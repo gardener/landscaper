@@ -9,8 +9,9 @@ import (
 	"fmt"
 	"os"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/spf13/cobra"
+
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	"github.com/gardener/landscaper/pkg/deployer/container/wait"
 	"github.com/gardener/landscaper/pkg/version"

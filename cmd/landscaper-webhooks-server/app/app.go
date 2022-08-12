@@ -99,12 +99,15 @@ func registerWebhooks(ctx context.Context,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	o *options) error {
+
 	webhookLogger := logging.Wrap(ctrl.Log.WithName("webhook").WithName("validation"))
+	ctx = logging.NewContext(ctx, webhookLogger)
+
 	webhookConfigurationName := "landscaper-validation-webhook"
 	// noop if all webhooks are disabled
 	if len(o.webhook.enabledWebhooks) == 0 {
 		webhookLogger.Info("Validation disabled")
-		return webhook.DeleteValidatingWebhookConfiguration(ctx, kubeClient, webhookConfigurationName, webhookLogger)
+		return webhook.DeleteValidatingWebhookConfiguration(ctx, kubeClient, webhookConfigurationName)
 	}
 
 	webhookLogger.Info("Validation enabled")
@@ -154,11 +157,11 @@ func registerWebhooks(ctx context.Context,
 	webhookLogger.Info("Enabling validation", "resources", webhookedResourcesLog)
 
 	// create/update/delete ValidatingWebhookConfiguration
-	if err := webhook.UpdateValidatingWebhookConfiguration(ctx, kubeClient, wo, webhookLogger); err != nil {
+	if err := webhook.UpdateValidatingWebhookConfiguration(ctx, kubeClient, wo); err != nil {
 		return err
 	}
 	// register webhooks
-	if err := webhook.RegisterWebhooks(webhookLogger, webhookServer, kubeClient, scheme, wo); err != nil {
+	if err := webhook.RegisterWebhooks(ctx, webhookServer, kubeClient, scheme, wo); err != nil {
 		return err
 	}
 

@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gardener/landscaper/test/utils"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,7 +27,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 )
 
 // Dumper is a struct to dump logs and useful information about known object for a state
@@ -34,13 +35,13 @@ type Dumper struct {
 	kubeClientSet kubernetes.Interface
 	namespaces    sets.String
 	lsNamespace   string
-	logger        simplelogger.Logger
+	logger        utils.Logger
 	startTime     time.Time
 	endTime       time.Time
 }
 
 // NewDumper create a new dumper
-func NewDumper(logger simplelogger.Logger, kubeClient client.Client, kubeClientSet kubernetes.Interface, lsNamespace string, namespaces ...string) *Dumper {
+func NewDumper(logger utils.Logger, kubeClient client.Client, kubeClientSet kubernetes.Interface, lsNamespace string, namespaces ...string) *Dumper {
 	return &Dumper{
 		logger:        logger,
 		kubeClient:    kubeClient,
@@ -124,7 +125,7 @@ func (d *Dumper) DumpInstallationsInNamespace(ctx context.Context, namespace str
 }
 
 // DumpInstallation dumps information about the installation
-func DumpInstallation(logger simplelogger.Logger, inst *lsv1alpha1.Installation) error {
+func DumpInstallation(logger utils.Logger, inst *lsv1alpha1.Installation) error {
 	// do not dummp the full spec if the installation was successfull
 	if inst.Status.Phase == lsv1alpha1.ComponentPhaseSucceeded {
 		logger.Logf("--- Installation %s succeeded\n", inst.Name)
@@ -151,7 +152,7 @@ func (d *Dumper) DumpDeployItemsInNamespace(ctx context.Context, namespace strin
 }
 
 // DumpDeployItems dumps information about the deploy items
-func DumpDeployItems(logger simplelogger.Logger, deployItem *lsv1alpha1.DeployItem) error {
+func DumpDeployItems(logger utils.Logger, deployItem *lsv1alpha1.DeployItem) error {
 	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
 		logger.Logf("--- DeployItem %s succeeded\n", deployItem.Name)
 		return nil
@@ -207,7 +208,7 @@ func (d *Dumper) DumpExecutionInNamespace(ctx context.Context, namespace string)
 }
 
 // DumpExecution dumps information about the execution
-func DumpExecution(logger simplelogger.Logger, exec *lsv1alpha1.Execution) error {
+func DumpExecution(logger utils.Logger, exec *lsv1alpha1.Execution) error {
 	if exec.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
 		logger.Logf("--- Execution %s succeeded\n", exec.Name)
 		return nil
@@ -237,7 +238,7 @@ func (d *Dumper) DumpConfigMapsInNamespace(ctx context.Context, namespace string
 }
 
 // DumpConfigMap dumps information about the configmap
-func DumpConfigMap(logger simplelogger.Logger, cm *corev1.ConfigMap) error {
+func DumpConfigMap(logger utils.Logger, cm *corev1.ConfigMap) error {
 	logger.Logf("--- ConfigMap %s\n", cm.Name)
 	logger.Logf("%s\n", FormatAsYAML(cm.Data, 0))
 	return nil
@@ -319,7 +320,7 @@ func (d *Dumper) DumpEnvironments(ctx context.Context) error {
 }
 
 // DumpEnvironment dumps information about the environment
-func DumpEnvironment(logger simplelogger.Logger, env *lsv1alpha1.Environment) error {
+func DumpEnvironment(logger utils.Logger, env *lsv1alpha1.Environment) error {
 	logger.Logf("--- Environment %s\n", env.Name)
 	logger.Logf("%s\n", FormatAsYAML(env.Spec, 0))
 	return nil
@@ -340,7 +341,7 @@ func (d *Dumper) DumpDeployerRegistrations(ctx context.Context) error {
 }
 
 // DumpDeployerRegistration dumps information about the deployer registration
-func DumpDeployerRegistration(logger simplelogger.Logger, dr *lsv1alpha1.DeployerRegistration) error {
+func DumpDeployerRegistration(logger utils.Logger, dr *lsv1alpha1.DeployerRegistration) error {
 	logger.Logf("--- Deployer Registration %s\n", dr.Name)
 	logger.Logf("%s\n", FormatAsYAML(dr.Spec, 0))
 	return nil
@@ -376,7 +377,7 @@ func (d *Dumper) DumpDeploymentsInNamespace(ctx context.Context, ns string) erro
 }
 
 // DumpDeployment dumps information about the deployment
-func DumpDeployment(logger simplelogger.Logger, deployment *appsv1.Deployment) error {
+func DumpDeployment(logger utils.Logger, deployment *appsv1.Deployment) error {
 	containerFmt := `
 --- Deployment %s
 Containers: %s
