@@ -242,14 +242,14 @@ func StartReconcileFromContext(ctx context.Context, req reconcile.Request) (Logg
 
 // StartReconcile works like StartReconcileFromContext, but it is called on an existing logger instead of fetching one from the context.
 func (l Logger) StartReconcile(req reconcile.Request, keysAndValues ...interface{}) Logger {
-	newLogger := l.WithValues(lc.KeyReconciledResource, req.NamespacedName).WithValues(keysAndValues)
+	newLogger := l.WithValues(lc.KeyReconciledResource, req.NamespacedName).WithValues(keysAndValues...)
 	newLogger.Info(lc.MsgStartReconcile)
 	return newLogger
 }
 
 // StartReconcileAndAddToContext works like StartReconcile, but additionally returns a context with the new logger.
 func (l Logger) StartReconcileAndAddToContext(ctx context.Context, req reconcile.Request, keysAndValues ...interface{}) (Logger, context.Context) {
-	newLogger := l.StartReconcile(req, keysAndValues)
+	newLogger := l.StartReconcile(req, keysAndValues...)
 	ctx = NewContext(ctx, newLogger)
 	return newLogger, ctx
 }

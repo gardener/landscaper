@@ -14,24 +14,27 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 // Agent is the internal landscaper agent that contains all landscaper specific code.
 type Agent struct {
-	log            logging.Logger
 	config         config.AgentConfiguration
 	lsClient       client.Client
 	lsRestConfig   *rest.Config
@@ -42,8 +45,7 @@ type Agent struct {
 }
 
 // New creates a new agent.
-func New(log logging.Logger,
-	lsClient client.Client,
+func New(lsClient client.Client,
 	lsRestConfig *rest.Config,
 	lsScheme *runtime.Scheme,
 	hostClient client.Client,
@@ -51,7 +53,6 @@ func New(log logging.Logger,
 	hostScheme *runtime.Scheme,
 	config config.AgentConfiguration) *Agent {
 	return &Agent{
-		log:            log,
 		config:         config,
 		lsClient:       lsClient,
 		lsRestConfig:   lsRestConfig,
@@ -65,6 +66,7 @@ func New(log logging.Logger,
 // EnsureLandscaperResources ensures that all landscaper resources
 // like the Environment and the Target are registered in the landscaper cluster.
 func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostClient client.Client) (*lsv1alpha1.Environment, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "EnsureLandscaperResources")
 	target, err := utils.NewTargetBuilder(string(lsv1alpha1.KubernetesClusterTargetType)).
 		Config(lsv1alpha1.KubernetesClusterTargetConfig{
 			Kubeconfig: lsv1alpha1.ValueRef{
@@ -109,6 +111,7 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 
 	if err := lsClient.Get(ctx, kutil.ObjectKeyFromObject(env), env); err != nil {
 		if apierrors.IsNotFound(err) {
+			logger.Info("Environment not found, creating it")
 			mutateFunc()
 			if err := lsClient.Create(ctx, env); err != nil {
 				return nil, err
@@ -119,19 +122,24 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 	}
 
 	if !env.DeletionTimestamp.IsZero() {
+		logger.Debug("Environment has deletion timestamp", lc.KeyDeletionTimestamp, env.DeletionTimestamp.Time)
 		// the environment has the deployer management finalizer if there are still deployer installation
 		// therefore do nothing.
 		if !controllerutil.ContainsFinalizer(env, lsv1alpha1.LandscaperDMFinalizer) {
+			logger.Debug("Cleaning up resources")
 			// cleanup resources but do not remove the finalizer
 			// as we would otherwise just right directly reconcile a new environment.
 			if err := a.RemoveHostResources(ctx, hostClient); err != nil {
 				return nil, fmt.Errorf("unable to remove host resources: %w", err)
 			}
 			return env, nil
+		} else {
+			logger.Debug("Environment still has Landscaper deployer management finalizer")
 		}
 		// still update the environment to reconcile possible new configurations.
 	}
 
+	logger.Info("Updating Environment")
 	mutateFunc()
 	if err := lsClient.Update(ctx, env); err != nil {
 		return nil, err
@@ -144,24 +152,28 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 // The function ensure the following resources:
 // - the secret containing the kubeconfig for the host kubeconfig
 func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Client) (*rest.Config, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "EnsureHostResources")
 	// create a dedicated service account and rbac rules for the kubeconfig
 	// Currently that kubeconfig has access to all resources as the deployers could install anything.
 	// We might need to restrict that in the future but at least the access the be audited.
 	sa := &corev1.ServiceAccount{}
 	sa.Name = fmt.Sprintf("deployer-%s", a.config.Name)
 	sa.Namespace = a.config.Namespace
+	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(sa).String(), lc.KeyResourceKind, "ServiceAccount")
 	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, sa, func() error {
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create service account %q for deployer on host cluster: %w", sa.Name, err)
 	}
 	cr := DeployerClusterRole(a.config.Name)
+	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(cr).String(), lc.KeyResourceKind, "ClusterRole")
 	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, cr, func() error {
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create cluster role %q for deployer on host cluster: %w", cr.Name, err)
 	}
 	crb := DeployerClusterRoleBinding(sa, a.config.Name)
+	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(crb).String(), lc.KeyResourceKind, "ClusterRoleBinding")
 	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, crb, func() error {
 		crb.Subjects = DeployerClusterRoleBindingSubjects(sa)
 		return nil
@@ -171,7 +183,7 @@ func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Clien
 
 	hostRestConfig := rest.CopyConfig(a.hostRestConfig)
 	if err := kutil.AddServiceAccountToken(ctx, kubeClient, sa, hostRestConfig); err != nil {
-		a.log.Error(err, "unable to add a service account token", "service-account", sa.Name)
+		logger.Error(err, "unable to add a service account token", "service-account", sa.Name)
 		return nil, err
 	}
 
@@ -198,9 +210,11 @@ func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Clien
 
 // RemoveHostResources removes all resources created by the agent from the host.
 func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Client) error {
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "RemoveHostResources")
 	sa := &corev1.ServiceAccount{}
 	sa.Name = fmt.Sprintf("deployer-%s", a.config.Name)
 	sa.Namespace = a.config.Namespace
+	sa.SetGroupVersionKind(schema.GroupVersionKind{})
 	cr := DeployerClusterRole(a.config.Name)
 	crb := DeployerClusterRoleBinding(sa, a.config.Name)
 
@@ -211,6 +225,15 @@ func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Clien
 				continue
 			}
 			return err
+		}
+		if logger.Enabled(logging.DEBUG) {
+			log := logger.WithValues(lc.KeyResource, kutil.ObjectKeyFromObject(obj).String())
+			gvk, err := apiutil.GVKForObject(obj, api.LandscaperScheme)
+			if err != nil {
+				log.Error(err, "unable to find GVK for object")
+			} else {
+				log.Debug("Waiting for resource to be deleted", lc.KeyResourceKind, gvk.Kind)
+			}
 		}
 	}
 	err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (done bool, err error) {
@@ -229,17 +252,22 @@ func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Clien
 
 // Reconcile reconciles the environment and target on the landscaper.
 func (a *Agent) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
 	if req.Name != a.config.Name {
+		logger.Info("Not responsible for this environment")
 		return reconcile.Result{}, nil
 	}
+	logger.Info("Ensuring Landscaper resources")
 	env, err := a.EnsureLandscaperResources(ctx, a.lsClient, a.hostClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	if !env.DeletionTimestamp.IsZero() && !controllerutil.ContainsFinalizer(env, lsv1alpha1.LandscaperDMFinalizer) {
+		logger.Info("Environment is in deletion", lc.KeyDeletionTimestamp, env.DeletionTimestamp.Time)
 		return reconcile.Result{}, nil
 	}
+	logger.Info("Ensuring host resources")
 	if _, err := a.EnsureHostResources(ctx, a.hostClient); err != nil {
 		return reconcile.Result{}, err
 	}

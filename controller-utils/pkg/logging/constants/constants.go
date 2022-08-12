@@ -45,6 +45,10 @@ const (
 	KeyJobID = "jobID"
 	// KeyJobIDFinished is for the ID of the finished job.
 	KeyJobIDFinished = "jobIDFinished"
+	// KeyVersion is for referencing a version
+	KeyVersion = "version"
+	// KeyDeletionTimestamp is for referencing a deletion timestamp. The value should be of type time.Time.
+	KeyDeletionTimestamp = "deletionTimestamp"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

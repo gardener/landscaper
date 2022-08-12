@@ -10,7 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
+	"github.com/gardener/landscaper/pkg/version"
 )
 
 func NewManifestDeployerControllerCommand(ctx context.Context) *cobra.Command {
@@ -34,6 +36,7 @@ func NewManifestDeployerControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
+	o.DeployerOptions.Log.Info("Starting Manifest Deployer", lc.KeyVersion, version.Get().GitVersion)
 	if err := manifestctlr.AddDeployerToManager(o.DeployerOptions.Log, o.DeployerOptions.LsMgr, o.DeployerOptions.HostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup helm controller")
 	}

@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	"golang.org/x/sync/errgroup"
@@ -76,7 +77,7 @@ func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
 
 func (o *Options) run(ctx context.Context) error {
 	setupLogger := o.Log.WithName("setup")
-	setupLogger.Info(fmt.Sprintf("Start Landscaper Controller with version %q", version.Get().String()))
+	setupLogger.Info("Starting Landscaper Controller", lc.KeyVersion, version.Get().String())
 
 	configBytes, err := yaml.Marshal(o.Config)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/spf13/cobra"
 
 	"github.com/gardener/landscaper/pkg/deployer/container/wait"
@@ -39,7 +40,7 @@ It waits until the main container has finished, then back-ups the optional state
 }
 
 func (o *options) run(ctx context.Context) {
-	o.log.Info(fmt.Sprintf("running wait executor with version %s", version.Get().GitVersion))
+	o.log.Info("Starting wait executor for container deployer", lc.KeyVersion, version.Get().GitVersion)
 	if err := wait.Run(ctx, o.log); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -60,6 +60,7 @@ func (o *DefaultOptions) Complete() error {
 	if err != nil {
 		return err
 	}
+	log = log.WithName("deployer")
 	o.Log = log
 	ctrl.SetLogger(log.Logr())
 

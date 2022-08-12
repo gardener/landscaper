@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/version"
 )
@@ -34,6 +35,7 @@ func NewContainerDeployerControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
+	o.DeployerOptions.Log.Info("Starting Container Deployer", lc.KeyVersion, version.Get().GitVersion)
 	if err := containerctlr.AddControllerToManager(o.DeployerOptions.Log,
 		o.DeployerOptions.HostMgr,
 		o.DeployerOptions.LsMgr,

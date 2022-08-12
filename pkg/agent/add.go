@@ -27,7 +27,8 @@ import (
 
 // AddToManager adds the agent to the provided manager.
 func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Manager, hostMgr manager.Manager, config config.AgentConfiguration) error {
-	log := logger.WithName("agent")
+	log := logger.WithName("agent").WithValues("targetEnvironment", config.Name)
+	ctx = logging.NewContext(ctx, log)
 	// create direct client for the agent to ensure the landscaper resources
 	lsClient, err := client.New(lsMgr.GetConfig(), client.Options{
 		Scheme: lsMgr.GetScheme(),
@@ -41,8 +42,7 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 	if err != nil {
 		return fmt.Errorf("unable to create direct landscaper kubernetes client: %w", err)
 	}
-	agent := New(log,
-		lsMgr.GetClient(),
+	agent := New(lsMgr.GetClient(),
 		lsMgr.GetConfig(),
 		lsMgr.GetScheme(),
 		hostMgr.GetClient(),
@@ -60,7 +60,7 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 
 	err = builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.Environment{}).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Reconciles("environment", "Environment").Logr() }).
 		Complete(agent)
 	if err != nil {
 		return err
