@@ -50,7 +50,7 @@ func HandleErrorFunc(ctx context.Context, err lserrors.LsError, log logging.Logg
 	}
 
 	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {
-		writer := read_write_layer.NewWriter(log, c)
+		writer := read_write_layer.NewWriter(c)
 		if err2 := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000051, deployItem); err2 != nil {
 			if apierrors.IsConflict(err2) { // reduce logging
 				log.Debug(fmt.Sprintf("unable to update status: %s", err2.Error()))

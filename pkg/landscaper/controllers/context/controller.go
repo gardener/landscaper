@@ -83,5 +83,5 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 }
 
 func (c *defaulterController) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(c.log, c.client)
+	return read_write_layer.NewWriter(c.client)
 }

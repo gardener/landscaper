@@ -9,17 +9,14 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 type Writer struct {
-	log    logging.Logger
 	client client.Client
 }
 
-func NewWriter(log logging.Logger, c client.Client) *Writer {
+func NewWriter(c client.Client) *Writer {
 	return &Writer{
-		log:    log,
 		client: c,
 	}
 }

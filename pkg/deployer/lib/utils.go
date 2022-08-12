@@ -59,7 +59,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 		log.Debug("removing reconcile annotation")
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
 		log.Debug("updating metadata")
-		writer := read_write_layer.NewWriter(log, kubeClient)
+		writer := read_write_layer.NewWriter(kubeClient)
 		if err := writer.UpdateDeployItem(ctx, read_write_layer.W000046, di); err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func PrepareReconcile(ctx context.Context, log logging.Logger, kubeClient client
 	}
 
 	log.Debug("updating status")
-	writer := read_write_layer.NewWriter(log, kubeClient)
+	writer := read_write_layer.NewWriter(kubeClient)
 	if err := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, di); err != nil {
 		return err
 	}

@@ -61,7 +61,7 @@ func (o *Operation) Client() client.Client {
 }
 
 func (o *Operation) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(o.log, o.client)
+	return read_write_layer.NewWriter(o.client)
 }
 
 // Scheme returns a kubernetes scheme

@@ -17,13 +17,10 @@ const (
 )
 
 // getLogger tries to fetch the most up-to-date logger from the context
-// and falls back to the writer's logger if that fails.
+// and falls back to creating a new one if that fails.
 // The keys and values are only added in case of the fallback.
 func (w *Writer) getLogger(ctx context.Context, keysAndValues ...interface{}) logging.Logger {
-	log, err := logging.FromContext(ctx)
-	if err != nil {
-		return w.log.WithValues(keysAndValues...)
-	}
+	log, _ := logging.FromContextOrNew(ctx, keysAndValues)
 	return log
 }
 
