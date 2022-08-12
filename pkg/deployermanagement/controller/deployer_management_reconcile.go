@@ -323,7 +323,7 @@ func (dm *DeployerManagement) EnsureRBACRoles(ctx context.Context) error {
 }
 
 func (dm *DeployerManagement) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(dm.log, dm.client)
+	return read_write_layer.NewWriter(dm.client)
 }
 
 // FQName defines the fully qualified name for the resources created for a deployer installation.

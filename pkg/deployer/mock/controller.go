@@ -183,5 +183,5 @@ func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1al
 }
 
 func (d *deployer) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(d.log, d.lsClient)
+	return read_write_layer.NewWriter(d.lsClient)
 }

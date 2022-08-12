@@ -47,6 +47,10 @@ const (
 	KeyJobIDFinished = "jobIDFinished"
 	// KeyCDName is the name of a component descriptor.
 	KeyCDName = "cdName"
+	// KeyVersion is for referencing a version
+	KeyVersion = "version"
+	// KeyDeletionTimestamp is for referencing a deletion timestamp. The value should be of type time.Time.
+	KeyDeletionTimestamp = "deletionTimestamp"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

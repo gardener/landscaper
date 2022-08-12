@@ -51,7 +51,7 @@ type EnvironmentController struct {
 }
 
 func (con *EnvironmentController) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(con.log, con.client)
+	return read_write_layer.NewWriter(con.client)
 }
 
 func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {

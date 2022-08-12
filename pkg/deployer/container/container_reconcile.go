@@ -52,7 +52,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			"Reconcile", "FetchRunningPod", err.Error())
 	}
 
-	lsWriter := read_write_layer.NewWriter(c.log, c.lsClient)
+	lsWriter := read_write_layer.NewWriter(c.lsClient)
 
 	// do nothing if the pod is still running
 	if pod != nil {

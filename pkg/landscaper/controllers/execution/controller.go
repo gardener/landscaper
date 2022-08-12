@@ -340,12 +340,10 @@ func (c *controller) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) lse
 }
 
 func (c *controller) removeForceReconcileAnnotation(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
 	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		old := exec.DeepCopy()
 		delete(exec.Annotations, lsv1alpha1.OperationAnnotation)
-		writer := read_write_layer.NewWriter(logger, c.client)
+		writer := read_write_layer.NewWriter(c.client)
 		if err := writer.PatchExecution(ctx, read_write_layer.W000029, exec, old); err != nil {
 			c.eventRecorder.Event(exec, corev1.EventTypeWarning, "RemoveForceReconcileAnnotation", err.Error())
 			return lserrors.NewWrappedError(err, "Reconcile", "RemoveForceReconcileAnnotation", err.Error())
@@ -355,7 +353,7 @@ func (c *controller) removeForceReconcileAnnotation(ctx context.Context, exec *l
 }
 
 func (c *controller) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(c.log, c.client)
+	return read_write_layer.NewWriter(c.client)
 }
 
 func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alpha1.Execution) error {
@@ -462,7 +460,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, c client.Client, exec *
 		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 
 		logger.Debug("updating status")
-		writer := read_write_layer.NewWriter(logger, c)
+		writer := read_write_layer.NewWriter(c)
 		if err := writer.UpdateExecutionStatus(ctx, read_write_layer.W000033, exec); err != nil {
 			return lserrors.NewWrappedError(err, operation, "update execution status", err.Error())
 		}
@@ -472,7 +470,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, c client.Client, exec *
 		logger.Debug("removing reconcile annotation")
 		delete(exec.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
 		logger.Debug("updating metadata")
-		writer := read_write_layer.NewWriter(logger, c)
+		writer := read_write_layer.NewWriter(c)
 		if err := writer.UpdateExecution(ctx, read_write_layer.W000027, exec); err != nil {
 			return lserrors.NewWrappedError(err, operation, "update execution", err.Error())
 		}
@@ -517,7 +515,7 @@ func handleError(ctx context.Context, err lserrors.LsError, c client.Client,
 	}
 
 	if !reflect.DeepEqual(oldExec.Status, exec.Status) {
-		writer := read_write_layer.NewWriter(logger, c)
+		writer := read_write_layer.NewWriter(c)
 		if updateErr := writer.UpdateExecutionStatus(ctx, read_write_layer.W000031, exec); updateErr != nil {
 			if apierrors.IsConflict(updateErr) { // reduce logging
 				logger.Debug(fmt.Sprintf("unable to update status: %s", updateErr.Error()))

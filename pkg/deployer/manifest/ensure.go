@@ -195,5 +195,5 @@ func (m *Manifest) Delete(ctx context.Context) error {
 }
 
 func (m *Manifest) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(m.log, m.lsKubeClient)
+	return read_write_layer.NewWriter(m.lsKubeClient)
 }
