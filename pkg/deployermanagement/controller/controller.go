@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -18,12 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"github.com/gardener/landscaper/apis/config"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // NewEnvironmentController creates a new landscaper agent EnvironmentController.
@@ -55,12 +52,12 @@ func (con *EnvironmentController) Writer() *read_write_layer.Writer {
 }
 
 func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := con.log.WithValues("resource", req.NamespacedName.String())
+	logger, ctx := con.log.StartReconcileAndAddToContext(ctx, req)
 
 	env := &lsv1alpha1.Environment{}
 	if err := con.client.Get(ctx, req.NamespacedName, env); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
+			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -78,6 +75,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 			wg      = sync.WaitGroup{}
 		)
 		for _, registration := range registrations.Items {
+			_, ctx = logging.FromContextOrNew(ctx, []interface{}{"deployerRegistration", registration.Name})
 			wg.Add(1)
 			go func(registration lsv1alpha1.DeployerRegistration) {
 				defer wg.Done()
@@ -127,6 +125,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 	}
 
 	for _, registration := range registrations.Items {
+		_, ctx = logging.FromContextOrNew(ctx, []interface{}{"deployerRegistration", registration.Name})
 		if err := con.dm.Reconcile(ctx, &registration, env); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -156,12 +155,12 @@ type DeployerRegistrationController struct {
 }
 
 func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := con.log.WithValues("resource", req.NamespacedName.String())
+	logger, ctx := con.log.StartReconcileAndAddToContext(ctx, req)
 
 	registration := &lsv1alpha1.DeployerRegistration{}
 	if err := con.client.Get(ctx, req.NamespacedName, registration); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
+			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -187,6 +186,7 @@ func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req re
 			wg      = sync.WaitGroup{}
 		)
 		for _, env := range environments.Items {
+			_, ctx = logging.FromContextOrNew(ctx, []interface{}{"environment", env.Name})
 			wg.Add(1)
 			go func(env lsv1alpha1.Environment) {
 				defer wg.Done()
@@ -210,6 +210,7 @@ func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req re
 	}
 
 	for _, env := range environments.Items {
+		_, ctx = logging.FromContextOrNew(ctx, []interface{}{"environment", env.Name})
 		if err := con.dm.Reconcile(ctx, registration, &env); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -242,7 +243,7 @@ func NewInstallationController(log logging.Logger, c client.Client, scheme *runt
 }
 
 func (con *InstallationController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := con.log.WithValues("resource", req.NamespacedName.String())
+	logger, ctx := con.log.StartReconcileAndAddToContext(ctx, req)
 
 	if req.Namespace != con.config.DeployerManagement.Namespace {
 		return reconcile.Result{}, nil
@@ -251,7 +252,7 @@ func (con *InstallationController) Reconcile(ctx context.Context, req reconcile.
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, con.client, req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
+			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err

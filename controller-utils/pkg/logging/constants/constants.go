@@ -18,6 +18,8 @@ const (
 	// KeyResource is for 'namespace/name' of a resource.
 	// For referencing the resource which is currently being reconciled, use KeyReconciledResource instead.
 	KeyResource = "resource"
+	// KeyResourceNonNamespaced is for the name of a non-namespaced resource.
+	KeyResourceNonNamespaced = "resourceNonNamespaced"
 	// KeyResourceKind is for the kind of the referenced resource. Meant to be used in combination with KeyResource.
 	// For the kind of the resource which is currently being reconciled, use KeyReconciledResourceKind instead.
 	KeyResourceKind = "resourceKind"
@@ -55,6 +57,8 @@ const (
 	KeyIndex = "index"
 	// KeyFileName is for the name of a file.
 	KeyFileName = "fileName"
+	// KeyServiceAccount is for a kubernetes service account.
+	KeyServiceAccount = "serviceAccount"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

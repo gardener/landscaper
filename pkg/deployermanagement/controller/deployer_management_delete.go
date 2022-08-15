@@ -9,13 +9,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // Delete removes a deployer installation given a deployer registration and a environment.
@@ -45,7 +44,7 @@ func (dm *DeployerManagement) Delete(ctx context.Context, registration *lsv1alph
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
-			dm.log.Debug("unable to get installation while waiting for deletion", "err", err.Error())
+			return false, fmt.Errorf("unable to get installation while waiting for deletion: %w", err)
 		}
 		return false, nil
 	})
