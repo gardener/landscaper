@@ -237,7 +237,8 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, mgr manager.Manag
 	if err != nil {
 		return fmt.Errorf("unable to create direct client: %q", err)
 	}
-	return o.Deployer.DeployInternalDeployers(ctx, o.Log, directClient, o.Config)
+	ctx = logging.NewContext(ctx, logging.Wrap(ctrl.Log.WithName("deployerManagement")))
+	return o.Deployer.DeployInternalDeployers(ctx, directClient, o.Config)
 }
 
 func (o *Options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {

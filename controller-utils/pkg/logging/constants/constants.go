@@ -18,6 +18,8 @@ const (
 	// KeyResource is for 'namespace/name' of a resource.
 	// For referencing the resource which is currently being reconciled, use KeyReconciledResource instead.
 	KeyResource = "resource"
+	// KeyResourceNonNamespaced is for the name of a non-namespaced resource.
+	KeyResourceNonNamespaced = "resourceNonNamespaced"
 	// KeyResourceKind is for the kind of the referenced resource. Meant to be used in combination with KeyResource.
 	// For the kind of the resource which is currently being reconciled, use KeyReconciledResourceKind instead.
 	KeyResourceKind = "resourceKind"

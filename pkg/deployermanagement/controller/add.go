@@ -53,7 +53,7 @@ func AddControllersToManager(logger logging.Logger, mgr manager.Manager, config 
 		return fmt.Errorf("unable to register deployer registration controller: %w", err)
 	}
 
-	log = logger.Reconciles("deployerRegistration", "Namespace")
+	log = logger.Reconciles("deployerRegistration", "Installation")
 	inst := NewInstallationController(
 		log,
 		mgr.GetClient(),

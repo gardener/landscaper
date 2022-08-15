@@ -11,30 +11,26 @@ import (
 	"fmt"
 	"time"
 
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
-	"k8s.io/apimachinery/pkg/selection"
-
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
-
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/validation"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // DeployerClusterRoleName is the name of the deployer cluster role.
@@ -133,6 +129,9 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 func (dm *DeployerManagement) getInstallation(ctx context.Context,
 	registration *lsv1alpha1.DeployerRegistration,
 	env *lsv1alpha1.Environment) (*lsv1alpha1.Installation, error) {
+
+	log, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "getInstallation")
+
 	installations := &lsv1alpha1.InstallationList{}
 	if err := read_write_layer.ListInstallations(ctx, dm.client, installations,
 		client.InNamespace(dm.config.Namespace),
@@ -155,7 +154,7 @@ func (dm *DeployerManagement) getInstallation(ctx context.Context,
 			registration.Status.LastError = lserrors.TryUpdateError(inst.Status.LastError, err)
 
 			if err := dm.client.Status().Update(ctx, registration); err != nil {
-				dm.log.Error(err, "failed to update status for deployer registration", registration.Name)
+				log.Error(err, "failed to update status for deployer registration")
 			}
 
 			return nil, err
@@ -180,6 +179,12 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 	inst *lsv1alpha1.Installation,
 	registration *lsv1alpha1.DeployerRegistration,
 	env *lsv1alpha1.Environment) error {
+
+	log, ctx := logging.FromContextOrNew(ctx, nil,
+		lc.KeyMethod, "createDeployerTarget",
+		"installation", client.ObjectKeyFromObject(inst).String(),
+	)
+
 	target := &lsv1alpha1.Target{}
 	target.Name = FQName(registration, env)
 	target.Namespace = dm.config.Namespace
@@ -203,7 +208,7 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 	restConfig.TLSClientConfig.CAData = env.Spec.LandscaperClusterRestConfig.TLSClientConfig.CAData
 
 	if err := kutil.AddServiceAccountToken(ctx, dm.client, sa, restConfig); err != nil {
-		dm.log.Error(err, "unable to add service account token", "service-account", sa.Name)
+		log.Error(err, "unable to add service account token", "serviceAccount", client.ObjectKeyFromObject(sa).String())
 		return err
 	}
 

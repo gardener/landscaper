@@ -17,11 +17,12 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // DeployInternalDeployers automatically deploys configured deployers using the new Deployer registrations.
-func (o *Options) DeployInternalDeployers(ctx context.Context, log logging.Logger, kubeClient client.Client, config *config.LandscaperConfiguration) error {
+func (o *Options) DeployInternalDeployers(ctx context.Context, kubeClient client.Client, config *config.LandscaperConfiguration) error {
 	commonCompDescRef := &lsv1alpha1.ComponentDescriptorDefinition{
 		Reference: &lsv1alpha1.ComponentDescriptorReference{
 			RepositoryContext: config.DeployerManagement.DeployerRepositoryContext,
@@ -89,15 +90,16 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, log logging.Logge
 	}
 
 	for _, deployerName := range o.EnabledDeployers {
-		if err := o.deployDeployerRegistrations(ctx, log, deployerName, kubeClient, apply); err != nil {
+		if err := o.deployDeployerRegistrations(ctx, deployerName, kubeClient, apply); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (o *Options) deployDeployerRegistrations(ctx context.Context, log logging.Logger, deployerName string, kubeClient client.Client, apply DeployerApplyFunc) error {
-	log.Info("Enable Deployer", "name", deployerName)
+func (o *Options) deployDeployerRegistrations(ctx context.Context, deployerName string, kubeClient client.Client, apply DeployerApplyFunc) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "deployDeployerRegistrations")
+	log.Info("Enable Deployer", lc.KeyResourceNonNamespaced, deployerName)
 
 	deployerConfig, _ := o.GetDeployerConfigForDeployer(deployerName)
 
