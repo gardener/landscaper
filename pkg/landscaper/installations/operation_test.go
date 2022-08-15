@@ -21,7 +21,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils"
 	testutils "github.com/gardener/landscaper/test/utils"
 )

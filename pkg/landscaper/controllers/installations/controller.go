@@ -43,7 +43,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
 )
 
 const (

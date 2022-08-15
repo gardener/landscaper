@@ -26,7 +26,7 @@ import (
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
-	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"

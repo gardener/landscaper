@@ -17,7 +17,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
-	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 

@@ -27,7 +27,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
-	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
