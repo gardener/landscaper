@@ -57,6 +57,8 @@ const (
 	KeyIndex = "index"
 	// KeyFileName is for the name of a file.
 	KeyFileName = "fileName"
+	// KeyServiceAccount is for a kubernetes service account.
+	KeyServiceAccount = "serviceAccount"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"
