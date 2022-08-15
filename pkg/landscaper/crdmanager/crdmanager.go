@@ -7,11 +7,10 @@ package crdmanager
 import (
 	"embed"
 
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/controller-utils/pkg/crdmanager"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
@@ -22,6 +21,6 @@ const (
 var importedCrdFS embed.FS
 
 // NewCrdManager returns a new instance of the CRDManager
-func NewCrdManager(log logging.Logger, mgr manager.Manager, lsConfig *config.LandscaperConfiguration) (*crdmanager.CRDManager, error) {
-	return crdmanager.NewCrdManager(log, mgr, lsConfig.CrdManagement, &importedCrdFS, embedFSCrdRootDir)
+func NewCrdManager(mgr manager.Manager, lsConfig *config.LandscaperConfiguration) (*crdmanager.CRDManager, error) {
+	return crdmanager.NewCrdManager(mgr, lsConfig.CrdManagement, &importedCrdFS, embedFSCrdRootDir)
 }
