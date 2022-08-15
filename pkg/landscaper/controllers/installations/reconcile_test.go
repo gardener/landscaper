@@ -7,6 +7,8 @@ package installations_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -20,7 +22,6 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -46,9 +47,9 @@ var _ = Describe("Reconcile", func() {
 			fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata")
 			Expect(err).ToNot(HaveOccurred())
 
-			op = lsoperation.NewOperation(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 
-			ctrl = installationsctl.NewTestActuator(*op, &config.LandscaperConfiguration{
+			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
 					Local: &config.LocalRegistryConfiguration{
 						RootPath: "./testdata",

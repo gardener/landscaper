@@ -8,7 +8,6 @@ import (
 	"context"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,7 +20,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
-	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -45,7 +44,7 @@ var _ = Describe("Delete", func() {
 
 		fakeExecutions = state.Executions
 		fakeDeployItems = state.DeployItems
-		op = operation.NewOperation(logging.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		op = operation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
 	})
 
 	It("should block deletion if deploy items still exist", func() {

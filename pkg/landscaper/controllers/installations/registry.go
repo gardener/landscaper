@@ -14,11 +14,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/landscaper/operation"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
 )

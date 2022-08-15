@@ -10,7 +10,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -22,7 +21,6 @@ type RegistriesAccessor interface {
 
 // Operation is the type that is used to share common operational data across the landscaper reconciler
 type Operation struct {
-	log               logging.Logger
 	client            client.Client
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
@@ -31,9 +29,8 @@ type Operation struct {
 
 // NewOperation creates a new internal installation Operation object.
 // DEPRECATED: use the Builder instead.
-func NewOperation(log logging.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) *Operation {
+func NewOperation(c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) *Operation {
 	return &Operation{
-		log:           log,
 		client:        c,
 		scheme:        scheme,
 		eventRecorder: recorder,
@@ -43,16 +40,10 @@ func NewOperation(log logging.Logger, c client.Client, scheme *runtime.Scheme, r
 // Copy creates a new operation with the same client, scheme and component resolver
 func (o *Operation) Copy() *Operation {
 	return &Operation{
-		log:               o.log,
 		client:            o.client,
 		scheme:            o.scheme,
 		componentRegistry: o.componentRegistry,
 	}
-}
-
-// Log returns a logging instance
-func (o *Operation) Log() logging.Logger {
-	return o.log
 }
 
 // Client returns a controller runtime client.Registry

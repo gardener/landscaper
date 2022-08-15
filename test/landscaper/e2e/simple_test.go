@@ -26,7 +26,7 @@ import (
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -46,9 +46,9 @@ var _ = Describe("Simple", func() {
 		fakeComponentRegistry, err = componentsregistry.NewLocalClient(filepath.Join(projectRoot, "examples", "01-simple"))
 		Expect(err).ToNot(HaveOccurred())
 
-		op := operation.NewOperation(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeComponentRegistry)
+		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeComponentRegistry)
 
-		instActuator = instctlr.NewTestActuator(*op, &config.LandscaperConfiguration{
+		instActuator = instctlr.NewTestActuator(*op, logging.Discard(), &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
 				Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
 			},

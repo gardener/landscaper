@@ -17,12 +17,11 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	operation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
@@ -36,7 +35,7 @@ var _ = Describe("Operation", func() {
 
 	BeforeEach(func() {
 		kubeClient = fake.NewClientBuilder().WithScheme(api.LandscaperScheme).Build()
-		commonOp := operation.NewOperation(logging.Discard(), kubeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		commonOp := operation.NewOperation(kubeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
 		op = &installations.Operation{
 			Inst: &installations.Installation{
 				InstallationBase: installations.InstallationBase{Info: &lsv1alpha1.Installation{}},

@@ -17,7 +17,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
@@ -109,7 +108,6 @@ var _ = Describe("Execution Operation", func() {
 			Client(kClient).
 			ComponentDescriptor(cd).
 			ComponentRegistry(componentResolver).
-			WithLogger(logging.Discard()).
 			WithContext(lsCtx).
 			Build(ctx)
 		Expect(err).ToNot(HaveOccurred())
