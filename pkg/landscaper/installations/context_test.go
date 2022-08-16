@@ -11,7 +11,6 @@ import (
 	"github.com/onsi/gomega/gstruct"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -53,7 +52,7 @@ var _ = Describe("Context", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(logging.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+		op = lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 	})
 
 	AfterEach(func() {

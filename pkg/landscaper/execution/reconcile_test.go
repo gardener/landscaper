@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
@@ -42,7 +41,7 @@ var _ = Describe("Reconcile", func() {
 
 		fakeExecutions = state.Executions
 		fakeDeployItems = state.DeployItems
-		op = operation.NewOperation(logging.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		op = operation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
 	})
 
 	It("should deploy the specified deploy items", func() {

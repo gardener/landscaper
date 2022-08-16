@@ -198,40 +198,32 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 }
 
 func (c *controller) handlePhaseInit(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.UpdateDeployItems(ctx)
 }
 
 func (c *controller) handlePhaseProgressing(ctx context.Context, exec *lsv1alpha1.Execution) (
 	*execution.DeployItemClassification, lserrors.LsError) {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.TriggerDeployItems(ctx)
 }
 
 func (c *controller) handlePhaseCompleting(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.CollectAndUpdateExportsNew(ctx)
 }
 
 func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
 	op := "handlePhaseInitDelete"
 
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	managedItems, err := o.ListManagedDeployItems(ctx)
 	if err != nil {
@@ -263,10 +255,8 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1
 
 func (c *controller) handlePhaseDeleting(ctx context.Context, exec *lsv1alpha1.Execution) (
 	*execution.DeployItemClassification, lserrors.LsError) {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.TriggerDeployItemsForDelete(ctx)
 }
@@ -305,8 +295,6 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 }
 
 func (c *controller) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
 	if err := HandleAnnotationsAndGeneration(ctx, c.client, exec); err != nil {
 		return err
 	}
@@ -319,7 +307,7 @@ func (c *controller) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) lse
 	}
 
 	forceReconcile := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-	op := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec,
+	op := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec,
 		forceReconcile)
 
 	if !exec.DeletionTimestamp.IsZero() {
@@ -357,8 +345,6 @@ func (c *controller) Writer() *read_write_layer.Writer {
 }
 
 func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alpha1.Execution) error {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
 	delete(exec.Annotations, lsv1alpha1.OperationAnnotation)
 	if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000100, exec); err != nil {
 		return err
@@ -367,7 +353,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 	op := "handleInterruptOperation"
 
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	managedItems, err := o.ListManagedDeployItems(ctx)
 	if err != nil {

@@ -59,6 +59,7 @@ func NewController(logger logging.Logger,
 	lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
 
 	ctrl := &Controller{
+		log:                 logger,
 		LsConfig:            lsConfig,
 		ComponentOverwriter: overwriter,
 	}
@@ -72,14 +73,15 @@ func NewController(logger logging.Logger,
 		logger.Debug("setup shared components registry  cache")
 	}
 
-	op := operation.NewOperation(logger, kubeClient, scheme, eventRecorder)
+	op := operation.NewOperation(kubeClient, scheme, eventRecorder)
 	ctrl.Operation = *op
 	return ctrl, nil
 }
 
 // NewTestActuator creates a new Controller that is only meant for testing.
-func NewTestActuator(op operation.Operation, configuration *config.LandscaperConfiguration) *Controller {
+func NewTestActuator(op operation.Operation, logger logging.Logger, configuration *config.LandscaperConfiguration) *Controller {
 	a := &Controller{
+		log:       logger,
 		Operation: op,
 		LsConfig:  configuration,
 	}
@@ -89,6 +91,7 @@ func NewTestActuator(op operation.Operation, configuration *config.LandscaperCon
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
+	log                 logging.Logger
 	LsConfig            *config.LandscaperConfiguration
 	SharedCache         cache.Cache
 	ComponentOverwriter componentoverwrites.Overwriter
@@ -103,7 +106,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger, ctx := c.Log().StartReconcileAndAddToContext(ctx, req)
+	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
@@ -174,7 +177,7 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 }
 
 func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger, ctx := c.Log().StartReconcileAndAddToContext(ctx, req)
+	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {

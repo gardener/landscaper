@@ -55,9 +55,9 @@ var _ = Describe("Delete", func() {
 			fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata")
 			Expect(err).ToNot(HaveOccurred())
 
-			op = lsoperation.NewOperation(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 
-			ctrl = installationsctl.NewTestActuator(*op, &config.LandscaperConfiguration{
+			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
 					Local: &config.LocalRegistryConfiguration{
 						RootPath: "./testdata",
@@ -89,7 +89,7 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstRoot, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			instController := installationsctl.NewTestActuator(*instOp.Operation, logging.Discard(), nil)
 			Expect(instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)).To(Succeed())
 
 			instA := &lsv1alpha1.Installation{}
@@ -115,7 +115,7 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			instController := installationsctl.NewTestActuator(*instOp.Operation, logging.Discard(), nil)
 			err = instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -134,7 +134,7 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			instController := installationsctl.NewTestActuator(*instOp.Operation, logging.Discard(), nil)
 			Expect(instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)).To(Succeed())
 
 			instC := &lsv1alpha1.Installation{}

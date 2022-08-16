@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/onsi/gomega"
@@ -41,8 +40,6 @@ import (
 	k8smock "github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 )
 
 // TestInstallationConfig defines a installation configuration which can be used to create
@@ -67,41 +64,6 @@ type TestInstallationConfig struct {
 	// BlueprintFilePath defines the filepath to the blueprint definition.
 	// Will be defaulted to <BlueprintContentPath>/blueprint.yaml if not defined.
 	BlueprintFilePath string
-}
-
-// CreateTestInstallationResources creates a test environment with a installation, a blueprint and a operation.
-// Should only be used for root installation as other installations may be created during runtime.
-func CreateTestInstallationResources(op *lsoperation.Operation, cfg TestInstallationConfig) (*lsv1alpha1.Installation, *installations.Installation, *blueprints.Blueprint, *installations.Operation) {
-	// apply defaults
-	if len(cfg.BlueprintFilePath) == 0 {
-		cfg.BlueprintFilePath = filepath.Join(cfg.BlueprintContentPath, "blueprint.yaml")
-	}
-
-	if cfg.MockClient != nil {
-		cfg.MockClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-			func(ctx context.Context, instList *lsv1alpha1.InstallationList, _ ...interface{}) error {
-				*instList = lsv1alpha1.InstallationList{}
-				return nil
-			})
-	}
-
-	rootInst := cfg.Installation
-	if rootInst == nil {
-		rootInst = &lsv1alpha1.Installation{}
-		rootInst.Name = cfg.InstallationName
-		rootInst.Namespace = cfg.InstallationNamespace
-		rootInst.Spec.ComponentDescriptor = LocalRemoteComponentDescriptorRef(cfg.RemoteBlueprintComponentName, cfg.RemoteBlueprintVersion, cfg.RemoteBlueprintBaseURL)
-		rootInst.Spec.Blueprint = LocalRemoteBlueprintRef(cfg.RemoteBlueprintResourceName)
-	}
-
-	rootBlueprint := CreateBlueprintFromFile(cfg.BlueprintFilePath, cfg.BlueprintContentPath)
-
-	rootIntInst, err := installations.New(rootInst, rootBlueprint)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	rootInstOp, err := installations.NewOperationBuilder(rootIntInst).WithOperation(op).Build(context.TODO())
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	return rootInst, rootIntInst, rootBlueprint, rootInstOp
 }
 
 // LocalRemoteComponentDescriptorRef creates a new default local remote component descriptor reference
