@@ -63,7 +63,7 @@ var _ = Describe("Constructor", func() {
 	It("should fetch import values from DeployItem's configuration and write them to 'import.json'", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		memFs := memoryfs.New()
@@ -84,7 +84,7 @@ var _ = Describe("Constructor", func() {
 	It("should fetch a blueprint from a DeployItem's configuration and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		memFs := memoryfs.New()
@@ -104,7 +104,7 @@ var _ = Describe("Constructor", func() {
 	It("should fetch an inline blueprint from a DeployItem's configuration and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		memFs := memoryfs.New()
@@ -124,7 +124,7 @@ var _ = Describe("Constructor", func() {
 	It("should fetch component descriptor from DeployItem's configuration and write them to the component descriptor path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		memFs := memoryfs.New()
@@ -146,7 +146,7 @@ var _ = Describe("Constructor", func() {
 	It("should fetch an inline component descriptor from DeployItem's configuration and write them to the component descriptor path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		memFs := memoryfs.New()
@@ -168,7 +168,7 @@ var _ = Describe("Constructor", func() {
 	It("should fetch an inline blueprint from a DeployItem's configuration with no Component Descriptor at all and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		memFs := memoryfs.New()
@@ -188,7 +188,7 @@ var _ = Describe("Constructor", func() {
 	It("should fetch an inline blueprint and an inline Component Descriptor from a DeployItem's configuration and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		memFs := memoryfs.New()
@@ -214,7 +214,7 @@ var _ = Describe("Constructor", func() {
 	It("should ignore if the registry secrets path does not exist", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		opts.RegistrySecretBasePath = "/unexisting/path"
