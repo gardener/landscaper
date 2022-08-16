@@ -26,7 +26,7 @@ import (
 
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
 func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manager, config containerv1alpha1.Configuration) error {
-	ctrlLogger := logger.WithName("ContainerDeployer")
+	log := logger.WithName("container")
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
 		Scheme: hostMgr.GetScheme(),
@@ -35,7 +35,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		return fmt.Errorf("unable to create direct client for the host cluster: %w", err)
 	}
 	deployer, err := NewDeployer(
-		ctrlLogger,
+		log,
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
 		directHostClient,
@@ -46,7 +46,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 
 	src := source.NewKindWithCache(&corev1.Pod{}, hostMgr.GetCache())
 	podRec := NewPodReconciler(
-		ctrlLogger.WithName("PodReconciler"),
+		log.WithName("podReconciler"),
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
@@ -60,7 +60,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		options.CacheSyncTimeout = config.Controller.CacheSyncTimeout.Duration
 	}
 
-	err = deployerlib.Add(logging.Wrap(ctrl.Log), lsMgr, hostMgr, deployerlib.DeployerArgs{
+	err = deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
 		Name:            Name,
 		Version:         version.Get().String(),
 		Identity:        config.Identity,
@@ -81,10 +81,10 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 	}
 
 	if config.GarbageCollection.Disable {
-		logger.Info("GarbageCollector disabled")
+		log.Info("GarbageCollector disabled")
 		return nil
 	}
-	return NewGarbageCollector(logger.WithName("GarbageCollector"),
+	return NewGarbageCollector(log.WithName("garbageCollector"),
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
 		config.Identity,

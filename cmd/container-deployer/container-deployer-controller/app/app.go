@@ -36,7 +36,7 @@ func NewContainerDeployerControllerCommand(ctx context.Context) *cobra.Command {
 
 func (o *options) run(ctx context.Context) error {
 	o.DeployerOptions.Log.Info("Starting Container Deployer", lc.KeyVersion, version.Get().GitVersion)
-	if err := containerctlr.AddControllerToManager(o.DeployerOptions.Log.WithName("container"),
+	if err := containerctlr.AddControllerToManager(o.DeployerOptions.Log,
 		o.DeployerOptions.HostMgr,
 		o.DeployerOptions.LsMgr,
 		o.Config); err != nil {

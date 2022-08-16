@@ -19,7 +19,7 @@ import (
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
 func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config mockv1alpha1.Configuration) error {
-	log := logger.WithName("MockDeployer")
+	log := logger.WithName("mock")
 	d, err := NewDeployer(
 		log,
 		lsMgr.GetClient(),

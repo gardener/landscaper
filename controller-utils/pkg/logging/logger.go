@@ -230,7 +230,14 @@ func (l Logger) IsInitialized() bool {
 // Reconciles is meant to be used for the logger initialization for controllers.
 // It is a wrapper for WithName(name).WithValues(lc.KeyReconciledResourceKind, reconciledResource).
 func (l Logger) Reconciles(name, reconciledResource string) Logger {
-	return l.WithName(name).WithValues(lc.KeyReconciledResourceKind, reconciledResource)
+	log := l
+	if len(name) != 0 {
+		log = log.WithName(name)
+	}
+	if len(reconciledResource) != 0 {
+		log = log.WithValues(lc.KeyReconciledResourceKind, reconciledResource)
+	}
+	return log
 }
 
 // Logr returns the internal logr.Logger.

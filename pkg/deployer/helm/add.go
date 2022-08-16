@@ -17,7 +17,7 @@ import (
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
 func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config helmv1alpha1.Configuration) error {
-	log := logger.WithName("HelmDeployer")
+	log := logger.WithName("helm")
 	d, err := NewDeployer(
 		log,
 		lsMgr.GetClient(),

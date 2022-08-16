@@ -103,7 +103,7 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) 
 		hostMgr.GetScheme(),
 		args)
 
-	log = log.Reconciles("deployItem", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
+	log = log.Reconciles("", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
 
 	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
