@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"net/http"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -67,7 +69,11 @@ type InstallationValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	iv.log.Debug("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	logger := iv.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+	ctx = logging.NewContext(ctx, logger)
+
+	logger.Debug("Received request")
+
 	inst := &lscore.Installation{}
 	if _, _, err := iv.decoder.Decode(req.Object.Raw, nil, inst); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -81,11 +87,11 @@ func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Reque
 	v1alpha1Inst := &lsv1alpha1.Installation{}
 	err := lsv1alpha1.Convert_core_Installation_To_v1alpha1_Installation(inst, v1alpha1Inst, nil)
 	if err != nil {
-		iv.log.Error(err, "error while converting core Installation to v1alpha1 Installation")
+		logger.Error(err, "error while converting core Installation to v1alpha1 Installation")
 	} else {
 		dupErr, err := checkForDuplicateExports(ctx, iv.Client, v1alpha1Inst)
 		if err != nil {
-			iv.log.Error(err, "error while checking for duplicate exports")
+			logger.Error(err, "error while checking for duplicate exports")
 		} else if dupErr != nil {
 			return admission.Denied(dupErr.Error())
 		}
@@ -100,8 +106,11 @@ func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Reque
 type DeployItemValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
-func (div *DeployItemValidator) Handle(_ context.Context, req admission.Request) admission.Response {
-	div.log.Debug("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+func (div *DeployItemValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	logger := div.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+
+	logger.Debug("Received request")
+
 	di := &lscore.DeployItem{}
 	if _, _, err := div.decoder.Decode(req.Object.Raw, nil, di); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -118,7 +127,7 @@ func (div *DeployItemValidator) Handle(_ context.Context, req admission.Request)
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 		if oldDi.Spec.Type != di.Spec.Type {
-			div.log.Debug(fmt.Sprintf("deployitem type is immutable, got %q but expected %q", di.Spec.Type, oldDi.Spec.Type))
+			logger.Debug(fmt.Sprintf("deployitem type is immutable, got %q but expected %q", di.Spec.Type, oldDi.Spec.Type))
 			return admission.Errored(http.StatusForbidden, field.Forbidden(field.NewPath(".spec.type"), "type is immutable"))
 		}
 	}
@@ -133,7 +142,10 @@ type ExecutionValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (ev *ExecutionValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	ev.log.Debug("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	logger := ev.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+
+	logger.Debug("Received request")
+
 	exec := &lscore.Execution{}
 	if _, _, err := ev.decoder.Decode(req.Object.Raw, nil, exec); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -153,7 +165,10 @@ type ComponentOverwritesValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (ev *ComponentOverwritesValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	ev.log.Debug("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	logger := ev.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+
+	logger.Debug("Received request")
+
 	co := &lscore.ComponentOverwrites{}
 	if _, _, err := ev.decoder.Decode(req.Object.Raw, nil, co); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)

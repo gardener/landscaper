@@ -9,6 +9,8 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/gardener/landscaper/test/utils"
+
 	"github.com/gardener/landscaper/test/integration/core"
 	"github.com/gardener/landscaper/test/integration/deployers"
 	"github.com/gardener/landscaper/test/integration/deployitems"
@@ -20,7 +22,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/framework"
 )
 
@@ -37,7 +38,7 @@ func TestConfig(t *testing.T) {
 	ctx := context.Background()
 	defer ctx.Done()
 
-	logger := simplelogger.NewLogger()
+	logger := utils.NewLogger()
 
 	opts.RootPath = "../../"
 	f, err := framework.New(logger, opts)

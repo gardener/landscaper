@@ -38,7 +38,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsscheme "github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -89,7 +88,7 @@ func (o *Options) Complete() error {
 // Framework is the Landscaper test framework to execute tests.
 // Also includes some helper functions.
 type Framework struct {
-	logger simplelogger.Logger
+	logger utils.Logger
 	// RootPath is the filepath to the root of the landscaper repository
 	RootPath string
 	// RestConfig is the kubernetes rest config for the test cluster
@@ -124,7 +123,7 @@ type Framework struct {
 	OCICache cache.Cache
 }
 
-func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
+func New(logger utils.Logger, cfg *Options) (*Framework, error) {
 	if err := cfg.Complete(); err != nil {
 		return nil, err
 	}
@@ -197,13 +196,13 @@ func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
 }
 
 // Log returns the default logger
-func (f *Framework) Log() simplelogger.Logger {
+func (f *Framework) Log() utils.Logger {
 	return f.logger
 }
 
 // TestLog returns a new testlogger that logs to the ginkgo managed writer
-func (f *Framework) TestLog() simplelogger.Logger {
-	return simplelogger.NewLoggerFromWriter(ginkgo.GinkgoWriter)
+func (f *Framework) TestLog() utils.Logger {
+	return utils.NewLoggerFromWriter(ginkgo.GinkgoWriter)
 }
 
 // WaitForSystemComponents waits for all system component of the landscaper to be ready

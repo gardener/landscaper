@@ -21,7 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 )
 
 // WaitForObjectDeletion waits until the given object is deleted
@@ -110,7 +109,7 @@ func DeleteObject(
 }
 
 // WaitForDeploymentToBeReady waits for a deployment to be ready
-func WaitForDeploymentToBeReady(ctx context.Context, logger simplelogger.Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
+func WaitForDeploymentToBeReady(ctx context.Context, logger Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
 	err := wait.PollImmediate(5*time.Second, timeout, func() (done bool, err error) {
 		deploy := &appsv1.Deployment{}
 		if err := kubeClient.Get(ctx, objKey, deploy); err != nil {

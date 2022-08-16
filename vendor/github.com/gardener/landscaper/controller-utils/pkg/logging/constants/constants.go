@@ -23,6 +23,10 @@ const (
 	// KeyResourceKind is for the kind of the referenced resource. Meant to be used in combination with KeyResource.
 	// For the kind of the resource which is currently being reconciled, use KeyReconciledResourceKind instead.
 	KeyResourceKind = "resourceKind"
+	// KeyResourceGroup is for the group of the referenced resource. Meant to be used in combination with KeyResource.
+	KeyResourceGroup = "resourceGroup"
+	// KeyResourceVersion is for the version of the referenced resource. Meant to be used in combination with KeyResource.
+	KeyResourceVersion = "resourceVersion"
 	// KeyInstallationPhase is for the phase of an installation.
 	KeyInstallationPhase = "installationPhase"
 	// KeyExecutionPhase is for the phase of an execution.
