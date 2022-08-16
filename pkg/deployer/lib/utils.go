@@ -12,7 +12,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,6 +19,8 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/api"
