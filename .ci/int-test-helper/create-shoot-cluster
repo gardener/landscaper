@@ -11,6 +11,9 @@ set -o pipefail
 GARDENER_KUBECONFIG_PATH=$1
 NAMESPACE=$2
 TMP=$3
+MAX_NUM_CLUSTERS=$4
+NUM_CLUSTERS_START_DELETE_OLDEST=$5
+DURATION_FOR_CLUSTER_DELETION=$6
 
 SOURCE_PATH="$(dirname $0)/../.."
 cd "${SOURCE_PATH}"
@@ -21,4 +24,7 @@ echo "Run create Gardener shoot cluster in ${SOURCE_PATH}"
 go run -mod=vendor ./hack/testcluster shootcluster create \
     --kubeconfig=$GARDENER_KUBECONFIG_PATH \
     --namespace=$NAMESPACE \
-    --cluster-auth=$TMP
+    --cluster-auth=$TMP \
+    --max-num-cluster=$MAX_NUM_CLUSTERS \
+    --num-clusters-start-delete-oldest=$NUM_CLUSTERS_START_DELETE_OLDEST \
+    --duration-for-cluster-deletion=$DURATION_FOR_CLUSTER_DELETION

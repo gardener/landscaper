@@ -8,9 +8,44 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+# This script executes mainly executes the following steps:
+#
+# - create-shoot-cluster: Creates a new test shoot cluster in the Gardener Canary Landscape in the namespace provided
+#   with $2 using the kubeconfig located at $1. The names of all test shoot clusters starts with the prefix "it-".
+#
+# - create-registry: Creates an OCI registry in the new test shoot cluster
+#
+# - install-missing-software: Installs potentially missing software for the following steps
+#
+# - install-landscaper: Installs the landscaper on the new test shoot cluster.
+#
+# - run-tests: Executes the integration tests on the new test shoot cluster
+#
+# - delete-shoot-cluster: Deletes the test shoot cluster if all tests were successful.
+#
+# $3 contains the version of the landscaper which is installed. This version is also used in some integration
+# tests.
+#
+# Currently, the script could not be run against another Gardener landscape than Canary because there is some hard coded
+# stuff in the shoot manifest used to create new test shoot clusters.
+#
+# Before a new test shoot cluster is created in create-shoot-cluster, the already existing test clusters in the
+# namespace are checked and potentially removed according to the following strategy:
+# - If the maximal number of allowed test clusters is larger or equal to $4, the script fails and it is required
+#   that the test clusters must be deleted manually.
+# - With $6 you provide a duration according to the format expected by time.ParseDuration (https://pkg.go.dev/time#ParseDuration)
+#   e.g. 48h. All test clusters older than this duration are deleted.
+# - If there are still X test clusters with "X >= $5", the oldest "X - $5 + 1" test clusters are deleted.
+# - The algorithm does not wait until deleted clusters are removed. It just triggers the deletion and continues with
+#   the tests require less time.
+
 GARDENER_KUBECONFIG_PATH=$1  # path to the kubeconfig of the gardener cluster for the garden project
 NAMESPACE=$2  # the namespace (= "garden-" + project) of the shoot cluster, e.g. "garden-hubtest"
 VERSION=$3   # version of the landscaper to be tested
+MAX_NUM_CLUSTERS=$4 # maximal number of test clusters
+NUM_CLUSTERS_START_DELETE_OLDEST=$5 # number of cluster to start deletion of the oldest
+DURATION_FOR_CLUSTER_DELETION=$6 # test cluster existing longer than this will be deleted
+
 
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
@@ -27,7 +62,12 @@ rm -f -r $TMP
 mkdir -p $TMP
 echo "Config directory: ${TMP}"
 
-./.ci/int-test-helper/create-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
+./.ci/int-test-helper/create-shoot-cluster $GARDENER_KUBECONFIG_PATH \
+  $NAMESPACE \
+  $TMP \
+  $MAX_NUM_CLUSTERS \
+  $NUM_CLUSTERS_START_DELETE_OLDEST \
+  $DURATION_FOR_CLUSTER_DELETION
 
 KUBECONFIG_PATH=$TMP/kubeconfig.yaml
 echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
