@@ -7,9 +7,15 @@ package helm_test
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/json"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
@@ -160,6 +166,75 @@ var _ = Describe("Template", func() {
 				}
 				return nil
 			}, 10*time.Second, 2*time.Second).Should(Succeed(), "additional namespace should be created")
+		})
+
+		It("should export helm values", func() {
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./chartresolver/testdata/testchart")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			helmValues := map[string]interface{}{
+				"MyKey": "SomeVal",
+			}
+
+			helmValuesRaw, err := json.Marshal(helmValues)
+			Expect(err).ToNot(HaveOccurred())
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Name:            "test",
+				Namespace:       "some-namespace",
+				Chart:           chartAccess,
+				CreateNamespace: true,
+				Values:          helmValuesRaw,
+				Exports: &managedresource.Exports{
+					Exports: []managedresource.Export{
+						{
+							Key:      "ExportA",
+							JSONPath: ".Values.MyKey",
+						},
+					},
+				},
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "myitem").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			export := &corev1.Secret{}
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item); err != nil {
+					return err
+				}
+
+				if item.Status.ExportReference == nil {
+					return fmt.Errorf("export reference not found")
+				}
+
+				return nil
+			}, 20*time.Second, 2*time.Second).Should(Succeed(), "export should be created")
+
+			Expect(testenv.Client.Get(ctx, item.Status.ExportReference.NamespacedName(), export)).ToNot(HaveOccurred())
+			Expect(export.Data).To(HaveKey("config"))
+			configRaw, _ := export.Data["config"]
+
+			var config map[string]interface{}
+			Expect(json.Unmarshal(configRaw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("ExportA", "SomeVal"))
 		})
 
 	})
