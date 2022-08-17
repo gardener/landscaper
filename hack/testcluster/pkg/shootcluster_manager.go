@@ -197,6 +197,9 @@ func (o *ShootClusterManager) createGardenClient() (dynamic.Interface, error) {
 
 func (o *ShootClusterManager) checkAndDeleteExistingTestShoots(ctx context.Context, gardenClientForShoots dynamic.ResourceInterface) error {
 	shootList, err := gardenClientForShoots.List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
 
 	testShoots := []unstructured.Unstructured{}
 	for _, shoot := range shootList.Items {
