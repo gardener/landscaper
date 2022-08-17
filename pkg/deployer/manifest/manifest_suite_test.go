@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -169,6 +171,54 @@ var _ = Describe("Reconcile", func() {
 		manifestConfig := &manifestv1alpha1.ProviderConfiguration{}
 		manifestConfig.Manifests = []*runtime.RawExtension{
 			rawCM,
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+
+		cmRes := &corev1.ConfigMap{}
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
+		Expect(cmRes.Data).To(HaveKeyWithValue("key", "val"))
+
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
+		m, err = manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(m.Delete(ctx)).To(HaveOccurred())
+		Expect(m.Delete(ctx)).To(Succeed())
+
+		cmRes = &corev1.ConfigMap{}
+		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes))).To(BeTrue())
+	})
+
+	It("should delete a created configmap with immutable policy", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		cm := &corev1.ConfigMap{}
+		cm.Name = "my-cm"
+		cm.Namespace = state.Namespace
+		cm.Data = map[string]string{
+			"key": "val",
+		}
+		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:   managedresource.ImmutablePolicy,
+				Manifest: rawCM,
+			},
 		}
 		item, err := manifest.NewDeployItemBuilder().
 			Key(state.Namespace, "myitem").
