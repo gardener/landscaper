@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	corev1 "k8s.io/api/core/v1"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -226,9 +228,15 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 	// if fallback policy is set and the resource is already managed by another deployer
 	// we are not allowed to manage that resource
 	if manifest.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
-		a.log.Info("resource is already managed", "resource", key.String())
+		a.log.Info("resource is already managed, skip update", lc.KeyResource, key.String())
 		return nil, nil
 	}
+
+	if manifest.Policy == managedresource.ImmutablePolicy {
+		a.log.Info("resource is immutable, skip update", lc.KeyResource, key.String())
+		return mr, nil
+	}
+
 	// inject manifest specific labels
 	a.injectLabels(obj)
 	kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)

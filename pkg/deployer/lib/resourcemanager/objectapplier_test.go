@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -259,4 +261,68 @@ var _ = Describe("ObjectApplier", func() {
 		Expect(managedResources[1].Resource.Name).To(Equal("my-cm"))
 	})
 
+	It("should not update immutable resources", func() {
+		ctx := context.Background()
+
+		cm := &corev1.ConfigMap{}
+		cm.Name = "my-cm"
+		cm.Namespace = "test"
+		cm.Data = map[string]string{
+			"key": "val",
+		}
+		cmRaw, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts := resourcemanager.ManifestApplierOptions{
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ImmutablePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+		}
+		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cm)).ToNot(HaveOccurred())
+		Expect(cm.Data).To(HaveKeyWithValue("key", "val"))
+
+		cm.Data["key"] = "valUpdated"
+		cmRaw, err = kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts = resourcemanager.ManifestApplierOptions{
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ImmutablePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+		}
+		managedResources, err = resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cm)).ToNot(HaveOccurred())
+		Expect(cm.Data).To(HaveKeyWithValue("key", "val"))
+	})
 })

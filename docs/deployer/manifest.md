@@ -139,10 +139,11 @@ spec:
 
 __Policy__:
 
-- `manage`: create, update and delete (occupies already managed resources)
-- `fallback`: create, update and delete (only if not already managed by someone else: check for annotation with landscaper identity, deployitem name + namespace)
-- `keep`: create, update
-- `ignore`: forget
+- `manage`: The manifest will be created, updated and deleted (occupies already managed resources).
+- `fallback`: The manifest will be created, updated and deleted (only if not already managed by someone else: check for annotation with landscaper identity, deployitem name + namespace)
+- `keep`: The manifest will be created, updated, but not deleted.
+- `ignore`: The manifest will be completely ignored.
+- `immutable`: The manifest be created and deleted, but never updated. 
 
 ### Status
 

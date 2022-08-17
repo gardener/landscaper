@@ -27,6 +27,8 @@ const (
 	KeepPolicy ManifestPolicy = "keep"
 	// IgnorePolicy defines a policy where the resource is completely ignored by the deployer.
 	IgnorePolicy ManifestPolicy = "ignore"
+	// ImmutablePolicy defines a policy where the resource is created and deleted but never updated.
+	ImmutablePolicy ManifestPolicy = "immutable"
 )
 
 // Manifest defines a manifest that is managed by the deployer.
