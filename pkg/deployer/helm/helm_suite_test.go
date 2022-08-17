@@ -230,7 +230,7 @@ var _ = Describe("Template", func() {
 
 			Expect(testenv.Client.Get(ctx, item.Status.ExportReference.NamespacedName(), export)).ToNot(HaveOccurred())
 			Expect(export.Data).To(HaveKey("config"))
-			configRaw, _ := export.Data["config"]
+			configRaw := export.Data["config"]
 
 			var config map[string]interface{}
 			Expect(json.Unmarshal(configRaw, &config)).ToNot(HaveOccurred())
