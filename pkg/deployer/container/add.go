@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,6 +20,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/version"
+	"github.com/go-logr/logr"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -75,6 +77,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 
 	if err := ctrl.NewControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(noopPredicate{})).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Watches(src, &PodEventHandler{}).
 		Complete(podRec); err != nil {
 		return err

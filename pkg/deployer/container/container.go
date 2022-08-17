@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -42,7 +41,6 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 
 // Container is the internal representation of a DeployItem of Type Container
 type Container struct {
-	log      logging.Logger
 	lsClient client.Client
 	// hostClient is a cached client that is used to interact with the host cluster
 	// The host cluster is the cluster where the pods are executed.
@@ -65,8 +63,7 @@ type Container struct {
 }
 
 // New creates a new internal container item
-func New(log logging.Logger,
-	lsClient,
+func New(lsClient,
 	hostClient,
 	directHostClient client.Client,
 	config containerv1alpha1.Configuration,
@@ -94,7 +91,6 @@ func New(log logging.Logger,
 	}
 
 	return &Container{
-		log:                   log,
 		lsClient:              lsClient,
 		hostClient:            hostClient,
 		directHostClient:      directHostClient,

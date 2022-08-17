@@ -45,8 +45,9 @@ import (
 // It also creates all needed directories.
 func Run(ctx context.Context, fs vfs.FileSystem) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
+	log = log.WithName("container").WithName("init")
 	opts := &options{}
-	opts.Complete(ctx)
+	opts.Complete()
 	if err := opts.Validate(); err != nil {
 		return err
 	}
@@ -63,7 +64,7 @@ func Run(ctx context.Context, fs vfs.FileSystem) error {
 			Scheme: api.LandscaperScheme,
 		})
 		if err != nil {
-			log.Error(err, "unable to build kubernetes client")
+			log.Error(err, "Unable to build kubernetes client")
 			return false, nil
 		}
 		return true, nil
@@ -115,7 +116,7 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			return fmt.Errorf("no inline component descriptor or reference found")
 		}
 
-		ociClient, err := createOciClientFromDockerAuthConfig(ctx, log, fs, opts.RegistrySecretBasePath)
+		ociClient, err := createOciClientFromDockerAuthConfig(ctx, fs, opts.RegistrySecretBasePath)
 		if err != nil {
 			return err
 		}
@@ -160,7 +161,7 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 	}
 
 	log.Info("Restoring state")
-	if err := state.New(log, kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StateDirPath).WithFs(fs).Restore(ctx); err != nil {
+	if err := state.New(kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StateDirPath).WithFs(fs).Restore(ctx); err != nil {
 		return err
 	}
 	log.Info("State has been successfully restored")
@@ -203,7 +204,8 @@ func fetchComponentDescriptor(
 }
 
 // todo: add retries
-func createOciClientFromDockerAuthConfig(_ context.Context, log logging.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
+func createOciClientFromDockerAuthConfig(ctx context.Context, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
+	log, _ := logging.FromContextOrNew(ctx, nil)
 	var secrets []string
 	err := vfs.Walk(fs, registryPullSecretsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

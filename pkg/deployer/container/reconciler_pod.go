@@ -54,7 +54,8 @@ func NewPodReconciler(
 }
 
 func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	deployItem, lsCtx, err := GetAndCheckReconcile(r.log, r.lsClient, r.config)(ctx, req)
+	_, ctx = r.log.StartReconcileAndAddToContext(ctx, req)
+	deployItem, lsCtx, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, req)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

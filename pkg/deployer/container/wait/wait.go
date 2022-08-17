@@ -17,6 +17,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/container"
 	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 // WaitUntilMainContainerFinished waits until the main container of the pod has finished.
@@ -41,18 +42,18 @@ func WaitUntilMainContainerFinished(ctx context.Context, kubeClient client.Clien
 			if apierrors.IsUnauthorized(err) {
 				return false, err
 			}
-			log.Error(err, "unable to get pod", "pod", podKey.String())
+			log.Error(err, "Unable to get pod", lc.KeyResource, podKey.String())
 			return false, nil
 		}
 
 		mainContainerStatus, err := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
 		if err != nil {
-			log.Error(err, "unable to get container status for main container")
+			log.Error(err, "Unable to get container status for main container")
 			return false, nil
 		}
 
 		if mainContainerStatus.State.Terminated == nil {
-			log.Debug("main container is still running...")
+			log.Debug("Main container is still running...")
 			return false, nil
 		}
 		return true, nil

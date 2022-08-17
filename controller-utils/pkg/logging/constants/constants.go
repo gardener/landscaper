@@ -71,8 +71,12 @@ const (
 	KeyGroupVersionKind = "groupVersionKind"
 	// KeyStatus is for a status of whatever kind.
 	KeyStatus = "status"
-	// KeyOperationAnnotation is for logging the value of the current operation annotation
+	// KeyOperationAnnotation is for logging the value of the current operation annotation.
 	KeyOperationAnnotation = "operationAnnotation"
+	// KeyReason is for providing a reason.
+	KeyReason = "reason"
+	// KeyPhase is for a generic phase. For the phases of Installations, Executions, or DeployItems, use the more specific constants.
+	KeyPhase = "phase"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

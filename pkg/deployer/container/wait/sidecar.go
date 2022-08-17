@@ -21,6 +21,7 @@ import (
 // Run runs the container deployer sidecar.
 func Run(ctx context.Context) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
+	log = log.WithName("container").WithName("wait")
 	opts := &options{}
 	opts.Setup()
 
@@ -40,7 +41,7 @@ func Run(ctx context.Context) error {
 			Scheme: api.LandscaperScheme,
 		})
 		if err != nil {
-			log.Error(err, "unable to build kubernetes client")
+			log.Error(err, "Unable to build kubernetes client")
 			return false, nil
 		}
 		return true, nil
@@ -55,7 +56,7 @@ func Run(ctx context.Context) error {
 	}
 
 	// backup state
-	if err := state.New(log, kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StatePath).Backup(ctx); err != nil {
+	if err := state.New(kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StatePath).Backup(ctx); err != nil {
 		return withTerminationLog(log, err)
 	}
 
@@ -72,7 +73,7 @@ func withTerminationLog(log logging.Logger, err error) error {
 	}
 
 	if err := ioutil.WriteFile("/dev/termination-log", []byte(err.Error()), os.ModePerm); err != nil {
-		log.Error(err, "unable to write termination message")
+		log.Error(err, "Unable to write termination message")
 	}
 	return err
 }

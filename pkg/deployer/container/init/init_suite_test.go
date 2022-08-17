@@ -65,7 +65,7 @@ var _ = Describe("Constructor", func() {
 		defer ctx.Done()
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/00-di-simple.yaml")
@@ -86,7 +86,7 @@ var _ = Describe("Constructor", func() {
 		defer ctx.Done()
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
@@ -106,7 +106,7 @@ var _ = Describe("Constructor", func() {
 		defer ctx.Done()
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/02-di-inline-blueprint.yaml")
@@ -126,7 +126,7 @@ var _ = Describe("Constructor", func() {
 		defer ctx.Done()
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
@@ -148,7 +148,7 @@ var _ = Describe("Constructor", func() {
 		defer ctx.Done()
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/03-di-inline-cd.yaml")
@@ -170,7 +170,7 @@ var _ = Describe("Constructor", func() {
 		defer ctx.Done()
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/04-di-inline-bp-no-cd.yaml")
@@ -190,7 +190,7 @@ var _ = Describe("Constructor", func() {
 		defer ctx.Done()
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/05-di-inline-bp-inline-cd.yaml")
@@ -216,7 +216,7 @@ var _ = Describe("Constructor", func() {
 		defer ctx.Done()
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		opts.RegistrySecretBasePath = "/unexisting/path"
 		memFs := memoryfs.New()
 
