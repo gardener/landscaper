@@ -498,7 +498,7 @@ func (o *ShootClusterManager) deleteOutdatedShootCluster(ctx context.Context, ga
 		durationOfCluster := time.Since(*creationTimestamp)
 
 		if durationOfCluster > o.durationForClusterDeletion {
-			o.log.Logfln("test shoot cluster %s will be deleted because it lives for %s which is longer that the border %s",
+			o.log.Logfln("test shoot cluster %s will be deleted because it lives for %s which is longer than the border %s",
 				clusterName, durationOfCluster.String(), o.durationForClusterDeletion.String())
 
 			if err = o.deleteShootCluster(ctx, gardenClientForShoots, clusterName); err != nil {
