@@ -103,38 +103,34 @@ spec:
           config: abc
     - ...
     
-    # Define exports that are read from the manifests and exported so 
-    # that is can be used by other deployitems.
-    # The exports are read form the deployed resources so status and other runtime attributes
-    # are available and can be exported.
+    # Define exports that are read from the kubernetes resources,
+    # so they can be used by other deployitems or installations.
+    # The deployer tries to read the export values until either the global or the specific timeout is exceeded.
     exports:
-      defaultTimeout: 5m
+      defaultTimeout: 5m # global default timeout that is used when no specific timeout is set
       exports:
-      # Describes one export that is read from the templates values or a templated resource.
-      # The value will be by default read from the values if fromResource is not specified.
-      # The specified jsonPath value is written with the given key to the exported configuration.
-      - key: KeyB # value is read from secret
+      - key: KeyA # value is read from a secret and exported with name "KeyA"
         timeout: 10m # optional specific timeout
-        jsonPath: .spec.config
+        jsonPath: .data.somekey # points to the value in the resource that is being exported
         fromResource: # required
-          apiVersion: v1
+          apiVersion: v1 # specification of the resource type
           kind: Secret
-          name: my-secret
-          namespace: a
-      - key: KeyC # value is read from secret that is referenced by a service account
+          name: my-secret # name of the resource
+          namespace: a # namespace of the resource
+      - key: KeyB # value is read from secret that is referenced by a service account and exported with name "KeyB"
         timeout: 10m # optional specific timeout
-        jsonPath: .secrets[0] # points to a object ref that consists of a name and namespace
+        jsonPath: .secrets[0] # points to an object reference that consists of a name and namespace
         fromResource:
-          apiVersion: v1
+          apiVersion: v1 # specification of the resource type
           kind: ServiceAccount
-          name: my-user
-          namespace: a
+          name: my-user # name of the resource
+          namespace: a # namespace of the resource
         # Defines the referenced objects kind and version. 
-        # The name and namespace is taken from the resource defined in "fromResource".
+        # The name and namespace is taken from the jsonPath defined in "fromResource".
         fromObjectRef:
           apiVersion: v1
           kind: Secret
-          jsonPath: ".data.somekey" # jsonpath in the secret
+          jsonPath: ".data.somekey" # points to the value in the resource that is being exported
 ```
 
 __Policy__:

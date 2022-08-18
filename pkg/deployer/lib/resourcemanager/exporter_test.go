@@ -195,7 +195,7 @@ var _ = Describe("Exporter", func() {
 		}))
 	})
 
-	It("should refuse to export if the resource is not managed by the exporter", func() {
+	It("should not refuse to export if the resource is not managed by the exporter", func() {
 		ctx := context.Background()
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-data"
@@ -226,7 +226,7 @@ var _ = Describe("Exporter", func() {
 			DefaultTimeout: &timeout,
 			Objects:        managedresource.ManagedResourceStatusList{},
 		}).Export(ctx, exports)
-		Expect(err).To(HaveOccurred())
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("referenced resource", func() {
