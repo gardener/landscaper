@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 func NewCreateRegistryCommand(ctx context.Context) *cobra.Command {
@@ -87,7 +87,7 @@ func (o *CreateRegistryOptions) Validate() error {
 }
 
 func (o *CreateRegistryOptions) Run(ctx context.Context) error {
-	logger := simplelogger.NewLogger().WithTimestamp()
+	logger := utils.NewLogger().WithTimestamp()
 	return pkg.CreateRegistry(ctx,
 		logger,
 		o.kubeClient,

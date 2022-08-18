@@ -32,7 +32,7 @@ import (
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 const (
@@ -113,7 +113,7 @@ spec:
 
 //
 func CreateRegistry(ctx context.Context,
-	logger simplelogger.Logger,
+	logger utils.Logger,
 	kubeClient client.Client,
 	restConfig *rest.Config,
 	namespace string,
@@ -311,7 +311,7 @@ func CreateRegistry(ctx context.Context,
 
 // DeleteRegistry deletes a previously created registry.
 func DeleteRegistry(ctx context.Context,
-	logger simplelogger.Logger,
+	logger utils.Logger,
 	kubeClient client.Client,
 	namespace string,
 	id string,
@@ -381,7 +381,7 @@ func generateCertificate(svc *corev1.Service) (*corev1.Secret, error) {
 
 // cleanupRegistry deletes the registry and additional resources.
 func cleanupRegistry(ctx context.Context,
-	logger simplelogger.Logger,
+	logger utils.Logger,
 	kubeClient client.Client,
 	namespace string,
 	id string,
@@ -441,7 +441,7 @@ func cleanupRegistry(ctx context.Context,
 }
 
 // cleanupObject deletes the objects.
-func cleanupObject(ctx context.Context, logger simplelogger.Logger, componentName string, kubeClient client.Client, obj client.Object, timeout time.Duration) error {
+func cleanupObject(ctx context.Context, logger utils.Logger, componentName string, kubeClient client.Client, obj client.Object, timeout time.Duration) error {
 	gvk, err := apiutil.GVKForObject(obj, scheme.Scheme)
 	if err != nil {
 		return fmt.Errorf("unable to get group version kind for %s/%s: %w", obj.GetNamespace(), obj.GetName(), err)

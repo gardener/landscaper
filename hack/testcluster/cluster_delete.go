@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 // NewDeleteClusterCommand creates a new delete cluster command.
@@ -56,7 +56,7 @@ func (o *DeleteClusterOptions) Validate() error {
 }
 
 func (o *DeleteClusterOptions) Run(ctx context.Context) error {
-	logger := simplelogger.NewLogger().WithTimestamp()
+	logger := utils.NewLogger().WithTimestamp()
 	return pkg.DeleteCluster(ctx,
 		logger,
 		o.kubeClient,

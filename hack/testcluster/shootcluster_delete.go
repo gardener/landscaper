@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 func NewDeleteShootClusterCommand(ctx context.Context) *cobra.Command {
@@ -75,9 +75,14 @@ func (o *DeleteShootClusterOptions) Validate() error {
 }
 
 func (o *DeleteShootClusterOptions) Run(ctx context.Context) error {
-	log := simplelogger.NewLogger().WithTimestamp()
+	log := utils.NewLogger().WithTimestamp()
 
-	shootClusterManager := pkg.NewShootClusterManager(log, o.GardenClusterKubeconfigPath, o.Namespace, o.AuthDirectoryPath)
+	shootClusterManager, err := pkg.NewShootClusterManager(log, o.GardenClusterKubeconfigPath, o.Namespace, o.AuthDirectoryPath,
+		0, 0, "1h")
+
+	if err != nil {
+		return err
+	}
 
 	if err := shootClusterManager.DeleteShootCluster(ctx); err != nil {
 		return err
