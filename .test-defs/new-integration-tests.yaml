@@ -1,0 +1,14 @@
+kind: TestDefinition
+metadata:
+  name: new-integration-tests
+spec:
+  owner: gardener-oq@listserv.sap.com
+  description: runs the new integration tests
+  activeDeadlineSeconds: 900
+
+  command: [sh, -c]
+  args:
+  - >-
+    .ci/new-integration-test-with-cluster-creation somekubeconfig.yaml garden-laas TEST_VERSION 10 7 48h
+
+  image: alpine:3.16.0

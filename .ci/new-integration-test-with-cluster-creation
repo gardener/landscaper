@@ -72,8 +72,8 @@ echo "Config directory: ${TMP}"
 KUBECONFIG_PATH=$TMP/kubeconfig.yaml
 echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
 
-./.ci/int-test-helper/create-registry $KUBECONFIG_PATH $TMP
-./.ci/int-test-helper/install-missing-software
-./.ci/int-test-helper/install-landscaper $KUBECONFIG_PATH $VERSION $TMP
-./.ci/int-test-helper/run-tests $KUBECONFIG_PATH $TMP/docker.config $VERSION
-./.ci/int-test-helper/delete-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
+#./.ci/int-test-helper/create-registry $KUBECONFIG_PATH $TMP
+#./.ci/int-test-helper/install-missing-software
+#./.ci/int-test-helper/install-landscaper $KUBECONFIG_PATH $VERSION $TMP
+#./.ci/int-test-helper/run-tests $KUBECONFIG_PATH $TMP/docker.config $VERSION
+#./.ci/int-test-helper/delete-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP

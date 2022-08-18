@@ -1,0 +1,35 @@
+apiVersion: testmachinery.sapcloud.io/v1beta1
+kind: Testrun
+metadata:
+  generateName: tm-landscaper-
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 172800 # 2 days
+  {{- if .Values.revision }}
+  locationSets:
+  - default: true
+    name: landscaper
+    locations:
+    - type: git
+      repo: https://github.com/gardener/landscaper.git
+      revision: {{ .Values.revision }}
+  {{- end }}
+
+  config:
+  - name: CLUSTER_NAME
+    type: env
+    value: test-cluster
+  - name: HOST_CLUSTER_CONFIG
+    type: env
+    value: testmachinery.config
+  {{- if .Values.version }}
+  - name: EFFECTIVE_VERSION
+    type: env
+    value: {{ .Values.version }}
+  {{- end }}
+
+  testflow:
+  - name: create-cluster
+    definition:
+      name: create-cluster
+
