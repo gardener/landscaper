@@ -28,7 +28,7 @@ echo -n "Starting testmachinery for landscaper version ${VERSION}"
     --no-execution-group \
     --testrun-prefix landscaper-e2e- \
     --timeout=3700 \
-    --testruns-chart-path=.ci/testruns/integration-test-new \
+    --testruns-chart-path=.ci/testruns/integration-test \
     --set imageTag="${VERSION}" \
     --set version="${VERSION}" \
     --set revision="$(git rev-parse HEAD)"

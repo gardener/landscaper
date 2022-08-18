@@ -32,32 +32,4 @@ spec:
   - name: create-cluster
     definition:
       name: create-cluster
-  - name: create-registry
-    dependsOn: ["create-cluster"]
-    definition:
-      name: create-registry
-  - name: install-landscaper
-    dependsOn: ["create-registry"]
-    definition:
-      name: install-landscaper
-  - name: test
-    dependsOn: ["install-landscaper"]
-    definition:
-      name: integration-test
-  - name: delete-cluster
-    dependsOn: ["test"]
-    definition:
-      name: delete-cluster
-  - name: delete-registry
-    dependsOn: ["test"]
-    definition:
-      name: delete-registry
-
-  onExit:
-  - name: delete-cluster
-    definition:
-      name: delete-cluster
-  - name: delete-registry
-    definition:
-      name: delete-registry
 
