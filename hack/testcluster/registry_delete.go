@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 // NewDeleteRegistryCommand creates a new delete registry command.
@@ -56,7 +56,7 @@ func (o *DeleteRegistryOptions) Validate() error {
 }
 
 func (o *DeleteRegistryOptions) Run(ctx context.Context) error {
-	logger := simplelogger.NewLogger().WithTimestamp()
+	logger := utils.NewLogger().WithTimestamp()
 	return pkg.DeleteRegistry(ctx,
 		logger,
 		o.kubeClient,

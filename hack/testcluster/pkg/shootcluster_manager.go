@@ -30,7 +30,7 @@ import (
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 //go:embed resources/shootcluster_template.yaml
@@ -62,7 +62,7 @@ var (
 )
 
 type ShootClusterManager struct {
-	log                          simplelogger.Logger
+	log                          utils.Logger
 	gardenClusterKubeconfigPath  string
 	namespace                    string
 	authDirectoryPath            string
@@ -71,7 +71,7 @@ type ShootClusterManager struct {
 	durationForClusterDeletion   time.Duration
 }
 
-func NewShootClusterManager(log simplelogger.Logger, gardenClusterKubeconfigPath, namespace,
+func NewShootClusterManager(log utils.Logger, gardenClusterKubeconfigPath, namespace,
 	authDirectoryPath string, maxNumOfClusters, numClustersStartDeleteOldest int, durationForClusterDeletion string) (*ShootClusterManager, error) {
 
 	duration, err := time.ParseDuration(durationForClusterDeletion)
@@ -317,7 +317,8 @@ func (o *ShootClusterManager) createShootManifest(name string) (*unstructured.Un
 
 func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, gardenClient dynamic.ResourceInterface, clusterName string) error {
 
-	err := wait.Poll(5*time.Second, 15*time.Minute, func() (done bool, err error) {
+	err := wait.Poll(10*time.Second, 15*time.Minute, func() (done bool, err error) {
+		o.log.Logfln("wait for cluster is ready")
 		shoot, getError := gardenClient.Get(ctx, clusterName, metav1.GetOptions{})
 		if err != nil {
 			if errors.IsNotFound(getError) {
@@ -335,7 +336,8 @@ func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, 
 
 		result, err := jp.FindResults(shoot.Object)
 		if err != nil {
-			return false, fmt.Errorf("failed to get cluster status: result not found: %w", err)
+			o.log.Logfln("failed to get cluster status: result not found: %w", err)
+			return false, nil
 		}
 
 		if len(result) != 1 || len(result[0]) != 1 {
@@ -493,7 +495,7 @@ func (o *ShootClusterManager) deleteOutdatedShootCluster(ctx context.Context, ga
 			o.log.Logfln("test shoot cluster %s found with creation timestamp: %s", clusterName, creationTimestamp.String())
 		}
 
-		durationOfCluster := time.Now().Sub(*creationTimestamp)
+		durationOfCluster := time.Since(*creationTimestamp)
 
 		if durationOfCluster > o.durationForClusterDeletion {
 			o.log.Logfln("test shoot cluster %s will be deleted because it lives for %s which is longer that the border %s",

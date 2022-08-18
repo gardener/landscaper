@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 func NewCreateShootClusterCommand(ctx context.Context) *cobra.Command {
@@ -97,7 +97,7 @@ func (o *CreateShootClusterOptions) Validate() error {
 }
 
 func (o *CreateShootClusterOptions) Run(ctx context.Context) error {
-	log := simplelogger.NewLogger().WithTimestamp()
+	log := utils.NewLogger().WithTimestamp()
 
 	log.Logfln("Create cluster with:")
 	log.Logfln("  GardenClusterKubeconfigPath: " + o.GardenClusterKubeconfigPath)

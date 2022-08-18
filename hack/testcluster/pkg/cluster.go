@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 // ClusterIdLabelName is the name of the label that holds the unique id for the current created cluster.
@@ -134,7 +134,7 @@ type CreateClusterArgs struct {
 }
 
 // CreateCluster creates a new k3d cluster running in a pod.
-func CreateCluster(ctx context.Context, logger simplelogger.Logger, args CreateClusterArgs) (err error) {
+func CreateCluster(ctx context.Context, logger utils.Logger, args CreateClusterArgs) (err error) {
 	var (
 		kubeClient           = args.KubeClient
 		stateFile            = args.StateFile
@@ -257,7 +257,7 @@ func CreateCluster(ctx context.Context, logger simplelogger.Logger, args CreateC
 	return nil
 }
 
-func getKubeconfigFromCluster(logger simplelogger.Logger, restConfig *rest.Config, pod *corev1.Pod) ([]byte, error) {
+func getKubeconfigFromCluster(logger utils.Logger, restConfig *rest.Config, pod *corev1.Pod) ([]byte, error) {
 	var (
 		kubeconfigBytes []byte
 		err             error
@@ -280,7 +280,7 @@ func getKubeconfigFromCluster(logger simplelogger.Logger, restConfig *rest.Confi
 
 // DeleteCluster deletes a previously deployed test cluster.
 func DeleteCluster(ctx context.Context,
-	logger simplelogger.Logger,
+	logger utils.Logger,
 	kubeClient client.Client,
 	namespace string,
 	id string,
@@ -304,7 +304,7 @@ func DeleteCluster(ctx context.Context,
 }
 
 // cleanupPod deletes the cluster that is running in the given pod.
-func cleanupPod(ctx context.Context, logger simplelogger.Logger, componentName string, kubeClient client.Client, pod *corev1.Pod, timeout time.Duration) error {
+func cleanupPod(ctx context.Context, logger utils.Logger, componentName string, kubeClient client.Client, pod *corev1.Pod, timeout time.Duration) error {
 	logger.Logfln("Cleanup %s in pod %q", componentName, pod.GetName())
 	err := wait.PollImmediate(10*time.Second, 1*time.Minute, func() (done bool, err error) {
 		if err := kubeClient.Delete(ctx, pod); err != nil {
@@ -338,7 +338,7 @@ func cleanupPod(ctx context.Context, logger simplelogger.Logger, componentName s
 	return nil
 }
 
-func executeCommandOnPod(logger simplelogger.Logger, restConfig *rest.Config, name, namespace, containerName, command string) ([]byte, error) {
+func executeCommandOnPod(logger utils.Logger, restConfig *rest.Config, name, namespace, containerName, command string) ([]byte, error) {
 	client, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes client set: %w", err)
