@@ -95,8 +95,7 @@ landscaper:
       steps:
         integration-test:
           execute:
-          #- integration-test
-          - integration-test-new
+          - integration-test
           trait_depends:
           - publish
           image: 'eu.gcr.io/gardener-project/gardener/testmachinery/testmachinery-run:stable'
