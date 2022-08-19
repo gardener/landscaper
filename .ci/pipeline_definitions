@@ -80,7 +80,7 @@ landscaper:
           #depends:
           #- publish
           #- publish-helm-charts
-          image: 'golang:1.17.9-alpine3.16'
+          image: 'golang:1.17.9-alpine3.14'
           execute:
           - integration-test-new
           output_dir: 'integration_test'
