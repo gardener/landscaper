@@ -25,8 +25,8 @@
     "landscaperConfig" : {
       "properties": {
         "verbosity": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "enum": ["error", "info", "debug", "Error", "Info", "Debug", "ERROR", "INFO", "DEBUG"]
         },
         "replicas": {
           "type:": "integer",

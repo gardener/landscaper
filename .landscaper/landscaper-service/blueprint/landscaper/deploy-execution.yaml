@@ -19,7 +19,7 @@ deployItems:
         fullnameOverride: landscaper-{{ .imports.hostingClusterNamespace }}
 
         landscaper:
-          verbosity: {{ .imports.landscaperConfig.landscaper.verbosity | default 2 }}
+          verbosity: {{ .imports.landscaperConfig.landscaper.verbosity | default "info" }}
           crdManagement:
             deployCrd: true
             forceUpdate: true
