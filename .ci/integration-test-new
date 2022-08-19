@@ -4,8 +4,29 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Script executed in case of a PR. Currently this does nothing but it is planned to let it trigger the integration tests
+# if the PR has some particular label.
+
 set -o errexit
 set -o nounset
 set -o pipefail
 
 echo "Fake integration tests started"
+
+if ! which git 1>/dev/null; then
+  echo "Installing git... "
+  apk add --no-cache --no-progress git
+fi
+
+
+SOURCE_PATH="$(dirname $0)/.."
+cd "${SOURCE_PATH}"
+SOURCE_PATH="$(pwd)"
+
+echo "git show"
+
+git show -q | grep "run-int-tests"
+
+
+
+

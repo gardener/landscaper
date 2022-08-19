@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
@@ -72,6 +73,19 @@ func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Reque
 	logger := iv.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
 	ctx = logging.NewContext(ctx, logger)
 
+	timeBefore := time.Now()
+	result := iv.handlePrivate(ctx, req)
+	timeAfter := time.Now()
+
+	if timeAfter.Sub(timeBefore) > 9*time.Second {
+		logger.Info("validation request required more than 9 seconds")
+	}
+	return result
+}
+
+func (iv *InstallationValidator) handlePrivate(ctx context.Context, req admission.Request) admission.Response {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "InstallationValidator.handlePrivate"})
+
 	logger.Debug("Received request")
 
 	inst := &lscore.Installation{}
@@ -108,6 +122,20 @@ type DeployItemValidator struct{ abstractValidator }
 // Handle handles a request to the webhook
 func (div *DeployItemValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	logger := div.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+	ctx = logging.NewContext(ctx, logger)
+
+	timeBefore := time.Now()
+	result := div.handlePrivate(ctx, req)
+	timeAfter := time.Now()
+
+	if timeAfter.Sub(timeBefore) > 9*time.Second {
+		logger.Info("validation request required more than 9 seconds")
+	}
+	return result
+}
+
+func (div *DeployItemValidator) handlePrivate(ctx context.Context, req admission.Request) admission.Response {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "DeployItemValidator.handlePrivate"})
 
 	logger.Debug("Received request")
 
@@ -143,6 +171,21 @@ type ExecutionValidator struct{ abstractValidator }
 // Handle handles a request to the webhook
 func (ev *ExecutionValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	logger := ev.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+	ctx = logging.NewContext(ctx, logger)
+
+	timeBefore := time.Now()
+	result := ev.handlePrivate(ctx, req)
+	timeAfter := time.Now()
+
+	if timeAfter.Sub(timeBefore) > 9*time.Second {
+		logger.Info("validation request required more than 9 seconds")
+	}
+
+	return result
+}
+
+func (ev *ExecutionValidator) handlePrivate(ctx context.Context, req admission.Request) admission.Response {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "ExecutionValidator.handlePrivate"})
 
 	logger.Debug("Received request")
 

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -109,13 +111,11 @@ func DeleteObject(
 }
 
 // WaitForDeploymentToBeReady waits for a deployment to be ready
-func WaitForDeploymentToBeReady(ctx context.Context, logger Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
+func WaitForDeploymentToBeReady(ctx context.Context, logger utils.Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
 	err := wait.PollImmediate(5*time.Second, timeout, func() (done bool, err error) {
 		deploy := &appsv1.Deployment{}
 		if err := kubeClient.Get(ctx, objKey, deploy); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false, err
-			}
+			logger.Logfln("Waiting for deployment %q to be available (%s)...", objKey.String(), err.Error())
 			return false, nil
 		}
 		if err := CheckDeployment(deploy); err != nil {
@@ -128,6 +128,25 @@ func WaitForDeploymentToBeReady(ctx context.Context, logger Logger, kubeClient c
 		return fmt.Errorf("unable to wait for deployment to be ready %q: %w", objKey.Name, err)
 	}
 	logger.Logfln("Deployment %q is ready", objKey.String())
+	return nil
+}
+
+// WaitForContextToBeReady waits for a context to be ready
+func WaitForContextToBeReady(ctx context.Context, logger utils.Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
+	err := wait.PollImmediate(5*time.Second, timeout, func() (done bool, err error) {
+		context := &v1alpha1.Context{}
+		if err := kubeClient.Get(ctx, objKey, context); err != nil {
+			logger.Logfln("failed to get context %q: %w - retried in 5 seconds", objKey.String(), err)
+			return false, nil
+		}
+
+		return true, nil
+	})
+	if err != nil {
+		logger.Logfln("unable to wait for context to be ready %q: %w", objKey.String(), err)
+		return fmt.Errorf("unable to wait for context to be ready %q: %w", objKey.String(), err)
+	}
+	logger.Logfln("context is ready %q", objKey.String())
 	return nil
 }
 

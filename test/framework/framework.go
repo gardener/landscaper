@@ -16,10 +16,9 @@ import (
 	"strings"
 	"time"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	utils2 "github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	commonutils "github.com/gardener/landscaper/pkg/utils"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/gardener/component-cli/ociclient"
@@ -27,19 +26,23 @@ import (
 	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsscheme "github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
+)
+
+var (
+	timeoutTime = 30 * time.Second
 )
 
 // OpenSourceRepositoryContext is the base url of the repository context for the gardener open source components.
@@ -88,7 +91,7 @@ func (o *Options) Complete() error {
 // Framework is the Landscaper test framework to execute tests.
 // Also includes some helper functions.
 type Framework struct {
-	logger utils.Logger
+	logger utils2.Logger
 	// RootPath is the filepath to the root of the landscaper repository
 	RootPath string
 	// RestConfig is the kubernetes rest config for the test cluster
@@ -121,9 +124,11 @@ type Framework struct {
 	OCIClient ociclient.Client
 	// OCICache is the oci store of the local oci client
 	OCICache cache.Cache
+
+	TestsFailed bool
 }
 
-func New(logger utils.Logger, cfg *Options) (*Framework, error) {
+func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 	if err := cfg.Complete(); err != nil {
 		return nil, err
 	}
@@ -135,6 +140,7 @@ func New(logger utils.Logger, cfg *Options) (*Framework, error) {
 		Cleanup:        &Cleanup{},
 		DisableCleanup: cfg.DisableCleanup,
 		RunOnShoot:     cfg.RunOnShoot,
+		TestsFailed:    false,
 	}
 
 	var err error
@@ -196,13 +202,13 @@ func New(logger utils.Logger, cfg *Options) (*Framework, error) {
 }
 
 // Log returns the default logger
-func (f *Framework) Log() utils.Logger {
+func (f *Framework) Log() utils2.Logger {
 	return f.logger
 }
 
 // TestLog returns a new testlogger that logs to the ginkgo managed writer
-func (f *Framework) TestLog() utils.Logger {
-	return utils.NewLoggerFromWriter(ginkgo.GinkgoWriter)
+func (f *Framework) TestLog() utils2.Logger {
+	return utils2.NewLoggerFromWriter(ginkgo.GinkgoWriter)
 }
 
 // WaitForSystemComponents waits for all system component of the landscaper to be ready
@@ -210,40 +216,13 @@ func (f *Framework) WaitForSystemComponents(ctx context.Context) error {
 	if len(f.LsNamespace) == 0 {
 		return nil
 	}
-	f.logger.WithTimestamp().Logf("Waiting for Landscaper components to be ready in %s", f.LsNamespace)
+	f.logger.WithTimestamp().Logfln("Waiting for Landscaper components to be ready in %s", f.LsNamespace)
 	// get all deployments
-	deploymentList := &appsv1.DeploymentList{}
-	if err := f.Client.List(ctx, deploymentList,
-		client.InNamespace(f.LsNamespace),
-		client.HasLabels{lsv1alpha1.LandscaperComponentLabelName}); err != nil {
-		return err
-	}
+	deploymentNames := []string{"landscaper", "landscaper-webhooks", "container-default-container-deployer", "helm-default-helm-deployer", "manifest-default-manifest-deployer", "mock-default-mock-deployer"}
 
-	for _, deployment := range deploymentList.Items {
-		if err := utils.WaitForDeploymentToBeReady(ctx, f.Log(), f.Client, client.ObjectKeyFromObject(&deployment), 10*time.Minute); err != nil {
+	for _, deploymentName := range deploymentNames {
+		if err := utils.WaitForDeploymentToBeReady(ctx, f.Log(), f.Client, client.ObjectKey{Namespace: f.LsNamespace, Name: deploymentName}, 10*time.Minute); err != nil {
 			return err
-		}
-	}
-
-	// get all deployments
-	installationList := &lsv1alpha1.InstallationList{}
-	if err := f.Client.List(ctx, installationList, client.InNamespace(f.LsNamespace)); err != nil {
-		return err
-	}
-	if len(installationList.Items) == 0 {
-		f.logger.WithTimestamp().Logf("No installations found in %s", f.LsNamespace)
-		return nil
-	}
-	f.logger.WithTimestamp().Logf("Waiting for Deployer Installations to be ready in %s", f.LsNamespace)
-	for _, inst := range installationList.Items {
-		if commonutils.IsNewReconcile() {
-			if err := lsutils.WaitForInstallationToFinish(ctx, f.Client, &inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute); err != nil {
-				return err
-			}
-		} else {
-			if err := lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, &inst, 2*time.Minute); err != nil {
-				return err
-			}
 		}
 	}
 
@@ -253,7 +232,7 @@ func (f *Framework) WaitForSystemComponents(ctx context.Context) error {
 // NewState creates a new state with a test namespace.
 // It also returns a cleanup function that should be called when the test has finished.
 func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, error) {
-	state, err := envtest.InitStateWithNamespace(ctx, f.Client)
+	state, err := envtest.InitStateWithNamespace(ctx, f.Client, f.logger)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -298,39 +277,34 @@ func (f *Framework) Register() *State {
 			cleanup: cleanup,
 		}
 		*state = s
+
+		err = f.prepareNextTest(ctx, state.Namespace)
+		utils.ExpectNoError(err)
 	})
+
 	ginkgo.AfterEach(func() {
+		f.TestsFailed = f.TestsFailed || ginkgo.CurrentGinkgoTestDescription().Failed
 		ctx := context.Background()
 		defer ctx.Done()
 		dumper := state.dumper
 		dumper.endTime = time.Now()
 
 		// dump before cleanup if the test failed
+		f.Log().Logln("Check if test failed...")
 		if ginkgo.CurrentGinkgoTestDescription().Failed {
 			utils.ExpectNoError(dumper.Dump(ctx))
 		}
 
-		if err := state.cleanup(ctx); err != nil {
-			{
-				// try to dump
-				if err := dumper.Dump(ctx); err != nil {
-					f.logger.Logln(err.Error())
-				}
-				utils.ExpectNoError(err)
-			}
-		}
-
-		// do global cleanup if the ginkgo description failed.
 		if !ginkgo.CurrentGinkgoTestDescription().Failed {
-			return
-		}
-		if f.DisableCleanup {
-			f.Log().Logln("Skipping cleanup...")
-			return
-		}
-		f.Log().Logln("Start landscape cleanup...")
-		for ns := range dumper.namespaces {
-			utils.ExpectNoError(CleanupLandscaperResources(ctx, f.Client, ns))
+			if err := state.cleanup(ctx); err != nil {
+				{
+					// try to dump
+					if err := dumper.Dump(ctx); err != nil {
+						f.logger.Logln(err.Error())
+					}
+					utils.ExpectNoError(err)
+				}
+			}
 		}
 	})
 	return state
@@ -409,6 +383,32 @@ func (f *Framework) cleanupBeforeObjectsInTestNamespace(ctx context.Context, nam
 	}
 	for _, obj := range podList.Items {
 		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (f *Framework) prepareNextTest(ctx context.Context, namespace string) error {
+	f.Log().Logln("prepare next test")
+
+	err := utils.WaitForContextToBeReady(ctx, f.Log(), f.Client, client.ObjectKey{Namespace: namespace, Name: "default"}, timeoutTime)
+	if err != nil {
+		return err
+	}
+
+	f.Log().Logln("check for ingress class")
+	ingressClass := networkingv1.IngressClass{}
+	err = f.Client.Get(ctx, client.ObjectKey{Name: "nginx"}, &ingressClass)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	} else {
+		f.Log().Logln("Delete ingressClass")
+		err = f.Client.Delete(ctx, &ingressClass)
+		if err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
 	}

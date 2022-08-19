@@ -7,14 +7,14 @@ package main
 import (
 	"context"
 	"errors"
-	"strconv"
 	"time"
+
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg"
-	"github.com/gardener/landscaper/test/utils"
 )
 
 func NewCreateShootClusterCommand(ctx context.Context) *cobra.Command {
@@ -98,14 +98,6 @@ func (o *CreateShootClusterOptions) Validate() error {
 
 func (o *CreateShootClusterOptions) Run(ctx context.Context) error {
 	log := utils.NewLogger().WithTimestamp()
-
-	log.Logfln("Create cluster with:")
-	log.Logfln("  GardenClusterKubeconfigPath: " + o.GardenClusterKubeconfigPath)
-	log.Logfln("  Namespace: " + o.Namespace)
-	log.Logfln("  AuthDirectoryPath: " + o.AuthDirectoryPath)
-	log.Logfln("  MaxNumOfClusters: " + strconv.Itoa(o.MaxNumOfClusters))
-	log.Logfln("  NumClustersStartDeleteOldest: " + strconv.Itoa(o.NumClustersStartDeleteOldest))
-	log.Logfln("  DurationForClusterDeletion: " + o.DurationForClusterDeletion)
 
 	shootClusterManager, err := pkg.NewShootClusterManager(log, o.GardenClusterKubeconfigPath, o.Namespace,
 		o.AuthDirectoryPath, o.MaxNumOfClusters, o.NumClustersStartDeleteOldest, o.DurationForClusterDeletion)

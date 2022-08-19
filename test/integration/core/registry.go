@@ -40,7 +40,7 @@ import (
 
 func RegistryTest(f *framework.Framework) {
 	if !f.IsRegistryEnabled() {
-		f.Log().Log("No registry configured skipping the registry tests...")
+		f.Log().Logln("No registry configured skipping the registry tests...")
 		return
 	}
 

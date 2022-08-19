@@ -13,33 +13,55 @@ echo "Run install missing software"
 # install bash for the get version command
 if ! which bash 1>/dev/null; then
   echo "Installing bash... "
-  apk add --no-cache bash
+  apk add --no-cache --no-progress bash
 fi
 
 if ! which openssl 1>/dev/null; then
   echo "Installing openssl... "
-  apk add openssl
+  apk add --no-cache --no-progress openssl
 fi
 
 if ! which curl 1>/dev/null; then
   echo "Installing curl... "
-  apk add curl
+  apk add --no-cache --no-progress curl
 fi
 
 if ! which git 1>/dev/null; then
   echo "Installing git... "
-  apk add --no-cache git
+  apk add --no-cache --no-progress git
 fi
 
-if ! which kubectl 1>/dev/null; then
-  echo "Kubectl is not installed, trying to install it..."
-  curl -LO https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl
-  mv ./kubectl /usr/local/bin/kubectl
-  chmod +x /usr/local/bin/kubectl
+if ! command -v kubectl &> /dev/null
+then
+    echo "Kubectl could not be found"
+    echo "Try installing it..."
+    curl -sSLO https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 fi
 
-if ! which helm 1>/dev/null; then
-  echo "Helm 3 is not installed, trying to install it..."
-  export DESIRED_VERSION=v3.7.0
-  curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+if ! command -v helm &> /dev/null
+then
+    echo "Helm could not be found"
+    echo "Try installing it..."
+    export DESIRED_VERSION="v3.8.1"
+    curl -sS https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+fi
+
+if ! command -v landscaper-cli &> /dev/null
+then
+  if [[ $(go env GOOS) == "darwin" ]]; then
+    echo "Installing landscaper-cli for darwin"
+    curl -sSLO https://github.com/gardener/landscapercli/releases/download/v0.19.0/landscapercli-darwin-amd64.gz
+    gunzip landscapercli-darwin-amd64.gz
+    chmod 700 landscapercli-darwin-amd64
+    mv landscapercli-darwin-amd64 /usr/local/bin/landscaper-cli
+  fi
+
+  if [[ $(go env GOOS) == "linux" ]]; then
+    echo "Installing landscaper-cli for linux"
+    curl -sSLO https://github.com/gardener/landscapercli/releases/download/v0.19.0/landscapercli-linux-amd64.gz
+    gunzip landscapercli-linux-amd64.gz
+    chmod 700 landscapercli-linux-amd64
+    mv landscapercli-linux-amd64 /usr/local/bin/landscaper-cli
+  fi
 fi
