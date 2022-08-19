@@ -9,7 +9,7 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/gardener/landscaper/test/utils"
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
 	"github.com/gardener/landscaper/test/integration/core"
 	"github.com/gardener/landscaper/test/integration/deployers"
@@ -40,14 +40,18 @@ func TestConfig(t *testing.T) {
 
 	logger := utils.NewLogger()
 
+	logger.Logln("Create framework")
 	opts.RootPath = "../../"
 	f, err := framework.New(logger, opts)
 	if err != nil {
+		logger.Logln("Creating framework failed")
 		t.Fatal(err)
 	}
 	d := framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
+	f.Log().Logfln("waiting for system components")
 	err = f.WaitForSystemComponents(ctx)
 	if err != nil {
+		f.Log().Logfln("waiting for system components failed: %s", err.Error())
 		if derr := d.Dump(ctx); derr != nil {
 			f.Log().Logf("error during dump: %s", derr.Error())
 		}
@@ -69,7 +73,8 @@ func TestConfig(t *testing.T) {
 	executions.RegisterTests(f)
 
 	AfterSuite(func() {
-		f.Cleanup.Run()
+		f.Log().Logfln("\nStart after suite cleanup")
+		f.Cleanup.Run(f.Log(), f.TestsFailed)
 	})
 
 	RunSpecs(t, "Landscaper Integration Test Suite")

@@ -142,8 +142,9 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 
 	rel, err := install.Run(c.chart, values)
 	if err != nil {
-		err2 := fmt.Errorf("unable to install helm chart release: %w", err)
-		return nil, lserror.NewWrappedError(err2, currOp, "Install", err2.Error())
+		message := fmt.Sprintf("unable to install helm chart release: %s", err.Error())
+		logger.Info(message)
+		return nil, lserror.NewWrappedError(err, currOp, "Install", message)
 	}
 
 	logger.Info(fmt.Sprintf("%s successfully installed in %s", c.releaseName, c.defaultNamespace))
@@ -178,8 +179,9 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 
 	rel, err := upgrade.Run(c.releaseName, c.chart, values)
 	if err != nil {
-		err2 := fmt.Errorf("unable to upgrade helm chart release: %w", err)
-		return nil, lserror.NewWrappedError(err2, currOp, "Upgrade", err2.Error())
+		message := fmt.Sprintf("unable to upgrade helm chart release: %s", err.Error())
+		logger.Info(message)
+		return nil, lserror.NewWrappedError(err, currOp, "Install", message)
 	}
 
 	logger.Info(fmt.Sprintf("%s successfully upgraded in %s", c.releaseName, c.defaultNamespace))

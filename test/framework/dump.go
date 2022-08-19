@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gardener/landscaper/test/utils"
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -68,7 +68,7 @@ func (d *Dumper) ClearNamespaces() {
 // todo: dump additional resources
 func (d *Dumper) Dump(ctx context.Context) error {
 	d.logger.Logln("Dump")
-	if err := d.DumpNamespaces(ctx); err != nil {
+	if err := d.dumpNamespaces(ctx); err != nil {
 		return err
 	}
 	if len(d.lsNamespace) != 0 {
@@ -82,7 +82,7 @@ func (d *Dumper) Dump(ctx context.Context) error {
 }
 
 // DumpNamespaces dumps information about all configured namespaces.
-func (d *Dumper) DumpNamespaces(ctx context.Context) error {
+func (d *Dumper) dumpNamespaces(ctx context.Context) error {
 	for ns := range d.namespaces {
 		d.logger.Logfln("Dump %s", ns)
 		// check if namespace exists
@@ -92,7 +92,7 @@ func (d *Dumper) DumpNamespaces(ctx context.Context) error {
 			}
 			return err
 		}
-		if err := d.DumpInstallationsInNamespace(ctx, ns); err != nil {
+		if err := d.dumpInstallationsInNamespace(ctx, ns); err != nil {
 			return err
 		}
 		if err := d.DumpExecutionInNamespace(ctx, ns); err != nil {
@@ -111,7 +111,7 @@ func (d *Dumper) DumpNamespaces(ctx context.Context) error {
 	return nil
 }
 
-func (d *Dumper) DumpInstallationsInNamespace(ctx context.Context, namespace string) error {
+func (d *Dumper) dumpInstallationsInNamespace(ctx context.Context, namespace string) error {
 	installationList := &lsv1alpha1.InstallationList{}
 	if err := d.kubeClient.List(ctx, installationList, client.InNamespace(namespace)); err != nil {
 		return fmt.Errorf("unable to list installations for namespace %q: %w", namespace, err)
@@ -273,7 +273,7 @@ func (d *Dumper) DumpLandscaperResources(ctx context.Context) error {
 	if err := d.DumpDeployerRegistrations(ctx); err != nil {
 		return err
 	}
-	if err := d.DumpInstallationsInNamespace(ctx, d.lsNamespace); err != nil {
+	if err := d.dumpInstallationsInNamespace(ctx, d.lsNamespace); err != nil {
 		return err
 	}
 	if err := d.DumpExecutionInNamespace(ctx, d.lsNamespace); err != nil {

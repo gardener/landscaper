@@ -3,6 +3,8 @@ apiVersion: core.gardener.cloud/v1beta1
 metadata:
   namespace: {{ .namespace }}
   name: {{ .name }}
+  annotations:
+    shoot.gardener.cloud/cleanup-extended-apis-finalize-grace-period-seconds: '180'
 spec:
   provider:
     type: gcp

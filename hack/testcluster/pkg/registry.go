@@ -18,6 +18,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+
 	"github.com/docker/cli/cli/config/configfile"
 	dockerconfigtypes "github.com/docker/cli/cli/config/types"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +34,6 @@ import (
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates"
-	"github.com/gardener/landscaper/test/utils"
 )
 
 const (

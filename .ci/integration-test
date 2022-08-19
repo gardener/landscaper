@@ -1,8 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 # SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
+
+# Script executing the integration tests in the context of a Gardener Concours pipeline job with access to the cc-config.
+# It is called in case of a head-update of the master branch and a new release.
 
 set -o errexit
 set -o nounset
@@ -10,25 +13,8 @@ set -o pipefail
 
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
+SOURCE_PATH="$(pwd)"
+export SOURCE_PATH
 
-mkdir -p /tm
-/cc/utils/cli.py config attribute --cfg-type kubernetes --cfg-name testmachinery --key kubeconfig > /tm/kubeconfig
+./.ci/int-test
 
-echo -n "Updating helm chart version"
-./hack/update-helm-chart-version.sh
-
-VERSION="$(./hack/get-version.sh)"
-echo -n "Starting testmachinery for landscaper version ${VERSION}"
-
-# inject the release image tag (content of the VERSION file) as well as the current HEAD commit sha, so that
-# 1) TM can retrieve the needed TestDefinitions (from current HEAD)
-# 2) we will test the actual release docker image instead of a dev image
-/testrunner run \
-    --tm-kubeconfig-path=/tm/kubeconfig \
-    --no-execution-group \
-    --testrun-prefix landscaper-e2e- \
-    --timeout=3700 \
-    --testruns-chart-path=.ci/testruns/integration-test \
-    --set imageTag="${VERSION}" \
-    --set version="${VERSION}" \
-    --set revision="$(git rev-parse HEAD)"

@@ -32,8 +32,22 @@ Integration tests are tests that use a k8s-conformance-compliant cluster and opt
 
 #### execution
 
-The tests are by default executed on every head-update of the main git branch and can be optionally executed on a PR by commenting that PR with `/test`.
+The tests are by default executed on every head-update of the main git branch and in case of a new release.
+In both cases the [script](../../.ci/integration-test) is executed, which 
+
+- creates a Gardener shoot cluster in the project *laas* on the 
+  [Gardener Canary landscape](https://dashboard.garden.canary.k8s.ondemand.com/namespace/garden-laas/shoots/).
+  All such clusters have a name with the prefix *it-*.
+- installs the landscaper on the shoot cluster
+- runs the tests
+- deletes the shoot cluster if all tests succeeded, otherwise it lets the cluster as it is for further investigations.
+
+The test script also cleans up old test shoot clusters. More details about the program details can be found in the 
+corresponding script files.
+
+The integration tests can be optionally executed on a PR by commenting that PR with `/test`.
 This will trigger the TestMachinery bot and will execute the integration tests for the PR in the TestMachinery.
+Thereby the integration tests are executed on a [k3s cluster](https://k3s.io/) instead of a Gardener shoot cluster.
 
 The TestMachinery itself works with 
 - TestDefinitions that define a single test step (find them in [.test-defs](../../.test-defs))
@@ -49,6 +63,12 @@ make integration-test KUBECONFIG_PATH=<path to cluster kubeconfig file>
 ```
 
 The tests set up a local OCI registry, install/upgrade the landscaper and executes the integration tests.
+
+It is also possible to execute the tests with Gardner shoot cluster creation and deletion with:
+
+```
+make integration-test-with-cluster-creation KUBECONFIG_PATH=<path to Gardener kubeconfig for project laas on the Canary landscape>
+```
 
 #### write tests
 

@@ -1,5 +1,6 @@
 tmp
-tmp-int-test
+tmp-int-test-cluster
+tmp-int-test-core
 
 /dev
 /gen

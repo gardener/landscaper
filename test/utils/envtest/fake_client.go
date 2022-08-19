@@ -23,7 +23,7 @@ import (
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.
 func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 	objects := make([]client.Object, 0)
-	state := NewState()
+	state := NewState(nil)
 	if len(path) != 0 {
 		err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {

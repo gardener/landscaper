@@ -22,3 +22,4 @@ go run -mod=vendor ./hack/testcluster shootcluster delete \
     --kubeconfig=$GARDENER_KUBECONFIG_PATH \
     --namespace=$NAMESPACE \
     --cluster-auth=$TMP
+

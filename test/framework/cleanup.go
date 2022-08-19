@@ -4,7 +4,11 @@
 
 package framework
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+)
 
 type CleanupActionHandle *int
 type cleanupAction struct {
@@ -46,7 +50,12 @@ func (c *Cleanup) Remove(handle CleanupActionHandle) {
 // Run runs all functions installed by AddCleanupAction.  It does
 // not remove them (see RemoveCleanupAction) but it does run unlocked, so they
 // may remove themselves.
-func (c *Cleanup) Run() {
+func (c *Cleanup) Run(logger utils.Logger, testsFailed bool) {
+	if testsFailed {
+		logger.Logln("cleanup skipped due to failed tests")
+		return
+	}
+
 	list := []func(){}
 	func() {
 		c.mux.Lock()
