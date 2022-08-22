@@ -9,6 +9,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	"helm.sh/helm/v3/pkg/chart"
@@ -47,6 +50,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 	ch *chart.Chart) error {
 
 	currOp := "ApplyFile"
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, currOp})
 
 	_, targetClient, targetClientSet, err := h.TargetClient(ctx)
 	if err != nil {
@@ -96,7 +100,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		var err error
 		h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
 		if err != nil {
-			h.log.Error(err, "unable to encode status")
+			logger.Error(err, "unable to encode status")
 		}
 		return deployErr
 	}
@@ -147,13 +151,15 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 	return applier, err
 }
 
-func (h *Helm) createManifests(_ context.Context, currOp string, files, crds map[string]string) ([]managedresource.Manifest, error) {
-	objects, err := kutil.ParseFilesToRawExtension(h.log, files)
+func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds map[string]string) ([]managedresource.Manifest, error) {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "createManifests"})
+
+	objects, err := kutil.ParseFilesToRawExtension(logger, files)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
 	}
-	crdObjects, err := kutil.ParseFilesToRawExtension(h.log, crds)
+	crdObjects, err := kutil.ParseFilesToRawExtension(logger, crds)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
@@ -275,7 +281,9 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 }
 
 func (h *Helm) deleteManifests(ctx context.Context) error {
-	h.log.Info("Deleting files")
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "deleteManifests"})
+	logger.Info("Deleting files")
+
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
 	if h.ProviderStatus == nil || len(h.ProviderStatus.ManagedResources) == 0 {
@@ -314,7 +322,9 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 }
 
 func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
-	h.log.Info("Deleting files with real helm deployer")
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "lsHealthCheckController.check"})
+	logger.Info("Deleting files with real helm deployer")
+
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
 	if h.ProviderStatus == nil {
