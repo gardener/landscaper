@@ -61,7 +61,7 @@ var _ = Describe("Reconcile", func() {
 	)
 
 	BeforeEach(func() {
-		ctx := logging.NewContext(context.Background(), logging.Discard())
+		ctx = context.Background()
 		var err error
 		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -101,7 +101,8 @@ var _ = Describe("Reconcile", func() {
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(m.Reconcile(ctx)).To(Succeed())
+		mctx := logging.NewContext(ctx, logging.Discard())
+		Expect(m.Reconcile(mctx)).To(Succeed())
 
 		cmRes := &corev1.ConfigMap{}
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
@@ -147,7 +148,8 @@ var _ = Describe("Reconcile", func() {
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(m.Reconcile(ctx)).To(Succeed())
+		mctx := logging.NewContext(ctx, logging.Discard())
+		Expect(m.Reconcile(mctx)).To(Succeed())
 
 		cmRes := &corev1.ConfigMap{}
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
@@ -183,7 +185,8 @@ var _ = Describe("Reconcile", func() {
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(m.Reconcile(ctx)).To(Succeed())
+		mctx := logging.NewContext(ctx, logging.Discard())
+		Expect(m.Reconcile(mctx)).To(Succeed())
 
 		cmRes := &corev1.ConfigMap{}
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
@@ -193,7 +196,7 @@ var _ = Describe("Reconcile", func() {
 		m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(m.Delete(ctx)).To(HaveOccurred())
-		Expect(m.Delete(ctx)).To(Succeed())
+		Expect(m.Delete(mctx)).To(Succeed())
 
 		cmRes = &corev1.ConfigMap{}
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes))).To(BeTrue())
@@ -231,7 +234,8 @@ var _ = Describe("Reconcile", func() {
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(m.Reconcile(ctx)).To(Succeed())
+		mctx := logging.NewContext(ctx, logging.Discard())
+		Expect(m.Reconcile(mctx)).To(Succeed())
 
 		cmRes := &corev1.ConfigMap{}
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
@@ -240,8 +244,8 @@ var _ = Describe("Reconcile", func() {
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
 		m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(m.Delete(ctx)).To(HaveOccurred())
-		Expect(m.Delete(ctx)).To(Succeed())
+		Expect(m.Delete(mctx)).To(HaveOccurred())
+		Expect(m.Delete(mctx)).To(Succeed())
 
 		cmRes = &corev1.ConfigMap{}
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes))).To(BeTrue())
