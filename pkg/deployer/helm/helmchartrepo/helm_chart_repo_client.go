@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	"sigs.k8s.io/yaml"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
@@ -33,11 +35,10 @@ const (
 )
 
 type HelmChartRepoClient struct {
-	log   logging.Logger
 	auths []helmv1alpha1.Auth
 }
 
-func NewHelmChartRepoClient(log logging.Logger, context *lsv1alpha1.Context) (*HelmChartRepoClient, error) {
+func NewHelmChartRepoClient(context *lsv1alpha1.Context) (*HelmChartRepoClient, error) {
 	currOp := "NewHelmChartRepoClient"
 	auths := []helmv1alpha1.Auth{}
 
@@ -65,7 +66,6 @@ func NewHelmChartRepoClient(log logging.Logger, context *lsv1alpha1.Context) (*H
 	}
 
 	return &HelmChartRepoClient{
-		log:   log,
 		auths: auths,
 	}, nil
 }
@@ -94,7 +94,7 @@ func (c *HelmChartRepoClient) fetchChart(ctx context.Context, chartURL string) (
 	return c.executeGetRequest(ctx, chartURL)
 }
 
-func (c *HelmChartRepoClient) executeGetRequest(_ context.Context, rawURL string) ([]byte, error) {
+func (c *HelmChartRepoClient) executeGetRequest(ctx context.Context, rawURL string) ([]byte, error) {
 	authData := c.getAuthData(rawURL)
 
 	httpClient, err := c.getHttpClient(authData)
@@ -112,7 +112,7 @@ func (c *HelmChartRepoClient) executeGetRequest(_ context.Context, rawURL string
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
 
-	data, err := c.readResponseBody(res)
+	data, err := c.readResponseBody(ctx, res)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,9 @@ func (c *HelmChartRepoClient) getAuthData(rawURL string) *helmv1alpha1.Auth {
 	return nil
 }
 
-func (c *HelmChartRepoClient) readResponseBody(res *http.Response) ([]byte, error) {
+func (c *HelmChartRepoClient) readResponseBody(ctx context.Context, res *http.Response) ([]byte, error) {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "readResponseBody"})
+
 	if res == nil {
 		return nil, errors.New("response must not be nil")
 	}
@@ -244,14 +246,14 @@ func (c *HelmChartRepoClient) readResponseBody(res *http.Response) ([]byte, erro
 	if res.StatusCode != http.StatusOK {
 		err := fmt.Errorf("request failed with status code %v", res.StatusCode)
 
-		if c.log.Enabled(logging.DEBUG) {
+		if logger.Enabled(logging.DEBUG) {
 			body, bodyReadErr := ioutil.ReadAll(res.Body)
 			if bodyReadErr != nil {
-				c.log.Error(err, err.Error(), "response status code without body", res.StatusCode)
+				logger.Error(err, err.Error(), "response status code without body", res.StatusCode)
 				return nil, err
 			}
 
-			c.log.Error(err, err.Error(), "response status code with body", res.StatusCode, "response body", string(body))
+			logger.Error(err, err.Error(), "response status code with body", res.StatusCode, "response body", string(body))
 		}
 
 		return nil, err

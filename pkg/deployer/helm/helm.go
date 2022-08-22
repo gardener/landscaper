@@ -148,7 +148,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "BuildOCIClient", err.Error())
 	}
 
-	helmChartRepoClient, err := helmchartrepo.NewHelmChartRepoClient(h.log, h.Context)
+	helmChartRepoClient, err := helmchartrepo.NewHelmChartRepoClient(h.Context)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
