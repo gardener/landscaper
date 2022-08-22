@@ -81,7 +81,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		// apply helm
 		// convert manifests in ManagedResourceStatusList
 		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration,
-			h.TargetRestConfig, targetClientSet, h.log)
+			h.TargetRestConfig, targetClientSet)
 		deployErr = realHelmDeployer.Deploy(ctx)
 		if deployErr == nil {
 			managedResourceStatusList, err = realHelmDeployer.GetManagedResourcesStatus(ctx, manifests)
@@ -328,7 +328,7 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
 	}
 
 	realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(nil, h.ProviderConfiguration,
-		h.TargetRestConfig, targetClientSet, h.log)
+		h.TargetRestConfig, targetClientSet)
 
 	err = realHelmDeployer.Undeploy(ctx)
 	if err == nil {
