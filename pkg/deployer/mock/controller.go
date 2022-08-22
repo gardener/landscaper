@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	corev1 "k8s.io/api/core/v1"
@@ -151,9 +153,11 @@ func (d *deployer) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem
 }
 
 func (d *deployer) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (*mockv1alpha1.ProviderConfiguration, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "getConfig"})
+
 	config := &mockv1alpha1.ProviderConfiguration{}
 	if _, _, err := Decoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
-		d.log.Error(err, "unable to unmarshal config")
+		logger.Error(err, "unable to unmarshal config")
 		item.Status.Conditions = lsv1alpha1helper.CreateOrUpdateConditions(item.Status.Conditions, lsv1alpha1.DeployItemValidationCondition, lsv1alpha1.ConditionFalse,
 			"FailedUnmarshal", err.Error())
 		_ = d.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000053, item)

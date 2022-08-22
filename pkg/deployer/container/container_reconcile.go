@@ -622,7 +622,7 @@ func (c *Container) SyncConfiguration(ctx context.Context, defaultLabels map[str
 // SyncExport syncs the export secret from the wait container to the deploy item export.
 func (c *Container) SyncExport(ctx context.Context) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
-	log.Debug("Sync export to landscaper cluster", lc.KeyResource)
+	log.Debug("Sync export to landscaper cluster")
 	secret := &corev1.Secret{}
 	key := kutil.ObjectKey(ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.Configuration.Namespace)
 	if err := c.directHostClient.Get(ctx, key, secret); err != nil {
