@@ -153,8 +153,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		return nil, nil, nil, nil, err
 	}
 
-	ch, err := chartresolver.GetChart(ctx, h.log.WithName("chartresolver"), ociClient, helmChartRepoClient,
-		&h.ProviderConfiguration.Chart)
+	ch, err := chartresolver.GetChart(ctx, ociClient, helmChartRepoClient, &h.ProviderConfiguration.Chart)
 	if err != nil {
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error())
 	}

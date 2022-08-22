@@ -13,6 +13,7 @@ import (
 	"net/http"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
 
 	"github.com/gardener/component-cli/ociclient"
@@ -30,8 +31,9 @@ import (
 var NoChartDefinedError = errors.New("no chart was provided")
 
 // GetChart resolves the chart based on a chart access configuration.
-func GetChart(ctx context.Context, log logging.Logger, ociClient ociclient.Client,
+func GetChart(ctx context.Context, ociClient ociclient.Client,
 	helmChartRepoClient *helmchartrepo.HelmChartRepoClient, chartConfig *helmv1alpha1.Chart) (*chart.Chart, error) {
+
 	if chartConfig.Archive != nil {
 		return getChartFromArchive(chartConfig.Archive)
 	}
@@ -42,11 +44,11 @@ func GetChart(ctx context.Context, log logging.Logger, ociClient ociclient.Clien
 
 	// fetch the chart from a component descriptor defined resource
 	if chartConfig.FromResource != nil {
-		return getChartFromResource(ctx, log, ociClient, helmChartRepoClient, chartConfig.FromResource)
+		return getChartFromResource(ctx, ociClient, helmChartRepoClient, chartConfig.FromResource)
 	}
 
 	if chartConfig.HelmChartRepo != nil {
-		return getChartFromHelmChartRepo(ctx, log, helmChartRepoClient, chartConfig.HelmChartRepo)
+		return getChartFromHelmChartRepo(ctx, helmChartRepoClient, chartConfig.HelmChartRepo)
 	}
 
 	return nil, NoChartDefinedError
@@ -111,11 +113,14 @@ func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref str
 	return ch, err
 }
 
-func getChartFromResource(ctx context.Context, log logging.Logger, ociClient ociclient.Client,
+func getChartFromResource(ctx context.Context, ociClient ociclient.Client,
 	helmChartRepoClient *helmchartrepo.HelmChartRepoClient, ref *helmv1alpha1.RemoteChartReference) (*chart.Chart, error) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "getChartFromResource"})
+
 	// we also have to add a custom resolver for the "ociImage" resolver as we have to implement the
 	// helm specific ociClient manifest structure
-	compResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient, ref.Inline)
+	compResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(logger, ociClient, ref.Inline)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build component resolver: %w", err)
 	}
@@ -143,7 +148,7 @@ func getChartFromResource(ctx context.Context, log logging.Logger, ociClient oci
 
 	resources, err := cd.GetResourcesByName(ref.ResourceName)
 	if err != nil {
-		log.Error(err, "unable to find helm resource")
+		logger.Error(err, "unable to find helm resource")
 		return nil, fmt.Errorf("unable to find resource with name %q in component descriptor", ref.ResourceName)
 	}
 	if len(resources) != 1 {
@@ -163,9 +168,8 @@ func getChartFromResource(ctx context.Context, log logging.Logger, ociClient oci
 	return ch, err
 }
 
-func getChartFromHelmChartRepo(ctx context.Context, log logging.Logger, helmChartRepoClient *helmchartrepo.HelmChartRepoClient,
+func getChartFromHelmChartRepo(ctx context.Context, helmChartRepoClient *helmchartrepo.HelmChartRepoClient,
 	ref *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
-
 	resolver := helmchartrepo.NewHelmChartRepoResolverAsHelmChartRepoResolver(helmChartRepoClient)
 	var buf bytes.Buffer
 
