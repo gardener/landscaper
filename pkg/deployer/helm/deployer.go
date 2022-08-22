@@ -8,8 +8,6 @@ import (
 	"context"
 	"time"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
 	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -105,8 +103,7 @@ func (d *deployer) ForceReconcile(ctx context.Context, lsCtx *lsv1alpha1.Context
 }
 
 func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "Abort"})
-	logger.Info("abort is not yet implemented")
+	d.log.Info("abort is not yet implemented")
 	return nil
 }
 
