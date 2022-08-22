@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/utils/tar"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -34,8 +35,6 @@ import (
 
 // State handles the backup and restore of state of container deploy item.
 type State struct {
-	log logging.Logger
-
 	deployItem lsv1alpha1.ObjectReference
 	// namespace is the namespace where the state secrets should be created.
 	namespace  string
@@ -45,9 +44,8 @@ type State struct {
 }
 
 // New creates a new state instance.
-func New(log logging.Logger, kubeClient client.Client, namespace string, deployItemKey lsv1alpha1.ObjectReference, statePath string) *State {
+func New(kubeClient client.Client, namespace string, deployItemKey lsv1alpha1.ObjectReference, statePath string) *State {
 	return &State{
-		log:        log,
 		deployItem: deployItemKey,
 		namespace:  namespace,
 		kubeClient: kubeClient,
@@ -69,8 +67,9 @@ func (s *State) Backup(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	if len(files) == 0 {
-		s.log.Info("no State to persist")
+		log.Info("No State to persist")
 		return nil
 	}
 
@@ -88,7 +87,7 @@ func (s *State) Backup(ctx context.Context) error {
 	tmpFile.Close()
 	defer func() {
 		if err := os.Remove(tmpFile.Name()); err != nil {
-			s.log.Error(err, "unable to remove tmp State file")
+			log.Error(err, "Unable to remove tmp State file")
 		}
 	}()
 
@@ -136,8 +135,10 @@ func (s *State) Restore(ctx context.Context) error {
 		return err
 	}
 
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+
 	// the secrets are grouped by uuid and sorted by their creation date
-	s.log.Info(fmt.Sprintf("Restore state from %d secrets", len(secretList.Items)))
+	log.Info("Restoring state from secrets", "secretCount", len(secretList.Items))
 	secrets := map[string][]*corev1.Secret{}
 	var newest *corev1.Secret
 	for _, secret := range secretList.Items {
@@ -189,11 +190,12 @@ func (s *State) restoreFromSecrets(secrets []*corev1.Secret) error {
 }
 
 func (s *State) gcOldSecrets(ctx context.Context, secrets []*corev1.Secret) {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	for _, secret := range secrets {
 		if err := s.kubeClient.Delete(ctx, secret); err != nil {
-			s.log.Error(err, "unable to delete old state secret %s in namespace %s", secret.Name, secret.Namespace)
+			log.Error(err, "Unable to delete old state secret %s in namespace %s", secret.Name, secret.Namespace)
 		}
-		s.log.Info(fmt.Sprintf("Successfully garbage collected %q", secret.Name))
+		log.Info("Successfully garbage collected", lc.KeyResource, secret.Name)
 	}
 }
 
@@ -281,7 +283,7 @@ func CleanupState(ctx context.Context, log logging.Logger, kubeClient client.Cli
 				if apierrors.IsNotFound(err) {
 					continue
 				}
-				log.Error(err, "unable to delete state secret")
+				log.Error(err, "Unable to delete state secret")
 			}
 			completed = false
 		}

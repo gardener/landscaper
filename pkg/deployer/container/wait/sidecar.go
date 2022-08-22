@@ -19,7 +19,9 @@ import (
 )
 
 // Run runs the container deployer sidecar.
-func Run(ctx context.Context, log logging.Logger) error {
+func Run(ctx context.Context) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+	log = log.WithName("container").WithName("wait")
 	opts := &options{}
 	opts.Setup()
 
@@ -39,7 +41,7 @@ func Run(ctx context.Context, log logging.Logger) error {
 			Scheme: api.LandscaperScheme,
 		})
 		if err != nil {
-			log.Error(err, "unable to build kubernetes client")
+			log.Error(err, "Unable to build kubernetes client")
 			return false, nil
 		}
 		return true, nil
@@ -49,17 +51,17 @@ func Run(ctx context.Context, log logging.Logger) error {
 
 	// wait for the main container to finish.
 	// event if the exitcode != 0, the state is still backed up.
-	if err := WaitUntilMainContainerFinished(ctx, log, kubeClient, opts.PodKey.NamespacedName()); err != nil {
+	if err := WaitUntilMainContainerFinished(ctx, kubeClient, opts.PodKey.NamespacedName()); err != nil {
 		return withTerminationLog(log, err)
 	}
 
 	// backup state
-	if err := state.New(log, kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StatePath).Backup(ctx); err != nil {
+	if err := state.New(kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StatePath).Backup(ctx); err != nil {
 		return withTerminationLog(log, err)
 	}
 
 	// upload exports
-	if err := UploadExport(ctx, log, kubeClient, opts.DeployItemKey, opts.PodKey, opts.ExportFilePath); err != nil {
+	if err := UploadExport(ctx, kubeClient, opts.DeployItemKey, opts.PodKey, opts.ExportFilePath); err != nil {
 		return withTerminationLog(log, err)
 	}
 	return nil
@@ -71,7 +73,7 @@ func withTerminationLog(log logging.Logger, err error) error {
 	}
 
 	if err := ioutil.WriteFile("/dev/termination-log", []byte(err.Error()), os.ModePerm); err != nil {
-		log.Error(err, "unable to write termination message")
+		log.Error(err, "Unable to write termination message")
 	}
 	return err
 }

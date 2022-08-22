@@ -17,13 +17,15 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/container"
 	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 // WaitUntilMainContainerFinished waits until the main container of the pod has finished.
 // For a comparison of different possibilities to wait for a container to finish
 // see the argo doc: https://github.com/argoproj/argo/blob/master/docs/workflow-executors.md
 // This method currently uses the k8s api method for simplicity and stability reasons.
-func WaitUntilMainContainerFinished(ctx context.Context, log logging.Logger, kubeClient client.Client, podKey client.ObjectKey) error {
+func WaitUntilMainContainerFinished(ctx context.Context, kubeClient client.Client, podKey client.ObjectKey) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	backoff := wait.Backoff{
 		Duration: 30 * time.Second,
 		Factor:   1.25,
@@ -40,18 +42,18 @@ func WaitUntilMainContainerFinished(ctx context.Context, log logging.Logger, kub
 			if apierrors.IsUnauthorized(err) {
 				return false, err
 			}
-			log.Error(err, "unable to get pod", "pod", podKey.String())
+			log.Error(err, "Unable to get pod", lc.KeyResource, podKey.String())
 			return false, nil
 		}
 
 		mainContainerStatus, err := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
 		if err != nil {
-			log.Error(err, "unable to get container status for main container")
+			log.Error(err, "Unable to get container status for main container")
 			return false, nil
 		}
 
 		if mainContainerStatus.State.Terminated == nil {
-			log.Debug("main container is still running...")
+			log.Debug("Main container is still running...")
 			return false, nil
 		}
 		return true, nil

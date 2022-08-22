@@ -63,7 +63,7 @@ const (
 )
 
 // ReconcileExtensionHook represents a function which will be called when the hook is executed.
-type ReconcileExtensionHook func(context.Context, logging.Logger, *lsv1alpha1.DeployItem, *lsv1alpha1.Target, HookType) (*HookResult, error)
+type ReconcileExtensionHook func(context.Context, *lsv1alpha1.DeployItem, *lsv1alpha1.Target, HookType) (*HookResult, error)
 
 // ReconcileExtensionHooks maps hook types to a list of hook functions.
 type ReconcileExtensionHooks map[HookType][]ReconcileExtensionHook
@@ -78,9 +78,10 @@ type ReconcileExtensionHookSetup struct {
 // The results of all executed hooks are aggregated using the AggregateHookResults function, except for
 //   DuringResponsibilityCheck and ShouldReconcile hooks, where AggregateHookResultsWithInvertedAbortPriority is used instead.
 // An error is returned if one of the hooks returns an error or if an unknown hook type is given.
-func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logging.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, ht HookType) (*HookResult, lserror.LsError) {
-	logger := log.WithName(string(ht))
-	logger.Debug("calling extension hooks")
+func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, ht HookType) (*HookResult, lserror.LsError) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger = logger.WithName(string(ht))
+	logger.Debug("Calling extension hooks")
 	typedHooks, ok := hooks[ht]
 	if !ok {
 		switch ht {
@@ -94,9 +95,9 @@ func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log loggi
 	}
 	hookRes := make([]*HookResult, len(typedHooks))
 	for i, hook := range typedHooks {
-		logger.WithValues("index", i).Debug("calling extension hook")
+		logger.Info("Calling extension hook", "index", i)
 		var err error
-		hookRes[i], err = hook(ctx, logger, di, target, ht)
+		hookRes[i], err = hook(ctx, di, target, ht)
 		if err != nil {
 			return nil, lserror.NewWrappedError(err, "ExecuteHooks", "ExecuteReconcile",
 				fmt.Sprintf("error executing reconciliation extension hook %d of type %q", i, string(ht)))

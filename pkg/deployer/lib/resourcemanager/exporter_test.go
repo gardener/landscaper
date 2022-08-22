@@ -31,6 +31,7 @@ var _ = Describe("Exporter", func() {
 
 	BeforeEach(func() {
 		ctx, cancel = context.WithCancel(context.Background())
+		ctx = logging.NewContextWithDiscard(ctx)
 		var err error
 		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -67,7 +68,7 @@ var _ = Describe("Exporter", func() {
 				},
 			},
 		}
-		res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
+		res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 			KubeClient: testenv.Client,
 			Objects: managedresource.ManagedResourceStatusList{
 				{
@@ -120,7 +121,7 @@ var _ = Describe("Exporter", func() {
 				},
 			},
 		}
-		res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
+		res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 			KubeClient: testenv.Client,
 			Objects: managedresource.ManagedResourceStatusList{
 				{
@@ -175,7 +176,7 @@ var _ = Describe("Exporter", func() {
 				},
 			},
 		}
-		res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
+		res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 			KubeClient:     testenv.Client,
 			DefaultTimeout: &timeout,
 			Objects: managedresource.ManagedResourceStatusList{
@@ -221,7 +222,7 @@ var _ = Describe("Exporter", func() {
 				},
 			},
 		}
-		_, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
+		_, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 			KubeClient:     testenv.Client,
 			DefaultTimeout: &timeout,
 			Objects:        managedresource.ManagedResourceStatusList{},
@@ -269,7 +270,7 @@ var _ = Describe("Exporter", func() {
 					},
 				},
 			}
-			res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
+			res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 				KubeClient:     testenv.Client,
 				DefaultTimeout: &timeout,
 				Objects: managedresource.ManagedResourceStatusList{
@@ -331,7 +332,7 @@ var _ = Describe("Exporter", func() {
 					},
 				},
 			}
-			res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
+			res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 				KubeClient:     testenv.Client,
 				DefaultTimeout: &timeout,
 				Objects: managedresource.ManagedResourceStatusList{

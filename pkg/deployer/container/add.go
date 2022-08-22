@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,6 +20,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/version"
+	"github.com/go-logr/logr"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -26,7 +28,7 @@ import (
 
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
 func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manager, config containerv1alpha1.Configuration) error {
-	ctrlLogger := logger.WithName("ContainerDeployer")
+	log := logger.WithName("container")
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
 		Scheme: hostMgr.GetScheme(),
@@ -35,7 +37,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		return fmt.Errorf("unable to create direct client for the host cluster: %w", err)
 	}
 	deployer, err := NewDeployer(
-		ctrlLogger,
+		log,
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
 		directHostClient,
@@ -46,7 +48,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 
 	src := source.NewKindWithCache(&corev1.Pod{}, hostMgr.GetCache())
 	podRec := NewPodReconciler(
-		ctrlLogger.WithName("PodReconciler"),
+		log.WithName("podReconciler"),
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
@@ -60,7 +62,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		options.CacheSyncTimeout = config.Controller.CacheSyncTimeout.Duration
 	}
 
-	err = deployerlib.Add(logging.Wrap(ctrl.Log), lsMgr, hostMgr, deployerlib.DeployerArgs{
+	err = deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
 		Name:            Name,
 		Version:         version.Get().String(),
 		Identity:        config.Identity,
@@ -75,16 +77,17 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 
 	if err := ctrl.NewControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(noopPredicate{})).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Watches(src, &PodEventHandler{}).
 		Complete(podRec); err != nil {
 		return err
 	}
 
 	if config.GarbageCollection.Disable {
-		logger.Info("GarbageCollector disabled")
+		log.Info("GarbageCollector disabled")
 		return nil
 	}
-	return NewGarbageCollector(logger.WithName("GarbageCollector"),
+	return NewGarbageCollector(log.WithName("garbageCollector"),
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
 		config.Identity,

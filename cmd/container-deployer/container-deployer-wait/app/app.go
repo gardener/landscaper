@@ -42,7 +42,7 @@ It waits until the main container has finished, then back-ups the optional state
 
 func (o *options) run(ctx context.Context) {
 	o.log.Info("Starting wait executor for container deployer", lc.KeyVersion, version.Get().GitVersion)
-	if err := wait.Run(ctx, o.log); err != nil {
+	if err := wait.Run(ctx); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

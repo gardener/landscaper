@@ -65,7 +65,7 @@ var _ = Describe("Init e2e", func() {
 	})
 
 	It("should restore a backup", func() {
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 		defer ctx.Done()
 		var (
 			fs           = memoryfs.New()
@@ -84,7 +84,7 @@ var _ = Describe("Init e2e", func() {
 		utils.ExpectNoError(fs.MkdirAll(container.StatePath, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(logging.Discard(), testenv.Client, testState.Namespace, di, container.StatePath).WithFs(fs)
+		s := state.New(testenv.Client, testState.Namespace, di, container.StatePath).WithFs(fs)
 
 		utils.ExpectNoError(s.Backup(ctx))
 
@@ -94,8 +94,8 @@ var _ = Describe("Init e2e", func() {
 		Expect(vfs.WriteFile(resFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
 
 		opts := &options{}
-		opts.Complete(ctx)
-		Expect(run(ctx, logging.Discard(), opts, testenv.Client, resFs)).To(Succeed())
+		opts.Complete()
+		Expect(run(ctx, opts, testenv.Client, resFs)).To(Succeed())
 
 		resData, err := vfs.ReadFile(resFs, testFilePath)
 		utils.ExpectNoError(err)

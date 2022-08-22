@@ -38,7 +38,7 @@ var _ = Describe("Container Deployer State", func() {
 	})
 
 	It("should save a file and restore it", func() {
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 		defer ctx.Done()
 		var (
 			fs           = memoryfs.New()
@@ -51,7 +51,7 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(logging.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)
@@ -66,7 +66,7 @@ var _ = Describe("Container Deployer State", func() {
 	})
 
 	It("should garbage collect old state secrets", func() {
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 		defer ctx.Done()
 		var (
 			fs           = memoryfs.New()
@@ -78,7 +78,7 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(logging.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)
@@ -109,7 +109,7 @@ var _ = Describe("Container Deployer State", func() {
 	})
 
 	It("should cleanup the state", func() {
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 		defer ctx.Done()
 		var (
 			fs           = memoryfs.New()
@@ -121,7 +121,7 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(logging.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)

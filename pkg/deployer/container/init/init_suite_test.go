@@ -25,7 +25,6 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	mock_client "github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/test/utils"
 )
 
@@ -64,16 +63,16 @@ var _ = Describe("Constructor", func() {
 	It("should fetch import values from DeployItem's configuration and write them to 'import.json'", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/00-di-simple.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logging.Discard(), opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
 
 		dataBytes, err := vfs.ReadFile(memFs, container.ImportsPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -85,16 +84,16 @@ var _ = Describe("Constructor", func() {
 	It("should fetch a blueprint from a DeployItem's configuration and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logging.Discard(), opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -105,16 +104,16 @@ var _ = Describe("Constructor", func() {
 	It("should fetch an inline blueprint from a DeployItem's configuration and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/02-di-inline-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logging.Discard(), opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -125,16 +124,16 @@ var _ = Describe("Constructor", func() {
 	It("should fetch component descriptor from DeployItem's configuration and write them to the component descriptor path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logging.Discard(), opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
 
 		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -147,16 +146,16 @@ var _ = Describe("Constructor", func() {
 	It("should fetch an inline component descriptor from DeployItem's configuration and write them to the component descriptor path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/03-di-inline-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logging.Discard(), opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
 
 		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -169,16 +168,16 @@ var _ = Describe("Constructor", func() {
 	It("should fetch an inline blueprint from a DeployItem's configuration with no Component Descriptor at all and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/04-di-inline-bp-no-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logging.Discard(), opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -189,16 +188,16 @@ var _ = Describe("Constructor", func() {
 	It("should fetch an inline blueprint and an inline Component Descriptor from a DeployItem's configuration and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		memFs := memoryfs.New()
 
 		file, err := ioutil.ReadFile("./testdata/05-di-inline-bp-inline-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logging.Discard(), opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -215,9 +214,9 @@ var _ = Describe("Constructor", func() {
 	It("should ignore if the registry secrets path does not exist", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
-		opts.Complete(ctx)
+		opts.Complete()
 		opts.RegistrySecretBasePath = "/unexisting/path"
 		memFs := memoryfs.New()
 
@@ -225,7 +224,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logging.Discard(), opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())

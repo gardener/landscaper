@@ -6,12 +6,12 @@ package lib
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
@@ -26,8 +26,9 @@ import (
 
 // HandleErrorFunc returns a error handler func for deployers.
 // The functions automatically sets the phase for long running errors and updates the status accordingly.
-func HandleErrorFunc(ctx context.Context, err lserrors.LsError, log logging.Logger, c client.Client,
+func HandleErrorFunc(ctx context.Context, err lserrors.LsError, c client.Client,
 	eventRecorder record.EventRecorder, oldDeployItem, deployItem *lsv1alpha1.DeployItem, isDelete bool) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	// if successfully deleted we could not update the object
 	if isDelete && err == nil {
 		di := &lsv1alpha1.DeployItem{}
@@ -53,9 +54,9 @@ func HandleErrorFunc(ctx context.Context, err lserrors.LsError, log logging.Logg
 		writer := read_write_layer.NewWriter(c)
 		if err2 := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000051, deployItem); err2 != nil {
 			if apierrors.IsConflict(err2) { // reduce logging
-				log.Debug(fmt.Sprintf("unable to update status: %s", err2.Error()))
+				log.Debug("Unable to update status", lc.KeyError, err2.Error())
 			} else {
-				log.Error(err2, "unable to update status")
+				log.Error(err2, "Unable to update status")
 			}
 			// retry on conflict
 			if err == nil {

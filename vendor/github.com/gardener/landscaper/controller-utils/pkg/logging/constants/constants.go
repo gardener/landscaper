@@ -63,6 +63,20 @@ const (
 	KeyFileName = "fileName"
 	// KeyServiceAccount is for a kubernetes service account.
 	KeyServiceAccount = "serviceAccount"
+	// KeyDeployItemType is for the type of deployitem which is handled by the controller.
+	KeyDeployItemType = "deployItemType"
+	// KeyError is for logging an error message without using 'logger.Error' for whatever reason.
+	KeyError = "error"
+	// KeyGroupVersionKind is for listing group, version, and kind of a resource.
+	KeyGroupVersionKind = "groupVersionKind"
+	// KeyStatus is for a status of whatever kind.
+	KeyStatus = "status"
+	// KeyOperationAnnotation is for logging the value of the current operation annotation.
+	KeyOperationAnnotation = "operationAnnotation"
+	// KeyReason is for providing a reason.
+	KeyReason = "reason"
+	// KeyPhase is for a generic phase. For the phases of Installations, Executions, or DeployItems, use the more specific constants.
+	KeyPhase = "phase"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

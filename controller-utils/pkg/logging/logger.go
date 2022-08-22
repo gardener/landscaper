@@ -142,6 +142,23 @@ func FromContextOrDiscard(ctx context.Context) Logger {
 	return log
 }
 
+// NewContext is a wrapper for logr.NewContext.
+func NewContext(ctx context.Context, log Logger) context.Context {
+	return logr.NewContext(ctx, log.Logr())
+}
+
+// Discard is a wrapper for logr.Discard.
+func Discard() Logger {
+	return Wrap(logr.Discard())
+}
+
+// ADDITIONAL FUNCTIONS
+
+// Wrap constructs a new Logger, using the provided logr.Logger internally.
+func Wrap(log logr.Logger) Logger {
+	return Logger{internal: log}
+}
+
 // FromContextOrNew tries to fetch a logger from the context.
 // It is expected that a logger is contained in the context. If retrieving it fails, a new logger will be created and an error is logged.
 // keysAndValuesFallback contains keys and values which will only be added if the logger could not be retrieved and a new one had to be created.
@@ -161,8 +178,10 @@ func FromContextOrNew(ctx context.Context, keysAndValuesFallback []interface{}, 
 		ctx = NewContext(ctx, newLogger)
 		return newLogger, ctx
 	}
-	log = log.WithValues(keysAndValues...)
-	ctx = NewContext(ctx, log)
+	if len(keysAndValues) > 0 {
+		log = log.WithValues(keysAndValues...)
+		ctx = NewContext(ctx, log)
+	}
 	return log, ctx
 }
 
@@ -179,21 +198,9 @@ func FromContextWithFallback(ctx context.Context, fallback Logger, keysAndValues
 	return log, ctx
 }
 
-func Discard() Logger {
-	return Wrap(logr.Discard())
-}
-
-// NewContext is a wrapper for logr.NewContext.
-// It adds the logger to the context twice, in a wrapped as well as a logr version.
-func NewContext(ctx context.Context, log Logger) context.Context {
-	return logr.NewContext(ctx, log.Logr())
-}
-
-// ADDITIONAL FUNCTIONS
-
-// Wrap constructs a new Logger, using the provided logr.Logger internally.
-func Wrap(log logr.Logger) Logger {
-	return Logger{internal: log}
+// NewContextWithDiscard adds a discard logger to the given context and returns the new context.
+func NewContextWithDiscard(ctx context.Context) context.Context {
+	return NewContext(ctx, Discard())
 }
 
 // Debug logs a message at DEBUG level.
@@ -222,7 +229,14 @@ func (l Logger) IsInitialized() bool {
 // Reconciles is meant to be used for the logger initialization for controllers.
 // It is a wrapper for WithName(name).WithValues(lc.KeyReconciledResourceKind, reconciledResource).
 func (l Logger) Reconciles(name, reconciledResource string) Logger {
-	return l.WithName(name).WithValues(lc.KeyReconciledResourceKind, reconciledResource)
+	log := l
+	if len(name) != 0 {
+		log = log.WithName(name)
+	}
+	if len(reconciledResource) != 0 {
+		log = log.WithValues(lc.KeyReconciledResourceKind, reconciledResource)
+	}
+	return log
 }
 
 // Logr returns the internal logr.Logger.

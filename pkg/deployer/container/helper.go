@@ -18,6 +18,7 @@ import (
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -26,10 +27,10 @@ import (
 	lsversion "github.com/gardener/landscaper/pkg/version"
 )
 
-func GetAndCheckReconcile(log logging.Logger, lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
+func GetAndCheckReconcile(lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
 	return func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
-		logger := log.WithValues("resource", req.NamespacedName)
-		logger.Debug("Reconcile deploy item")
+		logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, req.NamespacedName.String()})
+		// beginning of reconciliation is already logged by the calling method, not required here
 
 		deployItem := &lsv1alpha1.DeployItem{}
 		if err := read_write_layer.GetDeployItem(ctx, lsClient, req.NamespacedName, deployItem); err != nil {
@@ -41,7 +42,7 @@ func GetAndCheckReconcile(log logging.Logger, lsClient client.Client, config con
 		}
 
 		if deployItem.Spec.Type != Type {
-			logger.Debug("DeployItem is of wrong type", "type", deployItem.Spec.Type)
+			logger.Debug("DeployItem is of wrong type", lc.KeyDeployItemType, deployItem.Spec.Type)
 			return nil, nil, nil
 		}
 

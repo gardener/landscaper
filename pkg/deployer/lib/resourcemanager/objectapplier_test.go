@@ -30,20 +30,21 @@ var _ = Describe("ObjectApplier", func() {
 
 	var (
 		state *envtest.State
+		ctx   context.Context
 	)
 
 	BeforeEach(func() {
 		var err error
-		state, err = testenv.InitState(context.TODO())
+		ctx = logging.NewContextWithDiscard(context.TODO())
+		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		Expect(state.CleanupState(context.TODO()))
+		Expect(state.CleanupState(ctx))
 	})
 
 	It("should apply and update a configmap", func() {
-		ctx := context.TODO()
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
 		cm.Namespace = state.Namespace
@@ -68,7 +69,7 @@ var _ = Describe("ObjectApplier", func() {
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
 
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res := &corev1.ConfigMap{}
@@ -92,7 +93,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 		}
 		opts.ManagedResources = managedResources
-		_, err = resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		_, err = resourcemanager.ApplyManifests(ctx, opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res = &corev1.ConfigMap{}
@@ -101,7 +102,6 @@ var _ = Describe("ObjectApplier", func() {
 	})
 
 	It("should delete a orphaned resource", func() {
-		ctx := context.TODO()
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
 		cm.Namespace = state.Namespace
@@ -125,7 +125,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res := &corev1.ConfigMap{}
@@ -142,7 +142,7 @@ var _ = Describe("ObjectApplier", func() {
 
 		opts.Manifests = []managedresource.Manifest{}
 		opts.ManagedResources = managedResources
-		managedResources, err = resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		managedResources, err = resourcemanager.ApplyManifests(ctx, opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res = &corev1.ConfigMap{}
@@ -151,8 +151,6 @@ var _ = Describe("ObjectApplier", func() {
 	})
 
 	It("should keep a sorted list of managed resources", func() {
-		ctx := context.TODO()
-
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
 		cm.Namespace = state.Namespace
@@ -187,7 +185,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res := &corev1.ConfigMap{}
@@ -205,7 +203,7 @@ var _ = Describe("ObjectApplier", func() {
 
 			opts.Manifests[0].Manifest = cmRaw
 			opts.ManagedResources = managedResources
-			managedResources, err = resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+			managedResources, err = resourcemanager.ApplyManifests(ctx, opts)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(managedResources).To(HaveLen(2))
@@ -216,8 +214,6 @@ var _ = Describe("ObjectApplier", func() {
 	})
 
 	It("should create a namespace before other resources", func() {
-		ctx := context.TODO()
-
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
 		cm.Namespace = "test"
@@ -249,7 +245,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res := &corev1.ConfigMap{}
@@ -262,8 +258,6 @@ var _ = Describe("ObjectApplier", func() {
 	})
 
 	It("should not update immutable resources", func() {
-		ctx := context.Background()
-
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
 		cm.Namespace = "test"
@@ -288,7 +282,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(managedResources).To(HaveLen(1))
@@ -316,7 +310,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
-		managedResources, err = resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
+		managedResources, err = resourcemanager.ApplyManifests(ctx, opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(managedResources).To(HaveLen(1))

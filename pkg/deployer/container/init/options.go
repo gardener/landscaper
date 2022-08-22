@@ -5,7 +5,6 @@
 package init
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"os"
@@ -40,7 +39,7 @@ type options struct {
 }
 
 // Complete reads necessary options from the expected sources.
-func (o *options) Complete(ctx context.Context) {
+func (o *options) Complete() {
 	o.ConfigurationFilePath = os.Getenv(container.ConfigurationPathName)
 	o.ImportsFilePath = os.Getenv(container.ImportsPathName)
 	o.ExportsFilePath = os.Getenv(container.ExportsPathName)
