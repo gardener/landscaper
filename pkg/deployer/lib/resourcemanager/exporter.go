@@ -88,7 +88,7 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			defer wg.Done()
 			ctx, cancel := context.WithTimeout(ctx, export.Timeout.Duration)
 			defer cancel()
-			log2 := log.WithValues("key", export.Key)
+			log2 := log.WithValues(lc.KeyExportKey, export.Key)
 
 			backoff := wait.Backoff{
 				Jitter: 1.15,

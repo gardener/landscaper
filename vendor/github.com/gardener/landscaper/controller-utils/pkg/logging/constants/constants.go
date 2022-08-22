@@ -77,6 +77,10 @@ const (
 	KeyReason = "reason"
 	// KeyPhase is for a generic phase. For the phases of Installations, Executions, or DeployItems, use the more specific constants.
 	KeyPhase = "phase"
+	// KeyExportKey is for the key that the value from JSONPath is exported to.
+	KeyExportKey = "exportKey"
+	// KeyManagedResourcePolicy is for the manage policy of a resource.
+	KeyManagedResourcePolicy = "managedResourcePolicy"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

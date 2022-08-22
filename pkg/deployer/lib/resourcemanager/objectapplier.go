@@ -289,7 +289,7 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 		logger2 := logger.WithValues(lc.KeyResource, types.NamespacedName{Namespace: mr.Resource.Namespace, Name: mr.Resource.Name}.String(), lc.KeyResourceKind, mr.Resource.Kind)
 		logger2.Debug("Checking resource")
 		if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
-			logger2.Debug("Ignoring resource due to policy", "policy", string(mr.Policy))
+			logger2.Debug("Ignoring resource due to policy", lc.KeyManagedResourcePolicy, string(mr.Policy))
 			continue
 		}
 		ref := mr.Resource

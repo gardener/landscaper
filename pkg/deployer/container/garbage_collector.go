@@ -10,8 +10,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"github.com/go-logr/logr"
+
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -130,7 +131,7 @@ func (gc *GarbageCollector) cleanupRBACResources(obj client.Object) reconcile.Re
 			if apierrors.IsNotFound(err) {
 				return reconcile.Result{}, nil
 			}
-			gc.log.Error(err, "Rnable to get resource")
+			gc.log.Error(err, "unable to get resource")
 			return reconcile.Result{}, err
 		}
 		shouldGC, err := gc.shouldGarbageCollect(ctx, obj)
