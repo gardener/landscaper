@@ -28,8 +28,6 @@ import (
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 
 	manifestvalidation "github.com/gardener/landscaper/apis/deployer/manifest/validation"
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 )
 
@@ -46,7 +44,6 @@ func init() {
 
 // Manifest is the internal representation of a DeployItem of Type Manifest
 type Manifest struct {
-	log            logging.Logger
 	lsKubeClient   client.Client
 	hostKubeClient client.Client
 	Configuration  *manifestv1alpha2.Configuration
@@ -67,8 +64,7 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 }
 
 // New creates a new internal manifest item
-func New(log logging.Logger,
-	lsKubeClient client.Client,
+func New(lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	configuration *manifestv1alpha2.Configuration,
 	item *lsv1alpha1.DeployItem,
@@ -97,7 +93,6 @@ func New(log logging.Logger,
 	}
 
 	return &Manifest{
-		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
 		lsKubeClient:          lsKubeClient,
 		hostKubeClient:        hostKubeClient,
 		Configuration:         configuration,

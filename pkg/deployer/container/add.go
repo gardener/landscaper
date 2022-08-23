@@ -17,10 +17,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/go-logr/logr"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/version"
-	"github.com/go-logr/logr"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"

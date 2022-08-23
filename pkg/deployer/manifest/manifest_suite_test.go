@@ -98,10 +98,11 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(m.Reconcile(ctx)).To(Succeed())
+		mctx := logging.NewContext(ctx, logging.Discard())
+		Expect(m.Reconcile(mctx)).To(Succeed())
 
 		cmRes := &corev1.ConfigMap{}
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
@@ -144,10 +145,11 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(m.Reconcile(ctx)).To(Succeed())
+		mctx := logging.NewContext(ctx, logging.Discard())
+		Expect(m.Reconcile(mctx)).To(Succeed())
 
 		cmRes := &corev1.ConfigMap{}
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
@@ -180,20 +182,21 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(m.Reconcile(ctx)).To(Succeed())
+		mctx := logging.NewContext(ctx, logging.Discard())
+		Expect(m.Reconcile(mctx)).To(Succeed())
 
 		cmRes := &corev1.ConfigMap{}
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
 		Expect(cmRes.Data).To(HaveKeyWithValue("key", "val"))
 
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
-		m, err = manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(m.Delete(ctx)).To(HaveOccurred())
-		Expect(m.Delete(ctx)).To(Succeed())
+		Expect(m.Delete(mctx)).To(Succeed())
 
 		cmRes = &corev1.ConfigMap{}
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes))).To(BeTrue())
@@ -228,20 +231,21 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(m.Reconcile(ctx)).To(Succeed())
+		mctx := logging.NewContext(ctx, logging.Discard())
+		Expect(m.Reconcile(mctx)).To(Succeed())
 
 		cmRes := &corev1.ConfigMap{}
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes)).To(Succeed())
 		Expect(cmRes.Data).To(HaveKeyWithValue("key", "val"))
 
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
-		m, err = manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(m.Delete(ctx)).To(HaveOccurred())
-		Expect(m.Delete(ctx)).To(Succeed())
+		Expect(m.Delete(mctx)).To(HaveOccurred())
+		Expect(m.Delete(mctx)).To(Succeed())
 
 		cmRes = &corev1.ConfigMap{}
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(cm), cmRes))).To(BeTrue())

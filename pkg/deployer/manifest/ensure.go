@@ -8,6 +8,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,6 +34,8 @@ import (
 
 func (m *Manifest) Reconcile(ctx context.Context) error {
 	currOp := "ReconcileManifests"
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, currOp})
+
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 
 	_, targetClient, targetClientSet, err := m.TargetClient(ctx)
@@ -69,7 +74,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		var err2 error
 		m.DeployItem.Status.ProviderStatus, err2 = kutil.ConvertToRawExtension(m.ProviderStatus, Scheme)
 		if err2 != nil {
-			m.log.Error(err, "unable to encode status")
+			logger.Error(err, "unable to encode status")
 		}
 		return err
 	}

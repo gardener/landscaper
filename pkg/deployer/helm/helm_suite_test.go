@@ -62,7 +62,7 @@ var _ = AfterSuite(func() {
 
 var _ = Describe("Template", func() {
 	It("should ignore non-kubernetes manifests that are valid yaml", func() {
-		ctx := context.Background()
+		ctx := logging.NewContext(context.Background(), logging.Discard())
 
 		kubeconfig, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
@@ -84,7 +84,7 @@ var _ = Describe("Template", func() {
 		lsCtx := &lsv1alpha1.Context{}
 		lsCtx.Name = lsv1alpha1.DefaultContextName
 		lsCtx.Namespace = item.Namespace
-		h, err := helm.New(logging.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
+		h, err := helm.New(helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
 		Expect(err).ToNot(HaveOccurred())
 		files, crds, _, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())

@@ -38,7 +38,7 @@ var _ = Describe("GetChart", func() {
 
 	Context("FromOCIRegistry", func() {
 		It("should resolve a chart from public readable helm ociClient artifact", func() {
-			ctx := context.Background()
+			ctx := logging.NewContext(context.Background(), logging.Discard())
 			defer ctx.Done()
 			ociClient, err := ociclient.NewClient(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())
@@ -47,13 +47,13 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0",
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logging.Discard(), ociClient, nil, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, ociClient, nil, chartAccess)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
 
 		It("should resolve a legacy chart from public readable helm ociClient artifact", func() {
-			ctx := context.Background()
+			ctx := logging.NewContext(context.Background(), logging.Discard())
 			defer ctx.Done()
 			ociClient, err := ociclient.NewClient(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())
@@ -62,14 +62,14 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logging.Discard(), ociClient, nil, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, ociClient, nil, chartAccess)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
 	})
 
 	It("should resolve a chart from a public readable component descriptor", func() {
-		ctx := context.Background()
+		ctx := logging.NewContext(context.Background(), logging.Discard())
 		defer ctx.Done()
 		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
@@ -86,13 +86,13 @@ var _ = Describe("GetChart", func() {
 			FromResource: ref,
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logging.Discard(), ociClient, nil, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, ociClient, nil, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 	})
 
 	It("should resolve a chart from an inline component descriptor", func() {
-		ctx := context.Background()
+		ctx := logging.NewContext(context.Background(), logging.Discard())
 		defer ctx.Done()
 		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
@@ -112,13 +112,13 @@ var _ = Describe("GetChart", func() {
 			FromResource: ref,
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logging.Discard(), ociClient, nil, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, ociClient, nil, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 	})
 
 	It("should resolve a chart as base64 encoded file", func() {
-		ctx := context.Background()
+		ctx := logging.NewContext(context.Background(), logging.Discard())
 		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
 
@@ -131,7 +131,7 @@ var _ = Describe("GetChart", func() {
 			},
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logging.Discard(), ociClient, nil, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, ociClient, nil, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("testchart"))
 	})
@@ -150,7 +150,7 @@ var _ = Describe("GetChart", func() {
 		})
 
 		It("should resolve a chart from a webserver", func() {
-			ctx := context.Background()
+			ctx := logging.NewContext(context.Background(), logging.Discard())
 			defer ctx.Done()
 			ociClient, err := ociclient.NewClient(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())
@@ -171,13 +171,13 @@ var _ = Describe("GetChart", func() {
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logging.Discard(), ociClient, nil, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, ociClient, nil, chartAccess)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("testchart"))
 		})
 
 		It("should not try to load a chart for non-success http status codes", func() {
-			ctx := context.Background()
+			ctx := logging.NewContext(context.Background(), logging.Discard())
 			defer ctx.Done()
 			ociClient, err := ociclient.NewClient(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())
@@ -197,7 +197,7 @@ var _ = Describe("GetChart", func() {
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logging.Discard(), ociClient, nil, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, ociClient, nil, chartAccess)
 			Expect(chart).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(http.StatusText(401)))

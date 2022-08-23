@@ -13,6 +13,8 @@ import (
 
 	"helm.sh/helm/v3/pkg/chart"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
 
 	"github.com/gardener/component-cli/ociclient"
@@ -41,7 +43,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 const (
@@ -62,7 +63,6 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 
 // Helm is the internal representation of a DeployItem of Type Helm
 type Helm struct {
-	log            logging.Logger
 	lsKubeClient   client.Client
 	hostKubeClient client.Client
 	Configuration  helmv1alpha1.Configuration
@@ -80,8 +80,7 @@ type Helm struct {
 }
 
 // New creates a new internal helm item
-func New(log logging.Logger,
-	helmconfig helmv1alpha1.Configuration,
+func New(helmconfig helmv1alpha1.Configuration,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	item *lsv1alpha1.DeployItem,
@@ -112,7 +111,6 @@ func New(log logging.Logger,
 	}
 
 	return &Helm{
-		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
 		lsKubeClient:          lsKubeClient,
 		hostKubeClient:        hostKubeClient,
 		Configuration:         helmconfig,
@@ -139,7 +137,6 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 	// todo: do caching of charts
 
 	ociClient, err := createOCIClient(ctx,
-		h.log,
 		h.lsKubeClient,
 		append(lib.GetRegistryPullSecretsFromContext(h.Context), h.DeployItem.Spec.RegistryPullSecrets...),
 		h.Configuration,
@@ -148,13 +145,12 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "BuildOCIClient", err.Error())
 	}
 
-	helmChartRepoClient, err := helmchartrepo.NewHelmChartRepoClient(h.log, h.Context)
+	helmChartRepoClient, err := helmchartrepo.NewHelmChartRepoClient(h.Context)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	ch, err := chartresolver.GetChart(ctx, h.log.WithName("chartresolver"), ociClient, helmChartRepoClient,
-		&h.ProviderConfiguration.Chart)
+	ch, err := chartresolver.GetChart(ctx, ociClient, helmChartRepoClient, &h.ProviderConfiguration.Chart)
 	if err != nil {
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error())
 	}
@@ -262,7 +258,9 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
 
-func createOCIClient(ctx context.Context, log logging.Logger, client client.Client, registryPullSecrets []lsv1alpha1.ObjectReference, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
+func createOCIClient(ctx context.Context, client client.Client, registryPullSecrets []lsv1alpha1.ObjectReference, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "lsHealthCheckController.check"})
+
 	// resolve all pull secrets
 	secrets, err := kutil.ResolveSecrets(ctx, client, registryPullSecrets)
 	if err != nil {
@@ -274,7 +272,7 @@ func createOCIClient(ctx context.Context, log logging.Logger, client client.Clie
 	if config.OCI != nil {
 		ociConfigFiles = config.OCI.ConfigFiles
 	}
-	ociKeyring, err := credentials.NewBuilder(log.WithName("ociKeyring").Logr()).
+	ociKeyring, err := credentials.NewBuilder(logger.WithName("ociKeyring").Logr()).
 		WithFS(osfs.New()).
 		FromConfigFiles(ociConfigFiles...).
 		FromPullSecrets(secrets...).
@@ -282,7 +280,7 @@ func createOCIClient(ctx context.Context, log logging.Logger, client client.Clie
 	if err != nil {
 		return nil, err
 	}
-	ociClient, err := ociclient.NewClient(log.Logr(),
+	ociClient, err := ociclient.NewClient(logger.Logr(),
 		utils.WithConfiguration(config.OCI),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(sharedCache),

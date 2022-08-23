@@ -8,8 +8,6 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/apimachinery/pkg/types"
-
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
@@ -48,8 +46,7 @@ type deployer struct {
 }
 
 func (d *deployer) Reconcile(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace}.String())
-	manifest, err := New(logger, d.lsClient, d.hostClient, &d.config, di, target)
+	manifest, err := New(d.lsClient, d.hostClient, &d.config, di, target)
 	if err != nil {
 		return err
 	}
@@ -57,8 +54,7 @@ func (d *deployer) Reconcile(ctx context.Context, _ *lsv1alpha1.Context, di *lsv
 }
 
 func (d deployer) Delete(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace}.String())
-	manifest, err := New(logger, d.lsClient, d.hostClient, &d.config, di, target)
+	manifest, err := New(d.lsClient, d.hostClient, &d.config, di, target)
 	if err != nil {
 		return err
 	}
@@ -83,7 +79,7 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 }
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
-	manifest, err := New(d.log, d.lsClient, d.hostClient, &d.config, di, nil)
+	manifest, err := New(d.lsClient, d.hostClient, &d.config, di, nil)
 	if err != nil {
 		return nil, err
 	}

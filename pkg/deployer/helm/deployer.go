@@ -65,7 +65,7 @@ type deployer struct {
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	helm, err := New(d.log, d.config, d.lsClient, d.hostClient, di, target, lsCtx, d.sharedCache)
+	helm, err := New(d.config, d.lsClient, d.hostClient, di, target, lsCtx, d.sharedCache)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 }
 
 func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	helm, err := New(d.log, d.config, d.lsClient, d.hostClient, di, target, lsCtx, d.sharedCache)
+	helm, err := New(d.config, d.lsClient, d.hostClient, di, target, lsCtx, d.sharedCache)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
 	// todo: directly parse deploy items
-	helm, err := New(d.log, d.config, d.lsClient, d.hostClient, di, nil, nil, d.sharedCache)
+	helm, err := New(d.config, d.lsClient, d.hostClient, di, nil, nil, d.sharedCache)
 	if err != nil {
 		return nil, err
 	}
