@@ -351,6 +351,9 @@ Now, we need to tell Landscaper to pick up the artifacts from the OCI registry a
 
     ``` bash
     kubectl apply -f manifests/my-target.yaml  --kubeconfig ~/.kube/config-demo.yaml
+    ```
+
+    ``` bash
     kubectl apply -f manifests/installation.yaml --kubeconfig ~/.kube/config-demo.yaml
     ```
 

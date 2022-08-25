@@ -3,6 +3,9 @@ kind: Installation
 metadata:
   name: manifest-demo
   namespace: example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+
 spec:
   blueprint:
     ref:
