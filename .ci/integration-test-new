@@ -4,6 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Script executed in case of a PR. Currently this does nothing but it is planned to let it trigger the integration tests
+# if the PR has some particular label.
+
 set -o errexit
 set -o nounset
 set -o pipefail

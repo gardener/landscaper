@@ -19,6 +19,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -30,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/test/utils"
 )
 
 // ClusterIdLabelName is the name of the label that holds the unique id for the current created cluster.

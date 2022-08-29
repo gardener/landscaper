@@ -77,6 +77,7 @@ func WebhookTest(f *framework.Framework) {
 					inst.SetNamespace(state.Namespace)
 					if utils2.IsNewReconcile() {
 						lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+						metav1.SetMetaDataAnnotation(&inst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
 					}
 				} else {
 					// parse file and read kind
@@ -125,7 +126,7 @@ func WebhookTest(f *framework.Framework) {
 			// create invalid installation by creating different installation with same exports
 			invalidInst = inst.DeepCopy()
 			invalidInst.SetName("root2")
-			err = state.Client.Create(ctx, invalidInst)
+			err = state.Create(ctx, invalidInst)
 			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
 			Expect(err.Error()).To(HavePrefix("admission webhook \"installations.validation.landscaper.gardener.cloud\" denied the request"))
 			// the error should contain the conflicting export names
@@ -138,6 +139,7 @@ func WebhookTest(f *framework.Framework) {
 			for exp := range inst.Spec.ExportDataMappings {
 				Expect(err.Error()).To(ContainSubstring(exp))
 			}
+
 		})
 
 		It("should block invalid Execution resources", func() {

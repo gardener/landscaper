@@ -308,7 +308,7 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 			Eventually(func() lsv1alpha1.DeployItem { // check mock_di_prog first, because it's the only one that will change again (aborting timeout)
 				utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKeyFromObject(mock_di_prog), mock_di_prog))
 				return *mock_di_prog
-			}, waitingForReconcile, resyncTime).Should(MatchFields(IgnoreExtras, Fields{
+			}, 4*waitingForReconcile, resyncTime).Should(MatchFields(IgnoreExtras, Fields{
 				"ObjectMeta": MatchFields(IgnoreExtras, Fields{
 					"Annotations": MatchKeys(IgnoreExtras, Keys{
 						lsv1alpha1.OperationAnnotation:      BeEquivalentTo(lsv1alpha1.AbortOperation),

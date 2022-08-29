@@ -50,6 +50,7 @@ landscaper:
 fi
 
 echo "Pull landscaper helm chart"
+export HELM_EXPERIMENTAL_OCI=1
 helm pull oci://eu.gcr.io/gardener-project/landscaper/charts/landscaper --version $VERSION --untar --destination $TMP_GEN
 
 echo "Upgrade landscaper"

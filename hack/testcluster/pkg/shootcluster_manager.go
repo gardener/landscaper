@@ -19,6 +19,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -29,8 +31,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/yaml"
-
-	"github.com/gardener/landscaper/test/utils"
 )
 
 //go:embed resources/shootcluster_template.yaml
@@ -74,6 +74,14 @@ type ShootClusterManager struct {
 func NewShootClusterManager(log utils.Logger, gardenClusterKubeconfigPath, namespace,
 	authDirectoryPath string, maxNumOfClusters, numClustersStartDeleteOldest int, durationForClusterDeletion string) (*ShootClusterManager, error) {
 
+	log.Logfln("Create cluster with:")
+	log.Logfln("  GardenClusterKubeconfigPath: " + gardenClusterKubeconfigPath)
+	log.Logfln("  Namespace: " + namespace)
+	log.Logfln("  AuthDirectoryPath: " + authDirectoryPath)
+	log.Logfln("  MaxNumOfClusters: " + strconv.Itoa(maxNumOfClusters))
+	log.Logfln("  NumClustersStartDeleteOldest: " + strconv.Itoa(numClustersStartDeleteOldest))
+	log.Logfln("  DurationForClusterDeletion: " + durationForClusterDeletion)
+
 	duration, err := time.ParseDuration(durationForClusterDeletion)
 	if err != nil {
 		return nil, err
@@ -99,7 +107,7 @@ func (o *ShootClusterManager) CreateShootCluster(ctx context.Context) error {
 	gardenClientForShoots := gardenClient.Resource(shootGVR).Namespace(o.namespace)
 	gardenClientForSecrets := gardenClient.Resource(secretGVR).Namespace(o.namespace)
 
-	if err := o.checkAndDeleteExistingTestShoots(ctx, gardenClientForShoots); err != nil {
+	if err := o.checkAndDeleteExistingTestShoots(ctx, gardenClientForShoots, gardenClientForSecrets); err != nil {
 		return err
 	}
 
@@ -111,7 +119,7 @@ func (o *ShootClusterManager) CreateShootCluster(ctx context.Context) error {
 		return err
 	}
 
-	o.log.Logfln("write cluster name")
+	o.log.Logfln("write cluster name: %s", clusterName)
 	if err := o.writeClusterName(clusterName); err != nil {
 		return err
 	}
@@ -134,7 +142,8 @@ func (o *ShootClusterManager) CreateShootCluster(ctx context.Context) error {
 	}
 
 	o.log.Logfln("write kubeconfig")
-	if err := o.writeKubeconfig(ctx, gardenClientForSecrets, clusterName); err != nil {
+	filePath := path.Join(o.authDirectoryPath, filenameForKubeconfig)
+	if err := o.writeKubeconfig(ctx, gardenClientForSecrets, clusterName, filePath); err != nil {
 		return err
 	}
 
@@ -148,20 +157,25 @@ func (o *ShootClusterManager) DeleteShootCluster(ctx context.Context) error {
 	}
 
 	gardenClientForShoots := gardenClient.Resource(shootGVR).Namespace(o.namespace)
+	gardenClientForSecrets := gardenClient.Resource(secretGVR).Namespace(o.namespace)
 
 	clusterName, err := o.readClusterName()
 	if err != nil {
 		return err
 	}
 
-	if err = o.deleteShootCluster(ctx, gardenClientForShoots, clusterName); err != nil {
+	if err = o.deleteShootCluster(ctx, gardenClientForShoots, gardenClientForSecrets, clusterName); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (o *ShootClusterManager) deleteShootCluster(ctx context.Context, gardenClientForShoots dynamic.ResourceInterface, clusterName string) error {
+func (o *ShootClusterManager) deleteShootCluster(ctx context.Context, gardenClientForShoots,
+	gardenClientForSecrets dynamic.ResourceInterface, clusterName string) error {
+
+	o.log.Logln("start deleting shoot cluster: " + clusterName)
+
 	shoot, err := gardenClientForShoots.Get(ctx, clusterName, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("unable to read shoot %s: %w", clusterName, err)
@@ -177,6 +191,8 @@ func (o *ShootClusterManager) deleteShootCluster(ctx context.Context, gardenClie
 	if err = gardenClientForShoots.Delete(ctx, clusterName, metav1.DeleteOptions{}); err != nil {
 		return err
 	}
+
+	o.log.Logln("finished deleting shoot cluster: " + clusterName)
 
 	return nil
 }
@@ -195,7 +211,9 @@ func (o *ShootClusterManager) createGardenClient() (dynamic.Interface, error) {
 	return gardenClient, nil
 }
 
-func (o *ShootClusterManager) checkAndDeleteExistingTestShoots(ctx context.Context, gardenClientForShoots dynamic.ResourceInterface) error {
+func (o *ShootClusterManager) checkAndDeleteExistingTestShoots(ctx context.Context,
+	gardenClientForShoots, gardenClientForSecrets dynamic.ResourceInterface) error {
+
 	shootList, err := gardenClientForShoots.List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -217,12 +235,12 @@ func (o *ShootClusterManager) checkAndDeleteExistingTestShoots(ctx context.Conte
 		}
 	}
 
-	remainingTestShoots, err := o.deleteOutdatedShootCluster(ctx, gardenClientForShoots, testShoots)
+	remainingTestShoots, err := o.deleteOutdatedOrCleanupDeletedShootCluster(ctx, gardenClientForShoots, gardenClientForSecrets, testShoots)
 	if err != nil {
 		return err
 	}
 
-	o.deleteOldestShootCluster(ctx, gardenClientForShoots, remainingTestShoots)
+	o.deleteOldestShootCluster(ctx, gardenClientForShoots, gardenClientForSecrets, remainingTestShoots)
 
 	return nil
 }
@@ -430,9 +448,10 @@ func (o *ShootClusterManager) readClusterName() (string, error) {
 	return string(clusterName), nil
 }
 
-func (o *ShootClusterManager) writeKubeconfig(ctx context.Context, gardenClient dynamic.ResourceInterface, clusterName string) error {
+func (o *ShootClusterManager) writeKubeconfig(ctx context.Context, gardenClientForSecrets dynamic.ResourceInterface,
+	clusterName, filePath string) error {
 	secretName := clusterName + ".kubeconfig"
-	secret, err := gardenClient.Get(ctx, secretName, metav1.GetOptions{})
+	secret, err := gardenClientForSecrets.Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get kubeconfig: error reading secret %s: %w", secretName, err)
 	}
@@ -461,7 +480,6 @@ func (o *ShootClusterManager) writeKubeconfig(ctx context.Context, gardenClient 
 		return fmt.Errorf("failed to get kubeconfig: base64 decoding failed")
 	}
 
-	filePath := path.Join(o.authDirectoryPath, filenameForKubeconfig)
 	if err := os.WriteFile(filePath, []byte(kubeconfig), os.ModePerm); err != nil {
 		return fmt.Errorf("failed to write kubeconfig to file %s: %w", filePath, err)
 	}
@@ -477,8 +495,14 @@ func (o *ShootClusterManager) addConfirmAnnotation(shoot *unstructured.Unstructu
 	annotations["confirmation.gardener.cloud/deletion"] = "true"
 }
 
-func (o *ShootClusterManager) deleteOutdatedShootCluster(ctx context.Context, gardenClientForShoots dynamic.ResourceInterface,
-	testShoots []unstructured.Unstructured) ([]unstructured.Unstructured, error) {
+func (o *ShootClusterManager) hasDeletionTimestamp(shoot *unstructured.Unstructured) bool {
+	metadataIntf := shoot.Object["metadata"]
+	metadata := metadataIntf.(map[string]interface{})
+	return metadata["deletionTimestamp"] != nil
+}
+
+func (o *ShootClusterManager) deleteOutdatedOrCleanupDeletedShootCluster(ctx context.Context, gardenClientForShoots,
+	gardenClientForSecrets dynamic.ResourceInterface, testShoots []unstructured.Unstructured) ([]unstructured.Unstructured, error) {
 	o.log.Logfln("Starting to delete old clusters")
 
 	remainingTestShoots := []unstructured.Unstructured{}
@@ -497,11 +521,15 @@ func (o *ShootClusterManager) deleteOutdatedShootCluster(ctx context.Context, ga
 
 		durationOfCluster := time.Since(*creationTimestamp)
 
-		if durationOfCluster > o.durationForClusterDeletion {
+		hasDeletionTimestamp := o.hasDeletionTimestamp(&shoot)
+
+		if hasDeletionTimestamp {
+			continue
+		} else if durationOfCluster > o.durationForClusterDeletion {
 			o.log.Logfln("test shoot cluster %s will be deleted because it lives for %s which is longer than the border %s",
 				clusterName, durationOfCluster.String(), o.durationForClusterDeletion.String())
 
-			if err = o.deleteShootCluster(ctx, gardenClientForShoots, clusterName); err != nil {
+			if err = o.deleteShootCluster(ctx, gardenClientForShoots, gardenClientForSecrets, clusterName); err != nil {
 				o.log.Logfln("outdated test shoot cluster %s could not be deleted: %s", clusterName, err.Error())
 			}
 		} else {
@@ -512,7 +540,7 @@ func (o *ShootClusterManager) deleteOutdatedShootCluster(ctx context.Context, ga
 	return remainingTestShoots, nil
 }
 
-func (o *ShootClusterManager) deleteOldestShootCluster(ctx context.Context, gardenClientForShoots dynamic.ResourceInterface,
+func (o *ShootClusterManager) deleteOldestShootCluster(ctx context.Context, gardenClientForShoots, gardenClientForSecrets dynamic.ResourceInterface,
 	testShoots []unstructured.Unstructured) {
 
 	numOfOldestClustersToDelete := len(testShoots) - o.numClustersStartDeleteOldest + 1
@@ -542,7 +570,7 @@ func (o *ShootClusterManager) deleteOldestShootCluster(ctx context.Context, gard
 			}
 
 			o.log.Logfln("deleting the oldest shoot cluster %s", name)
-			if err = o.deleteShootCluster(ctx, gardenClientForShoots, name); err != nil {
+			if err = o.deleteShootCluster(ctx, gardenClientForShoots, gardenClientForSecrets, name); err != nil {
 				o.log.Logfln("not able to trigger delete for oldest test shoot cluster")
 			}
 		}

@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,12 +92,12 @@ func (e *Environment) Stop() error {
 
 // InitState creates a new isolated environment with its own namespace.
 func (e *Environment) InitState(ctx context.Context) (*State, error) {
-	return InitStateWithNamespace(ctx, e.Client)
+	return InitStateWithNamespace(ctx, e.Client, nil)
 }
 
 // InitStateWithNamespace creates a new isolated environment with its own namespace.
-func InitStateWithNamespace(ctx context.Context, c client.Client) (*State, error) {
-	state := NewStateWithClient(c)
+func InitStateWithNamespace(ctx context.Context, c client.Client, log utils.Logger) (*State, error) {
+	state := NewStateWithClient(log, c)
 	// create a new testing namespace
 	ns := &corev1.Namespace{}
 	ns.GenerateName = "tests-"

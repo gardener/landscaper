@@ -23,13 +23,23 @@ type Logger interface {
 
 // NewLoggerFromWriter creates a new logger that writes to the given writer
 func NewLoggerFromWriter(writer io.Writer) Logger {
-	return &logger{writer: writer}
+	tmpWriter := writer
+	if tmpWriter == nil {
+		tmpWriter = os.Stdout
+	}
+	return &logger{writer: tmpWriter}
 }
 
 // NewLogger creates a new logger that writes to stdout
 func NewLogger() Logger {
 	return &logger{
 		writer: os.Stdout,
+	}
+}
+
+func NewDiscardLogger() Logger {
+	return &logger{
+		writer: nil,
 	}
 }
 
@@ -40,8 +50,9 @@ type logger struct {
 
 func (l logger) Log(msg string) {
 	if l.writer == nil {
-		l.writer = os.Stdout
+		return
 	}
+
 	if !l.enableTimestamp {
 		_, _ = fmt.Fprint(l.writer, msg)
 		return
