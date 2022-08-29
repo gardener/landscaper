@@ -585,28 +585,23 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 	for _, target := range targetExports {
 		target = target.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
-		raw, err := target.Build()
-		if err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
-				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-					"CreateTargets",
-					fmt.Sprintf("unable to create target for export %s", target.Metadata.Key)))
-			return fmt.Errorf("unable to build target for export %s: %w", target.Metadata.Key, err)
-		}
+
+		targetForUpdate := &lsv1alpha1.Target{}
+		target.ApplyNameAndNamespace(targetForUpdate)
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
-		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000069, raw, func() error {
-			if err, err2 := lsutil.SetExclusiveOwnerReference(o.Inst.Info, raw); err != nil {
-				return fmt.Errorf("target object '%s' for export '%s' conflicts with existing target owned by another installation: %w", client.ObjectKeyFromObject(raw).String(), target.Metadata.Key, err)
+		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000069, targetForUpdate, func() error {
+			if err, err2 := lsutil.SetExclusiveOwnerReference(o.Inst.Info, targetForUpdate); err != nil {
+				return fmt.Errorf("target object '%s' for export '%s' conflicts with existing target owned by another installation: %w", client.ObjectKeyFromObject(targetForUpdate).String(), target.Metadata.Key, err)
 			} else if err2 != nil {
 				return fmt.Errorf("error setting owner reference: %w", err2)
 			}
-			return target.Apply(raw)
+			return target.Apply(targetForUpdate)
 		}); err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateTargets",
 					fmt.Sprintf("unable to create target for export %s", target.Metadata.Key)))
-			return fmt.Errorf("unable to create or update target %s for export %s: %w", raw.Name, target.Metadata.Key, err)
+			return fmt.Errorf("unable to create or update target %s for export %s: %w", targetForUpdate.Name, target.Metadata.Key, err)
 		}
 	}
 
@@ -719,27 +714,21 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 		SetKey(importDef.Name).
 		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
 
-	target, err = intTarget.Build()
-	if err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
-			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-				"CreateTargets",
-				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
-		return fmt.Errorf("unable to build target for import '%s': %w", importDef.Name, err)
-	}
+	targetForUpdate := &lsv1alpha1.Target{}
+	intTarget.ApplyNameAndNamespace(targetForUpdate)
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
-	if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000071, target, func() error {
-		if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
+	if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000071, targetForUpdate, func() error {
+		if err := controllerutil.SetOwnerReference(o.Inst.Info, targetForUpdate, api.LandscaperScheme); err != nil {
 			return err
 		}
-		return intTarget.Apply(target)
+		return intTarget.Apply(targetForUpdate)
 	}); err != nil {
 		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateTargets",
 				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
-		return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", target.Name, importDef.Name, err)
+		return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", targetForUpdate.Name, importDef.Name, err)
 	}
 
 	return nil

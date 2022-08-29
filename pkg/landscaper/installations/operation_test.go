@@ -86,6 +86,31 @@ var _ = Describe("Operation", func() {
 			Expect(targetList.Items[0].Labels).To(HaveKeyWithValue("lab", "val2"))
 			Expect(targetList.Items[0].Spec.Type).To(Equal(lsv1alpha1.TargetType("test-type")))
 			Expect(targetList.Items[0].Spec.Configuration.RawMessage).To(Equal(json.RawMessage("true")))
+
+			// Check update of the target
+			target.Annotations = map[string]string{
+				"ann": "val3",
+			}
+			target.Labels = map[string]string{
+				"lab": "val4",
+			}
+			target.Spec.Type = "test-type-2"
+			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("false"))
+			targetObj, err = utils.JSONSerializeToGenericObject(target)
+			testutils.ExpectNoError(err)
+			op.Inst.Imports = map[string]interface{}{
+				"my-import": targetObj,
+			}
+
+			testutils.ExpectNoError(op.CreateOrUpdateImports(ctx))
+
+			targetList = &lsv1alpha1.TargetList{}
+			testutils.ExpectNoError(kubeClient.List(ctx, targetList))
+			Expect(targetList.Items).To(HaveLen(1))
+			Expect(targetList.Items[0].Annotations).To(HaveKeyWithValue("ann", "val3"))
+			Expect(targetList.Items[0].Labels).To(HaveKeyWithValue("lab", "val4"))
+			Expect(targetList.Items[0].Spec.Type).To(Equal(lsv1alpha1.TargetType("test-type-2")))
+			Expect(targetList.Items[0].Spec.Configuration.RawMessage).To(Equal(json.RawMessage("false")))
 		})
 
 	})
@@ -173,6 +198,77 @@ var _ = Describe("Operation", func() {
 			})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("target object 'default/myexport' for export 'myexport' conflicts with existing target owned by another installation: object 'default/myexport' is already owned by another object with kind 'Installation' (owninginst)"))
+		})
+
+		It("should sync an exported target", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+
+			target := &lsv1alpha1.Target{}
+			target.Annotations = map[string]string{
+				"ann": "val1",
+			}
+			target.Labels = map[string]string{
+				"lab": "val2",
+			}
+			target.Spec.Type = "test-type"
+			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("true"))
+
+			internalTarget, err := dataobjects.NewFromTarget(target)
+			Expect(err).NotTo(HaveOccurred())
+			internalTargets := []*dataobjects.Target{
+				internalTarget,
+			}
+
+			op.Inst.Info.Name = "test"
+			op.Inst.Info.Namespace = "default"
+			op.Inst.Blueprint.Info.Exports = []lsv1alpha1.ExportDefinition{
+				{
+					FieldValueDefinition: lsv1alpha1.FieldValueDefinition{
+						Name:       "my-export",
+						TargetType: "test-type",
+					},
+					Type: lsv1alpha1.ExportTypeTarget,
+				},
+			}
+
+			testutils.ExpectNoError(kubeClient.Create(ctx, op.Inst.Info))
+
+			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, internalTargets))
+
+			targetList := &lsv1alpha1.TargetList{}
+			testutils.ExpectNoError(kubeClient.List(ctx, targetList))
+			Expect(targetList.Items).To(HaveLen(1))
+			Expect(targetList.Items[0].Annotations).To(HaveKeyWithValue("ann", "val1"))
+			Expect(targetList.Items[0].Labels).To(HaveKeyWithValue("lab", "val2"))
+			Expect(targetList.Items[0].Spec.Type).To(Equal(lsv1alpha1.TargetType("test-type")))
+			Expect(targetList.Items[0].Spec.Configuration.RawMessage).To(Equal(json.RawMessage("true")))
+
+			// Check update of the target
+			target.Annotations = map[string]string{
+				"ann": "val3",
+			}
+			target.Labels = map[string]string{
+				"lab": "val4",
+			}
+			target.Spec.Type = "test-type-2"
+			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("false"))
+
+			internalTarget, err = dataobjects.NewFromTarget(target)
+			Expect(err).NotTo(HaveOccurred())
+			internalTargets = []*dataobjects.Target{
+				internalTarget,
+			}
+
+			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, internalTargets))
+
+			targetList = &lsv1alpha1.TargetList{}
+			testutils.ExpectNoError(kubeClient.List(ctx, targetList))
+			Expect(targetList.Items).To(HaveLen(1))
+			Expect(targetList.Items[0].Annotations).To(HaveKeyWithValue("ann", "val3"))
+			Expect(targetList.Items[0].Labels).To(HaveKeyWithValue("lab", "val4"))
+			Expect(targetList.Items[0].Spec.Type).To(Equal(lsv1alpha1.TargetType("test-type-2")))
+			Expect(targetList.Items[0].Spec.Configuration.RawMessage).To(Equal(json.RawMessage("false")))
 		})
 
 	})

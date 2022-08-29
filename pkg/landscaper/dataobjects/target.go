@@ -85,36 +85,27 @@ func (t *Target) SetOwner(own *metav1.OwnerReference) *Target {
 	return t
 }
 
-// Build creates a new data object based on the given data and metadata.
-// Does not set owner references.
-func (t *Target) Build() (*lsv1alpha1.Target, error) {
-	newTarget := &lsv1alpha1.Target{}
-	newTarget.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
-	newTarget.Namespace = t.Metadata.Namespace
-	if t.Raw != nil {
-		newTarget.Spec = t.Raw.Spec
-		for key, val := range t.Raw.Annotations {
-			metav1.SetMetaDataAnnotation(&newTarget.ObjectMeta, key, val)
-		}
-		for key, val := range t.Raw.Labels {
-			kutil.SetMetaDataLabel(newTarget, key, val)
-		}
-		t.Metadata.Hash = generateHash(t.Raw.Spec.Configuration.RawMessage)
-	}
-
-	SetMetadataFromObject(newTarget, t.Metadata)
-	t.Raw = newTarget
-	return newTarget, nil
-}
-
 // Apply applies data and metadata to an existing target (except owner references).
-func (t Target) Apply(raw *lsv1alpha1.Target) error {
+func (t *Target) Apply(raw *lsv1alpha1.Target) error {
 	raw.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
 	raw.Namespace = t.Metadata.Namespace
 	raw.Spec = t.Raw.Spec
-	t.Metadata.Hash = generateHash(t.Raw.Spec.Configuration.RawMessage)
-	SetMetadataFromObject(raw, t.Metadata)
+	for key, val := range t.Raw.Annotations {
+		metav1.SetMetaDataAnnotation(&raw.ObjectMeta, key, val)
+	}
+	for key, val := range t.Raw.Labels {
+		kutil.SetMetaDataLabel(raw, key, val)
+	}
+	metadata := t.Metadata
+	metadata.Hash = generateHash(t.Raw.Spec.Configuration.RawMessage)
+	SetMetadataFromObject(raw, metadata)
 	return nil
+}
+
+// ApplyNameAndNamespace sets name and namespace based on the given metadata.
+func (t *Target) ApplyNameAndNamespace(target *lsv1alpha1.Target) {
+	target.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
+	target.Namespace = t.Metadata.Namespace
 }
 
 // Imported interface
