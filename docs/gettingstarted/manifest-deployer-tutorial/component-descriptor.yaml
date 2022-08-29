@@ -1,0 +1,10 @@
+component:
+  componentReferences: []
+  name: ""
+  provider: internal
+  repositoryContexts: []
+  resources: []
+  sources: []
+  version: ""
+meta:
+  schemaVersion: v2
