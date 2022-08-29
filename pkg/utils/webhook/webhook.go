@@ -75,12 +75,22 @@ func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Reque
 
 	timeBefore := time.Now()
 	result := iv.handlePrivate(ctx, req)
-	timeAfter := time.Now()
 
-	if timeAfter.Sub(timeBefore) > 9*time.Second {
-		logger.Info("validation request required more than 9 seconds")
-	}
+	logIfDurationExceeded(ctx, timeBefore)
+
 	return result
+}
+
+func logIfDurationExceeded(ctx context.Context, timeBefore time.Time) {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "logIfDurationExceeded"})
+
+	timeAfter := time.Now()
+	diff := timeAfter.Sub(timeBefore)
+	// check if request requires more than 9 seconds because 10 seconds timeout is configured at the landscaper webhook
+	// calling this validation logic.
+	if diff > 9*time.Second {
+		logger.Info(fmt.Sprintf("validation request required more than 9 seconds: %s", diff.String()))
+	}
 }
 
 func (iv *InstallationValidator) handlePrivate(ctx context.Context, req admission.Request) admission.Response {
@@ -126,11 +136,9 @@ func (div *DeployItemValidator) Handle(ctx context.Context, req admission.Reques
 
 	timeBefore := time.Now()
 	result := div.handlePrivate(ctx, req)
-	timeAfter := time.Now()
 
-	if timeAfter.Sub(timeBefore) > 9*time.Second {
-		logger.Info("validation request required more than 9 seconds")
-	}
+	logIfDurationExceeded(ctx, timeBefore)
+
 	return result
 }
 
@@ -175,11 +183,8 @@ func (ev *ExecutionValidator) Handle(ctx context.Context, req admission.Request)
 
 	timeBefore := time.Now()
 	result := ev.handlePrivate(ctx, req)
-	timeAfter := time.Now()
 
-	if timeAfter.Sub(timeBefore) > 9*time.Second {
-		logger.Info("validation request required more than 9 seconds")
-	}
+	logIfDurationExceeded(ctx, timeBefore)
 
 	return result
 }

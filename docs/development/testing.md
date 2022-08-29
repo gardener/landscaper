@@ -35,9 +35,7 @@ Integration tests are tests that use a k8s-conformance-compliant cluster and opt
 The tests are by default executed on every head-update of the main git branch and in case of a new release.
 In both cases the [script](../../.ci/integration-test) is executed, which 
 
-- creates a Gardener shoot cluster in the project *laas* on the 
-  [Gardener Canary landscape](https://dashboard.garden.canary.k8s.ondemand.com/namespace/garden-laas/shoots/).
-  All such clusters have a name with the prefix *it-*.
+- creates a Gardener shoot cluster in the project *laas* on the Gardener Canary landscape. All such clusters have a name with the prefix *it-*.
 - installs the landscaper on the shoot cluster
 - runs the tests
 - deletes the shoot cluster if all tests succeeded, otherwise it lets the cluster as it is for further investigations.
