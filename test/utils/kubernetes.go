@@ -133,10 +133,10 @@ func WaitForDeploymentToBeReady(ctx context.Context, logger utils.Logger, kubeCl
 
 // WaitForContextToBeReady waits for a context to be ready
 func WaitForContextToBeReady(ctx context.Context, logger utils.Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
-	err := wait.PollImmediate(5*time.Second, timeout, func() (done bool, err error) {
+	err := wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
 		context := &v1alpha1.Context{}
 		if err := kubeClient.Get(ctx, objKey, context); err != nil {
-			logger.Logfln("failed to get context %q: %w - retried in 5 seconds", objKey.String(), err)
+			logger.Logfln("failed to get context %q: %w - retried in 1 second", objKey.String(), err)
 			return false, nil
 		}
 
