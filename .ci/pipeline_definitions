@@ -77,9 +77,8 @@ landscaper:
     pull-request:
       steps:
         run_integration_test:
-          #depends:
-          #- publish
-          #- publish-helm-charts
+          depends:
+          - publish
           image: 'golang:1.18.5-alpine3.16'
           execute:
           - integration-test-new
