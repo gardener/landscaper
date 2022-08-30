@@ -21,6 +21,7 @@ from subprocess import run
 
 version = os.environ["VERSION"]
 source_path = os.environ["SOURCE_PATH"]
+pr_id = os.environ["PR_ID"]
 
 factory = ctx().cfg_factory()
 print("Starting integration tests with version " + version + " in sourcepath " + source_path)
@@ -31,7 +32,7 @@ with utils.TempFileAuto(prefix="landscape_kubeconfig_") as kubeconfig_temp_file:
     kubeconfig_temp_file.write(yaml.safe_dump(landscape_kubeconfig.kubeconfig()))
     landscape_kubeconfig_path = kubeconfig_temp_file.switch()
 
-    command = [source_path + "/.ci/local-integration-test-with-cluster-creation", landscape_kubeconfig_path, "garden-laas ", version]
+    command = [source_path + "/.ci/local-integration-test-with-cluster-creation", landscape_kubeconfig_path, "garden-laas ", version, pr_id]
 
     print("Executing command")
     run = run(command)

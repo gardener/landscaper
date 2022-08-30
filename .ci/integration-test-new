@@ -4,11 +4,35 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Script executed in case of a PR. Currently this does nothing but it is planned to let it trigger the integration tests
-# if the PR has some particular label.
+# Script executed in case of a commit to a PR. The script checks if the comment of the commit contains "run-int-tests".
+# In that case, the integration tests are executed by calling ./.ci/int-test. The parameter $PR_ID is integrated in the
+# test cluster name. The cluster name has the format it-pr$PR_ID-<4-digits>.
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
-echo "Fake integration tests started"
+echo "check if integration tests should be started"
+
+if ! which git 1>/dev/null; then
+  echo "Installing git... "
+  apk add --no-cache --no-progress git
+fi
+
+PR_ID=$(git config -f pull-request-gardener.landscaper-pr.master/.git/config pullrequest.id)
+echo "PR_ID: " $PR_ID
+
+SOURCE_PATH="$(dirname $0)/.."
+cd "${SOURCE_PATH}"
+SOURCE_PATH="$(pwd)"
+export SOURCE_PATH
+
+GIT_COMMENT=$(git show -s --format=%s)
+echo "git comment: " $GIT_COMMENT
+
+if git show -s --format=%s | grep run-int-tests; then
+    echo "integration tests should be started"
+    ./.ci/int-test $PR_ID
+else
+    echo "integration tests are skipped"
+fi

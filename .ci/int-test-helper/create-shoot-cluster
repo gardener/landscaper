@@ -14,6 +14,7 @@ TMP=$3
 MAX_NUM_CLUSTERS=$4
 NUM_CLUSTERS_START_DELETE_OLDEST=$5
 DURATION_FOR_CLUSTER_DELETION=$6
+PR_ID=$7
 
 SOURCE_PATH="$(dirname $0)/../.."
 cd "${SOURCE_PATH}"
@@ -27,4 +28,5 @@ go run -mod=vendor ./hack/testcluster shootcluster create \
     --cluster-auth=$TMP \
     --max-num-cluster=$MAX_NUM_CLUSTERS \
     --num-clusters-start-delete-oldest=$NUM_CLUSTERS_START_DELETE_OLDEST \
-    --duration-for-cluster-deletion=$DURATION_FOR_CLUSTER_DELETION
+    --duration-for-cluster-deletion=$DURATION_FOR_CLUSTER_DELETION \
+    --pr-id=$PR_ID
