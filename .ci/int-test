@@ -6,11 +6,15 @@
 
 # Helper script executing the integration tests in the context of a Gardener Concours pipeline job with access to the cc-config.
 # It is called by the scripts integration-test and integration-test-new and installs some required software and calls
-# .../hack/integration-test.py
+# .../hack/integration-test.py. The script requires an ID for $1 which is integrated in the name of the test shoot cluster.
+# The cluster name has the format it-pr$PR_ID-<4-digits>.
 
 set -o errexit
 set -o nounset
 set -o pipefail
+
+PR_ID=$1
+export PR_ID
 
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"

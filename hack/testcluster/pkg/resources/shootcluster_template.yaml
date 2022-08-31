@@ -26,7 +26,7 @@ spec:
           type: n1-standard-2
           image:
             name: gardenlinux
-            version: 576.10.0
+            version: 576.11.0
         zones:
           - europe-west1-c
         cri:

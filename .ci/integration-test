@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Script executing the integration tests in the context of a Gardener Concours pipeline job with access to the cc-config.
-# It is called in case of a head-update of the master branch and a new release.
+# It is called in case of a head-update of the master branch and a new release. The parameter "1", when calling ./.ci/int-test,
+# is integrated in the test cluster name indicating that the tests were triggered by a head update commit or a new release.
+# The cluster name has the format it-pr1-<4-digits>.
 
 set -o errexit
 set -o nounset
@@ -16,5 +18,5 @@ cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 export SOURCE_PATH
 
-./.ci/int-test
+./.ci/int-test "1"
 

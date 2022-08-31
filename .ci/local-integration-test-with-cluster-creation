@@ -17,7 +17,10 @@ set -o pipefail
 
 # - create-shoot-cluster: Creates a new test shoot cluster in the Gardener Canary Landscape in the namespace provided
 #   with $2 (e.g. garden-laas) using the kubeconfig located at the file system path provided by $1. The names of all
-#   test shoot clusters starts with the prefix "it-".
+#   test shoot clusters have the format it-pr$4-<4-digits>, whereby
+#   - $4==0 indicates that the script was triggered locally
+#   - $4==1 indicates that the script was triggered by a commit to a head update or a new release
+#   - otherwise, indicates that the script was triggered by a commit to a PR whereby $4 contains the ID of the PR.
 #
 # - local-integration-test: calls a script which executes the integration tests on the just created shoot cluster
 #
@@ -31,8 +34,10 @@ set -o pipefail
 #
 # Before a new test shoot cluster is created, the already existing test clusters in the namespace are checked and
 # potentially deleted according to the following strategy:
+#
 # - If the maximal number of test clusters is larger or equal to $MAX_NUM_CLUSTERS, the script fails and it is required
 #   that the test clusters are deleted manually.
+# - If the test was triggered by a PR, all existing clusters with a name prefix it-pr$4- are deleted.
 # - $DURATION_FOR_CLUSTER_DELETION provides a duration according to the format expected by
 #   time.ParseDuration (https://pkg.go.dev/time#ParseDuration). All test clusters older than this duration are deleted.
 # - If there are still X test clusters with 'X >= $NUM_CLUSTERS_START_DELETE_OLDEST', the oldest
@@ -43,6 +48,7 @@ set -o pipefail
 GARDENER_KUBECONFIG_PATH=$1
 NAMESPACE=$2
 VERSION=$3
+PR_ID=$4
 
 MAX_NUM_CLUSTERS=20
 NUM_CLUSTERS_START_DELETE_OLDEST=15
@@ -69,7 +75,8 @@ echo "Config directory: ${TMP}"
   $TMP \
   $MAX_NUM_CLUSTERS \
   $NUM_CLUSTERS_START_DELETE_OLDEST \
-  $DURATION_FOR_CLUSTER_DELETION
+  $DURATION_FOR_CLUSTER_DELETION \
+  $PR_ID
 
 KUBECONFIG_PATH=$TMP/kubeconfig.yaml
 echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"

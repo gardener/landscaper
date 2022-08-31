@@ -60,7 +60,7 @@ integration-test:
 
 .PHONY: integration-test-with-cluster-creation
 integration-test-with-cluster-creation:
-	@$(REPO_ROOT)/.ci/local-integration-test-with-cluster-creation $(KUBECONFIG_PATH) garden-laas $(EFFECTIVE_VERSION)
+	@$(REPO_ROOT)/.ci/local-integration-test-with-cluster-creation $(KUBECONFIG_PATH) garden-laas $(EFFECTIVE_VERSION) 0
 
 .PHONY: verify
 verify: check

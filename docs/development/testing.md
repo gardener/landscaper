@@ -35,13 +35,28 @@ Integration tests are tests that use a k8s-conformance-compliant cluster and opt
 The tests are by default executed on every head-update of the main git branch and in case of a new release.
 In both cases the [script](../../.ci/integration-test) is executed, which 
 
-- creates a Gardener shoot cluster in the project *laas* on the Gardener Canary landscape. All such clusters have a name with the prefix *it-*.
+- creates a Gardener shoot cluster in the project *laas* on the Gardener Canary landscape
 - installs the landscaper on the shoot cluster
 - runs the tests
-- deletes the shoot cluster if all tests succeeded, otherwise it lets the cluster as it is for further investigations.
+- deletes the shoot cluster if all tests succeeded, otherwise it lets the cluster as it is for further investigations
 
-The test script also cleans up old test shoot clusters. More details about the program details can be found in the 
-corresponding script files.
+For a commit to a PR the [script](../../.ci/integration-test-new) is executed. It starts the integration tests 
+if the comment of the commit contains a string *run-int-tests*, e.g. `git commit -m "some changes (run-int-tests)`. 
+Otherwise, the tests are skipped. If you have pushed a commit with a message not containing *run-int-tests* you could just 
+add a commit without changes but the right message to trigger the integration tests, e.g.:
+
+```
+git commit --allow-empty -m "some text (run-int-tests)"
+git push
+```
+
+The integration test scripts clean up old test shoot clusters. More details about the cleanup strategy and further 
+program details can be found in the corresponding script files.
+
+All test shoot clusters names have the format it-pr<someNumber>-<4-digits> (e.g. it-pr12-4652), whereby
+- <someNumber>==0 indicates that the script was triggered locally (see below)
+- <someNumber>==1 indicates that the script was triggered by a commit to a head update or a new release
+- otherwise, indicates that the script was triggered by a commit to a PR whereby <someNumber> contains the ID of the PR.
 
 The integration tests can be optionally executed on a PR by commenting that PR with `/test`.
 This will trigger the TestMachinery bot and will execute the integration tests for the PR in the TestMachinery.

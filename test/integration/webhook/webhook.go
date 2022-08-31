@@ -110,7 +110,7 @@ func WebhookTest(f *framework.Framework) {
 
 			// apply root installation into cluster and wait for it to be succeeded
 			lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
-			utils.ExpectNoError(state.Client.Create(ctx, inst))
+			utils.ExpectNoError(state.Create(ctx, inst))
 			Eventually(func() lsv1alpha1.InstallationPhase {
 				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 				return inst.Status.InstallationPhase
