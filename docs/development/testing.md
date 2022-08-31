@@ -42,7 +42,13 @@ In both cases the [script](../../.ci/integration-test) is executed, which
 
 For a commit to a PR the [script](../../.ci/integration-test-new) is executed. It starts the integration tests 
 if the comment of the commit contains a string *run-int-tests*, e.g. `git commit -m "some changes (run-int-tests)`. 
-Otherwise, the tests are skipped. 
+Otherwise, the tests are skipped. If you have pushed a commit with a message not containing *run-int-tests* you could just 
+add a commit without changes but the right message to trigger the integration tests, e.g.:
+
+```
+git commit --allow-empty -m "some text (run-int-tests)"
+git push
+```
 
 The integration test scripts clean up old test shoot clusters. More details about the cleanup strategy and further 
 program details can be found in the corresponding script files.
