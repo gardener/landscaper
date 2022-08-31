@@ -32,7 +32,7 @@ with utils.TempFileAuto(prefix="landscape_kubeconfig_") as kubeconfig_temp_file:
     kubeconfig_temp_file.write(yaml.safe_dump(landscape_kubeconfig.kubeconfig()))
     landscape_kubeconfig_path = kubeconfig_temp_file.switch()
 
-    command = [source_path + "/.ci/local-integration-test-with-cluster-creation", landscape_kubeconfig_path, "garden-laas ", version, pr_id]
+    command = [source_path + "/.ci/local-integration-test-with-cluster-creation", landscape_kubeconfig_path, "garden-laas", version, pr_id]
 
     print("Executing command")
     run = run(command)
