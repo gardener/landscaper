@@ -68,7 +68,7 @@ landscaper:
               - committers
               - codeowners
       steps:
-        integration-test:
+        run_integration_test:
           execute:
           - integration-test
           trait_depends:
@@ -102,7 +102,7 @@ landscaper:
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
-        integration-test:
+        run_integration_test:
           execute:
           - integration-test
           trait_depends:
