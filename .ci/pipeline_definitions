@@ -68,17 +68,18 @@ landscaper:
               - committers
               - codeowners
       steps:
-        integration-test:
+        run_integration_test:
           execute:
           - integration-test
           trait_depends:
           - publish
           image: 'golang:1.18.5-alpine3.16'
+          output_dir: 'integration_test'
     pull-request:
       steps:
         run_integration_test:
-          #depends:
-          #- publish
+          depends:
+          - publish
           image: 'golang:1.18.5-alpine3.16'
           execute:
           - integration-test-new
@@ -101,9 +102,19 @@ landscaper:
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
-        integration-test:
+        run_integration_test:
           execute:
           - integration-test
           trait_depends:
           - publish
           image: 'golang:1.18.5-alpine3.16'
+          output_dir: 'integration_test'
+        update_release:
+          inputs:
+            INTEGRATION_TEST_PATH: integration_test_path
+          execute:
+          - update_release.py
+          trait_depends:
+          - release
+          depends:
+          - run_integration_test
