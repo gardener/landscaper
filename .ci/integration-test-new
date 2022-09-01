@@ -31,9 +31,10 @@ GIT_COMMENT=$(git show -s --format=%s)
 echo "git comment: " $GIT_COMMENT
 
 if git show -s --format=%s | grep run-int-tests; then
-    echo "integration tests should be started"
+    echo "integration tests are started with INTEGRATION_TEST_PATH: "$(INTEGRATION_TEST_PATH)
+
     ./.ci/int-test $PR_ID | tee $(INTEGRATION_TEST_PATH)/ttt.log
-    echo "integration tests finished"
+    echo "integration tests finished with INTEGRATION_TEST_PATH: "$(INTEGRATION_TEST_PATH)
     cat $(INTEGRATION_TEST_PATH)/ttt.log
 else
     echo "integration tests are skipped"
