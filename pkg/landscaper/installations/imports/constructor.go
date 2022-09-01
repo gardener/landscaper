@@ -152,6 +152,9 @@ func (c *Constructor) constructImports(
 				}
 				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeData)
 			}
+			if def.Schema == nil {
+				return nil, installations.NewErrorf(installations.SchemaValidationFailed, fmt.Errorf("schema is nil"), "%s: no schema defined", defPath.String())
+			}
 			validator, err := c.JSONSchemaValidator(def.Schema.RawMessage)
 			if err != nil {
 				return imports, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: validator creation failed", defPath.String())
