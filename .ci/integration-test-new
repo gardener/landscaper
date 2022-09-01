@@ -38,7 +38,7 @@ echo "git comment: " $GIT_COMMENT
 
 if git show -s --format=%s | grep run-int-tests; then
     echo "integration tests are started with FULL_INTEGRATION_TEST_PATH: "$FULL_INTEGRATION_TEST_PATH
-    ./.ci/int-test $PR_ID | tee $INTEGRATION_TEST_PATH/ttt.log
+    ./.ci/int-test $PR_ID | tee $FULL_INTEGRATION_TEST_PATH/ttt.log
     echo "integration tests finished with FULL_INTEGRATION_TEST_PATH: "$FULL_INTEGRATION_TEST_PATH
     cat $FULL_INTEGRATION_TEST_PATH/ttt.log
 else
