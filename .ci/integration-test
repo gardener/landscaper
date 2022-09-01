@@ -13,10 +13,16 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+CURRENT_PATH="$(pwd)"
+cd "${INTEGRATION_TEST_PATH}"
+FULL_INTEGRATION_TEST_PATH="$(pwd)"
+export FULL_INTEGRATION_TEST_PATH
+cd "${CURRENT_PATH}"
+
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 export SOURCE_PATH
 
-./.ci/int-test "1"
+./.ci/int-test "1" | tee $FULL_INTEGRATION_TEST_PATH/ttt.log
 
