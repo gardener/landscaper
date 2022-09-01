@@ -14,9 +14,9 @@ set -o pipefail
 
 echo "check if integration tests should be started"
 
-set
+ls
 
-echo "set executed"
+echo "ls executed"
 
 exit 0
 
