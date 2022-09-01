@@ -108,6 +108,7 @@ landscaper:
           trait_depends:
           - publish
           image: 'golang:1.18.5-alpine3.16'
+          output_dir: 'integration_test'
         update_release:
           inputs:
             INTEGRATION_TEST_PATH: integration_test_path
