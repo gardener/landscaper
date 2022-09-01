@@ -78,7 +78,7 @@ landscaper:
       steps:
         run_integration_test:
           depends:
-          - publish
+          #- publish
           image: 'golang:1.18.5-alpine3.16'
           execute:
           - integration-test-new
