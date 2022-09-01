@@ -180,6 +180,18 @@ var _ = Describe("Constructor", func() {
 			err = c.Construct(ctx, nil)
 			Expect(installations.IsSchemaValidationFailedError(err)).To(BeTrue())
 		})
+
+		It("should handle missing schema definition in import gracefully", func() {
+			ctx := context.Background()
+			inInstJ, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test12/j"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstJ
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			c := imports.NewConstructor(op)
+			Expect(c.Construct(ctx, nil)).ToNot(Succeed())
+		})
 	})
 
 	Context("Targets", func() {
