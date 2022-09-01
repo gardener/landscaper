@@ -81,6 +81,6 @@ echo "Config directory: ${TMP}"
 KUBECONFIG_PATH=$TMP/kubeconfig.yaml
 echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
 
-./.ci/local-integration-test $KUBECONFIG_PATH $VERSION
+#./.ci/local-integration-test $KUBECONFIG_PATH $VERSION
 
 ./.ci/int-test-helper/delete-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP

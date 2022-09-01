@@ -42,8 +42,8 @@ pip3 install -q --upgrade pip
 echo "Running pip3 install gardener-cicd-libs"
 pip3 install -q gardener-cicd-libs
 
-VERSION="$(./hack/get-version.sh)"
+VERSION="v0.31.0"
 export VERSION
 
-# ./hack/integration-test.py
+./hack/integration-test.py
 
