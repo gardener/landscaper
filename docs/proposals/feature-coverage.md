@@ -52,7 +52,7 @@ Changed import values (data and targets). New values must be passed to subinstal
 Update of imports:
 - adding a new import parameter
 - removing an import parameter
-- importing first from ConfigMap, and then from Secret
+- importing first from ConfigMap, and then from Secret (perhaps also switch between ConfigMap and DataObject etc.)
 - changing the name of a ConfigMap
 
 
