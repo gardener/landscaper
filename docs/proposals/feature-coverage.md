@@ -53,7 +53,7 @@ Update of imports:
 - adding a new import parameter
 - removing an import parameter
 - importing first from ConfigMap, and then from Secret (perhaps also switch between ConfigMap and DataObject etc.)
-- changing the name of a ConfigMap
+- changing the name of a ConfigMap, Secrets, DataObject and TargetListReference
 
 
 
