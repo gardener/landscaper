@@ -185,16 +185,18 @@ var _ = Describe("Operation", func() {
 			op.Inst.Info.Namespace = "default"
 			op.Inst.Info.UID = "new-installation-uid"
 
-			err := op.CreateOrUpdateExports(ctx, nil, []*dataobjects.Target{
-				{
-					Metadata: dataobjects.Metadata{
-						Namespace:  "default",
-						Context:    "",
-						Key:        "myexport",
-						SourceType: lsv1alpha1.ExportDataObjectSourceType,
-						Source:     "test",
-					},
-				},
+			targetExtension := dataobjects.NewTargetExtension(nil, nil)
+			metadata := dataobjects.Metadata{
+				Namespace:  "default",
+				Context:    "",
+				Key:        "myexport",
+				SourceType: lsv1alpha1.ExportDataObjectSourceType,
+				Source:     "test",
+			}
+			targetExtension.SetMetadata(metadata)
+
+			err := op.CreateOrUpdateExports(ctx, nil, []*dataobjects.TargetExtension{
+				targetExtension,
 			})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("target object 'default/myexport' for export 'myexport' conflicts with existing target owned by another installation: object 'default/myexport' is already owned by another object with kind 'Installation' (owninginst)"))
@@ -214,10 +216,9 @@ var _ = Describe("Operation", func() {
 			target.Spec.Type = "test-type"
 			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("true"))
 
-			internalTarget, err := dataobjects.NewFromTarget(target)
-			Expect(err).NotTo(HaveOccurred())
-			internalTargets := []*dataobjects.Target{
-				internalTarget,
+			targetExtension := dataobjects.NewTargetExtension(target, nil)
+			targetExtensions := []*dataobjects.TargetExtension{
+				targetExtension,
 			}
 
 			op.Inst.Info.Name = "test"
@@ -234,7 +235,7 @@ var _ = Describe("Operation", func() {
 
 			testutils.ExpectNoError(kubeClient.Create(ctx, op.Inst.Info))
 
-			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, internalTargets))
+			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, targetExtensions))
 
 			targetList := &lsv1alpha1.TargetList{}
 			testutils.ExpectNoError(kubeClient.List(ctx, targetList))
@@ -254,13 +255,12 @@ var _ = Describe("Operation", func() {
 			target.Spec.Type = "test-type-2"
 			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("false"))
 
-			internalTarget, err = dataobjects.NewFromTarget(target)
-			Expect(err).NotTo(HaveOccurred())
-			internalTargets = []*dataobjects.Target{
-				internalTarget,
+			targetExtension = dataobjects.NewTargetExtension(target, nil)
+			targetExtensions = []*dataobjects.TargetExtension{
+				targetExtension,
 			}
 
-			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, internalTargets))
+			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, targetExtensions))
 
 			targetList = &lsv1alpha1.TargetList{}
 			testutils.ExpectNoError(kubeClient.List(ctx, targetList))

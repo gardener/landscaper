@@ -330,10 +330,11 @@ func (rh *ReconcileHelper) ImportsSatisfied() error {
 		}
 		if imp.Targets != nil {
 			// targetlist import consisting of multiple target references
-			if len(imp.Targets) != len(targets.Targets) {
-				return installations.NewImportNotSatisfiedErrorf(nil, "%s: targetlist import has wrong number of targets: expected %d, got %d", impPath, len(imp.Targets), len(targets.Targets))
+			if len(imp.Targets) != len(targets.GetTargetExtensions()) {
+				return installations.NewImportNotSatisfiedErrorf(nil, "%s: targetlist import has wrong number of targets: expected %d, got %d", impPath, len(imp.Targets),
+					len(targets.GetTargetExtensions()))
 			}
-			for _, target := range targets.Targets {
+			for _, target := range targets.GetTargetExtensions() {
 				if err := rh.checkStateForImport(impPath, *dataobjects.NewImported("", target)); err != nil {
 					return err
 				}

@@ -185,7 +185,7 @@ func getTargetSources(ctx context.Context,
 
 	refs := make([]*lsv1alpha1.ObjectReference, 0)
 	for _, target := range targets {
-		owner := kutil.GetOwner(target.Raw.ObjectMeta)
+		owner := kutil.GetOwner(target.GetTarget().ObjectMeta)
 		if !installations.OwnerReferenceIsInstallation(owner) {
 			continue
 		}
