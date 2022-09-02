@@ -83,6 +83,9 @@ image: {}
 #  tag: ""
 
 controller:
+  # Overrides the controller container name. Default is "landscaper-controller".
+  containerName: landscaper-controller
+
   # Allows to target a different cluster than the hosting cluster of the controller instance.
   # Provide the kubeconfig to access the remote Landscaper cluster here (inline or via secretRef).
   # When providing a secretRef, see ./templates/cluster-kubeconfig-secret.yaml for the correct secret format.
@@ -100,6 +103,8 @@ controller:
     #tag: ""
 
 webhooksServer:
+  # Overrides the controller container name. Default is "landscaper-webhooks".
+  containerName: landscaper-webhooks
   # Allows to target a different cluster than the hosting cluster of the webhooks server instance.
   # Provide the kubeconfig to access the remote Landscaper cluster here (inline or via secretRef).
   # When providing a secretRef, see ./templates/cluster-kubeconfig-secret.yaml for the correct secret format.
