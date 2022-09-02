@@ -1,0 +1,16 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+name: subinst1
+blueprint:
+  ref: cd://componentReferences/target-importer-component/resources/blueprint
+
+imports:
+  targets:
+    - name: cluster
+      target: cluster
+    - name: target
+      target: target
+
+  data:
+    - name: namespace
+      dataRef: namespace

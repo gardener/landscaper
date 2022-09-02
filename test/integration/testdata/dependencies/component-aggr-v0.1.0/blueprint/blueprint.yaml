@@ -1,0 +1,24 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
+
+imports:
+  - name: cluster
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+exports:
+  - name: track
+    type: data
+    schema:
+      type: string
+
+subinstallations:
+  - file: /subinstallation-1.yaml
+  - file: /subinstallation-2.yaml
+  - file: /subinstallation-3.yaml
+  - file: /subinstallation-4.yaml
+
+exportExecutions:
+  - name: default-export-execution
+    file: /export-execution.yaml
+    type: GoTemplate

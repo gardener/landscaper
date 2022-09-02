@@ -106,7 +106,7 @@ func WaitForInstallationToHaveCondition(
 	cond InstallationConditionFunc,
 	timeout time.Duration) error {
 
-	return wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
+	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
 		updated := &lsv1alpha1.Installation{}
 		if err := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated); err != nil {
 			return false, err

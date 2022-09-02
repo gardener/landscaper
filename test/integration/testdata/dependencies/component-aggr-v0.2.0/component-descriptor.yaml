@@ -1,0 +1,20 @@
+meta:
+  schemaVersion: 'v2'
+component:
+  name: 'github.com/gardener/landscaper/integration-tests/dependencies-aggr'
+  version: 'v0.2.0'
+
+  repositoryContexts:
+    - type: 'ociRegistry'
+      baseUrl: 'eu.gcr.io/gardener-project/landscaper/integration-tests'
+
+  provider: 'internal'
+
+  componentReferences:
+    - name: base-component
+      componentName: github.com/gardener/landscaper/integration-tests/dependencies-base
+      version: v0.1.0
+
+  sources: []
+
+  resources: []
