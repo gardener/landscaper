@@ -17,52 +17,47 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
-var _ ImportedBase = &TargetList{}
+var _ ImportedBase = &TargetExtensionList{}
 
-// TargetList is the internal representation of a list of targets.
-type TargetList struct {
-	Targets []*Target
-	Def     *lsv1alpha1.TargetImport
+// TargetExtensionList is the internal representation of a list of targets.
+type TargetExtensionList struct {
+	targetExtensions []*TargetExtension
+	def              *lsv1alpha1.TargetImport
 }
 
-// NewTargetList creates a new internal targetlist.
-func NewTargetList() *TargetList {
-	return NewTargetListWithSize(0)
+// NewTargetExtensionList creates a new internal targetlist instance from a list of raw targets.
+func NewTargetExtensionList(targets []lsv1alpha1.Target, def *lsv1alpha1.TargetImport) *TargetExtensionList {
+	res := newTargetExtensionListWithSize(len(targets))
+	for i := range targets {
+		tmp := NewTargetExtension(&targets[i], nil)
+		res.targetExtensions[i] = tmp
+	}
+
+	res.def = def
+
+	return res
 }
 
-// NewTargetListWithSize creates a new internal targetlist with a given size.
-func NewTargetListWithSize(size int) *TargetList {
-	return &TargetList{
-		Targets: make([]*Target, size),
+// NewTargetExtensionListWithSize creates a new internal targetlist with a given size.
+func newTargetExtensionListWithSize(size int) *TargetExtensionList {
+	return &TargetExtensionList{
+		targetExtensions: make([]*TargetExtension, size),
 	}
 }
 
 // SetAllSourceType sets the source type for all targets in the list.
-func (t *TargetList) SetAllSourceType(sourceType lsv1alpha1.DataObjectSourceType) *TargetList {
-	for i := range t.Targets {
-		t.Targets[i].SetSourceType(sourceType)
+func (t *TargetExtensionList) SetAllSourceType(sourceType lsv1alpha1.DataObjectSourceType) *TargetExtensionList {
+	for i := range t.targetExtensions {
+		t.targetExtensions[i].SetSourceType(sourceType)
 	}
 	return t
 }
 
-// NewFromTargetList creates a new internal targetlist instance from a list of raw targets.
-func NewFromTargetList(targets []lsv1alpha1.Target) (*TargetList, error) {
-	res := NewTargetListWithSize(len(targets))
-	for i := range targets {
-		tmp, err := NewFromTarget(&targets[i])
-		if err != nil {
-			return nil, err
-		}
-		res.Targets[i] = tmp
-	}
-	return res, nil
-}
-
 // GetData returns the targets as list of internal go maps.
-func (t *TargetList) GetData() ([]interface{}, error) {
-	rawTargets := make([]lsv1alpha1.Target, len(t.Targets))
-	for i := range t.Targets {
-		rawTargets[i] = *t.Targets[i].Raw
+func (t *TargetExtensionList) GetData() ([]interface{}, error) {
+	rawTargets := make([]lsv1alpha1.Target, len(t.targetExtensions))
+	for i := range t.targetExtensions {
+		rawTargets[i] = *t.targetExtensions[i].GetTarget()
 	}
 	raw, err := json.Marshal(rawTargets)
 	if err != nil {
@@ -77,67 +72,67 @@ func (t *TargetList) GetData() ([]interface{}, error) {
 
 // Build creates a new data object based on the given data and metadata.
 // Does not set owner references.
-func (tl TargetList) Build(tlName string) ([]*lsv1alpha1.Target, error) {
-	newTL := make([]*lsv1alpha1.Target, len(tl.Targets))
+func (tl TargetExtensionList) Build(tlName string) ([]*lsv1alpha1.Target, error) {
+	newTL := make([]*lsv1alpha1.Target, len(tl.targetExtensions))
 	for i := 0; i < len(newTL); i++ {
-		tar := tl.Targets[i]
+		tar := tl.targetExtensions[i]
 		newTarget := &lsv1alpha1.Target{}
-		newTarget.Name = lsv1alpha1helper.GenerateDataObjectNameWithIndex(tar.Metadata.Context, tar.Metadata.Key, i)
-		newTarget.Namespace = tar.Metadata.Namespace
-		if tar.Raw != nil {
-			newTarget.Spec = tar.Raw.Spec
-			for key, val := range tar.Raw.Annotations {
+		newTarget.Name = lsv1alpha1helper.GenerateDataObjectNameWithIndex(tar.GetMetadata().Context, tar.GetMetadata().Key, i)
+		newTarget.Namespace = tar.GetMetadata().Namespace
+		if tar.GetTarget() != nil {
+			newTarget.Spec = tar.GetTarget().Spec
+			for key, val := range tar.GetTarget().Annotations {
 				metav1.SetMetaDataAnnotation(&newTarget.ObjectMeta, key, val)
 			}
-			for key, val := range tar.Raw.Labels {
+			for key, val := range tar.GetTarget().Labels {
 				kutil.SetMetaDataLabel(newTarget, key, val)
 			}
 		}
-		SetMetadataFromObject(newTarget, tar.Metadata)
-		tar.Raw = newTarget
+		SetMetadataFromObject(newTarget, tar.GetMetadata())
+		tar.SetTarget(newTarget)
 		newTL[i] = newTarget
 	}
 	return newTL, nil
 }
 
 // Apply applies data and metadata to a existing target (except owner references).
-func (tl TargetList) Apply(raw *lsv1alpha1.Target, index int) error {
-	t := tl.Targets[index]
-	raw.Name = lsv1alpha1helper.GenerateDataObjectNameWithIndex(t.Metadata.Context, t.Metadata.Key, index)
-	raw.Namespace = t.Metadata.Namespace
-	raw.Spec = t.Raw.Spec
-	SetMetadataFromObject(raw, t.Metadata)
+func (tl TargetExtensionList) Apply(raw *lsv1alpha1.Target, index int) error {
+	t := tl.targetExtensions[index]
+	raw.Name = lsv1alpha1helper.GenerateDataObjectNameWithIndex(t.GetMetadata().Context, t.GetMetadata().Key, index)
+	raw.Namespace = t.GetMetadata().Namespace
+	raw.Spec = t.GetTarget().Spec
+	SetMetadataFromObject(raw, t.GetMetadata())
 	return nil
 }
 
 // Imported interface
 
-func (tl *TargetList) GetImportType() lsv1alpha1.ImportType {
+func (tl *TargetExtensionList) GetImportType() lsv1alpha1.ImportType {
 	return lsv1alpha1.ImportTypeTargetList
 }
 
-func (tl *TargetList) IsListTypeImport() bool {
+func (tl *TargetExtensionList) IsListTypeImport() bool {
 	return true
 }
 
-func (tl *TargetList) GetInClusterObject() client.Object {
+func (tl *TargetExtensionList) GetInClusterObject() client.Object {
 	return nil
 }
-func (tl *TargetList) GetInClusterObjects() []client.Object {
+func (tl *TargetExtensionList) GetInClusterObjects() []client.Object {
 	res := []client.Object{}
-	for _, t := range tl.Targets {
-		res = append(res, t.Raw)
+	for _, t := range tl.targetExtensions {
+		res = append(res, t.GetTarget())
 	}
 	return res
 }
 
-func (tl *TargetList) ComputeConfigGeneration() string {
-	if len(tl.Targets) == 0 {
+func (tl *TargetExtensionList) ComputeConfigGeneration() string {
+	if len(tl.targetExtensions) == 0 {
 		return ""
 	}
 
-	hashList := make([]string, len(tl.Targets))
-	for k, v := range tl.Targets {
+	hashList := make([]string, len(tl.targetExtensions))
+	for k, v := range tl.targetExtensions {
 		hashList[k] = v.ComputeConfigGeneration()
 	}
 
@@ -150,18 +145,22 @@ func (tl *TargetList) ComputeConfigGeneration() string {
 	return string(hashListJson)
 }
 
-func (tl *TargetList) GetListItems() []ImportedBase {
-	res := make([]ImportedBase, len(tl.Targets))
-	for i := range tl.Targets {
-		res[i] = tl.Targets[i]
+func (tl *TargetExtensionList) GetListItems() []ImportedBase {
+	res := make([]ImportedBase, len(tl.targetExtensions))
+	for i := range tl.targetExtensions {
+		res[i] = tl.targetExtensions[i]
 	}
 	return res
 }
 
-func (tl *TargetList) GetImportReference() string {
+func (tl *TargetExtensionList) GetImportReference() string {
 	return ""
 }
 
-func (tl *TargetList) GetImportDefinition() interface{} {
-	return tl.Def
+func (tl *TargetExtensionList) GetImportDefinition() interface{} {
+	return tl.def
+}
+
+func (tl *TargetExtensionList) GetTargetExtensions() []*TargetExtension {
+	return tl.targetExtensions
 }

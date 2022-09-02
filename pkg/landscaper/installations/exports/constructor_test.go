@@ -210,36 +210,18 @@ var _ = Describe("Constructor", func() {
 			Expect(res).ToNot(BeNil())
 			Expect(res).To(HaveLen(2), "should export 2 targets from execution and installation e")
 
-			id := func(element interface{}) string {
-				do := element.(*dataobjects.Target)
-				return do.Metadata.Key
+			for _, next := range res {
+				if next.GetMetadata().Key == "root.y" {
+					Expect(next.GetTarget().Spec.Type).To(Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")))
+					Expect(next.GetTarget().Spec.Configuration).To(Equal(lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-a"`)}))
+					Expect(next.GetMetadata().SourceType).To(Equal((lsv1alpha1.ExportDataObjectSourceType)))
+				} else {
+					Expect(next.GetTarget().Spec.Type).To(Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")))
+					Expect(next.GetTarget().Spec.Configuration).To(Equal(lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-e"`)}))
+					Expect(next.GetMetadata().SourceType).To(Equal((lsv1alpha1.ExportDataObjectSourceType)))
+					Expect(next.GetMetadata().Key).To(Equal(("root.z")))
+				}
 			}
-			Expect(res).To(MatchElements(id, IgnoreExtras, Elements{
-				"root.y": PointTo(MatchFields(IgnoreExtras, Fields{
-					"Raw": PointTo(MatchFields(IgnoreExtras, Fields{
-						"Spec": MatchFields(IgnoreExtras, Fields{
-							"Type":          Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")),
-							"Configuration": Equal(lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-a"`)}),
-						}),
-					})),
-					"Metadata": MatchFields(IgnoreExtras, Fields{
-						"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
-						"Key":        Equal("root.y"),
-					}),
-				})),
-				"root.z": PointTo(MatchFields(IgnoreExtras, Fields{
-					"Raw": PointTo(MatchFields(IgnoreExtras, Fields{
-						"Spec": MatchFields(IgnoreExtras, Fields{
-							"Type":          Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")),
-							"Configuration": Equal(lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-e"`)}),
-						}),
-					})),
-					"Metadata": MatchFields(IgnoreExtras, Fields{
-						"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
-						"Key":        Equal("root.z"),
-					}),
-				})),
-			}))
 		})
 
 		It("should forbid export of a wrong target type", func() {

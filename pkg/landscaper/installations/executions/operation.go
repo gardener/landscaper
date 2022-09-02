@@ -99,10 +99,10 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 				if ti == nil {
 					return nil, o.deployItemSpecificationError(cond, elem.Name, "targetlist import %q not found", elem.Target.Import)
 				}
-				if *elem.Target.Index < 0 || *elem.Target.Index >= len(ti.Targets) {
+				if *elem.Target.Index < 0 || *elem.Target.Index >= len(ti.GetTargetExtensions()) {
 					return nil, o.deployItemSpecificationError(cond, elem.Name, "index %d out of bounds", *elem.Target.Index)
 				}
-				rawTarget := ti.Targets[*elem.Target.Index].Raw
+				rawTarget := ti.GetTargetExtensions()[*elem.Target.Index].GetTarget()
 				target.Name = rawTarget.Name
 				target.Namespace = rawTarget.Namespace
 			} else if len(elem.Target.Import) > 0 {
@@ -111,7 +111,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 				if t == nil {
 					return nil, o.deployItemSpecificationError(cond, elem.Name, "target import %q not found", elem.Target.Import)
 				}
-				rawTarget := t.Raw
+				rawTarget := t.GetTarget()
 				target.Name = rawTarget.Name
 				target.Namespace = rawTarget.Namespace
 			} else if len(elem.Target.Name) == 0 {

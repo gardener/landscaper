@@ -50,8 +50,8 @@ type Operation struct {
 	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
 	context                         Context
 
-	targetLists map[string]*dataobjects.TargetList
-	targets     map[string]*dataobjects.Target
+	targetLists map[string]*dataobjects.TargetExtensionList
+	targets     map[string]*dataobjects.TargetExtension
 
 	// CurrentOperation is the name of the current operation that is used for the error erporting
 	CurrentOperation string
@@ -65,16 +65,16 @@ func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.
 		Build(ctx)
 }
 
-func (o *Operation) GetTargetImport(name string) *dataobjects.Target {
+func (o *Operation) GetTargetImport(name string) *dataobjects.TargetExtension {
 	return o.targets[name]
 }
-func (o *Operation) GetTargetListImport(name string) *dataobjects.TargetList {
+func (o *Operation) GetTargetListImport(name string) *dataobjects.TargetExtensionList {
 	return o.targetLists[name]
 }
-func (o *Operation) SetTargetImports(data map[string]*dataobjects.Target) {
+func (o *Operation) SetTargetImports(data map[string]*dataobjects.TargetExtension) {
 	o.targets = data
 }
-func (o *Operation) SetTargetListImports(data map[string]*dataobjects.TargetList) {
+func (o *Operation) SetTargetListImports(data map[string]*dataobjects.TargetExtensionList) {
 	o.targetLists = data
 }
 
@@ -242,8 +242,8 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 }
 
 // GetImportedTargets returns all imported targets of the installation.
-func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.Target, error) {
-	targets := map[string]*dataobjects.Target{}
+func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.TargetExtension, error) {
+	targets := map[string]*dataobjects.TargetExtension{}
 	for _, def := range o.Inst.Info.Spec.Imports.Targets {
 		if len(def.Target) == 0 {
 			// It's a target list, skip it
@@ -258,7 +258,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
 			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
-			owner     = kutil.GetOwner(target.Raw.ObjectMeta)
+			owner     = kutil.GetOwner(target.GetTarget().ObjectMeta)
 		)
 		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 			sourceRef = &lsv1alpha1.ObjectReference{
@@ -285,15 +285,15 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 }
 
 // GetImportedTargetLists returns all imported target lists of the installation.
-func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dataobjects.TargetList, error) {
-	targets := map[string]*dataobjects.TargetList{}
+func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dataobjects.TargetExtensionList, error) {
+	targets := map[string]*dataobjects.TargetExtensionList{}
 	for _, def := range o.Inst.Info.Spec.Imports.Targets {
 		if len(def.Target) != 0 {
 			// It's a single target, skip it
 			continue
 		}
 		var (
-			tl  *dataobjects.TargetList
+			tl  *dataobjects.TargetExtensionList
 			err error
 		)
 		if def.Targets != nil {
@@ -312,12 +312,12 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 
 		targets[def.Name] = tl
 
-		tis := make([]lsv1alpha1.TargetImportStatus, len(tl.Targets))
-		for i, t := range tl.Targets {
+		tis := make([]lsv1alpha1.TargetImportStatus, len(tl.GetTargetExtensions()))
+		for i, t := range tl.GetTargetExtensions() {
 			var (
 				sourceRef *lsv1alpha1.ObjectReference
 				configGen = dataobjects.ImportedBase(t).ComputeConfigGeneration()
-				owner     = kutil.GetOwner(t.Raw.ObjectMeta)
+				owner     = kutil.GetOwner(t.GetTarget().ObjectMeta)
 			)
 			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 				sourceRef = &lsv1alpha1.ObjectReference{
@@ -332,7 +332,7 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 				configGen = inst.Status.ConfigGeneration
 			}
 			tis[i] = lsv1alpha1.TargetImportStatus{
-				Target:           t.Raw.Name,
+				Target:           t.GetTarget().Name,
 				SourceRef:        sourceRef,
 				ConfigGeneration: configGen,
 			}
@@ -543,7 +543,7 @@ func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 }
 
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
-func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*dataobjects.DataObject, targetExports []*dataobjects.Target) error {
+func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*dataobjects.DataObject, targetExports []*dataobjects.TargetExtension) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateExportsCondition)
 
 	configGen, err := CreateGenerationHash(o.Inst.Info)
@@ -592,7 +592,8 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000069, targetForUpdate, func() error {
 			if err, err2 := lsutil.SetExclusiveOwnerReference(o.Inst.Info, targetForUpdate); err != nil {
-				return fmt.Errorf("target object '%s' for export '%s' conflicts with existing target owned by another installation: %w", client.ObjectKeyFromObject(targetForUpdate).String(), target.Metadata.Key, err)
+				return fmt.Errorf("target object '%s' for export '%s' conflicts with existing target owned by another installation: %w",
+					client.ObjectKeyFromObject(targetForUpdate).String(), target.GetMetadata().Key, err)
 			} else if err2 != nil {
 				return fmt.Errorf("error setting owner reference: %w", err2)
 			}
@@ -600,8 +601,8 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}); err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateTargets",
-					fmt.Sprintf("unable to create target for export %s", target.Metadata.Key)))
-			return fmt.Errorf("unable to create or update target %s for export %s: %w", targetForUpdate.Name, target.Metadata.Key, err)
+					fmt.Sprintf("unable to create target for export %s", target.GetMetadata().Key)))
+			return fmt.Errorf("unable to create or update target %s for export %s: %w", targetForUpdate.Name, target.GetMetadata().Key, err)
 		}
 	}
 
@@ -705,24 +706,22 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 	if _, _, err := api.Decoder.Decode(data, nil, target); err != nil {
 		return err
 	}
-	intTarget, err := dataobjects.NewFromTarget(target)
-	if err != nil {
-		return err
-	}
-	intTarget.SetNamespace(o.Inst.Info.Namespace).
+	targetExtension := dataobjects.NewTargetExtension(target, nil)
+
+	targetExtension.SetNamespace(o.Inst.Info.Namespace).
 		SetContext(src).
 		SetKey(importDef.Name).
 		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
 
 	targetForUpdate := &lsv1alpha1.Target{}
-	intTarget.ApplyNameAndNamespace(targetForUpdate)
+	targetExtension.ApplyNameAndNamespace(targetForUpdate)
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000071, targetForUpdate, func() error {
 		if err := controllerutil.SetOwnerReference(o.Inst.Info, targetForUpdate, api.LandscaperScheme); err != nil {
 			return err
 		}
-		return intTarget.Apply(targetForUpdate)
+		return targetExtension.Apply(targetForUpdate)
 	}); err != nil {
 		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -748,19 +747,16 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 		}
 		tars[i] = *tar
 	}
-	intTL, err := dataobjects.NewFromTargetList(tars)
-	if err != nil {
-		return err
-	}
-	for i := range intTL.Targets {
-		tar := intTL.Targets[i]
+	targetExtensionList := dataobjects.NewTargetExtensionList(tars, nil)
+	for i := range targetExtensionList.GetTargetExtensions() {
+		tar := targetExtensionList.GetTargetExtensions()[i]
 		tar.SetNamespace(o.Inst.Info.Namespace).
 			SetContext(src).
 			SetKey(importDef.Name).
 			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
 	}
 
-	targets, err := intTL.Build(importDef.Name)
+	targets, err := targetExtensionList.Build(importDef.Name)
 	if err != nil {
 		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -775,7 +771,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 			if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
 				return err
 			}
-			return intTL.Apply(target, i)
+			return targetExtensionList.Apply(target, i)
 		}); err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,

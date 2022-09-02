@@ -184,33 +184,34 @@ func GetTargets(ctx context.Context,
 	kubeClient client.Client,
 	contextName string,
 	inst *lsv1alpha1.Installation,
-	targetImport lsv1alpha1.TargetImport) ([]*dataobjects.Target, []string, error) {
+	targetImport lsv1alpha1.TargetImport) ([]*dataobjects.TargetExtension, []string, error) {
 	// get deploy item from current context
-	var targets []*dataobjects.Target
+	var targets []*dataobjects.TargetExtension
 	var targetImportReferences []string
 	if len(targetImport.Target) != 0 {
 		target, err := GetTargetImport(ctx, kubeClient, contextName, inst, targetImport)
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: unable to get target for '%s': %w", targetImport.Name, targetImport.Name, err)
 		}
-		targets = []*dataobjects.Target{target}
+		targets = []*dataobjects.TargetExtension{target}
 		targetImportReferences = []string{targetImport.Target}
 	} else if targetImport.Targets != nil {
 		tl, err := GetTargetListImportByNames(ctx, kubeClient, contextName, inst, targetImport)
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: unable to get targetlist for '%s': %w", targetImport.Name, targetImport.Name, err)
 		}
-		if len(tl.Targets) != len(targetImport.Targets) {
-			return nil, nil, fmt.Errorf("%s: targetlist size mismatch: %d targets were expected but %d were fetched from the cluster", targetImport.Name, len(targetImport.Targets), len(tl.Targets))
+		if len(tl.GetTargetExtensions()) != len(targetImport.Targets) {
+			return nil, nil, fmt.Errorf("%s: targetlist size mismatch: %d targets were expected but %d were fetched from the cluster",
+				targetImport.Name, len(targetImport.Targets), len(tl.GetTargetExtensions()))
 		}
-		targets = tl.Targets
+		targets = tl.GetTargetExtensions()
 		targetImportReferences = targetImport.Targets
 	} else if len(targetImport.TargetListReference) != 0 {
 		tl, err := GetTargetListImportBySelector(ctx, kubeClient, contextName, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, targetImport, true)
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: unable to get targetlist for '%s': %w", targetImport.Name, targetImport.Name, err)
 		}
-		targets = tl.Targets
+		targets = tl.GetTargetExtensions()
 		targetImportReferences = []string{targetImport.TargetListReference}
 	} else {
 		return nil, nil, fmt.Errorf("invalid target import '%s': one of target, targets, or targetListRef must be specified", targetImport.Name)
@@ -219,22 +220,18 @@ func GetTargets(ctx context.Context,
 }
 
 // GetTargetImport fetches the target import from the cluster.
-func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *lsv1alpha1.Installation, targetImport lsv1alpha1.TargetImport) (*dataobjects.Target, error) {
+func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *lsv1alpha1.Installation, targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetExtension, error) {
 	// get deploy item from current context
 	targetName := targetImport.Target
-	raw := &lsv1alpha1.Target{}
+	target := &lsv1alpha1.Target{}
 	targetName = lsv1alpha1helper.GenerateDataObjectName(contextName, targetName)
-	if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Namespace), raw); err != nil {
+	if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Namespace), target); err != nil {
 		return nil, err
 	}
 
-	target, err := dataobjects.NewFromTarget(raw)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create internal target for %s: %w", targetName, err)
-	}
-	target.Def = &targetImport
+	targetExtension := dataobjects.NewTargetExtension(target, &targetImport)
 
-	return target, nil
+	return targetExtension, nil
 }
 
 // GetTargetListImportByNames fetches the target imports from the cluster, based on a list of target names.
@@ -243,7 +240,7 @@ func GetTargetListImportByNames(
 	kubeClient client.Client,
 	contextName string,
 	inst *lsv1alpha1.Installation,
-	targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetList, error) {
+	targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetExtensionList, error) {
 	targets := make([]lsv1alpha1.Target, len(targetImport.Targets))
 	for i, targetName := range targetImport.Targets {
 		// get deploy item from current context
@@ -254,13 +251,9 @@ func GetTargetListImportByNames(
 		}
 		targets[i] = *raw
 	}
-	targetList, err := dataobjects.NewFromTargetList(targets)
-	if err != nil {
-		return nil, err
-	}
-	targetList.Def = &targetImport
+	targetExtensionList := dataobjects.NewTargetExtensionList(targets, &targetImport)
 
-	return targetList, nil
+	return targetExtensionList, nil
 }
 
 // GetTargetListImportBySelector fetches the target imports from the cluster, based on a label selector.
@@ -272,7 +265,7 @@ func GetTargetListImportBySelector(
 	inst *lsv1alpha1.Installation,
 	selector map[string]string,
 	targetImport lsv1alpha1.TargetImport,
-	restrictToImport bool) (*dataobjects.TargetList, error) {
+	restrictToImport bool) (*dataobjects.TargetExtensionList, error) {
 	targets := &lsv1alpha1.TargetList{}
 	// construct label selector
 	contextSelector := labels.NewSelector()
@@ -310,12 +303,8 @@ func GetTargetListImportBySelector(
 	if err := kubeClient.List(ctx, targets, client.InNamespace(inst.Namespace), &client.ListOptions{LabelSelector: contextSelector}); err != nil {
 		return nil, err
 	}
-	targetList, err := dataobjects.NewFromTargetList(targets.Items)
-	if err != nil {
-		return nil, err
-	}
-	targetList.Def = &targetImport
-	return targetList, nil
+	targetExtensionList := dataobjects.NewTargetExtensionList(targets.Items, &targetImport)
+	return targetExtensionList, nil
 }
 
 // GetComponentDescriptorImport fetches the component descriptor import from the cluster/registry.

@@ -46,7 +46,7 @@ func NewConstructor(op *installations.Operation) *Constructor {
 }
 
 // Construct loads the exported data from the execution and the subinstallations.
-func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject, []*dataobjects.Target, error) {
+func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject, []*dataobjects.TargetExtension, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(c.Inst.Info).String()})
 
 	var (
@@ -150,7 +150,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		dataObjects[i] = do
 	}
 
-	targets := make([]*dataobjects.Target, len(c.Inst.Info.Spec.Exports.Targets))
+	targets := make([]*dataobjects.TargetExtension, len(c.Inst.Info.Spec.Exports.Targets))
 	targetExportsPath := fldPath.Child("exports").Child("targets")
 	for i, targetExport := range c.Inst.Info.Spec.Exports.Targets {
 		targetExportPath := targetExportsPath.Child(targetExport.Name)
@@ -158,7 +158,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		if !ok {
 			return nil, nil, fmt.Errorf("%s: target export is not defined", targetExportPath.String())
 		}
-		target, err := ConvertTargetTemplateToTarget(data)
+		target, err := ConvertTargetTemplateToTargetExtension(data)
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: unable to build target from template: %w", targetExportPath.String(), err)
 		}
@@ -212,7 +212,7 @@ func (c *Constructor) aggregateTargetsInContext(ctx context.Context) (map[string
 	return aggTargets, nil
 }
 
-func ConvertTargetTemplateToTarget(tmplData interface{}) (*dataobjects.Target, error) {
+func ConvertTargetTemplateToTargetExtension(tmplData interface{}) (*dataobjects.TargetExtension, error) {
 	data, err := json.Marshal(tmplData)
 	if err != nil {
 		return nil, err
@@ -221,7 +221,7 @@ func ConvertTargetTemplateToTarget(tmplData interface{}) (*dataobjects.Target, e
 	if err := json.Unmarshal(data, targetTemplate); err != nil {
 		return nil, err
 	}
-	raw := &lsv1alpha1.Target{
+	target := &lsv1alpha1.Target{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      targetTemplate.Labels,
 			Annotations: targetTemplate.Annotations,
@@ -231,7 +231,7 @@ func ConvertTargetTemplateToTarget(tmplData interface{}) (*dataobjects.Target, e
 			Configuration: targetTemplate.Configuration,
 		},
 	}
-	return dataobjects.NewFromTarget(raw)
+	return dataobjects.NewTargetExtension(target, nil), nil
 }
 
 // templateDataMappings constructs the export data mappings

@@ -30,8 +30,8 @@ func NewConstructor(op *installations.Operation) *Constructor {
 // Imports is a helper struct to pass around the loaded imports.
 type Imports struct {
 	DataObjects              map[string]*dataobjects.DataObject
-	Targets                  map[string]*dataobjects.Target
-	TargetLists              map[string]*dataobjects.TargetList
+	Targets                  map[string]*dataobjects.TargetExtension
+	TargetLists              map[string]*dataobjects.TargetExtensionList
 	ComponentDescriptors     map[string]*dataobjects.ComponentDescriptor
 	ComponentDescriptorLists map[string]*dataobjects.ComponentDescriptorList
 }
@@ -128,8 +128,8 @@ func (c *Constructor) Construct(ctx context.Context, imps *Imports) error {
 func (c *Constructor) constructImports(
 	importList lsv1alpha1.ImportDefinitionList,
 	importedDataObjects map[string]*dataobjects.DataObject,
-	importedTargets map[string]*dataobjects.Target,
-	importedTargetLists map[string]*dataobjects.TargetList,
+	importedTargets map[string]*dataobjects.TargetExtension,
+	importedTargetLists map[string]*dataobjects.TargetExtensionList,
 	importedComponentDescriptors map[string]*dataobjects.ComponentDescriptor,
 	importedComponentDescriptorLists map[string]*dataobjects.ComponentDescriptorList,
 	templatedDataMappings map[string]interface{},
@@ -266,8 +266,8 @@ func (c *Constructor) constructImports(
 func (c *Constructor) templateDataMappings(
 	fldPath *field.Path,
 	importedDataObjects map[string]*dataobjects.DataObject,
-	importedTargets map[string]*dataobjects.Target,
-	importedTargetLists map[string]*dataobjects.TargetList,
+	importedTargets map[string]*dataobjects.TargetExtension,
+	importedTargetLists map[string]*dataobjects.TargetExtensionList,
 	importedComponentDescriptors map[string]*dataobjects.ComponentDescriptor,
 	importedComponentDescriptorLists map[string]*dataobjects.ComponentDescriptorList) (map[string]interface{}, error) {
 
