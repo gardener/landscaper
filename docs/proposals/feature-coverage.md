@@ -61,13 +61,20 @@ Update of imports:
 
 Export execution of the blueprint
 
+Type validation
+
 Export data mapping of the installation
 
 An export value can be written to a `DataObject` or `Target`.
 
-Update scenarios
+#### Update scenarios
 
+Changed export values (data and targets). New values must be passed upwards.
 
+Update of exports:
+- adding new export parameter
+- removing an export parameter
+- changing the name of a `Target` or `DataObject`
 
 ### Root Installations
 
@@ -114,15 +121,22 @@ Update Scenarios:
 
 ### Component Descriptor and Blueprint Definition
 
-The component descriptor can be given by reference or inline.
+The component descriptor can be given:
+- inline 
+- or by reference (field `spec.componentDescriptorRef`).  
+  In this case, the repository context can be given 
+  - in field `spec.componentDescriptorRef.repositoryContext`
+  - in field `repositoryContext` of the `Context` referenced in the `Installation`
 
-The blueprint of an installation can be given by a reference (name of a resource in the component descriptor) or inline.
+The blueprint of an installation can be given:
+- inline
+- or by referencing a resource in the component descriptor
 
 Subinstallations, deploy executions, export executions can be defined in separate files or in the blueprint.yaml
 
-
-
-### Registry Pull Secrets
+Pulling a blueprint, component descriptor or jsonschema using a registry pull secret
+- from field `registryPullSecrets` of the installation spec
+- from field `registryPullSecrets` of the `Context` referenced in the `Installation`
 
 
 
