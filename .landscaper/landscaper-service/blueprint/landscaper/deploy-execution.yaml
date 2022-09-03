@@ -46,6 +46,8 @@ deployItems:
         image: {}
 
         controller:
+          name: landscaper-controller
+
           landscaperKubeconfig:
             kubeconfig: |
 {{ .imports.landscaperControllerKubeconfigYaml | indent 14 }}
@@ -63,6 +65,8 @@ deployItems:
             pullPolicy: IfNotPresent
 
         webhooksServer:
+          name: landscaper-webhooks
+
           landscaperKubeconfig:
             kubeconfig: |
 {{ .imports.landscaperWebhooksKubeconfigYaml | indent 14}}
