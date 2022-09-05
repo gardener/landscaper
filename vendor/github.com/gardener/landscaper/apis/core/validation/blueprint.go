@@ -359,27 +359,6 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 			}
 			// invalid definition if no if matches, but this is validated at another point already
 		}
-		for i, cd := range instTmpl.Imports.ComponentDescriptors {
-			impPath := instPath.Child("imports").Child("componentDescriptors").Index(i).Key(cd.Name)
-			if len(cd.DataRef) != 0 {
-				importedComponentDescriptors = append(importedComponentDescriptors, Import{
-					Name: cd.DataRef,
-					Path: impPath,
-				})
-			} else if cd.List != nil {
-				for i2, cd2 := range cd.List {
-					tmpPath := impPath.Child("list").Index(i2)
-					if len(cd2.DataRef) != 0 {
-						importedComponentDescriptors = append(importedComponentDescriptors, Import{
-							Name: cd2.DataRef,
-							Path: tmpPath,
-						})
-					}
-					// invalid definition if no if matches, but this is validated at another point already
-				}
-			}
-			// invalid definition if no if matches, but this is validated at another point already
-		}
 
 		allErrs = append(allErrs, ValidateInstallationTemplate(instPath, instTmpl)...)
 		if len(instTmpl.Name) != 0 && names.Has(instTmpl.Name) {
@@ -450,8 +429,6 @@ func ValidateInstallationTemplateImports(imports core.InstallationImports, fldPa
 	allErrs = append(allErrs, tmpErrs...)
 	tmpErrs, importNames = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
 	allErrs = append(allErrs, tmpErrs...)
-	tmpErrs, _ = ValidateInstallationTemplateComponentDescriptorImports(imports.ComponentDescriptors, fldPath.Child("componentDescriptors"), importNames)
-	allErrs = append(allErrs, tmpErrs...)
 
 	return allErrs
 }
@@ -480,45 +457,6 @@ func ValidateInstallationTemplateDataImports(imports []core.DataImport, fldPath 
 		}
 		if importNames.Has(imp.Name) {
 			allErrs = append(allErrs, field.Duplicate(fldPath.Index(idx), imp.Name))
-		}
-		importNames.Insert(imp.Name)
-	}
-
-	return allErrs, importNames
-}
-
-// ValidateInstallationTemplateComponentDescriptorImports validates the component descriptor imports of an InstallationTemplate
-func ValidateInstallationTemplateComponentDescriptorImports(imports []core.ComponentDescriptorImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
-	allErrs := field.ErrorList{}
-
-	for idx, imp := range imports {
-		fldPathIdx := fldPath.Index(idx)
-		if imp.Name == "" {
-			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
-		}
-		allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx, imp, "DataRef", "List")...)
-		if imp.ConfigMapRef != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPathIdx.Child("configMapRef"), "only 'dataRef' and 'list' fields may be used in subinstallation templates"))
-		}
-		if imp.SecretRef != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPathIdx.Child("secretRef"), "only 'dataRef' and 'list' fields may be used in subinstallation templates"))
-		}
-		if len(imp.List) > 0 {
-			for idx2, cd := range imp.List {
-				fldPathIdx2 := fldPathIdx.Child("list").Index(idx2)
-				if cd.ConfigMapRef != nil {
-					allErrs = append(allErrs, field.Forbidden(fldPathIdx2.Child("configMapRef"), "only 'dataRef' may be used for referencing component descriptors in subinstallation templates"))
-				}
-				if cd.SecretRef != nil {
-					allErrs = append(allErrs, field.Forbidden(fldPathIdx2.Child("secretRef"), "only 'dataRef' may be used for referencing component descriptors in subinstallation templates"))
-				}
-				if len(cd.DataRef) == 0 {
-					allErrs = append(allErrs, field.Required(fldPathIdx2.Child("dataRef"), "component descriptors must be referenced using the 'dataRef' field in subinstallation templates"))
-				}
-			}
-		}
-		if importNames.Has(imp.Name) {
-			allErrs = append(allErrs, field.Duplicate(fldPathIdx, imp.Name))
 		}
 		importNames.Insert(imp.Name)
 	}
