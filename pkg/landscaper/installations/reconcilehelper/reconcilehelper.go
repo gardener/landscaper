@@ -12,8 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/pkg/utils"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -525,14 +523,6 @@ func (rh *ReconcileHelper) checkStateForParentImport(fldPath *field.Path, import
 		return installations.NewImportNotFoundErrorf(err, "%s: import in parent not found", fldPath.String())
 	}
 
-	if utils.IsNewReconcile() {
-		return nil
-	}
-
-	// parent has to be progressing
-	if !lsv1alpha1helper.IsProgressingInstallationPhase(rh.parent.Info.Status.Phase) {
-		return installations.NewImportNotSatisfiedErrorf(nil, "%s: Parent has to be progressing to get imports", fldPath.String())
-	}
 	return nil
 }
 

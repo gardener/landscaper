@@ -214,11 +214,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		}
 
 		utils.ExpectNoError(state.Create(ctx, inst))
-		if commonutils.IsNewReconcile() {
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
-		} else {
-			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
-		}
+		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
 
 		ginkgo.By("Testing the deployer with a simple deployitem")
 
@@ -235,19 +231,12 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		}
 		g.Expect(di).ToNot(g.BeNil())
 		utils.ExpectNoError(state.Create(ctx, di))
-		if commonutils.IsNewReconcile() {
-			// Set a new jobID to trigger a reconcile of the deploy item
-			utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-			utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now()))
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
+		// Set a new jobID to trigger a reconcile of the deploy item
+		utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+		utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now()))
+		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
 
-			utils.ExpectNoError(utils.DeleteDeployItemForNewReconcile(ctx, f.Client, di, 2*time.Minute))
-			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))
-		} else {
-			utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
-
-			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, di, 2*time.Minute))
-			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))
-		}
+		utils.ExpectNoError(utils.DeleteDeployItemForNewReconcile(ctx, f.Client, di, 2*time.Minute))
+		utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))
 	})
 }

@@ -155,59 +155,58 @@ var _ = Describe("Helm Deployer", func() {
 
 		By("verify continuous reconciliation")
 		// continuous reconcile currently not supported by new reconcile strategy
-		if !lsutils.IsNewReconcile() {
-			// add continuous reconcile spec to di
-			providerConfig.ContinuousReconcile = &continuousreconcile.ContinuousReconcileSpec{Every: &lsv1alpha1.Duration{Duration: 1 * time.Hour}}
-			di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(state.Client.Update(ctx, di))
 
-			// reconcile once to generate status
-			_, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
-			testutil.ExpectNoError(err)
+		// add continuous reconcile spec to di
+		providerConfig.ContinuousReconcile = &continuousreconcile.ContinuousReconcileSpec{Every: &lsv1alpha1.Duration{Duration: 1 * time.Hour}}
+		di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Client.Update(ctx, di))
 
-			testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-			lastReconciled := di.Status.LastReconcileTime
-			testDuration := time.Duration(1 * time.Hour)
-			expectedNextReconcileIn := time.Until(lastReconciled.Add(testDuration))
-			recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
-			testutil.ExpectNoError(err)
-			timeDiff := expectedNextReconcileIn - recRes.RequeueAfter
-			Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+		// reconcile once to generate status
+		_, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
 
-			// check again when closer to the next reconciliation time
-			testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-			shortTestDuration := time.Duration(10 * time.Minute)
-			lastReconciled.Time = time.Now().Add((-1) * testDuration).Add(shortTestDuration)
-			di.Status.LastReconcileTime = lastReconciled
-			testutil.ExpectNoError(testenv.Client.Status().Update(ctx, di))
-			recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
-			testutil.ExpectNoError(err)
-			lstr := di.Status.LastReconcileTime.Time.String()
-			nxtr := recRes.RequeueAfter.String()
-			By("last: " + lstr + " - next: " + nxtr)
-			timeDiff = shortTestDuration - recRes.RequeueAfter
-			Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+		lastReconciled := di.Status.LastReconcileTime
+		testDuration := time.Duration(1 * time.Hour)
+		expectedNextReconcileIn := time.Until(lastReconciled.Add(testDuration))
+		recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		timeDiff := expectedNextReconcileIn - recRes.RequeueAfter
+		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
 
-			// verify that continuous reconciliation can be disabled by annotation
-			if di.Annotations == nil {
-				di.Annotations = make(map[string]string)
-			}
-			di.Annotations[continuousreconcileextension.ContinuousReconcileActiveAnnotation] = "false"
-			testutil.ExpectNoError(testenv.Client.Update(ctx, di))
-			recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
-			testutil.ExpectNoError(err)
-			Expect(recRes.RequeueAfter).To(BeNumerically("==", time.Duration(0)))
+		// check again when closer to the next reconciliation time
+		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+		shortTestDuration := time.Duration(10 * time.Minute)
+		lastReconciled.Time = time.Now().Add((-1) * testDuration).Add(shortTestDuration)
+		di.Status.LastReconcileTime = lastReconciled
+		testutil.ExpectNoError(testenv.Client.Status().Update(ctx, di))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		lstr := di.Status.LastReconcileTime.Time.String()
+		nxtr := recRes.RequeueAfter.String()
+		By("last: " + lstr + " - next: " + nxtr)
+		timeDiff = shortTestDuration - recRes.RequeueAfter
+		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
 
-			//testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
-			//// Expect that the deploy item gets deleted
-			//Eventually(func() error{
-			//	_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
-			//	return err
-			//}, time.Minute, 5 *time.Second).Should(Succeed())
-			//
-			//Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
+		// verify that continuous reconciliation can be disabled by annotation
+		if di.Annotations == nil {
+			di.Annotations = make(map[string]string)
 		}
+		di.Annotations[continuousreconcileextension.ContinuousReconcileActiveAnnotation] = "false"
+		testutil.ExpectNoError(testenv.Client.Update(ctx, di))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		Expect(recRes.RequeueAfter).To(BeNumerically("==", time.Duration(0)))
+
+		//testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+		//// Expect that the deploy item gets deleted
+		//Eventually(func() error{
+		//	_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+		//	return err
+		//}, time.Minute, 5 *time.Second).Should(Succeed())
+		//
+		//Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
 	})
 
 })
