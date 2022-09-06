@@ -21,7 +21,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
-func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := con.log.StartReconcile(req)
 	ctx = logging.NewContext(ctx, logger)
 
