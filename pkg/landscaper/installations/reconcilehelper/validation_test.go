@@ -7,8 +7,6 @@ package reconcilehelper_test
 import (
 	"context"
 
-	"github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -174,31 +172,6 @@ var _ = Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rh.ImportsSatisfied()).ToNot(Succeed())
 		})
-
-		It("should fail if the parent provides the import but is not progressing", func() {
-			if utils.IsNewReconcile() {
-				return
-			}
-
-			ctx := context.Background()
-
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
-			Expect(err).ToNot(HaveOccurred())
-			op.Inst = inInstA
-			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
-			Expect(err).ToNot(HaveOccurred())
-			inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseInit
-			Expect(fakeClient.Status().Update(ctx, inInstRoot.Info))
-
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
-
-			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rh.ImportsSatisfied()).ToNot(Succeed())
-		})
-
 	})
 
 	Context("InstallationsDependingOnReady", func() {

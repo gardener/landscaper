@@ -12,11 +12,10 @@ import (
 	"path/filepath"
 	"time"
 
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	utils2 "github.com/gardener/landscaper/pkg/utils"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -75,10 +74,8 @@ func WebhookTest(f *framework.Framework) {
 				if d.Name() == "00-root-installation.yaml" {
 					utils.ExpectNoError(utils.ReadResourceFromFile(inst, path))
 					inst.SetNamespace(state.Namespace)
-					if utils2.IsNewReconcile() {
-						lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
-						metav1.SetMetaDataAnnotation(&inst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
-					}
+					lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+					metav1.SetMetaDataAnnotation(&inst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
 				} else {
 					// parse file and read kind
 					data, err := ioutil.ReadFile(path)

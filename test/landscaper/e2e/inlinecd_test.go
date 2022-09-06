@@ -8,9 +8,6 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,6 +15,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -72,238 +71,135 @@ var _ = Describe("Inline Component Descriptor", func() {
 	})
 
 	It("Should successfully reconcile InlineCDTest", func() {
-		if utils.IsNewReconcile() {
-			ctx := context.Background()
+		ctx := context.Background()
 
-			var err error
-			state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "02-inline-cd", "cluster"))
-			Expect(err).ToNot(HaveOccurred())
-			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+		var err error
+		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "02-inline-cd", "cluster"))
+		Expect(err).ToNot(HaveOccurred())
+		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
-			// first the installation controller should run and set the finalizer
-			// afterwards it should again reconcile and deploy the execution
-			instReq := testutils.Request("root-1", state.Namespace)
-			inst := &lsv1alpha1.Installation{}
-			Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-			Expect(testutils.AddReconcileAnnotation(ctx, testenv, inst)).To(Succeed())
-			testutils.ShouldReconcile(ctx, instActuator, instReq)        // add finalizer
-			testutils.ShouldReconcile(ctx, instActuator, instReq)        // remove reconcile annotation and generate jobID
-			_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
+		// first the installation controller should run and set the finalizer
+		// afterwards it should again reconcile and deploy the execution
+		instReq := testutils.Request("root-1", state.Namespace)
+		inst := &lsv1alpha1.Installation{}
+		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
+		Expect(testutils.AddReconcileAnnotation(ctx, testenv, inst)).To(Succeed())
+		testutils.ShouldReconcile(ctx, instActuator, instReq)        // add finalizer
+		testutils.ShouldReconcile(ctx, instActuator, instReq)        // remove reconcile annotation and generate jobID
+		_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
 
-			Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseProgressing))
-			Expect(inst.Status.JobID).NotTo(BeEmpty())
-			Expect(inst.Status.JobIDFinished).To(BeEmpty())
-			Expect(inst.Status.ExecutionReference).ToNot(BeNil())
-			Expect(inst.Status.Imports).To(HaveLen(1))
-			Expect(inst.Status.Imports[0]).To(MatchFields(IgnoreExtras, Fields{
-				"Name": Equal("imp-a"),
-				"Type": Equal(lsv1alpha1.DataImportStatusType),
-			}))
+		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseProgressing))
+		Expect(inst.Status.JobID).NotTo(BeEmpty())
+		Expect(inst.Status.JobIDFinished).To(BeEmpty())
+		Expect(inst.Status.ExecutionReference).ToNot(BeNil())
+		Expect(inst.Status.Imports).To(HaveLen(1))
+		Expect(inst.Status.Imports[0]).To(MatchFields(IgnoreExtras, Fields{
+			"Name": Equal("imp-a"),
+			"Type": Equal(lsv1alpha1.DataImportStatusType),
+		}))
 
-			jobID := inst.Status.JobID
+		jobID := inst.Status.JobID
 
-			execReq := testutils.Request(inst.Status.ExecutionReference.Name, inst.Status.ExecutionReference.Namespace)
-			exec := &lsv1alpha1.Execution{}
-			Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
-			Expect(exec.Status.ExecutionPhase).To(BeEmpty())
-			Expect(exec.Status.JobID).To(Equal(jobID))
-			Expect(exec.Status.JobIDFinished).To(BeEmpty())
+		execReq := testutils.Request(inst.Status.ExecutionReference.Name, inst.Status.ExecutionReference.Namespace)
+		exec := &lsv1alpha1.Execution{}
+		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
+		Expect(exec.Status.ExecutionPhase).To(BeEmpty())
+		Expect(exec.Status.JobID).To(Equal(jobID))
+		Expect(exec.Status.JobIDFinished).To(BeEmpty())
 
-			// reconcile execution
-			_ = testutils.ShouldNotReconcile(ctx, execActuator, execReq) // not finished
+		// reconcile execution
+		_ = testutils.ShouldNotReconcile(ctx, execActuator, execReq) // not finished
 
-			Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
-			Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseProgressing))
-			Expect(exec.Status.JobID).To(Equal(jobID))
-			Expect(exec.Status.JobIDFinished).To(BeEmpty())
-			Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
+		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseProgressing))
+		Expect(exec.Status.JobID).To(Equal(jobID))
+		Expect(exec.Status.JobIDFinished).To(BeEmpty())
+		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
 
-			diList := &lsv1alpha1.DeployItemList{}
-			Expect(testenv.Client.List(ctx, diList)).ToNot(HaveOccurred())
-			Expect(diList.Items).To(HaveLen(1))
-			diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
-			di := &lsv1alpha1.DeployItem{}
-			Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-			Expect(di.Status.DeployItemPhase).To(BeEmpty())
-			Expect(di.Status.JobID).To(Equal(jobID))
-			Expect(di.Status.JobIDFinished).To(BeEmpty())
+		diList := &lsv1alpha1.DeployItemList{}
+		Expect(testenv.Client.List(ctx, diList)).ToNot(HaveOccurred())
+		Expect(diList.Items).To(HaveLen(1))
+		diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
+		di := &lsv1alpha1.DeployItem{}
+		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
+		Expect(di.Status.DeployItemPhase).To(BeEmpty())
+		Expect(di.Status.JobID).To(Equal(jobID))
+		Expect(di.Status.JobIDFinished).To(BeEmpty())
 
-			// reconcile deploy item
-			testutils.ShouldReconcile(ctx, mockActuator, diReq)
-			testutils.ShouldReconcile(ctx, mockActuator, diReq)
+		// reconcile deploy item
+		testutils.ShouldReconcile(ctx, mockActuator, diReq)
+		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 
-			Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-			Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
-			Expect(di.Status.JobID).To(Equal(jobID))
-			Expect(di.Status.JobIDFinished).To(Equal(jobID))
+		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
+		Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
+		Expect(di.Status.JobID).To(Equal(jobID))
+		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 
-			// as the deploy item is now successfully reconciled, we have to trigger the execution
-			// and check if the states are correctly propagated
-			testutils.ShouldReconcile(ctx, execActuator, execReq)
+		// as the deploy item is now successfully reconciled, we have to trigger the execution
+		// and check if the states are correctly propagated
+		testutils.ShouldReconcile(ctx, execActuator, execReq)
 
-			Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
-			Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseSucceeded))
-			Expect(exec.Status.JobID).To(Equal(jobID))
-			Expect(exec.Status.JobIDFinished).To(Equal(jobID))
-			Expect(exec.Status.ExportReference).ToNot(BeNil())
+		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseSucceeded))
+		Expect(exec.Status.JobID).To(Equal(jobID))
+		Expect(exec.Status.JobIDFinished).To(Equal(jobID))
+		Expect(exec.Status.ExportReference).ToNot(BeNil())
 
-			// as the execution is now successfully reconciled, we have to trigger the installation
-			// and check if the state is propagated
-			testutils.ShouldReconcile(ctx, instActuator, instReq)
+		// as the execution is now successfully reconciled, we have to trigger the installation
+		// and check if the state is propagated
+		testutils.ShouldReconcile(ctx, instActuator, instReq)
 
-			Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseSucceeded))
-			Expect(inst.Status.JobID).To(Equal(jobID))
-			Expect(inst.Status.JobIDFinished).To(Equal(jobID))
+		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseSucceeded))
+		Expect(inst.Status.JobID).To(Equal(jobID))
+		Expect(inst.Status.JobIDFinished).To(Equal(jobID))
 
-			By("delete resource")
-			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
+		By("delete resource")
+		Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
 
-			// the installation controller should propagate the deletion to the execution
-			testutils.ShouldReconcile(ctx, instActuator, instReq)        // generate jobID for deletion
-			_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // delete execution
+		// the installation controller should propagate the deletion to the execution
+		testutils.ShouldReconcile(ctx, instActuator, instReq)        // generate jobID for deletion
+		_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // delete execution
 
-			Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseDeleting))
-			Expect(inst.Status.JobID).NotTo(Equal(jobID))
-			Expect(inst.Status.JobIDFinished).To(Equal(jobID))
+		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseDeleting))
+		Expect(inst.Status.JobID).NotTo(Equal(jobID))
+		Expect(inst.Status.JobIDFinished).To(Equal(jobID))
 
-			deletionJobID := inst.Status.JobID
+		deletionJobID := inst.Status.JobID
 
-			Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
-			Expect(exec.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-			Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseSucceeded))
-			Expect(exec.Status.JobID).To(Equal(deletionJobID))
-			Expect(exec.Status.JobIDFinished).To(Equal(jobID))
+		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
+		Expect(exec.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseSucceeded))
+		Expect(exec.Status.JobID).To(Equal(deletionJobID))
+		Expect(exec.Status.JobIDFinished).To(Equal(jobID))
 
-			// the execution controller should propagate the deletion to its deploy item
-			testutils.ShouldReconcile(ctx, execActuator, execReq)
+		// the execution controller should propagate the deletion to its deploy item
+		testutils.ShouldReconcile(ctx, execActuator, execReq)
 
-			Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-			Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-			Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
-			Expect(di.Status.JobID).To(Equal(deletionJobID))
-			Expect(di.Status.JobIDFinished).To(Equal(jobID))
+		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
+		Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
+		Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
+		Expect(di.Status.JobID).To(Equal(deletionJobID))
+		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 
-			// deployer should remove finalizer
-			testutils.ShouldReconcile(ctx, mockActuator, diReq)
-			err = testenv.Client.Get(ctx, diReq.NamespacedName, di)
-			Expect(err).To(HaveOccurred())
-			Expect(apierrors.IsNotFound(err)).To(BeTrue(), "deploy item should be deleted")
+		// deployer should remove finalizer
+		testutils.ShouldReconcile(ctx, mockActuator, diReq)
+		err = testenv.Client.Get(ctx, diReq.NamespacedName, di)
+		Expect(err).To(HaveOccurred())
+		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "deploy item should be deleted")
 
-			// execution controller should remove finalizer
-			testutils.ShouldReconcile(ctx, execActuator, execReq)
-			err = testenv.Client.Get(ctx, execReq.NamespacedName, exec)
-			Expect(err).To(HaveOccurred())
-			Expect(apierrors.IsNotFound(err)).To(BeTrue(), "execution should be deleted")
+		// execution controller should remove finalizer
+		testutils.ShouldReconcile(ctx, execActuator, execReq)
+		err = testenv.Client.Get(ctx, execReq.NamespacedName, exec)
+		Expect(err).To(HaveOccurred())
+		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "execution should be deleted")
 
-			// installation controller should remove finalizer
-			testutils.ShouldReconcile(ctx, instActuator, instReq)
-			err = testenv.Client.Get(ctx, instReq.NamespacedName, inst)
-			Expect(err).To(HaveOccurred())
-			Expect(apierrors.IsNotFound(err)).To(BeTrue(), "installation should be deleted")
-
-		} else {
-			ctx := context.Background()
-
-			var err error
-			state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "02-inline-cd", "cluster"))
-			Expect(err).ToNot(HaveOccurred())
-			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
-
-			// first the installation controller should run and set the finalizer
-			// afterwards it should again reconcile and deploy the execution
-			instReq := testutils.Request("root-1", state.Namespace)
-			testutils.ShouldReconcile(ctx, instActuator, instReq)
-			testutils.ShouldReconcile(ctx, instActuator, instReq)
-
-			inst := &lsv1alpha1.Installation{}
-			Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
-			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseProgressing))
-			Expect(inst.Status.ExecutionReference).ToNot(BeNil())
-			Expect(inst.Status.Imports).To(HaveLen(1))
-			Expect(inst.Status.Imports[0]).To(MatchFields(IgnoreExtras, Fields{
-				"Name": Equal("imp-a"),
-				"Type": Equal(lsv1alpha1.DataImportStatusType),
-			}))
-
-			execReq := testutils.Request(inst.Status.ExecutionReference.Name, inst.Status.ExecutionReference.Namespace)
-			exec := &lsv1alpha1.Execution{}
-			Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
-
-			// after the execution was created by the installation, we need to run the execution controller
-			// on first reconcile it should add the finalizer
-			// and int he second reconcile it should create the deploy item
-			testutils.ShouldReconcile(ctx, execActuator, execReq)
-			testutils.ShouldReconcile(ctx, execActuator, execReq)
-
-			Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
-			Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
-			Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
-
-			diList := &lsv1alpha1.DeployItemList{}
-			Expect(testenv.Client.List(ctx, diList)).ToNot(HaveOccurred())
-			Expect(diList.Items).To(HaveLen(1))
-
-			diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
-			di := &lsv1alpha1.DeployItem{}
-			Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).ToNot(HaveOccurred())
-
-			testutils.ShouldReconcile(ctx, mockActuator, diReq)
-			testutils.ShouldReconcile(ctx, mockActuator, diReq)
-
-			// as the deploy item is now successfully reconciled, we have to trigger the execution
-			// and check if the states are correctly propagated
-			_, err = execActuator.Reconcile(ctx, execReq)
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
-			Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
-			Expect(exec.Status.ExportReference).ToNot(BeNil())
-
-			// as the execution is now successfully reconciled, we have to trigger the installation
-			// and check if the state is propagated
-			_, err = instActuator.Reconcile(ctx, testutils.Request("root-1", state.Namespace))
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
-			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
-
-			By("delete resource")
-			Expect(testenv.Client.Delete(ctx, inst)).ToNot(HaveOccurred())
-
-			// the installation controller should propagate the deletion to its subcharts
-			_, err = instActuator.Reconcile(ctx, instReq)
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
-			Expect(exec.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-
-			// the execution controller should propagate the deletion to its deploy item
-			_, err = execActuator.Reconcile(ctx, execReq)
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).ToNot(HaveOccurred())
-			Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-
-			_, err = mockActuator.Reconcile(ctx, diReq)
-			Expect(err).ToNot(HaveOccurred())
-			err = testenv.Client.Get(ctx, diReq.NamespacedName, di)
-			Expect(err).To(HaveOccurred())
-			Expect(apierrors.IsNotFound(err)).To(BeTrue(), "deploy item should be deleted")
-
-			// execution controller should remove the finalizer
-			testutils.ShouldReconcile(ctx, execActuator, execReq)
-			err = testenv.Client.Get(ctx, execReq.NamespacedName, exec)
-			Expect(err).To(HaveOccurred())
-			Expect(apierrors.IsNotFound(err)).To(BeTrue(), "execution should be deleted")
-
-			// installation controller should remove its own finalizer
-			testutils.ShouldReconcile(ctx, instActuator, instReq)
-			err = testenv.Client.Get(ctx, instReq.NamespacedName, inst)
-			Expect(err).To(HaveOccurred())
-			Expect(apierrors.IsNotFound(err)).To(BeTrue(), "installation should be deleted")
-		}
+		// installation controller should remove finalizer
+		testutils.ShouldReconcile(ctx, instActuator, instReq)
+		err = testenv.Client.Get(ctx, instReq.NamespacedName, inst)
+		Expect(err).To(HaveOccurred())
+		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "installation should be deleted")
 	})
 })
