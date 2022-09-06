@@ -33,7 +33,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -73,73 +72,6 @@ var _ = Describe("Delete", func() {
 				Expect(testenv.CleanupState(ctx, state)).ToNot(HaveOccurred())
 				state = nil
 			}
-		})
-
-		It("should block deletion if there are still subinstallations", func() {
-			ctx := context.Background()
-
-			var err error
-			state, err = testenv.InitResources(ctx, "./testdata/state/test1")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
-
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/root"])
-			Expect(err).ToNot(HaveOccurred())
-
-			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstRoot, nil)
-			Expect(err).ToNot(HaveOccurred())
-
-			instController := installationsctl.NewTestActuator(*instOp.Operation, logging.Discard(), nil)
-			Expect(instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)).To(Succeed())
-
-			instA := &lsv1alpha1.Installation{}
-			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "a", Namespace: state.Namespace}, instA)).ToNot(HaveOccurred())
-			instB := &lsv1alpha1.Installation{}
-			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "b", Namespace: state.Namespace}, instB)).ToNot(HaveOccurred())
-
-			Expect(instA.DeletionTimestamp.IsZero()).To(BeFalse())
-			Expect(instB.DeletionTimestamp.IsZero()).To(BeFalse())
-		})
-
-		It("should not block deletion if there are no subinstallations left", func() {
-			ctx := context.Background()
-
-			var err error
-			state, err = testenv.InitResources(ctx, "./testdata/state/test1")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
-
-			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/b"])
-			Expect(err).ToNot(HaveOccurred())
-
-			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
-			Expect(err).ToNot(HaveOccurred())
-
-			instController := installationsctl.NewTestActuator(*instOp.Operation, logging.Discard(), nil)
-			err = instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should delete subinstallations if no one imports exported values", func() {
-			ctx := context.Background()
-
-			var err error
-			state, err = testenv.InitResources(ctx, "./testdata/state/test2")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
-
-			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/a"])
-			Expect(err).ToNot(HaveOccurred())
-
-			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
-			Expect(err).ToNot(HaveOccurred())
-
-			instController := installationsctl.NewTestActuator(*instOp.Operation, logging.Discard(), nil)
-			Expect(instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)).To(Succeed())
-
-			instC := &lsv1alpha1.Installation{}
-			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "c", Namespace: state.Namespace}, instC)).ToNot(HaveOccurred())
-			Expect(instC.DeletionTimestamp.IsZero()).To(BeFalse())
 		})
 
 		It("should propagate the force deletion annotation to an execution in deletion state", func() {

@@ -10,7 +10,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -18,23 +17,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
-
-// CombinedPhase returns the phase of the referenced execution.
-func CombinedPhase(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (lsv1alpha1.ExecutionPhase, error) {
-	exec, err := GetExecutionForInstallation(ctx, kubeClient, inst)
-	if err != nil {
-		return "", err
-	}
-	if exec == nil {
-		return "", nil
-	}
-
-	if exec.Generation != exec.Status.ObservedGeneration {
-		return lsv1alpha1.ExecutionPhaseProgressing, nil
-	}
-
-	return exec.Status.Phase, nil
-}
 
 // GetExportedValues returns the exported values of the execution
 func (o *ExecutionOperation) GetExportedValues(ctx context.Context, inst *installations.Installation) (*dataobjects.DataObject, error) {

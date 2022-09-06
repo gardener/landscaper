@@ -68,25 +68,6 @@ func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*Reco
 
 ///// VALIDATION METHODS /////
 
-// UpdateRequired returns true if either the installation or one of its imports is outdated and therefore an update is required.
-func (rh *ReconcileHelper) UpdateRequired() (bool, error) {
-	if lsv1alpha1helper.HasOperation(rh.Inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) &&
-		rh.Inst.Info.Status.Phase == lsv1alpha1.ComponentPhaseFailed {
-		return true, nil
-	}
-
-	// check if a reconcile is required due to changed spec or imports
-	if !rh.InstUpToDate() {
-		return true, nil
-	}
-
-	impsUpToDate, err := rh.ImportsUpToDate()
-	if err != nil {
-		return false, rh.NewError(err, "ImportsUpToDate", err.Error())
-	}
-	return !impsUpToDate, nil
-}
-
 // UpdateAllowed returns an error if the installation cannot be updated due to dependencies or unfulfilled imports.
 func (rh *ReconcileHelper) UpdateAllowed(dependedOnSiblings sets.String) error {
 	err := rh.InstallationsDependingOnReady(dependedOnSiblings)
@@ -96,16 +77,6 @@ func (rh *ReconcileHelper) UpdateAllowed(dependedOnSiblings sets.String) error {
 	}
 	err = rh.ImportsSatisfied()
 	return err
-}
-
-// InstUpToDate returns true if the observedGeneration in the installation status matches the current generation of the installation
-func (rh *ReconcileHelper) InstUpToDate() bool {
-	return InstUpToDate(rh.Inst.Info)
-}
-
-// InstUpToDate returns true if the observedGeneration in the installation status matches the current generation of the installation
-func InstUpToDate(installation *lsv1alpha1.Installation) bool {
-	return installation.ObjectMeta.Generation == installation.Status.ObservedGeneration
 }
 
 // ImportsUpToDate returns true if the export configGeneration of each import is equal to the configGeneration in the import status

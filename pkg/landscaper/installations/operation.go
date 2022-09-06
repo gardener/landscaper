@@ -14,7 +14,6 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -494,23 +493,6 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 		installations = append(installations, &inst)
 	}
 	return installations, nil
-}
-
-// TriggerDependents triggers all installations that depend on the current installation.
-// These are most likely all installation that import a key which is exported by the current installation.
-func (o *Operation) TriggerDependents(ctx context.Context) error {
-	for _, sibling := range o.Context().Siblings {
-		if !importsAnyExport(o.Inst, sibling) {
-			continue
-		}
-
-		// todo: maybe use patch
-		metav1.SetMetaDataAnnotation(&sibling.Info.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
-		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000011, sibling.Info); err != nil {
-			return errors.Wrapf(err, "unable to trigger installation %s", sibling.Info.Name)
-		}
-	}
-	return nil
 }
 
 // NewTriggerDependents triggers all installations that depend on the current installation.

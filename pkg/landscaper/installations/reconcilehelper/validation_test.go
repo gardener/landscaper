@@ -473,28 +473,4 @@ var _ = Describe("Validation", func() {
 
 	})
 
-	Context("InstUpToDate", func() {
-
-		It("should succeed if the installation is up-to-date", func() {
-			ctx := context.Background()
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
-			Expect(err).ToNot(HaveOccurred())
-			op.Inst = inInstA
-
-			Expect(reconcilehelper.InstUpToDate(op.Inst.Info)).To(BeTrue())
-		})
-
-		It("should fail if the installation is not up-to-date", func() {
-			ctx := context.Background()
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
-			Expect(err).ToNot(HaveOccurred())
-			inInstA.Info.Status.ObservedGeneration = -1
-			Expect(fakeClient.Status().Update(ctx, inInstA.Info)).To(Succeed())
-			op.Inst = inInstA
-
-			Expect(reconcilehelper.InstUpToDate(op.Inst.Info)).To(BeFalse())
-		})
-
-	})
-
 })
