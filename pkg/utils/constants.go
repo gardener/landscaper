@@ -2,8 +2,6 @@ package utils
 
 import lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 
-var NewReconcile = true
-
 func IsDeployItemPhase(di *lsv1alpha1.DeployItem, phase lsv1alpha1.DeployItemPhase) bool {
 	return di.Status.DeployItemPhase == phase
 }
