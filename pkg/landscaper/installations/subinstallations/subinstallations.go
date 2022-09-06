@@ -16,7 +16,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -31,22 +30,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 )
-
-// TriggerSubInstallations triggers a reconcile for all sub installation of the component.
-func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation) error {
-	for _, instRef := range inst.Status.InstallationReferences {
-		subInst := &lsv1alpha1.Installation{}
-		if err := read_write_layer.GetInstallation(ctx, o.Client(), instRef.Reference.NamespacedName(), subInst); err != nil {
-			return errors.Wrapf(err, "unable to get sub installation %s", instRef.Reference.NamespacedName().String())
-		}
-
-		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
-		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000007, subInst); err != nil {
-			return errors.Wrapf(err, "unable to update sub installation %s", instRef.Reference.NamespacedName().String())
-		}
-	}
-	return nil
-}
 
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.
 func (o *Operation) Ensure(ctx context.Context) error {

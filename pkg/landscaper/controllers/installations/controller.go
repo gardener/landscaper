@@ -7,8 +7,6 @@ package installations
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"time"
 
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
@@ -32,7 +30,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
@@ -98,14 +95,6 @@ type Controller struct {
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	if !utils.IsNewReconcile() {
-		return c.reconcileOld(ctx, req)
-	} else {
-		return c.reconcileNew(ctx, req)
-	}
-}
-
-func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
 
 	inst := &lsv1alpha1.Installation{}
@@ -176,67 +165,6 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 	}
 }
 
-func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
-
-	inst := &lsv1alpha1.Installation{}
-	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Info(err.Error())
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
-	}
-
-	// don't reconcile if ignore annotation is set and installation is not currently running
-	if lsv1alpha1helper.HasIgnoreAnnotation(inst.ObjectMeta) && lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
-		logger.Debug("skipping reconcile due to ignore annotation")
-		return reconcile.Result{}, nil
-	}
-
-	// default the installation as it not done by the Controller runtime
-	api.LandscaperScheme.Default(inst)
-
-	oldInst := inst.DeepCopy()
-
-	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
-		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000010, inst); err != nil {
-			return reconcile.Result{}, err
-		}
-		return reconcile.Result{}, nil
-	}
-
-	if !inst.DeletionTimestamp.IsZero() {
-		err := c.handleDelete(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, true)
-	}
-
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		err := c.forceReconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-	}
-
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
-		// todo: handle abort..
-		logger.Info("do abort")
-	}
-
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		err := c.reconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-	} else if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) || inst.Status.ObservedGeneration != inst.Generation {
-		err := c.reconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-	} else {
-		// check whether the current phase does still match the combined phase of subinstallations and executions
-		if err := c.handleSubComponentPhaseChanges(ctx, inst); err != nil {
-			return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-		}
-		return reconcile.Result{}, nil
-	}
-}
-
 // initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
 // It does not modify the installation resource in the cluster in any way.
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, lserrors.LsError) {
@@ -275,120 +203,6 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 	instOp.SetOverwriter(c.ComponentOverwriter)
 	return instOp, nil
-}
-
-// HandleSubComponentPhaseChanges updates the phase of the given installation, if its phase doesn't match the combined phase of its subinstallations/executions anymore
-func (c *Controller) handleSubComponentPhaseChanges(
-	ctx context.Context,
-	inst *lsv1alpha1.Installation) lserrors.LsError {
-
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
-
-	execRef := inst.Status.ExecutionReference
-	phases := []lsv1alpha1.ComponentInstallationPhase{}
-	if execRef != nil {
-		exec := &lsv1alpha1.Execution{}
-		err := read_write_layer.GetExecution(ctx, c.Client(), execRef.NamespacedName(), exec)
-		if err != nil {
-			message := fmt.Sprintf("error getting execution for installation %s/%s", inst.Namespace, inst.Name)
-			return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "GetExecution", message)
-		}
-		phases = append(phases, lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase))
-	}
-	subinsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
-	if err != nil {
-		message := fmt.Sprintf("error fetching subinstallations for installation %s/%s", inst.Namespace, inst.Name)
-		return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "ListSubinstallations", message)
-	}
-	for _, sub := range subinsts {
-		phases = append(phases, sub.Status.Phase)
-	}
-	if len(phases) == 0 {
-		// Installation contains neither an execution nor subinstallations, so the phase can't be out of sync.
-		return nil
-	}
-	cp := lsv1alpha1helper.CombinedInstallationPhase(phases...)
-	if inst.Status.Phase != cp {
-		// Phase is completed but doesn't fit to the deploy items' phases
-		logger.Debug("execution phase mismatch", "phase", string(inst.Status.Phase), "combinedPhase", string(cp))
-
-		// get operation
-		var err error
-		instOp, err := c.initPrerequisites(ctx, inst)
-		if err != nil {
-			message := fmt.Sprintf("unable to construct operation for installation %s/%s", inst.Namespace, inst.Name)
-			return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "initPrerequisites", message)
-		}
-
-		if cp == lsv1alpha1.ComponentPhaseSucceeded {
-			// recompute exports
-			dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
-			if err != nil {
-				return instOp.NewError(err, "ConstructExports", err.Error())
-			}
-			if err := instOp.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
-				return instOp.NewError(err, "CreateOrUpdateExports", err.Error())
-			}
-		}
-
-		// update status
-		err = instOp.UpdateInstallationStatus(ctx, inst, cp)
-		if err != nil {
-			message := fmt.Sprintf("error updating installation status for installation %s/%s", inst.Namespace, inst.Name)
-			return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "UpdateInstallationStatus", message)
-		}
-
-		if cp == lsv1alpha1.ComponentPhaseSucceeded {
-			// trigger dependent installations
-			err = instOp.TriggerDependents(ctx)
-			if err != nil {
-				return instOp.NewError(err, "TriggerDependants", err.Error())
-			}
-		}
-
-		return nil
-	}
-	return nil
-}
-
-func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation, isDelete bool) error {
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
-
-	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
-	// if successfully deleted we could not update the object
-	if isDelete && err == nil {
-		inst2 := &lsv1alpha1.Installation{}
-		if err2 := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), inst2); err2 != nil {
-			if apierrors.IsNotFound(err2) {
-				return nil
-			}
-		}
-	}
-
-	inst.Status.Phase = lserrors.GetPhaseForLastError(
-		inst.Status.Phase,
-		inst.Status.LastError,
-		5*time.Minute)
-
-	if inst.Status.LastError != nil {
-		lastErr := inst.Status.LastError
-		c.EventRecorder().Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
-	}
-
-	if !reflect.DeepEqual(oldInst.Status, inst.Status) {
-		if err2 := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000015, inst); err2 != nil {
-			if apierrors.IsConflict(err2) { // reduce logging
-				logger.Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
-			} else {
-				logger.Error(err2, "unable to update status")
-			}
-			if err == nil {
-				return err2
-			}
-		}
-	}
-
-	return err
 }
 
 func (c *Controller) compareJobIDs(predecessorMap, predecessorMapNew map[string]*installations.InstallationBase) bool {

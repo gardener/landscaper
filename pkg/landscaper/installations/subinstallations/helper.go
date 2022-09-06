@@ -5,7 +5,6 @@
 package subinstallations
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -15,13 +14,10 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/apis/core"
 	"github.com/gardener/landscaper/apis/core/validation"
 
-	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -329,32 +325,6 @@ func (o *Operation) buildCoreImports(importList lsv1alpha1.ImportDefinitionList)
 		}
 	}
 	return coreImports, nil
-}
-
-// CombinedPhase returns the combined phase of all subinstallations
-func CombinedPhase(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation, subinsts ...*lsv1alpha1.Installation) (lsv1alpha1.ComponentInstallationPhase, error) {
-	if len(subinsts) == 0 {
-		var err error
-		subinsts, err = installations.ListSubinstallations(ctx, kubeClient, inst)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	if len(subinsts) == 0 {
-		return "", nil
-	}
-
-	phases := make([]lsv1alpha1.ComponentInstallationPhase, 0)
-	for _, v := range subinsts {
-		if v.Generation != v.Status.ObservedGeneration {
-			phases = append(phases, lsv1alpha1.ComponentPhaseProgressing)
-		} else {
-			phases = append(phases, v.Status.Phase)
-		}
-	}
-
-	return helper.CombinedInstallationPhase(phases...), nil
 }
 
 // getInstallationTemplate returns the installation template by name
