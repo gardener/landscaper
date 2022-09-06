@@ -115,26 +115,10 @@ func (w *Writer) UpdateExecution(ctx context.Context, writeID WriteID, execution
 	return errorWithWriteID(err, writeID)
 }
 
-func (w *Writer) PatchExecution(ctx context.Context, writeID WriteID, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
-	opts ...client.PatchOption) error {
-	generationOld, resourceVersionOld := getGenerationAndResourceVersion(old)
-	err := patch(ctx, w.client, new, client.MergeFrom(old), opts...)
-	w.logExecutionUpdate(ctx, writeID, opExecSpec, new, generationOld, resourceVersionOld, err)
-	return errorWithWriteID(err, writeID)
-}
-
 func (w *Writer) UpdateExecutionStatus(ctx context.Context, writeID WriteID, execution *lsv1alpha1.Execution) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(execution)
 	err := updateStatus(ctx, w.client.Status(), execution)
 	w.logExecutionUpdate(ctx, writeID, opExecStatus, execution, generationOld, resourceVersionOld, err)
-	return errorWithWriteID(err, writeID)
-}
-
-func (w *Writer) PatchExecutionStatus(ctx context.Context, writeID WriteID, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
-	opts ...client.PatchOption) error {
-	generationOld, resourceVersionOld := getGenerationAndResourceVersion(old)
-	err := patchStatus(ctx, w.client.Status(), new, client.MergeFrom(old), opts...)
-	w.logExecutionUpdate(ctx, writeID, opExecStatus, new, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
@@ -169,14 +153,6 @@ func (w *Writer) UpdateDeployItemStatus(ctx context.Context, writeID WriteID, de
 	return errorWithWriteID(err, writeID)
 }
 
-func (w *Writer) PatchDeployItemStatus(ctx context.Context, writeID WriteID, new *lsv1alpha1.DeployItem, old *lsv1alpha1.DeployItem,
-	opts ...client.PatchOption) error {
-	generationOld, resourceVersionOld := getGenerationAndResourceVersion(old)
-	err := patchStatus(ctx, w.client.Status(), new, client.MergeFrom(old), opts...)
-	w.logDeployItemUpdate(ctx, writeID, opDIStatus, new, generationOld, resourceVersionOld, err)
-	return errorWithWriteID(err, writeID)
-}
-
 func (w *Writer) DeleteDeployItem(ctx context.Context, writeID WriteID, deployItem *lsv1alpha1.DeployItem) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(deployItem)
 	err := delete(ctx, w.client, deployItem)
@@ -200,16 +176,8 @@ func update(ctx context.Context, c client.Client, object client.Object) error {
 	return c.Update(ctx, object)
 }
 
-func patch(ctx context.Context, c client.Client, object client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	return c.Patch(ctx, object, patch, opts...)
-}
-
 func updateStatus(ctx context.Context, c client.StatusWriter, object client.Object) error {
 	return c.Update(ctx, object)
-}
-
-func patchStatus(ctx context.Context, c client.StatusWriter, object client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	return c.Patch(ctx, object, patch, opts...)
 }
 
 func delete(ctx context.Context, c client.Client, object client.Object) error {
