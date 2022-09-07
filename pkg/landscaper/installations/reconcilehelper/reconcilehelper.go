@@ -311,17 +311,6 @@ func (rh *ReconcileHelper) ImportsSatisfied() error {
 		}
 	}
 
-	// check component descriptor imports
-	for _, imp := range rh.Inst.Info.Spec.Imports.ComponentDescriptors {
-		impPath := fldPath.Child("componentDescriptors", imp.Name)
-		if len(imp.DataRef) != 0 {
-			if err := rh.checkStateForParentImport(impPath, imp.DataRef); err != nil {
-				return err
-			}
-		}
-		// we can only verify component descriptor list imports which reference a parent import
-	}
-
 	return nil
 }
 

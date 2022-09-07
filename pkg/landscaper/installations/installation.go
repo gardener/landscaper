@@ -144,16 +144,6 @@ func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.ExportDefinit
 	return lsv1alpha1.ExportDefinition{}, fmt.Errorf("export with key %s not found", key)
 }
 
-// GetCDImport return the import for a given key
-func (i *Installation) GetCDImport(key string) (lsv1alpha1.ComponentDescriptorImport, error) {
-	for _, elem := range i.Info.Spec.Imports.ComponentDescriptors {
-		if elem.Name == key {
-			return elem, nil
-		}
-	}
-	return lsv1alpha1.ComponentDescriptorImport{}, fmt.Errorf("import with key %s not found", key)
-}
-
 // getFlattenedImports is an auxiliary method that flattens the tree of conditional imports into a list
 func getFlattenedImports(importList lsv1alpha1.ImportDefinitionList) lsv1alpha1.ImportDefinitionList {
 	res := lsv1alpha1.ImportDefinitionList{}

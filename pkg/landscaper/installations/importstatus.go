@@ -24,9 +24,6 @@ func (s *ImportStatus) set(status lsv1alpha1.ImportStatus) {
 	if status.Type == lsv1alpha1.TargetImportStatusType || status.Type == lsv1alpha1.TargetListImportStatusType {
 		s.Target[status.Name] = &status
 	}
-	if status.Type == lsv1alpha1.CDImportStatusType || status.Type == lsv1alpha1.CDListImportStatusType {
-		s.ComponentDescriptor[status.Name] = &status
-	}
 }
 
 // Update the internal import states

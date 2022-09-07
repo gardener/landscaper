@@ -32,16 +32,6 @@ func ComputeImportsHash(imps *Imports) (string, error) {
 		impsHashes.TargetLists[k] = v.ComputeConfigGeneration()
 	}
 
-	impsHashes.ComponentDescriptors = make(map[string]string, len(imps.ComponentDescriptors))
-	for k, v := range imps.ComponentDescriptors {
-		impsHashes.ComponentDescriptors[k] = v.ComputeConfigGeneration()
-	}
-
-	impsHashes.ComponentDescriptorLists = make(map[string]string, len(imps.ComponentDescriptorLists))
-	for k, v := range imps.ComponentDescriptorLists {
-		impsHashes.ComponentDescriptorLists[k] = v.ComputeConfigGeneration()
-	}
-
 	impsHashesJson, err := json.Marshal(impsHashes)
 	if err != nil {
 		return "", err
