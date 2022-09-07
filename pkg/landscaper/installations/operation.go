@@ -521,10 +521,6 @@ func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1al
 			if err := o.createOrUpdateTargetListImport(ctx, src, importDef, importDataList); err != nil {
 				return fmt.Errorf("unable to create or update targetlist import '%s': %w", importDef.Name, err)
 			}
-		case lsv1alpha1.ImportTypeComponentDescriptor:
-			// nothing to do for component descriptors, since they do not use in-cluster objects for import propagation
-		case lsv1alpha1.ImportTypeComponentDescriptorList:
-			// nothing to do for component descriptor lists, since they do not use in-cluster objects for import propagation
 		default:
 			return fmt.Errorf("unknown import type '%s' for import '%s'", string(importDef.Type), importDef.Name)
 		}

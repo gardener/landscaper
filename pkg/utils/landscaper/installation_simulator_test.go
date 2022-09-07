@@ -60,7 +60,7 @@ func (c *TestSimulatorCallbacks) OnExports(path string, exports map[string]inter
 
 var _ = Describe("Installation Simulator", func() {
 	var (
-		testDataDir       = "./testdata/02-subinstallations"
+		testDataDir       = "./testdata/01-subinstallations"
 		registry          componentsregistry.TypedRegistry
 		repository        *componentsregistry.LocalRepository
 		cd                *cdv2.ComponentDescriptor

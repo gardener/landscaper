@@ -252,17 +252,15 @@ func ValidateSubinstallations(fldPath *field.Path, subinstallations []core.Subin
 // Take care to also include all templated templates for proper validation.
 func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []core.ImportDefinition, subinstallations []*core.InstallationTemplate) field.ErrorList {
 	var (
-		allErrs                      = field.ErrorList{}
-		names                        = sets.NewString()
-		importedDataObjects          = make([]Import, 0)
-		exportedDataObjects          = sets.NewString()
-		importedTargets              = make([]Import, 0)
-		exportedTargets              = sets.NewString()
-		importedComponentDescriptors = make([]Import, 0)
+		allErrs             = field.ErrorList{}
+		names               = sets.NewString()
+		importedDataObjects = make([]Import, 0)
+		exportedDataObjects = sets.NewString()
+		importedTargets     = make([]Import, 0)
+		exportedTargets     = sets.NewString()
 
-		blueprintDataImports                = sets.NewString()
-		blueprintTargetImports              = sets.NewString()
-		blueprintComponentDescriptorImports = sets.NewString()
+		blueprintDataImports   = sets.NewString()
+		blueprintTargetImports = sets.NewString()
 	)
 
 	for _, bImport := range blueprintImportDefs {
@@ -272,8 +270,6 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 				blueprintDataImports.Insert(bImport.Name)
 			case core.ImportTypeTarget, core.ImportTypeTargetList:
 				blueprintTargetImports.Insert(bImport.Name)
-			case core.ImportTypeComponentDescriptor, core.ImportTypeComponentDescriptorList:
-				blueprintComponentDescriptorImports.Insert(bImport.Name)
 			}
 		} else {
 			// fallback to old logic
@@ -370,7 +366,6 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 	// validate that all imported values are either satisfied by the blueprint or by another sibling
 	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintDataImports, exportedDataObjects, importedDataObjects)...)
 	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintTargetImports, exportedTargets, importedTargets)...)
-	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintComponentDescriptorImports, sets.NewString(), importedComponentDescriptors)...)
 
 	return allErrs
 }

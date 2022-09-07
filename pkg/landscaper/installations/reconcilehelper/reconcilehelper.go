@@ -462,10 +462,6 @@ func (rh *ReconcileHelper) getConfigGenerationsFromImportStatus(imp *dataobjects
 				configGens[ts.Target] = ts.ConfigGeneration
 			}
 		}
-	case lsv1alpha1.ImportTypeComponentDescriptor:
-		// there is no config generation for component descriptor imports
-	case lsv1alpha1.ImportTypeComponentDescriptorList:
-		// there is no config generation for component descriptor imports
 	default:
 		return "", nil, fmt.Errorf("unknown import type %q", imp.GetImportName())
 	}
@@ -549,9 +545,6 @@ func (rh *ReconcileHelper) checkStateForSiblingExport(fldPath *field.Path, sibli
 				break
 			}
 		}
-	case lsv1alpha1.ImportTypeComponentDescriptor, lsv1alpha1.ImportTypeComponentDescriptorList:
-		// component descriptors can currently not be exported, so this should never happen
-		return installations.NewImportNotFoundErrorf(nil, "%s: component descriptors cannot be imported from siblings", fldPath.String())
 	default:
 		return fmt.Errorf("%s: unknown import type %q", fldPath.String(), string(importType))
 	}
