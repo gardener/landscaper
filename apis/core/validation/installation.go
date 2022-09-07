@@ -91,7 +91,7 @@ func ValidateInstallationImports(imports core.InstallationImports, fldPath *fiel
 
 	tmpErrs, importNames = ValidateInstallationDataImports(imports.Data, fldPath.Child("data"), importNames)
 	allErrs = append(allErrs, tmpErrs...)
-	tmpErrs, importNames = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
+	tmpErrs, _ = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
 	allErrs = append(allErrs, tmpErrs...)
 
 	return allErrs
