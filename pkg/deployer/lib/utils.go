@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"reflect"
 
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
 	"k8s.io/client-go/tools/record"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -143,7 +145,7 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 	lsClient client.Client, lsEventRecorder record.EventRecorder) error {
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
-	deployItem.Status.SetLastError(lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))
+	lsutil.SetLastError(&deployItem.Status, lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))
 
 	if deployItem.Status.GetLastError() != nil {
 		if lserrors.ContainsAnyErrorCode(deployItem.Status.GetLastError().Codes, lsv1alpha1.UnrecoverableErrorCodes) {
@@ -162,7 +164,7 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 
 	if deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
 		deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
-		deployItem.Status.JobIDFinished = deployItem.Status.JobID
+		deployItem.Status.JobIDFinished = deployItem.Status.GetJobID()
 	}
 
 	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {

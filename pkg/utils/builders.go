@@ -157,7 +157,7 @@ func (b *DeployItemBuilder) Build() (*lsv1alpha1.DeployItem, error) {
 	}
 
 	if b.generateJobID {
-		di.Status.JobID = uuid.New().String()
+		di.Status.SetJobID(uuid.New().String())
 	}
 
 	return di, nil

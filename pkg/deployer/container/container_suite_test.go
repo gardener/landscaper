@@ -114,7 +114,7 @@ var _ = Describe("Template", func() {
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), di)).To(Succeed())
 			if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
 				di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed &&
-				di.Status.JobID == di.Status.JobIDFinished {
+				di.Status.GetJobID() == di.Status.JobIDFinished {
 				return nil
 			}
 			return fmt.Errorf("phase is %s but expected it to be failed", di.Status.Phase)

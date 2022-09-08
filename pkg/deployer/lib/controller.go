@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -178,7 +180,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
 	}
 
-	if di.Status.JobID != di.Status.JobIDFinished {
+	if di.Status.GetJobID() != di.Status.JobIDFinished {
 		if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
 			di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
 			di.Status.DeployItemPhase == "" {
@@ -281,6 +283,7 @@ func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1
 	now := metav1.Now()
 	di.Status.LastReconcileTime = &now
 	di.Status.Deployer = c.info
+	lsutil.InitErrors(&di.Status)
 
 	if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000004, di); err != nil {
 		return err

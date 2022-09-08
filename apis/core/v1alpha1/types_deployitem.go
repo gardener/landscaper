@@ -199,6 +199,14 @@ func (r *DeployItemStatus) SetFirstError(err *Error) {
 	r.FirstError = err
 }
 
+func (r *DeployItemStatus) GetJobID() string {
+	return r.JobID
+}
+
+func (r *DeployItemStatus) SetJobID(id string) {
+	r.JobID = id
+}
+
 // DeployerInformation holds additional information about the deployer that
 // has reconciled or is reconciling the deploy item.
 type DeployerInformation struct {

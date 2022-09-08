@@ -84,7 +84,7 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 					return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 				}
 
-				di.Status.JobID = o.exec.Status.JobID
+				di.Status.SetJobID(o.exec.Status.JobID)
 				now := metav1.Now()
 				di.Status.JobIDGenerationTime = &now
 				if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
@@ -112,7 +112,7 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 				return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 			}
 
-			di.Status.JobID = o.exec.Status.JobID
+			di.Status.SetJobID(o.exec.Status.JobID)
 			now := metav1.Now()
 			di.Status.JobIDGenerationTime = &now
 			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000089, di); err != nil {
@@ -157,7 +157,7 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 				return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 			}
 
-			di.Status.JobID = o.exec.Status.JobID
+			di.Status.SetJobID(o.exec.Status.JobID)
 			now := metav1.Now()
 			di.Status.JobIDGenerationTime = &now
 			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {

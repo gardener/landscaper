@@ -67,7 +67,7 @@ func ExternalJSONSchemaTestForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(err)
 			Expect(deployItems).To(HaveLen(1))
 			Expect(deployItems[0].Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
-			Expect(deployItems[0].Status.JobIDFinished).To(Equal(deployItems[0].Status.JobID))
+			Expect(deployItems[0].Status.JobIDFinished).To(Equal(deployItems[0].Status.GetJobID()))
 
 			// todo: make namespace configurable for deployed resources
 			// expect that the echo server deployment is successfully running
