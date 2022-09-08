@@ -210,3 +210,30 @@ func SetExclusiveOwnerReference(owner client.Object, obj client.Object) (error, 
 	}
 	return nil, controllerutil.SetOwnerReference(owner, obj, api.LandscaperScheme)
 }
+
+func SetLastError(deployItemStatus *lsv1alpha1.DeployItemStatus, err *lsv1alpha1.Error) {
+	deployItemStatus.SetLastError(err)
+
+	if deployItemStatus.GetFirstError() == nil {
+		deployItemStatus.SetFirstError(err)
+	}
+
+	if err != nil {
+		lastErrors := deployItemStatus.GetLastErrors()
+		if lastErrors == nil {
+			deployItemStatus.SetLastErrors([]*lsv1alpha1.Error{})
+		}
+		lastErrors = append(lastErrors, err)
+
+		if len(lastErrors) > 5 {
+			lastErrors = lastErrors[1:]
+		}
+		deployItemStatus.SetLastErrors(lastErrors)
+	}
+}
+
+func InitErrors(deployItemStatus *lsv1alpha1.DeployItemStatus) {
+	deployItemStatus.SetLastError(nil)
+	deployItemStatus.SetFirstError(nil)
+	deployItemStatus.SetLastErrors(nil)
+}

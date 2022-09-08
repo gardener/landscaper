@@ -4137,6 +4137,25 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
 						},
 					},
+					"lastErrors": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ErrorHistory describes the last n errors that occurred since JobID was changed the last time.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
+									},
+								},
+							},
+						},
+					},
+					"firstError": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FirstError describes the first error that occurred since JobID was changed the last time.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
+						},
+					},
 					"lastReconcileTime": {
 						SchemaProps: spec.SchemaProps{
 							Description: "LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started",

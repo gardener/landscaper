@@ -616,9 +616,9 @@ func updateJobIdForDeployItem(ctx context.Context, c client.Client, obj *lsv1alp
 		return err
 	}
 
-	if obj != nil && obj.Status.JobID == obj.Status.JobIDFinished {
+	if obj != nil && obj.Status.GetJobID() == obj.Status.JobIDFinished {
 		time := v1.Now()
-		obj.Status.JobID = obj.Status.JobID + "-1"
+		obj.Status.SetJobID(obj.Status.GetJobID() + "-1")
 		obj.Status.JobIDGenerationTime = &time
 		if err := c.Status().Update(ctx, obj); err != nil {
 			if readError := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); apierrors.IsNotFound(readError) {

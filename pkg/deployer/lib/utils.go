@@ -9,6 +9,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
+	"k8s.io/client-go/tools/record"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
@@ -131,4 +139,55 @@ func GetRegistryPullSecretsFromContext(lsCtx *lsv1alpha1.Context) []lsv1alpha1.O
 		}
 	}
 	return refs
+}
+
+func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem,
+	lsClient client.Client, lsEventRecorder record.EventRecorder) error {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	lsutil.SetLastError(&deployItem.Status, lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))
+
+	if deployItem.Status.GetLastError() != nil {
+		if lserrors.ContainsAnyErrorCode(deployItem.Status.GetLastError().Codes, lsv1alpha1.UnrecoverableErrorCodes) {
+			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		}
+
+		lastErr := deployItem.Status.GetLastError()
+		lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+	}
+
+	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
+	} else if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
+		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseSucceeded
+	}
+
+	if deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
+		deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
+		deployItem.Status.JobIDFinished = deployItem.Status.GetJobID()
+	}
+
+	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {
+		if err2 := read_write_layer.NewWriter(lsClient).UpdateDeployItemStatus(ctx, read_write_layer.W000092, deployItem); err2 != nil {
+			if !deployItem.DeletionTimestamp.IsZero() {
+				// recheck if already deleted
+				diRecheck := &lsv1alpha1.DeployItem{}
+				errRecheck := read_write_layer.GetDeployItem(ctx, lsClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), diRecheck)
+				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
+					return nil
+				}
+			}
+
+			if apierrors.IsConflict(err2) { // reduce logging
+				logger.Debug("Unable to update status", lc.KeyError, err2.Error())
+			} else {
+				logger.Error(err2, "Unable to update status")
+			}
+			if err == nil {
+				return err2
+			}
+		}
+	}
+
+	return err
 }

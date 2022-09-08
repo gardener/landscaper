@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -272,14 +274,14 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 		item := &managedItems[i]
 
 		if item.Status.JobIDFinished != exec.Status.JobID {
-			item.Status.JobID = exec.Status.JobID
+			item.Status.SetJobID(exec.Status.JobID)
 			item.Status.JobIDFinished = exec.Status.JobID
 			item.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
 			item.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-			item.Status.LastError = lserrors.UpdatedError(item.Status.LastError,
+			lsutil.SetLastError(&item.Status, lserrors.UpdatedError(item.Status.GetLastError(),
 				"InterruptOperation",
 				"InterruptOperation",
-				"operation was interrupted")
+				"operation was interrupted"))
 
 			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000101, item); err != nil {
 				return lserrors.NewWrappedError(err, "UpdateDeployItemStatus",

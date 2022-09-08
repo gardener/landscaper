@@ -7,11 +7,11 @@ package lib
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,9 +44,6 @@ type Deployer interface {
 	Reconcile(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// Delete the deployitem.
 	Delete(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
-	// ForceReconcile the deployitem.
-	// Keep in mind that the force deletion annotation must be removed by the Deployer.
-	ForceReconcile(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// Abort the deployitem progress.
 	Abort(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// ExtensionHooks returns all registered extension hooks.
@@ -183,7 +180,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
 	}
 
-	if di.Status.JobID != di.Status.JobIDFinished {
+	if di.Status.GetJobID() != di.Status.JobIDFinished {
 		if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
 			di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
 			di.Status.DeployItemPhase == "" {
@@ -213,52 +210,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem) error {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-	deployItem.Status.LastError = lserrors.TryUpdateLsError(deployItem.Status.LastError, err)
-
-	if deployItem.Status.LastError != nil {
-		if lserrors.ContainsAnyErrorCode(deployItem.Status.LastError.Codes, lsv1alpha1.UnrecoverableErrorCodes) {
-			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		}
-
-		lastErr := deployItem.Status.LastError
-		c.lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
-	}
-
-	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-	} else if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
-		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseSucceeded
-	}
-
-	if deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
-		deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
-		deployItem.Status.JobIDFinished = deployItem.Status.JobID
-	}
-
-	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {
-		if err2 := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000092, deployItem); err2 != nil {
-			if !deployItem.DeletionTimestamp.IsZero() {
-				// recheck if already deleted
-				diRecheck := &lsv1alpha1.DeployItem{}
-				errRecheck := read_write_layer.GetDeployItem(ctx, c.lsClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), diRecheck)
-				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
-					return nil
-				}
-			}
-
-			if apierrors.IsConflict(err2) { // reduce logging
-				logger.Debug("Unable to update status", lc.KeyError, err2.Error())
-			} else {
-				logger.Error(err2, "Unable to update status")
-			}
-			if err == nil {
-				return err2
-			}
-		}
-	}
-
-	return err
+	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsClient, c.lsEventRecorder)
 }
 
 func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.Logger, deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, error) {
@@ -331,6 +283,7 @@ func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1
 	now := metav1.Now()
 	di.Status.LastReconcileTime = &now
 	di.Status.Deployer = c.info
+	lsutil.InitErrors(&di.Status)
 
 	if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000004, di); err != nil {
 		return err

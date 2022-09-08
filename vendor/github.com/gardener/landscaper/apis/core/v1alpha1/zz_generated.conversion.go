@@ -1592,6 +1592,8 @@ func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployIt
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
+	out.LastErrors = *(*[]*core.Error)(unsafe.Pointer(&in.LastErrors))
+	out.FirstError = (*core.Error)(unsafe.Pointer(in.FirstError))
 	out.LastReconcileTime = (*metav1.Time)(unsafe.Pointer(in.LastReconcileTime))
 	if err := Convert_v1alpha1_DeployerInformation_To_core_DeployerInformation(&in.Deployer, &out.Deployer, s); err != nil {
 		return err
@@ -1615,6 +1617,8 @@ func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.Dep
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*Error)(unsafe.Pointer(in.LastError))
+	out.LastErrors = *(*[]*Error)(unsafe.Pointer(&in.LastErrors))
+	out.FirstError = (*Error)(unsafe.Pointer(in.FirstError))
 	out.LastReconcileTime = (*metav1.Time)(unsafe.Pointer(in.LastReconcileTime))
 	if err := Convert_core_DeployerInformation_To_v1alpha1_DeployerInformation(&in.Deployer, &out.Deployer, s); err != nil {
 		return err

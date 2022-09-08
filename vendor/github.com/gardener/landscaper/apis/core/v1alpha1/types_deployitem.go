@@ -140,6 +140,12 @@ type DeployItemStatus struct {
 	// LastError describes the last error that occurred.
 	LastError *Error `json:"lastError,omitempty"`
 
+	// ErrorHistory describes the last n errors that occurred since JobID was changed the last time.
+	LastErrors []*Error `json:"lastErrors,omitempty"`
+
+	// FirstError describes the first error that occurred since JobID was changed the last time.
+	FirstError *Error `json:"firstError,omitempty"`
+
 	// LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started
 	// +optional
 	LastReconcileTime *metav1.Time `json:"lastReconcileTime,omitempty"`
@@ -167,6 +173,38 @@ type DeployItemStatus struct {
 
 	// DeployItemPhase is the current phase of the deploy item.
 	DeployItemPhase DeployItemPhase `json:"deployItemPhase,omitempty"`
+}
+
+func (r *DeployItemStatus) GetLastError() *Error {
+	return r.LastError
+}
+
+func (r *DeployItemStatus) SetLastError(err *Error) {
+	r.LastError = err
+}
+
+func (r *DeployItemStatus) GetLastErrors() []*Error {
+	return r.LastErrors
+}
+
+func (r *DeployItemStatus) SetLastErrors(errors []*Error) {
+	r.LastErrors = errors
+}
+
+func (r *DeployItemStatus) GetFirstError() *Error {
+	return r.FirstError
+}
+
+func (r *DeployItemStatus) SetFirstError(err *Error) {
+	r.FirstError = err
+}
+
+func (r *DeployItemStatus) GetJobID() string {
+	return r.JobID
+}
+
+func (r *DeployItemStatus) SetJobID(id string) {
+	r.JobID = id
 }
 
 // DeployerInformation holds additional information about the deployer that

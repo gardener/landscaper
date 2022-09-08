@@ -263,13 +263,13 @@ func AddReconcileAnnotation(ctx context.Context, testenv *envtest.Environment, i
 }
 
 func UpdateJobIdForDeployItem(ctx context.Context, testenv *envtest.Environment, di *lsv1alpha1.DeployItem, time metav1.Time) error {
-	di.Status.JobID = di.Status.JobID + "-1"
+	di.Status.SetJobID(di.Status.GetJobID() + "-1")
 	di.Status.JobIDGenerationTime = &time
 	return testenv.Client.Status().Update(ctx, di)
 }
 
 func UpdateJobIdForDeployItemC(ctx context.Context, cl client.Client, di *lsv1alpha1.DeployItem, time metav1.Time) error {
-	di.Status.JobID = di.Status.JobID + "-1"
+	di.Status.SetJobID(di.Status.GetJobID() + "-1")
 	di.Status.JobIDGenerationTime = &time
 	return cl.Status().Update(ctx, di)
 }

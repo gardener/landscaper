@@ -821,6 +821,22 @@ func (in *DeployItemStatus) DeepCopyInto(out *DeployItemStatus) {
 		*out = new(Error)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.LastErrors != nil {
+		in, out := &in.LastErrors, &out.LastErrors
+		*out = make([]*Error, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(Error)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
+	if in.FirstError != nil {
+		in, out := &in.FirstError, &out.FirstError
+		*out = new(Error)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.LastReconcileTime != nil {
 		in, out := &in.LastReconcileTime, &out.LastReconcileTime
 		*out = (*in).DeepCopy()

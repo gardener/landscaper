@@ -84,7 +84,7 @@ var _ = Describe("Helm Deployer", func() {
 		}
 		di.Spec.Type = helmctrl.Type
 
-		di.Status.JobID = "1"
+		di.Status.SetJobID("1")
 
 		// Create target
 		target, err := testutil.CreateOrUpdateTarget(ctx,
@@ -135,7 +135,7 @@ var _ = Describe("Helm Deployer", func() {
 			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
 		}
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-		di.Status.JobID = di.Status.JobID + "-1"
+		di.Status.SetJobID(di.Status.GetJobID() + "-1")
 		Expect(testenv.Client.Status().Update(ctx, di)).To(Succeed())
 
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))

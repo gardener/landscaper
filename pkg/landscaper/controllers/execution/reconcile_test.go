@@ -78,7 +78,7 @@ var _ = Describe("Reconcile", func() {
 		di := &items.Items[0]
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-		di.Status.JobID = exec.Status.JobID
+		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(state.Client.Status().Update(ctx, di))
 
@@ -206,7 +206,7 @@ var _ = Describe("Reconcile", func() {
 		// set item to failed state
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-		di.Status.JobID = exec.Status.JobID
+		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
 
@@ -222,7 +222,7 @@ var _ = Describe("Reconcile", func() {
 
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 		di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseSucceeded
-		di.Status.JobID = exec.Status.JobID
+		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
 
@@ -238,7 +238,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-		di.Status.JobID = exec.Status.JobID
+		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
 
@@ -283,12 +283,12 @@ var _ = Describe("Reconcile", func() {
 			di = state.DeployItems[state.Namespace+"/di-b"]
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			Expect(di.DeletionTimestamp.IsZero()).To(BeFalse())
-			Expect(di.Status.JobID).To(Equal(exec.Status.JobID))
+			Expect(di.Status.GetJobID()).To(Equal(exec.Status.JobID))
 
 			di = state.DeployItems[state.Namespace+"/di-c"]
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			Expect(di.DeletionTimestamp.IsZero()).To(BeFalse())
-			Expect(di.Status.JobID).To(Equal(exec.Status.JobID))
+			Expect(di.Status.GetJobID()).To(Equal(exec.Status.JobID))
 		})
 	})
 })

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -34,7 +36,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	if di.Status.JobID == di.Status.JobIDFinished {
+	if di.Status.GetJobID() == di.Status.JobIDFinished {
 		logger.Debug("deploy item is finished, nothing to do")
 		return reconcile.Result{}, nil
 	}
@@ -126,15 +128,15 @@ func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1a
 	logger.Info("pickup timeout occurred")
 
 	di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-	di.Status.JobIDFinished = di.Status.JobID
+	di.Status.JobIDFinished = di.Status.GetJobID()
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	di.Status.ObservedGeneration = di.Generation
-	di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
+	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
 		lsv1alpha1.PickupTimeoutOperation,
 		lsv1alpha1.PickupTimeoutReason,
 		fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", con.pickupTimeout/time.Second),
 		lsv1alpha1.ErrorTimeout,
-	)
+	))
 
 	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000110, di); err != nil {
 		logger.Error(err, "unable to set deployitem status")
@@ -171,15 +173,15 @@ func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, di *lsv
 	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 
 	di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-	di.Status.JobIDFinished = di.Status.JobID
+	di.Status.JobIDFinished = di.Status.GetJobID()
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	di.Status.ObservedGeneration = di.Generation
-	di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
+	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
 		lsv1alpha1.AbortingTimeoutOperation,
 		lsv1alpha1.AbortingTimeoutReason,
 		fmt.Sprintf("deployer has not aborted progressing this deploy item within %d seconds",
 			con.abortingTimeout/time.Second),
-		lsv1alpha1.ErrorTimeout)
+		lsv1alpha1.ErrorTimeout))
 
 	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000111, di); err != nil {
 		// we might need to expose this as event on the deploy item

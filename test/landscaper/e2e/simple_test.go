@@ -123,7 +123,7 @@ var _ = Describe("Simple", func() {
 		di := &lsv1alpha1.DeployItem{}
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
 		Expect(di.Status.DeployItemPhase).To(BeEmpty())
-		Expect(di.Status.JobID).To(Equal(jobID))
+		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(BeEmpty())
 
 		// reconcile deploy item
@@ -132,7 +132,7 @@ var _ = Describe("Simple", func() {
 
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
 		Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
-		Expect(di.Status.JobID).To(Equal(jobID))
+		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 
 		// as the deploy item is now successfully reconciled, we have to trigger the execution
@@ -180,7 +180,7 @@ var _ = Describe("Simple", func() {
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
 		Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
 		Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
-		Expect(di.Status.JobID).To(Equal(deletionJobID))
+		Expect(di.Status.GetJobID()).To(Equal(deletionJobID))
 		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 
 		// deployer should remove finalizer

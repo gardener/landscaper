@@ -11,7 +11,7 @@ func IsInstallationPhase(inst *lsv1alpha1.Installation, phase lsv1alpha1.Install
 }
 
 func IsDeployItemJobIDsIdentical(di *lsv1alpha1.DeployItem) bool {
-	return di.Status.JobID == di.Status.JobIDFinished
+	return di.Status.GetJobID() == di.Status.JobIDFinished
 }
 
 func IsInstallationJobIDsIdentical(inst *lsv1alpha1.Installation) bool {

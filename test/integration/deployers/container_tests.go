@@ -108,7 +108,7 @@ func ContainerDeployerTestsForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Update(ctx, di))
 
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
-			di.Status.JobID = "2"
+			di.Status.SetJobID("2")
 			Expect(state.Client.Status().Update(ctx, di)).To(Succeed())
 
 			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))

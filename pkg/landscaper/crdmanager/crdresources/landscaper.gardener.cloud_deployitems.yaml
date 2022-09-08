@@ -176,6 +176,43 @@ spec:
                 required:
                 - name
                 type: object
+              firstError:
+                description: FirstError describes the first error that occurred since
+                  JobID was changed the last time.
+                properties:
+                  codes:
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
+                    items:
+                      type: string
+                    type: array
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: Last time the condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  operation:
+                    description: Operation describes the operator where the error
+                      occurred.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                required:
+                - operation
+                - lastTransitionTime
+                - lastUpdateTime
+                - reason
+                - message
+                type: object
               jobID:
                 description: JobID is the ID of the current working request.
                 type: string
@@ -223,6 +260,46 @@ spec:
                 - reason
                 - message
                 type: object
+              lastErrors:
+                description: ErrorHistory describes the last n errors that occurred
+                  since JobID was changed the last time.
+                items:
+                  description: Error holds information about an error that occurred.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    operation:
+                      description: Operation describes the operator where the error
+                        occurred.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                  required:
+                  - operation
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - reason
+                  - message
+                  type: object
+                type: array
               lastReconcileTime:
                 description: LastReconcileTime indicates when the reconciliation of
                   the last change to the deploy item has started

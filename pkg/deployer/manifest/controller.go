@@ -61,14 +61,6 @@ func (d deployer) Delete(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alp
 	return manifest.Delete(ctx)
 }
 
-func (d *deployer) ForceReconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	if err := d.Reconcile(ctx, lsCtx, di, target); err != nil {
-		return err
-	}
-	delete(di.Annotations, lsv1alpha1.OperationAnnotation)
-	return nil
-}
-
 func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
