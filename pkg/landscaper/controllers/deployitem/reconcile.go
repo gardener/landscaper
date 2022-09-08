@@ -129,12 +129,12 @@ func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1a
 	di.Status.JobIDFinished = di.Status.JobID
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	di.Status.ObservedGeneration = di.Generation
-	di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
+	di.Status.SetLastError(lserrors.UpdatedError(di.Status.GetLastError(),
 		lsv1alpha1.PickupTimeoutOperation,
 		lsv1alpha1.PickupTimeoutReason,
 		fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", con.pickupTimeout/time.Second),
 		lsv1alpha1.ErrorTimeout,
-	)
+	))
 
 	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000110, di); err != nil {
 		logger.Error(err, "unable to set deployitem status")
@@ -174,12 +174,12 @@ func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, di *lsv
 	di.Status.JobIDFinished = di.Status.JobID
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	di.Status.ObservedGeneration = di.Generation
-	di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
+	di.Status.SetLastError(lserrors.UpdatedError(di.Status.GetLastError(),
 		lsv1alpha1.AbortingTimeoutOperation,
 		lsv1alpha1.AbortingTimeoutReason,
 		fmt.Sprintf("deployer has not aborted progressing this deploy item within %d seconds",
 			con.abortingTimeout/time.Second),
-		lsv1alpha1.ErrorTimeout)
+		lsv1alpha1.ErrorTimeout))
 
 	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000111, di); err != nil {
 		// we might need to expose this as event on the deploy item

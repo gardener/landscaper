@@ -44,9 +44,6 @@ type Deployer interface {
 	Reconcile(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// Delete the deployitem.
 	Delete(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
-	// ForceReconcile the deployitem.
-	// Keep in mind that the force deletion annotation must be removed by the Deployer.
-	ForceReconcile(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// Abort the deployitem progress.
 	Abort(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// ExtensionHooks returns all registered extension hooks.
@@ -214,14 +211,14 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
-	deployItem.Status.LastError = lserrors.TryUpdateLsError(deployItem.Status.LastError, err)
+	deployItem.Status.SetLastError(lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))
 
-	if deployItem.Status.LastError != nil {
-		if lserrors.ContainsAnyErrorCode(deployItem.Status.LastError.Codes, lsv1alpha1.UnrecoverableErrorCodes) {
+	if deployItem.Status.GetLastError() != nil {
+		if lserrors.ContainsAnyErrorCode(deployItem.Status.GetLastError().Codes, lsv1alpha1.UnrecoverableErrorCodes) {
 			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		}
 
-		lastErr := deployItem.Status.LastError
+		lastErr := deployItem.Status.GetLastError()
 		c.lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
 	}
 

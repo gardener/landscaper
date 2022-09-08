@@ -188,7 +188,7 @@ Status:
 
 	logger.Logf(fmtMsg,
 		deployItem.Status.Phase,
-		FormatLastError(deployItem.Status.LastError, "    "),
+		FormatLastError(deployItem.Status.GetLastError(), "    "),
 		FormatAsYAML(deployItem.Status.ProviderStatus, 4))
 	return nil
 }

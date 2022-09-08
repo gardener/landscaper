@@ -113,7 +113,6 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	}
 
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	m.DeployItem.Status.LastError = nil
 
 	return nil
 }
@@ -190,7 +189,6 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	}
 
 	if !completed {
-		m.DeployItem.Status.LastError = nil
 		return errors.New("not all items are deleted")
 	}
 	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)

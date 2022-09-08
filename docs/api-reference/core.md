@@ -2646,6 +2646,32 @@ Error
 </tr>
 <tr>
 <td>
+<code>lastErrors</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.*github.com/gardener/landscaper/apis/core/v1alpha1.Error">
+[]*github.com/gardener/landscaper/apis/core/v1alpha1.Error
+</a>
+</em>
+</td>
+<td>
+<p>ErrorHistory describes the last n errors that occurred since JobID was changed the last time.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>firstError</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Error">
+Error
+</a>
+</em>
+</td>
+<td>
+<p>FirstError describes the first error that occurred since JobID was changed the last time.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>lastReconcileTime</code></br>
 <em>
 <a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">

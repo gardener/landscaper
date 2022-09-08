@@ -39,14 +39,14 @@ func HandleErrorFunc(ctx context.Context, err lserrors.LsError, c client.Client,
 		}
 	}
 
-	deployItem.Status.LastError = lserrors.TryUpdateLsError(deployItem.Status.LastError, err)
+	deployItem.Status.SetLastError(lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))
 
 	phaseForLastError := lserrors.GetPhaseForLastError(lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
-		deployItem.Status.LastError, 5*time.Minute)
+		deployItem.Status.GetLastError(), 5*time.Minute)
 	deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(phaseForLastError)
 
-	if deployItem.Status.LastError != nil {
-		lastErr := deployItem.Status.LastError
+	if deployItem.Status.GetLastError() != nil {
+		lastErr := deployItem.Status.GetLastError()
 		eventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
 	}
 

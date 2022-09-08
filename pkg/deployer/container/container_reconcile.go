@@ -203,7 +203,6 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	if err := c.CleanupPod(ctx, pod); err != nil {
 		return err
 	}
-	c.DeployItem.Status.LastError = nil
 	return nil
 }
 
