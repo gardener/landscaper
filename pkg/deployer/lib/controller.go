@@ -7,11 +7,9 @@ package lib
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -210,52 +208,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem) error {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-	deployItem.Status.SetLastError(lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))
-
-	if deployItem.Status.GetLastError() != nil {
-		if lserrors.ContainsAnyErrorCode(deployItem.Status.GetLastError().Codes, lsv1alpha1.UnrecoverableErrorCodes) {
-			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		}
-
-		lastErr := deployItem.Status.GetLastError()
-		c.lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
-	}
-
-	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-	} else if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
-		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseSucceeded
-	}
-
-	if deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
-		deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
-		deployItem.Status.JobIDFinished = deployItem.Status.JobID
-	}
-
-	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {
-		if err2 := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000092, deployItem); err2 != nil {
-			if !deployItem.DeletionTimestamp.IsZero() {
-				// recheck if already deleted
-				diRecheck := &lsv1alpha1.DeployItem{}
-				errRecheck := read_write_layer.GetDeployItem(ctx, c.lsClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), diRecheck)
-				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
-					return nil
-				}
-			}
-
-			if apierrors.IsConflict(err2) { // reduce logging
-				logger.Debug("Unable to update status", lc.KeyError, err2.Error())
-			} else {
-				logger.Error(err2, "Unable to update status")
-			}
-			if err == nil {
-				return err2
-			}
-		}
-	}
-
-	return err
+	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsClient, c.lsEventRecorder)
 }
 
 func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.Logger, deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, error) {

@@ -107,7 +107,7 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 			}
 		}
 
-		var timeout int32 = 20
+		var timeout int32 = 15
 		vwcWebhook := admissionregistrationv1.ValidatingWebhook{
 			Name:                    elem.ResourceName + o.WebhookNameSuffix,
 			SideEffects:             &noSideEffects,
