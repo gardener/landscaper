@@ -15,11 +15,9 @@ import (
 )
 
 var importTypesWithExpectedConfig = map[string][]string{
-	string(core.ImportTypeData):                    {"Schema"},
-	string(core.ImportTypeTarget):                  {"TargetType"},
-	string(core.ImportTypeTargetList):              {"TargetType"},
-	string(core.ImportTypeComponentDescriptor):     {},
-	string(core.ImportTypeComponentDescriptorList): {},
+	string(core.ImportTypeData):       {"Schema"},
+	string(core.ImportTypeTarget):     {"TargetType"},
+	string(core.ImportTypeTargetList): {"TargetType"},
 }
 var exportTypesWithExpectedConfig = map[string][]string{
 	string(core.ExportTypeData):   {"Schema"},

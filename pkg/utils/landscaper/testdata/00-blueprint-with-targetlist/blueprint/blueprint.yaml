@@ -6,9 +6,3 @@ imports:
 - name: testClusters
   type: targetList
   targetType: landscaper.gardener.cloud/kubernetes-cluster
-
-- name: testComponent
-  type: componentDescriptor
-
-- name: testComponents
-  type: componentDescriptorList

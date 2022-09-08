@@ -64,8 +64,6 @@ func (imp *Imported) GetImportPath() *field.Path {
 		fldPath = fldPath.Child("data")
 	case lsv1alpha1.ImportTypeTarget, lsv1alpha1.ImportTypeTargetList:
 		fldPath = fldPath.Child("targets")
-	case lsv1alpha1.ImportTypeComponentDescriptor, lsv1alpha1.ImportTypeComponentDescriptorList:
-		fldPath = fldPath.Child("componentDescriptors")
 	}
 	return fldPath.Child(imp.GetImportName())
 }

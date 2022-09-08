@@ -91,9 +91,7 @@ func ValidateInstallationImports(imports core.InstallationImports, fldPath *fiel
 
 	tmpErrs, importNames = ValidateInstallationDataImports(imports.Data, fldPath.Child("data"), importNames)
 	allErrs = append(allErrs, tmpErrs...)
-	tmpErrs, importNames = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
-	allErrs = append(allErrs, tmpErrs...)
-	tmpErrs, _ = ValidateInstallationComponentDescriptorImports(imports.ComponentDescriptors, fldPath.Child("componentDescriptors"), importNames)
+	tmpErrs, _ = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
 	allErrs = append(allErrs, tmpErrs...)
 
 	return allErrs
@@ -143,49 +141,6 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 			for idx2, tg := range imp.Targets {
 				if len(tg) == 0 {
 					allErrs = append(allErrs, field.Required(fldPathIdx.Child("targets").Index(idx2), "target must not be empty"))
-				}
-			}
-		}
-		if importNames.Has(imp.Name) {
-			allErrs = append(allErrs, field.Duplicate(fldPathIdx, imp.Name))
-		}
-		importNames.Insert(imp.Name)
-	}
-
-	return allErrs, importNames
-}
-
-// ValidateInstallationComponentDescriptorImports validates the component descriptor imports of an Installation
-func ValidateInstallationComponentDescriptorImports(imports []core.ComponentDescriptorImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
-	allErrs := field.ErrorList{}
-
-	for idx, imp := range imports {
-		fldPathIdx := fldPath.Index(idx)
-		if imp.Name == "" {
-			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
-		}
-		allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx, imp, "Ref", "ConfigMapRef", "SecretRef", "List")...)
-		if imp.ConfigMapRef != nil {
-			allErrs = append(allErrs, ValidateConfigMapReference(*imp.ConfigMapRef, fldPathIdx.Child("configMapRef"))...)
-		}
-		if imp.SecretRef != nil {
-			allErrs = append(allErrs, ValidateSecretReference(*imp.SecretRef, fldPathIdx.Child("secretRef"))...)
-		}
-		if len(imp.DataRef) != 0 {
-			allErrs = append(allErrs, field.Invalid(fldPathIdx.Child("dataRef"), imp.DataRef, "must be set in subinstallation templates only"))
-		}
-		if len(imp.List) > 0 {
-			for idx2, cd := range imp.List {
-				fldPathIdx2 := fldPathIdx.Child("list").Index(idx2)
-				allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx2, cd, "Ref", "ConfigMapRef", "SecretRef")...)
-				if cd.ConfigMapRef != nil {
-					allErrs = append(allErrs, ValidateConfigMapReference(*cd.ConfigMapRef, fldPathIdx2.Child("configMapRef"))...)
-				}
-				if cd.SecretRef != nil {
-					allErrs = append(allErrs, ValidateSecretReference(*cd.SecretRef, fldPathIdx2.Child("secretRef"))...)
-				}
-				if len(cd.DataRef) != 0 {
-					allErrs = append(allErrs, field.Invalid(fldPathIdx2.Child("dataRef"), cd.DataRef, "must be set in subinstallation templates only"))
 				}
 			}
 		}

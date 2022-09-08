@@ -126,24 +126,10 @@ var _ = Describe("Blueprint", func() {
 					},
 					Type: core.ImportTypeTargetList,
 				},
-				{
-					FieldValueDefinition: core.FieldValueDefinition{
-						Name:       "myimport4",
-						TargetType: "test",
-					},
-					Type: core.ImportTypeComponentDescriptor,
-				},
-				{
-					FieldValueDefinition: core.FieldValueDefinition{
-						Name:   "myimport5",
-						Schema: &core.JSONSchemaDefinition{},
-					},
-					Type: core.ImportTypeComponentDescriptorList,
-				},
 			}
 
 			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), impDefs)
-			Expect(allErrs).To(HaveLen(5))
+			Expect(allErrs).To(HaveLen(3))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeInvalid),
 				"Field":  Equal("x[0][myimport1]"),
@@ -157,16 +143,6 @@ var _ = Describe("Blueprint", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeInvalid),
 				"Field":  Equal("x[2][myimport3]"),
-				"Detail": ContainSubstring("Schema"),
-			}))))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":   Equal(field.ErrorTypeInvalid),
-				"Field":  Equal("x[3][myimport4]"),
-				"Detail": ContainSubstring("TargetType"),
-			}))))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":   Equal(field.ErrorTypeInvalid),
-				"Field":  Equal("x[4][myimport5]"),
 				"Detail": ContainSubstring("Schema"),
 			}))))
 		})
