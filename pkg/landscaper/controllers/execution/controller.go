@@ -108,6 +108,9 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseInit {
 		if err := c.handlePhaseInit(ctx, exec); err != nil {
+			if lsutil.IsRecoverableError(err) {
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000007)
+			}
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000131)
 		}
 
@@ -142,6 +145,9 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseCompleting {
 		if err := c.handlePhaseCompleting(ctx, exec); err != nil {
+			if lsutil.IsRecoverableError(err) {
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000008)
+			}
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000138)
 		}
 
@@ -154,6 +160,9 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseInitDelete {
 		if err := c.handlePhaseInitDelete(ctx, exec); err != nil {
+			if lsutil.IsRecoverableError(err) {
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000010)
+			}
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleteFailed, err, read_write_layer.W000140)
 		}
 

@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,8 +53,10 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseInit {
 		fatalError, normalError := c.handlePhaseInit(ctx, inst)
 
-		if fatalError != nil {
+		if fatalError != nil && !lsutil.IsRecoverableError(fatalError) {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError, read_write_layer.W000087)
+		} else if fatalError != nil && lsutil.IsRecoverableError(fatalError) {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, fatalError, read_write_layer.W000003)
 		} else if normalError != nil {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError, read_write_layer.W000088)
 		}
@@ -94,8 +98,10 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseCompleting {
 		fatalError, normalError := c.handlePhaseCompleting(ctx, inst)
 
-		if fatalError != nil {
+		if fatalError != nil && !lsutil.IsRecoverableError(fatalError) {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError, read_write_layer.W000120)
+		} else if fatalError != nil && lsutil.IsRecoverableError(fatalError) {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, fatalError, read_write_layer.W000005)
 		} else if normalError != nil {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError, read_write_layer.W000121)
 		}
@@ -111,8 +117,10 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		// trigger deletion of execution and sub installations
 		fatalError, normalError := c.handleDeletionPhaseInit(ctx, inst)
 
-		if fatalError != nil {
+		if fatalError != nil && !lsutil.IsRecoverableError(fatalError) {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleteFailed, fatalError, read_write_layer.W000123)
+		} else if fatalError != nil && lsutil.IsRecoverableError(fatalError) {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, fatalError, read_write_layer.W000006)
 		} else if normalError != nil {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError, read_write_layer.W000124)
 		}
