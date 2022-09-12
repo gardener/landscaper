@@ -2,17 +2,20 @@ package dependencies
 
 import (
 	"context"
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"path"
 	"path/filepath"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 func DependencyTests(f *framework.Framework) {

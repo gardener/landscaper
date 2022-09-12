@@ -56,19 +56,19 @@ func New(op *installations.Operation) *ExecutionOperation {
 	}
 }
 
-func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst *installations.Installation) (core.DeployItemTemplateList, error) {
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
+func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst *installations.InstallationImportsAndBlueprint) (core.DeployItemTemplateList, error) {
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.GetInstallation().Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
 		KubeClient: o.Client(),
-		Inst:       inst.Info,
+		Inst:       inst.GetInstallation(),
 	}
 	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
-				o.Context().External.InjectComponentDescriptorRef(inst.Info),
-				inst.Blueprint,
+				o.Context().External.InjectComponentDescriptorRef(inst.GetInstallation()),
+				inst.GetBlueprint(),
 				o.ComponentDescriptor,
 				o.ResolvedComponentDescriptorList,
 				inst.GetImports())))
@@ -91,7 +91,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 		if elem.Target != nil {
 			target = &core.ObjectReference{
 				Name:      elem.Target.Name,
-				Namespace: o.Inst.Info.Namespace,
+				Namespace: o.Inst.GetInstallation().Namespace,
 			}
 			if elem.Target.Index != nil {
 				// targetlist import reference
@@ -139,18 +139,18 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 	return execTemplates, nil
 }
 
-func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation) error {
+func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.InstallationImportsAndBlueprint) error {
 	execTemplates, err := o.RenderDeployItemTemplates(ctx, inst)
 	if execTemplates == nil || err != nil {
 		return err
 	}
 
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.GetInstallation().Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	exec := &lsv1alpha1.Execution{}
-	exec.Name = inst.Info.Name
-	exec.Namespace = inst.Info.Namespace
-	exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
+	exec.Name = inst.GetInstallation().Name
+	exec.Namespace = inst.GetInstallation().Namespace
+	exec.Spec.RegistryPullSecrets = inst.GetInstallation().Spec.RegistryPullSecrets
 
 	versionedDeployItemTemplateList := lsv1alpha1.DeployItemTemplateList{}
 	if err := lsv1alpha1.Convert_core_DeployItemTemplateList_To_v1alpha1_DeployItemTemplateList(&execTemplates, &versionedDeployItemTemplateList, nil); err != nil {
@@ -161,20 +161,20 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}
 
 	if _, err := o.Writer().CreateOrUpdateExecution(ctx, read_write_layer.W000022, exec, func() error {
-		exec.Spec.Context = inst.Info.Spec.Context
+		exec.Spec.Context = inst.GetInstallation().Spec.Context
 		exec.Spec.DeployItems = versionedDeployItemTemplateList
 
-		if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+		if lsv1alpha1helper.HasOperation(inst.GetInstallation().ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ForceReconcileOperation))
 		} else {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 		}
 
-		if exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		if exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lsv1alpha1helper.HasOperation(inst.GetInstallation().ObjectMeta, lsv1alpha1.ReconcileOperation) {
 			exec.Spec.ReconcileID = uuid.New().String()
 		}
 
-		if err := controllerutil.SetControllerReference(inst.Info, exec, api.LandscaperScheme); err != nil {
+		if err := controllerutil.SetControllerReference(inst.GetInstallation(), exec, api.LandscaperScheme); err != nil {
 			return err
 		}
 		o.Scheme().Default(exec)
@@ -182,17 +182,17 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}); err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CreateOrUpdateExecutionReason, "Unable to create or update execution")
-		_ = o.UpdateInstallationStatus(ctx, inst.Info, lsv1alpha1.ComponentPhaseProgressing, cond)
+		_ = o.UpdateInstallationStatus(ctx, inst.GetInstallation(), lsv1alpha1.ComponentPhaseProgressing, cond)
 		return err
 	}
 
-	inst.Info.Status.ExecutionReference = &lsv1alpha1.ObjectReference{
+	inst.GetInstallation().Status.ExecutionReference = &lsv1alpha1.ObjectReference{
 		Name:      exec.Name,
 		Namespace: exec.Namespace,
 	}
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		ExecutionDeployedReason, "Deployed execution item")
-	if err := o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond); err != nil {
+	if err := o.UpdateInstallationStatus(ctx, inst.GetInstallation(), inst.GetInstallation().Status.Phase, cond); err != nil {
 		return err
 	}
 

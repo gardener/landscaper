@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/dependencies"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -273,7 +275,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 	}
 
 	if len(installationTemplates) > 0 {
-		installationTemplates, err = subinstallations.OrderInstallationTemplates(installationTemplates)
+		installationTemplates, err = dependencies.CheckForCyclesAndDuplicateExports(installationTemplates, true)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable for order subinstallations of blueprint: %w", err)
 		}

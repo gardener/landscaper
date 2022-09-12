@@ -2,66 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package subinstallations_test
+package dependencies
 
 import (
 	"fmt"
 	"sort"
 	"strings"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/util/sets"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
-var _ = Describe("SubinstallationsHelper", func() {
+var _ = Describe("Cyclic Dependency Determination Tests", func() {
 
-	Context("DependencyComputation", func() {
-
-		It("should not compute dependencies for independent installation templates", func() {
-			deps := map[string][]string{
-				"a": nil,
-				"b": nil,
-				"c": nil,
-			}
-			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
-			computedDeps, impRels := subinstallations.ComputeInstallationDependencies(subinstallations.AbstractInstallationTemplates(tmpls))
-			for k, v := range computedDeps {
-				Expect(v).To(BeEmpty(), "entry %q has non-empty dependency list", k)
-			}
-			Expect(impRels).To(BeEmpty())
-		})
-
-		It("should correctly detect data dependencies", func() {
-			deps := map[string][]string{
-				"a": nil,
-				"b": {"a"},
-			}
-			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
-			computedDeps, impRels := subinstallations.ComputeInstallationDependencies(subinstallations.AbstractInstallationTemplates(tmpls))
-			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
-			Expect(impRels).To(HaveLen(1))
-			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_data")))
-		})
-		It("should correctly detect target dependencies", func() {
-			deps := map[string][]string{
-				"a": nil,
-				"b": {"a"},
-			}
-			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(targetDependency))
-			computedDeps, impRels := subinstallations.ComputeInstallationDependencies(subinstallations.AbstractInstallationTemplates(tmpls))
-			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
-			Expect(impRels).To(HaveLen(1))
-			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_target")))
-		})
-
-	})
-
-	Context("InstallationTemplateOrdering", func() {
+	Context("OrderTemplates", func() {
 
 		It("should return independent installation templates in the same order they were given", func() {
 			deps := map[string][]string{
@@ -70,9 +26,20 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"c": nil,
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
-			ordered, err := subinstallations.OrderInstallationTemplates(tmpls)
+			_, err := CheckForCyclesAndDuplicateExports(tmpls, true)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(ordered).To(Equal(tmpls))
+		})
+
+		It("should correctly detect data dependencies", func() {
+			deps := map[string][]string{
+				"a": nil,
+				"b": {"a"},
+			}
+			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
+			orderedTmpls, err := CheckForCyclesAndDuplicateExports(tmpls, true)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(orderedTmpls[0].Name == "a").To(BeTrue())
+			Expect(orderedTmpls[1].Name == "b").To(BeTrue())
 		})
 
 		It("should correctly order based on data dependencies", func() {
@@ -82,10 +49,11 @@ var _ = Describe("SubinstallationsHelper", func() {
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
 			sortInstallationTemplatesAlphabetically(tmpls)
-			ordered, err := subinstallations.OrderInstallationTemplates(tmpls)
+			ordered, err := CheckForCyclesAndDuplicateExports(tmpls, true)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(installationTemplatesToNames(ordered)).To(Equal([]string{"b", "a"}))
 		})
+
 		It("should correctly order based on target dependencies", func() {
 			deps := map[string][]string{
 				"a": {"b"},
@@ -93,7 +61,7 @@ var _ = Describe("SubinstallationsHelper", func() {
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(targetDependency))
 			sortInstallationTemplatesAlphabetically(tmpls)
-			ordered, err := subinstallations.OrderInstallationTemplates(tmpls)
+			ordered, err := CheckForCyclesAndDuplicateExports(tmpls, true)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(installationTemplatesToNames(ordered)).To(Equal([]string{"b", "a"}))
 		})
@@ -110,7 +78,8 @@ var _ = Describe("SubinstallationsHelper", func() {
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(mixedDependency))
 			sortInstallationTemplatesAlphabetically(tmpls)
-			ordered, err := subinstallations.OrderInstallationTemplates(tmpls)
+
+			ordered, err := CheckForCyclesAndDuplicateExports(tmpls, true)
 			Expect(err).ToNot(HaveOccurred())
 			indices := stringSliceToIndexMap(installationTemplatesToNames(ordered))
 			Expect(indices["b"]).To(BeNumerically("<", indices["c"]))
@@ -137,13 +106,11 @@ var _ = Describe("SubinstallationsHelper", func() {
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(mixedDependency))
 			sortInstallationTemplatesAlphabetically(tmpls)
-			_, err := subinstallations.OrderInstallationTemplates(tmpls)
+			_, err := CheckForCyclesAndDuplicateExports(tmpls, true)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Op: EnsureNestedInstallations - Reason: OrderNestedInstallationTemplates - Message: The following cyclic dependencies have been found in the nested installation templates: {c -[e_data]-> e -[d_data]-> d -[c_target]-> c}"))
 		})
 
 	})
-
 })
 
 type dependencyMode string

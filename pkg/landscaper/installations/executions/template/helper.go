@@ -23,7 +23,6 @@ import (
 // The arguments are expected to be a set of key value pairs that describe the identity of the resource.
 // e.g. []interface{}{"name", "my-resource"}.
 // Optionally the first argument can be a component descriptor provided as map[string]interface{}
-//
 func ResolveResources(defaultCD *cdv2.ComponentDescriptor, args []interface{}) ([]cdv2.Resource, error) {
 	if len(args) < 2 {
 		panic("at least 2 arguments are expected")
@@ -76,7 +75,6 @@ func ResolveResources(defaultCD *cdv2.ComponentDescriptor, args []interface{}) (
 // The arguments are expected to be a set of key value pairs that describe the identity of the resource.
 // e.g. []interface{}{"name", "my-component"}.
 // Optionally the first argument can be a component descriptor provided as map[string]interface{}
-//
 func ResolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList, args []interface{}) ([]cdv2.ComponentDescriptor, error) {
 	if len(args) < 2 {
 		panic("at least 2 arguments are expected")

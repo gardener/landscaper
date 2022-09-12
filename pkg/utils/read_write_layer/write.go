@@ -44,6 +44,13 @@ func (w *Writer) CreateOrUpdateCoreTarget(ctx context.Context, writeID WriteID, 
 	return result, errorWithWriteID(err, writeID)
 }
 
+func (w *Writer) DeleteTarget(ctx context.Context, writeID WriteID, target *lsv1alpha1.Target) error {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(target)
+	err := delete(ctx, w.client, target)
+	w.logTargetUpdate(ctx, writeID, opInstDelete, target, generationOld, resourceVersionOld, err)
+	return errorWithWriteID(err, writeID)
+}
+
 // methods for data objects
 
 func (w *Writer) CreateOrUpdateCoreDataObject(ctx context.Context, writeID WriteID, do *lsv1alpha1.DataObject,
@@ -60,6 +67,13 @@ func (w *Writer) CreateOrUpdateDataObject(ctx context.Context, writeID WriteID, 
 	result, err := kubernetes.CreateOrUpdate(ctx, w.client, do, f)
 	w.logDataObjectUpdate(ctx, writeID, opDOCreateOrUpdate, do, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
+}
+
+func (w *Writer) DeleteDataObject(ctx context.Context, writeID WriteID, do *lsv1alpha1.DataObject) error {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(do)
+	err := delete(ctx, w.client, do)
+	w.logDataObjectUpdate(ctx, writeID, opInstDelete, do, generationOld, resourceVersionOld, err)
+	return errorWithWriteID(err, writeID)
 }
 
 // methods for installations

@@ -6,11 +6,13 @@ package targets
 
 import (
 	"context"
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
-	k8sv1 "k8s.io/api/core/v1"
 	"path"
 	"path/filepath"
 	"time"
+
+	k8sv1 "k8s.io/api/core/v1"
+
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

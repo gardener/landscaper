@@ -166,9 +166,13 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
 	currentOperation := "handlePhaseInit"
 
-	err := c.checkForDuplicateExports(ctx, inst)
-	if err != nil {
-		return lserrors.BuildLsError(err, currentOperation, "CheckForDuplicateExports", err.Error(), lsv1alpha1.ErrorConfigurationProblem), nil
+	// cleanup
+	newCleaner := NewDataObjectAndTargetCleaner(inst, c.Client())
+	if err := newCleaner.CleanupContext(ctx); err != nil {
+		return lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error()), nil
+	}
+	if err := newCleaner.CleanupExports(ctx); err != nil {
+		return lserrors.NewWrappedError(err, currentOperation, "CleanupExports", err.Error()), nil
 	}
 
 	instOp, imps, importsHash, predecessorMap, fatalError, normalError := c.init(ctx, inst)
@@ -209,7 +213,7 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 }
 
 func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation,
-	*imports.Imports, string, map[string]*installations.InstallationBase, lserrors.LsError, lserrors.LsError) {
+	*imports.Imports, string, map[string]*installations.InstallationAndImports, lserrors.LsError, lserrors.LsError) {
 
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
@@ -228,13 +232,9 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*
 		return nil, nil, "", nil, fatalError, nil
 	}
 
-	dependendOnSiblings, err := rh.FetchDependencies()
-	if err != nil {
-		fatalError = lserrors.NewWrappedError(err, currentOperation, "FetchDependencies", err.Error())
-		return nil, nil, "", nil, fatalError, nil
-	}
+	predecessors := rh.FetchPredecessors()
 
-	predecessorMap, err := rh.GetPredecessors(inst, dependendOnSiblings)
+	predecessorMap, err := rh.GetPredecessors(inst, predecessors)
 	if err != nil {
 		normalError := lserrors.NewWrappedError(err, currentOperation, "GetPredecessors", err.Error())
 		return nil, nil, "", nil, nil, normalError
@@ -250,14 +250,9 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*
 		return nil, nil, "", nil, fatalError, nil
 	}
 
-	if err = rh.ImportsSatisfied(); err != nil {
-		fatalError = lserrors.NewWrappedError(err, currentOperation, "ImportsSatisfied", err.Error())
-		return nil, nil, "", nil, fatalError, nil
-	}
-
-	imps, err := rh.GetImports()
+	imps, err := rh.ImportsSatisfied()
 	if err != nil {
-		fatalError = lserrors.NewWrappedError(err, currentOperation, "GetImports", err.Error())
+		fatalError = lserrors.NewWrappedError(err, currentOperation, "ImportsSatisfied", err.Error())
 		return nil, nil, "", nil, fatalError, nil
 	}
 
@@ -428,8 +423,8 @@ func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *install
 		return lserrors.NewWrappedError(err, currOp, "ReconcileExecution", err.Error())
 	}
 
-	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
-	inst.Info.Status.ObservedGeneration = inst.Info.Generation
+	inst.GetInstallation().Status.Imports = inst.ImportStatus().GetStatus()
+	inst.GetInstallation().Status.ObservedGeneration = inst.GetInstallation().Generation
 	return nil
 }
 

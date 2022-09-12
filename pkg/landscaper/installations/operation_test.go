@@ -36,11 +36,10 @@ var _ = Describe("Operation", func() {
 	BeforeEach(func() {
 		kubeClient = fake.NewClientBuilder().WithScheme(api.LandscaperScheme).Build()
 		commonOp := operation.NewOperation(kubeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		instImportsAndBlueprint := installations.NewInstallationImportsAndBlueprint(&lsv1alpha1.Installation{},
+			&blueprints.Blueprint{Info: &lsv1alpha1.Blueprint{}})
 		op = &installations.Operation{
-			Inst: &installations.Installation{
-				InstallationBase: installations.InstallationBase{Info: &lsv1alpha1.Installation{}},
-				Blueprint:        &blueprints.Blueprint{Info: &lsv1alpha1.Blueprint{}},
-			},
+			Inst:      instImportsAndBlueprint,
 			Operation: commonOp,
 		}
 	})
@@ -62,9 +61,9 @@ var _ = Describe("Operation", func() {
 			targetObj, err := utils.JSONSerializeToGenericObject(target)
 			testutils.ExpectNoError(err)
 
-			op.Inst.Info.Name = "test"
-			op.Inst.Info.Namespace = "default"
-			op.Inst.Blueprint.Info.Imports = []lsv1alpha1.ImportDefinition{
+			op.Inst.GetInstallation().Name = "test"
+			op.Inst.GetInstallation().Namespace = "default"
+			op.Inst.GetBlueprint().Info.Imports = []lsv1alpha1.ImportDefinition{
 				{
 					FieldValueDefinition: lsv1alpha1.FieldValueDefinition{
 						Name:       "my-import",
@@ -73,9 +72,9 @@ var _ = Describe("Operation", func() {
 					Type: lsv1alpha1.ImportTypeTarget,
 				},
 			}
-			op.Inst.Imports = map[string]interface{}{
+			op.Inst.SetImports(map[string]interface{}{
 				"my-import": targetObj,
-			}
+			})
 
 			testutils.ExpectNoError(op.CreateOrUpdateImports(ctx))
 
@@ -98,9 +97,9 @@ var _ = Describe("Operation", func() {
 			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("false"))
 			targetObj, err = utils.JSONSerializeToGenericObject(target)
 			testutils.ExpectNoError(err)
-			op.Inst.Imports = map[string]interface{}{
+			op.Inst.SetImports(map[string]interface{}{
 				"my-import": targetObj,
-			}
+			})
 
 			testutils.ExpectNoError(op.CreateOrUpdateImports(ctx))
 
@@ -138,9 +137,9 @@ var _ = Describe("Operation", func() {
 
 			testutils.ExpectNoError(kubeClient.Create(ctx, do))
 
-			op.Inst.Info.Name = "test"
-			op.Inst.Info.Namespace = "default"
-			op.Inst.Info.UID = "new-installation-uid"
+			op.Inst.GetInstallation().Name = "test"
+			op.Inst.GetInstallation().Namespace = "default"
+			op.Inst.GetInstallation().UID = "new-installation-uid"
 
 			err := op.CreateOrUpdateExports(ctx, []*dataobjects.DataObject{
 				{
@@ -181,9 +180,9 @@ var _ = Describe("Operation", func() {
 
 			testutils.ExpectNoError(kubeClient.Create(ctx, target))
 
-			op.Inst.Info.Name = "test"
-			op.Inst.Info.Namespace = "default"
-			op.Inst.Info.UID = "new-installation-uid"
+			op.Inst.GetInstallation().Name = "test"
+			op.Inst.GetInstallation().Namespace = "default"
+			op.Inst.GetInstallation().UID = "new-installation-uid"
 
 			targetExtension := dataobjects.NewTargetExtension(nil, nil)
 			metadata := dataobjects.Metadata{
@@ -221,9 +220,9 @@ var _ = Describe("Operation", func() {
 				targetExtension,
 			}
 
-			op.Inst.Info.Name = "test"
-			op.Inst.Info.Namespace = "default"
-			op.Inst.Blueprint.Info.Exports = []lsv1alpha1.ExportDefinition{
+			op.Inst.GetInstallation().Name = "test"
+			op.Inst.GetInstallation().Namespace = "default"
+			op.Inst.GetBlueprint().Info.Exports = []lsv1alpha1.ExportDefinition{
 				{
 					FieldValueDefinition: lsv1alpha1.FieldValueDefinition{
 						Name:       "my-export",
@@ -233,7 +232,7 @@ var _ = Describe("Operation", func() {
 				},
 			}
 
-			testutils.ExpectNoError(kubeClient.Create(ctx, op.Inst.Info))
+			testutils.ExpectNoError(kubeClient.Create(ctx, op.Inst.GetInstallation()))
 
 			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, targetExtensions))
 

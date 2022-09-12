@@ -54,11 +54,11 @@ func GetParentInstallationName(inst *lsv1alpha1.Installation) string {
 }
 
 // CreateInternalInstallationBases creates internal installation bases for a list of ComponentInstallations
-func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) []*InstallationBase {
+func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) []*InstallationAndImports {
 	if len(installations) == 0 {
 		return nil
 	}
-	internalInstallations := make([]*InstallationBase, len(installations))
+	internalInstallations := make([]*InstallationAndImports, len(installations))
 	for i, inst := range installations {
 		inInst := CreateInternalInstallationBase(inst)
 		internalInstallations[i] = inInst
@@ -91,7 +91,7 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 
 // CreateInternalInstallation creates an internal installation for an Installation
 // DEPRECATED: use CreateInternalInstallationWithContext instead
-func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*Installation, error) {
+func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}
@@ -100,7 +100,7 @@ func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentR
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
-	return New(inst, blue)
+	return NewInstallationImportsAndBlueprint(inst, blue), nil
 }
 
 // CreateInternalInstallationWithContext creates an internal installation for an Installation
@@ -108,8 +108,7 @@ func CreateInternalInstallationWithContext(ctx context.Context,
 	inst *lsv1alpha1.Installation,
 	kubeClient client.Client,
 	compResolver ctf.ComponentResolver,
-	overwriter componentoverwrites.Overwriter,
-) (*Installation, error) {
+	overwriter componentoverwrites.Overwriter) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}
@@ -121,22 +120,22 @@ func CreateInternalInstallationWithContext(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
-	return New(inst, blue)
+	return NewInstallationImportsAndBlueprint(inst, blue), nil
 }
 
 // CreateInternalInstallationBase creates an internal installation base for an Installation
-func CreateInternalInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
+func CreateInternalInstallationBase(inst *lsv1alpha1.Installation) *InstallationAndImports {
 	if inst == nil {
 		return nil
 	}
-	return NewInstallationBase(inst)
+	return NewInstallationAndImports(inst)
 }
 
 // GetDataImport fetches the data import from the cluster.
 func GetDataImport(ctx context.Context,
 	kubeClient client.Client,
 	contextName string,
-	inst *InstallationBase,
+	inst *InstallationAndImports,
 	dataImport lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
 
 	var rawDataObject *lsv1alpha1.DataObject
@@ -144,7 +143,7 @@ func GetDataImport(ctx context.Context,
 	if len(dataImport.DataRef) != 0 {
 		rawDataObject = &lsv1alpha1.DataObject{}
 		doName := lsv1alpha1helper.GenerateDataObjectName(contextName, dataImport.DataRef)
-		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), rawDataObject); err != nil {
+		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(doName, inst.GetInstallation().Namespace), rawDataObject); err != nil {
 			return nil, nil, fmt.Errorf("unable to fetch data object %s (%s/%s): %w", doName, contextName, dataImport.DataRef, err)
 		}
 	}

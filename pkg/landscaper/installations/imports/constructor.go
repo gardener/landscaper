@@ -79,7 +79,7 @@ func (c *Constructor) LoadImports(ctx context.Context) (*Imports, error) {
 // The imported data is added to installation resource.
 func (c *Constructor) Construct(ctx context.Context, imps *Imports) error {
 	inst := c.Inst
-	fldPath := field.NewPath(inst.Info.Name)
+	fldPath := field.NewPath(inst.GetInstallation().Name)
 
 	// if imports are not given, load them
 	if imps == nil {
@@ -96,7 +96,7 @@ func (c *Constructor) Construct(ctx context.Context, imps *Imports) error {
 	}
 
 	// add additional imports and targets
-	imports, err := c.constructImports(inst.Blueprint.Info.Imports, imps.DataObjects, imps.Targets, imps.TargetLists, templatedDataMappings, fldPath)
+	imports, err := c.constructImports(inst.GetBlueprint().Info.Imports, imps.DataObjects, imps.Targets, imps.TargetLists, templatedDataMappings, fldPath)
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (c *Constructor) templateDataMappings(
 	}
 
 	values := make(map[string]interface{})
-	for key, dataMapping := range c.Inst.Info.Spec.ImportDataMappings {
+	for key, dataMapping := range c.Inst.GetInstallation().Spec.ImportDataMappings {
 		impPath := fldPath.Child(key)
 
 		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)

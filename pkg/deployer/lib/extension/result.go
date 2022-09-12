@@ -25,7 +25,7 @@ type HookResult struct {
 //     it will be true in the return value.
 //   - ReconcileResult.RequeueAfter is aggregated using a minimum function, so the return value's field will be set
 //     to the smallest value greater than zero that was set among the given hook results.
-//     - If ReconcileResult.Requeue is true, RequeueAfter will be set to zero to ensure an immediate reconcile.
+//   - If ReconcileResult.Requeue is true, RequeueAfter will be set to zero to ensure an immediate reconcile.
 func AggregateHookResults(hrs ...*HookResult) *HookResult {
 	return aggregateHookResults(func(a, b bool) bool { return a || b }, hrs...)
 }
