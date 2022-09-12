@@ -188,6 +188,18 @@ func CollectErrorCodes(err error) []lsv1alpha1.ErrorCode {
 	return codes
 }
 
+func ContainsErrorCode(err error, code lsv1alpha1.ErrorCode) bool {
+	codes := CollectErrorCodes(err)
+
+	for _, next := range codes {
+		if next == code {
+			return true
+		}
+	}
+
+	return false
+}
+
 // UpdatedError updates the properties of a error.
 func UpdatedError(lastError *lsv1alpha1.Error, operation, reason, message string, codes ...lsv1alpha1.ErrorCode) *lsv1alpha1.Error {
 	if lastError == nil {
@@ -215,7 +227,7 @@ func UpdatedError(lastError *lsv1alpha1.Error, operation, reason, message string
 		newError.Codes = lastError.Codes
 	}
 
-	if !reflect.DeepEqual(lastError, newError){
+	if !reflect.DeepEqual(lastError, newError) {
 		newError.LastUpdateTime = metav1.Now()
 	}
 

@@ -3,6 +3,9 @@ package read_write_layer
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/gardener/landscaper/apis/errors"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -190,9 +193,29 @@ func getGenerationAndResourceVersion(object client.Object) (generation int64, re
 	return
 }
 
-func errorWithWriteID(err error, writeID WriteID) error {
+func errorWithWriteID(err error, writeID WriteID) errors.LsError {
 	if err == nil {
 		return nil
 	}
-	return fmt.Errorf("write operation %s failed: %w", writeID, err)
+
+	errorCodes := []lsv1alpha1.ErrorCode{}
+	if isRecoverableError(err) {
+		errorCodes = append(errorCodes, lsv1alpha1.ErrorWebhook)
+	}
+
+	lsError := errors.NewWrappedError(err, "errorWithWriteID", "write",
+		fmt.Sprintf("write operation %s failed with %s", writeID, err.Error()), errorCodes...)
+
+	return lsError
+}
+
+func isRecoverableError(err error) bool {
+	// There are sometimes intermediate problems with the webhook preventing a write operation.
+	// Such errors should result in a retry of the reconcile operation.
+	isWebhookProblem := strings.Contains(err.Error(), "webhook")
+	isSpecialWebhookProblem := strings.Contains(err.Error(), "connection refused") ||
+		strings.Contains(err.Error(), "context deadline exceeded") ||
+		strings.Contains(err.Error(), "failed to call webhook")
+
+	return isWebhookProblem && isSpecialWebhookProblem
 }
