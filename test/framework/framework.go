@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	v1 "k8s.io/api/admissionregistration/v1"
+
 	utils2 "github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -410,6 +412,26 @@ func (f *Framework) prepareNextTest(ctx context.Context, namespace string) error
 		err = f.Client.Delete(ctx, &ingressClass)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return err
+		}
+	}
+
+	f.Log().Logln("Cleanup ValidatingWebhookConfigurations")
+	hookList := &v1.ValidatingWebhookConfigurationList{}
+	if err := f.Client.List(ctx, hookList); err != nil {
+		return err
+	}
+
+	for i := range hookList.Items {
+		hook := &hookList.Items[i]
+		ann := hook.GetAnnotations()
+		if len(ann) > 0 {
+			releaseNamespace, ok := ann["meta.helm.sh/release-namespace"]
+			if ok && strings.HasPrefix(releaseNamespace, "tests-") {
+				f.Log().Logfln("Delete ValidatingWebhookConfiguration %s", hook.Name)
+				if err := f.Client.Delete(ctx, hook); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
