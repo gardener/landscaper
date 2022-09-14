@@ -1,7 +1,7 @@
 meta:
   schemaVersion: 'v2'
 component:
-  name: 'github.com/gardener/landscaper/integration-tests/dependencies-aggr'
+  name: 'github.com/gardener/landscaper/integration-tests/dependencies-conflict'
   version: 'v0.1.0'
 
   repositoryContexts:

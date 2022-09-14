@@ -47,7 +47,7 @@ func DependencyTests(f *framework.Framework) {
 
 			By("Create installation with chain of four subinstallations")
 			inst := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation", "installation-v0.1.0.yaml")))
+			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-chain", "installation.yaml")))
 			utils.SetInstallationNamespace(inst, state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, inst))
 
@@ -68,7 +68,7 @@ func DependencyTests(f *framework.Framework) {
 			instOld := &lsv1alpha1.Installation{}
 			utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld))
 			inst = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation", "installation-v0.2.0.yaml")))
+			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-join", "installation.yaml")))
 			utils.SetInstallationNamespace(inst, state.Namespace)
 			inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
 			utils.ExpectNoError(f.Client.Update(ctx, inst))
@@ -83,6 +83,40 @@ func DependencyTests(f *framework.Framework) {
 			track = ""
 			utils.GetDataObjectData(exportDo, &track)
 			Expect(track).To(Equal("(A|B|C)D"))
+		})
+
+		It("should detect a dependency cycle", func() {
+
+			By("Create target")
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			utils.ExpectNoError(err)
+			utils.ExpectNoError(state.Create(ctx, target))
+
+			By("Create installation with cycle of subinstallations")
+			inst := &lsv1alpha1.Installation{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-cycle", "installation.yaml")))
+			utils.SetInstallationNamespace(inst, state.Namespace)
+			utils.ExpectNoError(state.Create(ctx, inst))
+
+			By("Wait for installation to fail")
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseFailed, 2*time.Minute))
+		})
+
+		It("should detect an export conflict", func() {
+
+			By("Create target")
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			utils.ExpectNoError(err)
+			utils.ExpectNoError(state.Create(ctx, target))
+
+			By("Create installation with an export conflict between subinstallations")
+			inst := &lsv1alpha1.Installation{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-conflict", "installation.yaml")))
+			utils.SetInstallationNamespace(inst, state.Namespace)
+			utils.ExpectNoError(state.Create(ctx, inst))
+
+			By("Wait for installation to fail")
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseFailed, 2*time.Minute))
 		})
 	})
 }

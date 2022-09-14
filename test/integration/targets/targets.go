@@ -43,7 +43,7 @@ func TargetTests(f *framework.Framework) {
 			ctx.Done()
 		})
 
-		XIt("should export Targets", func() {
+		It("should export Targets", func() {
 
 			// Create Installation that exports a Target "target-1"
 
@@ -99,34 +99,18 @@ func TargetTests(f *framework.Framework) {
 			targetConfig = &lsv1alpha1.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, &targetConfig)
 			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig 2"))
-		})
 
-		XIt("should import a TargetList", func() {
+			// Create an Installation that imports a target list consisting of "target-1" and  "target-2"
 
 			By("Create DataObjects with import data")
-			do := &lsv1alpha1.DataObject{}
+			do = &lsv1alpha1.DataObject{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(do, path.Join(testdataDir, "installation-target-importer", "import-do-namespace.yaml")))
 			do.SetNamespace(state.Namespace)
 			utils.SetDataObjectData(do, state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, do))
 
-			By("Create Targets")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
-			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, target))
-
-			target = &lsv1alpha1.Target{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(target, path.Join(testdataDir, "installation-target-importer", "target-1.yaml")))
-			target.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, target))
-
-			target = &lsv1alpha1.Target{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(target, path.Join(testdataDir, "installation-target-importer", "target-2.yaml")))
-			target.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, target))
-
 			By("Create Installation")
-			inst := &lsv1alpha1.Installation{}
+			inst = &lsv1alpha1.Installation{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-importer", "installation.yaml")))
 			utils.SetInstallationNamespace(inst, state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, inst))
