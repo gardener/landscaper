@@ -35,6 +35,8 @@ Default import data mapping
 
 Required and optional imports
 
+Default values for optional parameters
+
 Type validation
 
 #### Using Imports

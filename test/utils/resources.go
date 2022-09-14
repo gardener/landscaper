@@ -242,6 +242,33 @@ func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client
 	return lsutils.CreateKubernetesTarget(namespace, name, restConfig)
 }
 
+func SetDataObjectData(do *lsv1alpha1.DataObject, data interface{}) {
+	raw, err := json.Marshal(data)
+	ExpectNoError(err)
+	do.Data = lsv1alpha1.NewAnyJSON(raw)
+}
+
+func GetDataObjectData(do *lsv1alpha1.DataObject, data interface{}) {
+	ExpectNoError(json.Unmarshal(do.Data.RawMessage, data))
+}
+
+func GetTargetConfiguration(target *lsv1alpha1.Target, config interface{}) {
+	ExpectNoError(json.Unmarshal(target.Spec.Configuration.RawMessage, config))
+}
+
+func SetInstallationNamespace(inst *lsv1alpha1.Installation, namespace string) {
+	inst.Namespace = namespace
+	for i := range inst.Spec.Imports.Data {
+		data := &inst.Spec.Imports.Data[i]
+		if data.ConfigMapRef != nil {
+			data.ConfigMapRef.Namespace = namespace
+		}
+		if data.SecretRef != nil {
+			data.SecretRef.Namespace = namespace
+		}
+	}
+}
+
 // BuildContainerDeployItem builds a new deploy item of type container.
 func BuildContainerDeployItem(configuration *containerv1alpha1.ProviderConfiguration) *lsv1alpha1.DeployItem {
 	di, err := container.NewDeployItemBuilder().

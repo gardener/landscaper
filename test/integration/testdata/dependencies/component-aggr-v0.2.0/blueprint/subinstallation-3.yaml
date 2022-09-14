@@ -1,0 +1,18 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+name: dependencies-sub3
+blueprint:
+  ref: cd://componentReferences/base-component/resources/blueprint
+
+imports:
+  targets:
+    - name: cluster
+      target: cluster
+
+importDataMappings:
+  trackIn: "C"
+
+exports:
+  data:
+    - name: trackOut
+      dataRef: track3
