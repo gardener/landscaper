@@ -6,10 +6,11 @@ package importexport
 
 import (
 	"context"
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"path"
 	"path/filepath"
 	"time"
+
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

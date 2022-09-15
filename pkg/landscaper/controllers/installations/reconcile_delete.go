@@ -197,7 +197,7 @@ func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Install
 }
 
 // checkIfSiblingImports checks if a sibling imports any of the installations exports.
-func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installations.InstallationBase) bool {
+func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installations.InstallationAndImports) bool {
 	for _, sibling := range siblings {
 		for _, dataImport := range inst.Spec.Exports.Data {
 			if sibling.IsImportingData(dataImport.DataRef) {

@@ -164,8 +164,8 @@ var _ = Describe("Constructor", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			do := &lsv1alpha1.DataObject{}
-			do.Name = lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.Info), "root.a")
-			do.Namespace = inInstRoot.Info.Namespace
+			do.Name = lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.GetInstallation()), "root.a")
+			do.Namespace = inInstRoot.GetInstallation().Namespace
 			Expect(fakeClient.Get(ctx, kutil.ObjectKey(do.Name, do.Namespace), do)).To(Succeed())
 			do.Data.RawMessage = []byte("7")
 			Expect(fakeClient.Update(ctx, do)).To(Succeed())

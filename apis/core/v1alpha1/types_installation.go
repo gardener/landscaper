@@ -449,10 +449,11 @@ type ImportStatus struct {
 
 // MarshalJSON implements the json marshaling for a TargetImport
 // Why this is needed:
-//   We need Targets to not have the 'omitempty' annotation,
-//   because the code distinguishes between nil and an empty list.
-//   Not having the annotation causes the default json marshal to write
-//   'null' in case of nil, which causes problems.
+//
+//	We need Targets to not have the 'omitempty' annotation,
+//	because the code distinguishes between nil and an empty list.
+//	Not having the annotation causes the default json marshal to write
+//	'null' in case of nil, which causes problems.
 func (ti TargetImport) MarshalJSON() ([]byte, error) {
 
 	type TargetImportWithTargets struct {

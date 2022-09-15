@@ -13,7 +13,7 @@ spec:
 
   componentDescriptor:
     ref:
-      componentName: github.com/gardener/landscaper/integration-tests/dependencies-aggr
+      componentName: github.com/gardener/landscaper/integration-tests/dependencies-cycle
       repositoryContext:
         baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
         type: ociRegistry

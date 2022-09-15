@@ -33,7 +33,7 @@ var _ = Describe("ImportExecutions", func() {
 		fakeCompRepo      ctf.ComponentResolver
 	)
 
-	Load := func(inst string) (context.Context, *installations.Installation) {
+	Load := func(inst string) (context.Context, *installations.InstallationImportsAndBlueprint) {
 		ctx := context.Background()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations[inst])
 		Expect(err).ToNot(HaveOccurred())
@@ -42,9 +42,8 @@ var _ = Describe("ImportExecutions", func() {
 
 		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 		Expect(err).ToNot(HaveOccurred())
-		imps, err := rh.GetImports()
+		imps, err := rh.ImportsSatisfied()
 		Expect(err).To(Succeed())
-		Expect(rh.ImportsSatisfied()).NotTo(HaveOccurred())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, imps)).To(Succeed())
 		return ctx, inInstRoot
@@ -75,7 +74,7 @@ var _ = Describe("ImportExecutions", func() {
 		exec := imports.New(op)
 		err := exec.Ensure(ctx, inst)
 		Expect(err).To(Succeed())
-		Expect(inst.Imports["processed"]).To(Equal("mytestvalue(extended)"))
+		Expect(inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
 	})
 
 	It("should extend imports incrementally by import executions", func() {
@@ -83,8 +82,8 @@ var _ = Describe("ImportExecutions", func() {
 		exec := imports.New(op)
 		err := exec.Ensure(ctx, inst)
 		Expect(err).To(Succeed())
-		Expect(inst.Imports["processed"]).To(Equal("mytestvalue(extended)"))
-		Expect(inst.Imports["further"]).To(Equal("mytestvalue(extended)(further)"))
+		Expect(inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
+		Expect(inst.GetImports()["further"]).To(Equal("mytestvalue(extended)(further)"))
 	})
 
 	It("should validate imports by import executions", func() {
@@ -100,9 +99,9 @@ var _ = Describe("ImportExecutions", func() {
 		err := exec.Ensure(ctx, inst)
 		Expect(err).NotTo(Succeed())
 		Expect(err.Error()).To(Equal("import validation failed: invalid test data:other"))
-		Expect(inst.Info.Status.Conditions[0].Type).To(Equal(lsv1alpha1.ConditionType("ValidateImports")))
-		Expect(inst.Info.Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionStatus("False")))
-		Expect(inst.Info.Status.Conditions[0].Reason).To(Equal("ImportValidationFailed"))
-		Expect(inst.Info.Status.Conditions[0].Message).To(Equal("invalid test data:other"))
+		Expect(inst.GetInstallation().Status.Conditions[0].Type).To(Equal(lsv1alpha1.ConditionType("ValidateImports")))
+		Expect(inst.GetInstallation().Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionStatus("False")))
+		Expect(inst.GetInstallation().Status.Conditions[0].Reason).To(Equal("ImportValidationFailed"))
+		Expect(inst.GetInstallation().Status.Conditions[0].Message).To(Equal("invalid test data:other"))
 	})
 })

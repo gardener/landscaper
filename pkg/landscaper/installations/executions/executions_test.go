@@ -35,7 +35,7 @@ var _ = Describe("DeployItemExecutions", func() {
 		fakeCompRepo      ctf.ComponentResolver
 	)
 
-	Load := func(inst string) (context.Context, *installations.Installation) {
+	Load := func(inst string) (context.Context, *installations.InstallationImportsAndBlueprint) {
 		ctx := context.Background()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations[inst])
 		Expect(err).ToNot(HaveOccurred())
@@ -44,9 +44,8 @@ var _ = Describe("DeployItemExecutions", func() {
 
 		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 		Expect(err).ToNot(HaveOccurred())
-		imps, err := rh.GetImports()
+		imps, err := rh.ImportsSatisfied()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(rh.ImportsSatisfied()).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, imps)).To(Succeed())
 		return ctx, inInstRoot

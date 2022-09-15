@@ -13,5 +13,5 @@ import (
 // generate the one imported config
 type Constructor struct {
 	*installations.Operation
-	siblings []*installations.InstallationBase
+	siblings []*installations.InstallationAndImports
 }

@@ -17,9 +17,7 @@ import (
 	"github.com/gardener/component-cli/ociclient/cache"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -185,12 +183,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "ResolveBlueprint", err.Error())
 	}
 
-	internalInstallation, err := installations.New(inst, intBlueprint)
-	if err != nil {
-		err = fmt.Errorf("unable to create internal representation of installation: %w", err)
-		return nil, lserrors.NewWrappedError(err,
-			currOp, "InitInstallation", err.Error())
-	}
+	internalInstallation := installations.NewInstallationImportsAndBlueprint(inst, intBlueprint)
 
 	instOp, err := installations.NewOperationBuilder(internalInstallation).
 		WithOperation(op).
@@ -205,7 +198,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	return instOp, nil
 }
 
-func (c *Controller) compareJobIDs(predecessorMap, predecessorMapNew map[string]*installations.InstallationBase) bool {
+func (c *Controller) compareJobIDs(predecessorMap, predecessorMapNew map[string]*installations.InstallationAndImports) bool {
 	if len(predecessorMap) != len(predecessorMapNew) {
 		return false
 	}
@@ -216,7 +209,7 @@ func (c *Controller) compareJobIDs(predecessorMap, predecessorMapNew map[string]
 			return false
 		}
 
-		if oldPredecessor.Info.Status.JobID != newPredecessor.Info.Status.JobID {
+		if oldPredecessor.GetInstallation().Status.JobID != newPredecessor.GetInstallation().Status.JobID {
 			return false
 		}
 	}
@@ -301,27 +294,4 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	}
 
 	return lsError
-}
-
-func (c *Controller) checkForDuplicateExports(ctx context.Context, inst *lsv1alpha1.Installation) error {
-	// fetch all installations in the same namespace with the same parent
-	var selector client.ListOption
-	if parent, ok := inst.Labels[lsv1alpha1.EncompassedByLabel]; ok {
-		selector = client.MatchingLabels(map[string]string{
-			lsv1alpha1.EncompassedByLabel: parent,
-		})
-	} else {
-		r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
-		if err != nil {
-			return err
-		}
-		selector = client.MatchingLabelsSelector{Selector: labels.NewSelector().Add(*r)}
-	}
-	siblingList := &lsv1alpha1.InstallationList{}
-	err := read_write_layer.ListInstallations(ctx, c.Client(), siblingList, client.InNamespace(inst.Namespace), selector)
-	if err != nil {
-		return err
-	}
-
-	return utils.CheckForDuplicateExports(inst, siblingList.Items)
 }

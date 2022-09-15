@@ -347,7 +347,7 @@ func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, 
 	err := wait.Poll(10*time.Second, 15*time.Minute, func() (done bool, err error) {
 		o.log.Logfln("wait for cluster is ready")
 		shoot, getError := gardenClient.Get(ctx, clusterName, metav1.GetOptions{})
-		if err != nil {
+		if getError != nil {
 			if errors.IsNotFound(getError) {
 				return false, nil
 			}

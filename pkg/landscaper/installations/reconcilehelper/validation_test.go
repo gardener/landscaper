@@ -15,7 +15,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
@@ -70,20 +69,21 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(rh.ImportsSatisfied()).To(Succeed())
+				_, err = rh.ImportsSatisfied()
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("should succeed if the import comes from a sibling", func() {
 				ctx := context.Background()
 				inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 				Expect(err).ToNot(HaveOccurred())
-				inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-				Expect(fakeClient.Status().Update(ctx, inInstRoot.Info)).To(Succeed())
+				inInstRoot.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+				Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
 
 				inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 				Expect(err).ToNot(HaveOccurred())
-				inInstA.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-				Expect(fakeClient.Status().Update(ctx, inInstA.Info)).To(Succeed())
+				inInstA.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+				Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
 				inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 				Expect(err).ToNot(HaveOccurred())
@@ -94,7 +94,8 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(rh.ImportsSatisfied()).To(Succeed())
+				_, err = rh.ImportsSatisfied()
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 		})
@@ -106,7 +107,7 @@ var _ = Describe("Validation", func() {
 
 				inInstE, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
 				Expect(err).ToNot(HaveOccurred())
-				inInstE.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+				inInstE.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
 				inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/f"])
 				Expect(err).ToNot(HaveOccurred())
@@ -117,7 +118,8 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(rh.ImportsSatisfied()).To(Succeed())
+				_, err = rh.ImportsSatisfied()
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("should fail if a target import from a manually added target is not present", func() {
@@ -135,7 +137,8 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(rh.ImportsSatisfied()).ToNot(Succeed())
+				_, err = rh.ImportsSatisfied()
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("should fail if a import from a parent import is not present", func() {
@@ -153,7 +156,8 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(rh.ImportsSatisfied()).ToNot(Succeed())
+				_, err = rh.ImportsSatisfied()
+				Expect(err).To(HaveOccurred())
 			})
 
 		})
@@ -170,7 +174,8 @@ var _ = Describe("Validation", func() {
 
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(rh.ImportsSatisfied()).ToNot(Succeed())
+			_, err = rh.ImportsSatisfied()
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
@@ -181,7 +186,7 @@ var _ = Describe("Validation", func() {
 
 			inInstE, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstE.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			inInstE.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
 
 			inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/f"])
 			Expect(err).ToNot(HaveOccurred())
@@ -193,80 +198,34 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			dependendOnSiblings, err := rh.FetchDependencies()
+			predecessors := rh.FetchPredecessors()
+
+			predecessorMap, err := rh.GetPredecessors(inInstE.GetInstallation(), predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(inInstE.Info, dependendOnSiblings)
+			err = rh.AllPredecessorsFinished(inInstE.GetInstallation(), predecessorMap)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsFinished(inInstE.Info, predecessorMap)
+			err = rh.AllPredecessorsSucceeded(inInstE.GetInstallation(), predecessorMap)
 			Expect(err).ToNot(HaveOccurred())
-
-			err = rh.AllPredecessorsSucceeded(inInstE.Info, predecessorMap)
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should fail if the parent installation is not running", func() {
-			ctx := context.Background()
-
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
-			Expect(err).ToNot(HaveOccurred())
-			op.Inst = inInstA
-			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
-			Expect(err).ToNot(HaveOccurred())
-			inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseInit
-			Expect(fakeClient.Status().Update(ctx, inInstRoot.Info))
-
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
-
-			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(err).ToNot(HaveOccurred())
-			dependedOnSiblings, err := rh.FetchDependencies()
-			Expect(err).ToNot(HaveOccurred())
-			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
-			Expect(err).To(HaveOccurred())
-			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
-			Expect(err.Error()).To(ContainSubstring("parent installation %q is not progressing", kutil.ObjectKeyFromObject(inInstRoot.Info).String()))
-		})
-
-		It("should fail if a root installation's sibling which is depended on is not ready", func() {
-			ctx := context.Background()
-
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root"])
-			Expect(err).ToNot(HaveOccurred())
-			op.Inst = inInstRoot
-			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
-
-			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(err).ToNot(HaveOccurred())
-			dependedOnSiblings, err := rh.FetchDependencies()
-			Expect(err).ToNot(HaveOccurred())
-			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
-			Expect(err).To(HaveOccurred())
-			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
-			Expect(err.Error()).To(ContainSubstring("depending on installation %q which is not succeeded", kutil.ObjectKey("root-dep", "test3").String()))
 		})
 
 		It("should fail if a preceding installation is 'Failed'", func() {
 			ctx := context.Background()
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstA.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-			Expect(fakeClient.Status().Update(ctx, inInstA.Info)).To(Succeed())
+			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
+			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
 			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstB.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
-			Expect(fakeClient.Status().Update(ctx, inInstB.Info)).To(Succeed())
+			inInstB.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
+			Expect(fakeClient.Status().Update(ctx, inInstB.GetInstallation())).To(Succeed())
 
 			inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/c"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstC.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
-			Expect(fakeClient.Status().Update(ctx, inInstC.Info)).To(Succeed())
+			inInstC.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			Expect(fakeClient.Status().Update(ctx, inInstC.GetInstallation())).To(Succeed())
 
 			inInstD, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/d"])
 			Expect(err).ToNot(HaveOccurred())
@@ -277,50 +236,49 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			dependendOnSiblings, err := rh.FetchDependencies()
+			predecessors := rh.FetchPredecessors()
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(inInstD.Info, dependendOnSiblings)
+			predecessorMap, err := rh.GetPredecessors(inInstD.GetInstallation(), predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsFinished(inInstD.Info, predecessorMap)
+			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsSucceeded(inInstD.Info, predecessorMap)
+			err = rh.AllPredecessorsSucceeded(inInstD.GetInstallation(), predecessorMap)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
-			Expect(err.Error()).To(ContainSubstring("depending on installation %q which is not succeeded", kutil.ObjectKeyFromObject(inInstA.Info).String()))
 		})
 
 		It("should fail if a preceding installation is 'Progressing'", func() {
 			ctx := context.Background()
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstA.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseProgressing
-			inInstA.Info.Status.JobID = "2"
-			inInstA.Info.Status.JobIDFinished = "1"
-			Expect(fakeClient.Status().Update(ctx, inInstA.Info)).To(Succeed())
+			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseProgressing
+			inInstA.GetInstallation().Status.JobID = "2"
+			inInstA.GetInstallation().Status.JobIDFinished = "1"
+			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
 			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstB.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
-			inInstB.Info.Status.JobID = "2"
-			inInstB.Info.Status.JobIDFinished = "2"
-			Expect(fakeClient.Status().Update(ctx, inInstB.Info)).To(Succeed())
+			inInstB.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseProgressing
+			inInstB.GetInstallation().Status.JobID = "2"
+			inInstB.GetInstallation().Status.JobIDFinished = "1"
+			Expect(fakeClient.Status().Update(ctx, inInstB.GetInstallation())).To(Succeed())
 
 			inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/c"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstC.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
-			inInstC.Info.Status.JobID = "2"
-			inInstC.Info.Status.JobIDFinished = "2"
-			Expect(fakeClient.Status().Update(ctx, inInstC.Info)).To(Succeed())
+			inInstC.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			inInstC.GetInstallation().Status.JobID = "2"
+			inInstC.GetInstallation().Status.JobIDFinished = "2"
+			Expect(fakeClient.Status().Update(ctx, inInstC.GetInstallation())).To(Succeed())
 
 			inInstD, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/d"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstD.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseInit
-			inInstD.Info.Status.JobID = "2"
-			inInstD.Info.Status.JobIDFinished = "1"
-			Expect(fakeClient.Status().Update(ctx, inInstB.Info)).To(Succeed())
+			inInstD.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseInit
+			inInstD.GetInstallation().Status.JobID = "2"
+			inInstD.GetInstallation().Status.JobIDFinished = "1"
+			Expect(fakeClient.Status().Update(ctx, inInstB.GetInstallation())).To(Succeed())
 
 			op.Inst = inInstD
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -328,47 +286,46 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			dependendOnSiblings, err := rh.FetchDependencies()
+			predecessors := rh.FetchPredecessors()
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(inInstD.Info, dependendOnSiblings)
+			predecessorMap, err := rh.GetPredecessors(inInstD.GetInstallation(), predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsFinished(inInstD.Info, predecessorMap)
+			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
-			Expect(err.Error()).To(ContainSubstring("depending on installation %q which not finished current job", kutil.ObjectKeyFromObject(inInstA.Info).String()))
 		})
 
 		It("should fail if a preceding installation is outdated", func() {
 			ctx := context.Background()
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstA.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
-			inInstA.Info.Status.JobID = "1"
-			inInstA.Info.Status.JobIDFinished = "1"
-			Expect(fakeClient.Status().Update(ctx, inInstA.Info)).To(Succeed())
+			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			inInstA.GetInstallation().Status.JobID = "1"
+			inInstA.GetInstallation().Status.JobIDFinished = "1"
+			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
 			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstB.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
-			inInstB.Info.Status.JobID = "2"
-			inInstB.Info.Status.JobIDFinished = "2"
-			Expect(fakeClient.Status().Update(ctx, inInstB.Info)).To(Succeed())
+			inInstB.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			inInstB.GetInstallation().Status.JobID = "1"
+			inInstB.GetInstallation().Status.JobIDFinished = "1"
+			Expect(fakeClient.Status().Update(ctx, inInstB.GetInstallation())).To(Succeed())
 
 			inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/c"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstC.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
-			inInstC.Info.Status.JobID = "2"
-			inInstC.Info.Status.JobIDFinished = "2"
-			Expect(fakeClient.Status().Update(ctx, inInstC.Info)).To(Succeed())
+			inInstC.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			inInstC.GetInstallation().Status.JobID = "2"
+			inInstC.GetInstallation().Status.JobIDFinished = "2"
+			Expect(fakeClient.Status().Update(ctx, inInstC.GetInstallation())).To(Succeed())
 
 			inInstD, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/d"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstD.Info.Status.InstallationPhase = lsv1alpha1.InstallationPhaseInit
-			inInstD.Info.Status.JobID = "2"
-			inInstD.Info.Status.JobIDFinished = "1"
-			Expect(fakeClient.Status().Update(ctx, inInstC.Info)).To(Succeed())
+			inInstD.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhaseInit
+			inInstD.GetInstallation().Status.JobID = "2"
+			inInstD.GetInstallation().Status.JobIDFinished = "1"
+			Expect(fakeClient.Status().Update(ctx, inInstC.GetInstallation())).To(Succeed())
 
 			op.Inst = inInstD
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -376,16 +333,14 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			dependendOnSiblings, err := rh.FetchDependencies()
+			predecessors := rh.FetchPredecessors()
+
+			predecessorMap, err := rh.GetPredecessors(inInstD.GetInstallation(), predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(inInstD.Info, dependendOnSiblings)
-			Expect(err).ToNot(HaveOccurred())
-
-			err = rh.AllPredecessorsFinished(inInstD.Info, predecessorMap)
+			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
-			Expect(err.Error()).To(ContainSubstring("depending on installation %q which not finished current job", kutil.ObjectKeyFromObject(inInstA.Info).String()))
 		})
 	})
 
@@ -395,13 +350,13 @@ var _ = Describe("Validation", func() {
 			ctx := context.Background()
 			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-			Expect(fakeClient.Status().Update(ctx, inInstRoot.Info)).To(Succeed())
+			inInstRoot.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+			Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
 
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstA.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-			Expect(fakeClient.Status().Update(ctx, inInstA.Info)).To(Succeed())
+			inInstA.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
 			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 			Expect(err).ToNot(HaveOccurred())
@@ -421,14 +376,14 @@ var _ = Describe("Validation", func() {
 			ctx := context.Background()
 			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-			Expect(fakeClient.Status().Update(ctx, inInstRoot.Info)).To(Succeed())
+			inInstRoot.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+			Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
 
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstA.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-			inInstA.Info.Status.ConfigGeneration = "updated"
-			Expect(fakeClient.Status().Update(ctx, inInstA.Info)).To(Succeed())
+			inInstA.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+			inInstA.GetInstallation().Status.ConfigGeneration = "updated"
+			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
 			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 			Expect(err).ToNot(HaveOccurred())

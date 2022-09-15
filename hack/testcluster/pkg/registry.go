@@ -112,7 +112,6 @@ spec:
       secretName: {{ .secretName }}
 `
 
-//
 func CreateRegistry(ctx context.Context,
 	logger utils.Logger,
 	kubeClient client.Client,

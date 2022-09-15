@@ -92,8 +92,7 @@ var _ = Describe("Execution Operation", func() {
 		intBlueprint, err := blueprints.Resolve(ctx, componentResolver, lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 		Expect(err).ToNot(HaveOccurred())
 
-		internalInst, err := installations.New(inst, intBlueprint)
-		Expect(err).ToNot(HaveOccurred())
+		internalInst := installations.NewInstallationImportsAndBlueprint(inst, intBlueprint)
 		Expect(internalInst).ToNot(BeNil())
 
 		internalInst.SetImports(map[string]interface{}{

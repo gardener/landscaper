@@ -1,8 +1,8 @@
 meta:
   schemaVersion: 'v2'
 component:
-  name: 'github.com/gardener/landscaper/integration-tests/dependencies-aggr'
-  version: 'v0.2.0'
+  name: 'github.com/gardener/landscaper/integration-tests/dependencies-join'
+  version: 'v0.1.0'
 
   repositoryContexts:
     - type: 'ociRegistry'

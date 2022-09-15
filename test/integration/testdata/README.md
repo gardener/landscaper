@@ -84,11 +84,13 @@ reconciliation. It is checked that the updated import values are used.
 
 The blueprints in this section are used to check the order in which subinstallations are processed.
 
-- The blueprint of the base component [dependencies/component-base](dependencies/component-base) simply imports a 
-  string and exports it unchanged. Remark: the blueprint has neither deploy items, not subinstallations.
-- The aggregated components [dependencies/component-aggr-v0.1.0](dependencies/component-aggr-v0.1.0) and
-  [dependencies/component-aggr-v0.2.0](dependencies/component-aggr-v0.2.0) have subinstallations using the base 
-  component. Each subinstallation reads the strings exported by its predecessors and uses an import data mapping to 
-  combine them and to append the own name. In this way the strings that are passed through the subinstallations track 
-  the processing order. Version `v0.1.0` consists of a chain of four subinstallations. Version `v0.2.0` consists of 
-  three independent subinstallations, and a fourth one that depends on the first three.
+The blueprint of the base component [dependencies/component-base](dependencies/component-base) simply imports a 
+string and exports it unchanged. 
+Remark: the blueprint has neither deploy items, not subinstallations (that's possible).
+
+The aggregated components [dependencies/component-aggr-v0.1.0](dependencies/component-aggr-v0.1.0) and
+[dependencies/component-aggr-v0.2.0](dependencies/component-aggr-v0.2.0) have subinstallations using the base 
+component. Each subinstallation reads the strings exported by its predecessors and uses an import data mapping to 
+combine them and to append the own name. In this way the strings that are passed through the subinstallations track 
+the processing order. Version `v0.1.0` consists of a chain of four subinstallations. Version `v0.2.0` consists of 
+three independent subinstallations, and a fourth one that depends on the first three.

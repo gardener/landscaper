@@ -20,7 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	lscore "github.com/gardener/landscaper/apis/core"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/validation"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
@@ -94,7 +93,7 @@ func logIfDurationExceeded(ctx context.Context, timeBefore time.Time) {
 }
 
 func (iv *InstallationValidator) handlePrivate(ctx context.Context, req admission.Request) admission.Response {
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "InstallationValidator.handlePrivate"})
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "InstallationValidator.handlePrivate"})
 
 	logger.Debug("Received request")
 
@@ -105,20 +104,6 @@ func (iv *InstallationValidator) handlePrivate(ctx context.Context, req admissio
 
 	if errs := validation.ValidateInstallation(inst); len(errs) > 0 {
 		return admission.Denied(errs.ToAggregate().Error())
-	}
-
-	// check if the installation declares an export which is already exported by another installation in the same context
-	v1alpha1Inst := &lsv1alpha1.Installation{}
-	err := lsv1alpha1.Convert_core_Installation_To_v1alpha1_Installation(inst, v1alpha1Inst, nil)
-	if err != nil {
-		logger.Error(err, "error while converting core Installation to v1alpha1 Installation")
-	} else {
-		dupErr, err := checkForDuplicateExports(ctx, iv.Client, v1alpha1Inst)
-		if err != nil {
-			logger.Error(err, "error while checking for duplicate exports")
-		} else if dupErr != nil {
-			return admission.Denied(dupErr.Error())
-		}
 	}
 
 	return admission.Allowed("Installation is valid")

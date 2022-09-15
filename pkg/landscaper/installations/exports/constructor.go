@@ -47,10 +47,10 @@ func NewConstructor(op *installations.Operation) *Constructor {
 
 // Construct loads the exported data from the execution and the subinstallations.
 func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject, []*dataobjects.TargetExtension, error) {
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(c.Inst.Info).String()})
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(c.Inst.GetInstallation()).String()})
 
 	var (
-		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.Info.Name)).Child("internalExports")
+		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.GetInstallation().Name)).Child("internalExports")
 		internalExports = map[string]interface{}{
 			"deployitems": struct{}{},
 			"dataobjects": struct{}{},
@@ -79,11 +79,11 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 
 	stateHdlr := template.KubernetesStateHandler{
 		KubeClient: c.Client(),
-		Inst:       c.Inst.Info,
+		Inst:       c.Inst.GetInstallation(),
 	}
 	exports, err := template.New(gotemplate.New(c.BlobResolver, stateHdlr), spiff.New(stateHdlr)).
 		TemplateExportExecutions(template.NewExportExecutionOptions(template.NewBlueprintExecutionOptions(
-			c.Inst.GetInfo(), c.Inst.Blueprint, c.ComponentDescriptor, c.ResolvedComponentDescriptorList, c.Inst.GetImports()),
+			c.Inst.GetInstallation(), c.Inst.GetBlueprint(), c.ComponentDescriptor, c.ResolvedComponentDescriptorList, c.Inst.GetImports()),
 			internalExports))
 	if err != nil {
 		return nil, nil, err
@@ -123,7 +123,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 
 	// exportDataMappings
-	if c.Inst.Info.Spec.ExportDataMappings != nil && len(c.Inst.Info.Spec.ExportDataMappings) > 0 {
+	if c.Inst.GetInstallation().Spec.ExportDataMappings != nil && len(c.Inst.GetInstallation().Spec.ExportDataMappings) > 0 {
 		exportDataMappings, err := c.templateDataMappings(fldPath, exports)
 		if err != nil {
 			return nil, nil, err
@@ -135,9 +135,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 
 	// Resolve export mapping for all internalExports
-	dataObjects := make([]*dataobjects.DataObject, len(c.Inst.Info.Spec.Exports.Data))
+	dataObjects := make([]*dataobjects.DataObject, len(c.Inst.GetInstallation().Spec.Exports.Data))
 	dataExportsPath := fldPath.Child("exports").Child("data")
-	for i, dataExport := range c.Inst.Info.Spec.Exports.Data {
+	for i, dataExport := range c.Inst.GetInstallation().Spec.Exports.Data {
 		dataExportPath := dataExportsPath.Child(dataExport.Name)
 		data, ok := exports[dataExport.Name]
 		if !ok {
@@ -150,9 +150,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		dataObjects[i] = do
 	}
 
-	targets := make([]*dataobjects.TargetExtension, len(c.Inst.Info.Spec.Exports.Targets))
+	targets := make([]*dataobjects.TargetExtension, len(c.Inst.GetInstallation().Spec.Exports.Targets))
 	targetExportsPath := fldPath.Child("exports").Child("targets")
-	for i, targetExport := range c.Inst.Info.Spec.Exports.Targets {
+	for i, targetExport := range c.Inst.GetInstallation().Spec.Exports.Targets {
 		targetExportPath := targetExportsPath.Child(targetExport.Name)
 		data, ok := exports[targetExport.Name]
 		if !ok {
@@ -171,9 +171,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 }
 
 func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string]interface{}, error) {
-	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.Info)
+	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.GetInstallation())
 	dataObjectList := &lsv1alpha1.DataObjectList{}
-	if err := c.Client().List(ctx, dataObjectList, client.InNamespace(c.Inst.Info.Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
+	if err := c.Client().List(ctx, dataObjectList, client.InNamespace(c.Inst.GetInstallation().Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err
 	}
 
@@ -190,9 +190,9 @@ func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[st
 }
 
 func (c *Constructor) aggregateTargetsInContext(ctx context.Context) (map[string]interface{}, error) {
-	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.Info)
+	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.GetInstallation())
 	targetList := &lsv1alpha1.TargetList{}
-	if err := c.Client().List(ctx, targetList, client.InNamespace(c.Inst.Info.Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
+	if err := c.Client().List(ctx, targetList, client.InNamespace(c.Inst.GetInstallation().Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err
 	}
 
@@ -250,7 +250,7 @@ func (c *Constructor) templateDataMappings(fldPath *field.Path, exports map[stri
 	}
 
 	values := make(map[string]interface{})
-	for key, dataMapping := range c.Inst.Info.Spec.ExportDataMappings {
+	for key, dataMapping := range c.Inst.GetInstallation().Spec.ExportDataMappings {
 		expPath := fldPath.Child(key)
 
 		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)

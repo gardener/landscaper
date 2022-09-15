@@ -116,7 +116,7 @@ subinstallations:
     exports:
       data:
         - name: subinst-b-export-a
-          dataRef: subinst-a-export-a
+          dataRef: subinst-b-export-a
         - name: subinst-b-export-b
           dataRef: subinst-b-export-b
 

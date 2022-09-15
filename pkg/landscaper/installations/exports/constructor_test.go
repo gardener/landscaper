@@ -97,7 +97,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
+		op.Inst.GetBlueprint().Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
 				Template: lsv1alpha1.AnyJSON{RawMessage: []byte(`"exports:\n  root.y: {{ index .values.dataobjects \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`)},
@@ -139,7 +139,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
+		op.Inst.GetBlueprint().Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
 				Template: lsv1alpha1.AnyJSON{RawMessage: []byte(`"root.y: true\nroot.z: {{ index .values.dataobjects \"root.z\" }}"`)},
@@ -159,7 +159,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
+		op.Inst.GetBlueprint().Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
 				Template: lsv1alpha1.AnyJSON{RawMessage: []byte(`"exports:\n  root.y: {{ index .values.deployitems.deploy \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`)},
@@ -232,7 +232,7 @@ var _ = Describe("Constructor", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			target := &lsv1alpha1.Target{}
-			targetName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.Info), "root.z")
+			targetName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.GetInstallation()), "root.z")
 			key := kutil.ObjectKey(targetName, "test4")
 			Expect(fakeClient.Get(ctx, key, target)).To(Succeed())
 			target.Spec.Type = "unknownType"
@@ -277,7 +277,7 @@ var _ = Describe("Constructor", func() {
 			op.Inst = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
+			op.Inst.GetBlueprint().Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 				{
 					Type:     lsv1alpha1.GOTemplateType,
 					Template: lsv1alpha1.AnyJSON{RawMessage: []byte(`"exports:\n  root.y: {{ index .values.dataobjects \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`)},
