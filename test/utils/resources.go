@@ -242,6 +242,35 @@ func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client
 	return lsutils.CreateKubernetesTarget(namespace, name, restConfig)
 }
 
+func BuildTargetAndSecretFromKubernetesTarget(target *lsv1alpha1.Target) (*lsv1alpha1.Target, *corev1.Secret, error) {
+	const key = "kubeconfig"
+
+	config := lsv1alpha1.KubernetesClusterTargetConfig{}
+	if err := json.Unmarshal(target.Spec.Configuration.RawMessage, &config); err != nil {
+		return nil, nil, err
+	}
+
+	if config.Kubeconfig.StrVal == nil {
+		return nil, nil, fmt.Errorf("target contains no kubeconfig")
+	}
+
+	kubeconfig := *config.Kubeconfig.StrVal
+
+	secret := &corev1.Secret{}
+	secret.Name = target.Name
+	secret.Namespace = target.Namespace
+	secret.StringData = map[string]string{
+		key: kubeconfig,
+	}
+
+	targetWithRef, err := CreateKubernetesTargetFromSecret(target.Namespace, target.Name, secret)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return targetWithRef, secret, nil
+}
+
 func SetDataObjectData(do *lsv1alpha1.DataObject, data interface{}) {
 	raw, err := json.Marshal(data)
 	ExpectNoError(err)

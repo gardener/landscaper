@@ -166,53 +166,53 @@ func SubinstallationTests(f *framework.Framework) {
 
 			// Remove subinstallations
 
-			//By("Update installation referencing component version v0.1.0 with one subinstallation")
-			//instOld = &lsv1alpha1.Installation{}
-			//utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld))
-			//inst = &lsv1alpha1.Installation{}
-			//utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-1", "installation-v0.1.0.yaml")))
-			//utils.SetInstallationNamespace(inst, state.Namespace)
-			//inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
-			//utils.ExpectNoError(f.Client.Update(ctx, inst))
-			//
-			//By("Wait for installation to finish")
-			//utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
-			//
-			//By("Check deployed ConfigMaps")
-			//configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-example"}
-			//configMap = &k8sv1.ConfigMap{}
-			//utils.ExpectNoError(f.Client.Get(ctx, configMapKey, configMap))
-			//Expect(configMap.Data).To(HaveLen(3))
-			//Expect(configMap.Data).To(HaveKeyWithValue("foo", "bar"))
-			//Expect(configMap.Data).To(HaveKeyWithValue("key1", "value1"))
-			//Expect(configMap.Data).To(HaveKeyWithValue("key2", "value2"))
-			//
-			//By("Check deleted ConfigMaps")
-			//configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-example-x"}
-			//configMap = &k8sv1.ConfigMap{}
-			//Expect(f.Client.Get(ctx, configMapKey, configMap)).To(HaveOccurred())
-			//
-			//configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-example-x-x"}
-			//configMap = &k8sv1.ConfigMap{}
-			//Expect(f.Client.Get(ctx, configMapKey, configMap)).To(HaveOccurred())
-			//
-			//By("Check DataObjects with exports")
-			//exportDo = &lsv1alpha1.DataObject{}
-			//exportDoKey = client.ObjectKey{Name: "export-do-name", Namespace: state.Namespace}
-			//utils.ExpectNoError(f.Client.Get(ctx, exportDoKey, exportDo))
-			//exportName = ""
-			//utils.GetDataObjectData(exportDo, &exportName)
-			//Expect(exportName).To(Equal("cm-example-x"))
-			//
-			//exportDo = &lsv1alpha1.DataObject{}
-			//exportDoKey = client.ObjectKey{Name: "export-do-data", Namespace: state.Namespace}
-			//utils.ExpectNoError(f.Client.Get(ctx, exportDoKey, exportDo))
-			//exportMap = map[string]string{}
-			//utils.GetDataObjectData(exportDo, &exportMap)
-			//Expect(exportMap).To(HaveLen(3))
-			//Expect(exportMap).To(HaveKeyWithValue("foo", "bar"))
-			//Expect(exportMap).To(HaveKeyWithValue("key1", "value1"))
-			//Expect(exportMap).To(HaveKeyWithValue("key2", "value2"))
+			By("Update installation referencing component version v0.1.0 with one subinstallation")
+			instOld = &lsv1alpha1.Installation{}
+			utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld))
+			inst = &lsv1alpha1.Installation{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-1", "installation-v0.1.0.yaml")))
+			utils.SetInstallationNamespace(inst, state.Namespace)
+			inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
+			utils.ExpectNoError(f.Client.Update(ctx, inst))
+
+			By("Wait for installation to finish")
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+
+			By("Check deployed ConfigMaps")
+			configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-example"}
+			configMap = &k8sv1.ConfigMap{}
+			utils.ExpectNoError(f.Client.Get(ctx, configMapKey, configMap))
+			Expect(configMap.Data).To(HaveLen(3))
+			Expect(configMap.Data).To(HaveKeyWithValue("foo", "bar"))
+			Expect(configMap.Data).To(HaveKeyWithValue("key1", "value1"))
+			Expect(configMap.Data).To(HaveKeyWithValue("key2", "value2"))
+
+			By("Check deleted ConfigMaps")
+			configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-example-x"}
+			configMap = &k8sv1.ConfigMap{}
+			Expect(f.Client.Get(ctx, configMapKey, configMap)).To(HaveOccurred())
+
+			configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-example-x-x"}
+			configMap = &k8sv1.ConfigMap{}
+			Expect(f.Client.Get(ctx, configMapKey, configMap)).To(HaveOccurred())
+
+			By("Check DataObjects with exports")
+			exportDo = &lsv1alpha1.DataObject{}
+			exportDoKey = client.ObjectKey{Name: "export-do-name", Namespace: state.Namespace}
+			utils.ExpectNoError(f.Client.Get(ctx, exportDoKey, exportDo))
+			exportName = ""
+			utils.GetDataObjectData(exportDo, &exportName)
+			Expect(exportName).To(Equal("cm-example-x"))
+
+			exportDo = &lsv1alpha1.DataObject{}
+			exportDoKey = client.ObjectKey{Name: "export-do-data", Namespace: state.Namespace}
+			utils.ExpectNoError(f.Client.Get(ctx, exportDoKey, exportDo))
+			exportMap = map[string]string{}
+			utils.GetDataObjectData(exportDo, &exportMap)
+			Expect(exportMap).To(HaveLen(3))
+			Expect(exportMap).To(HaveKeyWithValue("foo", "bar"))
+			Expect(exportMap).To(HaveKeyWithValue("key1", "value1"))
+			Expect(exportMap).To(HaveKeyWithValue("key2", "value2"))
 		})
 
 		It("should update the version of subinstallations", func() {

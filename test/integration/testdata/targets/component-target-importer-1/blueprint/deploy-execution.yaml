@@ -15,7 +15,7 @@ deployItems:
             apiVersion: v1
             kind: ConfigMap
             metadata:
-              name: cm-kubeconfigs
+              name: {{ .imports.name }}
               namespace: {{ .imports.namespace }}
             data:
               {{ if .imports.target }}

@@ -1,7 +1,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
-  name: target-importer
+  name: import-export-1
   namespace: example
   annotations:
     landscaper.gardener.cloud/operation: reconcile
@@ -13,21 +13,24 @@ spec:
 
   componentDescriptor:
     ref:
-      componentName: github.com/gardener/landscaper/integration-tests/target-importer
+      componentName: github.com/gardener/landscaper/integration-tests/import-export
       repositoryContext:
         baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
         type: ociRegistry
-      version: v0.1.0
+      version: v0.3.0
 
   imports:
     targets:
       - name: cluster
         target: my-cluster
-      - name: targets
-        targets:
-          - target-1
-          - target-2
 
     data:
-      - name: namespace
+      - name: configmapNamespaceIn
         dataRef: import-do-namespace
+
+  exports:
+    data:
+      - name: configmapNameOut
+        dataRef: export-do-name
+      - name: configmapDataOut
+        dataRef: export-do-data

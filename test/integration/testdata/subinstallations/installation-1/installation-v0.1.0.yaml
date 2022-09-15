@@ -17,7 +17,7 @@ spec:
       repositoryContext:
         baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
         type: ociRegistry
-      version: v0.1.0
+      version: v0.1.1
 
   imports:
     targets:

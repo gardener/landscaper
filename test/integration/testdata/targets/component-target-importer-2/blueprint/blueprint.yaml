@@ -4,10 +4,7 @@ jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
 
 imports:
   - name: cluster
-    targetType: landscaper.gardener.cloud/kubernetes-cluster
-
-  - name: target
-    required: false
+    required: true
     type: target
     targetType: landscaper.gardener.cloud/kubernetes-cluster
 
@@ -20,9 +17,10 @@ imports:
     required: true
     type: data
     schema:
+      description: namespace of the configmaps which the blueprint creates.
       type: string
 
-subinstallationExecutions:
-  - name: default
+deployExecutions:
+  - name: default-deploy-execution
+    file: /deploy-execution.yaml
     type: GoTemplate
-    file: /subinstallation-1.yaml
