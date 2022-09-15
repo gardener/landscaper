@@ -58,7 +58,6 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) lse
 
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
 	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
-	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 	if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000034, o.exec); err != nil {
 		msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
 		return lserrors.NewWrappedError(err, "TriggerDeployItem", msg, err.Error())

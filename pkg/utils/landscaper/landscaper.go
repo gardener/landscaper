@@ -20,33 +20,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/health"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
-
-// WaitForInstallationToBeHealthy waits until the given installation is in the expected phase
-func WaitForInstallationToBeHealthy(
-	ctx context.Context,
-	kubeClient client.Reader,
-	inst *lsv1alpha1.Installation,
-	timeout time.Duration) error {
-
-	err := WaitForInstallationToHaveCondition(ctx, kubeClient, inst, func(installation *lsv1alpha1.Installation) (bool, error) {
-		if err := health.CheckInstallation(inst); err != nil {
-			return false, nil
-		}
-		return true, nil
-	}, timeout)
-	if err != nil {
-		// try to get the actual error
-		if err := health.CheckInstallation(inst); err != nil {
-			return fmt.Errorf("error while waiting for installation to be healthy: %w", err)
-		}
-		return fmt.Errorf("error while waiting for installation to be healthy: %w", err)
-	}
-	return nil
-}
 
 // WaitForInstallationToFinish waits until the given installation has finished with the given phase
 func WaitForInstallationToFinish(
@@ -72,27 +48,6 @@ func IsInstallationFinished(inst *lsv1alpha1.Installation, phase lsv1alpha1.Inst
 		return false, fmt.Errorf("installation has finish with unexpected phase: %s, expected: %s", inst.Status.InstallationPhase, phase)
 	}
 	return true, nil
-}
-
-// WaitForInstallationToBeInPhase waits until the given installation is in the expected phase
-func WaitForInstallationToBeInPhase(
-	ctx context.Context,
-	kubeClient client.Reader,
-	inst *lsv1alpha1.Installation,
-	phase lsv1alpha1.ComponentInstallationPhase,
-	timeout time.Duration) error {
-
-	err := WaitForInstallationToHaveCondition(ctx, kubeClient, inst, func(installation *lsv1alpha1.Installation) (bool, error) {
-		if inst.Status.Phase == phase {
-			return true, nil
-		}
-		return false, nil
-	}, timeout)
-
-	if err != nil {
-		return fmt.Errorf("error while waiting for installation to be in phase %q: %w", phase, err)
-	}
-	return nil
 }
 
 // InstallationConditionFunc defines a condition function that is used to in the wait helper function.

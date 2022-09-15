@@ -61,7 +61,23 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError, read_write_layer.W000088)
 		}
 
-		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseObjectsCreated, nil, read_write_layer.W000114); err != nil {
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseCleanupOrphaned, nil, read_write_layer.W000114); err != nil {
+			return err
+		}
+	}
+
+	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseCleanupOrphaned {
+		fatalError, normalError := c.handlePhaseCleanupOrphaned(ctx, inst)
+
+		if fatalError != nil && !lsutil.IsRecoverableError(fatalError) {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError, read_write_layer.W000019)
+		} else if fatalError != nil && lsutil.IsRecoverableError(fatalError) {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, fatalError, read_write_layer.W000023)
+		} else if normalError != nil {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError, read_write_layer.W000024)
+		}
+
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseObjectsCreated, nil, read_write_layer.W000025); err != nil {
 			return err
 		}
 	}
@@ -276,12 +292,72 @@ func (c *Controller) hash(imps *imports.Imports) (string, error) {
 	return hash, nil
 }
 
+func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
+	currentOperation := "handlePhaseCleanupOrphaned"
+
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	if err != nil {
+		return nil, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
+	}
+
+	subInstsToDelete := []*lsv1alpha1.Installation{}
+	for _, next := range subInsts {
+		if !next.ObjectMeta.DeletionTimestamp.IsZero() {
+			subInstsToDelete = append(subInstsToDelete, next)
+		}
+	}
+
+	if len(subInstsToDelete) == 0 {
+		return nil, nil
+	}
+
+	// all deletions failed
+	allFailed := true
+	for _, next := range subInstsToDelete {
+		if next.Status.JobIDFinished != inst.Status.JobID || next.Status.InstallationPhase != lsv1alpha1.InstallationPhaseDeleteFailed {
+			allFailed = false
+		}
+	}
+
+	if allFailed {
+		return lserrors.NewWrappedError(err, currentOperation, "AllOrphanedSubinstallationsFailed", err.Error()), nil
+	}
+
+	for _, next := range subInstsToDelete {
+		if next.Status.JobID != inst.Status.JobID {
+			next.Status.JobID = inst.Status.JobID
+			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000076, next); err != nil {
+				return nil, lserrors.NewWrappedError(err, currentOperation, "UpdateInstallationStatus", err.Error())
+			}
+		}
+	}
+
+	return nil, lserrors.NewWrappedError(err, currentOperation, "OrphanedSubinstsStillDeleting", err.Error())
+}
+
 func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	currentOperation := "handlePhaseObjectsCreated"
 
 	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
+	}
+
+	// cleanup references in status
+	oldReferences := inst.Status.InstallationReferences
+	newReferences := []lsv1alpha1.NamedObjectReference{}
+	for _, nextRef := range oldReferences {
+		for _, nextSubInst := range subInsts {
+			if nextSubInst.Name == nextRef.Reference.Name {
+				newReferences = append(newReferences, nextRef)
+				break
+			}
+		}
+	}
+
+	inst.Status.InstallationReferences = newReferences
+	if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000026, inst); err != nil {
+		return lserrors.NewWrappedError(err, currentOperation, "UpdateInstallationReferences", err.Error())
 	}
 
 	// trigger subinstallations

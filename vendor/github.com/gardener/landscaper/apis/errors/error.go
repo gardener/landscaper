@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -236,27 +235,6 @@ func UpdatedError(lastError *lsv1alpha1.Error, operation, reason, message string
 	}
 
 	return newError
-}
-
-// GetPhaseForLastError returns a failed installation phase if the given
-// error lasts longer than the specified time.
-func GetPhaseForLastError(phase lsv1alpha1.ComponentInstallationPhase, lastError *lsv1alpha1.Error, d time.Duration) lsv1alpha1.ComponentInstallationPhase {
-	if lastError == nil {
-		return phase
-	}
-	if len(phase) == 0 {
-		return lsv1alpha1.ComponentPhaseFailed
-	}
-
-	// directly set the phase to error if the error contains an unrecoverable error code
-	if ContainsAnyErrorCode(lastError.Codes, lsv1alpha1.UnrecoverableErrorCodes) {
-		return lsv1alpha1.ComponentPhaseFailed
-	}
-
-	if lastError.LastUpdateTime.Sub(lastError.LastTransitionTime.Time).Seconds() > d.Seconds() {
-		return lsv1alpha1.ComponentPhaseFailed
-	}
-	return phase
 }
 
 // ContainsAnyErrorCode checks whether any expected error code is included in a list of error codes

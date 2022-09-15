@@ -201,7 +201,6 @@ var _ = Describe("Delete", func() {
 
 			// patch status to be failed
 			old := inst.DeepCopy()
-			inst.Status.Phase = lsv1alpha1.ComponentPhaseFailed
 			Expect(testenv.Client.Status().Patch(ctx, inst, client.MergeFrom(old)))
 			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
 

@@ -229,7 +229,8 @@ func isRecoverableError(err error) bool {
 	isWebhookProblem := strings.Contains(err.Error(), "webhook")
 	isSpecialWebhookProblem := strings.Contains(err.Error(), "connection refused") ||
 		strings.Contains(err.Error(), "context deadline exceeded") ||
-		strings.Contains(err.Error(), "failed to call webhook")
+		strings.Contains(err.Error(), "failed to call webhook") ||
+		strings.Contains(err.Error(), "proxy error")
 
 	return isWebhookProblem && isSpecialWebhookProblem
 }

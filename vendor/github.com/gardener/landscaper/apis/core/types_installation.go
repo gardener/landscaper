@@ -10,9 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ComponentInstallationPhase is a string that contains the component's installation phase
-type ComponentInstallationPhase string
-
 // InstallationPhase is a string that contains the installation phase
 type InstallationPhase string
 
@@ -89,9 +86,6 @@ type InstallationSpec struct {
 
 // InstallationStatus contains the current status of a Installation.
 type InstallationStatus struct {
-	// Phase is the current phase of the installation.
-	Phase ComponentInstallationPhase `json:"-"`
-
 	// ObservedGeneration is the most recent generation observed for this ControllerInstallations.
 	// It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
 	ObservedGeneration int64 `json:"observedGeneration"`

@@ -7,11 +7,12 @@ package mediatype_test
 import (
 	"testing"
 
-	"github.com/gardener/landscaper/apis/mediatype"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
+
+	"github.com/gardener/landscaper/apis/mediatype"
 )
 
 func TestConfig(t *testing.T) {
@@ -103,14 +104,14 @@ var _ = Describe("MediaType test suite", func() {
 
 	Context("Landscaper specifics", func() {
 		It("should parse a legacy blueprint layer type", func() {
-			mt, err := mediatype.Parse(mediatype.BlueprintArtifactsMediaTypeV0)
+			mt, _ := mediatype.Parse(mediatype.BlueprintArtifactsMediaTypeV0)
 			layerMT, err := mediatype.Parse(mediatype.BlueprintArtifactsLayerMediaTypeV1 + "+gzip")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mt).To(Equal(layerMT))
 		})
 
 		It("should parse a legacy jsonschema layer type", func() {
-			mt, err := mediatype.Parse(mediatype.JSONSchemaArtifactsMediaTypeV0)
+			mt, _ := mediatype.Parse(mediatype.JSONSchemaArtifactsMediaTypeV0)
 			newMT, err := mediatype.Parse(mediatype.JSONSchemaArtifactsMediaTypeV1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mt).To(Equal(newMT))

@@ -239,16 +239,6 @@ func RemoveVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObject
 	return objects
 }
 
-// IsCompletedInstallationPhase returns true if the phase indicates a final state.
-func IsCompletedInstallationPhase(phase v1alpha1.ComponentInstallationPhase) bool {
-	return phase == v1alpha1.ComponentPhaseFailed || phase == v1alpha1.ComponentPhaseAborted || phase == v1alpha1.ComponentPhaseSucceeded
-}
-
-// IsProgressingInstallationPhase returns true if the phase indicates that the component is still progressing.
-func IsProgressingInstallationPhase(phase v1alpha1.ComponentInstallationPhase) bool {
-	return phase == v1alpha1.ComponentPhaseProgressing || phase == v1alpha1.ComponentPhasePending || phase == v1alpha1.ComponentPhaseDeleting
-}
-
 func IsDeletionInstallationPhase(phase v1alpha1.InstallationPhase) bool {
 	return phase == v1alpha1.InstallationPhaseInitDelete ||
 		phase == v1alpha1.InstallationPhaseTriggerDelete ||
