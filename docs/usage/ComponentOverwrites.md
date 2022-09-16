@@ -1,7 +1,7 @@
 # Component Overwrites
 
 When deploying applications using aggregated blueprints, their component descriptors reference multiple other components with blueprints.
-In order to test new versions of transitive dependencies one would have to release new versions of all including component descriptors which could, depending on the depth, result in a lot of releases and therefore repetitive overhead.
+In order to test new versions of transitive dependencies one would have to release new versions of all included component descriptors which could, depending on the depth, result in a lot of releases and therefore repetitive overhead.
 
 To support simpler testing of development versions in aggregated components it should be possible to override specific blueprints or components manually in a live system.
 
@@ -10,7 +10,7 @@ Therefore, two new resources are introduced:
 - [`ComponentVersionOverwrites`](#componentversionoverwrites)
 - [`ComponentOverwrites`](#componentoverwrites) *(deprecated)*
 
-Whenever the component reference of an Installation, regardless whether used directly or indirectly, it will be matter of substitution for described component overwrites. This means that not only the component descriptor reference used in an Installation is replaces, but also all of the references within the - potentially replaced - component descriptor.
+Whenever the component references an Installation, regardless of whether it is used directly or indirectly, it will be matter of substitution for described component overwrites. This means that not only the component descriptor reference used in an Installation is replaced, but also all of the references within the - potentially replaced - component descriptor.
 
 ## Overwrite Evaluation
 
@@ -50,7 +50,7 @@ overwrites:
   substitution:
     repositoryContext:
       type: ociRegistry
-      baseUrl: "example.com"
+      baseUrl: "example.org"
     componentName: ""
     version: ""
 ```
@@ -68,15 +68,15 @@ metadata:
 
 overwrites:
 - component:
-    repositoryContext: # optional
+    repositoryContext:
       type: ociRegistry
       baseUrl: "example.com"
     componentName: ""
-    version: "" # optional
+    version: ""
   target:
-    repositoryContext: # optional
+    repositoryContext:
       type: ociRegistry
-      baseUrl: "example.com"
-    componentName: "" # optional
+      baseUrl: "example.org"
+    componentName: ""
     version: ""
 ```
