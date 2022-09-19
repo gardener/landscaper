@@ -175,7 +175,6 @@ github.com/gardener/landscaper/apis/config/v1alpha1
 github.com/gardener/landscaper/apis/core
 github.com/gardener/landscaper/apis/core/install
 github.com/gardener/landscaper/apis/core/v1alpha1
-github.com/gardener/landscaper/apis/core/v1alpha1/health
 github.com/gardener/landscaper/apis/core/v1alpha1/helper
 github.com/gardener/landscaper/apis/core/validation
 github.com/gardener/landscaper/apis/deployer/container

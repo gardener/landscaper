@@ -180,6 +180,11 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	op := "DeleteInstallationAllowed"
 
+	v, ok := inst.GetAnnotations()[lsv1alpha1.DeleteIgnoreSuccessors]
+	if ok && v == "true" {
+		return nil
+	}
+
 	_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err,
@@ -187,7 +192,6 @@ func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Install
 	}
 
 	// check if suitable for deletion
-	// todo: replacements and internal deletions
 	if checkIfSiblingImports(inst, installations.CreateInternalInstallationBases(siblings...)) {
 		return lserrors.NewWrappedError(SiblingImportError,
 			op, "SiblingImport", SiblingImportError.Error())

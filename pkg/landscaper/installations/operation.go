@@ -176,11 +176,10 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 
 // UpdateInstallationStatus updates the status of a installation
 func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation,
-	phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
+	updatedConditions ...lsv1alpha1.Condition) error {
 
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
-	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
 	if err := o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000018, inst); err != nil {
 		logger.Error(err, "unable to set installation status")
@@ -477,7 +476,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 	o.Inst.GetInstallation().Status.ConfigGeneration = configGen
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue, "DataObjectsCreated", "DataObjects successfully created")
-	return o.UpdateInstallationStatus(ctx, o.Inst.GetInstallation(), o.Inst.GetInstallation().Status.Phase, cond)
+	return o.UpdateInstallationStatus(ctx, o.Inst.GetInstallation(), cond)
 }
 
 // CreateOrUpdateImports creates or updates the data objects that holds the imported values for every import

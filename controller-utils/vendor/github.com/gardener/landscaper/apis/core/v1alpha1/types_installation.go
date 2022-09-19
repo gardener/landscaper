@@ -52,25 +52,16 @@ const ComponentReferenceOverwriteCondition ConditionType = "ComponentReferenceOv
 
 type ComponentInstallationPhase string
 
-const (
-	ComponentPhaseInit        ComponentInstallationPhase = "Init"
-	ComponentPhasePending     ComponentInstallationPhase = "PendingDependencies"
-	ComponentPhaseProgressing ComponentInstallationPhase = "Progressing"
-	ComponentPhaseDeleting    ComponentInstallationPhase = "Deleting"
-	ComponentPhaseAborted     ComponentInstallationPhase = "Aborted"
-	ComponentPhaseSucceeded   ComponentInstallationPhase = "Succeeded"
-	ComponentPhaseFailed      ComponentInstallationPhase = "Failed"
-)
-
 type InstallationPhase string
 
 const (
-	InstallationPhaseInit           InstallationPhase = "Init"
-	InstallationPhaseObjectsCreated InstallationPhase = "ObjectsCreated"
-	InstallationPhaseProgressing    InstallationPhase = "Progressing"
-	InstallationPhaseCompleting     InstallationPhase = "Completing"
-	InstallationPhaseSucceeded      InstallationPhase = "Succeeded"
-	InstallationPhaseFailed         InstallationPhase = "Failed"
+	InstallationPhaseInit            InstallationPhase = "Init"
+	InstallationPhaseCleanupOrphaned InstallationPhase = "CleanupOrphaned"
+	InstallationPhaseObjectsCreated  InstallationPhase = "ObjectsCreated"
+	InstallationPhaseProgressing     InstallationPhase = "Progressing"
+	InstallationPhaseCompleting      InstallationPhase = "Completing"
+	InstallationPhaseSucceeded       InstallationPhase = "Succeeded"
+	InstallationPhaseFailed          InstallationPhase = "Failed"
 
 	InstallationPhaseInitDelete    InstallationPhase = "InitDelete"
 	InstallationPhaseTriggerDelete InstallationPhase = "TriggerDelete"
@@ -181,9 +172,6 @@ type InstallationSpec struct {
 
 // InstallationStatus contains the current status of a Installation.
 type InstallationStatus struct {
-	// Phase is the current phase of the installation.
-	Phase ComponentInstallationPhase `json:"-"`
-
 	// ObservedGeneration is the most recent generation observed for this ControllerInstallations.
 	// It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
 	ObservedGeneration int64 `json:"observedGeneration"`
@@ -449,10 +437,11 @@ type ImportStatus struct {
 
 // MarshalJSON implements the json marshaling for a TargetImport
 // Why this is needed:
-//   We need Targets to not have the 'omitempty' annotation,
-//   because the code distinguishes between nil and an empty list.
-//   Not having the annotation causes the default json marshal to write
-//   'null' in case of nil, which causes problems.
+//
+//	We need Targets to not have the 'omitempty' annotation,
+//	because the code distinguishes between nil and an empty list.
+//	Not having the annotation causes the default json marshal to write
+//	'null' in case of nil, which causes problems.
 func (ti TargetImport) MarshalJSON() ([]byte, error) {
 
 	type TargetImportWithTargets struct {

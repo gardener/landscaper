@@ -25,7 +25,7 @@ root installation (and therefore of the complete object tree) can only start if 
 
 The reconciliation of an installation is divided into several phases. The diagram below shows these phases and the
 possible transitions between them. The phases on the left hand side constitute the **installation flow**:
-`Init`, `ObjectsCreated`, `Progressing`, `Completing`, `Succeeded`, resp. `Failed` in case of an error.
+`Init`, `CleanupOrphaned`, `ObjectsCreated`, `Progressing`, `Completing`, `Succeeded`, resp. `Failed` in case of an error.
 The phases on the right hand side constitute the **deletion flow**: `InitDelete`, `TriggerDelete`, `Deleting`, and in
 case of an error `DeleteFailed`.
 
@@ -61,6 +61,20 @@ During the `Init` phase, the installation controller
   been changed during the reconcile flow, 
   see [phase "Completing - Collecting Exports](#phase-completing---collecting-exports).
 - templates and creates all subobjects (subinstallations and execution).
+- deletes all orphaned subinstallations. This means that only the delete operation is called for every subinstallation
+  but the deletion is not started until the next phase. Before the delete operation is called for an orphaned subinstallation,
+  it gets the annotation `landscaper.gardener.cloud//delete-ignore-successors=true` such that the subinstallation is 
+  deleted without waiting for the deletion of dependent subinstallations.
+
+#### Phase "CleanupOrphaned"
+
+In this phase the controller triggers the deletion flow for all orphaned subinstallation of the current installation.
+This is done by passing the job ID of the current installation to all orphaned subinstallation. If all are gone, 
+the next phase is started. When all remaining orphaned subinstallations failed with their deletion, the overall 
+reconcile of the current installation stops with `Failed`. As long as there orphaned subinstallation still working on their 
+deletion, the processing of the current installation remains in Phase `CleanupOrphaned`.
+
+Be aware that the orphaned subinstallations are deleted in an arbitrary order. 
 
 #### Phase "ObjectsCreated"
 
@@ -140,10 +154,13 @@ job ID and the deletion flow starts with phase `InitDelete`.
 Phase `InitDelete` starts with a check whether there still exist successors of the current installation, i.e. siblings 
 that import an export of the current installation. Successors must be deleted first. Therefore, the installation
 remains in phase `InitDelete` as long as successors exist. The phase and thus also the check are repeated in
-increasing time intervals.
+increasing time intervals. 
 
 If there are no successors, all subobjects are deleted. From then on, all subobjects have a deletion timestamp, but 
 their finalizers prevent the actual removal.
+
+If the installatin has the annotation `landscaper.gardener.cloud//delete-ignore-successors=true` the check for still 
+existing successors is skipped.
 
 #### Phase "TriggerDelete"
 

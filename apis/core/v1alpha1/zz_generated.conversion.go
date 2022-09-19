@@ -1945,7 +1945,6 @@ func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec,
 	out.Context = in.Context
 	out.DeployItems = *(*core.DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
-	out.ReconcileID = in.ReconcileID
 	return nil
 }
 
@@ -1953,12 +1952,10 @@ func autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.Execution
 	out.Context = in.Context
 	out.DeployItems = *(*DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
-	out.ReconcileID = in.ReconcileID
 	return nil
 }
 
 func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionStatus, out *core.ExecutionStatus, s conversion.Scope) error {
-	out.Phase = core.ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
@@ -1977,7 +1974,6 @@ func Convert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionStatu
 }
 
 func autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.ExecutionStatus, out *ExecutionStatus, s conversion.Scope) error {
-	out.Phase = ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*Error)(unsafe.Pointer(in.LastError))
@@ -2286,7 +2282,6 @@ func Convert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.Install
 }
 
 func autoConvert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *InstallationStatus, out *core.InstallationStatus, s conversion.Scope) error {
-	out.Phase = core.ComponentInstallationPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
@@ -2307,7 +2302,6 @@ func Convert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *Installa
 }
 
 func autoConvert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in *core.InstallationStatus, out *InstallationStatus, s conversion.Scope) error {
-	out.Phase = ComponentInstallationPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*Error)(unsafe.Pointer(in.LastError))

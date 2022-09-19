@@ -46,8 +46,8 @@ const (
 // DefaultMediaTypeConversions defines the default conversions for landscaper media types.
 func DefaultMediaTypeConversions(mediaType string) (convertedType string, converted bool, err error) {
 	switch mediaType {
-		case BlueprintArtifactsMediaTypeV0:
-			return NewBuilder(BlueprintArtifactsLayerMediaTypeV1).Compression(GZipCompression).String(), true, nil
+	case BlueprintArtifactsMediaTypeV0:
+		return NewBuilder(BlueprintArtifactsLayerMediaTypeV1).Compression(GZipCompression).String(), true, nil
 	case JSONSchemaArtifactsMediaTypeV0:
 		return JSONSchemaArtifactsMediaTypeV1, true, nil
 	}

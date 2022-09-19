@@ -8,8 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
-
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -170,10 +168,6 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 		}
 
-		if exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lsv1alpha1helper.HasOperation(inst.GetInstallation().ObjectMeta, lsv1alpha1.ReconcileOperation) {
-			exec.Spec.ReconcileID = uuid.New().String()
-		}
-
 		if err := controllerutil.SetControllerReference(inst.GetInstallation(), exec, api.LandscaperScheme); err != nil {
 			return err
 		}
@@ -182,7 +176,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}); err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CreateOrUpdateExecutionReason, "Unable to create or update execution")
-		_ = o.UpdateInstallationStatus(ctx, inst.GetInstallation(), lsv1alpha1.ComponentPhaseProgressing, cond)
+		_ = o.UpdateInstallationStatus(ctx, inst.GetInstallation(), cond)
 		return err
 	}
 
@@ -192,7 +186,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		ExecutionDeployedReason, "Deployed execution item")
-	if err := o.UpdateInstallationStatus(ctx, inst.GetInstallation(), inst.GetInstallation().Status.Phase, cond); err != nil {
+	if err := o.UpdateInstallationStatus(ctx, inst.GetInstallation(), cond); err != nil {
 		return err
 	}
 

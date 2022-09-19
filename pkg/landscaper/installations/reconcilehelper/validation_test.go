@@ -77,12 +77,10 @@ var _ = Describe("Validation", func() {
 				ctx := context.Background()
 				inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 				Expect(err).ToNot(HaveOccurred())
-				inInstRoot.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 				Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
 
 				inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 				Expect(err).ToNot(HaveOccurred())
-				inInstA.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 				Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
 				inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
@@ -105,9 +103,8 @@ var _ = Describe("Validation", func() {
 			It("should succeed if the import comes from a sibling", func() {
 				ctx := context.Background()
 
-				inInstE, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
+				_, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
 				Expect(err).ToNot(HaveOccurred())
-				inInstE.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
 				inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/f"])
 				Expect(err).ToNot(HaveOccurred())
@@ -350,12 +347,10 @@ var _ = Describe("Validation", func() {
 			ctx := context.Background()
 			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstRoot.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 			Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
 
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstA.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
 			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
@@ -376,12 +371,10 @@ var _ = Describe("Validation", func() {
 			ctx := context.Background()
 			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstRoot.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 			Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
 
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
-			inInstA.GetInstallation().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 			inInstA.GetInstallation().Status.ConfigGeneration = "updated"
 			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
