@@ -2,7 +2,7 @@ meta:
   schemaVersion: 'v2'
 component:
   name: 'github.com/gardener/landscaper/integration-tests/subinstallations'
-  version: 'v0.1.0'
+  version: 'v0.1.1'
 
   repositoryContexts:
     - type: 'ociRegistry'

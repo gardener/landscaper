@@ -1,0 +1,26 @@
+subinstallations:
+  {{ $imports := .imports }}
+  {{ range $i, $target := .imports.targets }}
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+    name: subinst{{ $i }}
+    blueprint:
+      ref: cd://componentReferences/target-importer-component/resources/blueprint
+
+    imports:
+      targets:
+        - name: cluster
+          target: cluster
+        - name: target
+          target: {{ $target.metadata.name }}  # evaluates to "target-1", "target-2", but the context of the
+                                               # installation contains no targets with these keys. The two targets
+                                               # have been copied in the context, but both have the key "targets".
+
+      data:
+        - name: namespace
+          dataRef: namespace
+
+    importDataMappings:
+      name: cm-kubeconfig-{{ $i }}
+
+  {{ end }}

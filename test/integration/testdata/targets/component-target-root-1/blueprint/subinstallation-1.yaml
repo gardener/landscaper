@@ -1,16 +1,26 @@
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: subinst1
-blueprint:
-  ref: cd://componentReferences/target-importer-component/resources/blueprint
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+    name: subinst1
+    blueprint:
+      ref: cd://componentReferences/target-importer-component/resources/blueprint
 
-imports:
-  targets:
-    - name: cluster
-      target: cluster
-    - name: target
-      target: target
+    imports:
+      targets:
+        - name: cluster
+          target: cluster
+        {{- if .imports.target }}
+        - name: target
+          target: target
+        {{- end}}
+        {{- if .imports.targets }}
+        - name: targets
+          targetListRef: targets
+        {{- end }}
 
-  data:
-    - name: namespace
-      dataRef: namespace
+      data:
+        - name: namespace
+          dataRef: namespace
+
+    importDataMappings:
+      name: cm-kubeconfigs

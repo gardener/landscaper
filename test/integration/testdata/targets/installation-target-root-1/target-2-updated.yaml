@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  annotations:
+    key1: value1
+  labels:
+    key2: value2
+  name: target-2
+  namespace: example
+spec:
+  type: landscaper.gardener.cloud/kubernetes-cluster
+  config:
+    kubeconfig: dummy kubeconfig 2 updated

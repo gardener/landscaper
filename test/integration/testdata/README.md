@@ -2,6 +2,19 @@
 
 ## Import Scenarios
 
+The blueprint of component [import-export/v0.1.0](import-export/v0.1.0) uses the mainfest deployer to create a
+ConfigMap. Name, namespace, and data of the ConfigMap can be provided by imports of the blueprint.
+The blueprint exports the imported name and data slightly modified.
+Installations that use this blueprint can be concatenated and are also used in the subinstallation scenarios.
+
+The blueprint of component [import-export/v0.2.0](import-export/v0.2.0) is just a variation of `v0.1.0`, so that
+a version update can be tested.
+
+The blueprint of component [import-export/v0.3.0](import-export/v0.3.0) is just a variation of `v0.1.0`.
+The imported name and data are optional and have default values. This scenario does not work and is not used in any 
+test case (issue: Default Values for Optional Imports of a Blueprint #172).
+
+
 ### Reading Import Values from Different Objects
 
 [**Installation import-export/installation-1**](./import-export/installation-1/installation.yaml) 
@@ -94,3 +107,28 @@ component. Each subinstallation reads the strings exported by its predecessors a
 combine them and to append the own name. In this way the strings that are passed through the subinstallations track 
 the processing order. Version `v0.1.0` consists of a chain of four subinstallations. Version `v0.2.0` consists of 
 three independent subinstallations, and a fourth one that depends on the first three.
+
+## Target Scenarios
+
+The blueprint of component
+[github.com/gardener/landscaper/integration-tests/target-exporter](targets/component-target-exporter)
+imports a string and exports a `Target` with the imported string as kubeconfig.
+
+The blueprint of component
+[github.com/gardener/landscaper/integration-tests/target-importer-1](targets/component-target-importer-1)
+imports a `Target` and a `TargetList` (both optional). It writes their kubeconfigs into one `ConfigMap`.
+
+The blueprint of component
+[github.com/gardener/landscaper/integration-tests/target-importer-2](targets/component-target-importer-2)
+imports a `TargetList` and generates a `DeployItem` for each `Target` of the list. Each of the DeployItems creates a
+`ConfigMap`.
+
+The blueprint of component
+[github.com/gardener/landscaper/integration-tests/target-root-1](targets/component-target-root-1)
+imports a `Target` and a `TargetList` and passes them to one subinstallation with the target-importer-1 component.  
+
+The blueprint of component
+[github.com/gardener/landscaper/integration-tests/target-root-2](targets/component-target-root-2)
+imports a `TargetList` and generates for each `Target` of the list a subinstallation with the target-importer-1 
+component. This scenario does not work and is not used in any test case 
+(issue: Templating a Subinstallation for Every Target of a TargetList #171).

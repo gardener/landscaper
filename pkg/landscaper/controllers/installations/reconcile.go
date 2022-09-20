@@ -332,7 +332,8 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 		}
 	}
 
-	return nil, lserrors.NewWrappedError(err, currentOperation, "OrphanedSubinstsStillDeleting", err.Error())
+	return nil, lserrors.NewError(currentOperation, "OrphanedSubinstsStillDeleting",
+		"some orphaned subinstallations are still deleting")
 }
 
 func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {

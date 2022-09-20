@@ -1,8 +1,8 @@
 meta:
   schemaVersion: 'v2'
 component:
-  name: 'github.com/gardener/landscaper/integration-tests/target-importer'
-  version: 'v0.1.0'
+  name: 'github.com/gardener/landscaper/integration-tests/import-export'
+  version: 'v0.3.0'
 
   repositoryContexts:
     - type: 'ociRegistry'
