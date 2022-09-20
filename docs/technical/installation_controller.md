@@ -3,7 +3,7 @@
 ## Reconcile Jobs
 
 The reconciliation of landscaper objects (installations, executions, deploy items) always starts at a root installation.
-Each objects that is being reconciled triggers a reconcile of its subobjects, i.e. installations trigger their 
+Each object that is being reconciled triggers a reconcile of its subobjects, i.e. installations trigger their 
 subinstallations and executions, and executions trigger their deploy items. In this way a reconcile that was 
 started at a root installation propagates through the complete object tree. This walk through the object tree of a
 root installation is called a **job**. A job has a job ID, a UUID, that is generated when the root installation starts 
