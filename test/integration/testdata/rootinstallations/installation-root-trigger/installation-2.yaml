@@ -1,10 +1,8 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
-  name: import-export-1
+  name: root-2
   namespace: example
-  annotations:
-    landscaper.gardener.cloud/operation: reconcile
 
 spec:
   blueprint:
@@ -17,7 +15,7 @@ spec:
       repositoryContext:
         baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
         type: ociRegistry
-      version: v0.4.0
+      version: v0.1.0
 
   imports:
     targets:
@@ -26,11 +24,15 @@ spec:
 
     data:
       - name: configmapNamespaceIn
-        dataRef: import-do-namespace
+        dataRef: do-namespace
+      - name: configmapNameIn
+        dataRef: do-name-2
+      - name: configmapDataIn
+        dataRef: do-data-2
 
   exports:
     data:
       - name: configmapNameOut
-        dataRef: export-do-name
+        dataRef: do-name-3
       - name: configmapDataOut
-        dataRef: export-do-data
+        dataRef: do-data-3

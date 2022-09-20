@@ -234,6 +234,22 @@ func (s *State) Create(ctx context.Context, obj client.Object, opts ...CreateOpt
 	return s.CreateWithClientAndRetries(ctx, s.Client, obj, opts...)
 }
 
+// Update a kubernetes resources
+func (s *State) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	for i := 0; i < 10; i++ {
+		err := s.Client.Update(ctx, obj, opts...)
+		if err == nil {
+			break
+		} else if s.checkIfSporadicError(err) {
+			s.log.Logln("state Update failed but retried: " + err.Error())
+			time.Sleep(5 * time.Second)
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
 // InitResourcesWithClient creates a new isolated environment with its own namespace.
 func (s *State) InitResourcesWithClient(ctx context.Context, c client.Client, resourcesPath string) error {
 	// parse state and create resources in cluster

@@ -17,7 +17,7 @@ spec:
       repositoryContext:
         baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
         type: ociRegistry
-      version: v0.4.0
+      version: v0.3.0
 
   imports:
     targets:
@@ -25,12 +25,16 @@ spec:
         target: my-cluster
 
     data:
+      - name: configmapNameIn
+        dataRef: import-do-name-updated
       - name: configmapNamespaceIn
-        dataRef: import-do-namespace
+        dataRef: import-do-namespace-updated
+      - name: configmapDataIn
+        dataRef: import-do-data-updated
 
   exports:
     data:
       - name: configmapNameOut
-        dataRef: export-do-name
+        dataRef: export-do-name-updated
       - name: configmapDataOut
-        dataRef: export-do-data
+        dataRef: export-do-data-updated

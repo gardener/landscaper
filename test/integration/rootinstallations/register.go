@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package targets
+package rootinstallations
 
 import (
 	"github.com/gardener/landscaper/test/framework"
@@ -10,5 +10,5 @@ import (
 
 // RegisterTests registers all tests of this package
 func RegisterTests(f *framework.Framework) {
-	TargetTests(f)
+	RootInstallationTests(f)
 }

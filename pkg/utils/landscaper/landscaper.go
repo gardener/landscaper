@@ -11,15 +11,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
@@ -48,6 +48,25 @@ func IsInstallationFinished(inst *lsv1alpha1.Installation, phase lsv1alpha1.Inst
 		return false, fmt.Errorf("installation has finish with unexpected phase: %s, expected: %s", inst.Status.InstallationPhase, phase)
 	}
 	return true, nil
+}
+
+// WaitForInstallationToBeDeleted waits until the given installation has finished with the given phase
+func WaitForInstallationToBeDeleted(
+	ctx context.Context,
+	kubeClient client.Reader,
+	inst *lsv1alpha1.Installation,
+	timeout time.Duration) error {
+
+	pollErr := wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
+		updated := &lsv1alpha1.Installation{}
+		getErr := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated)
+		return getErr != nil && apierrors.IsNotFound(getErr), nil
+	})
+
+	if pollErr != nil {
+		return fmt.Errorf("error while waiting for installation to be deleted: %w", pollErr)
+	}
+	return nil
 }
 
 // InstallationConditionFunc defines a condition function that is used to in the wait helper function.

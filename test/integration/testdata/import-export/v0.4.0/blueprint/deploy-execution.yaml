@@ -18,17 +18,7 @@ deployItems:
               name: {{ .imports.configmapNameIn }}
               namespace: {{ .imports.configmapNamespaceIn }}
             data:
-              fooUpdated: barUpdated
+              foo: bar
               {{- if .imports.configmapDataIn }}
               {{- .imports.configmapDataIn | toYaml | nindent 14 }}
               {{- end }}
-
-      exports:
-        exports:
-          - key: configmapDataOut
-            fromResource:
-              apiVersion: v1
-              kind: ConfigMap
-              name: {{ .imports.configmapNameIn }}
-              namespace: {{ .imports.configmapNamespaceIn }}
-            jsonPath: .data

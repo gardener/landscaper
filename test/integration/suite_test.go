@@ -9,25 +9,24 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/gardener/landscaper/test/integration/core"
-	"github.com/gardener/landscaper/test/integration/dependencies"
-	"github.com/gardener/landscaper/test/integration/deployitems"
-	"github.com/gardener/landscaper/test/integration/executions"
-	"github.com/gardener/landscaper/test/integration/importexport"
-	"github.com/gardener/landscaper/test/integration/installations"
-	"github.com/gardener/landscaper/test/integration/subinstallations"
-	"github.com/gardener/landscaper/test/integration/targets"
-	"github.com/gardener/landscaper/test/integration/tutorial"
-	"github.com/gardener/landscaper/test/integration/webhook"
-
-	"github.com/gardener/landscaper/test/integration/deployers"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-
 	"github.com/gardener/landscaper/test/framework"
+	"github.com/gardener/landscaper/test/integration/core"
+	"github.com/gardener/landscaper/test/integration/dependencies"
+	"github.com/gardener/landscaper/test/integration/deployers"
+	"github.com/gardener/landscaper/test/integration/deployitems"
+	"github.com/gardener/landscaper/test/integration/executions"
+	"github.com/gardener/landscaper/test/integration/importexport"
+	"github.com/gardener/landscaper/test/integration/inline"
+	"github.com/gardener/landscaper/test/integration/installations"
+	"github.com/gardener/landscaper/test/integration/rootinstallations"
+	"github.com/gardener/landscaper/test/integration/subinstallations"
+	"github.com/gardener/landscaper/test/integration/targets"
+	"github.com/gardener/landscaper/test/integration/tutorial"
+	"github.com/gardener/landscaper/test/integration/webhook"
 )
 
 var opts *framework.Options
@@ -74,9 +73,11 @@ func TestConfig(t *testing.T) {
 	}
 
 	importexport.RegisterTests(f)
+	rootinstallations.RegisterTests(f)
 	subinstallations.RegisterTests(f)
 	dependencies.RegisterTests(f)
 	targets.RegisterTests(f)
+	inline.RegisterTests(f)
 	tutorial.RegisterTests(f)
 	webhook.RegisterTests(f)
 	core.RegisterTests(f)
