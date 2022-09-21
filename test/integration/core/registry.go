@@ -21,8 +21,8 @@ import (
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
@@ -42,22 +42,22 @@ func RegistryTest(f *framework.Framework) {
 		return
 	}
 
-	_ = ginkgo.Describe("RegistryTest", func() {
+	_ = Describe("RegistryTest", func() {
 
 		var (
 			state = f.Register()
 			ctx   context.Context
 		)
 
-		ginkgo.BeforeEach(func() {
+		BeforeEach(func() {
 			ctx = context.Background()
 		})
 
-		ginkgo.AfterEach(func() {
+		AfterEach(func() {
 			ctx.Done()
 		})
 
-		ginkgo.It("should upload a component descriptor and blueprint to a private registry and install that blueprint", func() {
+		It("should upload a component descriptor and blueprint to a private registry and install that blueprint", func() {
 			var (
 				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/local-ingress-nginx")
 				targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")
@@ -68,27 +68,27 @@ func RegistryTest(f *framework.Framework) {
 				componentVersion = "v0.0.1"
 			)
 
-			ginkgo.By("upload component descriptor, blueprint and helm chart")
+			By("upload component descriptor, blueprint and helm chart")
 			cd := buildAndUploadComponentDescriptorWithArtifacts(ctx, f, componentName, componentVersion)
 			repoCtx := cd.GetEffectiveRepositoryContext()
 
-			ginkgo.By("Create Target for the installation")
+			By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, false)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
-			ginkgo.By("Create ConfigMap with imports for the installation")
+			By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
 			cm.SetNamespace(state.Namespace)
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
 			cm.Data["namespace"] = state.Namespace
 			utils.ExpectNoError(state.Create(ctx, cm))
 
-			ginkgo.By("Create Installation")
+			By("Create Installation")
 			inst := &lsv1alpha1.Installation{}
-			gomega.Expect(utils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
+			Expect(utils.ReadResourceFromFile(inst, instResource)).To(Succeed())
 			inst.SetNamespace(state.Namespace)
 			lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
 			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
@@ -107,15 +107,15 @@ func RegistryTest(f *framework.Framework) {
 
 			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
-			gomega.Expect(deployItems).To(gomega.HaveLen(1))
-			gomega.Expect(deployItems[0].Status.Phase).To(gomega.Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+			Expect(deployItems).To(HaveLen(1))
+			Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
 
 			// expect that the nginx deployment is successfully running
 			nginxIngressDeploymentName := "test-ingress-nginx-controller"
 			nginxIngressObjectKey := kutil.ObjectKey(nginxIngressDeploymentName, state.Namespace)
 			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
 
-			ginkgo.By("Delete installation")
+			By("Delete installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, inst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))
 
