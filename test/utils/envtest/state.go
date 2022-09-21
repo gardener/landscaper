@@ -510,7 +510,7 @@ func CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha
 	}
 
 	var innerErr error
-	if err := wait.PollImmediate(2*time.Second, 10*time.Second, func() (done bool, err error) {
+	if err := wait.PollImmediate(1*time.Second, 10*time.Second, func() (done bool, err error) {
 		innerErr = addReconcileAnnotation(ctx, c, obj)
 		return innerErr == nil, nil
 	}); err != nil {
@@ -660,7 +660,7 @@ func WaitForObjectToBeDeleted(ctx context.Context, c client.Client, obj client.O
 		lastErr error
 		uObj    client.Object
 	)
-	err := wait.PollImmediate(2*time.Second, timeout, func() (done bool, err error) {
+	err := wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
 		uObj = obj.DeepCopyObject().(client.Object)
 		if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, uObj); err != nil {
 			if apierrors.IsNotFound(err) {

@@ -118,7 +118,7 @@ var _ = Describe("Template", func() {
 				return nil
 			}
 			return fmt.Errorf("phase is %s but expected it to be failed", di.Status.Phase)
-		}, 10*time.Second, 2*time.Second).Should(Succeed())
+		}, 10*time.Second, 1*time.Second).Should(Succeed())
 		Expect(di.Status.GetLastError()).ToNot(BeNil())
 		Expect(di.Status.GetLastError().Codes).To(ContainElement(lsv1alpha1.ErrorConfigurationProblem))
 	})
