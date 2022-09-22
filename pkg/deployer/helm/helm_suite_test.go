@@ -165,7 +165,7 @@ var _ = Describe("Template", func() {
 					return err
 				}
 				return nil
-			}, 10*time.Second, 2*time.Second).Should(Succeed(), "additional namespace should be created")
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "additional namespace should be created")
 		})
 
 		It("should export helm values", func() {
@@ -226,7 +226,7 @@ var _ = Describe("Template", func() {
 				}
 
 				return nil
-			}, 20*time.Second, 2*time.Second).Should(Succeed(), "export should be created")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "export should be created")
 
 			Expect(testenv.Client.Get(ctx, item.Status.ExportReference.NamespacedName(), export)).ToNot(HaveOccurred())
 			Expect(export.Data).To(HaveKey("config"))

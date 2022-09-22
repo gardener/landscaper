@@ -202,7 +202,7 @@ func DeployerManagementTests(f *framework.Framework) {
 						return fmt.Errorf("expected that the environment still has one finalizer but found %d", len(env.Finalizers))
 					}
 					return nil
-				}, 30*time.Second, 5*time.Second).Should(g.Succeed())
+				}, 30*time.Second, 1*time.Second).Should(g.Succeed())
 			})
 		})
 

@@ -121,7 +121,7 @@ var _ = Describe("GarbageCollector", func() {
 					return err
 				}
 				return errors.New("still exists")
-			}, 10*time.Second, 2*time.Second).Should(Succeed(), "service account should be deleted")
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "service account should be deleted")
 		})
 
 		It("should garbage collect all rbac related resources", func() {
@@ -181,7 +181,7 @@ var _ = Describe("GarbageCollector", func() {
 					}
 				}
 				return fmt.Errorf("deployitem %s still exits", client.ObjectKeyFromObject(di).String())
-			}, 10*time.Second, 2*time.Second).Should(Succeed())
+			}, 10*time.Second, 1*time.Second).Should(Succeed())
 			Eventually(func() error {
 				var allErrs []error
 				for name, obj := range resources {
@@ -199,7 +199,7 @@ var _ = Describe("GarbageCollector", func() {
 					return errors2.NewAggregate(allErrs)
 				}
 				return nil
-			}, 10*time.Second, 2*time.Second).Should(Succeed(), "service accounts should be deleted")
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "service accounts should be deleted")
 		})
 
 		It("should not garbage collect a service accounts that is not managed by the deployer", func() {
@@ -254,7 +254,7 @@ var _ = Describe("GarbageCollector", func() {
 					return err
 				}
 				return errors.New("still exists")
-			}, 10*time.Second, 2*time.Second).Should(Succeed(), "service account should be deleted")
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "service account should be deleted")
 		})
 
 		It("should not garbage collect a secret that is not managed by the deployer", func() {
@@ -335,7 +335,7 @@ var _ = Describe("GarbageCollector", func() {
 					return err
 				}
 				return errors.New("still exists")
-			}, 10*time.Second, 2*time.Second).Should(Succeed(), "pod should be deleted")
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "pod should be deleted")
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(pod2), &corev1.Pod{})).To(Succeed())
 		})
 

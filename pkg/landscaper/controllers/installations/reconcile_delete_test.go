@@ -168,7 +168,7 @@ var _ = Describe("Delete", func() {
 					return fmt.Errorf("expected the reported error to be %q but got %q", installationsctl.SiblingImportError.Error(), i.Status.LastError.Message)
 				}
 				return nil
-			}, 20*time.Second, 2*time.Second).Should(Succeed(), "should error with a sibling import error")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "should error with a sibling import error")
 
 			instC := &lsv1alpha1.Installation{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "c", Namespace: state.Namespace}, instC)).ToNot(HaveOccurred())
@@ -197,7 +197,7 @@ var _ = Describe("Delete", func() {
 					return errors.New("no finalizers exist on the installation")
 				}
 				return nil
-			}, 20*time.Second, 2*time.Second).Should(Succeed(), "the installation should have been reconciled once")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "the installation should have been reconciled once")
 
 			// patch status to be failed
 			old := inst.DeepCopy()
@@ -213,7 +213,7 @@ var _ = Describe("Delete", func() {
 					return err
 				}
 				return errors.New("installation still exist")
-			}, 20*time.Second, 2*time.Second).Should(Succeed(), "the installation should be deleted")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "the installation should be deleted")
 		})
 	})
 

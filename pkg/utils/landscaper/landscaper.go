@@ -71,41 +71,6 @@ func WaitForInstallationToHaveCondition(
 	})
 }
 
-// WaitForDeployItemToSucceed waits for a DeployItem to be in phase Succeeded
-func WaitForDeployItemToSucceed(
-	ctx context.Context,
-	kubeClient client.Reader,
-	obj *lsv1alpha1.DeployItem,
-	timeout time.Duration) error {
-	return WaitForDeployItemToBeInPhase(ctx, kubeClient, obj, lsv1alpha1.ExecutionPhaseSucceeded, timeout)
-}
-
-// WaitForDeployItemToBeInPhase waits until the given deploy item is in the expected phase
-func WaitForDeployItemToBeInPhase(
-	ctx context.Context,
-	kubeClient client.Reader,
-	deployItem *lsv1alpha1.DeployItem,
-	phase lsv1alpha1.ExecutionPhase,
-	timeout time.Duration) error {
-
-	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
-		updated := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, kubeClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err != nil {
-			return false, err
-		}
-		*deployItem = *updated
-		if deployItem.Status.Phase == phase {
-			return true, nil
-		}
-		return false, nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("error while waiting for deploy item to be in phase %q: %w", phase, err)
-	}
-	return nil
-}
-
 // WaitForDeployItemToFinish waits until the given deploy item has finished with the given phase
 func WaitForDeployItemToFinish(
 	ctx context.Context,
