@@ -37,8 +37,8 @@ import (
 )
 
 const (
-	AddressFormatHostname = "hostname"
-	AddressFormatIP       = "ip"
+	DNSFormatInternal = "internal"
+	DNSFormatExternal = "external"
 )
 
 // see this issue for more discussions around min resources for a k8s cluster running in a pod.
@@ -120,7 +120,7 @@ func CreateRegistry(ctx context.Context,
 	id string,
 	stateFile string,
 	password string,
-	outputAddressFormat string,
+	dnsFormat string,
 	exportRegistryCreds string,
 	timeout time.Duration,
 	runOnShoot bool) (err error) {
@@ -256,10 +256,10 @@ func CreateRegistry(ctx context.Context,
 		Password:      password,
 		Auth:          base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
 	}
-	switch outputAddressFormat {
-	case AddressFormatHostname:
+	switch dnsFormat {
+	case DNSFormatInternal:
 		auth.ServerAddress = fmt.Sprintf("%s.%s:5000", svc.Name, svc.Namespace)
-	case AddressFormatIP:
+	case DNSFormatExternal:
 		if runOnShoot {
 			logger.Logln("Waiting for loadbalancer service to get ip/hostname ...")
 			err = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
@@ -286,7 +286,7 @@ func CreateRegistry(ctx context.Context,
 			auth.ServerAddress = fmt.Sprintf("%s:5000", svc.Spec.ClusterIP)
 		}
 	default:
-		return fmt.Errorf("unknown address format %q", outputAddressFormat)
+		return fmt.Errorf("unknown dns format %q", dnsFormat)
 	}
 
 	logger.Logln(fmt.Sprintf("using IP/hostname: %s", auth.ServerAddress))

@@ -43,7 +43,7 @@ go run -mod=vendor ./hack/testcluster registry create \
     --namespace=$REGISTRY_NS \
     --id=$ID \
     --registry-auth=$TMP/docker.config \
-    --address-format=ip \
+    --dns-format=external \
     --timeout=10m \
     --ls-run-on-shoot
 

@@ -14,7 +14,7 @@ spec:
     --namespace=clusters
     --id=$TM_TESTRUN_ID
     --registry-auth=$TM_SHARED_PATH/docker.config
-    --address-format=ip
+    --dns-format=external
     --timeout=10m
 
   image: golang:1.18.4
