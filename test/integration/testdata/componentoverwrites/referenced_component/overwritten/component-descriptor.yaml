@@ -1,0 +1,12 @@
+component:
+  componentReferences: []
+  name: github.com/gardener/landscaper/tests/componentoverwritestests/componentoverwrites/referenced-component
+  provider: internal
+  repositoryContexts:
+  - baseUrl: eu.gcr.io/gardener-project/landscaper/tests/components
+    type: ociRegistry
+  resources: []
+  sources: []
+  version: v1.2.3
+meta:
+  schemaVersion: v2

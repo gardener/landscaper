@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: source
+  annotations:
+    # this annotation is required such that the installation is picked up by the Landscaper
+    # it will be removed when processing has started
+    landscaper.gardener.cloud/operation: reconcile
+spec:
+  componentDescriptor: {} # set during runtime
+  blueprint:
+    ref:
+      resourceName: blueprint

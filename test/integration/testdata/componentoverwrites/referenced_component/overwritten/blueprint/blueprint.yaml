@@ -1,0 +1,17 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+deployExecutions:
+- type: Spiff
+  template:
+    deployItems:
+    - name: state
+      type: landscaper.gardener.cloud/mock
+      config:
+        apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+        providerStatus:
+          apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+          kind: ProviderStatus
+          version: overwritten
+
