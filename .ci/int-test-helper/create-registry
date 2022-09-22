@@ -47,4 +47,22 @@ go run -mod=vendor ./hack/testcluster registry create \
     --timeout=10m \
     --ls-run-on-shoot
 
+address=$(cat "$TMP/docker.config" | jq -r '.auths | to_entries | .[0].value.serveraddress')
+address=${address%:*} # remove port, if given
+echo "Waiting until registry address '$address' is routable ..."
+timeout=300
+start=$(date +%s)
+now=start
+while true; do
+  if nslookup "$address" >/dev/null; then
+    # successfully routed
+    break
+  elif [[ $(($now - $start)) -gt $timeout ]]; then
+    echo "Address '$address' did not become routable within $timeout seconds."
+    exit 1
+  fi
+  sleep 5
+  now=$(date +%s)
+done
 
+echo "Registry is running and reachable. Config is stored at '$TMP/docker.config'."
