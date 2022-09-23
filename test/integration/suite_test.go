@@ -7,6 +7,8 @@ package integration_test
 import (
 	"context"
 	"flag"
+	"testing"
+
 	"github.com/gardener/landscaper/test/integration/core"
 	"github.com/gardener/landscaper/test/integration/dependencies"
 	"github.com/gardener/landscaper/test/integration/deployitems"
@@ -17,7 +19,6 @@ import (
 	"github.com/gardener/landscaper/test/integration/targets"
 	"github.com/gardener/landscaper/test/integration/tutorial"
 	"github.com/gardener/landscaper/test/integration/webhook"
-	"testing"
 
 	"github.com/gardener/landscaper/test/integration/deployers"
 
