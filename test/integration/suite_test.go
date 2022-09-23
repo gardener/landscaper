@@ -7,6 +7,8 @@ package integration_test
 import (
 	"context"
 	"flag"
+	"testing"
+
 	"github.com/gardener/landscaper/test/integration/core"
 	"github.com/gardener/landscaper/test/integration/dependencies"
 	"github.com/gardener/landscaper/test/integration/deployitems"
@@ -17,7 +19,6 @@ import (
 	"github.com/gardener/landscaper/test/integration/targets"
 	"github.com/gardener/landscaper/test/integration/tutorial"
 	"github.com/gardener/landscaper/test/integration/webhook"
-	"testing"
 
 	"github.com/gardener/landscaper/test/integration/deployers"
 
@@ -52,14 +53,18 @@ func TestConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
-	f.Log().Logfln("waiting for system components")
-	err = f.WaitForSystemComponents(ctx)
-	if err != nil {
-		f.Log().Logfln("waiting for system components failed: %s", err.Error())
-		if derr := d.Dump(ctx); derr != nil {
-			f.Log().Logf("error during dump: %s", derr.Error())
+	if opts.SkipWaitingForSystemComponents {
+		f.Log().Logfln("Skipped waiting for system components")
+	} else {
+		f.Log().Logfln("Waiting for system components")
+		err = f.WaitForSystemComponents(ctx)
+		if err != nil {
+			f.Log().Logfln("Waiting for system components failed: %s", err.Error())
+			if derr := d.Dump(ctx); derr != nil {
+				f.Log().Logf("error during dump: %s", derr.Error())
+			}
+			t.Fatal(err)
 		}
-		t.Fatal(err)
 	}
 
 	if !opts.DisableCleanupBefore {

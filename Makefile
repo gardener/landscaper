@@ -58,6 +58,10 @@ test: setup-testenv
 integration-test:
 	@$(REPO_ROOT)/.ci/local-integration-test $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION)
 
+.PHONY: integration-test-pure
+integration-test-pure:
+	@$(REPO_ROOT)/.ci/local-integration-test-pure $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION)
+
 .PHONY: integration-test-with-cluster-creation
 integration-test-with-cluster-creation:
 	@$(REPO_ROOT)/.ci/local-integration-test-with-cluster-creation $(KUBECONFIG_PATH) garden-laas $(EFFECTIVE_VERSION) 0

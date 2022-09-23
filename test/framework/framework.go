@@ -52,15 +52,16 @@ var (
 const OpenSourceRepositoryContext = "eu.gcr.io/gardener-project/development"
 
 type Options struct {
-	fs                   *flag.FlagSet
-	KubeconfigPath       string
-	RootPath             string
-	LsNamespace          string
-	LsVersion            string
-	DockerConfigPath     string
-	DisableCleanup       bool
-	RunOnShoot           bool
-	DisableCleanupBefore bool
+	fs                             *flag.FlagSet
+	KubeconfigPath                 string
+	RootPath                       string
+	LsNamespace                    string
+	LsVersion                      string
+	DockerConfigPath               string
+	DisableCleanup                 bool
+	RunOnShoot                     bool
+	DisableCleanupBefore           bool
+	SkipWaitingForSystemComponents bool
 }
 
 // AddFlags registers the framework related flags
@@ -77,6 +78,7 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&o.DisableCleanup, "disable-cleanup", false, "skips the cleanup of resources.")
 	fs.BoolVar(&o.RunOnShoot, "ls-run-on-shoot", false, "runs on a shoot and not a k3s cluster")
 	fs.BoolVar(&o.DisableCleanupBefore, "ls-disable-cleanup-before", false, "disables cleanup of all namespaces with prefix `test` before the tests are started")
+	fs.BoolVar(&o.SkipWaitingForSystemComponents, "skip-waiting-for-system-components", false, "disables checking whether landscaper and the deployers are running in the cluster")
 	o.fs = fs
 }
 

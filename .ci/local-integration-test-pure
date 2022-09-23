@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Script executing the integration tests. Unlike 'local-integration-test', it will not install a registry or a landscaper.
+# Landscaper is expected to be already running in the cluster, using a registry is not supported at the moment.
+# This is useful e.g. if you want to debug a part of the landscaper and therefore run it locally, without the integration test script enabling the component in the cluster again.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+KUBECONFIG_PATH=$1
+VERSION=$2
+SOURCE_PATH="$(dirname $0)/.."
+cd "${SOURCE_PATH}"
+SOURCE_PATH="$(pwd)"
+
+echo "Run integration tests without landscaper creation"
+echo "Source path: ${SOURCE_PATH}"
+echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
+
+TMP="${SOURCE_PATH}/tmp-int-test-core"
+rm -f -r $TMP
+mkdir -p $TMP
+echo "Config directory: ${TMP}"
+
+./.ci/int-test-helper/install-missing-software
+./.ci/int-test-helper/run-tests $KUBECONFIG_PATH "" ${VERSION}
