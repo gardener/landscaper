@@ -7,7 +7,6 @@ package init
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -68,7 +67,7 @@ var _ = Describe("Constructor", func() {
 		opts.Complete()
 		memFs := memoryfs.New()
 
-		file, err := ioutil.ReadFile("./testdata/00-di-simple.yaml")
+		file, err := os.ReadFile("./testdata/00-di-simple.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
@@ -89,7 +88,7 @@ var _ = Describe("Constructor", func() {
 		opts.Complete()
 		memFs := memoryfs.New()
 
-		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
+		file, err := os.ReadFile("./testdata/01-di-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
@@ -109,7 +108,7 @@ var _ = Describe("Constructor", func() {
 		opts.Complete()
 		memFs := memoryfs.New()
 
-		file, err := ioutil.ReadFile("./testdata/02-di-inline-blueprint.yaml")
+		file, err := os.ReadFile("./testdata/02-di-inline-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
@@ -129,7 +128,7 @@ var _ = Describe("Constructor", func() {
 		opts.Complete()
 		memFs := memoryfs.New()
 
-		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
+		file, err := os.ReadFile("./testdata/01-di-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
@@ -151,7 +150,7 @@ var _ = Describe("Constructor", func() {
 		opts.Complete()
 		memFs := memoryfs.New()
 
-		file, err := ioutil.ReadFile("./testdata/03-di-inline-cd.yaml")
+		file, err := os.ReadFile("./testdata/03-di-inline-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
@@ -173,7 +172,7 @@ var _ = Describe("Constructor", func() {
 		opts.Complete()
 		memFs := memoryfs.New()
 
-		file, err := ioutil.ReadFile("./testdata/04-di-inline-bp-no-cd.yaml")
+		file, err := os.ReadFile("./testdata/04-di-inline-bp-no-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
@@ -193,7 +192,7 @@ var _ = Describe("Constructor", func() {
 		opts.Complete()
 		memFs := memoryfs.New()
 
-		file, err := ioutil.ReadFile("./testdata/05-di-inline-bp-inline-cd.yaml")
+		file, err := os.ReadFile("./testdata/05-di-inline-bp-inline-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
@@ -220,7 +219,7 @@ var _ = Describe("Constructor", func() {
 		opts.RegistrySecretBasePath = "/unexisting/path"
 		memFs := memoryfs.New()
 
-		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
+		file, err := os.ReadFile("./testdata/01-di-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())

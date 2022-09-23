@@ -6,7 +6,6 @@ package wait
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -72,7 +71,7 @@ func withTerminationLog(log logging.Logger, err error) error {
 		return nil
 	}
 
-	if err := ioutil.WriteFile("/dev/termination-log", []byte(err.Error()), os.ModePerm); err != nil {
+	if err := os.WriteFile("/dev/termination-log", []byte(err.Error()), os.ModePerm); err != nil {
 		log.Error(err, "Unable to write termination message")
 	}
 	return err

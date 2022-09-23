@@ -7,7 +7,6 @@ package template_test
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -61,7 +60,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 	Context("TemplateSubinstallationExecutions", func() {
 		It("should return the raw template if no templating funcs are defined", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-20.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-20.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -81,7 +80,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should use imports to template installations", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-21.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-21.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -104,7 +103,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 	Context("TemplateDeployExecutions", func() {
 		It("should return the raw template if no templating funcs are defined", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-01.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-01.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -124,7 +123,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should use the import values to template", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-02.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-02.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -145,7 +144,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should read the content of a file to template", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-03.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-03.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -169,7 +168,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should use a resource from the component descriptor", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-04.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-04.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -219,7 +218,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should use a resource from the component descriptor's referenced component", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-10.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-10.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -293,7 +292,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should throw an error when the template tries to template a undefined value", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-08.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-08.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -309,7 +308,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should use the state to template", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-09.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-09.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -336,7 +335,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should use the blueprint information", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-11.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-11.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -384,7 +383,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should generate an image vector", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-12.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -393,7 +392,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
 
-			cdRaw, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
+			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
@@ -408,7 +407,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 
-			result, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "result-12.yaml"))
+			result, err := os.ReadFile(filepath.Join(sharedTestdataDir, "result-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			resultString := string(result)
 
@@ -424,7 +423,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should use a parsed oci ref to template", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-13.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-13.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -453,7 +452,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 	Context("TemplateExportExecutions", func() {
 		It("should return the raw template if no templating funcs are defined", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-05.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-05.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -469,7 +468,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should use the export values to template", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-06.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-06.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -486,7 +485,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 		})
 
 		It("should read the content of a file to template", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-07.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-07.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -514,7 +513,7 @@ func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
 		stateHandler template.GenericStateHandler
 
 		executeTemplate = func(templateFile string, imports map[string]interface{}) ([]template.DeployItemSpecification, error) {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, templateFile))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, templateFile))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -524,7 +523,7 @@ func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
 
 			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
 
-			cdRaw, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
+			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
@@ -684,7 +683,7 @@ func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
 
 	Context("Error Messages", func() {
 		It("should handle template execution errors", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-22.yaml"))
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-22.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
@@ -701,7 +700,7 @@ func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
 			}
 			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
 
-			cdRaw, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
+			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())

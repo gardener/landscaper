@@ -7,7 +7,6 @@ package envtest
 import (
 	"bytes"
 	"html/template"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -33,7 +32,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 				return nil
 			}
 
-			data, err := ioutil.ReadFile(path)
+			data, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrapf(err, "unable to read file %s", path)
 			}

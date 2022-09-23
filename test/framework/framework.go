@@ -11,8 +11,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -162,7 +162,7 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 	}
 
 	if len(cfg.DockerConfigPath) != 0 {
-		data, err := ioutil.ReadFile(cfg.DockerConfigPath)
+		data, err := os.ReadFile(cfg.DockerConfigPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read docker config file: %w", err)
 		}

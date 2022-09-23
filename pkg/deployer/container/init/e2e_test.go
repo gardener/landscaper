@@ -6,7 +6,6 @@ package init
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -88,7 +87,7 @@ var _ = Describe("Init e2e", func() {
 
 		utils.ExpectNoError(s.Backup(ctx))
 
-		file, err := ioutil.ReadFile("./testdata/00-di-simple.yaml")
+		file, err := os.ReadFile("./testdata/00-di-simple.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(resFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(resFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())

@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -244,7 +243,7 @@ func CreateRegistry(ctx context.Context,
 		if err != nil {
 			return fmt.Errorf("unable to marshal state: %w", err)
 		}
-		if err := ioutil.WriteFile(stateFile, data, os.ModePerm); err != nil {
+		if err := os.WriteFile(stateFile, data, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write statefile to %q: %w", stateFile, err)
 		}
 		logger.Logfln("Successfully written state to %q", stateFile)
@@ -301,7 +300,7 @@ func CreateRegistry(ctx context.Context,
 	if err := os.MkdirAll(filepath.Dir(exportRegistryCreds), os.ModePerm); err != nil {
 		return fmt.Errorf("unable to create export directory %q: %w", filepath.Dir(exportRegistryCreds), err)
 	}
-	if err := ioutil.WriteFile(exportRegistryCreds, dockerconfigBytes, os.ModePerm); err != nil {
+	if err := os.WriteFile(exportRegistryCreds, dockerconfigBytes, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to write docker auth config to %q: %w", exportRegistryCreds, err)
 	}
 	logger.Logfln("Successfully written docker auth config to %q", exportRegistryCreds)

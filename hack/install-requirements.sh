@@ -21,4 +21,4 @@ chmod +x ${PROJECT_ROOT}/tmp/test/registry/registry
 
 GO111MODULE=off go get golang.org/x/tools/cmd/goimports
 
-curl -sfL "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" | sh -s -- -b $(go env GOPATH)/bin v1.46.2
+curl -sfL "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" | sh -s -- -b $(go env GOPATH)/bin v1.49.0

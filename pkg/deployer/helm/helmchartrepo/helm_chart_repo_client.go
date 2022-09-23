@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -247,7 +247,7 @@ func (c *HelmChartRepoClient) readResponseBody(ctx context.Context, res *http.Re
 		err := fmt.Errorf("request failed with status code %v", res.StatusCode)
 
 		if logger.Enabled(logging.DEBUG) {
-			body, bodyReadErr := ioutil.ReadAll(res.Body)
+			body, bodyReadErr := io.ReadAll(res.Body)
 			if bodyReadErr != nil {
 				logger.Error(err, err.Error(), "response status code without body", res.StatusCode)
 				return nil, err
@@ -259,7 +259,7 @@ func (c *HelmChartRepoClient) readResponseBody(ctx context.Context, res *http.Re
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("could not read response body: %w", err)
 	}
