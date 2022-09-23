@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
@@ -156,6 +158,8 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 }
 
 func (m *Manifest) Delete(ctx context.Context) error {
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "Delete")
+
 	currOp := "DeleteManifests"
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
@@ -178,6 +182,25 @@ func (m *Manifest) Delete(ctx context.Context) error {
 		}
 		ref := mr.Resource
 		obj := kutil.ObjectFromCoreObjectReference(&ref)
+
+		currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
+		currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
+		key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
+		if err := kubeClient.Get(ctx, key, &currObj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return lserrors.NewWrappedError(err,
+				currOp, "GetManifest", err.Error())
+		}
+
+		// if fallback policy is set and the resource is already managed by another deployer
+		// we are not allowed to delete that resource
+		if mr.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(&currObj, manifestv1alpha2.ManagedDeployItemLabel, m.DeployItem.Name) {
+			logger.Info("Resource is already managed, skip delete", lc.KeyResource, key.String())
+			continue
+		}
+
 		if err := kubeClient.Delete(ctx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
