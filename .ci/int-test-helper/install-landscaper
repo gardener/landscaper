@@ -55,6 +55,6 @@ helm pull oci://eu.gcr.io/gardener-project/landscaper/charts/landscaper --versio
 
 echo "Upgrade landscaper"
 helm upgrade --kubeconfig=$KUBECONFIG_PATH --install --wait --create-namespace -n ls-system \
-  -f $TMP/values.yaml -f $TMP/registry-values.yaml landscaper $TMP_GEN/landscaper
+  -f $TMP/values.yaml -f $TMP/registry-values.yaml landscaper $TMP_GEN/landscaper --set "landscaper.image.tag=${VERSION}"
 
 
