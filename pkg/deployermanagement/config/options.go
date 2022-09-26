@@ -6,7 +6,7 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	flag "github.com/spf13/pflag"
@@ -66,7 +66,7 @@ func (o *Options) parseDeployersConfigurationFile() error {
 	if len(o.DeployersConfigPath) == 0 {
 		return nil
 	}
-	data, err := ioutil.ReadFile(o.DeployersConfigPath)
+	data, err := os.ReadFile(o.DeployersConfigPath)
 	if err != nil {
 		return err
 	}

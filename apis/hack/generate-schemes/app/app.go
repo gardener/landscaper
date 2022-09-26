@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -72,7 +71,7 @@ func (g *SchemaGenerator) Run(schemaDir, crdDir string) error {
 
 		// write file
 		file := filepath.Join(schemaDir, generators.ParsePackageVersionName(defName).String()+".json")
-		if err := ioutil.WriteFile(file, data, os.ModePerm); err != nil {
+		if err := os.WriteFile(file, data, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write jsonschema for %q to %q: %w", file, generators.ParsePackageVersionName(defName).String(), err)
 		}
 
@@ -120,7 +119,7 @@ func (g *SchemaGenerator) Run(schemaDir, crdDir string) error {
 
 		// write file
 		file := filepath.Join(outDir, fmt.Sprintf("%s_%s.yaml", crd.CRD.Spec.Group, crd.CRD.Spec.Names.Plural))
-		if err := ioutil.WriteFile(file, data, os.ModePerm); err != nil {
+		if err := os.WriteFile(file, data, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write crd for %q to %q: %w", file, crd.CRD.Name, err)
 		}
 
@@ -146,7 +145,7 @@ func prepareExportDir(exportDir string) error {
 		return fmt.Errorf("unable to to create export directory %q: %w", exportDir, err)
 	}
 	// cleanup previous files
-	files, err := ioutil.ReadDir(exportDir)
+	files, err := os.ReadDir(exportDir)
 	if err != nil {
 		return fmt.Errorf("unable to read files from export directory: %w", err)
 	}

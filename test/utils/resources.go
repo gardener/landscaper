@@ -8,8 +8,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -89,7 +89,7 @@ func LocalRemoteBlueprintRef(resourceName string) lsv1alpha1.BlueprintDefinition
 
 // ReadResourceFromFile reads a file and parses it to the given object
 func ReadResourceFromFile(obj runtime.Object, testfile string) error {
-	data, err := ioutil.ReadFile(testfile)
+	data, err := os.ReadFile(testfile)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func ReadResourceFromFile(obj runtime.Object, testfile string) error {
 
 // ReadBlueprintFromFile reads a file and parses it to a Blueprint
 func ReadBlueprintFromFile(testfile string) (*lsv1alpha1.Blueprint, error) {
-	data, err := ioutil.ReadFile(testfile)
+	data, err := os.ReadFile(testfile)
 	if err != nil {
 		return nil, err
 	}

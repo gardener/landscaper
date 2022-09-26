@@ -6,7 +6,7 @@ package readinesscheck
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -58,12 +58,12 @@ var _ = AfterSuite(func() {
 
 func loadObjectsIntoTestEnv(dirname string, c client.Client, s *envtest.State) ([]lsv1alpha1.TypedObjectReference, error) {
 	decoder := serializer.NewCodecFactory(c.Scheme()).UniversalDecoder()
-	files, err := ioutil.ReadDir(dirname)
+	files, err := os.ReadDir(dirname)
 	Expect(err).ToNot(HaveOccurred())
 
 	objectRefs := make([]lsv1alpha1.TypedObjectReference, len(files))
 	for i, n := range files {
-		raw, err := ioutil.ReadFile(filepath.Join(dirname, n.Name()))
+		raw, err := os.ReadFile(filepath.Join(dirname, n.Name()))
 		if err != nil {
 			return nil, err
 		}

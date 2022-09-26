@@ -9,7 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
@@ -467,7 +467,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 	if c.Configuration.OCI != nil {
 		for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
-			secretFileContent, err := ioutil.ReadFile(secretFileName)
+			secretFileContent, err := os.ReadFile(secretFileName)
 			if err != nil {
 				log.Debug("Unable to read auth config from file, skipping", lc.KeyFileName, secretFileName, lc.KeyError, err.Error())
 				continue

@@ -7,7 +7,7 @@ package agent
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -298,7 +298,7 @@ func GenerateClusterRestConfig(restConfig *rest.Config) (lsv1alpha1.ClusterRestC
 	// the ca data has to be read from file for in-cluster configs
 	caData := restConfig.CAData
 	if len(restConfig.TLSClientConfig.CAFile) != 0 {
-		data, err := ioutil.ReadFile(restConfig.TLSClientConfig.CAFile)
+		data, err := os.ReadFile(restConfig.TLSClientConfig.CAFile)
 		if err != nil {
 			return lsv1alpha1.ClusterRestConfig{}, fmt.Errorf("unable to read ca data from %q: %w", restConfig.TLSClientConfig.CAFile, err)
 		}

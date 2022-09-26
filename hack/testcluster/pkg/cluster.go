@@ -10,7 +10,6 @@ import (
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -237,7 +236,7 @@ func CreateCluster(ctx context.Context, logger utils.Logger, args CreateClusterA
 		if err != nil {
 			return fmt.Errorf("unable to marshal state: %w", err)
 		}
-		if err := ioutil.WriteFile(stateFile, data, os.ModePerm); err != nil {
+		if err := os.WriteFile(stateFile, data, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write statefile to %q: %w", stateFile, err)
 		}
 		logger.Logfln("Successfully written state to %q", stateFile)
@@ -250,7 +249,7 @@ func CreateCluster(ctx context.Context, logger utils.Logger, args CreateClusterA
 	if err := os.MkdirAll(filepath.Dir(exportKubeconfigPath), os.ModePerm); err != nil {
 		return fmt.Errorf("unable to create export directory %q: %w", filepath.Dir(exportKubeconfigPath), err)
 	}
-	if err := ioutil.WriteFile(exportKubeconfigPath, kubeconfigBytes, os.ModePerm); err != nil {
+	if err := os.WriteFile(exportKubeconfigPath, kubeconfigBytes, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to write kubeconfig to %q: %w", exportKubeconfigPath, err)
 	}
 	logger.Logfln("Successfully written kubeconfig to %q", exportKubeconfigPath)

@@ -9,7 +9,7 @@ import (
 	"errors"
 	goflag "flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
@@ -81,7 +81,7 @@ func (o *DefaultOptions) Complete() error {
 	o.LsMgr = o.HostMgr
 
 	if len(o.LsKubeconfig) != 0 {
-		data, err := ioutil.ReadFile(o.LsKubeconfig)
+		data, err := os.ReadFile(o.LsKubeconfig)
 		if err != nil {
 			return fmt.Errorf("unable to read landscaper kubeconfig from %s: %w", o.LsKubeconfig, err)
 		}
@@ -137,7 +137,7 @@ func (o *DefaultOptions) GetConfig(obj runtime.Object) error {
 	if len(o.configPath) == 0 {
 		return nil
 	}
-	data, err := ioutil.ReadFile(o.configPath)
+	data, err := os.ReadFile(o.configPath)
 	if err != nil {
 		return fmt.Errorf("uable to read config from %q: %w", o.configPath, err)
 	}

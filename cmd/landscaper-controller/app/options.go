@@ -7,7 +7,7 @@ package app
 import (
 	"context"
 	goflag "flag"
-	"io/ioutil"
+	"os"
 
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -75,7 +75,7 @@ func (o *Options) parseConfigurationFile(ctx context.Context) (*config.Landscape
 	configv1alpha1 := &v1alpha1.LandscaperConfiguration{}
 
 	if len(o.ConfigPath) != 0 {
-		data, err := ioutil.ReadFile(o.ConfigPath)
+		data, err := os.ReadFile(o.ConfigPath)
 		if err != nil {
 			return nil, err
 		}
