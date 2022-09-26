@@ -47,6 +47,14 @@ then
     curl -sS https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 
+if ! command -v jq &> /dev/null
+then
+    echo "jq could not be found"
+    echo "Try installing it..."
+    curl -sSLO https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+    install -o root -g root -m 0755 jq-linux64 /usr/local/bin/jq
+fi
+
 if ! command -v landscaper-cli &> /dev/null
 then
   if [[ $(go env GOOS) == "darwin" ]]; then
