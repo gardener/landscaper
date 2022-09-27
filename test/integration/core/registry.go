@@ -300,6 +300,184 @@ func RegistryTest(f *framework.Framework) {
 				Expect(providerStatus).To(HaveKeyWithValue("version", BeEquivalentTo(expectedVersion)), "componentVersionOverwrites did not overwrite the version of the indirectly referenced component")
 			})
 
+			It("should apply component version overwrites to references of already replaced components", func() {
+				// define component descriptors
+				/*
+					Idea:
+					'source' component references 'intermediate' in version v0.1.0.
+					'intermediate' references 'referencedSource'.
+					The corresponding installations just contain a nested installation for each referenced cd.
+
+					ComponentVersionOverwrites are created for intermediate (v0.1.0 -> v0.2.0) and for referenced (v0.1.0 -> v1.2.3).
+					The overwritten version of intermediate (v0.2.0) references the to-be-overwritten version of referenced (v0.1.0).
+				*/
+				var (
+					testdataDir = filepath.Join(f.RootPath, "test", "integration", "testdata", "componentoverwrites")
+
+					sourceComponentDir = filepath.Join(testdataDir, "source_component")
+					sourceBlueprintDir = filepath.Join(sourceComponentDir, "blueprint")
+					sourceInstFile     = filepath.Join(sourceComponentDir, "installation.yaml")
+
+					intermediateName         = "intermediate" // has to match reference in subinstallation in the blueprint
+					intermediateComponentDir = filepath.Join(testdataDir, "intermediate_component")
+					intermediateBlueprintDir = filepath.Join(intermediateComponentDir, "blueprint")
+
+					referencedName                    = "referenced" // has to match reference in subinstallation in the blueprint
+					referencedComponentDir            = filepath.Join(testdataDir, "referenced_component")
+					referencedSourceComponentDir      = filepath.Join(referencedComponentDir, "source")
+					referencedSourceBlueprintDir      = filepath.Join(referencedSourceComponentDir, "blueprint")
+					referencedOverwrittenComponentDir = filepath.Join(referencedComponentDir, "overwritten")
+					referencedOverwrittenBlueprintDir = filepath.Join(referencedOverwrittenComponentDir, "blueprint")
+				)
+
+				// create and upload CDs
+				By("build and upload component descriptors with blueprints")
+				referencedSourceDescription := cdDescription{
+					name:         "example.com/overwrites/tobeoverwritten",
+					version:      "v0.1.0",
+					blueprintDir: referencedSourceBlueprintDir,
+				}
+				referencedDummyDescription := cdDescription{
+					name:         "example.com/overwrites/dummy",
+					version:      "v0.0.1",
+					blueprintDir: referencedSourceBlueprintDir,
+				}
+				referencedOverwrittenDescription := cdDescription{
+					name:         "example.com/overwrites/referenced",
+					version:      "v1.2.3",
+					blueprintDir: referencedOverwrittenBlueprintDir,
+				}
+				intermediateSourceDescription := cdDescription{
+					name:         "example.com/overwrites/intermediate",
+					version:      "v0.1.0",
+					blueprintDir: intermediateBlueprintDir,
+					cdRefs: []cdv2.ComponentReference{
+						{
+							Name:          referencedName,
+							ComponentName: referencedDummyDescription.name,
+							Version:       referencedDummyDescription.version,
+						},
+					},
+				}
+				intermediateOverwrittenDescription := cdDescription{
+					name:         intermediateSourceDescription.name,
+					version:      "v0.2.0",
+					blueprintDir: intermediateBlueprintDir,
+					cdRefs: []cdv2.ComponentReference{
+						{
+							Name:          referencedName,
+							ComponentName: referencedSourceDescription.name,
+							Version:       referencedSourceDescription.version,
+						},
+					},
+				}
+				sourceDescription := cdDescription{
+					name:         "example.com/overwrites/source",
+					version:      "v0.1.0",
+					blueprintDir: sourceBlueprintDir,
+					cdRefs: []cdv2.ComponentReference{
+						{
+							Name:          intermediateName,
+							ComponentName: intermediateSourceDescription.name,
+							Version:       intermediateSourceDescription.version,
+						},
+						{
+							Name:          referencedName,
+							ComponentName: referencedSourceDescription.name,
+							Version:       referencedSourceDescription.version,
+						},
+					},
+				}
+
+				cds := buildAndUploadComponentDescriptorsWithBlueprints(ctx, f, sourceDescription, intermediateSourceDescription, intermediateOverwrittenDescription, referencedSourceDescription, referencedDummyDescription, referencedOverwrittenDescription)
+				repoCtx := cds[0].GetEffectiveRepositoryContext()
+
+				By("create componentVersionOverwrite")
+				cvo := &lsv1alpha1.ComponentVersionOverwrites{
+					Overwrites: lsv1alpha1.ComponentVersionOverwriteList{
+						{
+							Source: lsv1alpha1.ComponentVersionOverwriteReference{
+								RepositoryContext: repoCtx,
+								ComponentName:     referencedSourceDescription.name,
+								Version:           referencedSourceDescription.version,
+							},
+							Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
+								ComponentName: referencedOverwrittenDescription.name,
+								Version:       referencedOverwrittenDescription.version,
+							},
+						},
+						{
+							Source: lsv1alpha1.ComponentVersionOverwriteReference{
+								RepositoryContext: repoCtx,
+								ComponentName:     intermediateSourceDescription.name,
+								Version:           intermediateSourceDescription.version,
+							},
+							Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
+								Version: intermediateOverwrittenDescription.version,
+							},
+						},
+					},
+				}
+				cvo.SetName(lsv1alpha1.DefaultContextName)
+				cvo.SetNamespace(state.Namespace)
+				utils.ExpectNoError(state.Create(ctx, cvo))
+
+				By("create installation")
+				inst := &lsv1alpha1.Installation{}
+				Expect(utils.ReadResourceFromFile(inst, sourceInstFile)).To(Succeed())
+				inst.SetNamespace(state.Namespace)
+				lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+				inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
+					Reference: &lsv1alpha1.ComponentDescriptorReference{
+						RepositoryContext: repoCtx,
+						ComponentName:     sourceDescription.name,
+						Version:           sourceDescription.version,
+					},
+				}
+				inst.Spec.Blueprint.Reference.ResourceName = "blueprint"
+				utils.ExpectNoError(state.Create(ctx, inst))
+
+				// wait for installation to finish
+				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+
+				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
+				var sourceIntermediateSubinst *lsv1alpha1.Installation
+				var sourceReferencedSubinst *lsv1alpha1.Installation
+				Expect(inst.Status.InstallationReferences).To(HaveLen(2))
+				for _, subInstRef := range inst.Status.InstallationReferences {
+					switch subInstRef.Name {
+					case "intermediate":
+						sourceIntermediateSubinst = &lsv1alpha1.Installation{}
+						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceIntermediateSubinst))
+					case "referenced":
+						sourceReferencedSubinst = &lsv1alpha1.Installation{}
+						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceReferencedSubinst))
+					default:
+						Fail(fmt.Sprintf("unexpected subinstallation: %s", subInstRef.Name))
+					}
+				}
+				Expect(sourceIntermediateSubinst).ToNot(BeNil())
+				Expect(sourceReferencedSubinst).ToNot(BeNil())
+
+				By("fetch subinstallations of intermediate installation")
+				Expect(sourceIntermediateSubinst.Status.InstallationReferences).To(HaveLen(1))
+				Expect(sourceIntermediateSubinst.Status.InstallationReferences[0].Name).To(BeEquivalentTo("referenced"))
+				intermediateReferencedSubinst := &lsv1alpha1.Installation{}
+				utils.ExpectNoError(state.Client.Get(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
+
+				By("fetch deployitems of referenced subinstallations")
+				deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, state.Client, intermediateReferencedSubinst)
+				utils.ExpectNoError(err)
+				Expect(deployItems).To(HaveLen(1))
+				intermediateReferencedDI := deployItems[0]
+
+				By("verify status")
+				expectedVersion := "overwritten"
+				providerStatus := map[string]interface{}{}
+				utils.ExpectNoError(json.Unmarshal(intermediateReferencedDI.Status.ProviderStatus.Raw, &providerStatus))
+				Expect(providerStatus).To(HaveKeyWithValue("version", BeEquivalentTo(expectedVersion)), "componentVersionOverwrites did not overwrite a reference contained in an already overwritten component")
+			})
+
 		})
 
 	})
