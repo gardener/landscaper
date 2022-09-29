@@ -98,67 +98,67 @@ func GetImports(path string) map[string]interface{} {
 	return imports
 }
 
+var (
+	registry            componentsregistry.TypedRegistry
+	repository          *componentsregistry.LocalRepository
+	landscaperServiceCD *cdv2.ComponentDescriptor
+	landscaperCD        *cdv2.ComponentDescriptor
+	virtualGardenCD     *cdv2.ComponentDescriptor
+	cdList              cdv2.ComponentDescriptorList
+	repositoryContext   cdv2.UnstructuredTypedObject
+)
+
+var _ = BeforeSuite(func() {
+	var err error
+	ctx := context.Background()
+	defer ctx.Done()
+
+	registry, err = componentsregistry.NewLocalClient("./testdata/registry")
+	Expect(err).ToNot(HaveOccurred())
+	repository = componentsregistry.NewLocalRepository("./testdata/registry")
+
+	for source, dest := range filesToCopy {
+		err = copyFile(source, dest)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	landscaperServiceCD, err = registry.Resolve(ctx, repository, "github.com/gardener/landscaper/landscaper-service", "v0.20.0")
+	Expect(err).ToNot(HaveOccurred())
+	Expect(landscaperServiceCD).ToNot(BeNil())
+
+	landscaperCD, err = registry.Resolve(ctx, repository, "github.com/gardener/landscaper", "v0.20.0")
+	Expect(err).ToNot(HaveOccurred())
+	Expect(landscaperCD).ToNot(BeNil())
+
+	virtualGardenCD, err = registry.Resolve(ctx, repository, "github.com/gardener/virtual-garden", "v0.1.0")
+	Expect(err).ToNot(HaveOccurred())
+	Expect(landscaperCD).ToNot(BeNil())
+
+	cdList.Components = []cdv2.ComponentDescriptor{
+		*landscaperServiceCD,
+		*landscaperCD,
+		*virtualGardenCD,
+	}
+
+	repoCtx := &cdv2.OCIRegistryRepository{
+		ObjectType: cdv2.ObjectType{
+			Type: registry.Type(),
+		},
+		BaseURL: filepath.Join(testData, "registry"),
+	}
+
+	repositoryContext.ObjectType = repoCtx.ObjectType
+	repositoryContext.Raw, err = json.Marshal(repoCtx)
+	Expect(err).ToNot(HaveOccurred())
+})
+
+var _ = AfterSuite(func() {
+	for _, dest := range filesToCopy {
+		_ = os.WriteFile(dest, []byte("{}"), 0644)
+	}
+})
+
 var _ = Describe("Landscaper Service Component", func() {
-
-	var (
-		registry            componentsregistry.TypedRegistry
-		repository          *componentsregistry.LocalRepository
-		landscaperServiceCD *cdv2.ComponentDescriptor
-		landscaperCD        *cdv2.ComponentDescriptor
-		virtualGardenCD     *cdv2.ComponentDescriptor
-		cdList              cdv2.ComponentDescriptorList
-		repositoryContext   cdv2.UnstructuredTypedObject
-	)
-
-	BeforeSuite(func() {
-		var err error
-		ctx := context.Background()
-		defer ctx.Done()
-
-		registry, err = componentsregistry.NewLocalClient("./testdata/registry")
-		Expect(err).ToNot(HaveOccurred())
-		repository = componentsregistry.NewLocalRepository("./testdata/registry")
-
-		for source, dest := range filesToCopy {
-			err = copyFile(source, dest)
-			Expect(err).ToNot(HaveOccurred())
-		}
-
-		landscaperServiceCD, err = registry.Resolve(ctx, repository, "github.com/gardener/landscaper/landscaper-service", "v0.20.0")
-		Expect(err).ToNot(HaveOccurred())
-		Expect(landscaperServiceCD).ToNot(BeNil())
-
-		landscaperCD, err = registry.Resolve(ctx, repository, "github.com/gardener/landscaper", "v0.20.0")
-		Expect(err).ToNot(HaveOccurred())
-		Expect(landscaperCD).ToNot(BeNil())
-
-		virtualGardenCD, err = registry.Resolve(ctx, repository, "github.com/gardener/virtual-garden", "v0.1.0")
-		Expect(err).ToNot(HaveOccurred())
-		Expect(landscaperCD).ToNot(BeNil())
-
-		cdList.Components = []cdv2.ComponentDescriptor{
-			*landscaperServiceCD,
-			*landscaperCD,
-			*virtualGardenCD,
-		}
-
-		repoCtx := &cdv2.OCIRegistryRepository{
-			ObjectType: cdv2.ObjectType{
-				Type: registry.Type(),
-			},
-			BaseURL: filepath.Join(testData, "registry"),
-		}
-
-		repositoryContext.ObjectType = repoCtx.ObjectType
-		repositoryContext.Raw, err = json.Marshal(repoCtx)
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	AfterSuite(func() {
-		for _, dest := range filesToCopy {
-			_ = os.WriteFile(dest, []byte("{}"), 0644)
-		}
-	})
 
 	It("should install the landscaper blueprint", func() {
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
