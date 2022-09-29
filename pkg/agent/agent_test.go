@@ -83,7 +83,7 @@ var _ = Describe("Agent", func() {
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey(ag.TargetSecretName(), state.Namespace), secret)).To(Succeed())
 			Expect(secret.Data).To(HaveKey("kubeconfig"))
 			Expect(string(secret.Data["kubeconfig"])).To(ContainSubstring("test-token"), "kubeconfig should contain the newly created token")
-		}, 30)
+		})
 	})
 
 })

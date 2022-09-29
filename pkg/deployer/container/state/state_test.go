@@ -137,6 +137,6 @@ var _ = Describe("Container Deployer State", func() {
 		secretList := &corev1.SecretList{}
 		utils.ExpectNoError(testenv.Client.List(ctx, secretList, client.InNamespace(testState.Namespace)))
 		Expect(secretList.Items).To(HaveLen(0))
-	}, 20)
+	})
 
 })

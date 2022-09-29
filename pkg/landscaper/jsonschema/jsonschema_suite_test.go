@@ -476,7 +476,7 @@ var _ = Describe("jsonschema", func() {
 			testutils.ExpectNoError(err)
 			ociClient, err = ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
 			testutils.ExpectNoError(err)
-		}, 60)
+		})
 
 		AfterEach(func() {
 			testutils.ExpectNoError(testenv.Close())
