@@ -49,128 +49,166 @@ func HelmDeployerTests(f *framework.Framework) {
 		AfterEach(func() {
 			ctx.Done()
 		})
+		Context("should deploy a helm chart with a single config map", func() {
+			testFunc := func(realHelmDeployer bool) {
+				By("Creating and applying a Helm-deployer DeployItem")
+				var (
+					chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart")
+					valuesFile = filepath.Join(chartDir, "values.yaml")
+				)
 
-		It("should deploy a helm chart with a single config map", func() {
-			By("Creating and applying a Helm-deployer DeployItem")
-			var (
-				chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart")
-				valuesFile = filepath.Join(chartDir, "values.yaml")
-			)
+				const deployName = "configmap-deployment"
+				di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, realHelmDeployer)
+				Expect(err).ShouldNot(HaveOccurred())
 
-			const deployName = "configmap-deployment"
-			di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, true)
-			Expect(err).ShouldNot(HaveOccurred())
+				cm := &corev1.ConfigMap{}
+				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
+				Expect(cm.Data["key"]).To(Equal("value"))
 
-			cm := &corev1.ConfigMap{}
-			Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
-			Expect(cm.Data["key"]).To(Equal("value"))
+				removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+			}
 
-			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+			It("with real helm deployer", func() {
+				testFunc(true)
+			})
+			It("with helm templating and manifest apply", func() {
+				testFunc(false)
+			})
 		})
+		Context("should update a helm chart with a single config map", func() {
+			testFunc := func(realHelmDeployer bool) {
+				By("Creating and applying a Helm-deployer DeployItem")
+				var (
+					chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart")
+					valuesFile = filepath.Join(chartDir, "values.yaml")
+				)
 
-		It("should update a helm chart with a single config map", func() {
-			By("Creating and applying a Helm-deployer DeployItem")
-			var (
-				chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart")
-				valuesFile = filepath.Join(chartDir, "values.yaml")
-			)
+				const deployName = "configmap-deployment"
+				deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, realHelmDeployer)
+				cm := &corev1.ConfigMap{}
+				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
+				Expect(cm.Data["key"]).To(Equal("value"))
 
-			const deployName = "configmap-deployment"
-			deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, true)
-			cm := &corev1.ConfigMap{}
-			Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
-			Expect(cm.Data["key"]).To(Equal("value"))
+				By("Updating a Helm-deployer DeployItem")
+				chartDir = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01_updated", "chart")
+				di := updateDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, realHelmDeployer)
+				cm_updated := &corev1.ConfigMap{}
+				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm_updated)).To(Succeed())
+				Expect(cm_updated.Data["key"]).To(Equal("value_updated"))
 
-			By("Updating a Helm-deployer DeployItem")
-			chartDir = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01_updated", "chart")
-			di := updateDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, true)
-			cm_updated := &corev1.ConfigMap{}
-			Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm_updated)).To(Succeed())
-			Expect(cm_updated.Data["key"]).To(Equal("value_updated"))
-
-			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+				removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+			}
+			It("with real helm deployer", func() {
+				testFunc(true)
+			})
+			It("with helm templating and manifest apply", func() {
+				testFunc(false)
+			})
 		})
+		Context("should export a value from the config map", func() {
+			testFunc := func(realHelmDeployer bool) {
+				By("Creating and applying a Helm-deployer DeployItem")
+				var (
+					chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "02_export", "chart")
+					valuesFile = filepath.Join(chartDir, "values.yaml")
+				)
 
-		It("should export a value from the config map", func() {
-			By("Creating and applying a Helm-deployer DeployItem")
-			var (
-				chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "02_export", "chart")
-				valuesFile = filepath.Join(chartDir, "values.yaml")
-			)
-
-			const deployName = "configmap-deployment"
-			exports := managedresource.Exports{
-				Exports: []managedresource.Export{
-					{
-						Key:      "exportKey",
-						JSONPath: "data.key",
-						FromResource: &lsv1alpha1.TypedObjectReference{
-							APIVersion: "v1",
-							Kind:       "ConfigMap",
-							ObjectReference: lsv1alpha1.ObjectReference{
-								Name:      "mychart-configmap",
-								Namespace: state.Namespace,
+				const deployName = "configmap-deployment"
+				exports := managedresource.Exports{
+					Exports: []managedresource.Export{
+						{
+							Key:      "exportKey",
+							JSONPath: "data.key",
+							FromResource: &lsv1alpha1.TypedObjectReference{
+								APIVersion: "v1",
+								Kind:       "ConfigMap",
+								ObjectReference: lsv1alpha1.ObjectReference{
+									Name:      "mychart-configmap",
+									Namespace: state.Namespace,
+								},
 							},
 						},
 					},
-				},
+				}
+				di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, &exports, nil, realHelmDeployer)
+				Expect(err).ShouldNot(HaveOccurred())
+				cm := &corev1.ConfigMap{}
+				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
+				Expect(cm.Data["key"]).To(Equal("value"))
+				Expect(di.Status.ExportReference.Name).To(Equal("configmap-deployment-export"))
+
+				export_secret := &corev1.Secret{}
+				Expect(state.Client.Get(ctx, di.Status.ExportReference.NamespacedName(), export_secret)).To(Succeed())
+				Expect(export_secret.Data[lsv1alpha1.DataObjectSecretDataKey]).ToNot(BeNil())
+				exportRaw := export_secret.Data[lsv1alpha1.DataObjectSecretDataKey]
+
+				var export map[string]interface{}
+				Expect(json.Unmarshal(exportRaw, &export)).ToNot(HaveOccurred())
+				Expect(export).To(HaveKeyWithValue("exportKey", "value"))
+
+				removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
 			}
-			di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, &exports, nil, true)
-			Expect(err).ShouldNot(HaveOccurred())
-			cm := &corev1.ConfigMap{}
-			Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
-			Expect(cm.Data["key"]).To(Equal("value"))
-			Expect(di.Status.ExportReference.Name).To(Equal("configmap-deployment-export"))
-
-			export_secret := &corev1.Secret{}
-			Expect(state.Client.Get(ctx, di.Status.ExportReference.NamespacedName(), export_secret)).To(Succeed())
-			Expect(export_secret.Data[lsv1alpha1.DataObjectSecretDataKey]).ToNot(BeNil())
-			exportRaw := export_secret.Data[lsv1alpha1.DataObjectSecretDataKey]
-
-			var export map[string]interface{}
-			Expect(json.Unmarshal(exportRaw, &export)).ToNot(HaveOccurred())
-			Expect(export).To(HaveKeyWithValue("exportKey", "value"))
-
-			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+			It("with real helm deployer", func() {
+				testFunc(true)
+			})
+			It("with helm templating and manifest apply", func() {
+				testFunc(false)
+			})
 		})
 
-		It("Helm templating deployment: should succeed a readinesCheck on a deployed helm chart with a single config map", func() {
-			By("Creating and applying a Helm-deployer DeployItem")
-			var (
-				chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart")
-				valuesFile = filepath.Join(chartDir, "values.yaml")
-			)
-			const deployName = "helm-deployer"
+		Context("should succeed a readinesCheck on a deployed helm chart with a single config map", func() {
+			testFunc := func(realHelmDeployer bool) {
+				By("Creating and applying a Helm-deployer DeployItem")
+				var (
+					chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart")
+					valuesFile = filepath.Join(chartDir, "values.yaml")
+				)
+				const deployName = "helm-deployer"
 
-			jsonRawMessage, err := json.Marshal(map[string]string{"value": "value"})
-			Expect(err).ShouldNot(HaveOccurred())
-			readinesCheck := getReadinessCheck(state.Namespace, jsonRawMessage)
+				jsonRawMessage, err := json.Marshal(map[string]string{"value": "value"})
+				Expect(err).ShouldNot(HaveOccurred())
+				readinesCheck := getReadinessCheck(state.Namespace, jsonRawMessage)
 
-			di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, &readinesCheck, true)
-			Expect(err).ShouldNot(HaveOccurred())
-			cm := &corev1.ConfigMap{}
-			Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
-			Expect(cm.Data["key"]).To(Equal("value"))
+				di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, &readinesCheck, realHelmDeployer)
+				Expect(err).ShouldNot(HaveOccurred())
+				cm := &corev1.ConfigMap{}
+				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
+				Expect(cm.Data["key"]).To(Equal("value"))
 
-			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+				removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+			}
+			It("with real helm deployer", func() {
+				testFunc(true)
+			})
+			It("with helm templating and manifest apply", func() {
+				testFunc(false)
+			})
 		})
 
-		It("Helm templating deployment: should fail a readinesCheck for a wrong value on a deployed helm chart with a single config map", func() {
-			By("Creating and applying a Helm-deployer DeployItem")
-			var (
-				chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart")
-				valuesFile = filepath.Join(chartDir, "values.yaml")
-			)
-			const deployName = "helm-deployer"
+		Context("should fail a readinesCheck for a wrong value on a deployed helm chart with a single config map", func() {
+			testFunc := func(realHelmDeployer bool) {
+				By("Creating and applying a Helm-deployer DeployItem")
+				var (
+					chartDir   = filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart")
+					valuesFile = filepath.Join(chartDir, "values.yaml")
+				)
+				const deployName = "helm-deployer"
 
-			jsonRawMessage, err := json.Marshal(map[string]string{"value": "value_WRONG"})
-			Expect(err).ShouldNot(HaveOccurred())
-			readinesCheck := getReadinessCheck(state.Namespace, jsonRawMessage)
+				jsonRawMessage, err := json.Marshal(map[string]string{"value": "value_WRONG"})
+				Expect(err).ShouldNot(HaveOccurred())
+				readinesCheck := getReadinessCheck(state.Namespace, jsonRawMessage)
 
-			di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, &readinesCheck, false)
-			Expect(err).Should(HaveOccurred())
+				di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, &readinesCheck, realHelmDeployer)
+				Expect(err).Should(HaveOccurred())
 
-			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+				removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
+			}
+			XIt("with real helm deployer", func() {
+				testFunc(true)
+			})
+			It("with helm templating and manifest apply", func() {
+				testFunc(false)
+			})
 		})
 
 	})
