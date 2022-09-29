@@ -1,0 +1,6 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  name: import-do-namespace-updated
+  namespace: example
+data: example

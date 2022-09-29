@@ -1,0 +1,9 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Context
+metadata:
+  name: example-context
+  namespace: example
+
+repositoryContext:
+  baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+  type: ociRegistry

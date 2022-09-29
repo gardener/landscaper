@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package dependencies
 
 import (
@@ -6,14 +10,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
-
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 )
@@ -39,7 +39,6 @@ func DependencyTests(f *framework.Framework) {
 		})
 
 		It("should process subinstallations in the correct order", func() {
-
 			By("Create target")
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
 			utils.ExpectNoError(err)
@@ -47,46 +46,27 @@ func DependencyTests(f *framework.Framework) {
 
 			By("Create installation with chain of four subinstallations")
 			inst := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-chain", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-chain", "installation.yaml")))
 
 			By("Wait for installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
 
-			By("Check DataObject with export")
-			exportDo := &lsv1alpha1.DataObject{}
-			exportDoKey := client.ObjectKey{Name: "export-do-track", Namespace: state.Namespace}
-			utils.ExpectNoError(f.Client.Get(ctx, exportDoKey, exportDo))
-			track := ""
-			utils.GetDataObjectData(exportDo, &track)
-			Expect(track).To(Equal("ABCD"))
+			By("Check processing order of subinstallations")
+			utils.ExpectNoError(utils.CheckDataObjectString(ctx, state.State, "export-do-track", "ABCD"))
 
 			// Update installation
 
-			By("Update installation with changed dependencies between subinstallations")
-			instOld := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld))
-			inst = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-join", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
-			utils.ExpectNoError(f.Client.Update(ctx, inst))
+			By("Update Installation with changed dependencies between subinstallations")
+			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-join", "installation.yaml")))
 
 			By("Wait for installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
 
-			By("Check DataObjects with exports")
-			exportDo = &lsv1alpha1.DataObject{}
-			exportDoKey = client.ObjectKey{Name: "export-do-track", Namespace: state.Namespace}
-			utils.ExpectNoError(f.Client.Get(ctx, exportDoKey, exportDo))
-			track = ""
-			utils.GetDataObjectData(exportDo, &track)
-			Expect(track).To(Equal("(A|B|C)D"))
+			By("Check changed processing order of subinstallations")
+			utils.ExpectNoError(utils.CheckDataObjectString(ctx, state.State, "export-do-track", "(A|B|C)D"))
 		})
 
 		It("should detect a dependency cycle", func() {
-
 			By("Create target")
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
 			utils.ExpectNoError(err)
@@ -94,16 +74,13 @@ func DependencyTests(f *framework.Framework) {
 
 			By("Create installation with cycle of subinstallations")
 			inst := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-cycle", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-cycle", "installation.yaml")))
 
 			By("Wait for installation to fail")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseFailed, 2*time.Minute))
 		})
 
 		It("should detect an export conflict", func() {
-
 			By("Create target")
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
 			utils.ExpectNoError(err)
@@ -111,9 +88,7 @@ func DependencyTests(f *framework.Framework) {
 
 			By("Create installation with an export conflict between subinstallations")
 			inst := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-conflict", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-conflict", "installation.yaml")))
 
 			By("Wait for installation to fail")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseFailed, 2*time.Minute))

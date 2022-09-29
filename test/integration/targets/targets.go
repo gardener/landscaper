@@ -44,14 +44,15 @@ func TargetTests(f *framework.Framework) {
 		})
 
 		It("should export Targets", func() {
+			var (
+				do1   = &lsv1alpha1.DataObject{} // contains a dummy kubeconfig for a Target to be deployed by the Installation
+				inst1 = &lsv1alpha1.Installation{}
+			)
 
 			// Create Installation that exports a Target "target-1"
 
 			By("Create DataObjects with import data")
-			do := &lsv1alpha1.DataObject{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(do, path.Join(testdataDir, "installation-target-exporter-1", "import-do-kubeconfig.yaml")))
-			do.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, do))
+			utils.ExpectNoError(utils.CreateDataObjectFromFile(ctx, state.State, do1, path.Join(testdataDir, "installation-target-exporter-1", "import-do-kubeconfig.yaml")))
 
 			By("Create Target")
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
@@ -59,13 +60,10 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, target))
 
 			By("Create Installation")
-			inst := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-exporter-1", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst1, path.Join(testdataDir, "installation-target-exporter-1", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
 
 			By("Check deployed Target")
 			targetKey := client.ObjectKey{Namespace: state.Namespace, Name: "target-1"}
@@ -77,20 +75,19 @@ func TargetTests(f *framework.Framework) {
 
 			// Create Installation that exports a Target "target-2"
 
+			var (
+				do2   = &lsv1alpha1.DataObject{} // contains a dummy kubeconfig for a Target to be deployed by the Installation
+				inst2 = &lsv1alpha1.Installation{}
+			)
+
 			By("Create DataObjects with import data")
-			do = &lsv1alpha1.DataObject{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(do, path.Join(testdataDir, "installation-target-exporter-2", "import-do-kubeconfig.yaml")))
-			do.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, do))
+			utils.ExpectNoError(utils.CreateDataObjectFromFile(ctx, state.State, do2, path.Join(testdataDir, "installation-target-exporter-2", "import-do-kubeconfig.yaml")))
 
 			By("Create Installation")
-			inst = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-exporter-2", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst2, path.Join(testdataDir, "installation-target-exporter-2", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst2, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
 
 			By("Check deployed Target")
 			targetKey = client.ObjectKey{Namespace: state.Namespace, Name: "target-2"}
@@ -102,42 +99,36 @@ func TargetTests(f *framework.Framework) {
 
 			// Create an Installation that imports a target list consisting of "target-1" and  "target-2"
 
+			var (
+				do3   = &lsv1alpha1.DataObject{}
+				inst3 = &lsv1alpha1.Installation{}
+			)
+
 			By("Create DataObjects with import data")
-			do = &lsv1alpha1.DataObject{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(do, path.Join(testdataDir, "installation-target-importer-1", "import-do-namespace.yaml")))
-			do.SetNamespace(state.Namespace)
-			utils.SetDataObjectData(do, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, do))
+			utils.ExpectNoError(utils.CreateNamespaceDataObjectFromFile(ctx, state.State, do3, path.Join(testdataDir, "installation-target-importer-1", "import-do-namespace.yaml")))
 
 			By("Create Installation")
-			inst = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-importer-1", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst3, path.Join(testdataDir, "installation-target-importer-1", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst3, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
 
-			By("Check deployed configmap")
-			configMapKey := client.ObjectKey{Namespace: state.Namespace, Name: "cm-kubeconfigs"}
-			configMap := &k8sv1.ConfigMap{}
-			utils.ExpectNoError(f.Client.Get(ctx, configMapKey, configMap))
-			Expect(configMap.Data).To(HaveLen(2))
-			Expect(configMap.Data).To(HaveKeyWithValue("target-1", "dummy kubeconfig 1"))
-			Expect(configMap.Data).To(HaveKeyWithValue("target-2", "dummy kubeconfig 2"))
+			By("Check deployed ConfigMap")
+			expectedData := map[string]string{"target-1": "dummy kubeconfig 1", "target-2": "dummy kubeconfig 2"}
+			utils.ExpectNoError(utils.CheckConfigMap(ctx, state.State, "cm-kubeconfigs", expectedData))
 		})
 
 		It("should create a DeployItem for each Target in a TargetList", func() {
+			var (
+				do   = &lsv1alpha1.DataObject{}
+				inst = &lsv1alpha1.Installation{}
+			)
 
 			// Create Installation that imports a TargetList with two Targets "target-1" and "target-2", and generates
 			// a DeployItem for each of them.
 
 			By("Create DataObjects with import data")
-			do := &lsv1alpha1.DataObject{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(do, path.Join(testdataDir, "installation-target-importer-2", "import-do-namespace.yaml")))
-			do.SetNamespace(state.Namespace)
-			utils.SetDataObjectData(do, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, do))
+			utils.ExpectNoError(utils.CreateNamespaceDataObjectFromFile(ctx, state.State, do, path.Join(testdataDir, "installation-target-importer-2", "import-do-namespace.yaml")))
 
 			By("Create Targets")
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
@@ -155,28 +146,17 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, target))
 
 			By("Create Installation")
-			inst := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-importer-2", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-importer-2", "installation.yaml")))
 
 			By("Wait for Installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
-			configMapKey := client.ObjectKey{Namespace: state.Namespace, Name: "cm-kubeconfig-0"}
-			configMap := &k8sv1.ConfigMap{}
-			utils.ExpectNoError(f.Client.Get(ctx, configMapKey, configMap))
-			Expect(configMap.Data).To(HaveLen(2))
-			Expect(configMap.Data).To(HaveKeyWithValue("targetName", "target-1"))
-			Expect(configMap.Data).To(HaveKeyWithValue("kubeconfig", "dummy kubeconfig 1"))
+			expectedData := map[string]string{"targetName": "target-1", "kubeconfig": "dummy kubeconfig 1"}
+			utils.ExpectNoError(utils.CheckConfigMap(ctx, state.State, "cm-kubeconfig-0", expectedData))
 
-			configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-kubeconfig-1"}
-			configMap = &k8sv1.ConfigMap{}
-			utils.ExpectNoError(f.Client.Get(ctx, configMapKey, configMap))
-			Expect(configMap.Data).To(HaveLen(2))
-			Expect(configMap.Data).To(HaveKeyWithValue("targetName", "target-2"))
-			Expect(configMap.Data).To(HaveKeyWithValue("kubeconfig", "dummy kubeconfig 2"))
+			expectedData = map[string]string{"targetName": "target-2", "kubeconfig": "dummy kubeconfig 2"}
+			utils.ExpectNoError(utils.CheckConfigMap(ctx, state.State, "cm-kubeconfig-1", expectedData))
 		})
 
 		It("should pass a Target and TargetList to a subinstallation", func() {
@@ -188,12 +168,13 @@ func TargetTests(f *framework.Framework) {
 			// The root installation templates its subinstallation, i.e. it uses a SubinstallationExecution; this is
 			// necessary because the Target and TargetList that are passed to the subinstallation are optional parameters.
 
+			var (
+				do   = &lsv1alpha1.DataObject{}
+				inst = &lsv1alpha1.Installation{}
+			)
+
 			By("Create DataObjects with import data")
-			do := &lsv1alpha1.DataObject{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(do, path.Join(testdataDir, "installation-target-root-1", "import-do-namespace.yaml")))
-			do.SetNamespace(state.Namespace)
-			utils.SetDataObjectData(do, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, do))
+			utils.ExpectNoError(utils.CreateNamespaceDataObjectFromFile(ctx, state.State, do, path.Join(testdataDir, "installation-target-root-1", "import-do-namespace.yaml")))
 
 			By("Create Targets")
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
@@ -206,10 +187,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, target))
 
 			By("Create Installation")
-			inst := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-root-1", "installation-1.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-root-1", "installation-1.yaml")))
 
 			By("Wait for Installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
@@ -239,7 +217,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-root-1", "installation-1.yaml")))
 			utils.SetInstallationNamespace(inst, state.Namespace)
 			inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
-			utils.ExpectNoError(f.Client.Update(ctx, inst))
+			utils.ExpectNoError(state.Update(ctx, inst))
 
 			By("Wait for Installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
@@ -260,13 +238,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, target2))
 
 			By("Update Installation so that it imports a TargetList")
-			instOld = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld))
-			inst = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-root-1", "installation-2.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
-			utils.ExpectNoError(f.Client.Update(ctx, inst))
+			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-root-1", "installation-2.yaml")))
 
 			By("Wait for Installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
@@ -291,13 +263,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Update(ctx, target2))
 
 			By("Reconcile Installation")
-			instOld = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld))
-			inst = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-root-1", "installation-2.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
-			utils.ExpectNoError(f.Client.Update(ctx, inst))
+			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-root-1", "installation-2.yaml")))
 
 			By("Wait for Installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
@@ -312,15 +278,15 @@ func TargetTests(f *framework.Framework) {
 		})
 
 		It("should use a Target that references a Secret", func() {
+			var (
+				do   = &lsv1alpha1.DataObject{}
+				inst = &lsv1alpha1.Installation{}
+			)
 
 			// Create an Installation that uses a Target with a reference to a Secret.
 
 			By("Create DataObject with import data")
-			do := &lsv1alpha1.DataObject{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(do, path.Join(testdataDir, "installation-target-secretref", "import-do-namespace.yaml")))
-			do.SetNamespace(state.Namespace)
-			utils.SetDataObjectData(do, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, do))
+			utils.ExpectNoError(utils.CreateNamespaceDataObjectFromFile(ctx, state.State, do, path.Join(testdataDir, "installation-target-secretref", "import-do-namespace.yaml")))
 
 			By("Create Target and Secret")
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
@@ -331,10 +297,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, target))
 
 			By("Create Installation")
-			inst := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-secretref", "installation.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-secretref", "installation.yaml")))
 
 			By("Wait for Installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))

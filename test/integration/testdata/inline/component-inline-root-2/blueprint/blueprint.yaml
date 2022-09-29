@@ -1,0 +1,79 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
+
+imports:
+  - name: cluster
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: configmapNameIn
+    required: true
+    type: data
+    schema:
+      description: name of the configmap which the blueprint creates.
+      type: string
+
+  - name: configmapNamespaceIn
+    required: true
+    type: data
+    schema:
+      description: namespace of the configmap which the blueprint creates.
+      type: string
+
+  - name: configmapDataIn
+    required: false
+    type: data
+    schema:
+      description: items of the configmap which the blueprint creates.
+      type: object
+
+exports:
+  - name: configmapNamesOut
+    type: data
+    schema:
+      type: object
+
+subinstallationExecutions:
+  - name: default-subinst-execution
+    type: GoTemplate
+    template: |
+      subinstallations:
+        {{- $imports := .imports }}
+        {{- range $key, $value := .imports.configmapDataIn }}
+        - apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: InstallationTemplate
+          name: subinst-{{ $key }}
+          blueprint:
+            ref: cd://componentReferences/inline-base-component/resources/blueprint
+      
+          imports:
+            targets:
+              - name: cluster
+                target: cluster
+      
+            data:
+              - name: configmapNamespaceIn
+                dataRef: configmapNamespaceIn
+      
+          importDataMappings:
+            configmapNameIn: cm-example-{{ $key }}
+            configmapDataIn:
+              {{ $key }}: {{ $value }}
+      
+          exports:
+            data:
+              - name: configmapNameOut
+                dataRef: configmapNameOut-{{ $key }}
+        {{- end }}
+
+exportExecutions:
+  - name: default-export-execution
+    type: GoTemplate
+    template: |
+      exports:
+        configmapNamesOut:
+          {{- $dataobjects := .dataobjects }}
+          {{- range $key, $value := .imports.configmapDataIn }}
+          {{- $doname := print "configmapNameOut-" $key }}
+          {{ $key }}: {{ index $dataobjects $doname }}
+          {{- end }}

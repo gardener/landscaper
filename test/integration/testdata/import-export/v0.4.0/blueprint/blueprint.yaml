@@ -7,7 +7,9 @@ imports:
     targetType: landscaper.gardener.cloud/kubernetes-cluster
 
   - name: configmapNameIn
-    required: true
+    required: false
+    default:
+      value: cm-example-default
     type: data
     schema:
       description: name of the configmap which the blueprint creates.
@@ -22,28 +24,16 @@ imports:
 
   - name: configmapDataIn
     required: false
+    default:
+      value:
+        defaultKey1: defaultValue1
+        defaultKey2: defaultValue2
     type: data
     schema:
       description: items of the configmap which the blueprint creates.
       type: object
 
-exports:
-  - name: configmapNameOut
-    type: data
-    schema:
-      type: string
-
-  - name: configmapDataOut
-    type: data
-    schema:
-      type: object
-
 deployExecutions:
   - name: default-deploy-execution
     file: /deploy-execution.yaml
-    type: GoTemplate
-
-exportExecutions:
-  - name: default-export-execution
-    file: /export-execution.yaml
     type: GoTemplate

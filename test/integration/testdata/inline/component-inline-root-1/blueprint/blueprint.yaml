@@ -38,12 +38,38 @@ exports:
     schema:
       type: object
 
-deployExecutions:
-  - name: default-deploy-execution
-    file: /deploy-execution.yaml
-    type: GoTemplate
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+    name: subinst1
+    blueprint:
+      ref: cd://componentReferences/inline-base-component/resources/blueprint
+
+    imports:
+      targets:
+        - name: cluster
+          target: cluster
+
+      data:
+        - name: configmapNamespaceIn
+          dataRef: configmapNamespaceIn
+        - name: configmapNameIn
+          dataRef: configmapNameIn
+        - name: configmapDataIn
+          dataRef: configmapDataIn
+
+    exports:
+      data:
+        - name: configmapNameOut
+          dataRef: configmapNameOut
+        - name: configmapDataOut
+          dataRef: configmapDataOut
 
 exportExecutions:
   - name: default-export-execution
-    file: /export-execution.yaml
     type: GoTemplate
+    template: |
+      exports:
+        configmapNameOut: {{ .dataobjects.configmapNameOut }}
+        configmapDataOut:
+          {{- .dataobjects.configmapDataOut | toYaml | nindent 4 }}
