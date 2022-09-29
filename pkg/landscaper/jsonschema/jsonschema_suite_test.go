@@ -481,7 +481,7 @@ var _ = Describe("jsonschema", func() {
 		AfterEach(func() {
 			testutils.ExpectNoError(testenv.Close())
 			ctx.Done()
-		}, 60)
+		})
 
 		It("should correctly resolve nested references across components", func() {
 			// create components
