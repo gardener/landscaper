@@ -7,7 +7,6 @@ package webhook
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
 	"os"
@@ -198,10 +197,10 @@ func writeCertificates(certDir string, caCert, serverCert *certificates.Certific
 	if err := os.MkdirAll(certDir, 0755); err != nil {
 		return nil, err
 	}
-	if err := ioutil.WriteFile(serverKeyPath, serverCert.PrivateKeyPEM, 0666); err != nil {
+	if err := os.WriteFile(serverKeyPath, serverCert.PrivateKeyPEM, 0666); err != nil {
 		return nil, err
 	}
-	if err := ioutil.WriteFile(serverCertPath, serverCert.CertificatePEM, 0666); err != nil {
+	if err := os.WriteFile(serverCertPath, serverCert.CertificatePEM, 0666); err != nil {
 		return nil, err
 	}
 

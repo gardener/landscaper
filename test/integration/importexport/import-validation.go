@@ -15,7 +15,7 @@ import (
 
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"

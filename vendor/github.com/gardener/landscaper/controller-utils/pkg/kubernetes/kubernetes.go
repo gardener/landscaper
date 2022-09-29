@@ -11,7 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -429,28 +429,28 @@ func GenerateKubeconfig(restConfig *rest.Config) (clientcmdapi.Config, error) {
 		bearerToken = restConfig.BearerToken
 	)
 	if len(restConfig.TLSClientConfig.CAFile) != 0 {
-		data, err := ioutil.ReadFile(restConfig.TLSClientConfig.CAFile)
+		data, err := os.ReadFile(restConfig.TLSClientConfig.CAFile)
 		if err != nil {
 			return clientcmdapi.Config{}, fmt.Errorf("unable to read ca from %q: %w", restConfig.TLSClientConfig.CAFile, err)
 		}
 		caData = data
 	}
 	if len(restConfig.TLSClientConfig.CertFile) != 0 {
-		data, err := ioutil.ReadFile(restConfig.TLSClientConfig.CertFile)
+		data, err := os.ReadFile(restConfig.TLSClientConfig.CertFile)
 		if err != nil {
 			return clientcmdapi.Config{}, fmt.Errorf("unable to read cert from %q: %w", restConfig.TLSClientConfig.CertFile, err)
 		}
 		certData = data
 	}
 	if len(restConfig.TLSClientConfig.KeyFile) != 0 {
-		data, err := ioutil.ReadFile(restConfig.TLSClientConfig.KeyFile)
+		data, err := os.ReadFile(restConfig.TLSClientConfig.KeyFile)
 		if err != nil {
 			return clientcmdapi.Config{}, fmt.Errorf("unable to read key from %q: %w", restConfig.TLSClientConfig.KeyFile, err)
 		}
 		keyData = data
 	}
 	if len(restConfig.BearerTokenFile) != 0 {
-		data, err := ioutil.ReadFile(restConfig.BearerTokenFile)
+		data, err := os.ReadFile(restConfig.BearerTokenFile)
 		if err != nil {
 			return clientcmdapi.Config{}, fmt.Errorf("unable to read bearer token from %q: %w", restConfig.BearerTokenFile, err)
 		}

@@ -11,9 +11,9 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -426,7 +426,7 @@ const TemporaryDirectoryForSelfGeneratedTLSCertificatesPattern = "self-generated
 // The function will return the *Certificate object as well as the path of the temporary directory where the
 // certificates are stored.
 func SelfGenerateTLSServerCertificate(name string, dnsNames []string) (*Certificate, string, error) {
-	tempDir, err := ioutil.TempDir("", TemporaryDirectoryForSelfGeneratedTLSCertificatesPattern)
+	tempDir, err := os.MkdirTemp("", TemporaryDirectoryForSelfGeneratedTLSCertificatesPattern)
 	if err != nil {
 		return nil, "", err
 	}
@@ -440,10 +440,10 @@ func SelfGenerateTLSServerCertificate(name string, dnsNames []string) (*Certific
 	if err != nil {
 		return nil, "", err
 	}
-	if err := ioutil.WriteFile(filepath.Join(tempDir, DataKeyCertificateCA), caCertificate.CertificatePEM, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tempDir, DataKeyCertificateCA), caCertificate.CertificatePEM, 0644); err != nil {
 		return nil, "", err
 	}
-	if err := ioutil.WriteFile(filepath.Join(tempDir, DataKeyPrivateKeyCA), caCertificate.PrivateKeyPEM, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tempDir, DataKeyPrivateKeyCA), caCertificate.PrivateKeyPEM, 0644); err != nil {
 		return nil, "", err
 	}
 
@@ -458,10 +458,10 @@ func SelfGenerateTLSServerCertificate(name string, dnsNames []string) (*Certific
 	if err != nil {
 		return nil, "", err
 	}
-	if err := ioutil.WriteFile(filepath.Join(tempDir, DataKeyCertificate), certificate.CertificatePEM, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tempDir, DataKeyCertificate), certificate.CertificatePEM, 0644); err != nil {
 		return nil, "", err
 	}
-	if err := ioutil.WriteFile(filepath.Join(tempDir, DataKeyPrivateKey), certificate.PrivateKeyPEM, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tempDir, DataKeyPrivateKey), certificate.PrivateKeyPEM, 0644); err != nil {
 		return nil, "", err
 	}
 

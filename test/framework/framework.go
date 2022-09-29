@@ -26,7 +26,7 @@ import (
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -287,7 +287,7 @@ func (f *Framework) Register() *State {
 	})
 
 	ginkgo.AfterEach(func() {
-		f.TestsFailed = f.TestsFailed || ginkgo.CurrentGinkgoTestDescription().Failed
+		f.TestsFailed = f.TestsFailed || ginkgo.CurrentSpecReport().Failed()
 		ctx := context.Background()
 		defer ctx.Done()
 		dumper := state.dumper
@@ -295,11 +295,11 @@ func (f *Framework) Register() *State {
 
 		// dump before cleanup if the test failed
 		f.Log().Logln("Check if test failed...")
-		if ginkgo.CurrentGinkgoTestDescription().Failed {
+		if ginkgo.CurrentSpecReport().Failed() {
 			utils.ExpectNoError(dumper.Dump(ctx))
 		}
 
-		if !ginkgo.CurrentGinkgoTestDescription().Failed {
+		if !ginkgo.CurrentSpecReport().Failed() {
 			if err := state.cleanup(ctx); err != nil {
 				{
 					// try to dump
