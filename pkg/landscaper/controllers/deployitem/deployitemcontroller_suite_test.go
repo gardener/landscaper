@@ -11,7 +11,7 @@ import (
 
 	lscore "github.com/gardener/landscaper/apis/core"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/test/utils/envtest"

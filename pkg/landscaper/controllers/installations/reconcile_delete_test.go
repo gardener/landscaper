@@ -14,7 +14,7 @@ import (
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

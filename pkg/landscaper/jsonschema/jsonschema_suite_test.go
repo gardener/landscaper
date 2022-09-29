@@ -19,7 +19,7 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/apis/mediatype"
@@ -476,12 +476,12 @@ var _ = Describe("jsonschema", func() {
 			testutils.ExpectNoError(err)
 			ociClient, err = ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
 			testutils.ExpectNoError(err)
-		}, 60)
+		})
 
 		AfterEach(func() {
 			testutils.ExpectNoError(testenv.Close())
 			ctx.Done()
-		}, 60)
+		})
 
 		It("should correctly resolve nested references across components", func() {
 			// create components

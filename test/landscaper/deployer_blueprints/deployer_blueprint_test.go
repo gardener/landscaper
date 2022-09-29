@@ -17,7 +17,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/pkg/deployer/helm"

@@ -13,7 +13,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	g "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
