@@ -234,6 +234,56 @@ func (s *State) Create(ctx context.Context, obj client.Object, opts ...CreateOpt
 	return s.CreateWithClientAndRetries(ctx, s.Client, obj, opts...)
 }
 
+// UpdateWithClient creates or updates a kubernetes resource and adds it to the current state
+func (s *State) UpdateWithClientAndRetries(ctx context.Context, c client.Client, obj client.Object, opts ...CreateOption) error {
+	options := &CreateOptions{}
+	if err := options.ApplyOptions(opts...); err != nil {
+		return err
+	}
+	tmp := obj.DeepCopyObject().(client.Object)
+
+	for i := 0; i < 10; i++ {
+		err := c.Update(ctx, obj)
+		if err == nil {
+			break
+		} else if s.checkIfSporadicError(err) {
+			s.log.Logln("state UpdateWithClient-update failed but retried: " + err.Error())
+			time.Sleep(5 * time.Second)
+		} else {
+			return err
+		}
+	}
+
+	tmp.SetName(obj.GetName())
+	tmp.SetNamespace(obj.GetNamespace())
+	tmp.SetResourceVersion(obj.GetResourceVersion())
+	tmp.SetGeneration(obj.GetGeneration())
+	tmp.SetUID(obj.GetUID())
+	tmp.SetCreationTimestamp(obj.GetCreationTimestamp())
+	if options.UpdateStatus {
+		if err := c.Status().Update(ctx, tmp); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
+
+			if strings.Contains(err.Error(), "connection refused") {
+				s.log.Logln("state UpdateWithClient-update failed but retried: " + err.Error())
+				if err := c.Status().Update(ctx, tmp); err != nil {
+					if !apierrors.IsNotFound(err) {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return s.AddResources(tmp)
+}
+
+// Updte updates a kubernetes resources and adds it to the current state
+func (s *State) Update(ctx context.Context, obj client.Object, opts ...CreateOption) error {
+	return s.UpdateWithClientAndRetries(ctx, s.Client, obj, opts...)
+}
+
 // InitResourcesWithClient creates a new isolated environment with its own namespace.
 func (s *State) InitResourcesWithClient(ctx context.Context, c client.Client, resourcesPath string) error {
 	// parse state and create resources in cluster
