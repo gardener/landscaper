@@ -19,7 +19,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
-	utils2 "github.com/gardener/landscaper/pkg/utils"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	. "github.com/onsi/ginkgo"
@@ -241,16 +240,11 @@ func deployDeployItemAndWaitForSuccess(
 	if err != nil {
 		return di, err
 	}
-	if utils2.IsNewReconcile() {
-		// Set a new jobID to trigger a reconcile of the deploy item
-		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
-		Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
-		By("Waiting for the DeployItem to succeed")
-		err = lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 1*time.Minute)
-	} else {
-		By("Waiting for the DeployItem to succeed")
-		err = lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 1*time.Minute)
-	}
+	// Set a new jobID to trigger a reconcile of the deploy item
+	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+	By("Waiting for the DeployItem to succeed")
+	err = lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 1*time.Minute)
 
 	return di, err
 }
@@ -278,16 +272,11 @@ func updateDeployItemAndWaitForSuccess(
 	di.Spec = new_di.Spec
 
 	utils.ExpectNoError(state.Update(ctx, di))
-	if utils2.IsNewReconcile() {
-		// Set a new jobID to trigger a reconcile of the deploy item
-		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
-		Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
-		By("Waiting for the DeployItem Update to succeed")
-		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 20*time.Second))
-	} else {
-		By("Waiting for the DeployItem Update to succeed")
-		utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 20*time.Second))
-	}
+	// Set a new jobID to trigger a reconcile of the deploy item
+	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+	By("Waiting for the DeployItem Update to succeed")
+	utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 20*time.Second))
 	return di
 }
 
@@ -300,11 +289,10 @@ func removeDeployItemAndWaitForSuccess(
 
 	By("Removing the DeployItem")
 	utils.ExpectNoError(f.Client.Delete(ctx, di))
-	if utils2.IsNewReconcile() {
-		// Set a new jobID to trigger a reconcile of the deploy item
-		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
-		Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
-	}
+	// Set a new jobID to trigger a reconcile of the deploy item
+	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+
 	By("Waiting for the DeployItem to disappear")
 	utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, di, 2*time.Minute))
 }
