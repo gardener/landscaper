@@ -10,6 +10,7 @@ import (
 	"github.com/gardener/landscaper/test/integration/deployers/blueprints"
 	"github.com/gardener/landscaper/test/integration/deployers/continuousreconcile"
 	"github.com/gardener/landscaper/test/integration/deployers/helmcharts"
+	"github.com/gardener/landscaper/test/integration/deployers/helmdeployer"
 	"github.com/gardener/landscaper/test/integration/deployers/management"
 )
 
@@ -21,6 +22,7 @@ func RegisterTests(f *framework.Framework) {
 		helmcharts.RegisterTests(f)
 		blueprints.RegisterTests(f)
 		management.RegisterTests(f)
+		helmdeployer.RegisterTests(f)
 	} else {
 		ContainerDeployerTests(f)
 		ManifestDeployerTests(f)
@@ -28,5 +30,6 @@ func RegisterTests(f *framework.Framework) {
 		blueprints.RegisterTests(f)
 		management.RegisterTests(f)
 		continuousreconcile.RegisterTests(f)
+		helmdeployer.RegisterTests(f)
 	}
 }
