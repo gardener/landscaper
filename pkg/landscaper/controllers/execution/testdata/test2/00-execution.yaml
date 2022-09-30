@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Execution
+metadata:
+  name: exec-2
+  namespace:  {{ .Namespace }}
+  generation: 1
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
+spec:
+
+  deployItems:
+    - name: a
+      type: landscaper.gardener.cloud/helm
+      config:
+        apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+        kind: ProviderConfiguration
+    - name: b
+      type: landscaper.gardener.cloud/helm
+      config:
+        apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+        kind: ProviderConfiguration
+    - name: c
+      type: landscaper.gardener.cloud/helm
+      dependsOn:
+        - a
+        - b
+      config:
+        apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+        kind: ProviderConfiguration
+
+status:
+  phase: Failed
+  jobID: job1
+  jobIDFinished: job1
+
+  observedGeneration: 2
+
+  deployItemRefs:
+  - name: a
+    ref:
+      name: di-a
+      namespace: {{ .Namespace }}
+      observedGeneration: 2
+  - name: b
+    ref:
+      name: di-b
+      namespace: {{ .Namespace }}
+      observedGeneration: 2
+  - name: c
+    ref:
+      name: di-c
+      namespace: {{ .Namespace }}
+      observedGeneration: 2
+  execGenerations:
+    - name: a
+      observedGeneration: 2
+    - name: b
+      observedGeneration: 2
+    - name: c
+      observedGeneration: 2
