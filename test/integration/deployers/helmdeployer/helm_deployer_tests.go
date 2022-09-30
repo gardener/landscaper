@@ -11,11 +11,12 @@ import (
 	"path/filepath"
 	"time"
 
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/utils/pointer"
+
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
