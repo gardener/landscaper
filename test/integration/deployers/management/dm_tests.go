@@ -10,11 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	g "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -23,7 +22,6 @@ import (
 
 	"github.com/gardener/landscaper/test/utils/envtest"
 
-	"github.com/gardener/landscaper/apis/core/v1alpha1/health"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
@@ -166,17 +164,11 @@ func DeployerManagementTests(f *framework.Framework) {
 					// expect that all installations are healthy
 					var allErrs []error
 					for _, inst := range instList.Items {
-						if utils.IsNewReconcile() {
-							finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhaseSucceeded)
-							if err != nil {
-								allErrs = append(allErrs, err)
-							} else if !finished {
-								allErrs = append(allErrs, fmt.Errorf("installation phase is not suceeded, but %s", inst.Status.InstallationPhase))
-							}
-						} else {
-							if err := health.CheckInstallation(&inst); err != nil {
-								allErrs = append(allErrs, err)
-							}
+						finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhaseSucceeded)
+						if err != nil {
+							allErrs = append(allErrs, err)
+						} else if !finished {
+							allErrs = append(allErrs, fmt.Errorf("installation phase is not suceeded, but %s", inst.Status.InstallationPhase))
 						}
 					}
 					if len(allErrs) != 0 {
@@ -210,7 +202,7 @@ func DeployerManagementTests(f *framework.Framework) {
 						return fmt.Errorf("expected that the environment still has one finalizer but found %d", len(env.Finalizers))
 					}
 					return nil
-				}, 30*time.Second, 5*time.Second).Should(g.Succeed())
+				}, 30*time.Second, 1*time.Second).Should(g.Succeed())
 			})
 		})
 
@@ -263,17 +255,11 @@ func DeployerManagementTests(f *framework.Framework) {
 				// expect that all installations are healthy
 				var allErrs []error
 				for _, inst := range newInstallations {
-					if utils.IsNewReconcile() {
-						finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhaseSucceeded)
-						if err != nil {
-							allErrs = append(allErrs, err)
-						} else if !finished {
-							allErrs = append(allErrs, fmt.Errorf("installation phase is not suceeded, but %s", inst.Status.InstallationPhase))
-						}
-					} else {
-						if err := health.CheckInstallation(&inst); err != nil {
-							allErrs = append(allErrs, fmt.Errorf("installation %q not healthy: %w", inst.Name, err))
-						}
+					finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhaseSucceeded)
+					if err != nil {
+						allErrs = append(allErrs, err)
+					} else if !finished {
+						allErrs = append(allErrs, fmt.Errorf("installation phase is not suceeded, but %s", inst.Status.InstallationPhase))
 					}
 				}
 				if len(allErrs) != 0 {

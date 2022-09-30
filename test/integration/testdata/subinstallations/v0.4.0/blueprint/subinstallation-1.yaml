@@ -1,0 +1,25 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+name: subinst1
+blueprint:
+  ref: cd://componentReferences/import-export-component-2/resources/blueprint
+
+imports:
+  targets:
+    - name: cluster
+      target: cluster
+
+  data:
+    - name: configmapNamespaceIn
+      dataRef: namespace
+    - name: configmapNameIn
+      dataRef: configmapNameFirst
+    - name: configmapDataIn
+      dataRef: configmapDataFirst
+
+exports:
+  data:
+    - name: configmapNameOut
+      dataRef: configmapName2
+    - name: configmapDataOut
+      dataRef: configmapData2

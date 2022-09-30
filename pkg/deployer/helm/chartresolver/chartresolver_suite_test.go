@@ -9,15 +9,15 @@ import (
 	"context"
 	"encoding/base64"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/yaml"
 
@@ -97,7 +97,7 @@ var _ = Describe("GetChart", func() {
 		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
 
-		file, err := ioutil.ReadFile("./testdata/01-component-descriptor.yaml")
+		file, err := os.ReadFile("./testdata/01-component-descriptor.yaml")
 		Expect(err).ToNot(HaveOccurred())
 
 		inline := &cdv2.ComponentDescriptor{}

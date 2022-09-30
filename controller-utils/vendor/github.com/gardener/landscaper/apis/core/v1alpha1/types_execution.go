@@ -33,11 +33,11 @@ const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
 type ExecutionPhase string
 
 const (
-	ExecutionPhaseInit        = ExecutionPhase(ComponentPhaseInit)
-	ExecutionPhaseProgressing = ExecutionPhase(ComponentPhaseProgressing)
-	ExecutionPhaseDeleting    = ExecutionPhase(ComponentPhaseDeleting)
-	ExecutionPhaseSucceeded   = ExecutionPhase(ComponentPhaseSucceeded)
-	ExecutionPhaseFailed      = ExecutionPhase(ComponentPhaseFailed)
+	ExecutionPhaseInit        ExecutionPhase = "Init"
+	ExecutionPhaseProgressing ExecutionPhase = "Progressing"
+	ExecutionPhaseDeleting    ExecutionPhase = "Deleting"
+	ExecutionPhaseSucceeded   ExecutionPhase = "Succeeded"
+	ExecutionPhaseFailed      ExecutionPhase = "Failed"
 )
 
 type ExecPhase string
@@ -131,17 +131,10 @@ type ExecutionSpec struct {
 	// Note that the type information is used to determine the secret key and the type of the secret.
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
-
-	// ReconcileID is used to update an execution even if its deploy items have not changed but their
-	// reconciliation should be triggered again.
-	ReconcileID string `json:"reconcileID,omitempty"`
 }
 
 // ExecutionStatus contains the current status of a execution.
 type ExecutionStatus struct {
-	// Phase is the current phase of the execution.
-	Phase ExecutionPhase `json:"-"`
-
 	// ObservedGeneration is the most recent generation observed for this Execution.
 	// It corresponds to the Execution generation, which is updated on mutation by the landscaper.
 	// +optional

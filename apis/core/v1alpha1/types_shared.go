@@ -157,6 +157,8 @@ const (
 	ErrorTimeout ErrorCode = "ERR_TIMEOUT"
 	// ErrorCyclicDependencies indicates that there are cyclic dependencies between multiple installations/deployitems.
 	ErrorCyclicDependencies ErrorCode = "ERR_CYCLIC_DEPENDENCIES"
+	// ErrorWebhook indicates that there is an intermediate problem with the webhook.
+	ErrorWebhook ErrorCode = "ERR_WEBHOOK"
 )
 
 // UnrecoverableErrorCodes defines unrecoverable error codes

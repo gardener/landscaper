@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: import-configmap-data
+  namespace: example
+data:
+  key3: value3
+  key4: value4

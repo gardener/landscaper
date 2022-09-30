@@ -7,7 +7,7 @@ package agent_test
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -83,7 +83,7 @@ var _ = Describe("Agent", func() {
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey(ag.TargetSecretName(), state.Namespace), secret)).To(Succeed())
 			Expect(secret.Data).To(HaveKey("kubeconfig"))
 			Expect(string(secret.Data["kubeconfig"])).To(ContainSubstring("test-token"), "kubeconfig should contain the newly created token")
-		}, 30)
+		})
 	})
 
 })

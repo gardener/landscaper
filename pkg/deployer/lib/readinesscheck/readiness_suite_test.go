@@ -6,11 +6,11 @@ package readinesscheck
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -58,12 +58,12 @@ var _ = AfterSuite(func() {
 
 func loadObjectsIntoTestEnv(dirname string, c client.Client, s *envtest.State) ([]lsv1alpha1.TypedObjectReference, error) {
 	decoder := serializer.NewCodecFactory(c.Scheme()).UniversalDecoder()
-	files, err := ioutil.ReadDir(dirname)
+	files, err := os.ReadDir(dirname)
 	Expect(err).ToNot(HaveOccurred())
 
 	objectRefs := make([]lsv1alpha1.TypedObjectReference, len(files))
 	for i, n := range files {
-		raw, err := ioutil.ReadFile(filepath.Join(dirname, n.Name()))
+		raw, err := os.ReadFile(filepath.Join(dirname, n.Name()))
 		if err != nil {
 			return nil, err
 		}

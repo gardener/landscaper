@@ -1,0 +1,83 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+  name: inline
+  namespace: example
+
+spec:
+
+  imports:
+    targets:
+      - name: cluster
+        target: my-cluster
+    data:
+      - name: namespace
+        dataRef: do-namespace
+      - name: entryIn
+        dataRef: do-entry-in
+
+  exports:
+    data:
+      - name: entryOut
+        dataRef: do-entry-out
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+          jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+          imports:
+            - name: cluster
+              targetType: landscaper.gardener.cloud/kubernetes-cluster
+            - name: namespace
+              type: data
+              schema:
+                type: string
+            - name: entryIn
+              type: data
+              schema:
+                type: object
+
+          exports:
+            - name: entryOut
+              type: data
+              schema:
+                type: object
+
+          deployExecutions:
+            - name: default
+              type: GoTemplate
+              template: |
+                deployItems:
+                  - name: item-1
+                    type: landscaper.gardener.cloud/kubernetes-manifest
+                    target:
+                      import: cluster
+                    config:
+                      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+                      kind: ProviderConfiguration
+                      updateStrategy: update
+                      manifests:
+                        - policy: manage
+                          manifest:
+                            apiVersion: v1
+                            kind: ConfigMap
+                            metadata:
+                              name: cm-1
+                              namespace: {{ .imports.namespace }}
+                            data:
+                              {{ .imports.entryIn.key }}: {{ .imports.entryIn.value }}
+          
+          exportExecutions:
+            - name: default-export-execution
+              type: GoTemplate
+              template: |
+                exports:
+                  entryOut:
+                    key: key2
+                    value: value2

@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 
 KUBECONFIG_PATH=$1
-REGISTRY_CONFIG=$2
+REGISTRY_CONFIG=$2 # if empty, registry tests and the checks whether the landscaper and the deployers are running will be skipped
 VERSION=$3
 
 # to disable set on 1
@@ -24,7 +24,7 @@ echo "Run integration tests in source path ${SOURCE_PATH}"
 go test -timeout=60m -mod=vendor ./test/integration \
     --v -ginkgo.v -ginkgo.progress -ginkgo.noColor -ginkgo.seed=17 -ginkgo.failFast \
     --kubeconfig $KUBECONFIG_PATH \
-    --registry-config=$REGISTRY_CONFIG \
+    ${REGISTRY_CONFIG:+"--registry-config="}${REGISTRY_CONFIG:-"--skip-waiting-for-system-components"} \
     --ls-namespace=ls-system \
     --ls-version=$VERSION \
     --ls-run-on-shoot \

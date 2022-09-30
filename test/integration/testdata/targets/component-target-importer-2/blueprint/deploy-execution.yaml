@@ -1,0 +1,25 @@
+deployItems:
+  {{ $imports := .imports }}
+  {{ range $i, $target := .imports.targets }}
+  - name: item{{ $i }}
+    type: landscaper.gardener.cloud/kubernetes-manifest
+    target:
+      import: cluster
+
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: cm-kubeconfig-{{ $i }}
+              namespace: {{ $imports.namespace }}
+            data:
+              targetName: {{ $target.metadata.name }}
+              kubeconfig: {{ $target.spec.config.kubeconfig }}
+  {{ end }}

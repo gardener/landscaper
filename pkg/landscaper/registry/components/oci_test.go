@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/gardener/component-spec/bindings-go/codec"
@@ -20,7 +20,7 @@ import (
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/osfs"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -74,7 +74,7 @@ var _ = Describe("Registry", func() {
 
 		ociClient.EXPECT().GetManifest(ctx, "example.com/component-descriptors/example.com/my-comp:0.0.1").Return(manifest, nil)
 		ociClient.EXPECT().Fetch(ctx, "example.com/component-descriptors/example.com/my-comp:0.0.1", cdConfigLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
-			data, err := ioutil.ReadFile("./testdata/comp1/config.json")
+			data, err := os.ReadFile("./testdata/comp1/config.json")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = io.Copy(writer, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
@@ -115,13 +115,13 @@ var _ = Describe("Registry", func() {
 
 		ociClient.EXPECT().GetManifest(ctx, "example.com/component-descriptors/example.com/my-comp:0.0.1").Return(manifest, nil)
 		ociClient.EXPECT().Fetch(ctx, "example.com/component-descriptors/example.com/my-comp:0.0.1", cdConfigLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
-			data, err := ioutil.ReadFile("./testdata/comp1/config.json")
+			data, err := os.ReadFile("./testdata/comp1/config.json")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = io.Copy(writer, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
 		})
 		ociClient.EXPECT().Fetch(ctx, "example.com/component-descriptors/example.com/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
-			data, err := ioutil.ReadFile("./testdata/comp1/component-descriptor.yaml")
+			data, err := os.ReadFile("./testdata/comp1/component-descriptor.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = io.Copy(writer, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())

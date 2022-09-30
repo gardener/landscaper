@@ -1,0 +1,4 @@
+exports:
+  configmapNameOut: {{ .imports.configmapNameIn }}-x
+  configmapDataOut:
+    {{- .deployitems.default.configmapDataOut | toYaml | nindent 4 }}

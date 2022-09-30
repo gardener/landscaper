@@ -9,20 +9,24 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/core"
+	"github.com/gardener/landscaper/test/integration/dependencies"
 	"github.com/gardener/landscaper/test/integration/deployers"
 	"github.com/gardener/landscaper/test/integration/deployitems"
 	"github.com/gardener/landscaper/test/integration/executions"
+	"github.com/gardener/landscaper/test/integration/importexport"
+	"github.com/gardener/landscaper/test/integration/inline"
 	"github.com/gardener/landscaper/test/integration/installations"
+	"github.com/gardener/landscaper/test/integration/rootinstallations"
+	"github.com/gardener/landscaper/test/integration/subinstallations"
+	"github.com/gardener/landscaper/test/integration/targets"
 	"github.com/gardener/landscaper/test/integration/tutorial"
 	"github.com/gardener/landscaper/test/integration/webhook"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"github.com/gardener/landscaper/test/framework"
 )
 
 var opts *framework.Options
@@ -48,14 +52,18 @@ func TestConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
-	f.Log().Logfln("waiting for system components")
-	err = f.WaitForSystemComponents(ctx)
-	if err != nil {
-		f.Log().Logfln("waiting for system components failed: %s", err.Error())
-		if derr := d.Dump(ctx); derr != nil {
-			f.Log().Logf("error during dump: %s", derr.Error())
+	if opts.SkipWaitingForSystemComponents {
+		f.Log().Logfln("Skipped waiting for system components")
+	} else {
+		f.Log().Logfln("Waiting for system components")
+		err = f.WaitForSystemComponents(ctx)
+		if err != nil {
+			f.Log().Logfln("Waiting for system components failed: %s", err.Error())
+			if derr := d.Dump(ctx); derr != nil {
+				f.Log().Logf("error during dump: %s", derr.Error())
+			}
+			t.Fatal(err)
 		}
-		t.Fatal(err)
 	}
 
 	if !opts.DisableCleanupBefore {
@@ -64,6 +72,12 @@ func TestConfig(t *testing.T) {
 		}
 	}
 
+	importexport.RegisterTests(f)
+	rootinstallations.RegisterTests(f)
+	subinstallations.RegisterTests(f)
+	dependencies.RegisterTests(f)
+	targets.RegisterTests(f)
+	inline.RegisterTests(f)
 	tutorial.RegisterTests(f)
 	webhook.RegisterTests(f)
 	core.RegisterTests(f)

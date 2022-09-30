@@ -1,0 +1,4 @@
+exports:
+  configmapNameLast: {{ .dataobjects.configmapName2 }}
+  configmapDataLast:
+    {{- .dataobjects.configmapData2 | toYaml | nindent 4 }}

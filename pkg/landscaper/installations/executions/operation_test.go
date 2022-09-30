@@ -7,7 +7,7 @@ package executions_test
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"k8s.io/apimachinery/pkg/util/json"
@@ -92,8 +92,7 @@ var _ = Describe("Execution Operation", func() {
 		intBlueprint, err := blueprints.Resolve(ctx, componentResolver, lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 		Expect(err).ToNot(HaveOccurred())
 
-		internalInst, err := installations.New(inst, intBlueprint)
-		Expect(err).ToNot(HaveOccurred())
+		internalInst := installations.NewInstallationImportsAndBlueprint(inst, intBlueprint)
 		Expect(internalInst).ToNot(BeNil())
 
 		internalInst.SetImports(map[string]interface{}{

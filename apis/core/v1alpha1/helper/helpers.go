@@ -213,16 +213,6 @@ func GetNamedObjectReference(objects []v1alpha1.NamedObjectReference, name strin
 	return v1alpha1.NamedObjectReference{}, false
 }
 
-// GetVersionedNamedObjectReference returns the versioned object reference with the given name.
-func GetVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObjectReference, name string) (v1alpha1.VersionedNamedObjectReference, bool) {
-	for _, ref := range objects {
-		if ref.Name == name {
-			return ref, true
-		}
-	}
-	return v1alpha1.VersionedNamedObjectReference{}, false
-}
-
 // ReferenceIsObject checks if the reference describes the given object.
 func ReferenceIsObject(ref v1alpha1.ObjectReference, obj metav1.Object) bool {
 	return ref.Name == obj.GetName() && ref.Namespace == obj.GetNamespace()
@@ -249,80 +239,11 @@ func RemoveVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObject
 	return objects
 }
 
-// IsCompletedInstallationPhase returns true if the phase indicates a final state.
-func IsCompletedInstallationPhase(phase v1alpha1.ComponentInstallationPhase) bool {
-	return phase == v1alpha1.ComponentPhaseFailed || phase == v1alpha1.ComponentPhaseAborted || phase == v1alpha1.ComponentPhaseSucceeded
-}
-
-// IsProgressingInstallationPhase returns true if the phase indicates that the component is still progressing.
-func IsProgressingInstallationPhase(phase v1alpha1.ComponentInstallationPhase) bool {
-	return phase == v1alpha1.ComponentPhaseProgressing || phase == v1alpha1.ComponentPhasePending || phase == v1alpha1.ComponentPhaseDeleting
-}
-
-// CombinedInstallationPhase returns the combined phase of multiple installation's phases.
-func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1alpha1.ComponentInstallationPhase {
-	if len(phases) == 0 {
-		return ""
-	}
-	var (
-		failed  bool
-		aborted bool
-		empty   = true
-	)
-	for _, phase := range phases {
-		switch phase {
-		case v1alpha1.ComponentPhaseProgressing, v1alpha1.ComponentPhasePending, v1alpha1.ComponentPhaseDeleting, v1alpha1.ComponentPhaseInit:
-			return v1alpha1.ComponentPhaseProgressing
-		case v1alpha1.ComponentPhaseFailed:
-			failed = true
-			empty = false
-		case v1alpha1.ComponentPhaseAborted:
-			aborted = true
-			empty = false
-		case v1alpha1.ComponentPhaseSucceeded:
-			empty = false
-		}
-	}
-
-	if aborted {
-		return v1alpha1.ComponentPhaseAborted
-	}
-
-	if failed {
-		return v1alpha1.ComponentPhaseFailed
-	}
-
-	if empty {
-		return ""
-	}
-
-	return v1alpha1.ComponentPhaseSucceeded
-}
-
 func IsDeletionInstallationPhase(phase v1alpha1.InstallationPhase) bool {
 	return phase == v1alpha1.InstallationPhaseInitDelete ||
 		phase == v1alpha1.InstallationPhaseTriggerDelete ||
 		phase == v1alpha1.InstallationPhaseDeleting ||
 		phase == v1alpha1.InstallationPhaseDeleteFailed
-}
-
-// IsCompletedExecutionPhase returns true if the phase indicates a final state.
-func IsCompletedExecutionPhase(phase v1alpha1.ExecutionPhase) bool {
-	return IsCompletedInstallationPhase(v1alpha1.ComponentInstallationPhase(phase))
-}
-
-// IsProgressingExecutionPhase returns true if the phase indicates that the component is still progressing.
-func IsProgressingExecutionPhase(phase v1alpha1.ExecutionPhase) bool {
-	return IsProgressingInstallationPhase(v1alpha1.ComponentInstallationPhase(phase))
-}
-
-// CombinedExecutionPhase returns the combined phase of multiple execution's phases.
-func CombinedExecutionPhase(phases ...v1alpha1.ExecutionPhase) v1alpha1.ExecutionPhase {
-	intPhases := make([]v1alpha1.ComponentInstallationPhase, len(phases))
-	for i, p := range phases {
-		intPhases[i] = v1alpha1.ComponentInstallationPhase(p)
-	}
-	return v1alpha1.ExecutionPhase(CombinedInstallationPhase(intPhases...))
 }
 
 // HasIgnoreAnnotation returns true only if the given object

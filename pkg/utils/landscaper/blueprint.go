@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/dependencies"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -273,7 +275,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 	}
 
 	if len(installationTemplates) > 0 {
-		installationTemplates, err = subinstallations.OrderInstallationTemplates(installationTemplates)
+		installationTemplates, err = dependencies.CheckForCyclesAndDuplicateExports(installationTemplates, true)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable for order subinstallations of blueprint: %w", err)
 		}
@@ -383,12 +385,6 @@ func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports
 		case lsv1alpha1.ImportTypeTargetList:
 			allErr = append(allErr, validateTargetListImport(value, importDef.TargetType, fldPath)...)
 
-		case lsv1alpha1.ImportTypeComponentDescriptor:
-			allErr = append(allErr, validateComponentDescriptorImport(value, fldPath)...)
-
-		case lsv1alpha1.ImportTypeComponentDescriptorList:
-			allErr = append(allErr, validateComponentDescriptorListImport(value, fldPath)...)
-
 		default:
 			allErr = append(allErr, field.Invalid(fldPath, string(importDef.Type), "unknown import type"))
 		}
@@ -468,32 +464,6 @@ func validateTargetListImport(value interface{}, expectedTargetType string, fldP
 
 	for i, targetObj := range targetList {
 		allErr = append(allErr, validateTargetImport(targetObj, expectedTargetType, fldPath.Index(i))...)
-	}
-
-	return allErr
-}
-
-func validateComponentDescriptorImport(value interface{}, fldPath *field.Path) field.ErrorList {
-	allErr := field.ErrorList{}
-	_, ok := value.(map[string]interface{})
-	if !ok {
-		allErr = append(allErr, field.Invalid(fldPath, value, "a component descriptor is expected to be an object"))
-		return allErr
-	}
-
-	return allErr
-}
-
-func validateComponentDescriptorListImport(value interface{}, fldPath *field.Path) field.ErrorList {
-	allErr := field.ErrorList{}
-
-	cdList, ok := value.([]interface{})
-	if !ok {
-		allErr = append(allErr, field.Invalid(fldPath, value, "a component descriptor list is expected to be a list"))
-	}
-
-	for i, cdObj := range cdList {
-		allErr = append(allErr, validateComponentDescriptorImport(cdObj, fldPath.Index(i))...)
 	}
 
 	return allErr

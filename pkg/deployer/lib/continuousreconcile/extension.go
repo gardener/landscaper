@@ -25,7 +25,9 @@ const ContinuousReconcileActiveAnnotation = "continuousreconcile.extensions.land
 // ContinuousReconcileExtension returns an extension hook function which can handle continuous reconciliation.
 // It is meant to be used as a ShouldReconcile hook and might yield unexpected results if used with another hook handle.
 // The function which it takes as an argument is expected to take a time and return the time when the deploy item should be scheduled for the next automatic reconciliation.
-//   It should return nil if continuous reconciliation is not configured for the deploy item.
+//
+//	It should return nil if continuous reconciliation is not configured for the deploy item.
+//
 // The returned function will panic if the provided deploy item is nil.
 func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time, *lsv1alpha1.DeployItem) (*time.Time, error)) extension.ReconcileExtensionHook {
 	return func(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, hype extension.HookType) (*extension.HookResult, error) {

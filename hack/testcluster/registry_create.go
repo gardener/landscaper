@@ -45,9 +45,10 @@ type CreateRegistryOptions struct {
 	// Will be generated if not provided
 	Password string
 
-	// OutputAddressFormat is the format of the output address for the registry
-	// Can be either hostname or ip
-	OutputAddressFormat string
+	// DNSFormat is the type of the output address for the registry
+	// Can be either internal or external
+	// internal will result in a hostname routable only via in-cluster-DNS, while external will result in a publicly routable IP or hostname.
+	DNSFormat string
 
 	RunOnShoot bool
 }
@@ -60,7 +61,7 @@ func (o *CreateRegistryOptions) AddFlags(fs *pflag.FlagSet) {
 	o.CommonOptions.AddFlags(fs)
 	fs.StringVar(&o.Password, "registry-password", "", "set the registry password")
 	fs.StringVar(&o.ExportRegistryCreds, "registry-auth", "", "path where the docker auth config is written to")
-	fs.StringVar(&o.OutputAddressFormat, "address-format", "hostname", "the format of the addresses in the generated output. Can be hostname or ip.")
+	fs.StringVar(&o.DNSFormat, "dns-format", "internal", "determines the type of address which is used for the registry service. Can be 'internal' (uses in-cluster-DNS) or 'external' (is publicly reachable).")
 	fs.BoolVar(&o.RunOnShoot, "ls-run-on-shoot", false, "runs on a shoot and not a k3s cluster")
 
 }
@@ -97,7 +98,7 @@ func (o *CreateRegistryOptions) Run(ctx context.Context) error {
 		o.ID,
 		o.StateFile,
 		o.Password,
-		o.OutputAddressFormat,
+		o.DNSFormat,
 		o.ExportRegistryCreds,
 		o.Timeout,
 		o.RunOnShoot)

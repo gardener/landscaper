@@ -1,0 +1,17 @@
+meta:
+  schemaVersion: 'v2'
+component:
+  name: 'github.com/gardener/landscaper/integration-tests/import-export'
+  version: 'v0.4.0'
+
+  repositoryContexts:
+    - type: 'ociRegistry'
+      baseUrl: 'eu.gcr.io/gardener-project/landscaper/integration-tests'
+
+  provider: 'internal'
+
+  componentReferences: []
+
+  sources: []
+
+  resources: []

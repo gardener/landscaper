@@ -1,0 +1,7 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  name: import-do-data-1
+  namespace: example
+data:
+  value: value7

@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -37,8 +36,8 @@ import (
 )
 
 const (
-	AddressFormatHostname = "hostname"
-	AddressFormatIP       = "ip"
+	DNSFormatInternal = "internal"
+	DNSFormatExternal = "external"
 )
 
 // see this issue for more discussions around min resources for a k8s cluster running in a pod.
@@ -112,7 +111,6 @@ spec:
       secretName: {{ .secretName }}
 `
 
-//
 func CreateRegistry(ctx context.Context,
 	logger utils.Logger,
 	kubeClient client.Client,
@@ -121,7 +119,7 @@ func CreateRegistry(ctx context.Context,
 	id string,
 	stateFile string,
 	password string,
-	outputAddressFormat string,
+	dnsFormat string,
 	exportRegistryCreds string,
 	timeout time.Duration,
 	runOnShoot bool) (err error) {
@@ -245,7 +243,7 @@ func CreateRegistry(ctx context.Context,
 		if err != nil {
 			return fmt.Errorf("unable to marshal state: %w", err)
 		}
-		if err := ioutil.WriteFile(stateFile, data, os.ModePerm); err != nil {
+		if err := os.WriteFile(stateFile, data, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write statefile to %q: %w", stateFile, err)
 		}
 		logger.Logfln("Successfully written state to %q", stateFile)
@@ -257,19 +255,28 @@ func CreateRegistry(ctx context.Context,
 		Password:      password,
 		Auth:          base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
 	}
-	switch outputAddressFormat {
-	case AddressFormatHostname:
+	switch dnsFormat {
+	case DNSFormatInternal:
 		auth.ServerAddress = fmt.Sprintf("%s.%s:5000", svc.Name, svc.Namespace)
-	case AddressFormatIP:
+	case DNSFormatExternal:
 		if runOnShoot {
+			logger.Logln("Waiting for loadbalancer service to get ip/hostname ...")
 			err = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
 				tmpSvc := &corev1.Service{}
 				if tmpErr := kubeClient.Get(ctx, client.ObjectKeyFromObject(svc), tmpSvc); tmpErr != nil {
 					return false, tmpErr
 				}
-				if len(tmpSvc.Status.LoadBalancer.Ingress) > 0 && len(tmpSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
-					auth.ServerAddress = fmt.Sprintf("%s:5000", tmpSvc.Status.LoadBalancer.Ingress[0].IP)
-					logger.Logln(fmt.Sprintf("External IP detected: %s", auth.ServerAddress))
+				if len(tmpSvc.Status.LoadBalancer.Ingress) > 0 {
+					address := ""
+					if len(tmpSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
+						address = tmpSvc.Status.LoadBalancer.Ingress[0].IP
+					} else if len(tmpSvc.Status.LoadBalancer.Ingress[0].Hostname) > 0 {
+						address = tmpSvc.Status.LoadBalancer.Ingress[0].Hostname
+					} else {
+						return false, nil
+					}
+					auth.ServerAddress = fmt.Sprintf("%s:5000", address)
+					logger.Logln(fmt.Sprintf("External IP/hostname detected: %s", auth.ServerAddress))
 					return true, nil
 				}
 				return false, nil
@@ -277,12 +284,11 @@ func CreateRegistry(ctx context.Context,
 		} else {
 			auth.ServerAddress = fmt.Sprintf("%s:5000", svc.Spec.ClusterIP)
 		}
-
-		logger.Logln(fmt.Sprintf("IP detected: %s", auth.ServerAddress))
-
 	default:
-		return fmt.Errorf("unknown address format %q", outputAddressFormat)
+		return fmt.Errorf("unknown dns format %q", dnsFormat)
 	}
+
+	logger.Logln(fmt.Sprintf("using IP/hostname: %s", auth.ServerAddress))
 	dockerconfig := configfile.ConfigFile{
 		AuthConfigs: map[string]dockerconfigtypes.AuthConfig{
 			auth.ServerAddress: auth,
@@ -302,7 +308,7 @@ func CreateRegistry(ctx context.Context,
 	if err := os.MkdirAll(filepath.Dir(exportRegistryCreds), os.ModePerm); err != nil {
 		return fmt.Errorf("unable to create export directory %q: %w", filepath.Dir(exportRegistryCreds), err)
 	}
-	if err := ioutil.WriteFile(exportRegistryCreds, dockerconfigBytes, os.ModePerm); err != nil {
+	if err := os.WriteFile(exportRegistryCreds, dockerconfigBytes, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to write docker auth config to %q: %w", exportRegistryCreds, err)
 	}
 	logger.Logfln("Successfully written docker auth config to %q", exportRegistryCreds)

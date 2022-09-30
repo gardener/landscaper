@@ -6,7 +6,6 @@ package utils
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 
 	. "github.com/onsi/gomega"
@@ -22,7 +21,7 @@ import (
 func ReadChartFrom(path string) ([]byte, func()) {
 	chart, err := chartloader.LoadDir(path)
 	Expect(err).ToNot(HaveOccurred())
-	tempDir, err := ioutil.TempDir(os.TempDir(), "chart-")
+	tempDir, err := os.MkdirTemp("", "chart-")
 	Expect(err).ToNot(HaveOccurred())
 	closer := func() {
 		Expect(os.RemoveAll(tempDir)).To(Succeed())
@@ -31,7 +30,7 @@ func ReadChartFrom(path string) ([]byte, func()) {
 	chartPath, err := chartutil.Save(chart, tempDir)
 	Expect(err).ToNot(HaveOccurred())
 
-	chartBytes, err := ioutil.ReadFile(chartPath)
+	chartBytes, err := os.ReadFile(chartPath)
 	Expect(err).ToNot(HaveOccurred())
 	return chartBytes, closer
 }
@@ -39,7 +38,7 @@ func ReadChartFrom(path string) ([]byte, func()) {
 // ReadValuesFromFile reads Helm values from a file and returns them as JSON raw message
 func ReadValuesFromFile(path string) json.RawMessage {
 	var values json.RawMessage
-	in, err := ioutil.ReadFile(path)
+	in, err := os.ReadFile(path)
 	Expect(err).ToNot(HaveOccurred())
 	values, err = yaml.YAMLToJSON(in)
 	Expect(err).ToNot(HaveOccurred())

@@ -11,20 +11,15 @@ import (
 	"path"
 	"path/filepath"
 
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	utils2 "github.com/gardener/landscaper/pkg/utils"
-
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	k8sv1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
@@ -65,26 +60,6 @@ func ImportExportTests(f *framework.Framework) {
 			target.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, target))
 			expectedTargetExport := target.Spec
-			// component descriptor secret
-			secret2 := &k8sv1.Secret{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(secret2, path.Join(testdataDir, "10-cdimport-secret.yaml")))
-			secret2.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, secret2))
-			tmpData := secret2.Data["componentDescriptor"]
-			tmpDataJSON, err := yaml.ToJSON(tmpData)
-			utils.ExpectNoError(err)
-			secretCD := &cdv2.ComponentDescriptor{}
-			utils.ExpectNoError(json.Unmarshal(tmpDataJSON, secretCD))
-			// component descriptor configmap
-			cm := &k8sv1.ConfigMap{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(cm, path.Join(testdataDir, "10-cdimport-configmap.yaml")))
-			cm.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, cm))
-			tmpDataString := cm.Data["componentDescriptor"]
-			tmpDataJSON, err = yaml.ToJSON([]byte(tmpDataString))
-			utils.ExpectNoError(err)
-			cmCD := &cdv2.ComponentDescriptor{}
-			utils.ExpectNoError(json.Unmarshal(tmpDataJSON, cmCD))
 
 			By("Create root installation")
 			root := &lsv1alpha1.Installation{}
@@ -108,38 +83,20 @@ func ImportExportTests(f *framework.Framework) {
 			}, timeoutTime, resyncTime).Should(BeTrue(), "unable to fetch subinstallation")
 
 			By("verify that installations are succeeded")
-			if utils2.IsNewReconcile() {
-				Eventually(func() (lsv1alpha1.InstallationPhase, error) {
-					err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(root), root)
-					if err != nil {
-						return "", err
-					}
-					return root.Status.InstallationPhase, nil
-				}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhaseSucceeded), "root installation should be in phase '%s'", lsv1alpha1.InstallationPhaseSucceeded)
-				Eventually(func() (lsv1alpha1.InstallationPhase, error) {
-					err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst)
-					if err != nil {
-						return "", err
-					}
-					return subinst.Status.InstallationPhase, nil
-				}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhaseSucceeded), "subinstallation should be in phase '%s'", lsv1alpha1.InstallationPhaseSucceeded)
-			} else {
-				By("verify that installations are succeeded")
-				Eventually(func() (lsv1alpha1.ComponentInstallationPhase, error) {
-					err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(root), root)
-					if err != nil {
-						return "", err
-					}
-					return root.Status.Phase, nil
-				}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ComponentPhaseSucceeded), "root installation should be in phase '%s'", lsv1alpha1.ComponentPhaseSucceeded)
-				Eventually(func() (lsv1alpha1.ComponentInstallationPhase, error) {
-					err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst)
-					if err != nil {
-						return "", err
-					}
-					return subinst.Status.Phase, nil
-				}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ComponentPhaseSucceeded), "subinstallation should be in phase '%s'", lsv1alpha1.ComponentPhaseSucceeded)
-			}
+			Eventually(func() (lsv1alpha1.InstallationPhase, error) {
+				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(root), root)
+				if err != nil {
+					return "", err
+				}
+				return root.Status.InstallationPhase, nil
+			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhaseSucceeded), "root installation should be in phase '%s'", lsv1alpha1.InstallationPhaseSucceeded)
+			Eventually(func() (lsv1alpha1.InstallationPhase, error) {
+				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst)
+				if err != nil {
+					return "", err
+				}
+				return subinst.Status.InstallationPhase, nil
+			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhaseSucceeded), "subinstallation should be in phase '%s'", lsv1alpha1.InstallationPhaseSucceeded)
 
 			labels := map[string]string{
 				lsv1alpha1.DataObjectSourceTypeLabel: "export",
@@ -228,64 +185,6 @@ func ImportExportTests(f *framework.Framework) {
 			tlImport = &lsv1alpha1.TargetList{}
 			utils.ExpectNoError(f.Client.List(ctx, tlImport, client.InNamespace(state.Namespace), client.MatchingLabels(labels)))
 			Expect(tlImport.Items).To(HaveLen(0))
-
-			// component descriptor imports
-			// exporting component descriptors is not possible and checking for in-cluster objects doesn't work either
-			// therefore the imports are rendered into the deploy item config
-			By("fetch deploy item provider status")
-			// fetch execution
-			exec := &lsv1alpha1.Execution{}
-			utils.ExpectNoError(f.Client.Get(ctx, subinst.Status.ExecutionReference.NamespacedName(), exec))
-			// there should be exactly one deploy item
-			Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
-			Expect(exec.Status.DeployItemReferences[0].Name).To(BeEquivalentTo("submain-import"))
-			di := &lsv1alpha1.DeployItem{}
-			utils.ExpectNoError(f.Client.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), di))
-			// extract provider configuration from deploy item
-			conf := &mockv1alpha1.ProviderConfiguration{}
-			utils.ExpectNoError(json.Unmarshal(di.Spec.Configuration.Raw, conf))
-			// extract ProviderStatus field from configuration
-			providerStatusDef := map[string]json.RawMessage{}
-			utils.ExpectNoError(json.Unmarshal(conf.ProviderStatus.Raw, &providerStatusDef))
-
-			By("verify component descriptor imports")
-			// provider status should contain component descriptor imports
-			//  secret ref
-			cdImportBySecretRaw, ok := providerStatusDef["cdImportBySecretRef"]
-			Expect(ok).To(BeTrue(), "cdImportBySecretRef not found in provider status definition")
-			cdImportBySecret := &cdv2.ComponentDescriptor{}
-			utils.ExpectNoError(json.Unmarshal(cdImportBySecretRaw, cdImportBySecret))
-			Expect(cdImportBySecret).To(Equal(secretCD))
-			//  configmap ref
-			cdImportByConfigMapRaw, ok := providerStatusDef["cdImportByConfigMapRef"]
-			Expect(ok).To(BeTrue(), "cdImportByConfigMapRef not found in provider status definition")
-			cdImportByConfigMap := &cdv2.ComponentDescriptor{}
-			utils.ExpectNoError(json.Unmarshal(cdImportByConfigMapRaw, cdImportByConfigMap))
-			Expect(cdImportByConfigMap).To(Equal(cmCD))
-
-			By("verify component descriptor list imports")
-			//  cd list import by referencing multiple cd imports
-			cdListImportByCdRefsRaw, ok := providerStatusDef["cdListImportByCdRefs"]
-			Expect(ok).To(BeTrue(), "cdListImportByCdRefs not found in provider status definition")
-			cdListImportByCdRefs := &cdv2.ComponentDescriptorList{}
-			utils.ExpectNoError(json.Unmarshal(cdListImportByCdRefsRaw, cdListImportByCdRefs))
-			Expect(cdListImportByCdRefs.Components).To(HaveLen(2))
-			Expect(cdListImportByCdRefs.Components).To(ContainElement(*secretCD))
-			Expect(cdListImportByCdRefs.Components).To(ContainElement(*cmCD))
-			//  cd list import by referencing a cd list import
-			cdListImportByListRefRaw, ok := providerStatusDef["cdListImportByListRef"]
-			Expect(ok).To(BeTrue(), "cdListImportByListRef not found in provider status definition")
-			cdListImportByListRef := &cdv2.ComponentDescriptorList{}
-			utils.ExpectNoError(json.Unmarshal(cdListImportByListRefRaw, cdListImportByListRef))
-			Expect(cdListImportByListRef.Components).To(HaveLen(2))
-			Expect(cdListImportByListRef.Components).To(ContainElement(*secretCD))
-			Expect(cdListImportByListRef.Components).To(ContainElement(*cmCD))
-			// empty cd list import
-			emptyCdListImportRaw, ok := providerStatusDef["emptyCdListImport"]
-			Expect(ok).To(BeTrue(), "emptyCdListImport not found in provider status definition")
-			emptyCdListImport := &cdv2.ComponentDescriptorList{}
-			utils.ExpectNoError(json.Unmarshal(emptyCdListImportRaw, emptyCdListImport))
-			Expect(emptyCdListImport.Components).To(HaveLen(0))
 		})
 	})
 }

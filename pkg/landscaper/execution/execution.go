@@ -84,7 +84,7 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 					return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 				}
 
-				di.Status.JobID = o.exec.Status.JobID
+				di.Status.SetJobID(o.exec.Status.JobID)
 				now := metav1.Now()
 				di.Status.JobIDGenerationTime = &now
 				if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
@@ -112,7 +112,7 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 				return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 			}
 
-			di.Status.JobID = o.exec.Status.JobID
+			di.Status.SetJobID(o.exec.Status.JobID)
 			now := metav1.Now()
 			di.Status.JobIDGenerationTime = &now
 			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000089, di); err != nil {
@@ -157,7 +157,7 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 				return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 			}
 
-			di.Status.JobID = o.exec.Status.JobID
+			di.Status.SetJobID(o.exec.Status.JobID)
 			now := metav1.Now()
 			di.Status.JobIDGenerationTime = &now
 			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
@@ -182,10 +182,9 @@ func (o *Operation) getDeployItems(ctx context.Context) ([]*executionItem, []lsv
 }
 
 // UpdateStatus updates the status of a execution
-func (o *Operation) UpdateStatus(ctx context.Context, phase lsv1alpha1.ExecutionPhase, updatedConditions ...lsv1alpha1.Condition) error {
+func (o *Operation) UpdateStatus(ctx context.Context, updatedConditions ...lsv1alpha1.Condition) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
-	o.exec.Status.Phase = phase
 	o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions, updatedConditions...)
 	if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000032, o.exec); err != nil {
 		logger.Error(err, "unable to set installation status")
@@ -220,5 +219,5 @@ func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values in
 		Name:      raw.Name,
 		Namespace: raw.Namespace,
 	}
-	return o.UpdateStatus(ctx, o.exec.Status.Phase)
+	return o.UpdateStatus(ctx)
 }

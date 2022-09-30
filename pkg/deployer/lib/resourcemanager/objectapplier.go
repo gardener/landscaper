@@ -228,7 +228,7 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 
 	// if fallback policy is set and the resource is already managed by another deployer
 	// we are not allowed to manage that resource
-	if manifest.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
+	if manifest.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(&currObj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
 		logger.Info("Resource is already managed, skip update", lc.KeyResource, key.String())
 		return nil, nil
 	}
@@ -294,12 +294,20 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 		}
 		ref := mr.Resource
 		obj := kutil.ObjectFromCoreObjectReference(&ref)
-		if err := a.kubeClient.Get(ctx, kutil.ObjectKey(ref.Name, ref.Namespace), obj); err != nil {
+		key := kutil.ObjectKey(ref.Name, ref.Namespace)
+		if err := a.kubeClient.Get(ctx, key, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger2.Debug("Object not found")
 				continue
 			}
 			return fmt.Errorf("unable to get object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
+		}
+
+		// if fallback policy is set and the resource is already managed by another deployer
+		// we are not allowed to manage that resource
+		if mr.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
+			logger.Info("Resource is already managed, skip cleanup", lc.KeyResource, key.String())
+			continue
 		}
 
 		if !containsObjectRef(ref, a.managedResources) {

@@ -89,14 +89,6 @@ imports:
   # required: true # defaults to true
   type: targetList # this is a targetlist import
   targetType: landscaper.gardener.cloud/kubernetes-cluster
-# Import a component descriptor
-- name: my-cd-import-key
-  # required: true # defaults to true
-  type: componentDescriptor # this is a component descriptor import
-# Import a component descriptor list
-- name: my-cdlist-import-key
-  # required: true # defaults to true
-  type: componentDescriptorList # this is a component descriptor list import
 
 # exports defines all values that are produced by the blueprint
 # and that are exported.
@@ -868,10 +860,7 @@ The installation specification (although technically called `InstallationTemplat
 templated by a template processor but used by the _Landscaper_ to generate a final _Installation_ object)
 has the following format:
 
-The installation specification is basically a plain installation with some limitations:
-- Using [component descriptor imports](#component-descriptor-imports-in-nested-installations)
-
-Besides those limitations a specification will still be processed by the landscaper
+A specification will still be processed by the landscaper
 before putting it as regular installations into the landscaper data plane:
 - it handles the scopes
 - it maps the usage of directly used parent imports
@@ -986,44 +975,4 @@ subinstallations:
     targets:
     - name: "also-my-foo-targets"
       targetListRef: "my-foo-targets"
-```
-
-#### Component Descriptor Imports in Nested Installations
-
-Only root installations can directly reference component descriptors in their
-imports. In nested installations, it is only possible to reference a component
-descriptor which has already been imported by the parent. Therefore, only the
-fields `dataRef` and `list` are allowed in component descriptor imports in nested
-installations.
-With `dataRef`, a single component descriptor or a list of component descriptors
-imported by the parent can be referenced.
-The `list` field can be used to build a new component descriptor list import, in
-the same way it is used in regular installations. The only difference is that all
-list entries can only use `dataRef` to reference a component descriptor.
-
-```yaml
-imports:
-  componentDescriptors:
-  - name: "my-single-cd"
-    secretRef: ... # single component descriptor import
-  - name: "my-other-single-cd"
-    secretRef: ... # single component descriptor import
-  - name: "my-cd-list"
-    list: # component descriptor list import
-    - secretRef: ...
-    - configMapRef: ...
-subinstallations:
-- apiVersion: landscaper.gardener.cloud/v1alpha1
-  kind: InstallationTemplate
-  name: mysubinst
-  imports:
-    componentDescriptors:
-    - name: "also-my-single-cd" # single component descriptor reference
-      dataRef: "my-single-cd"
-    - name: "also-my-cd-list" # component descriptor list reference
-      dataRef: "my-cd-list"
-    - name: "new-cd-list" # a new component descriptor list import based on multiple single cd imports
-      list:
-      - dataRef: "my-single-cd"
-      - dataRef: "my-other-single-cd"
 ```

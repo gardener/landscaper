@@ -13,11 +13,12 @@ SPDX-License-Identifier: Apache-2.0
 package openapi
 
 import (
-	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	common "k8s.io/kube-openapi/pkg/common"
 	spec "k8s.io/kube-openapi/pkg/validation/spec"
+
+	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
@@ -83,11 +84,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition":                                schema_landscaper_apis_core_v1alpha1_BlueprintDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintStaticDataSource":                          schema_landscaper_apis_core_v1alpha1_BlueprintStaticDataSource(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintStaticDataValueFrom":                       schema_landscaper_apis_core_v1alpha1_BlueprintStaticDataValueFrom(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.CDImportStatus":                                     schema_landscaper_apis_core_v1alpha1_CDImportStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ClusterRestConfig":                                  schema_landscaper_apis_core_v1alpha1_ClusterRestConfig(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition":                      schema_landscaper_apis_core_v1alpha1_ComponentDescriptorDefinition(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorImport":                          schema_landscaper_apis_core_v1alpha1_ComponentDescriptorImport(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorImportData":                      schema_landscaper_apis_core_v1alpha1_ComponentDescriptorImportData(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference":                       schema_landscaper_apis_core_v1alpha1_ComponentDescriptorReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrite":                                 schema_landscaper_apis_core_v1alpha1_ComponentOverwrite(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwriteReference":                        schema_landscaper_apis_core_v1alpha1_ComponentOverwriteReference(ref),
@@ -3071,47 +3069,6 @@ func schema_landscaper_apis_core_v1alpha1_BlueprintStaticDataValueFrom(ref commo
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_CDImportStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "CDImportStatus is the import status of a component descriptor",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"componentDescriptorRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentDescriptorRef is a reference to a component descriptor",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"),
-						},
-					},
-					"secretRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SecretRef is the name of the secret.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"configMapRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigMapRef is the name of the imported configmap.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"sourceRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SourceRef is the reference to the installation from where the value is imported",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
-	}
-}
-
 func schema_landscaper_apis_core_v1alpha1_ClusterRestConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3203,107 +3160,6 @@ func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorDefinition(ref comm
 		},
 		Dependencies: []string{
 			"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"},
-	}
-}
-
-func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorImport(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name the internal name of the imported/exported component descriptor.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"ref": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Ref is a reference to a component descriptor in a registry. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"),
-						},
-					},
-					"secretRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SecretRef is a reference to a key in a secret in the cluster. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
-						},
-					},
-					"configMapRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigMapRef is a reference to a key in a config map in the cluster. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference"),
-						},
-					},
-					"list": {
-						SchemaProps: spec.SchemaProps{
-							Description: "List represents a list of component descriptor imports. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorImportData"),
-									},
-								},
-							},
-						},
-					},
-					"dataRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DataRef can be used to reference component descriptors imported by the parent installation. This field is used in subinstallation templates only, use one of the other fields instead for root installations.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"name"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorImportData", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference", "github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
-	}
-}
-
-func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorImportData(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"ref": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Ref is a reference to a component descriptor in a registry. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"),
-						},
-					},
-					"secretRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SecretRef is a reference to a key in a secret in the cluster. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
-						},
-					},
-					"configMapRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigMapRef is a reference to a key in a config map in the cluster. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference"),
-						},
-					},
-					"dataRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DataRef can be used to reference component descriptors imported by the parent installation. This field is used in subinstallation templates only, use one of the other fields instead for root installations.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference", "github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
 	}
 }
 
@@ -4137,6 +3993,25 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
 						},
 					},
+					"lastErrors": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ErrorHistory describes the last n errors that occurred since JobID was changed the last time.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
+									},
+								},
+							},
+						},
+					},
+					"firstError": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FirstError describes the first error that occurred since JobID was changed the last time.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
+						},
+					},
 					"lastReconcileTime": {
 						SchemaProps: spec.SchemaProps{
 							Description: "LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started",
@@ -4914,13 +4789,6 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref common.ReferenceCall
 							},
 						},
 					},
-					"reconcileID": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ReconcileID is used to update an execution even if its deploy items have not changed but their reconciliation should be triggered again.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 				},
 			},
 		},
@@ -5224,26 +5092,6 @@ func schema_landscaper_apis_core_v1alpha1_ImportStatus(ref common.ReferenceCallb
 							},
 						},
 					},
-					"componentDescriptorRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentDescriptorRef is a reference to a component descriptor",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"),
-						},
-					},
-					"componentDescriptorList": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentDescriptors is a list of import statuses for component descriptors",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.CDImportStatus"),
-									},
-								},
-							},
-						},
-					},
 					"dataRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DataRef is the name of the in-cluster data object.",
@@ -5283,7 +5131,7 @@ func schema_landscaper_apis_core_v1alpha1_ImportStatus(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.CDImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportStatus"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportStatus"},
 	}
 }
 
@@ -5437,25 +5285,11 @@ func schema_landscaper_apis_core_v1alpha1_InstallationImports(ref common.Referen
 							},
 						},
 					},
-					"componentDescriptors": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentDescriptors defines all component descriptor imports.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorImport"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorImport", "github.com/gardener/landscaper/apis/core/v1alpha1.DataImport", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImport"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.DataImport", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImport"},
 	}
 }
 

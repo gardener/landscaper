@@ -14,7 +14,7 @@ import (
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,43 +74,6 @@ var _ = Describe("Delete", func() {
 			}
 		})
 
-		It("should propagate the force deletion annotation to an execution in deletion state", func() {
-			if lsutils.IsNewReconcile() {
-				// force reconcile is not required by new reconcile strategy
-				return
-			}
-
-			ctx := context.Background()
-
-			var err error
-			state, err = testenv.InitResources(ctx, "./testdata/state/test3")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
-
-			inst := &lsv1alpha1.Installation{}
-			inst.Name = "root"
-			inst.Namespace = state.Namespace
-			testutils.ExpectNoError(testenv.Client.Delete(ctx, inst))
-			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
-
-			exec := &lsv1alpha1.Execution{}
-			exec.Name = "root"
-			exec.Namespace = state.Namespace
-			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
-			Expect(exec.DeletionTimestamp).ToNot(BeNil())
-
-			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			metav1.SetMetaDataAnnotation(&inst.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ForceReconcileOperation))
-			testutils.ExpectNoError(testenv.Client.Update(ctx, inst))
-			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
-
-			// execution should have the force reconcile annotation
-			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
-			ann, ok := exec.Annotations[lsv1alpha1.OperationAnnotation]
-			Expect(ok).To(BeTrue())
-			Expect(ann).To(Equal(string(lsv1alpha1.ForceReconcileOperation)))
-		})
-
 		It("should propagate the delete-without-uninstall annotation to an execution", func() {
 			ctx := context.Background()
 
@@ -128,34 +91,21 @@ var _ = Describe("Delete", func() {
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			testutils.ExpectNoError(testenv.Client.Delete(ctx, inst))
 
-			if lsutils.IsNewReconcile() {
-				testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
-				_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
 
-				testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-				Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleting)).To(BeTrue())
-				Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeFalse())
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleting)).To(BeTrue())
+			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeFalse())
 
-				exec := &lsv1alpha1.Execution{}
-				exec.Name = "root"
-				exec.Namespace = state.Namespace
-				testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
-				Expect(exec.DeletionTimestamp).ToNot(BeNil())
-				ann, ok := exec.Annotations[lsv1alpha1.DeleteWithoutUninstallAnnotation]
-				Expect(ok).To(BeTrue())
-				Expect(ann).To(Equal("true"))
-			} else {
-				testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
-
-				exec := &lsv1alpha1.Execution{}
-				exec.Name = "root"
-				exec.Namespace = state.Namespace
-				testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
-				Expect(exec.DeletionTimestamp).ToNot(BeNil())
-				ann, ok := exec.Annotations[lsv1alpha1.DeleteWithoutUninstallAnnotation]
-				Expect(ok).To(BeTrue())
-				Expect(ann).To(Equal("true"))
-			}
+			exec := &lsv1alpha1.Execution{}
+			exec.Name = "root"
+			exec.Namespace = state.Namespace
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
+			Expect(exec.DeletionTimestamp).ToNot(BeNil())
+			ann, ok := exec.Annotations[lsv1alpha1.DeleteWithoutUninstallAnnotation]
+			Expect(ok).To(BeTrue())
+			Expect(ann).To(Equal("true"))
 
 		})
 	})
@@ -202,11 +152,9 @@ var _ = Describe("Delete", func() {
 
 			inst := state.Installations[state.Namespace+"/a"]
 			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
-			if lsutils.IsNewReconcile() {
-				Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)).ToNot(HaveOccurred())
-				inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
-				Expect(testutils.UpdateJobIdForInstallation(ctx, testenv, inst)).ToNot(HaveOccurred())
-			}
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)).ToNot(HaveOccurred())
+			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			Expect(testutils.UpdateJobIdForInstallation(ctx, testenv, inst)).ToNot(HaveOccurred())
 
 			Eventually(func() error {
 				i := &lsv1alpha1.Installation{}
@@ -220,7 +168,7 @@ var _ = Describe("Delete", func() {
 					return fmt.Errorf("expected the reported error to be %q but got %q", installationsctl.SiblingImportError.Error(), i.Status.LastError.Message)
 				}
 				return nil
-			}, 20*time.Second, 2*time.Second).Should(Succeed(), "should error with a sibling import error")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "should error with a sibling import error")
 
 			instC := &lsv1alpha1.Installation{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "c", Namespace: state.Namespace}, instC)).ToNot(HaveOccurred())
@@ -249,11 +197,10 @@ var _ = Describe("Delete", func() {
 					return errors.New("no finalizers exist on the installation")
 				}
 				return nil
-			}, 20*time.Second, 2*time.Second).Should(Succeed(), "the installation should have been reconciled once")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "the installation should have been reconciled once")
 
 			// patch status to be failed
 			old := inst.DeepCopy()
-			inst.Status.Phase = lsv1alpha1.ComponentPhaseFailed
 			Expect(testenv.Client.Status().Patch(ctx, inst, client.MergeFrom(old)))
 			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
 
@@ -266,7 +213,7 @@ var _ = Describe("Delete", func() {
 					return err
 				}
 				return errors.New("installation still exist")
-			}, 20*time.Second, 2*time.Second).Should(Succeed(), "the installation should be deleted")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "the installation should be deleted")
 		})
 	})
 

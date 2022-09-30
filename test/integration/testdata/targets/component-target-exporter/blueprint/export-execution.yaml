@@ -1,0 +1,9 @@
+exports:
+  target:
+    type: landscaper.gardener.cloud/kubernetes-cluster
+    annotations:
+      key1: value1
+    labels:
+      key2: value2
+    config:
+      kubeconfig: {{ .imports.kubeconfig }}

@@ -26,7 +26,9 @@ const (
 // 15:
 // 16:     name: test
 // 17:     namespace: {{ .imports.namaspace }}
-//                              ˆ≈≈≈≈≈≈≈
+//
+//	ˆ≈≈≈≈≈≈≈
+//
 // 18:
 // 19:     exportsFromManifests:
 // 20:     - key: ingressClass

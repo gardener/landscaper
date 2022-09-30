@@ -7,10 +7,9 @@ package execution
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"time"
 
-	corev1 "k8s.io/api/core/v1"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,10 +24,8 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -50,14 +47,6 @@ type controller struct {
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	if !utils.IsNewReconcile() {
-		return c.reconcileOld(ctx, req)
-	} else {
-		return c.reconcileNew(ctx, req)
-	}
-}
-
-func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.log.StartReconcile(req)
 	ctx = logging.NewContext(ctx, logger)
 
@@ -119,6 +108,9 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseInit {
 		if err := c.handlePhaseInit(ctx, exec); err != nil {
+			if lsutil.IsRecoverableError(err) {
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000007)
+			}
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000131)
 		}
 
@@ -153,6 +145,9 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseCompleting {
 		if err := c.handlePhaseCompleting(ctx, exec); err != nil {
+			if lsutil.IsRecoverableError(err) {
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000008)
+			}
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000138)
 		}
 
@@ -165,6 +160,9 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseInitDelete {
 		if err := c.handlePhaseInitDelete(ctx, exec); err != nil {
+			if lsutil.IsRecoverableError(err) {
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000010)
+			}
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleteFailed, err, read_write_layer.W000140)
 		}
 
@@ -261,85 +259,6 @@ func (c *controller) handlePhaseDeleting(ctx context.Context, exec *lsv1alpha1.E
 	return o.TriggerDeployItemsForDelete(ctx)
 }
 
-func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.log.StartReconcile(req)
-	ctx = logging.NewContext(ctx, logger)
-
-	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, c.client, req.NamespacedName, exec); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Info(err.Error())
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
-	}
-
-	// don't reconcile if ignore annotation is set and execution is not currently running
-	if lsv1alpha1helper.HasIgnoreAnnotation(exec.ObjectMeta) && lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
-		logger.Debug("skipping reconcile due to ignore annotation")
-		return reconcile.Result{}, nil
-	}
-
-	oldExec := exec.DeepCopy()
-
-	lsError := c.Ensure(ctx, exec)
-
-	lsErr2 := c.removeForceReconcileAnnotation(ctx, exec)
-	if lsError == nil {
-		// lsError is more important than lsErr2
-		lsError = lsErr2
-	}
-
-	isDelete := !exec.DeletionTimestamp.IsZero()
-	return reconcile.Result{}, handleError(ctx, lsError, c.client, c.eventRecorder, oldExec, exec, isDelete)
-}
-
-func (c *controller) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
-	if err := HandleAnnotationsAndGeneration(ctx, c.client, exec); err != nil {
-		return err
-	}
-
-	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
-		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
-		if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000025, exec); err != nil {
-			return lserrors.NewError("Reconcile", "AddFinalizer", err.Error())
-		}
-	}
-
-	forceReconcile := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-	op := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec,
-		forceReconcile)
-
-	if !exec.DeletionTimestamp.IsZero() {
-		return op.Delete(ctx)
-	}
-
-	if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
-		err := op.HandleDeployItemPhaseAndGenerationChanges(ctx)
-		if err != nil {
-			return lserrors.NewWrappedError(err, "Reconcile", "HandleDeployItemPhaseAndGenerationChanges", err.Error())
-		}
-		if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
-			return nil
-		}
-	}
-
-	return op.Reconcile(ctx)
-}
-
-func (c *controller) removeForceReconcileAnnotation(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
-	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		old := exec.DeepCopy()
-		delete(exec.Annotations, lsv1alpha1.OperationAnnotation)
-		writer := read_write_layer.NewWriter(c.client)
-		if err := writer.PatchExecution(ctx, read_write_layer.W000029, exec, old); err != nil {
-			c.eventRecorder.Event(exec, corev1.EventTypeWarning, "RemoveForceReconcileAnnotation", err.Error())
-			return lserrors.NewWrappedError(err, "Reconcile", "RemoveForceReconcileAnnotation", err.Error())
-		}
-	}
-	return nil
-}
-
 func (c *controller) Writer() *read_write_layer.Writer {
 	return read_write_layer.NewWriter(c.client)
 }
@@ -364,14 +283,14 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 		item := &managedItems[i]
 
 		if item.Status.JobIDFinished != exec.Status.JobID {
-			item.Status.JobID = exec.Status.JobID
+			item.Status.SetJobID(exec.Status.JobID)
 			item.Status.JobIDFinished = exec.Status.JobID
 			item.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
 			item.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-			item.Status.LastError = lserrors.UpdatedError(item.Status.LastError,
+			lsutil.SetLastError(&item.Status, lserrors.UpdatedError(item.Status.GetLastError(),
 				"InterruptOperation",
 				"InterruptOperation",
-				"operation was interrupted")
+				"operation was interrupted"))
 
 			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000101, item); err != nil {
 				return lserrors.NewWrappedError(err, "UpdateDeployItemStatus",
@@ -421,95 +340,4 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 	}
 
 	return lsErr
-}
-
-// HandleAnnotationsAndGeneration is meant to be called at the beginning of the reconcile loop.
-// If a reconcile is needed due to the reconcile annotation or a change in the generation, it will set the phase to Init and remove the reconcile annotation.
-// Returns: an error, if updating the execution failed, nil otherwise
-func HandleAnnotationsAndGeneration(ctx context.Context, c client.Client, exec *lsv1alpha1.Execution) lserrors.LsError {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
-	operation := "HandleAnnotationsAndGeneration"
-	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ReconcileOperation)
-	hasForceReconcileAnnotation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-	if hasReconcileAnnotation || hasForceReconcileAnnotation || exec.Status.ObservedGeneration != exec.Generation {
-		// reconcile necessary due to one of
-		// - reconcile annotation
-		// - force-reconcile annotation
-		// - outdated generation
-		opAnn := lsv1alpha1helper.GetOperation(exec.ObjectMeta)
-		logger.Debug("reconcile required, setting observed generation and phase",
-			lc.KeyOperation, opAnn,
-			lc.KeyObservedGeneration, exec.Status.ObservedGeneration,
-			lc.KeyGeneration, exec.Generation)
-		exec.Status.ObservedGeneration = exec.Generation
-		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-
-		logger.Debug("updating status")
-		writer := read_write_layer.NewWriter(c)
-		if err := writer.UpdateExecutionStatus(ctx, read_write_layer.W000033, exec); err != nil {
-			return lserrors.NewWrappedError(err, operation, "update execution status", err.Error())
-		}
-		logger.Debug("successfully updated status")
-	}
-	if hasReconcileAnnotation {
-		logger.Debug("removing reconcile annotation")
-		delete(exec.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-		logger.Debug("updating metadata")
-		writer := read_write_layer.NewWriter(c)
-		if err := writer.UpdateExecution(ctx, read_write_layer.W000027, exec); err != nil {
-			return lserrors.NewWrappedError(err, operation, "update execution", err.Error())
-		}
-		logger.Debug("successfully updated metadata")
-	}
-
-	return nil
-}
-
-func handleError(ctx context.Context, err lserrors.LsError, c client.Client,
-	eventRecorder record.EventRecorder, oldExec, exec *lsv1alpha1.Execution, isDelete bool) error {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
-	// if successfully deleted we could not update the object
-	if isDelete && err == nil {
-		exec2 := &lsv1alpha1.Execution{}
-		if err2 := read_write_layer.GetExecution(ctx, c, kutil.ObjectKey(exec.Name, exec.Namespace), exec2); err2 != nil {
-			if apierrors.IsNotFound(err2) {
-				return nil
-			}
-		}
-	}
-
-	// There are two kind of errors: err != nil and exec.Status.LastError != nil
-	// If err != nil this error is set and returned such that a retry is initiated.
-	// If err == nil and exec.Status.LastError != nil another object must change its state and initiate a new event
-	// for the execution exec.
-	if err != nil {
-		logger.Error(err, "handleError")
-		exec.Status.LastError = lserrors.TryUpdateLsError(exec.Status.LastError, err)
-	}
-
-	exec.Status.Phase = lsv1alpha1.ExecutionPhase(lserrors.GetPhaseForLastError(
-		lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase),
-		exec.Status.LastError,
-		5*time.Minute),
-	)
-
-	if exec.Status.LastError != nil {
-		lastErr := exec.Status.LastError
-		eventRecorder.Event(exec, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
-	}
-
-	if !reflect.DeepEqual(oldExec.Status, exec.Status) {
-		writer := read_write_layer.NewWriter(c)
-		if updateErr := writer.UpdateExecutionStatus(ctx, read_write_layer.W000031, exec); updateErr != nil {
-			if apierrors.IsConflict(updateErr) { // reduce logging
-				logger.Debug(fmt.Sprintf("unable to update status: %s", updateErr.Error()))
-			} else {
-				logger.Error(updateErr, "unable to update status")
-			}
-			return updateErr
-		}
-	}
-	return err
 }

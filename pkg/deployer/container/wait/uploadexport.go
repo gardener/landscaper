@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +41,7 @@ func UploadExport(ctx context.Context, kubeClient client.Client, deployItemKey l
 		return fmt.Errorf("main container exists with %d", mainContainerStatus.State.Terminated.ExitCode)
 	}
 
-	exportData, err := ioutil.ReadFile(exportFilePath)
+	exportData, err := os.ReadFile(exportFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Info("No export config found. Skip upload.")

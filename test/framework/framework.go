@@ -11,10 +11,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
+
+	v1 "k8s.io/api/admissionregistration/v1"
 
 	utils2 "github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
@@ -24,7 +26,7 @@ import (
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -50,15 +52,16 @@ var (
 const OpenSourceRepositoryContext = "eu.gcr.io/gardener-project/development"
 
 type Options struct {
-	fs                   *flag.FlagSet
-	KubeconfigPath       string
-	RootPath             string
-	LsNamespace          string
-	LsVersion            string
-	DockerConfigPath     string
-	DisableCleanup       bool
-	RunOnShoot           bool
-	DisableCleanupBefore bool
+	fs                             *flag.FlagSet
+	KubeconfigPath                 string
+	RootPath                       string
+	LsNamespace                    string
+	LsVersion                      string
+	DockerConfigPath               string
+	DisableCleanup                 bool
+	RunOnShoot                     bool
+	DisableCleanupBefore           bool
+	SkipWaitingForSystemComponents bool
 }
 
 // AddFlags registers the framework related flags
@@ -75,6 +78,7 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&o.DisableCleanup, "disable-cleanup", false, "skips the cleanup of resources.")
 	fs.BoolVar(&o.RunOnShoot, "ls-run-on-shoot", false, "runs on a shoot and not a k3s cluster")
 	fs.BoolVar(&o.DisableCleanupBefore, "ls-disable-cleanup-before", false, "disables cleanup of all namespaces with prefix `test` before the tests are started")
+	fs.BoolVar(&o.SkipWaitingForSystemComponents, "skip-waiting-for-system-components", false, "disables checking whether landscaper and the deployers are running in the cluster")
 	o.fs = fs
 }
 
@@ -160,7 +164,7 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 	}
 
 	if len(cfg.DockerConfigPath) != 0 {
-		data, err := ioutil.ReadFile(cfg.DockerConfigPath)
+		data, err := os.ReadFile(cfg.DockerConfigPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read docker config file: %w", err)
 		}
@@ -283,7 +287,7 @@ func (f *Framework) Register() *State {
 	})
 
 	ginkgo.AfterEach(func() {
-		f.TestsFailed = f.TestsFailed || ginkgo.CurrentGinkgoTestDescription().Failed
+		f.TestsFailed = f.TestsFailed || ginkgo.CurrentSpecReport().Failed()
 		ctx := context.Background()
 		defer ctx.Done()
 		dumper := state.dumper
@@ -291,11 +295,11 @@ func (f *Framework) Register() *State {
 
 		// dump before cleanup if the test failed
 		f.Log().Logln("Check if test failed...")
-		if ginkgo.CurrentGinkgoTestDescription().Failed {
+		if ginkgo.CurrentSpecReport().Failed() {
 			utils.ExpectNoError(dumper.Dump(ctx))
 		}
 
-		if !ginkgo.CurrentGinkgoTestDescription().Failed {
+		if !ginkgo.CurrentSpecReport().Failed() {
 			if err := state.cleanup(ctx); err != nil {
 				{
 					// try to dump
@@ -410,6 +414,26 @@ func (f *Framework) prepareNextTest(ctx context.Context, namespace string) error
 		err = f.Client.Delete(ctx, &ingressClass)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return err
+		}
+	}
+
+	f.Log().Logln("Cleanup ValidatingWebhookConfigurations")
+	hookList := &v1.ValidatingWebhookConfigurationList{}
+	if err := f.Client.List(ctx, hookList); err != nil {
+		return err
+	}
+
+	for i := range hookList.Items {
+		hook := &hookList.Items[i]
+		ann := hook.GetAnnotations()
+		if len(ann) > 0 {
+			releaseNamespace, ok := ann["meta.helm.sh/release-namespace"]
+			if ok && strings.HasPrefix(releaseNamespace, "tests-") {
+				f.Log().Logfln("Delete ValidatingWebhookConfiguration %s", hook.Name)
+				if err := f.Client.Delete(ctx, hook); err != nil {
+					return err
+				}
+			}
 		}
 	}
 

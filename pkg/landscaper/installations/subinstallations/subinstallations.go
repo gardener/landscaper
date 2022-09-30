@@ -9,6 +9,10 @@ import (
 	"fmt"
 	"reflect"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/gardener/landscaper/pkg/utils/dependencies"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -34,7 +38,7 @@ import (
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.
 func (o *Operation) Ensure(ctx context.Context) error {
 	var (
-		inst = o.Inst.Info
+		inst = o.Inst.GetInstallation()
 		cond = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 	)
 
@@ -43,23 +47,6 @@ func (o *Operation) Ensure(ctx context.Context) error {
 	subInstallations, err := o.GetSubInstallations(ctx, inst)
 	if err != nil {
 		return err
-	}
-
-	// need to check if we are allowed to update the subinstallation
-	// - we are not allowed if any subresource is in deletion
-	// - we are not allowed to update if any subinstallation is progressing
-	for _, subInstallation := range subInstallations {
-		if subInstallation.DeletionTimestamp != nil {
-			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-			err := fmt.Errorf("not eligible for update due to deletion of subinstallation %s", subInstallation.Name)
-			return o.NewError(err, "DeletingSubInstallation", err.Error())
-		}
-
-		if subInstallation.Status.Phase == lsv1alpha1.ComponentPhaseProgressing {
-			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-			err = fmt.Errorf("not eligible for update due to running subinstallation %s", subInstallation.Name)
-			return o.NewError(err, "RunningSubinstallation", err.Error())
-		}
 	}
 
 	installationTmpl, err := o.getInstallationTemplates()
@@ -72,8 +59,8 @@ func (o *Operation) Ensure(ctx context.Context) error {
 		// remove imports based on optional and conditional imports which are not satisfied in the parent
 		imports := []lsv1alpha1.DataImport{}
 		for _, imp := range instT.Imports.Data {
-			_, ok := o.Inst.Imports[imp.DataRef]
-			if ok || !isOptionalParentImport(imp.DataRef, o.Inst.Blueprint.Info.Imports, false) {
+			_, ok := o.Inst.GetImports()[imp.DataRef]
+			if ok || !isOptionalParentImport(imp.DataRef, o.Inst.GetBlueprint().Info.Imports, false) {
 				imports = append(imports, imp)
 			}
 		}
@@ -85,49 +72,10 @@ func (o *Operation) Ensure(ctx context.Context) error {
 		return err
 	}
 
-	for _, instT := range installationTmpl {
-		// replace data references component descriptor imports with the corresponding parent import
-		// this will eventually lead to a 'direct' reference
-		// needs to happen after subinstallation template validation because the validation accepts only data references in subinstallation templates, which are replaced in this step
-		for i := range instT.Imports.ComponentDescriptors {
-			imp := &instT.Imports.ComponentDescriptors[i]
-			if len(imp.DataRef) != 0 {
-				cdimp, err := o.Inst.GetCDImport(imp.DataRef)
-				if err != nil {
-					return fmt.Errorf("unable to resolve data reference for component descriptor import '%s' in subinstallation: import '%s' not found in parent: %w", imp.Name, imp.DataRef, err)
-				}
-				// set import to that of the parent
-				imp.DataRef = cdimp.DataRef
-				imp.Ref = cdimp.Ref
-				imp.ConfigMapRef = cdimp.ConfigMapRef
-				imp.SecretRef = cdimp.SecretRef
-				imp.List = cdimp.List
-			} else if len(imp.List) != 0 {
-				for j := range imp.List {
-					limp := &imp.List[j]
-					if len(limp.DataRef) != 0 {
-						cdlimp, err := o.Inst.GetCDImport(limp.DataRef)
-						if err != nil {
-							return fmt.Errorf("unable to resolve data reference for component descriptor import '%s' at index %d in subinstallation: import '%s' not found in parent: %w", imp.Name, j, limp.DataRef, err)
-						}
-						// set import to that of the parent
-						limp.DataRef = cdlimp.DataRef
-						limp.Ref = cdlimp.Ref
-						limp.ConfigMapRef = cdlimp.ConfigMapRef
-						limp.SecretRef = cdlimp.SecretRef
-					}
-				}
-			}
-		}
-	}
-
 	// delete removed subreferences
-	deletionTriggered, err := o.cleanupOrphanedSubInstallations(ctx, subInstallations, installationTmpl)
+	_, err = o.cleanupOrphanedSubInstallations(ctx, subInstallations, installationTmpl)
 	if err != nil {
 		return err
-	}
-	if deletionTriggered {
-		return nil
 	}
 
 	if err := o.createOrUpdateSubinstallations(ctx, subInstallations, installationTmpl); err != nil {
@@ -136,13 +84,13 @@ func (o *Operation) Ensure(ctx context.Context) error {
 
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		"InstallationsInstalled", "All Installations are successfully installed")
-	return o.UpdateInstallationStatus(ctx, inst, inst.Status.Phase, cond)
+	return o.UpdateInstallationStatus(ctx, inst, cond)
 }
 
 // isOptionalParentImport returns true if the specified import data reference
 // - exists in the parents blueprint (= in the given import definition list) AND
 //   - is optional (required: false) OR
-//	 - is a conditional import
+//   - is a conditional import
 func isOptionalParentImport(impRef string, impDefs lsv1alpha1.ImportDefinitionList, isConditional bool) bool {
 	for _, imp := range impDefs {
 		if imp.Name == impRef {
@@ -179,7 +127,7 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 		name, ok := inst.Annotations[lsv1alpha1.SubinstallationNameAnnotation]
 		if !ok {
 			// todo: remove after some deprecation period.
-			name, ok = getSubinstallationNameByReference(o.Inst.Info.Status.InstallationReferences, inst.Namespace, inst.Name)
+			name, ok = getSubinstallationNameByReference(o.Inst.GetInstallation().Status.InstallationReferences, inst.Namespace, inst.Name)
 			if !ok {
 				err := fmt.Errorf("dangling installation found %s", inst.Name)
 				return nil, o.NewError(err, "DanglingSubinstallation", err.Error())
@@ -204,10 +152,10 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 	subInstallations map[string]*lsv1alpha1.Installation,
 	installationTmpl []*lsv1alpha1.InstallationTemplate) (bool, error) {
 
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(o.Inst.Info).String()})
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(o.Inst.GetInstallation()).String()})
 
 	var (
-		inst    = o.Inst.Info
+		inst    = o.Inst.GetInstallation()
 		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		deleted = false
 	)
@@ -219,11 +167,21 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 
 		// delete installation
 		logger.Info("delete orphaned installation", "name", subInst.Name)
+
+		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteIgnoreSuccessors, "true")
+
+		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000015, subInst); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+
+			return deleted, o.NewError(err, "UpdateInstallationDeleteIgnoreSuccessors", err.Error())
+		}
+
 		if err := o.Writer().DeleteInstallation(ctx, read_write_layer.W000021, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			inst.Status.Phase = lsv1alpha1.ComponentPhaseFailed
 			cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"InstallationNotDeleted", fmt.Sprintf("Sub Installation %s cannot be deleted", subInst.Name))
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
@@ -238,16 +196,16 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 // getInstallationTemplates returns all installation templates defined by the referenced blueprint.
 func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTemplate, error) {
 	var instTmpls []*lsv1alpha1.InstallationTemplate
-	if len(o.Inst.Blueprint.Info.SubinstallationExecutions) != 0 {
+	if len(o.Inst.GetBlueprint().Info.SubinstallationExecutions) != 0 {
 		templateStateHandler := template.KubernetesStateHandler{
 			KubeClient: o.Client(),
-			Inst:       o.Inst.Info,
+			Inst:       o.Inst.GetInstallation(),
 		}
 		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
-				o.Context().External.InjectComponentDescriptorRef(o.Inst.Info.DeepCopy()),
-				o.Inst.Blueprint,
+				o.Context().External.InjectComponentDescriptorRef(o.Inst.GetInstallation().DeepCopy()),
+				o.Inst.GetBlueprint(),
 				o.ComponentDescriptor,
 				o.ResolvedComponentDescriptorList,
 				o.Inst.GetImports())))
@@ -257,8 +215,8 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 		}
 		instTmpls = append(instTmpls, templatedTmpls...)
 	}
-	if len(o.Inst.Blueprint.Info.Subinstallations) != 0 {
-		defaultTemplates, err := o.Inst.Blueprint.GetSubinstallations()
+	if len(o.Inst.GetBlueprint().Info.Subinstallations) != 0 {
+		defaultTemplates, err := o.Inst.GetBlueprint().GetSubinstallations()
 		if err != nil {
 			return nil, fmt.Errorf("unable to get default subinstallation templates: %w", err)
 		}
@@ -275,15 +233,19 @@ func (o *Operation) createOrUpdateSubinstallations(ctx context.Context,
 		return nil
 	}
 
-	// order subinstallations according to their dependencies
-	orderedSubinstallationTemplates, err := OrderInstallationTemplates(installationTmpl)
-	if err != nil {
-		return fmt.Errorf("unable to compute order for subinstallations: %w", err)
+	if _, err := dependencies.CheckForCyclesAndDuplicateExports(installationTmpl, false); err != nil {
+		return err
 	}
 
-	for _, subInstTmpl := range orderedSubinstallationTemplates {
+	for _, subInstTmpl := range installationTmpl {
 		subInst := subInstallations[subInstTmpl.Name]
-		_, err := o.createOrUpdateNewInstallation(ctx, o.Inst.Info, subInstTmpl, subInst)
+		if subInst != nil && !subInst.ObjectMeta.DeletionTimestamp.IsZero() {
+			// if a subinstallation was deleted, the deletion failed and it should be created again
+			// in such a situation the subinstallation must be removed first
+			return fmt.Errorf("an installation %s should be created which is currently under deletion", subInst.Name)
+		}
+
+		_, err := o.createOrUpdateNewInstallation(ctx, o.Inst.GetInstallation(), subInstTmpl, subInst)
 		if err != nil {
 			err = fmt.Errorf("unable to create installation for %s: %w", subInstTmpl.Name, err)
 			return o.NewError(err, "CreateOrUpdateInstallation", err.Error())

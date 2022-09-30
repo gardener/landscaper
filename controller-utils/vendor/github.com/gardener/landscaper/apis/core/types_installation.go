@@ -10,9 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ComponentInstallationPhase is a string that contains the component's installation phase
-type ComponentInstallationPhase string
-
 // InstallationPhase is a string that contains the installation phase
 type InstallationPhase string
 
@@ -89,9 +86,6 @@ type InstallationSpec struct {
 
 // InstallationStatus contains the current status of a Installation.
 type InstallationStatus struct {
-	// Phase is the current phase of the installation.
-	Phase ComponentInstallationPhase `json:"-"`
-
 	// ObservedGeneration is the most recent generation observed for this ControllerInstallations.
 	// It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
 	ObservedGeneration int64 `json:"observedGeneration"`
@@ -137,10 +131,6 @@ type InstallationImports struct {
 	// Targets defines all target imports.
 	// +optional
 	Targets []TargetImport `json:"targets,omitempty"`
-
-	// ComponentDescriptors defines all component descriptor imports.
-	// +optional
-	ComponentDescriptors []ComponentDescriptorImport `json:"componentDescriptors,omitempty"`
 }
 
 // InstallationExports defines exports of data objects and targets.
@@ -216,58 +206,6 @@ type TargetExport struct {
 	// Target is the name of the in-cluster target object.
 	// +optional
 	Target string `json:"target,omitempty"`
-}
-
-type ComponentDescriptorImport struct {
-	// Name the internal name of the imported/exported component descriptor.
-	Name string `json:"name"`
-
-	// Ref is a reference to a component descriptor in a registry.
-	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
-	// +optional
-	Ref *ComponentDescriptorReference `json:"ref,omitempty"`
-
-	// SecretRef is a reference to a key in a secret in the cluster.
-	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
-	// +optional
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
-
-	// ConfigMapRef is a reference to a key in a config map in the cluster.
-	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
-	// +optional
-	ConfigMapRef *ConfigMapReference `json:"configMapRef,omitempty"`
-
-	// List represents a list of component descriptor imports.
-	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
-	// +optional
-	List []ComponentDescriptorImportData `json:"list,omitempty"`
-
-	// DataRef can be used to reference component descriptors imported by the parent installation.
-	// This field is used in subinstallation templates only, use one of the other fields instead for root installations.
-	// +optional
-	DataRef string `json:"dataRef,omitempty"`
-}
-
-type ComponentDescriptorImportData struct {
-	// Ref is a reference to a component descriptor in a registry.
-	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
-	// +optional
-	Ref *ComponentDescriptorReference `json:"ref,omitempty"`
-
-	// SecretRef is a reference to a key in a secret in the cluster.
-	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
-	// +optional
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
-
-	// ConfigMapRef is a reference to a key in a config map in the cluster.
-	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
-	// +optional
-	ConfigMapRef *ConfigMapReference `json:"configMapRef,omitempty"`
-
-	// DataRef can be used to reference component descriptors imported by the parent installation.
-	// This field is used in subinstallation templates only, use one of the other fields instead for root installations.
-	// +optional
-	DataRef string `json:"dataRef,omitempty"`
 }
 
 // BlueprintDefinition defines the blueprint that should be used for the installation.
@@ -366,10 +304,6 @@ const (
 	TargetImportStatusType ImportStatusType = "target"
 	// TargetListImportStatusType is an ImportStatusType for target lists
 	TargetListImportStatusType ImportStatusType = "targetList"
-	// CDImportStatusType is an ImportStatusType for component descriptors
-	CDImportStatusType ImportStatusType = "componentDescriptor"
-	// CDListImportStatusType is an ImportStatusType for component descriptor lists
-	CDListImportStatusType ImportStatusType = "componentDescriptorList"
 )
 
 // TargetImportStatus
@@ -380,21 +314,6 @@ type TargetImportStatus struct {
 	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
 	// ConfigGeneration is the generation of the imported value.
 	ConfigGeneration string `json:"configGeneration,omitempty"`
-}
-
-/// CDImportStatus is the import status of a component descriptor
-type CDImportStatus struct {
-	// ComponentDescriptorRef is a reference to a component descriptor
-	// +optional
-	ComponentDescriptorRef *ComponentDescriptorReference `json:"componentDescriptorRef,omitempty"`
-	// SecretRef is the name of the secret.
-	// +optional
-	SecretRef string `json:"secretRef,omitempty"`
-	// ConfigMapRef is the name of the imported configmap.
-	// +optional
-	ConfigMapRef string `json:"configMapRef,omitempty"`
-	// SourceRef is the reference to the installation from where the value is imported
-	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
 }
 
 // ImportStatus hold the state of a import.
@@ -411,12 +330,6 @@ type ImportStatus struct {
 	// TargetList is a list of import statuses for in-cluster target objects.
 	// +optional
 	Targets []TargetImportStatus `json:"targetList,omitempty"`
-	// ComponentDescriptorRef is a reference to a component descriptor
-	// +optional
-	ComponentDescriptorRef *ComponentDescriptorReference `json:"componentDescriptorRef,omitempty"`
-	// ComponentDescriptors is a list of import statuses for component descriptors
-	// +optional
-	ComponentDescriptors []CDImportStatus `json:"componentDescriptorList,omitempty"`
 	// DataRef is the name of the in-cluster data object.
 	// +optional
 	DataRef string `json:"dataRef,omitempty"`

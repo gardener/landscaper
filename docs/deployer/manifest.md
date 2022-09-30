@@ -59,10 +59,10 @@ spec:
         # a resource is uniquely defined by its GVK, namespace and name
         # required if no labelSelector is specified, can be combined with a labelSelector which is potentially harmful
         resourceSelector:
-          apiVersion: apps/v1
-          kind: Deployment
-          name: myDeployment
-          namespace: myNamespace
+          - apiVersion: apps/v1
+            kind: Deployment
+            name: myDeployment
+            namespace: myNamespace
         # multiple resources for the readiness check to be performed on can be selected through labels
         # they are identified by their GVK and a set of labels that all need to match
         # required if no resourceSelector is specified, can be combined with a resourceSelector which is potentially harmful
@@ -92,7 +92,7 @@ spec:
     deleteTimeout: 2m
 
     manifests: # list of kubernetes manifests
-    - policy: manage | fallback | ignore | keep
+    - policy: manage | fallback | ignore | keep | immutable
       manifest:
         apiVersion: v1
         kind: Secret

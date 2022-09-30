@@ -1,7 +1,7 @@
 package landscaper_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -45,17 +45,6 @@ var _ = Describe("Landscaper", func() {
 				Installation:        nil,
 				Blueprint:           GetBlueprint("./testdata/00-blueprint-with-targetlist/blueprint"),
 			}, GetImports("./testdata/00-blueprint-with-targetlist/values.yaml"))
-
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should render a blueprint that imports a component descriptor and a component descriptor list", func() {
-			renderer := lsutils.NewBlueprintRenderer(nil, nil, nil)
-			_, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
-				ComponentDescriptor: nil,
-				Installation:        nil,
-				Blueprint:           GetBlueprint("./testdata/01-blueprint-with-cdlist/blueprint"),
-			}, GetImports("./testdata/01-blueprint-with-cdlist/values.yaml"))
 
 			Expect(err).ToNot(HaveOccurred())
 		})

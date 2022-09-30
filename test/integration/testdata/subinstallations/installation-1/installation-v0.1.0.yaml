@@ -1,0 +1,40 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+
+spec:
+  blueprint:
+    ref:
+      resourceName: blueprint
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper/integration-tests/subinstallations
+      repositoryContext:
+        baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+        type: ociRegistry
+      version: v0.1.1
+
+  imports:
+    targets:
+      - name: cluster
+        target: my-cluster
+
+    data:
+      - name: namespace
+        dataRef: import-do-namespace
+      - name: configmapNameFirst
+        dataRef: import-do-name
+      - name: configmapDataFirst
+        dataRef: import-do-data
+
+  exports:
+    data:
+      - name: configmapNameLast
+        dataRef: export-do-name
+      - name: configmapDataLast
+        dataRef: export-do-data

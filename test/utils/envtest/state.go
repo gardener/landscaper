@@ -234,54 +234,20 @@ func (s *State) Create(ctx context.Context, obj client.Object, opts ...CreateOpt
 	return s.CreateWithClientAndRetries(ctx, s.Client, obj, opts...)
 }
 
-// UpdateWithClient creates or updates a kubernetes resource and adds it to the current state
-func (s *State) UpdateWithClientAndRetries(ctx context.Context, c client.Client, obj client.Object, opts ...CreateOption) error {
-	options := &CreateOptions{}
-	if err := options.ApplyOptions(opts...); err != nil {
-		return err
-	}
-	tmp := obj.DeepCopyObject().(client.Object)
-
+// Update a kubernetes resources
+func (s *State) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	for i := 0; i < 10; i++ {
-		err := c.Update(ctx, obj)
+		err := s.Client.Update(ctx, obj, opts...)
 		if err == nil {
 			break
 		} else if s.checkIfSporadicError(err) {
-			s.log.Logln("state UpdateWithClient-update failed but retried: " + err.Error())
+			s.log.Logln("state Update failed but retried: " + err.Error())
 			time.Sleep(5 * time.Second)
 		} else {
 			return err
 		}
 	}
-
-	tmp.SetName(obj.GetName())
-	tmp.SetNamespace(obj.GetNamespace())
-	tmp.SetResourceVersion(obj.GetResourceVersion())
-	tmp.SetGeneration(obj.GetGeneration())
-	tmp.SetUID(obj.GetUID())
-	tmp.SetCreationTimestamp(obj.GetCreationTimestamp())
-	if options.UpdateStatus {
-		if err := c.Status().Update(ctx, tmp); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return err
-			}
-
-			if strings.Contains(err.Error(), "connection refused") {
-				s.log.Logln("state UpdateWithClient-update failed but retried: " + err.Error())
-				if err := c.Status().Update(ctx, tmp); err != nil {
-					if !apierrors.IsNotFound(err) {
-						return err
-					}
-				}
-			}
-		}
-	}
-	return s.AddResources(tmp)
-}
-
-// Updte updates a kubernetes resources and adds it to the current state
-func (s *State) Update(ctx context.Context, obj client.Object, opts ...CreateOption) error {
-	return s.UpdateWithClientAndRetries(ctx, s.Client, obj, opts...)
+	return nil
 }
 
 // InitResourcesWithClient creates a new isolated environment with its own namespace.
@@ -560,7 +526,7 @@ func CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha
 	}
 
 	var innerErr error
-	if err := wait.PollImmediate(2*time.Second, 10*time.Second, func() (done bool, err error) {
+	if err := wait.PollImmediate(1*time.Second, 10*time.Second, func() (done bool, err error) {
 		innerErr = addReconcileAnnotation(ctx, c, obj)
 		return innerErr == nil, nil
 	}); err != nil {
@@ -666,9 +632,9 @@ func updateJobIdForDeployItem(ctx context.Context, c client.Client, obj *lsv1alp
 		return err
 	}
 
-	if obj != nil && obj.Status.JobID == obj.Status.JobIDFinished {
+	if obj != nil && obj.Status.GetJobID() == obj.Status.JobIDFinished {
 		time := v1.Now()
-		obj.Status.JobID = obj.Status.JobID + "-1"
+		obj.Status.SetJobID(obj.Status.GetJobID() + "-1")
 		obj.Status.JobIDGenerationTime = &time
 		if err := c.Status().Update(ctx, obj); err != nil {
 			if readError := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); apierrors.IsNotFound(readError) {
@@ -710,7 +676,7 @@ func WaitForObjectToBeDeleted(ctx context.Context, c client.Client, obj client.O
 		lastErr error
 		uObj    client.Object
 	)
-	err := wait.PollImmediate(2*time.Second, timeout, func() (done bool, err error) {
+	err := wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
 		uObj = obj.DeepCopyObject().(client.Object)
 		if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, uObj); err != nil {
 			if apierrors.IsNotFound(err) {

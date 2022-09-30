@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -65,7 +65,7 @@ func (o *CommonOptions) Complete() error {
 
 	if len(o.ID) == 0 {
 		// statefile should be defined as it is already checked by the calling function
-		data, err := ioutil.ReadFile(o.StateFile)
+		data, err := os.ReadFile(o.StateFile)
 		if err != nil {
 			return fmt.Errorf("unable to read state file %q: %w", o.StateFile, err)
 		}

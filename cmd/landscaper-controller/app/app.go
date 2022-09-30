@@ -7,7 +7,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -107,7 +106,7 @@ func (o *Options) run(ctx context.Context) error {
 
 	lsMgr := hostMgr
 	if len(o.landscaperKubeconfigPath) > 0 {
-		data, err := ioutil.ReadFile(o.landscaperKubeconfigPath)
+		data, err := os.ReadFile(o.landscaperKubeconfigPath)
 		if err != nil {
 			return fmt.Errorf("unable to read landscaper kubeconfig from %s: %w", o.landscaperKubeconfigPath, err)
 		}

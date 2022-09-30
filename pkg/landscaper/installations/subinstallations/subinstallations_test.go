@@ -7,7 +7,7 @@ package subinstallations_test
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -302,7 +302,6 @@ var _ = Describe("SubInstallation", func() {
 
 				err := fakeClient.Get(ctx, client.ObjectKeyFromObject(inst), inst)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(inst.Status.Conditions).To(BeNil())
 				Expect(inst.Status.InstallationReferences).To(HaveLen(1))
 
 				subinst := &lsv1alpha1.Installation{}

@@ -1,0 +1,30 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: dependencies-root
+  namespace: example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+
+spec:
+  blueprint:
+    ref:
+      resourceName: blueprint
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper/integration-tests/dependencies-conflict
+      repositoryContext:
+        baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+        type: ociRegistry
+      version: v0.1.0
+
+  imports:
+    targets:
+      - name: cluster
+        target: my-cluster
+
+  exports:
+    data:
+      - name: track
+        dataRef: export-do-track

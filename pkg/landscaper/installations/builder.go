@@ -23,7 +23,7 @@ import (
 type OperationBuilder struct {
 	lsoperation.Builder
 
-	inst                            *Installation
+	inst                            *InstallationImportsAndBlueprint
 	cd                              *cdv2.ComponentDescriptor
 	op                              *lsoperation.Operation
 	blobResolver                    ctf.BlobResolver
@@ -33,14 +33,14 @@ type OperationBuilder struct {
 }
 
 // NewOperationBuilder creates a new operation builder.
-func NewOperationBuilder(inst *Installation) *OperationBuilder {
+func NewOperationBuilder(inst *InstallationImportsAndBlueprint) *OperationBuilder {
 	return &OperationBuilder{
 		inst: inst,
 	}
 }
 
 // Installation sets an installation.
-func (b *OperationBuilder) Installation(inst *Installation) *OperationBuilder {
+func (b *OperationBuilder) Installation(inst *InstallationImportsAndBlueprint) *OperationBuilder {
 	b.inst = inst
 	return b
 }
@@ -142,7 +142,7 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 
 	if b.context == nil {
-		newCtx, err := GetInstallationContext(ctx, instOp.Client(), instOp.Inst.Info, instOp.Overwriter)
+		newCtx, err := GetInstallationContext(ctx, instOp.Client(), instOp.Inst.GetInstallation(), instOp.Overwriter)
 		if err != nil {
 			return nil, err
 		}

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -113,12 +113,13 @@ var _ = Describe("Template", func() {
 		Eventually(func() error {
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), di)).To(Succeed())
 			if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
-				(!lsutils.IsNewReconcile() || (di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed && di.Status.JobID == di.Status.JobIDFinished)) {
+				di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed &&
+				di.Status.GetJobID() == di.Status.JobIDFinished {
 				return nil
 			}
 			return fmt.Errorf("phase is %s but expected it to be failed", di.Status.Phase)
-		}, 10*time.Second, 2*time.Second).Should(Succeed())
-		Expect(di.Status.LastError).ToNot(BeNil())
-		Expect(di.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorConfigurationProblem))
+		}, 10*time.Second, 1*time.Second).Should(Succeed())
+		Expect(di.Status.GetLastError()).ToNot(BeNil())
+		Expect(di.Status.GetLastError().Codes).To(ContainElement(lsv1alpha1.ErrorConfigurationProblem))
 	})
 })

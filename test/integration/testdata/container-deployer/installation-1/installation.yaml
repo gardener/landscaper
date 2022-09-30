@@ -1,0 +1,54 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: container-1
+  namespace: example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+spec:
+  blueprint:
+    ref:
+      resourceName: blueprint
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper/integration-tests/container-deployer/container-1
+      repositoryContext:
+        baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+        type: ociRegistry
+      version: v0.1.0
+
+  imports:
+    targets:
+      - name: targetCluster
+        target: my-cluster
+
+    data:
+      - name: configmapName
+        dataRef: import-do-name
+
+      - name: configmapNamespace
+        dataRef: import-do-namespace
+
+      - name: configmapData
+        dataRef: import-do-data
+
+  importDataMappings:
+    configmap:
+      name: (( configmapName ))
+      namespace: (( configmapNamespace ))
+      data: (( configmapData ))
+
+  exports:
+    data:
+    - name: configMapData
+      dataRef: configmapdata
+
+    - name: component
+      dataRef: component
+
+    - name: content
+      dataRef: content
+
+    - name: state
+      dataRef: state

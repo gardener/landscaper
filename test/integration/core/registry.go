@@ -13,8 +13,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	commonutils "github.com/gardener/landscaper/pkg/utils"
-
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
@@ -23,7 +21,7 @@ import (
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -105,11 +103,7 @@ func RegistryTest(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, inst))
 
 			// wait for installation to finish
-			if commonutils.IsNewReconcile() {
-				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
-			} else {
-				utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
-			}
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
 
 			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)

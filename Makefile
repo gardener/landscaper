@@ -36,13 +36,13 @@ revendor:
 
 .PHONY: format
 format:
-	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/apis/config $(REPO_ROOT)/apis/core $(REPO_ROOT)/apis/deployer $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd $(REPO_ROOT)/hack $(REPO_ROOT)/controller-utils/pkg
+	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/apis/config $(REPO_ROOT)/apis/core $(REPO_ROOT)/apis/deployer $(REPO_ROOT)/apis/errors $(REPO_ROOT)/apis/mediatype $(REPO_ROOT)/apis/openapi $(REPO_ROOT)/apis/schema $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd $(REPO_ROOT)/hack $(REPO_ROOT)/controller-utils/pkg
 
 .PHONY: check
 check: format
 	@$(REPO_ROOT)/hack/check.sh --golangci-lint-config=./.golangci.yaml $(REPO_ROOT)/hack/testcluster/...
 	@$(REPO_ROOT)/hack/check.sh --golangci-lint-config=./.golangci.yaml $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
-	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/apis/config/... $(REPO_ROOT)/apis/core/... $(REPO_ROOT)/apis/deployer/...
+	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/apis/config/... $(REPO_ROOT)/apis/core/... $(REPO_ROOT)/apis/deployer/... $(REPO_ROOT)/apis/errors/... $(REPO_ROOT)/apis/mediatype/... $(REPO_ROOT)/apis/openapi/... $(REPO_ROOT)/apis/schema/...
 	@cd $(REPO_ROOT)/controller-utils && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/controller-utils/pkg/...
 
 .PHONY: setup-testenv
@@ -57,6 +57,10 @@ test: setup-testenv
 .PHONY: integration-test
 integration-test:
 	@$(REPO_ROOT)/.ci/local-integration-test $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION)
+
+.PHONY: integration-test-pure
+integration-test-pure:
+	@$(REPO_ROOT)/.ci/local-integration-test-pure $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION)
 
 .PHONY: integration-test-with-cluster-creation
 integration-test-with-cluster-creation:

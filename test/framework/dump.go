@@ -127,7 +127,7 @@ func (d *Dumper) dumpInstallationsInNamespace(ctx context.Context, namespace str
 // DumpInstallation dumps information about the installation
 func DumpInstallation(logger utils.Logger, inst *lsv1alpha1.Installation) error {
 	// do not dummp the full spec if the installation was successfull
-	if inst.Status.Phase == lsv1alpha1.ComponentPhaseSucceeded {
+	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded {
 		logger.Logf("--- Installation %s succeeded\n", inst.Name)
 		return nil
 	}
@@ -188,7 +188,7 @@ Status:
 
 	logger.Logf(fmtMsg,
 		deployItem.Status.Phase,
-		FormatLastError(deployItem.Status.LastError, "    "),
+		FormatLastError(deployItem.Status.GetLastError(), "    "),
 		FormatAsYAML(deployItem.Status.ProviderStatus, 4))
 	return nil
 }
@@ -209,7 +209,7 @@ func (d *Dumper) DumpExecutionInNamespace(ctx context.Context, namespace string)
 
 // DumpExecution dumps information about the execution
 func DumpExecution(logger utils.Logger, exec *lsv1alpha1.Execution) error {
-	if exec.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseSucceeded {
 		logger.Logf("--- Execution %s succeeded\n", exec.Name)
 		return nil
 	}

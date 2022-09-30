@@ -903,18 +903,6 @@ For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-conta
 Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>reconcileID</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>ReconcileID is used to update an execution even if its deploy items have not changed but their
-reconciliation should be triggered again.</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -1589,76 +1577,6 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.CDImportStatus">CDImportStatus
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>)
-</p>
-<p>
-<p>CDImportStatus is the import status of a component descriptor</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>componentDescriptorRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
-ComponentDescriptorReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentDescriptorRef is a reference to a component descriptor</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>secretRef</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>SecretRef is the name of the secret.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configMapRef</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ConfigMapRef is the name of the imported configmap.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>sourceRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-ObjectReference
-</a>
-</em>
-</td>
-<td>
-<p>SourceRef is the reference to the installation from where the value is imported</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ClusterRestConfig">ClusterRestConfig
 </h3>
 <p>
@@ -1768,184 +1686,6 @@ github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationImports">InstallationImports</a>)
-</p>
-<p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>name</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Name the internal name of the imported/exported component descriptor.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ref</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
-ComponentDescriptorReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Ref is a reference to a component descriptor in a registry.
-Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>secretRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>SecretRef is a reference to a key in a secret in the cluster.
-Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configMapRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ConfigMapReference">
-ConfigMapReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ConfigMapRef is a reference to a key in a config map in the cluster.
-Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>list</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">
-[]ComponentDescriptorImportData
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>List represents a list of component descriptor imports.
-Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>dataRef</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>DataRef can be used to reference component descriptors imported by the parent installation.
-This field is used in subinstallation templates only, use one of the other fields instead for root installations.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">ComponentDescriptorImportData
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport</a>)
-</p>
-<p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>ref</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
-ComponentDescriptorReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Ref is a reference to a component descriptor in a registry.
-Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>secretRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>SecretRef is a reference to a key in a secret in the cluster.
-Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configMapRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ConfigMapReference">
-ConfigMapReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ConfigMapRef is a reference to a key in a config map in the cluster.
-Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>dataRef</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>DataRef can be used to reference component descriptors imported by the parent installation.
-This field is used in subinstallation templates only, use one of the other fields instead for root installations.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentDescriptorKind">ComponentDescriptorKind
 (<code>string</code> alias)</p></h3>
 <p>
@@ -1956,11 +1696,7 @@ It can be a component or a resource.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.CDImportStatus">CDImportStatus</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">ComponentDescriptorDefinition</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">ComponentDescriptorImportData</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">ComponentDescriptorDefinition</a>)
 </p>
 <p>
 <p>ComponentDescriptorReference is the reference to a component descriptor.
@@ -2014,10 +1750,6 @@ string
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentInstallationPhase">ComponentInstallationPhase
 (<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
-</p>
 <p>
 </p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentOverwrite">ComponentOverwrite
@@ -2250,8 +1982,6 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">ComponentDescriptorImportData</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>)
 </p>
 <p>
@@ -2642,6 +2372,32 @@ Error
 </td>
 <td>
 <p>LastError describes the last error that occurred.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastErrors</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.*github.com/gardener/landscaper/apis/core/v1alpha1.Error">
+[]*github.com/gardener/landscaper/apis/core/v1alpha1.Error
+</a>
+</em>
+</td>
+<td>
+<p>ErrorHistory describes the last n errors that occurred since JobID was changed the last time.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>firstError</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Error">
+Error
+</a>
+</em>
+</td>
+<td>
+<p>FirstError describes the first error that occurred since JobID was changed the last time.</p>
 </td>
 </tr>
 <tr>
@@ -3320,8 +3076,7 @@ int64
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>)
 </p>
 <p>
 </p>
@@ -3384,18 +3139,6 @@ For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-conta
 Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>reconcileID</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>ReconcileID is used to update an execution even if its deploy items have not changed but their
-reconciliation should be triggered again.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus
@@ -3415,19 +3158,6 @@ reconciliation should be triggered again.</p>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>
-<code>-</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionPhase">
-ExecutionPhase
-</a>
-</em>
-</td>
-<td>
-<p>Phase is the current phase of the execution.</p>
-</td>
-</tr>
 <tr>
 <td>
 <code>observedGeneration</code></br>
@@ -3820,34 +3550,6 @@ string
 </tr>
 <tr>
 <td>
-<code>componentDescriptorRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
-ComponentDescriptorReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentDescriptorRef is a reference to a component descriptor</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>componentDescriptorList</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.CDImportStatus">
-[]CDImportStatus
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentDescriptors is a list of import statuses for component descriptors</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>dataRef</code></br>
 <em>
 string
@@ -4056,20 +3758,6 @@ AnyJSON
 <p>Targets defines all target imports.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>componentDescriptors</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">
-[]ComponentDescriptorImport
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentDescriptors defines all component descriptor imports.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.InstallationPhase">InstallationPhase
@@ -4234,19 +3922,6 @@ Example: namespace: (( blueprint.exports.namespace ))</p>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>
-<code>-</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentInstallationPhase">
-ComponentInstallationPhase
-</a>
-</em>
-</td>
-<td>
-<p>Phase is the current phase of the installation.</p>
-</td>
-</tr>
 <tr>
 <td>
 <code>observedGeneration</code></br>
@@ -4550,7 +4225,6 @@ ObjectReference
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.CDImportStatus">CDImportStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ConfigMapReference">ConfigMapReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
@@ -4781,8 +4455,6 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">ComponentDescriptorImportData</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef</a>)
 </p>

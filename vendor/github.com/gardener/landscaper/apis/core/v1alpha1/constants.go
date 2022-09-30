@@ -31,6 +31,10 @@ const (
 	// uninstalling the deployed artifacts
 	DeleteWithoutUninstallAnnotation = LandscaperDomain + "/delete-without-uninstall"
 
+	// DeleteIgnoreSuccessors is the annotation that specifies that an installation is deleted even if there
+	// are dependent installations.
+	DeleteIgnoreSuccessors = LandscaperDomain + "/delete-ignore-successors"
+
 	// ReconcileTimestampAnnotation is used to recognize timeouts in deployitems
 	ReconcileTimestampAnnotation = LandscaperDomain + "/reconcile-time"
 

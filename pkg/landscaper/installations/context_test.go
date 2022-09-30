@@ -18,7 +18,7 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -100,7 +100,7 @@ var _ = Describe("Context", func() {
 		Expect(lCtx.Parent).ToNot(BeNil())
 		Expect(lCtx.Siblings).To(HaveLen(3))
 
-		Expect(lCtx.Parent.Info.Name).To(Equal("root"))
+		Expect(lCtx.Parent.GetInstallation().Name).To(Equal("root"))
 	})
 
 	It("initialize root installations with default context", func() {
@@ -114,7 +114,7 @@ var _ = Describe("Context", func() {
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, &defaultRepoContext)
 		Expect(err).ToNot(HaveOccurred())
-		repoContextOfOtherRoot := instOp.Context().Siblings[0].Info.Spec.ComponentDescriptor.Reference.RepositoryContext
+		repoContextOfOtherRoot := instOp.Context().Siblings[0].GetInstallation().Spec.ComponentDescriptor.Reference.RepositoryContext
 		Expect(repoContextOfOtherRoot).ToNot(BeNil())
 	})
 

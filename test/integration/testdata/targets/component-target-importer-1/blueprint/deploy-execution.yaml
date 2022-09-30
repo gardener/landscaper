@@ -1,0 +1,28 @@
+deployItems:
+  - name: default
+    type: landscaper.gardener.cloud/kubernetes-manifest
+    target:
+      import: cluster
+
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: {{ .imports.name }}
+              namespace: {{ .imports.namespace }}
+            data:
+              {{ if .imports.target }}
+              {{ .imports.target.metadata.name }}: {{ .imports.target.spec.config.kubeconfig }}
+              {{ end }}
+              {{ if .imports.targets }}
+              {{ range $target := .imports.targets }}
+              {{ $target.metadata.name }}: {{ $target.spec.config.kubeconfig }}
+              {{ end }}
+              {{ end }}

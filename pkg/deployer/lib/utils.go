@@ -9,6 +9,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+
+	"k8s.io/client-go/tools/record"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
@@ -20,87 +28,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/api"
 
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
-
-// HandleAnnotationsAndGeneration is meant to be called at the beginning of a deployer's reconcile loop.
-// If a reconcile is needed due to the reconcile annotation or a change in the generation, it will set the phase to Init and remove the reconcile annotation.
-// It will also remove the timeout annotation if it is set.
-// Returns: an error, if updating the deployitem failed, nil otherwise
-func HandleAnnotationsAndGeneration(ctx context.Context,
-	kubeClient client.Client,
-	di *lsv1alpha1.DeployItem,
-	deployerInfo lsv1alpha1.DeployerInformation) error {
-	log, ctx := logging.FromContextOrNew(ctx, nil)
-	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ReconcileOperation)
-	hasForceReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-	if hasReconcileAnnotation || hasForceReconcileAnnotation || di.Status.ObservedGeneration != di.Generation {
-		// reconcile necessary due to one of
-		// - reconcile annotation
-		// - force-reconcile annotation
-		// - outdated generation
-		opAnn := lsv1alpha1helper.GetOperation(di.ObjectMeta)
-		log.Info("Reconcile required, setting observed generation, phase, and last change reconcile timestamp", lc.KeyOperationAnnotation, opAnn, lc.KeyObservedGeneration, di.Status.ObservedGeneration, lc.KeyGeneration, di.Generation)
-		if err := PrepareReconcile(ctx, kubeClient, di, deployerInfo); err != nil {
-			return err
-		}
-	}
-
-	if hasReconcileAnnotation {
-		log.Debug("Removing reconcile annotation")
-		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-		log.Debug("Updating metadata")
-		writer := read_write_layer.NewWriter(kubeClient)
-		if err := writer.UpdateDeployItem(ctx, read_write_layer.W000046, di); err != nil {
-			return err
-		}
-		log.Debug("Successfully updated metadata")
-	}
-
-	return nil
-}
-
-// PrepareReconcile prepares a reconcile by setting the status of the deploy item accordingly.
-// It updates ObservedGeneration, LastReconcileTime, and sets the Phase to 'Init'.
-func PrepareReconcile(ctx context.Context, kubeClient client.Client, di *lsv1alpha1.DeployItem, deployerInfo lsv1alpha1.DeployerInformation) error {
-	log, ctx := logging.FromContextOrNew(ctx, nil)
-	di.Status.ObservedGeneration = di.Generation
-	di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-	now := metav1.Now()
-	di.Status.LastReconcileTime = &now
-	if di.Status.Deployer.Identity != deployerInfo.Identity {
-		log.Debug("Updating deployer identity")
-		di.Status.Deployer = deployerInfo
-	}
-
-	log.Debug("Updating status")
-	writer := read_write_layer.NewWriter(kubeClient)
-	if err := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, di); err != nil {
-		return err
-	}
-	log.Debug("Successfully updated status")
-	return nil
-}
-
-// ShouldReconcile returns true if the given deploy item should be reconciled
-func ShouldReconcile(di *lsv1alpha1.DeployItem) bool {
-	if di.Status.Phase == lsv1alpha1.ExecutionPhaseInit || di.Status.Phase == lsv1alpha1.ExecutionPhaseProgressing || di.Status.Phase == lsv1alpha1.ExecutionPhaseDeleting {
-		return true
-	}
-
-	return false
-}
 
 // GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
 // If the config defines the target from a secret that secret is read from all provided clients.
@@ -206,4 +139,55 @@ func GetRegistryPullSecretsFromContext(lsCtx *lsv1alpha1.Context) []lsv1alpha1.O
 		}
 	}
 	return refs
+}
+
+func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem,
+	lsClient client.Client, lsEventRecorder record.EventRecorder) error {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	lsutil.SetLastError(&deployItem.Status, lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))
+
+	if deployItem.Status.GetLastError() != nil {
+		if lserrors.ContainsAnyErrorCode(deployItem.Status.GetLastError().Codes, lsv1alpha1.UnrecoverableErrorCodes) {
+			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		}
+
+		lastErr := deployItem.Status.GetLastError()
+		lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+	}
+
+	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
+	} else if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
+		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseSucceeded
+	}
+
+	if deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
+		deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
+		deployItem.Status.JobIDFinished = deployItem.Status.GetJobID()
+	}
+
+	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {
+		if err2 := read_write_layer.NewWriter(lsClient).UpdateDeployItemStatus(ctx, read_write_layer.W000092, deployItem); err2 != nil {
+			if !deployItem.DeletionTimestamp.IsZero() {
+				// recheck if already deleted
+				diRecheck := &lsv1alpha1.DeployItem{}
+				errRecheck := read_write_layer.GetDeployItem(ctx, lsClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), diRecheck)
+				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
+					return nil
+				}
+			}
+
+			if apierrors.IsConflict(err2) { // reduce logging
+				logger.Debug("Unable to update status", lc.KeyError, err2.Error())
+			} else {
+				logger.Error(err2, "Unable to update status")
+			}
+			if err == nil {
+				return err2
+			}
+		}
+	}
+
+	return err
 }

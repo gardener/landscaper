@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,7 +35,7 @@ var _ = Describe("DeployItemExecutions", func() {
 		fakeCompRepo      ctf.ComponentResolver
 	)
 
-	Load := func(inst string) (context.Context, *installations.Installation) {
+	Load := func(inst string) (context.Context, *installations.InstallationImportsAndBlueprint) {
 		ctx := context.Background()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations[inst])
 		Expect(err).ToNot(HaveOccurred())
@@ -44,9 +44,8 @@ var _ = Describe("DeployItemExecutions", func() {
 
 		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 		Expect(err).ToNot(HaveOccurred())
-		imps, err := rh.GetImports()
+		imps, err := rh.ImportsSatisfied()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(rh.ImportsSatisfied()).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, imps)).To(Succeed())
 		return ctx, inInstRoot

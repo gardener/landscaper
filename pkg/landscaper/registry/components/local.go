@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -331,7 +330,7 @@ func (res *BaseFilesystemBlobResolver) ResolveFromFs(blobpath string) (*ctf.Blob
 			MediaType: "",
 			Digest:    digest.FromBytes(data.Bytes()).String(),
 			Size:      int64(data.Len()),
-		}, ioutil.NopCloser(&data), nil
+		}, io.NopCloser(&data), nil
 	}
 	file, err := res.fs.Open(blobpath)
 	if err != nil {

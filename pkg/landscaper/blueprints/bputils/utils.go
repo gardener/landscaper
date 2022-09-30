@@ -7,7 +7,7 @@ package bputils
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -73,7 +73,7 @@ func BuildNewBlueprintConfig(cache cache.Cache, fs vfs.FileSystem, path string) 
 		Size:      int64(len(data)),
 	}
 
-	if err := cache.Add(desc, ioutil.NopCloser(bytes.NewBuffer(data))); err != nil {
+	if err := cache.Add(desc, io.NopCloser(bytes.NewBuffer(data))); err != nil {
 		return ocispecv1.Descriptor{}, err
 	}
 	return desc, nil

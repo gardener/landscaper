@@ -85,11 +85,6 @@ spec:
                   - config
                   type: object
                 type: array
-              reconcileID:
-                description: ReconcileID is used to update an execution even if its
-                  deploy items have not changed but their reconciliation should be
-                  triggered again.
-                type: string
               registryPullSecrets:
                 description: 'RegistryPullSecrets defines a list of registry credentials
                   that are used to pull blueprints, component descriptors and jsonschemas

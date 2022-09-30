@@ -259,7 +259,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 }
 
 func createOCIClient(ctx context.Context, client client.Client, registryPullSecrets []lsv1alpha1.ObjectReference, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "lsHealthCheckController.check"})
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "helmDeployerController.createOCIClient"})
 
 	// resolve all pull secrets
 	secrets, err := kutil.ResolveSecrets(ctx, client, registryPullSecrets)
@@ -267,7 +267,7 @@ func createOCIClient(ctx context.Context, client client.Client, registryPullSecr
 		return nil, err
 	}
 
-	// always add a oci client to support unauthenticated requests
+	// always add an oci client to support unauthenticated requests
 	ociConfigFiles := make([]string, 0)
 	if config.OCI != nil {
 		ociConfigFiles = config.OCI.ConfigFiles

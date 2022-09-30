@@ -15,9 +15,9 @@ var InvalidTypeError = errors.New("INVALID_MEDIA_TYPE")
 type MediaTypeFormat string
 
 const (
-	DefaultFormat MediaTypeFormat = ""
-	OCIConfigFormat MediaTypeFormat  = "ociConfig"
-	OCILayerFormat MediaTypeFormat  = "ociLayer"
+	DefaultFormat   MediaTypeFormat = ""
+	OCIConfigFormat MediaTypeFormat = "ociConfig"
+	OCILayerFormat  MediaTypeFormat = "ociLayer"
 )
 
 // MediaType describes a media type (formerly known as MIME type) defined by the IANA in THE RFC 2045.
@@ -48,7 +48,7 @@ type MediaType struct {
 // String returns the string using the parsed type file and compression.
 func (t MediaType) String() string {
 	s := t.Type
-	if t.CompressionFormat !=  nil  && t.Suffix == nil {
+	if t.CompressionFormat != nil && t.Suffix == nil {
 		t.Suffix = t.CompressionFormat
 	}
 	if t.Suffix != nil {
@@ -76,7 +76,7 @@ func (t MediaType) IsCompressed(format string) bool {
 
 		// try to parse the compression from the suffix or tree
 		if t.Suffix == nil {
-			return  false
+			return false
 		}
 
 		return *t.Suffix == format
@@ -149,13 +149,12 @@ func Parse(mediaType string, conversions ...ConversionFunc) (MediaType, error) {
 	// try to detect config or layer type
 	splitType = strings.Split(tree, ".")
 
-
 	if len(splitType) > 2 && splitType[len(splitType)-2] == "config" {
 		mt.Format = OCIConfigFormat
 		mt.FileFormat = mt.Suffix
 		mt.Version = strPtr(splitType[len(splitType)-1])
 	} else if len(splitType) > 3 && splitType[len(splitType)-3] == "layer" {
-		mt.Format =  OCILayerFormat
+		mt.Format = OCILayerFormat
 		mt.FileFormat = strPtr(splitType[len(splitType)-1])
 		mt.Version = strPtr(splitType[len(splitType)-2])
 	}
@@ -174,8 +173,8 @@ func NewBuilder(t string) *Builder {
 		MediaType{
 			Orig:              "",
 			Type:              t,
-			Format: DefaultFormat,
-			Version: nil,
+			Format:            DefaultFormat,
+			Version:           nil,
 			FileFormat:        nil,
 			CompressionFormat: nil,
 		},
@@ -185,7 +184,7 @@ func NewBuilder(t string) *Builder {
 // Compression sets the compression format
 func (b *Builder) Compression(comp string) *Builder {
 	b.Type.CompressionFormat = &comp
-	b.Type.Suffix  = &comp
+	b.Type.Suffix = &comp
 	return b
 }
 
@@ -193,7 +192,7 @@ func (b *Builder) Compression(comp string) *Builder {
 // Will be automatically parsed from the type if it is not a config type.
 func (b *Builder) FileFormat(format string) *Builder {
 	b.Type.FileFormat = &format
-	b.Type.Suffix  = &format
+	b.Type.Suffix = &format
 	return b
 }
 

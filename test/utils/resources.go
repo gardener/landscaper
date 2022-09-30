@@ -8,8 +8,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -89,7 +89,7 @@ func LocalRemoteBlueprintRef(resourceName string) lsv1alpha1.BlueprintDefinition
 
 // ReadResourceFromFile reads a file and parses it to the given object
 func ReadResourceFromFile(obj runtime.Object, testfile string) error {
-	data, err := ioutil.ReadFile(testfile)
+	data, err := os.ReadFile(testfile)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func ReadResourceFromFile(obj runtime.Object, testfile string) error {
 
 // ReadBlueprintFromFile reads a file and parses it to a Blueprint
 func ReadBlueprintFromFile(testfile string) (*lsv1alpha1.Blueprint, error) {
-	data, err := ioutil.ReadFile(testfile)
+	data, err := os.ReadFile(testfile)
 	if err != nil {
 		return nil, err
 	}
@@ -242,6 +242,62 @@ func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client
 	return lsutils.CreateKubernetesTarget(namespace, name, restConfig)
 }
 
+func BuildTargetAndSecretFromKubernetesTarget(target *lsv1alpha1.Target) (*lsv1alpha1.Target, *corev1.Secret, error) {
+	const key = "kubeconfig"
+
+	config := lsv1alpha1.KubernetesClusterTargetConfig{}
+	if err := json.Unmarshal(target.Spec.Configuration.RawMessage, &config); err != nil {
+		return nil, nil, err
+	}
+
+	if config.Kubeconfig.StrVal == nil {
+		return nil, nil, fmt.Errorf("target contains no kubeconfig")
+	}
+
+	kubeconfig := *config.Kubeconfig.StrVal
+
+	secret := &corev1.Secret{}
+	secret.Name = target.Name
+	secret.Namespace = target.Namespace
+	secret.StringData = map[string]string{
+		key: kubeconfig,
+	}
+
+	targetWithRef, err := CreateKubernetesTargetFromSecret(target.Namespace, target.Name, secret)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return targetWithRef, secret, nil
+}
+
+func SetDataObjectData(do *lsv1alpha1.DataObject, data interface{}) {
+	raw, err := json.Marshal(data)
+	ExpectNoError(err)
+	do.Data = lsv1alpha1.NewAnyJSON(raw)
+}
+
+func GetDataObjectData(do *lsv1alpha1.DataObject, data interface{}) {
+	ExpectNoError(json.Unmarshal(do.Data.RawMessage, data))
+}
+
+func GetTargetConfiguration(target *lsv1alpha1.Target, config interface{}) {
+	ExpectNoError(json.Unmarshal(target.Spec.Configuration.RawMessage, config))
+}
+
+func SetInstallationNamespace(inst *lsv1alpha1.Installation, namespace string) {
+	inst.Namespace = namespace
+	for i := range inst.Spec.Imports.Data {
+		data := &inst.Spec.Imports.Data[i]
+		if data.ConfigMapRef != nil {
+			data.ConfigMapRef.Namespace = namespace
+		}
+		if data.SecretRef != nil {
+			data.SecretRef.Namespace = namespace
+		}
+	}
+}
+
 // BuildContainerDeployItem builds a new deploy item of type container.
 func BuildContainerDeployItem(configuration *containerv1alpha1.ProviderConfiguration) *lsv1alpha1.DeployItem {
 	di, err := container.NewDeployItemBuilder().
@@ -263,13 +319,13 @@ func AddReconcileAnnotation(ctx context.Context, testenv *envtest.Environment, i
 }
 
 func UpdateJobIdForDeployItem(ctx context.Context, testenv *envtest.Environment, di *lsv1alpha1.DeployItem, time metav1.Time) error {
-	di.Status.JobID = di.Status.JobID + "-1"
+	di.Status.SetJobID(di.Status.GetJobID() + "-1")
 	di.Status.JobIDGenerationTime = &time
 	return testenv.Client.Status().Update(ctx, di)
 }
 
 func UpdateJobIdForDeployItemC(ctx context.Context, cl client.Client, di *lsv1alpha1.DeployItem, time metav1.Time) error {
-	di.Status.JobID = di.Status.JobID + "-1"
+	di.Status.SetJobID(di.Status.GetJobID() + "-1")
 	di.Status.JobIDGenerationTime = &time
 	return cl.Status().Update(ctx, di)
 }

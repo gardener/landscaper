@@ -84,10 +84,6 @@ func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv
 	return containerOp.Delete(ctx)
 }
 
-func (d *deployer) ForceReconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	return d.Reconcile(ctx, lsCtx, di, target)
-}
-
 func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	d.log.Info("abort is not yet implemented")
 	return nil

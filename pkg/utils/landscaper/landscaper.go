@@ -11,42 +11,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/health"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
-
-// WaitForInstallationToBeHealthy waits until the given installation is in the expected phase
-func WaitForInstallationToBeHealthy(
-	ctx context.Context,
-	kubeClient client.Reader,
-	inst *lsv1alpha1.Installation,
-	timeout time.Duration) error {
-
-	err := WaitForInstallationToHaveCondition(ctx, kubeClient, inst, func(installation *lsv1alpha1.Installation) (bool, error) {
-		if err := health.CheckInstallation(inst); err != nil {
-			return false, nil
-		}
-		return true, nil
-	}, timeout)
-	if err != nil {
-		// try to get the actual error
-		if err := health.CheckInstallation(inst); err != nil {
-			return fmt.Errorf("error while waiting for installation to be healthy: %w", err)
-		}
-		return fmt.Errorf("error while waiting for installation to be healthy: %w", err)
-	}
-	return nil
-}
 
 // WaitForInstallationToFinish waits until the given installation has finished with the given phase
 func WaitForInstallationToFinish(
@@ -74,23 +50,21 @@ func IsInstallationFinished(inst *lsv1alpha1.Installation, phase lsv1alpha1.Inst
 	return true, nil
 }
 
-// WaitForInstallationToBeInPhase waits until the given installation is in the expected phase
-func WaitForInstallationToBeInPhase(
+// WaitForInstallationToBeDeleted waits until the given installation has finished with the given phase
+func WaitForInstallationToBeDeleted(
 	ctx context.Context,
 	kubeClient client.Reader,
 	inst *lsv1alpha1.Installation,
-	phase lsv1alpha1.ComponentInstallationPhase,
 	timeout time.Duration) error {
 
-	err := WaitForInstallationToHaveCondition(ctx, kubeClient, inst, func(installation *lsv1alpha1.Installation) (bool, error) {
-		if inst.Status.Phase == phase {
-			return true, nil
-		}
-		return false, nil
-	}, timeout)
+	pollErr := wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
+		updated := &lsv1alpha1.Installation{}
+		getErr := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated)
+		return getErr != nil && apierrors.IsNotFound(getErr), nil
+	})
 
-	if err != nil {
-		return fmt.Errorf("error while waiting for installation to be in phase %q: %w", phase, err)
+	if pollErr != nil {
+		return fmt.Errorf("error while waiting for installation to be deleted: %w", pollErr)
 	}
 	return nil
 }
@@ -106,7 +80,7 @@ func WaitForInstallationToHaveCondition(
 	cond InstallationConditionFunc,
 	timeout time.Duration) error {
 
-	return wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
+	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
 		updated := &lsv1alpha1.Installation{}
 		if err := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated); err != nil {
 			return false, err
@@ -114,41 +88,6 @@ func WaitForInstallationToHaveCondition(
 		*inst = *updated
 		return cond(inst)
 	})
-}
-
-// WaitForDeployItemToSucceed waits for a DeployItem to be in phase Succeeded
-func WaitForDeployItemToSucceed(
-	ctx context.Context,
-	kubeClient client.Reader,
-	obj *lsv1alpha1.DeployItem,
-	timeout time.Duration) error {
-	return WaitForDeployItemToBeInPhase(ctx, kubeClient, obj, lsv1alpha1.ExecutionPhaseSucceeded, timeout)
-}
-
-// WaitForDeployItemToBeInPhase waits until the given deploy item is in the expected phase
-func WaitForDeployItemToBeInPhase(
-	ctx context.Context,
-	kubeClient client.Reader,
-	deployItem *lsv1alpha1.DeployItem,
-	phase lsv1alpha1.ExecutionPhase,
-	timeout time.Duration) error {
-
-	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
-		updated := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, kubeClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err != nil {
-			return false, err
-		}
-		*deployItem = *updated
-		if deployItem.Status.Phase == phase {
-			return true, nil
-		}
-		return false, nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("error while waiting for deploy item to be in phase %q: %w", phase, err)
-	}
-	return nil
 }
 
 // WaitForDeployItemToFinish waits until the given deploy item has finished with the given phase

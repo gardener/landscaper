@@ -42,7 +42,7 @@ import (
 type Operation struct {
 	*lsoperation.Operation
 
-	Inst                            *Installation
+	Inst                            *InstallationImportsAndBlueprint
 	ComponentDescriptor             *cdv2.ComponentDescriptor
 	Overwriter                      componentoverwrites.Overwriter
 	BlobResolver                    ctf.BlobResolver
@@ -58,7 +58,7 @@ type Operation struct {
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation.
 // DEPRECATED: use the builder instead.
-func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *Installation, _ *cdv2.UnstructuredTypedObject) (*Operation, error) {
+func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *InstallationImportsAndBlueprint, _ *cdv2.UnstructuredTypedObject) (*Operation, error) {
 	return NewOperationBuilder(inst).
 		WithOperation(op).
 		Build(ctx)
@@ -80,7 +80,7 @@ func (o *Operation) SetTargetListImports(data map[string]*dataobjects.TargetExte
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
 // DEPRECATED: only used for tests. use the builder methods instead.
 func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
-	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.Info)
+	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.GetInstallation())
 	if err != nil {
 		return err
 	}
@@ -111,8 +111,8 @@ func (o *Operation) InstallationContextName() string {
 // JSONSchemaValidator returns a jsonschema validator.
 func (o *Operation) JSONSchemaValidator(schema []byte) (*jsonschema.Validator, error) {
 	v := jsonschema.NewValidator(&jsonschema.ReferenceContext{
-		LocalTypes:          o.Inst.Blueprint.Info.LocalTypes,
-		BlueprintFs:         o.Inst.Blueprint.Fs,
+		LocalTypes:          o.Inst.GetBlueprint().Info.LocalTypes,
+		BlueprintFs:         o.Inst.GetBlueprint().Fs,
 		ComponentDescriptor: o.ComponentDescriptor,
 		ComponentResolver:   o.ComponentsRegistry(),
 		RepositoryContext:   o.context.External.RepositoryContext,
@@ -132,7 +132,7 @@ func (o *Operation) SetOverwriter(ow componentoverwrites.Overwriter) {
 // ListSubinstallations returns a list of all subinstallations of the given installation.
 // Returns nil if no installations can be found
 func (o *Operation) ListSubinstallations(ctx context.Context, filter ...FilterInstallationFunc) ([]*lsv1alpha1.Installation, error) {
-	return ListSubinstallations(ctx, o.Client(), o.Inst.Info, filter...)
+	return ListSubinstallations(ctx, o.Client(), o.Inst.GetInstallation(), filter...)
 }
 
 type FilterInstallationFunc func(inst *lsv1alpha1.Installation) bool
@@ -176,11 +176,10 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 
 // UpdateInstallationStatus updates the status of a installation
 func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation,
-	phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
+	updatedConditions ...lsv1alpha1.Condition) error {
 
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
-	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
 	if err := o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000018, inst); err != nil {
 		logger.Error(err, "unable to set installation status")
@@ -193,9 +192,9 @@ func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 // It also updates the imports.
 func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dataobjects.DataObject, error) {
 	dataObjects := map[string]*dataobjects.DataObject{}
-	for _, def := range o.Inst.Info.Spec.Imports.Data {
+	for _, def := range o.Inst.GetInstallation().Spec.Imports.Data {
 
-		do, _, err := GetDataImport(ctx, o.Client(), o.Context().Name, &o.Inst.InstallationBase, def)
+		do, _, err := GetDataImport(ctx, o.Client(), o.Context().Name, &o.Inst.InstallationAndImports, def)
 		if err != nil {
 			return nil, err
 		}
@@ -206,10 +205,10 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
-		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
+		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
-				Namespace: o.Inst.Info.Namespace,
+				Namespace: o.Inst.GetInstallation().Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
 			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
@@ -243,12 +242,12 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 // GetImportedTargets returns all imported targets of the installation.
 func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.TargetExtension, error) {
 	targets := map[string]*dataobjects.TargetExtension{}
-	for _, def := range o.Inst.Info.Spec.Imports.Targets {
+	for _, def := range o.Inst.GetInstallation().Spec.Imports.Targets {
 		if len(def.Target) == 0 {
 			// It's a target list, skip it
 			continue
 		}
-		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst.Info, def)
+		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst.GetInstallation(), def)
 		if err != nil {
 			return nil, err
 		}
@@ -259,10 +258,10 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.GetTarget().ObjectMeta)
 		)
-		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
+		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
-				Namespace: o.Inst.Info.Namespace,
+				Namespace: o.Inst.GetInstallation().Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
 			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
@@ -286,7 +285,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 // GetImportedTargetLists returns all imported target lists of the installation.
 func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dataobjects.TargetExtensionList, error) {
 	targets := map[string]*dataobjects.TargetExtensionList{}
-	for _, def := range o.Inst.Info.Spec.Imports.Targets {
+	for _, def := range o.Inst.GetInstallation().Spec.Imports.Targets {
 		if len(def.Target) != 0 {
 			// It's a single target, skip it
 			continue
@@ -297,10 +296,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		)
 		if def.Targets != nil {
 			// List of target names
-			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst.Info, def)
+			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst.GetInstallation(), def)
 		} else if len(def.TargetListReference) != 0 {
 			// TargetListReference is converted to a label selector internally
-			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst.Info, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def, true)
+			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst.GetInstallation(), map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def, true)
 		} else {
 			// Invalid target
 			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
@@ -318,10 +317,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 				configGen = dataobjects.ImportedBase(t).ComputeConfigGeneration()
 				owner     = kutil.GetOwner(t.GetTarget().ObjectMeta)
 			)
-			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
+			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
 				sourceRef = &lsv1alpha1.ObjectReference{
 					Name:      owner.Name,
-					Namespace: o.Inst.Info.Namespace,
+					Namespace: o.Inst.GetInstallation().Namespace,
 				}
 				inst := &lsv1alpha1.Installation{}
 				if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
@@ -344,119 +343,6 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 	}
 
 	return targets, nil
-}
-
-// GetImportedComponentDescriptors returns all imported component descriptors of the installation.
-func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[string]*dataobjects.ComponentDescriptor, error) {
-	cds := map[string]*dataobjects.ComponentDescriptor{}
-	for _, def := range o.Inst.Info.Spec.Imports.ComponentDescriptors {
-		if def.List != nil {
-			// It's a component descriptor list, skip it
-			continue
-		}
-		cd, err := GetComponentDescriptorImport(ctx, o.Client(), o.Context().Name, o, def)
-		if err != nil {
-			return nil, err
-		}
-		cds[def.Name] = cd
-
-		var (
-			sref, cmref string
-			cdref       *lsv1alpha1.ComponentDescriptorReference = nil
-			sourceRef   *lsv1alpha1.ObjectReference
-			configGen   = cd.Descriptor.Version
-			owner       = cd.Owner
-		)
-		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
-			sourceRef = &lsv1alpha1.ObjectReference{
-				Name:      owner.Name,
-				Namespace: o.Inst.Info.Namespace,
-			}
-			inst := &lsv1alpha1.Installation{}
-			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
-				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
-					sourceRef.NamespacedName().String(), def.Name, err)
-			}
-		}
-		switch cd.RefType {
-		case dataobjects.RegistryReference:
-			cdref = cd.RegistryRef
-		case dataobjects.ConfigMapReference:
-			cmref = fmt.Sprintf("%s#%s", def.ConfigMapRef.NamespacedName().String(), def.ConfigMapRef.Key)
-		case dataobjects.SecretReference:
-			sref = fmt.Sprintf("%s#%s", def.SecretRef.NamespacedName().String(), def.SecretRef.Key)
-		}
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:                   def.Name,
-			Type:                   lsv1alpha1.CDImportStatusType,
-			SecretRef:              sref,
-			ConfigMapRef:           cmref,
-			ComponentDescriptorRef: cdref,
-			SourceRef:              sourceRef,
-			ConfigGeneration:       configGen,
-		})
-	}
-
-	return cds, nil
-}
-
-// GetImportedComponentDescriptorLists returns all imported component descriptor lists of the installation.
-func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (map[string]*dataobjects.ComponentDescriptorList, error) {
-	cdls := map[string]*dataobjects.ComponentDescriptorList{}
-	for _, def := range o.Inst.Info.Spec.Imports.ComponentDescriptors {
-		if def.List == nil {
-			// It's a single component descriptor import, skip it
-			continue
-		}
-		cdl, err := GetComponentDescriptorListImport(ctx, o.Client(), o.Context().Name, o, def)
-		if err != nil {
-			return nil, err
-		}
-		cdls[def.Name] = cdl
-
-		cdis := make([]lsv1alpha1.CDImportStatus, len(cdl.ComponentDescriptors))
-		for i, cd := range cdl.ComponentDescriptors {
-			var (
-				sourceRef *lsv1alpha1.ObjectReference
-				owner     = cd.Owner
-			)
-			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
-				sourceRef = &lsv1alpha1.ObjectReference{
-					Name:      owner.Name,
-					Namespace: o.Inst.Info.Namespace,
-				}
-				inst := &lsv1alpha1.Installation{}
-				if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
-					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
-						sourceRef.NamespacedName().String(), def.Name, err)
-				}
-			}
-			var (
-				sref, cmref string
-				cdref       *lsv1alpha1.ComponentDescriptorReference = nil
-			)
-			switch cd.RefType {
-			case dataobjects.RegistryReference:
-				cdref = cd.RegistryRef
-			case dataobjects.ConfigMapReference:
-				cmref = fmt.Sprintf("%s#%s", cd.ConfigMapRef.NamespacedName().String(), cd.ConfigMapRef.Key)
-			case dataobjects.SecretReference:
-				sref = fmt.Sprintf("%s#%s", cd.SecretRef.NamespacedName().String(), cd.SecretRef.Key)
-			}
-			cdis[i] = lsv1alpha1.CDImportStatus{
-				ComponentDescriptorRef: cdref,
-				ConfigMapRef:           cmref,
-				SecretRef:              sref,
-				SourceRef:              sourceRef,
-			}
-		}
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:                 def.Name,
-			Type:                 lsv1alpha1.CDListImportStatusType,
-			ComponentDescriptors: cdis,
-		})
-	}
-	return cdls, nil
 }
 
 // NewError creates a new error with the current operation
@@ -502,13 +388,13 @@ func (o *Operation) NewTriggerDependents(ctx context.Context) error {
 			continue
 		}
 
-		if IsRootInstallation(o.Inst.Info) {
-			metav1.SetMetaDataAnnotation(&sibling.Info.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
+		if IsRootInstallation(o.Inst.GetInstallation()) {
+			metav1.SetMetaDataAnnotation(&sibling.GetInstallation().ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 		} else {
-			lsv1alpha1helper.Touch(&sibling.Info.ObjectMeta)
+			lsv1alpha1helper.Touch(&sibling.GetInstallation().ObjectMeta)
 		}
 
-		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000085, sibling.Info); err != nil {
+		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000085, sibling.GetInstallation()); err != nil {
 			return err
 		}
 	}
@@ -520,29 +406,29 @@ func (o *Operation) NewTriggerDependents(ctx context.Context) error {
 func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	// we have to set our config generation to the desired state
 
-	o.Inst.Info.Status.ConfigGeneration = ""
-	return o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Inst.Info)
+	o.Inst.GetInstallation().Status.ConfigGeneration = ""
+	return o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Inst.GetInstallation())
 }
 
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
 func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*dataobjects.DataObject, targetExports []*dataobjects.TargetExtension) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateExportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.CreateExportsCondition)
 
-	configGen, err := CreateGenerationHash(o.Inst.Info)
+	configGen, err := CreateGenerationHash(o.Inst.GetInstallation())
 	if err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateConfigHash",
 				fmt.Sprintf("unable to create config hash: %s", err.Error())))
 		return err
 	}
 
-	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
+	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.GetInstallation())
 	for _, do := range dataExports {
-		do = do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		do = do.SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).SetContext(o.InstallationContextName())
 		raw, err := do.Build()
 		if err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"CreateDataObjects",
 					fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
@@ -551,14 +437,14 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := o.Writer().CreateOrUpdateCoreDataObject(ctx, read_write_layer.W000068, raw, func() error {
-			if err, err2 := lsutil.SetExclusiveOwnerReference(o.Inst.Info, raw); err != nil {
+			if err, err2 := lsutil.SetExclusiveOwnerReference(o.Inst.GetInstallation(), raw); err != nil {
 				return fmt.Errorf("dataobject '%s' for export '%s' conflicts with existing dataobject owned by another installation: %w", client.ObjectKeyFromObject(raw).String(), do.Metadata.Key, err)
 			} else if err2 != nil {
 				return fmt.Errorf("error setting owner reference: %w", err2)
 			}
 			return do.Apply(raw)
 		}); err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateDataObjects",
 					fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
 			return fmt.Errorf("unable to create or update data object %s for export %s: %w", raw.Name, do.Metadata.Key, err)
@@ -566,14 +452,14 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 	}
 
 	for _, target := range targetExports {
-		target = target.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		target = target.SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).SetContext(o.InstallationContextName())
 
 		targetForUpdate := &lsv1alpha1.Target{}
 		target.ApplyNameAndNamespace(targetForUpdate)
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000069, targetForUpdate, func() error {
-			if err, err2 := lsutil.SetExclusiveOwnerReference(o.Inst.Info, targetForUpdate); err != nil {
+			if err, err2 := lsutil.SetExclusiveOwnerReference(o.Inst.GetInstallation(), targetForUpdate); err != nil {
 				return fmt.Errorf("target object '%s' for export '%s' conflicts with existing target owned by another installation: %w",
 					client.ObjectKeyFromObject(targetForUpdate).String(), target.GetMetadata().Key, err)
 			} else if err2 != nil {
@@ -581,26 +467,26 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 			}
 			return target.Apply(targetForUpdate)
 		}); err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateTargets",
 					fmt.Sprintf("unable to create target for export %s", target.GetMetadata().Key)))
 			return fmt.Errorf("unable to create or update target %s for export %s: %w", targetForUpdate.Name, target.GetMetadata().Key, err)
 		}
 	}
 
-	o.Inst.Info.Status.ConfigGeneration = configGen
+	o.Inst.GetInstallation().Status.ConfigGeneration = configGen
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue, "DataObjectsCreated", "DataObjects successfully created")
-	return o.UpdateInstallationStatus(ctx, o.Inst.Info, o.Inst.Info.Status.Phase, cond)
+	return o.UpdateInstallationStatus(ctx, o.Inst.GetInstallation(), cond)
 }
 
 // CreateOrUpdateImports creates or updates the data objects that holds the imported values for every import
 func (o *Operation) CreateOrUpdateImports(ctx context.Context) error {
-	return o.createOrUpdateImports(ctx, o.Inst.Blueprint.Info.Imports)
+	return o.createOrUpdateImports(ctx, o.Inst.GetBlueprint().Info.Imports)
 }
 
 func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1alpha1.ImportDefinitionList) error {
 	importedValues := o.Inst.GetImports()
-	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
+	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.GetInstallation())
 	for _, importDef := range importDefs {
 		importData, ok := importedValues[importDef.Name]
 		if !ok {
@@ -634,10 +520,6 @@ func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1al
 			if err := o.createOrUpdateTargetListImport(ctx, src, importDef, importDataList); err != nil {
 				return fmt.Errorf("unable to create or update targetlist import '%s': %w", importDef.Name, err)
 			}
-		case lsv1alpha1.ImportTypeComponentDescriptor:
-			// nothing to do for component descriptors, since they do not use in-cluster objects for import propagation
-		case lsv1alpha1.ImportTypeComponentDescriptorList:
-			// nothing to do for component descriptor lists, since they do not use in-cluster objects for import propagation
 		default:
 			return fmt.Errorf("unknown import type '%s' for import '%s'", string(importDef.Type), importDef.Name)
 		}
@@ -647,15 +529,15 @@ func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1al
 }
 
 func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, importData interface{}) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.CreateImportsCondition)
 	do := dataobjects.New().
-		SetNamespace(o.Inst.Info.Namespace).SetSource(src).
+		SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).
 		SetContext(src).
 		SetKey(importDef.Name).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
 		SetData(importData)
 	raw, err := do.Build()
 	if err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateDataObjects",
 				fmt.Sprintf("unable to create data object for import '%s'", importDef.Name)))
@@ -664,12 +546,12 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	if _, err := o.Writer().CreateOrUpdateCoreDataObject(ctx, read_write_layer.W000070, raw, func() error {
-		if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
+		if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), raw, api.LandscaperScheme); err != nil {
 			return err
 		}
 		return do.Apply(raw)
 	}); err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateDataObjects",
 				fmt.Sprintf("unable to create data object for import '%s'", importDef.Name)))
@@ -679,7 +561,7 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 }
 
 func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, values interface{}) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.CreateImportsCondition)
 	data, err := json.Marshal(values)
 	if err != nil {
 		return err
@@ -690,7 +572,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 	}
 	targetExtension := dataobjects.NewTargetExtension(target, nil)
 
-	targetExtension.SetNamespace(o.Inst.Info.Namespace).
+	targetExtension.SetNamespace(o.Inst.GetInstallation().Namespace).
 		SetContext(src).
 		SetKey(importDef.Name).
 		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
@@ -700,12 +582,12 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000071, targetForUpdate, func() error {
-		if err := controllerutil.SetOwnerReference(o.Inst.Info, targetForUpdate, api.LandscaperScheme); err != nil {
+		if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), targetForUpdate, api.LandscaperScheme); err != nil {
 			return err
 		}
 		return targetExtension.Apply(targetForUpdate)
 	}); err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateTargets",
 				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
@@ -716,7 +598,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 }
 
 func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, values []interface{}) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.CreateImportsCondition)
 	tars := make([]lsv1alpha1.Target, len(values))
 	for i := range values {
 		tar := &lsv1alpha1.Target{}
@@ -732,7 +614,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 	targetExtensionList := dataobjects.NewTargetExtensionList(tars, nil)
 	for i := range targetExtensionList.GetTargetExtensions() {
 		tar := targetExtensionList.GetTargetExtensions()[i]
-		tar.SetNamespace(o.Inst.Info.Namespace).
+		tar.SetNamespace(o.Inst.GetInstallation().Namespace).
 			SetContext(src).
 			SetKey(importDef.Name).
 			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
@@ -740,7 +622,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 
 	targets, err := targetExtensionList.Build(importDef.Name)
 	if err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateTargets",
 				fmt.Sprintf("unable to create targets for import '%s'", importDef.Name)))
@@ -750,12 +632,12 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	for i, target := range targets {
 		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000072, target, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
+			if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), target, api.LandscaperScheme); err != nil {
 				return err
 			}
 			return targetExtensionList.Apply(target, i)
 		}); err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"CreateTargets",
 					fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
@@ -770,22 +652,22 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 func (o *Operation) GetExportForKey(ctx context.Context, key string) (*dataobjects.DataObject, error) {
 	doName := lsv1alpha1helper.GenerateDataObjectName(o.context.Name, key)
 	rawDO := &lsv1alpha1.DataObject{}
-	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.Info.Namespace), rawDO); err != nil {
+	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.GetInstallation().Namespace), rawDO); err != nil {
 		return nil, err
 	}
 	return dataobjects.NewFromDataObject(rawDO)
 }
 
-func importsAnyExport(exporter *Installation, importer *InstallationBase) bool {
-	for _, export := range exporter.Info.Spec.Exports.Data {
-		for _, def := range importer.Info.Spec.Imports.Data {
+func importsAnyExport(exporter *InstallationImportsAndBlueprint, importer *InstallationAndImports) bool {
+	for _, export := range exporter.GetInstallation().Spec.Exports.Data {
+		for _, def := range importer.GetInstallation().Spec.Imports.Data {
 			if def.DataRef == export.DataRef {
 				return true
 			}
 		}
 	}
-	for _, export := range exporter.Info.Spec.Exports.Targets {
-		for _, def := range importer.Info.Spec.Imports.Targets {
+	for _, export := range exporter.GetInstallation().Spec.Exports.Targets {
+		for _, def := range importer.GetInstallation().Spec.Imports.Targets {
 			if def.Target == export.Target {
 				return true
 			}

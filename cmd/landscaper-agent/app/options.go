@@ -8,7 +8,7 @@ import (
 	"errors"
 	goflag "flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
@@ -80,7 +80,7 @@ func (o *options) Complete() error {
 		return fmt.Errorf("unable to setup manager")
 	}
 
-	data, err := ioutil.ReadFile(o.landscaperKubeconfigPath)
+	data, err := os.ReadFile(o.landscaperKubeconfigPath)
 	if err != nil {
 		return fmt.Errorf("unable to read landscaper kubeconfig from %s: %w", o.landscaperKubeconfigPath, err)
 	}
@@ -106,7 +106,7 @@ func (o *options) parseConfigurationFile() (config.AgentConfiguration, error) {
 	if len(o.configPath) == 0 {
 		return config.AgentConfiguration{}, nil
 	}
-	data, err := ioutil.ReadFile(o.configPath)
+	data, err := os.ReadFile(o.configPath)
 	if err != nil {
 		return config.AgentConfiguration{}, err
 	}

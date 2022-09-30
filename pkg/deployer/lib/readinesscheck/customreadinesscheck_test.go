@@ -6,11 +6,11 @@ package readinesscheck
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -215,7 +215,7 @@ var _ = Describe("Custom health checks", func() {
 })
 
 func loadSingleObjectFromFile(fileName string) ([]*unstructured.Unstructured, []lsv1alpha1.TypedObjectReference) {
-	testObjectsRaw, err := ioutil.ReadFile(filepath.Join(testdataDir, fileName))
+	testObjectsRaw, err := os.ReadFile(filepath.Join(testdataDir, fileName))
 	Expect(err).ToNot(HaveOccurred())
 	testObjects, err := kutil.DecodeObjects(logging.Discard(), fileName, testObjectsRaw)
 	Expect(err).ToNot(HaveOccurred())

@@ -11,7 +11,7 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -137,6 +137,6 @@ var _ = Describe("Container Deployer State", func() {
 		secretList := &corev1.SecretList{}
 		utils.ExpectNoError(testenv.Client.List(ctx, secretList, client.InNamespace(testState.Namespace)))
 		Expect(secretList.Items).To(HaveLen(0))
-	}, 20)
+	})
 
 })

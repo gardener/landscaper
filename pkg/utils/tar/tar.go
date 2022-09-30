@@ -10,7 +10,6 @@ import (
 	"compress/gzip"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -195,7 +194,7 @@ func BuildTarGzipLayer(cache cache.Cache, fs vfs.FileSystem, path string, annota
 		Annotations: annotations,
 	}
 
-	if err := cache.Add(desc, ioutil.NopCloser(&blob)); err != nil {
+	if err := cache.Add(desc, io.NopCloser(&blob)); err != nil {
 		return ocispecv1.Descriptor{}, err
 	}
 

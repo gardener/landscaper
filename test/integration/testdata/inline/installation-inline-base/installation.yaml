@@ -1,0 +1,41 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: inline-base
+  namespace: example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+
+spec:
+  blueprint:
+    ref:
+      resourceName: blueprint
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper/integration-tests/inline-base
+      repositoryContext:
+        baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+        type: ociRegistry
+      version: v0.1.0
+
+  imports:
+    targets:
+      - name: cluster
+        target: my-cluster
+    data:
+      - name: configmapNamespaceIn
+        dataRef: import-do-namespace
+
+  importDataMappings:
+    configmapNameIn: cm-example
+    configmapDataIn:
+      key1: value1
+      key2: value2
+
+  exports:
+    data:
+      - name: configmapNameOut
+        dataRef: export-do-name
+      - name: configmapDataOut
+        dataRef: export-do-data

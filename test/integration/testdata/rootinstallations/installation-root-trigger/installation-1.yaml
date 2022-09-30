@@ -1,0 +1,39 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root-1
+  namespace: example
+
+spec:
+  blueprint:
+    ref:
+      resourceName: blueprint
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper/integration-tests/import-export
+      repositoryContext:
+        baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+        type: ociRegistry
+      version: v0.1.0
+
+  imports:
+    targets:
+      - name: cluster
+        target: my-cluster
+
+    data:
+      - name: configmapNamespaceIn
+        dataRef: do-namespace
+
+  importDataMappings:
+    configmapNameIn: cm-example
+    configmapDataIn:
+      key1: value1
+
+  exports:
+    data:
+      - name: configmapNameOut
+        dataRef: do-name-2
+      - name: configmapDataOut
+        dataRef: do-data-2

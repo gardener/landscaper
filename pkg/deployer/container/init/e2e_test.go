@@ -6,14 +6,13 @@ package init
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -88,7 +87,7 @@ var _ = Describe("Init e2e", func() {
 
 		utils.ExpectNoError(s.Backup(ctx))
 
-		file, err := ioutil.ReadFile("./testdata/00-di-simple.yaml")
+		file, err := os.ReadFile("./testdata/00-di-simple.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(resFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(resFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())

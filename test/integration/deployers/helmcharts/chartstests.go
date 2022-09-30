@@ -11,10 +11,9 @@ import (
 	"path/filepath"
 	"time"
 
-	utils2 "github.com/gardener/landscaper/pkg/utils"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -125,16 +124,11 @@ func deployDeployItemAndWaitForSuccess(
 
 	di := forgeHelmDeployItem(chartDir, valuesFile, deployerName, target, f.LsVersion)
 	utils.ExpectNoError(state.Create(ctx, di))
-	if utils2.IsNewReconcile() {
-		// Set a new jobID to trigger a reconcile of the deploy item
-		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
-		Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
-		By("Waiting for the DeployItem to succeed")
-		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
-	} else {
-		By("Waiting for the DeployItem to succeed")
-		utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
-	}
+	// Set a new jobID to trigger a reconcile of the deploy item
+	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+	By("Waiting for the DeployItem to succeed")
+	utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
 	By("Waiting for the corresponding Deployment to become ready")
 	deployKey := kutil.ObjectKey(deployerName, state.Namespace)
 	utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, deployKey, 2*time.Minute))
@@ -151,11 +145,9 @@ func removeDeployItemAndWaitForSuccess(
 
 	By("Removing the DeployItem")
 	utils.ExpectNoError(f.Client.Delete(ctx, di))
-	if utils2.IsNewReconcile() {
-		// Set a new jobID to trigger a reconcile of the deploy item
-		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
-		Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
-	}
+	// Set a new jobID to trigger a reconcile of the deploy item
+	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 	By("Waiting for the DeployItem to disappear")
 	utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, di, 2*time.Minute))
 

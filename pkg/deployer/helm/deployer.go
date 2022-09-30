@@ -67,19 +67,20 @@ type deployer struct {
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	helm, err := New(d.config, d.lsClient, d.hostClient, di, target, lsCtx, d.sharedCache)
 	if err != nil {
+		err = lserrors.NewWrappedError(err, "Reconcile", "New", err.Error())
 		return err
 	}
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 
 	files, crds, values, ch, err := helm.Template(ctx)
 	if err != nil {
+		err = lserrors.NewWrappedError(err, "Reconcile", "Template", err.Error())
 		return err
 	}
 
 	exports, err := helm.constructExportsFromValues(values)
 	if err != nil {
-		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
-			"ConstructExportFromValues", "", err.Error())
+		err = lserrors.NewWrappedError(err, "Reconcile", "ConstructExportFromValues", err.Error())
 		return err
 	}
 	return helm.ApplyFiles(ctx, files, crds, exports, ch)
@@ -92,14 +93,6 @@ func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *ls
 	}
 
 	return helm.DeleteFiles(ctx)
-}
-
-func (d *deployer) ForceReconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	if err := d.Reconcile(ctx, lsCtx, di, target); err != nil {
-		return err
-	}
-	delete(di.Annotations, lsv1alpha1.OperationAnnotation)
-	return nil
 }
 
 func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {

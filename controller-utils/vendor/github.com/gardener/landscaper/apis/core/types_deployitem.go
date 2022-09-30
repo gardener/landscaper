@@ -84,6 +84,12 @@ type DeployItemStatus struct {
 	// LastError describes the last error that occurred.
 	LastError *Error `json:"lastError,omitempty"`
 
+	// ErrorHistory describes the last n errors that occurred since JobID was changed the last time.
+	LastErrors []*Error `json:"lastErrors,omitempty"`
+
+	// FirstError describes the first error that occurred since JobID was changed the last time.
+	FirstError *Error `json:"firstError,omitempty"`
+
 	// LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started
 	// +optional
 	LastReconcileTime *metav1.Time `json:"lastReconcileTime,omitempty"`
