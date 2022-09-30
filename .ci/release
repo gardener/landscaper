@@ -9,8 +9,8 @@ set -o nounset
 set -o pipefail
 
 apk add --no-cache git make musl-dev curl
-curl -LO https://golang.org/dl/go1.18.linux-amd64.tar.gz
-tar -C /usr/local -xzf go1.18.linux-amd64.tar.gz
+curl -LO https://golang.org/dl/go1.19.linux-amd64.tar.gz
+tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin
 mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
