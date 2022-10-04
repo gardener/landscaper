@@ -268,7 +268,7 @@ func updateDeployItemAndWaitForSuccess(
 
 	By("Merge existing with updated spec DeployItem")
 	di := &lsv1alpha1.DeployItem{}
-	state.Client.Get(ctx, kutil.ObjectKey(chartName, state.Namespace), di)
+	utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKey(chartName, state.Namespace), di))
 	new_di := createHelmDeployItem(chartDir, valuesFile, chartName, target, nil, nil, useHelmDeployment)
 	di.Spec = new_di.Spec
 
