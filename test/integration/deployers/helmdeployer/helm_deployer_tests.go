@@ -84,7 +84,8 @@ func HelmDeployerTests(f *framework.Framework) {
 				)
 
 				const deployName = "configmap-deployment"
-				deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, realHelmDeployer)
+				_, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, realHelmDeployer)
+				Expect(err).ShouldNot(HaveOccurred())
 				cm := &corev1.ConfigMap{}
 				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
 				Expect(cm.Data["key"]).To(Equal("value"))
