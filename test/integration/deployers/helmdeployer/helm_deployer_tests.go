@@ -58,7 +58,8 @@ func HelmDeployerTests(f *framework.Framework) {
 				)
 
 				const deployName = "configmap-deployment"
-				di := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, realHelmDeployer)
+				di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, realHelmDeployer)
+				Expect(err).ShouldNot(HaveOccurred())
 
 				cm := &corev1.ConfigMap{}
 				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
@@ -84,7 +85,6 @@ func HelmDeployerTests(f *framework.Framework) {
 
 				const deployName = "configmap-deployment"
 				deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, nil, realHelmDeployer)
-
 				cm := &corev1.ConfigMap{}
 				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
 				Expect(cm.Data["key"]).To(Equal("value"))
@@ -130,8 +130,8 @@ func HelmDeployerTests(f *framework.Framework) {
 						},
 					},
 				}
-				di := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, &exports, nil, realHelmDeployer)
-
+				di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, &exports, nil, realHelmDeployer)
+				Expect(err).ShouldNot(HaveOccurred())
 				cm := &corev1.ConfigMap{}
 				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
 				Expect(cm.Data["key"]).To(Equal("value"))
@@ -169,8 +169,8 @@ func HelmDeployerTests(f *framework.Framework) {
 				Expect(err).ShouldNot(HaveOccurred())
 				readinesCheck := getReadinessCheck(state.Namespace, jsonRawMessage)
 
-				di := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, &readinesCheck, realHelmDeployer)
-
+				di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, &readinesCheck, realHelmDeployer)
+				Expect(err).ShouldNot(HaveOccurred())
 				cm := &corev1.ConfigMap{}
 				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", state.Namespace), cm)).To(Succeed())
 				Expect(cm.Data["key"]).To(Equal("value"))
@@ -198,7 +198,8 @@ func HelmDeployerTests(f *framework.Framework) {
 				Expect(err).ShouldNot(HaveOccurred())
 				readinesCheck := getReadinessCheck(state.Namespace, jsonRawMessage)
 
-				di := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, &readinesCheck, realHelmDeployer)
+				di, err := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployName, chartDir, valuesFile, nil, &readinesCheck, realHelmDeployer)
+				Expect(err).Should(HaveOccurred())
 
 				removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
 			}
@@ -220,26 +221,33 @@ func deployDeployItemAndWaitForSuccess(
 	state *envtest.State,
 	chartName string,
 	chartDir string,
-	valuesFile string, exports *managedresource.Exports, readinesCheck *readinesschecks.ReadinessCheckConfiguration, useHelmDeployment bool) *lsv1alpha1.DeployItem {
+	valuesFile string, exports *managedresource.Exports, readinesCheck *readinesschecks.ReadinessCheckConfiguration, useHelmDeployment bool) (*lsv1alpha1.DeployItem, error) {
 
 	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, chartName, f.RestConfig, true)
-	utils.ExpectNoError(err)
-	utils.ExpectNoError(state.Create(ctx, target))
+	if err != nil {
+		return nil, err
+	}
+	err = state.Create(ctx, target)
+	if err != nil {
+		return nil, err
+	}
 
 	By("Creating the DeployItem")
 	chartYaml := utils.ReadValuesFromFile(filepath.Join(chartDir, "Chart.yaml"))
 	fmt.Fprintf(GinkgoWriter, "Chart: %s", chartYaml)
 
 	di := createHelmDeployItem(chartDir, valuesFile, chartName, target, exports, readinesCheck, useHelmDeployment)
-	utils.ExpectNoError(state.Create(ctx, di))
-
+	err = state.Create(ctx, di)
+	if err != nil {
+		return di, err
+	}
 	// Set a new jobID to trigger a reconcile of the deploy item
 	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 	By("Waiting for the DeployItem to succeed")
-	utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 1*time.Minute))
+	err = lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 1*time.Minute)
 
-	return di
+	return di, err
 }
 
 // updateDeployItemAndWaitForSuccess updates a DeployItem, waits for it to succeed
@@ -260,7 +268,7 @@ func updateDeployItemAndWaitForSuccess(
 
 	By("Merge existing with updated spec DeployItem")
 	di := &lsv1alpha1.DeployItem{}
-	utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKey(chartName, state.Namespace), di))
+	state.Client.Get(ctx, kutil.ObjectKey(chartName, state.Namespace), di)
 	new_di := createHelmDeployItem(chartDir, valuesFile, chartName, target, nil, nil, useHelmDeployment)
 	di.Spec = new_di.Spec
 
