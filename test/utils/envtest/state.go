@@ -236,8 +236,12 @@ func (s *State) Create(ctx context.Context, obj client.Object, opts ...CreateOpt
 
 // Update a kubernetes resources
 func (s *State) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	return s.UpdateWithClient(ctx, s.Client, obj, opts...)
+}
+
+func (s *State) UpdateWithClient(ctx context.Context, cl client.Client, obj client.Object, opts ...client.UpdateOption) error {
 	for i := 0; i < 10; i++ {
-		err := s.Client.Update(ctx, obj, opts...)
+		err := cl.Update(ctx, obj, opts...)
 		if err == nil {
 			break
 		} else if s.checkIfSporadicError(err) {
@@ -413,7 +417,7 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 		}
 	}
 	for _, obj := range s.Installations {
-		if err := CleanupForInstallation(ctx, c, obj, *timeout); err != nil {
+		if err := s.CleanupForInstallation(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
@@ -510,7 +514,7 @@ func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, t
 }
 
 // CleanupForInstallation cleans up an installation from a cluster
-func CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation, timeout time.Duration) error {
+func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation, timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -527,7 +531,7 @@ func CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha
 
 	var innerErr error
 	if err := wait.PollImmediate(1*time.Second, 10*time.Second, func() (done bool, err error) {
-		innerErr = addReconcileAnnotation(ctx, c, obj)
+		innerErr = s.addReconcileAnnotation(ctx, c, obj)
 		return innerErr == nil, nil
 	}); err != nil {
 		if innerErr != nil {
@@ -602,7 +606,7 @@ func CleanupForDeployItem(ctx context.Context, c client.Client, obj *lsv1alpha1.
 	return nil
 }
 
-func addReconcileAnnotation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation) error {
+func (s *State) addReconcileAnnotation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation) error {
 	if err := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -612,7 +616,7 @@ func addReconcileAnnotation(ctx context.Context, c client.Client, obj *lsv1alpha
 
 	if obj != nil && !lsv1alpha1helper.HasOperation(obj.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		lsv1alpha1helper.SetOperation(&obj.ObjectMeta, lsv1alpha1.ReconcileOperation)
-		if err := c.Update(ctx, obj); err != nil {
+		if err := s.UpdateWithClient(ctx, c, obj); err != nil {
 			if readError := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); apierrors.IsNotFound(readError) {
 				return nil
 			}
