@@ -21,12 +21,13 @@ SOURCE_PATH="$(pwd)"
 
 echo "Run integration tests in source path ${SOURCE_PATH}"
 
-go test -timeout=60m -mod=vendor ./test/integration \
-    --v -ginkgo.v -ginkgo.progress -ginkgo.noColor -ginkgo.seed=17 -ginkgo.failFast \
-    --kubeconfig $KUBECONFIG_PATH \
-    ${REGISTRY_CONFIG:+"--registry-config="}${REGISTRY_CONFIG:-"--skip-waiting-for-system-components"} \
-    --ls-namespace=ls-system \
-    --ls-version=$VERSION \
-    --ls-run-on-shoot \
-    --disable-cleanup=$DISABLE_CLEANUP
+echo "Run integration tests in source path ${SOURCE_PATH}"
+ginkgo -timeout=60m -v -progress -no-color -seed=17 -fail-fast ./test/integration  -- \
+  --kubeconfig $KUBECONFIG_PATH  \
+  ${REGISTRY_CONFIG:+"--registry-config="}${REGISTRY_CONFIG:-"--skip-waiting-for-system-components"} \
+  --ls-namespace=ls-system  \
+  --ls-version=$VERSION  \
+  --ls-run-on-shoot  \
+  --disable-cleanup=$DISABLE_CLEANUP
+
 
