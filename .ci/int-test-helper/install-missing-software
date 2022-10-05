@@ -73,3 +73,10 @@ then
     mv landscapercli-linux-amd64 /usr/local/bin/landscaper-cli
   fi
 fi
+
+if ! command -v ginkgo &> /dev/null
+then
+    echo "ginkgo could not be found"
+    echo "Try installing it..."
+    go install github.com/onsi/ginkgo/v2/ginkgo@v2.2.0
+fi
