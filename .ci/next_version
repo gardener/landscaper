@@ -8,13 +8,14 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+SOURCE_DIR="$(dirname $0)/.."
+
 apk add --no-cache git make musl-dev curl
-curl -LO https://golang.org/dl/go1.19.linux-amd64.tar.gz
-tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
+GO_VERSION=$(grep "go \d.\d\d" ${SOURCE_DIR}/go.mod| sed 's/ //g')
+curl -LO https://golang.org/dl/${GO_VERSION}.linux-amd64.tar.gz
+tar -C /usr/local -xzf ${GO_VERSION}.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin
 mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
-
-SOURCE_DIR="$(dirname $0)/.."
 
 # revert the version update in the gomod file
 VERSION=$(cat ${SOURCE_DIR}/VERSION)
