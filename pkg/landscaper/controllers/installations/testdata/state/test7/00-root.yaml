@@ -1,0 +1,36 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: {{ .Namespace }}
+  annotations:
+    landscaper.gardener.cloud/operation: interrupt
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
+spec:
+
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: example.com/root
+
+  blueprint:
+    ref:
+      resourceName: root2
+
+status:
+  configGeneration: ""
+  executionRef:
+    name: root
+    namespace: {{ .Namespace }}
+  installationRefs:
+  - name: subinst
+    ref:
+      name: subinst
+      namespace: {{ .Namespace }}
+  jobID: job2
+  jobIDFinished: job1
+  phase: Progressing

@@ -1,0 +1,19 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+name: subinst1
+blueprint:
+  ref: cd://componentReferences/target-exporter-component/resources/blueprint
+
+imports:
+  targets:
+    - name: cluster
+      target: cluster
+
+  data:
+    - name: kubeconfig
+      dataRef: kubeconfig
+
+exports:
+  targets:
+    - name: target
+      target: target

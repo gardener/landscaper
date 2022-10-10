@@ -10,15 +10,13 @@ import (
 	"path/filepath"
 	"time"
 
-	k8sv1 "k8s.io/api/core/v1"
-
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	k8sv1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 )
@@ -307,6 +305,56 @@ func TargetTests(f *framework.Framework) {
 			configMap := &k8sv1.ConfigMap{}
 			utils.ExpectNoError(f.Client.Get(ctx, configMapKey, configMap))
 			Expect(configMap.Data).To(HaveLen(0))
+		})
+
+		It("should update an exported Target", func() {
+			var (
+				do1   = &lsv1alpha1.DataObject{} // contains a dummy kubeconfig for a Target to be deployed by the Installation
+				inst1 = &lsv1alpha1.Installation{}
+			)
+
+			// Create root Installation with subinstallation. The root Installation exports the Target that was exported
+			// by the subinstallation.
+
+			By("Create DataObjects with import data")
+			utils.ExpectNoError(utils.CreateDataObjectFromFile(ctx, state.State, do1, path.Join(testdataDir, "installation-target-exporter-root", "import-do-kubeconfig-1.yaml")))
+
+			By("Create Target")
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			utils.ExpectNoError(err)
+			utils.ExpectNoError(state.Create(ctx, target))
+
+			By("Create Installation")
+			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst1, path.Join(testdataDir, "installation-target-exporter-root", "installation.yaml")))
+
+			By("Wait for Installation to finish")
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+
+			By("Check exported Target")
+			targetKey := client.ObjectKey{Namespace: state.Namespace, Name: "target-1"}
+			target = &lsv1alpha1.Target{}
+			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
+			targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
+			utils.GetTargetConfiguration(target, targetConfig)
+			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig"))
+
+			// Update DataObject
+
+			By("Update DataObjects with import data")
+			utils.ExpectNoError(utils.UpdateDataObjectFromFile(ctx, state.State, do1, path.Join(testdataDir, "installation-target-exporter-root", "import-do-kubeconfig-2.yaml")))
+
+			By("Reconcile Installation")
+			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst1, path.Join(testdataDir, "installation-target-exporter-root", "installation.yaml")))
+
+			By("Wait for Installation to finish")
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+
+			By("Check exported Target")
+			target = &lsv1alpha1.Target{}
+			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
+			targetConfig = &lsv1alpha1.KubernetesClusterTargetConfig{}
+			utils.GetTargetConfiguration(target, targetConfig)
+			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig modified"))
 		})
 	})
 }
