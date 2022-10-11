@@ -1,0 +1,3 @@
+exports:
+  target:
+{{ .targets.target.spec | toYaml | indent 4 }}
