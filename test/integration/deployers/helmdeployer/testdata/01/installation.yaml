@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+  name: test-helm-01
+  namespace: example
+
+spec:
+  imports:
+    targets:
+      - name: cluster
+        target: my-cluster
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+          jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+          imports:
+            - name: cluster
+              targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+          deployExecutions:
+            - name: default
+              type: GoTemplate
+              template: |
+                deployItems:
+                  - name: default-deploy-item
+                    type: landscaper.gardener.cloud/helm
+                    target:
+                      import: cluster
+                    config:
+                      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+                      kind: ProviderConfiguration
+                      name: inline-helm
+                      namespace: example
+
+                      chart:
+                        helmChartRepo:
+                          helmChartRepoUrl: 
+                          helmChartName:    configmap
+                          helmChartVersion: 1.0.0

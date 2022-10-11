@@ -9,6 +9,7 @@ import (
 	"github.com/gardener/landscaper/test/integration/deployers/blueprints"
 	"github.com/gardener/landscaper/test/integration/deployers/container"
 	"github.com/gardener/landscaper/test/integration/deployers/helmcharts"
+	"github.com/gardener/landscaper/test/integration/deployers/helmdeployer"
 	"github.com/gardener/landscaper/test/integration/deployers/management"
 )
 
@@ -19,4 +20,5 @@ func RegisterTests(f *framework.Framework) {
 	container.ContainerTests(f)
 	blueprints.RegisterTests(f)
 	management.RegisterTests(f)
+	helmdeployer.RegisterTests(f)
 }
