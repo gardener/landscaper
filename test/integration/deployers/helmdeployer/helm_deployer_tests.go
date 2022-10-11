@@ -204,7 +204,7 @@ func HelmDeployerTests(f *framework.Framework) {
 
 				removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
 			}
-			XIt("with real helm deployer", func() {
+			It("with real helm deployer", func() {
 				testFunc(true)
 			})
 			It("with helm templating and manifest apply", func() {
