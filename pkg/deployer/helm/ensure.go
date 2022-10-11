@@ -92,6 +92,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 			if err != nil {
 				return err
 			}
+			h.ProviderStatus.ManagedResources = managedResourceStatusList
 		}
 	}
 
