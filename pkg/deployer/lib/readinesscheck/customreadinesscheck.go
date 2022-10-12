@@ -12,13 +12,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
-
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -61,7 +59,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady() error {
 	}
 
 	timeout := c.Timeout.Duration
-	if err := WaitForObjectsReady(c.Context, timeout, c.Client, objects, c.CheckObject); err != nil {
+	if err := WaitForObjectsReady(c.Context, timeout, c.Client, objects, c.CheckObject, c.isCheckRelevant, true); err != nil {
 		return lserror.NewWrappedError(err,
 			c.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}
@@ -112,6 +110,10 @@ func (c *CustomReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
 		}
 	}
 	return nil
+}
+
+func (d *CustomReadinessCheck) isCheckRelevant(_ *unstructured.Unstructured) bool {
+	return true
 }
 
 func matchResourceConditions(object interface{}, values []interface{}, operator selection.Operator) (bool, error) {

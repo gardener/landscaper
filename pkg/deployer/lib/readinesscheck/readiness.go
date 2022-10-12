@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -32,9 +33,13 @@ type StatusType string
 // checkObjectFunc is a function to perform the actual readiness check
 type checkObjectFunc func(*unstructured.Unstructured) error
 
+// isCheckRelevantFunc is a function that determines the check relevance of an object
+type isCheckRelevantFunc func(*unstructured.Unstructured) bool
+
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
-func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client, objects []*unstructured.Unstructured, fn checkObjectFunc) error {
+func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
+	objects []*unstructured.Unstructured, fn checkObjectFunc, isCheckRelevant isCheckRelevantFunc, failOnMissingObject bool) error {
 	var (
 		wg  sync.WaitGroup
 		try int32 = 1
@@ -57,7 +62,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
 
-				if err := IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
+				if err := IsObjectReady(ctx, kubeClient, obj, fn, isCheckRelevant, failOnMissingObject); err != nil {
 					switch err.(type) {
 					case *ObjectNotReadyError:
 						notReadyErrs = append(notReadyErrs, err)
@@ -108,18 +113,25 @@ func (e *ObjectNotReadyError) Error() string {
 }
 
 // IsObjectReady gets an updated version of an object and checks if it is ready.
-func IsObjectReady(ctx context.Context, kubeClient client.Client, obj *unstructured.Unstructured, checkObject checkObjectFunc) error {
+func IsObjectReady(ctx context.Context, kubeClient client.Client, obj *unstructured.Unstructured,
+	checkObject checkObjectFunc, isCheckRelevant isCheckRelevantFunc, failOnMissingObject bool) error {
 	objLog, ctx := logging.FromContextOrNew(ctx, nil,
 		lc.KeyGroupVersionKind, obj.GroupVersionKind().String(),
 		lc.KeyResource, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()).String())
 
+	if !isCheckRelevant(obj) && !failOnMissingObject {
+		return nil
+	}
+
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := kubeClient.Get(ctx, key, obj); err != nil {
-		objLog.Debug("Resource status", lc.KeyStatus, StatusUnknown)
-		return fmt.Errorf("unable to get %s %s/%s: %w",
-			obj.GroupVersionKind().String(),
-			obj.GetName(), obj.GetNamespace(),
-			err)
+		if !errors.IsNotFound(err) || isCheckRelevant(obj) || failOnMissingObject {
+			objLog.Debug("Resource status", lc.KeyStatus, StatusUnknown)
+			return fmt.Errorf("unable to get %s %s/%s: %w",
+				obj.GroupVersionKind().String(),
+				obj.GetName(), obj.GetNamespace(),
+				err)
+		}
 	}
 
 	objLog.Debug("Getting resource status")

@@ -9,40 +9,33 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	"helm.sh/helm/v3/pkg/chart"
-
-	"k8s.io/client-go/kubernetes"
-
-	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
-	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
-	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
-
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
+	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // ApplyFiles applies the helm templated files to the target cluster.
@@ -77,11 +70,9 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		deployErr                 error
 	)
 
-	if h.ProviderConfiguration.HelmDeployment != nil && !(*h.ProviderConfiguration.HelmDeployment) {
-		var applier *resourcemanager.ManifestApplier
-		applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
-		managedResourceStatusList = applier.GetManagedResourcesStatus()
-	} else {
+	shouldUseRealHelmDeployer := pointer.BoolDeref(h.ProviderConfiguration.HelmDeployment, true)
+
+	if shouldUseRealHelmDeployer {
 		// apply helm
 		// convert manifests in ManagedResourceStatusList
 		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration,
@@ -94,6 +85,10 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 			}
 			h.ProviderStatus.ManagedResources = managedResourceStatusList
 		}
+	} else {
+		var applier *resourcemanager.ManifestApplier
+		applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
+		managedResourceStatusList = applier.GetManagedResourcesStatus()
 	}
 
 	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
@@ -115,7 +110,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return lserrors.NewWrappedError(err, currOp, "UpdateStatus", err.Error())
 	}
 
-	if err := h.checkResourcesReady(ctx, targetClient); err != nil {
+	if err := h.checkResourcesReady(ctx, targetClient, !shouldUseRealHelmDeployer); err != nil {
 		return err
 	}
 
@@ -201,15 +196,16 @@ func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds m
 }
 
 // checkResourcesReady checks if the managed resources are Ready/Healthy.
-func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client) error {
+func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, failOnMissingObject bool) error {
 
 	if !h.ProviderConfiguration.ReadinessChecks.DisableDefault {
 		defaultReadinessCheck := health.DefaultReadinessCheck{
-			Context:          ctx,
-			Client:           client,
-			CurrentOp:        "DefaultCheckResourcesReadinessHelm",
-			Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
-			ManagedResources: h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
+			Context:             ctx,
+			Client:              client,
+			CurrentOp:           "DefaultCheckResourcesReadinessHelm",
+			Timeout:             h.ProviderConfiguration.ReadinessChecks.Timeout,
+			ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
+			FailOnMissingObject: failOnMissingObject,
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {

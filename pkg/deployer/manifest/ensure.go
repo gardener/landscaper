@@ -8,30 +8,24 @@ import (
 	"context"
 	"errors"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
-
-	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
-
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
+	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 func (m *Manifest) Reconcile(ctx context.Context) error {
@@ -125,11 +119,12 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 	managedresources := m.ProviderStatus.ManagedResources.TypedObjectReferenceList()
 	if !m.ProviderConfiguration.ReadinessChecks.DisableDefault {
 		defaultReadinessCheck := health.DefaultReadinessCheck{
-			Context:          ctx,
-			Client:           client,
-			CurrentOp:        "DefaultCheckResourcesReadinessManifest",
-			Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
-			ManagedResources: managedresources,
+			Context:             ctx,
+			Client:              client,
+			CurrentOp:           "DefaultCheckResourcesReadinessManifest",
+			Timeout:             m.ProviderConfiguration.ReadinessChecks.Timeout,
+			ManagedResources:    managedresources,
+			FailOnMissingObject: true,
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
