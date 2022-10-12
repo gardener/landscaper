@@ -14,6 +14,7 @@ import (
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -205,6 +206,7 @@ var MissingRepositoryContextError = errors.New("RepositoryContextMissing")
 
 // GetExternalContext resolves the context for an installation and applies defaults or overwrites if applicable.
 func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter) (ExternalContext, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	lsCtx := &lsv1alpha1.Context{}
 	cvo := &lsv1alpha1.ComponentVersionOverwrites{}
 	if len(inst.Spec.Context) != 0 {
@@ -222,6 +224,7 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 
 	if cvo != nil {
 		overwriter = componentoverwrites.NewSubstitutions(cvo.Overwrites)
+		logger.Debug("Found ComponentVersionOverwrites for context", "context", inst.Spec.Context)
 	}
 
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
