@@ -71,6 +71,7 @@
 - [JSONSchema](usage/JSONSchema.md)
 - [Landscaper Cli Usage](usage/LandscaperCli.md)
 - [Configuring the Landscaper Logs](usage/Logging.md)
+- [Repository Context](usage/RepositoryContext.md)
 - [Targets](usage/Targets.md)
 - [Templating](usage/Templating.md)
 

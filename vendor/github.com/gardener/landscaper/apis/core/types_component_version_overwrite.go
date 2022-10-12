@@ -22,7 +22,7 @@ type ComponentVersionOverwritesList struct {
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ComponentVersionOverwrites are resources that can hold any kind json or yaml data.
+// ComponentVersionOverwrites contain overwrites for specific (versions of) components.
 // +kubebuilder:resource:path="componentoverwrites",scope="Cluster",shortName={"compoverwrite","co","overwrite"},singular="componentoverwrites"
 type ComponentVersionOverwrites struct {
 	metav1.TypeMeta   `json:",inline"`
