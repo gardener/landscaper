@@ -34,8 +34,8 @@ If an overwrite object is described for a context, the cluster-wide component ov
 
 **Example**
 ```yaml
-apiVersion: landscaper.gardener.com/v1alpha1
-kind: ComponentVersionOverwrite
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentVersionOverwrites
 metadata:
   name: my-context
   namespace: my-namespace
@@ -61,8 +61,8 @@ A component overwrite object is a cluster-wide specification of component versio
 
 **Example**
 ```yaml
-apiVersion: landscaper.gardener.com/v1alpha1
-kind: ComponentOverwrite
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentOverwrites
 metadata:
   name: my-overwrite
 

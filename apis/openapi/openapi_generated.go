@@ -3406,14 +3406,14 @@ func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrite(ref common.R
 				Description: "ComponentVersionOverwrite defines an overwrite for a specific component and/or version of a component.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"component": {
+					"source": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Source defines the component that should be replaced.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference"),
 						},
 					},
-					"target": {
+					"substitution": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Substitution defines the replacement target for the component or version.",
 							Default:     map[string]interface{}{},
@@ -3421,7 +3421,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrite(ref common.R
 						},
 					},
 				},
-				Required: []string{"component", "target"},
+				Required: []string{"source", "substitution"},
 			},
 		},
 		Dependencies: []string{

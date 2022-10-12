@@ -54,9 +54,9 @@ type ComponentVersionOverwriteList []ComponentVersionOverwrite
 // ComponentVersionOverwrite defines an overwrite for a specific component and/or version of a component.
 type ComponentVersionOverwrite struct {
 	// Source defines the component that should be replaced.
-	Source ComponentVersionOverwriteReference `json:"component"`
+	Source ComponentVersionOverwriteReference `json:"source"`
 	// Substitution defines the replacement target for the component or version.
-	Substitution ComponentVersionOverwriteReference `json:"target"`
+	Substitution ComponentVersionOverwriteReference `json:"substitution"`
 }
 
 // ComponentVersionOverwriteReference defines a component reference by

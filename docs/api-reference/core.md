@@ -1943,7 +1943,7 @@ string
 <tbody>
 <tr>
 <td>
-<code>component</code></br>
+<code>source</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwriteReference">
 ComponentVersionOverwriteReference
@@ -1956,7 +1956,7 @@ ComponentVersionOverwriteReference
 </tr>
 <tr>
 <td>
-<code>target</code></br>
+<code>substitution</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwriteReference">
 ComponentVersionOverwriteReference
