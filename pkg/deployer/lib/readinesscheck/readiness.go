@@ -10,12 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
@@ -30,16 +31,45 @@ const (
 // StatusType defines the value of a Status.
 type StatusType string
 
-// checkObjectFunc is a function to perform the actual readiness check
-type checkObjectFunc func(*unstructured.Unstructured) error
+// ReadinessProfile defines which objects should be checked for readiness, and which conditions they must satisfy.
+type ReadinessProfile interface {
+	// GetCheckRelevantObjects determines the objects to be checked.
+	// The readiness check in function WaitForObjectsReady and IsObjectReady will
+	// 1. check the existence of the object and 2. call the Check method that can check further conditions.
+	GetCheckRelevantObjects(ctx context.Context) ([]*unstructured.Unstructured, error)
 
-// isCheckRelevantFunc is a function that determines the check relevance of an object
-type isCheckRelevantFunc func(*unstructured.Unstructured) bool
+	// CheckObject performs the readiness check for an object
+	CheckObject(*unstructured.Unstructured) error
 
-// WaitForObjectsReady waits for objects to be heatlhy and
+	GetClient() client.Client
+
+	GetTimeout() time.Duration
+
+	GetCurrentOperation() string
+}
+
+// CheckResourcesReady performs a readiness check
+func CheckResourcesReady(ctx context.Context, profile ReadinessProfile) error {
+	objects, err := profile.GetCheckRelevantObjects(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(objects) == 0 {
+		return nil
+	}
+
+	if err := waitForObjectsReady(ctx, objects, profile); err != nil {
+		return lserror.NewWrappedError(err, profile.GetCurrentOperation(), "CheckResourceReadiness",
+			err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
+	}
+
+	return nil
+}
+
+// waitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
-func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
-	objects []*unstructured.Unstructured, fn checkObjectFunc, isCheckRelevant isCheckRelevantFunc, failOnMissingObject bool) error {
+func waitForObjectsReady(ctx context.Context, objects []*unstructured.Unstructured, profile ReadinessProfile) error {
 	var (
 		wg  sync.WaitGroup
 		try int32 = 1
@@ -51,7 +81,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 	)
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
-	_ = wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
+	_ = wait.PollImmediate(5*time.Second, profile.GetTimeout(), func() (bool, error) {
 		log.Debug("Wait until resources are ready", "try", try)
 		try++
 
@@ -62,7 +92,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
 
-				if err := IsObjectReady(ctx, kubeClient, obj, fn, isCheckRelevant, failOnMissingObject); err != nil {
+				if err := isObjectReady(ctx, obj, profile); err != nil {
 					switch err.(type) {
 					case *ObjectNotReadyError:
 						notReadyErrs = append(notReadyErrs, err)
@@ -113,29 +143,22 @@ func (e *ObjectNotReadyError) Error() string {
 }
 
 // IsObjectReady gets an updated version of an object and checks if it is ready.
-func IsObjectReady(ctx context.Context, kubeClient client.Client, obj *unstructured.Unstructured,
-	checkObject checkObjectFunc, isCheckRelevant isCheckRelevantFunc, failOnMissingObject bool) error {
+func isObjectReady(ctx context.Context, obj *unstructured.Unstructured, profile ReadinessProfile) error {
 	objLog, ctx := logging.FromContextOrNew(ctx, nil,
 		lc.KeyGroupVersionKind, obj.GroupVersionKind().String(),
 		lc.KeyResource, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()).String())
 
-	if !isCheckRelevant(obj) && !failOnMissingObject {
-		return nil
-	}
-
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-	if err := kubeClient.Get(ctx, key, obj); err != nil {
-		if !errors.IsNotFound(err) || isCheckRelevant(obj) || failOnMissingObject {
-			objLog.Debug("Resource status", lc.KeyStatus, StatusUnknown)
-			return fmt.Errorf("unable to get %s %s/%s: %w",
-				obj.GroupVersionKind().String(),
-				obj.GetName(), obj.GetNamespace(),
-				err)
-		}
+	if err := profile.GetClient().Get(ctx, key, obj); err != nil {
+		objLog.Debug("Resource status", lc.KeyStatus, StatusUnknown)
+		return fmt.Errorf("unable to get %s %s/%s: %w",
+			obj.GroupVersionKind().String(),
+			obj.GetName(), obj.GetNamespace(),
+			err)
 	}
 
 	objLog.Debug("Getting resource status")
-	if err := checkObject(obj); err != nil {
+	if err := profile.CheckObject(obj); err != nil {
 		objLog.Debug("Resource status", lc.KeyStatus, StatusNotReady)
 		return &ObjectNotReadyError{
 			objectGVK:       obj.GroupVersionKind().String(),

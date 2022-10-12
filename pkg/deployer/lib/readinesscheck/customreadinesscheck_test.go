@@ -12,27 +12,24 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
-
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 var _ = Describe("Custom health checks", func() {
 
 	var (
-		customHealthCheck CustomReadinessCheck
+		customHealthCheck CustomReadinessProfile
 	)
 
 	BeforeEach(func() {
-		customHealthCheck = CustomReadinessCheck{
-			Context:   logging.NewContext(ctx, logging.Discard()),
+		customHealthCheck = CustomReadinessProfile{
 			Client:    testenv.Client,
 			CurrentOp: "custom health check test",
 			Timeout:   &lsv1alpha1.Duration{Duration: 180 * time.Second},

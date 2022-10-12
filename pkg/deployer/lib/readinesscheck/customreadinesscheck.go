@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,9 +28,8 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
-// CustomReadinessCheck contains all the data and methods required to kick off a custom readiness check
-type CustomReadinessCheck struct {
-	Context          context.Context
+// CustomReadinessProfile contains all the data and methods required to kick off a custom readiness check
+type CustomReadinessProfile struct {
 	Client           client.Client
 	CurrentOp        string
 	Timeout          *lsv1alpha1.Duration
@@ -37,49 +37,56 @@ type CustomReadinessCheck struct {
 	Configuration    health.CustomReadinessCheckConfiguration
 }
 
-// CheckResourcesReady starts a custom readiness check by checking the readiness of the submitted resources
-func (c *CustomReadinessCheck) CheckResourcesReady() error {
-	if c.Configuration.Disabled || len(c.ManagedResources) == 0 {
+var _ ReadinessProfile = &CustomReadinessProfile{}
+
+func (p *CustomReadinessProfile) GetTimeout() time.Duration {
+	return p.Timeout.Duration
+}
+
+func (p *CustomReadinessProfile) GetClient() client.Client {
+	return p.Client
+}
+
+func (p *CustomReadinessProfile) GetCurrentOperation() string {
+	return p.CurrentOp
+}
+
+func (p *CustomReadinessProfile) GetCheckRelevantObjects(ctx context.Context) ([]*unstructured.Unstructured, error) {
+	if p.Configuration.Disabled || len(p.ManagedResources) == 0 {
 		// nothing to do
-		return nil
+		return nil, nil
 	}
 
 	var objects []*unstructured.Unstructured
 
-	if c.Configuration.Resource != nil {
-		objects = getObjectsByTypedReference(c.ManagedResources, c.Configuration.Resource)
+	if p.Configuration.Resource != nil {
+		objects = getObjectsByTypedReference(p.ManagedResources, p.Configuration.Resource)
 	}
 
-	if c.Configuration.LabelSelector != nil {
-		o, err := getObjectsByLabels(c.Context, c.Client, c.ManagedResources, c.Configuration.LabelSelector)
+	if p.Configuration.LabelSelector != nil {
+		o, err := getObjectsByLabels(ctx, p.Client, p.ManagedResources, p.Configuration.LabelSelector)
 		if err != nil {
-			return lserror.NewWrappedError(err, c.CurrentOp, "get objects by LabelSelector", err.Error(), lsv1alpha1.ErrorInternalProblem)
+			return nil, lserror.NewWrappedError(err, p.CurrentOp, "get objects by LabelSelector", err.Error(), lsv1alpha1.ErrorInternalProblem)
 		}
 		objects = append(objects, o...)
 	}
 
-	timeout := c.Timeout.Duration
-	if err := WaitForObjectsReady(c.Context, timeout, c.Client, objects, c.CheckObject, c.isCheckRelevant, true); err != nil {
-		return lserror.NewWrappedError(err,
-			c.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
-	}
-
-	return nil
+	return objects, nil
 }
 
 // CheckObject checks the readiness of an object and returns an error if the object is considered unready
-func (c *CustomReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
-	for _, requirement := range c.Configuration.Requirements {
+func (p *CustomReadinessProfile) CheckObject(u *unstructured.Unstructured) error {
+	for _, requirement := range p.Configuration.Requirements {
 		fields, err := getFieldsByJSONPath(u.Object, requirement.JsonPath)
 		if err != nil {
-			return lserror.NewWrappedError(err, c.CurrentOp, "parsing JSON path", err.Error())
+			return lserror.NewWrappedError(err, p.CurrentOp, "parsing JSON path", err.Error())
 		}
 
 		if fieldDoesNotExist(fields) {
 			if requirement.Operator == selection.DoesNotExist {
 				return nil
 			}
-			return lserror.NewError(c.CurrentOp, "object check", fmt.Sprintf("field with JSON path %s does not exist", requirement.JsonPath))
+			return lserror.NewError(p.CurrentOp, "object check", fmt.Sprintf("field with JSON path %s does not exist", requirement.JsonPath))
 		}
 
 		if requirement.Operator == selection.Exists {
@@ -89,18 +96,18 @@ func (c *CustomReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
 
 		requirementValues, err := parseRequirementValues(requirement.Value)
 		if err != nil {
-			return lserror.NewWrappedError(err, c.CurrentOp, "parse requirement values", err.Error())
+			return lserror.NewWrappedError(err, p.CurrentOp, "parse requirement values", err.Error())
 		}
 
 		for _, field := range fields {
 			for _, value := range field {
 				ok, err := matchResourceConditions(value.Interface(), requirementValues, requirement.Operator)
 				if err != nil {
-					return lserror.NewWrappedError(err, c.CurrentOp, "check resource requirements", err.Error())
+					return lserror.NewWrappedError(err, p.CurrentOp, "check resource requirements", err.Error())
 				}
 
 				if !ok {
-					return lserror.NewError(c.CurrentOp, "check object values",
+					return lserror.NewError(p.CurrentOp, "check object values",
 						fmt.Sprintf("resource %s %s/%s does not fulfil resource condition field %s", u.GroupVersionKind().String(),
 							u.GetName(),
 							u.GetNamespace(),
@@ -110,10 +117,6 @@ func (c *CustomReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
 		}
 	}
 	return nil
-}
-
-func (d *CustomReadinessCheck) isCheckRelevant(_ *unstructured.Unstructured) bool {
-	return true
 }
 
 func matchResourceConditions(object interface{}, values []interface{}, operator selection.Operator) (bool, error) {

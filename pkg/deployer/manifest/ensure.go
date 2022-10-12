@@ -118,15 +118,14 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 
 	managedresources := m.ProviderStatus.ManagedResources.TypedObjectReferenceList()
 	if !m.ProviderConfiguration.ReadinessChecks.DisableDefault {
-		defaultReadinessCheck := health.DefaultReadinessCheck{
-			Context:             ctx,
+		profile := &health.DefaultReadinessProfile{
 			Client:              client,
 			CurrentOp:           "DefaultCheckResourcesReadinessManifest",
 			Timeout:             m.ProviderConfiguration.ReadinessChecks.Timeout,
 			ManagedResources:    managedresources,
 			FailOnMissingObject: true,
 		}
-		err := defaultReadinessCheck.CheckResourcesReady()
+		err := health.CheckResourcesReady(ctx, profile)
 		if err != nil {
 			return err
 		}
@@ -134,15 +133,14 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 
 	if m.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range m.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
-			customReadinessCheck := health.CustomReadinessCheck{
-				Context:          ctx,
+			profile := &health.CustomReadinessProfile{
 				Client:           client,
 				CurrentOp:        "CustomCheckResourcesReadinessManifest",
 				Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
 				ManagedResources: managedresources,
 				Configuration:    customReadinessCheckConfig,
 			}
-			err := customReadinessCheck.CheckResourcesReady()
+			err := health.CheckResourcesReady(ctx, profile)
 			if err != nil {
 				return err
 			}

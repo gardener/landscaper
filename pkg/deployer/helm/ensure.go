@@ -199,15 +199,14 @@ func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds m
 func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, failOnMissingObject bool) error {
 
 	if !h.ProviderConfiguration.ReadinessChecks.DisableDefault {
-		defaultReadinessCheck := health.DefaultReadinessCheck{
-			Context:             ctx,
+		profile := &health.DefaultReadinessProfile{
 			Client:              client,
 			CurrentOp:           "DefaultCheckResourcesReadinessHelm",
 			Timeout:             h.ProviderConfiguration.ReadinessChecks.Timeout,
 			ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 			FailOnMissingObject: failOnMissingObject,
 		}
-		err := defaultReadinessCheck.CheckResourcesReady()
+		err := health.CheckResourcesReady(ctx, profile)
 		if err != nil {
 			return err
 		}
@@ -215,15 +214,14 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 
 	if h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
-			customReadinessCheck := health.CustomReadinessCheck{
-				Context:          ctx,
+			profile := &health.CustomReadinessProfile{
 				Client:           client,
 				CurrentOp:        "CustomCheckResourcesReadinessHelm",
 				Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
 				ManagedResources: h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:    customReadinessCheckConfig,
 			}
-			err := customReadinessCheck.CheckResourcesReady()
+			err := health.CheckResourcesReady(ctx, profile)
 			if err != nil {
 				return err
 			}

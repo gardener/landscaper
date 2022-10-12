@@ -7,6 +7,7 @@ package readinesscheck
 import (
 	"context"
 	"fmt"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,13 +18,11 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/sets"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
-// DefaultReadinessCheck contains all the data and methods required to kick off a default readiness check
-type DefaultReadinessCheck struct {
-	Context             context.Context
+// DefaultReadinessProfile contains all the data and methods required to kick off a default readiness check
+type DefaultReadinessProfile struct {
 	Client              client.Client
 	CurrentOp           string
 	Timeout             *lsv1alpha1.Duration
@@ -31,31 +30,60 @@ type DefaultReadinessCheck struct {
 	FailOnMissingObject bool
 }
 
-// CheckResourcesReady implements the default readiness check for Kubernetes manifests
-func (d *DefaultReadinessCheck) CheckResourcesReady() error {
+var _ ReadinessProfile = &DefaultReadinessProfile{}
 
-	if len(d.ManagedResources) == 0 {
-		return nil
+func (p *DefaultReadinessProfile) GetTimeout() time.Duration {
+	return p.Timeout.Duration
+}
+
+func (p *DefaultReadinessProfile) GetClient() client.Client {
+	return p.Client
+}
+
+func (p *DefaultReadinessProfile) GetCurrentOperation() string {
+	return p.CurrentOp
+}
+
+func (p *DefaultReadinessProfile) GetCheckRelevantObjects(_ context.Context) ([]*unstructured.Unstructured, error) {
+	if len(p.ManagedResources) == 0 {
+		return nil, nil
 	}
 
-	objects := make([]*unstructured.Unstructured, len(d.ManagedResources))
-	for i, ref := range d.ManagedResources {
+	objects := make([]*unstructured.Unstructured, len(p.ManagedResources))
+	for i, ref := range p.ManagedResources {
 		obj := kutil.ObjectFromTypedObjectReference(&ref)
 		objects[i] = obj
 	}
 
-	timeout := d.Timeout.Duration
-	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject, d.isCheckRelevant, d.FailOnMissingObject); err != nil {
-		return lserror.NewWrappedError(err,
-			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
+	objects = p.filterCheckRelevantObjects(objects)
+
+	return objects, nil
+}
+
+// In case of the manifest deployer and fake helm deployer, we check all objects, at least their existence.
+// In case of the real helm deployer (p.FailOnMissingObject == false) we check only special kinds of objects like pods etc.
+func (p *DefaultReadinessProfile) filterCheckRelevantObjects(objects []*unstructured.Unstructured) []*unstructured.Unstructured {
+	if p.FailOnMissingObject {
+		// Check all objects (manifest deployer, fake helm deployer)
+		return objects
 	}
 
-	return nil
+	checkRelevant := sets.String{}
+	checkRelevant.Insert("Pod", "Deployment.apps", "ReplicaSet.apps", "StatefulSet.apps", "DaemonSet.apps", "ReplicationController")
+
+	resultObjects := []*unstructured.Unstructured{}
+	for i := range objects {
+		o := objects[i]
+		if checkRelevant.Has(o.GroupVersionKind().GroupKind().String()) {
+			resultObjects = append(resultObjects, o)
+		}
+	}
+	return resultObjects
 }
 
 // DefaultCheckObject checks if the object is ready and returns an error otherwise.
 // A non-managed object returns nil.
-func (d *DefaultReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
+func (p *DefaultReadinessProfile) CheckObject(u *unstructured.Unstructured) error {
 	gk := u.GroupVersionKind().GroupKind()
 	switch gk.String() {
 	case "Pod":
@@ -99,12 +127,6 @@ func (d *DefaultReadinessCheck) CheckObject(u *unstructured.Unstructured) error 
 	}
 }
 
-func (d *DefaultReadinessCheck) isCheckRelevant(u *unstructured.Unstructured) bool {
-	checkRelevant := sets.String{}
-	checkRelevant.Insert("Pod", "Deployment.apps", "ReplicaSet.apps", "StatefulSet.apps", "DaemonSet.apps", "ReplicationController")
-	return checkRelevant.Has(u.GroupVersionKind().GroupKind().String())
-}
-
 func outdatedGeneration(current, expected int64) error {
 	return fmt.Errorf("observed generation outdated (%d/%d)", current, expected)
 }
@@ -146,7 +168,7 @@ func getPodCondition(conditions []corev1.PodCondition, conditionType corev1.PodC
 
 // CheckPod checks whether the given Pod is ready.
 // A Pod is considered ready if it successfully completed
-// or if it has the the PodReady condition set to true.
+// or if it has the PodReady condition set to true.
 func CheckPod(pod *corev1.Pod) error {
 	for _, trueConditionType := range truePodConditionTypes {
 		conditionType := string(trueConditionType)
