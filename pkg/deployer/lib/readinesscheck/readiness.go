@@ -44,10 +44,10 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 		wg  sync.WaitGroup
 		try int32 = 1
 
-		// allErrs contains all the errors not related to the readiness of objects.
-		allErrs []error
 		// notReadyErrs contains all the errors related to the readiness of objects.
 		notReadyErrs []error
+		// allErrs contains all the errors not related to the readiness of objects.
+		otherErrs []error
 	)
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
@@ -55,27 +55,34 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 		log.Debug("Wait until resources are ready", "try", try)
 		try++
 
-		allErrs = nil
-		notReadyErrs = nil
-		for _, obj := range objects {
+		allErrors := make([]error, len(objects))
+
+		for i, obj := range objects {
 			wg.Add(1)
-			go func(obj *unstructured.Unstructured) {
+			go func(obj *unstructured.Unstructured, i int, allErrors []error) {
 				defer wg.Done()
 
 				if err := IsObjectReady(ctx, kubeClient, obj, fn, isCheckRelevant, failOnMissingObject); err != nil {
-					switch err.(type) {
-					case *ObjectNotReadyError:
-						notReadyErrs = append(notReadyErrs, err)
-					default:
-						allErrs = append(allErrs, err)
-					}
+					allErrors[i] = err
 				}
-			}(obj)
+			}(obj, i, allErrors)
 		}
 		wg.Wait()
 
-		if len(allErrs) > 0 {
-			return false, apimacherrors.NewAggregate(allErrs)
+		otherErrs = nil
+		notReadyErrs = nil
+
+		for _, err := range allErrors {
+			switch err.(type) {
+			case *ObjectNotReadyError:
+				notReadyErrs = append(notReadyErrs, err)
+			default:
+				otherErrs = append(otherErrs, err)
+			}
+		}
+
+		if len(otherErrs) > 0 {
+			return false, apimacherrors.NewAggregate(otherErrs)
 		}
 		if len(notReadyErrs) > 0 {
 			return false, nil
@@ -84,8 +91,8 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 		return true, nil
 	})
 
-	if len(allErrs) > 0 {
-		return apimacherrors.NewAggregate(allErrs)
+	if len(otherErrs) > 0 {
+		return apimacherrors.NewAggregate(otherErrs)
 	}
 	if len(notReadyErrs) > 0 {
 		return apimacherrors.NewAggregate(notReadyErrs)
