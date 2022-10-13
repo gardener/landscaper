@@ -11,7 +11,7 @@ set -o pipefail
 SOURCE_DIR="$(dirname $0)/.."
 
 apk add --no-cache git make musl-dev curl
-GO_VERSION=$(grep "go \d.\d\d" ${SOURCE_DIR}/go.mod| sed 's/ //g')
+GO_VERSION=$(grep "go [0-9].[0-9][0-9]" ${SOURCE_DIR}/go.mod| sed 's/ //g')
 curl -LO https://golang.org/dl/${GO_VERSION}.linux-amd64.tar.gz
 tar -C /usr/local -xzf ${GO_VERSION}.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin
