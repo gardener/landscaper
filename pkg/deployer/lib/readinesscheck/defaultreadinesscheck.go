@@ -44,13 +44,34 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 		objects[i] = obj
 	}
 
+	// In case if the manifest and fake helm deployer we check for all objects at least the existence.
+	// In case of a real helm deployment we check only Pods, Deployments, etc, because the other objects could
+	// be temporary due to helm hooks.
+	objects = d.filterObjects(objects)
+
 	timeout := d.Timeout.Duration
-	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject, d.isCheckRelevant, d.FailOnMissingObject); err != nil {
+	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject); err != nil {
 		return lserror.NewWrappedError(err,
 			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}
 
 	return nil
+}
+
+func (d *DefaultReadinessCheck) filterObjects(objects []*unstructured.Unstructured) []*unstructured.Unstructured {
+	if d.FailOnMissingObject {
+		return objects
+	}
+
+	filteredObjects := []*unstructured.Unstructured{}
+	for i := range objects {
+		obj := objects[i]
+		if d.isCheckRelevant(obj) {
+			filteredObjects = append(filteredObjects, obj)
+		}
+	}
+
+	return filteredObjects
 }
 
 // DefaultCheckObject checks if the object is ready and returns an error otherwise.

@@ -59,7 +59,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady() error {
 	}
 
 	timeout := c.Timeout.Duration
-	if err := WaitForObjectsReady(c.Context, timeout, c.Client, objects, c.CheckObject, c.isCheckRelevant, true); err != nil {
+	if err := WaitForObjectsReady(c.Context, timeout, c.Client, objects, c.CheckObject); err != nil {
 		return lserror.NewWrappedError(err,
 			c.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}
@@ -110,10 +110,6 @@ func (c *CustomReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
 		}
 	}
 	return nil
-}
-
-func (d *CustomReadinessCheck) isCheckRelevant(_ *unstructured.Unstructured) bool {
-	return true
 }
 
 func matchResourceConditions(object interface{}, values []interface{}, operator selection.Operator) (bool, error) {
