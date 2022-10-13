@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/kustomize/kyaml/sets"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserror "github.com/gardener/landscaper/apis/errors"
@@ -22,11 +23,12 @@ import (
 
 // DefaultReadinessCheck contains all the data and methods required to kick off a default readiness check
 type DefaultReadinessCheck struct {
-	Context          context.Context
-	Client           client.Client
-	CurrentOp        string
-	Timeout          *lsv1alpha1.Duration
-	ManagedResources []lsv1alpha1.TypedObjectReference
+	Context             context.Context
+	Client              client.Client
+	CurrentOp           string
+	Timeout             *lsv1alpha1.Duration
+	ManagedResources    []lsv1alpha1.TypedObjectReference
+	FailOnMissingObject bool
 }
 
 // CheckResourcesReady implements the default readiness check for Kubernetes manifests
@@ -42,6 +44,11 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 		objects[i] = obj
 	}
 
+	// In case if the manifest and fake helm deployer we check for all objects at least the existence.
+	// In case of a real helm deployment we check only Pods, Deployments, etc, because the other objects could
+	// be temporary due to helm hooks.
+	objects = d.filterObjects(objects)
+
 	timeout := d.Timeout.Duration
 	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject); err != nil {
 		return lserror.NewWrappedError(err,
@@ -49,6 +56,22 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 	}
 
 	return nil
+}
+
+func (d *DefaultReadinessCheck) filterObjects(objects []*unstructured.Unstructured) []*unstructured.Unstructured {
+	if d.FailOnMissingObject {
+		return objects
+	}
+
+	filteredObjects := []*unstructured.Unstructured{}
+	for i := range objects {
+		obj := objects[i]
+		if d.isCheckRelevant(obj) {
+			filteredObjects = append(filteredObjects, obj)
+		}
+	}
+
+	return filteredObjects
 }
 
 // DefaultCheckObject checks if the object is ready and returns an error otherwise.
@@ -95,6 +118,12 @@ func (d *DefaultReadinessCheck) CheckObject(u *unstructured.Unstructured) error 
 	default:
 		return nil
 	}
+}
+
+func (d *DefaultReadinessCheck) isCheckRelevant(u *unstructured.Unstructured) bool {
+	checkRelevant := sets.String{}
+	checkRelevant.Insert("Pod", "Deployment.apps", "ReplicaSet.apps", "StatefulSet.apps", "DaemonSet.apps", "ReplicationController")
+	return checkRelevant.Has(u.GroupVersionKind().GroupKind().String())
 }
 
 func outdatedGeneration(current, expected int64) error {
