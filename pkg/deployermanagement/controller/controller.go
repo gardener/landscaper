@@ -118,6 +118,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 		target.Spec = lsv1alpha1.TargetSpec{
 			Type:          targetTemplate.Type,
 			Configuration: targetTemplate.Configuration,
+			SecretRef:     targetTemplate.SecretRef,
 		}
 		return controllerutil.SetControllerReference(env, target, con.scheme)
 	}); err != nil {
