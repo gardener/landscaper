@@ -68,16 +68,12 @@ func New(lsClient client.Client,
 func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostClient client.Client) (*lsv1alpha1.Environment, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "EnsureLandscaperResources")
 	target, err := utils.NewTargetBuilder(string(lsv1alpha1.KubernetesClusterTargetType)).
-		Config(lsv1alpha1.KubernetesClusterTargetConfig{
-			Kubeconfig: lsv1alpha1.ValueRef{
-				SecretRef: &lsv1alpha1.SecretReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      a.TargetSecretName(),
-						Namespace: a.config.Namespace,
-					},
-					Key: lsv1alpha1.DefaultKubeconfigKey,
-				},
+		SecretRef(&lsv1alpha1.SecretReference{
+			ObjectReference: lsv1alpha1.ObjectReference{
+				Name:      a.TargetSecretName(),
+				Namespace: a.config.Namespace,
 			},
+			Key: lsv1alpha1.DefaultKubeconfigKey,
 		}).Build()
 	if err != nil {
 		return nil, err

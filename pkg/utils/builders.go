@@ -184,6 +184,7 @@ type TargetBuilder struct {
 	Type          string
 	ObjectKey     *lsv1alpha1.ObjectReference
 	Configuration interface{}
+	Ref           *lsv1alpha1.SecretReference
 	annotations   map[string]string
 }
 
@@ -192,23 +193,6 @@ func NewTargetBuilder(tType string) *TargetBuilder {
 	return &TargetBuilder{
 		Type: tType,
 	}
-}
-
-// DeepCopy creates a deep copy of the builder and its options.
-// Note that the scheme is not deep copied.
-func (b *TargetBuilder) DeepCopy() *TargetBuilder {
-	newBldr := NewTargetBuilder(b.Type).
-		Config(b.Configuration)
-
-	if b.ObjectKey != nil {
-		newBldr.Key(b.ObjectKey.Namespace, b.ObjectKey.Name)
-	}
-	if b.annotations != nil {
-		for key, val := range b.annotations {
-			newBldr.AddAnnotation(key, val)
-		}
-	}
-	return newBldr
 }
 
 // Key sets the deployitem's namespace and name.
@@ -235,16 +219,28 @@ func (b *TargetBuilder) Config(obj interface{}) *TargetBuilder {
 	return b
 }
 
+func (b *TargetBuilder) SecretRef(secretRef *lsv1alpha1.SecretReference) *TargetBuilder {
+	b.Ref = secretRef
+	return b
+}
+
 // Build creates the target using the given options.
 func (b *TargetBuilder) Build() (*lsv1alpha1.Target, error) {
-	configBytes, err := json.Marshal(b.Configuration)
-	if err != nil {
-		return nil, fmt.Errorf("unable to decode target config: %w", err)
-	}
-
 	target := &lsv1alpha1.Target{}
 	target.Spec.Type = lsv1alpha1.TargetType(b.Type)
-	target.Spec.Configuration = lsv1alpha1.NewAnyJSON(configBytes)
+
+	if b.Configuration != nil {
+		configBytes, err := json.Marshal(b.Configuration)
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode target config: %w", err)
+		}
+		target.Spec.Configuration = lsv1alpha1.NewAnyJSON(configBytes)
+	}
+
+	if b.Ref != nil {
+		target.Spec.SecretRef = b.Ref
+	}
+
 	if b.ObjectKey != nil {
 		target.Namespace = b.ObjectKey.Namespace
 		target.Name = b.ObjectKey.Name
