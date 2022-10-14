@@ -6516,8 +6516,14 @@ func schema_landscaper_apis_core_v1alpha1_TargetSpec(ref common.ReferenceCallbac
 					},
 					"config": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Configuration contains the target type specific configuration.",
+							Description: "Configuration contains the target type specific configuration. Exactly one of the fields Configuration and SecretRef must be set",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"),
+						},
+					},
+					"secretRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Reference to a secret containing the target type specific configuration. Exactly one of the fields Configuration and SecretRef must be set",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 				},
@@ -6525,7 +6531,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetSpec(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
 	}
 }
 
@@ -6546,8 +6552,14 @@ func schema_landscaper_apis_core_v1alpha1_TargetTemplate(ref common.ReferenceCal
 					},
 					"config": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Configuration contains the target type specific configuration.",
+							Description: "Configuration contains the target type specific configuration. Exactly one of the fields Configuration and SecretRef must be set",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"),
+						},
+					},
+					"secretRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Reference to a secret containing the target type specific configuration. Exactly one of the fields Configuration and SecretRef must be set",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 					"labels": {
@@ -6587,7 +6599,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetTemplate(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
 	}
 }
 
