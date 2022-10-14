@@ -23,7 +23,7 @@ type ComponentVersionOverwritesList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ComponentVersionOverwrites contain overwrites for specific (versions of) components.
-// +kubebuilder:resource:path="componentoverwrites",scope="Cluster",shortName={"compoverwrite","co","overwrite"},singular="componentoverwrites"
+// +kubebuilder:resource:path="componentversionoverwrites",scope="Cluster",shortName={"compveroverwrite","cvo","overwrite"},singular="componentversionoverwrite"
 type ComponentVersionOverwrites struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

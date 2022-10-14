@@ -86,8 +86,6 @@ type Controllers struct {
 	Executions ExecutionsController
 	// DeployItems contains the controller config that reconciles deploy items.
 	DeployItems DeployItemsController
-	// ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.
-	ComponentOverwrites ComponentOverwritesController
 	// Contexts contains the controller config that reconciles context objects.
 	Contexts ContextsController
 }
@@ -104,11 +102,6 @@ type ExecutionsController struct {
 
 // DeployItemsController contains the controller config that reconciles deploy items.
 type DeployItemsController struct {
-	CommonControllerConfig
-}
-
-// ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.
-type ComponentOverwritesController struct {
 	CommonControllerConfig
 }
 

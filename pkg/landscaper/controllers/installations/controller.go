@@ -190,7 +190,9 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "InitInstallationOperation", err.Error())
 	}
-	instOp.SetOverwriter(ow)
+	if instOp.Overwriter == nil {
+		instOp.SetOverwriter(ow)
+	}
 	return instOp, nil
 }
 

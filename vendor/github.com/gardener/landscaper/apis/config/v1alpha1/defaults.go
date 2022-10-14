@@ -34,7 +34,6 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	SetDefaults_CommonControllerConfig(&obj.Controllers.Installations.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&obj.Controllers.Executions.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&obj.Controllers.DeployItems.CommonControllerConfig)
-	SetDefaults_CommonControllerConfig(&obj.Controllers.ComponentOverwrites.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&obj.Controllers.Contexts.CommonControllerConfig)
 
 	if len(obj.DeployerManagement.Namespace) == 0 {
