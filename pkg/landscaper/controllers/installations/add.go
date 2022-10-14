@@ -14,21 +14,18 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 // AddControllerToManager register the installation Controller in a manager.
-func AddControllerToManager(logger logging.Logger, mgr manager.Manager, overwriter *componentoverwrites.Manager, config *config.LandscaperConfiguration) error {
+func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
 	log := logger.Reconciles("installation", "Installation")
 	a, err := NewController(
 		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("Landscaper"),
-		overwriter,
 		config,
 	)
 	if err != nil {

@@ -21,8 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -44,7 +42,6 @@ type Operation struct {
 
 	Inst                            *InstallationImportsAndBlueprint
 	ComponentDescriptor             *cdv2.ComponentDescriptor
-	Overwriter                      componentoverwrites.Overwriter
 	BlobResolver                    ctf.BlobResolver
 	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
 	context                         Scope
@@ -80,7 +77,7 @@ func (o *Operation) SetTargetListImports(data map[string]*dataobjects.TargetExte
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
 // DEPRECATED: only used for tests. use the builder methods instead.
 func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
-	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.GetInstallation())
+	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.GetInstallation(), o.Context().External.Overwriter)
 	if err != nil {
 		return err
 	}
@@ -88,7 +85,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 		return nil
 	}
 
-	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd, o.Context().External.RepositoryContext, o.Overwriter)
+	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd, o.Context().External.RepositoryContext, o.Context().External.Overwriter)
 	if err != nil {
 		return err
 	}
@@ -122,11 +119,6 @@ func (o *Operation) JSONSchemaValidator(schema []byte) (*jsonschema.Validator, e
 		return nil, fmt.Errorf("error compiling jsonschema: %w", err)
 	}
 	return v, nil
-}
-
-// SetOverwriter sets the component overwriter.
-func (o *Operation) SetOverwriter(ow componentoverwrites.Overwriter) {
-	o.Overwriter = ow
 }
 
 // ListSubinstallations returns a list of all subinstallations of the given installation.

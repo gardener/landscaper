@@ -39,7 +39,7 @@ var _ = Describe("SubInstallation", func() {
 		fakeInstallations map[string]*lsv1alpha1.Installation
 
 		createSubInstallationsOperation = func(ctx context.Context, installation *lsv1alpha1.Installation) *subinstallations.Operation {
-			instRoot, err := installations.CreateInternalInstallationWithContext(ctx, installation, fakeClient, op.ComponentsRegistry(), nil)
+			instRoot, err := installations.CreateInternalInstallationWithContext(ctx, installation, fakeClient, op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 
 			repoCtx := &cdv2.OCIRegistryRepository{
@@ -52,7 +52,7 @@ var _ = Describe("SubInstallation", func() {
 			repoCtxRaw, err := json.Marshal(repoCtx)
 			Expect(err).ToNot(HaveOccurred())
 
-			lsCtx, err := installations.GetInstallationContext(ctx, fakeClient, installation, nil)
+			lsCtx, err := installations.GetInstallationContext(ctx, fakeClient, installation)
 			Expect(err).ToNot(HaveOccurred())
 			lsCtx.External.Context.RepositoryContext = &cdv2.UnstructuredTypedObject{
 				ObjectType: repoCtx.ObjectType,

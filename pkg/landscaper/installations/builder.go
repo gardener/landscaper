@@ -138,21 +138,16 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 		ComponentDescriptor:             b.cd,
 		BlobResolver:                    b.blobResolver,
 		ResolvedComponentDescriptorList: b.resolvedComponentDescriptorList,
-		Overwriter:                      b.overwriter,
 	}
 
 	if b.context == nil {
-		newCtx, err := GetInstallationContext(ctx, instOp.Client(), instOp.Inst.GetInstallation(), instOp.Overwriter)
+		newCtx, err := GetInstallationContext(ctx, instOp.Client(), instOp.Inst.GetInstallation())
 		if err != nil {
 			return nil, err
 		}
 		b.context = newCtx
 	}
 	instOp.context = *b.context
-
-	if instOp.Overwriter == nil {
-		instOp.Overwriter = instOp.Context().External.Overwriter
-	}
 
 	if instOp.ComponentDescriptor == nil {
 		cdRef := instOp.Context().External.ComponentDescriptorRef()
@@ -187,7 +182,7 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 	if instOp.ResolvedComponentDescriptorList == nil {
 		var err error
-		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, instOp.ComponentsRegistry(), *instOp.ComponentDescriptor, instOp.Context().External.RepositoryContext, instOp.Overwriter)
+		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, instOp.ComponentsRegistry(), *instOp.ComponentDescriptor, instOp.Context().External.RepositoryContext, instOp.Context().External.Overwriter)
 		if err != nil {
 			return nil, err
 		}

@@ -133,7 +133,7 @@ var _ = Describe("Delete", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
-			Expect(installationsctl.AddControllerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, nil, &config.LandscaperConfiguration{})).To(Succeed())
+			Expect(installationsctl.AddControllerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, &config.LandscaperConfiguration{})).To(Succeed())
 			go func() {
 				Expect(mgr.Start(ctx)).To(Succeed())
 			}()

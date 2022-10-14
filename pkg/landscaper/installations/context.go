@@ -41,7 +41,7 @@ type Scope struct {
 
 // SetInstallationContext determines the current context and updates the operation context.
 func (o *Operation) SetInstallationContext(ctx context.Context) error {
-	newCtx, err := GetInstallationContext(ctx, o.Client(), o.Inst.GetInstallation(), o.Overwriter)
+	newCtx, err := GetInstallationContext(ctx, o.Client(), o.Inst.GetInstallation())
 	if err != nil {
 		return err
 	}
@@ -54,14 +54,13 @@ func (o *Operation) SetInstallationContext(ctx context.Context) error {
 // The context is later used to validate and get imported data.
 func GetInstallationContext(ctx context.Context,
 	kubeClient client.Client,
-	inst *lsv1alpha1.Installation,
-	overwriter componentoverwrites.Overwriter) (*Scope, error) {
+	inst *lsv1alpha1.Installation) (*Scope, error) {
 	parentInst, siblingInstallations, err := GetParentAndSiblings(ctx, kubeClient, inst)
 	if err != nil {
 		return nil, err
 	}
 
-	externalCtx, err := GetExternalContext(ctx, kubeClient, inst, overwriter)
+	externalCtx, err := GetExternalContext(ctx, kubeClient, inst)
 	if err != nil {
 		return nil, err
 	}
@@ -205,9 +204,10 @@ func (o *Operation) IsRoot() bool {
 var MissingRepositoryContextError = errors.New("RepositoryContextMissing")
 
 // GetExternalContext resolves the context for an installation and applies defaults or overwrites if applicable.
-func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter) (ExternalContext, error) {
+func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (ExternalContext, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	lsCtx := &lsv1alpha1.Context{}
+	var overwriter componentoverwrites.Overwriter
 	cvo := &lsv1alpha1.ComponentVersionOverwrites{}
 	if len(inst.Spec.Context) != 0 {
 		if err := kubeClient.Get(ctx, kutil.ObjectKey(inst.Spec.Context, inst.Namespace), lsCtx); err != nil {

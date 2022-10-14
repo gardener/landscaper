@@ -136,7 +136,7 @@ var _ = Describe("Context", func() {
 			inst.Namespace = state.Namespace
 			inst.Spec.Context = "test"
 
-			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, nil)
+			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(inst.Spec.ComponentDescriptor).To(BeNil())
 			Expect(extCtx.RepositoryContext.Raw).To(MatchJSON(testutils.ExampleRepositoryContext().Raw))
@@ -165,7 +165,7 @@ var _ = Describe("Context", func() {
 				},
 			}
 
-			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, nil)
+			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 			Expect(extCtx.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
@@ -190,74 +190,8 @@ var _ = Describe("Context", func() {
 				},
 			}
 
-			_, err = installations.GetExternalContext(ctx, testenv.Client, inst, nil)
+			_, err = installations.GetExternalContext(ctx, testenv.Client, inst)
 			Expect(err).To(HaveOccurred())
-		})
-
-		It("should overwrite a repository context (old overwriter)", func() {
-			ctx := context.Background()
-			state, err := testenv.InitState(ctx)
-			Expect(err).ToNot(HaveOccurred())
-
-			lsCtx := &lsv1alpha1.Context{
-				RepositoryContext: testutils.ExampleRepositoryContext(),
-			}
-			lsCtx.Name = "test"
-			lsCtx.Namespace = state.Namespace
-			Expect(state.Create(ctx, lsCtx)).To(Succeed())
-
-			inst := &lsv1alpha1.Installation{}
-			inst.Namespace = state.Namespace
-			inst.Spec.Context = "test"
-			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
-				Reference: &lsv1alpha1.ComponentDescriptorReference{
-					RepositoryContext: testutils.ExampleRepositoryContext(),
-				},
-			}
-
-			repoCtx := testutils.DefaultRepositoryContext("test.com")
-			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) bool {
-				reference.RepositoryContext = repoCtx
-				return true
-			})
-
-			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, ow)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext).To(Equal(repoCtx))
-			Expect(extCtx.RepositoryContext).To(Equal(repoCtx))
-		})
-
-		It("should overwrite a repository context defined by the external context (old overwriter)", func() {
-			ctx := context.Background()
-			state, err := testenv.InitState(ctx)
-			Expect(err).ToNot(HaveOccurred())
-
-			lsCtx := &lsv1alpha1.Context{
-				RepositoryContext: testutils.ExampleRepositoryContext(),
-			}
-			lsCtx.Name = "test"
-			lsCtx.Namespace = state.Namespace
-			Expect(state.Create(ctx, lsCtx)).To(Succeed())
-
-			inst := &lsv1alpha1.Installation{}
-			inst.Namespace = state.Namespace
-			inst.Spec.Context = "test"
-			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
-				Reference: &lsv1alpha1.ComponentDescriptorReference{
-					ComponentName: "abc",
-				},
-			}
-
-			repoCtx := testutils.DefaultRepositoryContext("test.com")
-			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) bool {
-				reference.RepositoryContext = repoCtx
-				return true
-			})
-
-			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, ow)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext).To(Equal(repoCtx))
-			Expect(extCtx.RepositoryContext).To(Equal(repoCtx))
 		})
 
 		It("should overwrite a repository context", func() {
@@ -300,7 +234,7 @@ var _ = Describe("Context", func() {
 			cvo.Namespace = state.Namespace
 			Expect(state.Create(ctx, cvo)).To(Succeed())
 
-			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, nil)
+			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cdv2.UnstructuredTypesEqual(inst.Spec.ComponentDescriptor.Reference.RepositoryContext, repoCtx)).To(BeTrue())
 			Expect(cdv2.UnstructuredTypesEqual(extCtx.RepositoryContext, repoCtx)).To(BeTrue())
@@ -346,7 +280,7 @@ var _ = Describe("Context", func() {
 			cvo.Namespace = state.Namespace
 			Expect(state.Create(ctx, cvo)).To(Succeed())
 
-			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, nil)
+			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cdv2.UnstructuredTypesEqual(inst.Spec.ComponentDescriptor.Reference.RepositoryContext, repoCtx)).To(BeTrue())
 			Expect(cdv2.UnstructuredTypesEqual(extCtx.RepositoryContext, repoCtx)).To(BeTrue())

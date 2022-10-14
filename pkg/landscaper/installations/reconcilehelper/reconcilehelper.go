@@ -215,7 +215,7 @@ func (rh *ReconcileHelper) fetchParent() error {
 	if rh.Operation.Context().Parent != nil {
 		var err error
 		parent, err = installations.CreateInternalInstallationWithContext(rh.ctx, rh.Operation.Context().Parent.GetInstallation(),
-			rh.Operation.Client(), rh.Operation.ComponentsRegistry(), rh.Operation.Overwriter)
+			rh.Operation.Client(), rh.Operation.ComponentsRegistry())
 		if err != nil {
 			return err
 		}
