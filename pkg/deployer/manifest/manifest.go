@@ -137,14 +137,24 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 		return restConfig, kubeClient, clientset, nil
 	}
 	if m.Target != nil {
-		targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
-		if err := json.Unmarshal(m.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
-			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
-		}
+		var kubeconfigBytes []byte
+		var err error
 
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.lsKubeClient, m.hostKubeClient)
-		if err != nil {
-			return nil, nil, nil, err
+		if m.Target.Spec.SecretRef != nil {
+			kubeconfigBytes, err = lib.GetKubeconfigFromSecretRef(ctx, m.Target.Spec.SecretRef, m.lsKubeClient, m.hostKubeClient)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+		} else {
+			targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
+			if err = json.Unmarshal(m.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
+				return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
+			}
+
+			kubeconfigBytes, err = lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.lsKubeClient, m.hostKubeClient)
+			if err != nil {
+				return nil, nil, nil, err
+			}
 		}
 
 		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)

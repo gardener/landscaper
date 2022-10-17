@@ -45,7 +45,10 @@ func GetKubeconfigFromTargetConfig(ctx context.Context, config *lsv1alpha1.Kuber
 		return nil, errors.New("kubeconfig not defined")
 	}
 
-	ref := config.Kubeconfig.SecretRef
+	return GetKubeconfigFromSecretRef(ctx, config.Kubeconfig.SecretRef, kubeClients...)
+}
+
+func GetKubeconfigFromSecretRef(ctx context.Context, ref *lsv1alpha1.SecretReference, kubeClients ...client.Client) ([]byte, error) {
 	var errList []error
 	for _, kubeClient := range kubeClients {
 		secret := &corev1.Secret{}
@@ -67,6 +70,7 @@ func GetKubeconfigFromTargetConfig(ctx context.Context, config *lsv1alpha1.Kuber
 		}
 		return kubeconfig, nil
 	}
+
 	if len(errList) != 0 {
 		return nil, utilerrors.NewAggregate(errList)
 	}

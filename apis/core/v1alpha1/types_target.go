@@ -82,9 +82,16 @@ type TargetSpec struct {
 	// Type is the type of the target that defines its data structure.
 	// The actual schema may be defined by a target type crd in the future.
 	Type TargetType `json:"type"`
+
 	// Configuration contains the target type specific configuration.
+	// Exactly one of the fields Configuration and SecretRef must be set
 	// +optional
 	Configuration AnyJSON `json:"config,omitempty"`
+
+	// Reference to a secret containing the target type specific configuration.
+	// Exactly one of the fields Configuration and SecretRef must be set
+	// +optional
+	SecretRef *SecretReference `json:"secretRef,omitempty"`
 }
 
 // TargetTemplate exposes specific parts of a target that are used in the exports
@@ -126,7 +133,9 @@ const DefaultKubeconfigKey = "kubeconfig"
 
 // ValueRef holds a value that can be either defined by string or by a secret ref.
 type ValueRef struct {
-	StrVal    *string          `json:"-"`
+	StrVal *string `json:"-"`
+
+	// deprecated
 	SecretRef *SecretReference `json:"secretRef,omitempty"`
 }
 

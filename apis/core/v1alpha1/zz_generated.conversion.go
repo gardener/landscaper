@@ -2864,6 +2864,7 @@ func autoConvert_v1alpha1_TargetSpec_To_core_TargetSpec(in *TargetSpec, out *cor
 	if err := Convert_v1alpha1_AnyJSON_To_core_AnyJSON(&in.Configuration, &out.Configuration, s); err != nil {
 		return err
 	}
+	out.SecretRef = (*core.SecretReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 
@@ -2877,6 +2878,7 @@ func autoConvert_core_TargetSpec_To_v1alpha1_TargetSpec(in *core.TargetSpec, out
 	if err := Convert_core_AnyJSON_To_v1alpha1_AnyJSON(&in.Configuration, &out.Configuration, s); err != nil {
 		return err
 	}
+	out.SecretRef = (*SecretReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 

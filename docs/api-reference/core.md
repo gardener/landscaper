@@ -1406,7 +1406,23 @@ AnyJSON
 </td>
 <td>
 <em>(Optional)</em>
-<p>Configuration contains the target type specific configuration.</p>
+<p>Configuration contains the target type specific configuration.
+Exactly one of the fields Configuration and SecretRef must be set</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
+SecretReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Reference to a secret containing the target type specific configuration.
+Exactly one of the fields Configuration and SecretRef must be set</p>
 </td>
 </tr>
 </table>
@@ -4456,6 +4472,7 @@ string
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef</a>)
 </p>
 <p>
@@ -4977,7 +4994,23 @@ AnyJSON
 </td>
 <td>
 <em>(Optional)</em>
-<p>Configuration contains the target type specific configuration.</p>
+<p>Configuration contains the target type specific configuration.
+Exactly one of the fields Configuration and SecretRef must be set</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
+SecretReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Reference to a secret containing the target type specific configuration.
+Exactly one of the fields Configuration and SecretRef must be set</p>
 </td>
 </tr>
 </tbody>
@@ -5226,6 +5259,7 @@ SecretReference
 </em>
 </td>
 <td>
+<p>deprecated</p>
 </td>
 </tr>
 </tbody>

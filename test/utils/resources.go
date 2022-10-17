@@ -183,28 +183,18 @@ func CreateKubernetesTargetFromSecret(namespace, name string, secret *corev1.Sec
 		break
 	}
 
-	config := lsv1alpha1.KubernetesClusterTargetConfig{
-		Kubeconfig: lsv1alpha1.ValueRef{
-			SecretRef: &lsv1alpha1.SecretReference{
-				ObjectReference: lsv1alpha1.ObjectReference{
-					Name:      secret.Name,
-					Namespace: secret.Namespace,
-				},
-				Key: key,
-			},
-		},
-	}
-	data, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
 	target := &lsv1alpha1.Target{}
 	target.Name = name
 	target.Namespace = namespace
 
 	target.Spec.Type = lsv1alpha1.KubernetesClusterTargetType
-	target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
+	target.Spec.SecretRef = &lsv1alpha1.SecretReference{
+		ObjectReference: lsv1alpha1.ObjectReference{
+			Name:      secret.Name,
+			Namespace: secret.Namespace,
+		},
+		Key: key,
+	}
 
 	return target, nil
 }

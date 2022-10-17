@@ -39,7 +39,26 @@ spec:
             properties:
               config:
                 description: Configuration contains the target type specific configuration.
+                  Exactly one of the fields Configuration and SecretRef must be set
                 x-kubernetes-preserve-unknown-fields: true
+              secretRef:
+                description: Reference to a secret containing the target type specific
+                  configuration. Exactly one of the fields Configuration and SecretRef
+                  must be set
+                properties:
+                  key:
+                    description: Key is the name of the key in the secret that holds
+                      the data.
+                    type: string
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                type: object
               type:
                 description: Type is the type of the target that defines its data
                   structure. The actual schema may be defined by a target type crd

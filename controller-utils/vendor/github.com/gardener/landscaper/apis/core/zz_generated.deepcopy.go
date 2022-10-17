@@ -2184,6 +2184,11 @@ func (in *TargetSelector) DeepCopy() *TargetSelector {
 func (in *TargetSpec) DeepCopyInto(out *TargetSpec) {
 	*out = *in
 	in.Configuration.DeepCopyInto(&out.Configuration)
+	if in.SecretRef != nil {
+		in, out := &in.SecretRef, &out.SecretRef
+		*out = new(SecretReference)
+		**out = **in
+	}
 	return
 }
 
