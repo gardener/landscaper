@@ -24,7 +24,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -37,7 +36,8 @@ import (
 
 // GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
 // If the config defines the target from a secret that secret is read from all provided clients.
-func GetKubeconfigFromTargetConfig(ctx context.Context, config *lsv1alpha1.KubernetesClusterTargetConfig, kubeClients ...client.Client) ([]byte, error) {
+func GetKubeconfigFromTargetConfig(ctx context.Context, config *lsv1alpha1.KubernetesClusterTargetConfig,
+	targetNamespace string, lsClient client.Client) ([]byte, error) {
 	if config.Kubeconfig.StrVal != nil {
 		return []byte(*config.Kubeconfig.StrVal), nil
 	}
@@ -45,38 +45,34 @@ func GetKubeconfigFromTargetConfig(ctx context.Context, config *lsv1alpha1.Kuber
 		return nil, errors.New("kubeconfig not defined")
 	}
 
-	return GetKubeconfigFromSecretRef(ctx, config.Kubeconfig.SecretRef, kubeClients...)
+	return GetKubeconfigFromSecretRef(ctx, config.Kubeconfig.SecretRef, targetNamespace, lsClient)
 }
 
-func GetKubeconfigFromSecretRef(ctx context.Context, ref *lsv1alpha1.SecretReference, kubeClients ...client.Client) ([]byte, error) {
-	var errList []error
-	for _, kubeClient := range kubeClients {
-		secret := &corev1.Secret{}
-		if err := kubeClient.Get(ctx, ref.NamespacedName(), secret); err != nil {
-			if !apierrors.IsNotFound(err) {
-				errList = append(errList, err)
-			}
-			continue
-		}
+func GetKubeconfigFromSecretRef(ctx context.Context, ref *lsv1alpha1.SecretReference, targetNamespace string,
+	lsClient client.Client) ([]byte, error) {
 
-		if len(ref.Key) == 0 {
-			ref.Key = lsv1alpha1.DefaultKubeconfigKey
-		}
-
-		kubeconfig, ok := secret.Data[ref.Key]
-		if !ok {
-			errList = append(errList, fmt.Errorf("secret found but key %q not found", ref.Key))
-			continue
-		}
-		return kubeconfig, nil
+	if len(ref.Namespace) > 0 && ref.Namespace != targetNamespace {
+		return nil, fmt.Errorf("namespace of secret ref %s differs from target namespace %s",
+			ref.Namespace, targetNamespace)
 	}
 
-	if len(errList) != 0 {
-		return nil, utilerrors.NewAggregate(errList)
+	secret := &corev1.Secret{}
+	secretKey := client.ObjectKey{Name: ref.Name, Namespace: targetNamespace}
+	if err := lsClient.Get(ctx, secretKey, secret); err != nil {
+		return nil, apierrors.NewNotFound(schema.GroupResource{
+			Resource: "secret",
+		}, ref.Name)
 	}
-	return nil, apierrors.NewNotFound(schema.GroupResource{
-		Resource: "secret",
-	}, ref.Name)
+
+	if len(ref.Key) == 0 {
+		ref.Key = lsv1alpha1.DefaultKubeconfigKey
+	}
+
+	kubeconfig, ok := secret.Data[ref.Key]
+	if !ok {
+		return nil, fmt.Errorf("secret found but key %q not found", ref.Key)
+	}
+	return kubeconfig, nil
 }
 
 // SetProviderStatus sets the provider specific status for a deploy item.

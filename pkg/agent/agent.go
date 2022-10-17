@@ -147,7 +147,7 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 // like the Target secret are registered in the landscaper cluster.
 // The function ensure the following resources:
 // - the secret containing the kubeconfig for the host kubeconfig
-func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Client) (*rest.Config, error) {
+func (a *Agent) EnsureHostResources(ctx context.Context, hostClient, lsClient client.Client) (*rest.Config, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "EnsureHostResources")
 	// create a dedicated service account and rbac rules for the kubeconfig
 	// Currently that kubeconfig has access to all resources as the deployers could install anything.
@@ -156,21 +156,21 @@ func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Clien
 	sa.Name = fmt.Sprintf("deployer-%s", a.config.Name)
 	sa.Namespace = a.config.Namespace
 	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(sa).String(), lc.KeyResourceKind, "ServiceAccount")
-	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, sa, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, hostClient, sa, func() error {
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create service account %q for deployer on host cluster: %w", sa.Name, err)
 	}
 	cr := DeployerClusterRole(a.config.Name)
 	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(cr).String(), lc.KeyResourceKind, "ClusterRole")
-	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, cr, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, hostClient, cr, func() error {
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create cluster role %q for deployer on host cluster: %w", cr.Name, err)
 	}
 	crb := DeployerClusterRoleBinding(sa, a.config.Name)
 	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(crb).String(), lc.KeyResourceKind, "ClusterRoleBinding")
-	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, crb, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, hostClient, crb, func() error {
 		crb.Subjects = DeployerClusterRoleBindingSubjects(sa)
 		return nil
 	}); err != nil {
@@ -178,7 +178,7 @@ func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Clien
 	}
 
 	hostRestConfig := rest.CopyConfig(a.hostRestConfig)
-	if err := kutil.AddServiceAccountToken(ctx, kubeClient, sa, hostRestConfig); err != nil {
+	if err := kutil.AddServiceAccountToken(ctx, hostClient, sa, hostRestConfig); err != nil {
 		logger.Error(err, "unable to add a service account token", "service-account", sa.Name)
 		return nil, err
 	}
@@ -190,9 +190,9 @@ func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Clien
 
 	secret := &corev1.Secret{}
 	secret.Name = a.TargetSecretName()
-	secret.Namespace = a.config.Namespace
+	secret.Namespace = a.config.LandscaperNamespace
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, secret, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, lsClient, secret, func() error {
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DefaultKubeconfigKey: kubeconfigBytes,
 		}
@@ -264,7 +264,7 @@ func (a *Agent) Reconcile(ctx context.Context, req reconcile.Request) (reconcile
 		return reconcile.Result{}, nil
 	}
 	logger.Info("Ensuring host resources")
-	if _, err := a.EnsureHostResources(ctx, a.hostClient); err != nil {
+	if _, err := a.EnsureHostResources(ctx, a.hostClient, a.lsClient); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil

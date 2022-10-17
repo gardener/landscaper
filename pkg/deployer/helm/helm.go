@@ -226,7 +226,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 		var err error
 
 		if h.Target.Spec.SecretRef != nil {
-			kubeconfigBytes, err = lib.GetKubeconfigFromSecretRef(ctx, h.Target.Spec.SecretRef, h.lsKubeClient, h.hostKubeClient)
+			kubeconfigBytes, err = lib.GetKubeconfigFromSecretRef(ctx, h.Target.Spec.SecretRef, h.Target.Namespace, h.lsKubeClient)
 			if err != nil {
 				return nil, nil, nil, err
 			}
@@ -236,7 +236,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 				return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 			}
 
-			kubeconfigBytes, err = lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.lsKubeClient, h.hostKubeClient)
+			kubeconfigBytes, err = lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.Target.Namespace, h.lsKubeClient)
 			if err != nil {
 				return nil, nil, nil, err
 			}

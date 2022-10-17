@@ -6,7 +6,10 @@ The description follows the kubernetes controller approach:
 
 The task of a Blueprint is to provide deployitem descriptions based on its input and outputs based on the input and the state of the deployment.
 
-The rendered deployitems are then handled by independent kubernetes controllers, which perform the real deployment tasks. This way, the Blueprint does not execute deployment actions, but provides the target state of formally described deployitems. The actions described by the Blueprint itself are therefore restricted to YAML-based manifest rendering. These actions are described by [template executions](./Templating.md).
+The rendered deployitems are then handled by independent kubernetes controllers, which perform the real deployment tasks. 
+This way, the Blueprint does not execute deployment actions, but provides the target state of formally described 
+deployitems. The actions described by the Blueprint itself are therefore restricted to YAML-based manifest rendering. 
+These actions are described by [template executions](./Templating.md).
 
 A Blueprint is a filesystem structure that contains the blueprint definition at `/blueprint.yaml`. Any other additional file can be referred to in the blueprint.yaml for JSON schema definitions and templates.
 

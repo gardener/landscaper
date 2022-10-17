@@ -343,6 +343,10 @@
           "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
           "type": "string"
         },
+        "landscaperNamespace": {
+          "description": "LandscaperNamespace is the namespace in the landscaper cluster where the installations and target for the deployers are stored. Defaults to ls-system",
+          "type": "string"
+        },
         "name": {
           "description": "Name is the name for the agent and environment. This name has to be landscaper globally unique.",
           "type": "string",

@@ -65,6 +65,11 @@ func DeployerManagementTests(f *framework.Framework) {
 		})
 
 		ginkgo.AfterEach(func() {
+			if ginkgo.CurrentSpecReport().Failed() {
+				ginkgo.By("Do not cleanup environments (outer loop)")
+				return
+			}
+
 			defer ctx.Done()
 			drList := &lsv1alpha1.DeployerRegistrationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, drList))
@@ -134,6 +139,11 @@ func DeployerManagementTests(f *framework.Framework) {
 			})
 
 			ginkgo.AfterEach(func() {
+				if ginkgo.CurrentSpecReport().Failed() {
+					ginkgo.By("Do not cleanup environments (inner loop)")
+					return
+				}
+
 				// cancel mgr context to close the manager watches.
 				cancel()
 				wg.Wait()
