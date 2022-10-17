@@ -8,21 +8,68 @@ Note that every deployer might support a subset or own target types.
 
 ### Kubernetes Cluster
 
+The target type `landscaper.gardener.cloud/kubernetes-cluster` contains the access data to a kubernetes cluster.
+
 **Type**: `landscaper.gardener.cloud/kubernetes-cluster`
-**Config**:
+
+There are three variants for the configuration of targets of type  `landscaper.gardener.cloud/kubernetes-cluster`
+
+**Config Variant 1**:
+
+This variant contains the kubeconfig in the `config` section.
+
 ```yaml
-config:
-  # either specify the kubeconfig as string or as secret ref
-  # Depending on the deployers the secretref can point to a secret in the landscaper cluster or the host cluster of the deployer.
-  kubeconfig: | 
-     apiVersion: v1
-     kind: Config
-     ....
-  kubeconfig:
-    secretRef:
-      name: my-secret
-      namespace: default
-      key: kubeconfig # optional will default to "kubeconfig"
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+    name: ...
+    namespace: ...
+spec:
+    config:
+      kubeconfig: | 
+         apiVersion: v1
+         kind: Config
+         ....
 ```
 
-**Known supported Deployers**: Helm Deployer, Manifest Deployer
+**Config Variant 2**:
+
+This variant contains the kubeconfig in a secrets referenced in the `config` section. The key in the data section, where
+to find the kubeconfig, could be specified. Currently, the secret must be in the same namespace as the target.
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+    name: ...
+    namespace: ...
+spec:
+    config:
+      secretRef:
+        name: my-secret
+        namespace: default
+        key: kubeconfig # optional will default to "kubeconfig"
+```
+
+**Config Variant 3**:
+
+This variant contains the kubeconfig in a secrets referenced under an entry `kubeconfig` in the `config` section. The 
+key in the data section, where to find the kubeconfig, could be specified. This is the old format before secret references 
+where introduced on the top level of the `config` field. Currently, the secret must be in the same namespace as the target.
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+    name: ...
+    namespace: ...
+spec:
+    config:
+      kubeconfig:
+        secretRef:
+          name: my-secret
+          namespace: default
+          key: kubeconfig # optional will default to "kubeconfig"
+```
+
+**Known supported Deployers**: Helm Deployer, Manifest Deployer, Container Deployer
