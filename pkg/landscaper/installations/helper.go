@@ -79,9 +79,8 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 	if inst.Spec.ComponentDescriptor.Inline != nil {
 		repoCtx = inst.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext()
 		ref = inst.Spec.ComponentDescriptor.Inline.ObjectMeta
-	}
-	// case remote reference
-	if inst.Spec.ComponentDescriptor.Reference != nil {
+	} else if inst.Spec.ComponentDescriptor.Reference != nil {
+		// case remote reference
 		refCopy := inst.Spec.ComponentDescriptor.Reference.DeepCopy()
 		if overwriter != nil {
 			overwriter.Replace(refCopy)
