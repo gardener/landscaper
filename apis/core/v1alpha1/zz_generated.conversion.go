@@ -1236,6 +1236,7 @@ func autoConvert_v1alpha1_Context_To_core_Context(in *Context, out *core.Context
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.RegistryPullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Configurations = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.Configurations))
+	out.ComponentVersionOverwritesReference = in.ComponentVersionOverwritesReference
 	return nil
 }
 
@@ -1249,6 +1250,7 @@ func autoConvert_core_Context_To_v1alpha1_Context(in *core.Context, out *Context
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.RegistryPullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Configurations = *(*map[string]AnyJSON)(unsafe.Pointer(&in.Configurations))
+	out.ComponentVersionOverwritesReference = in.ComponentVersionOverwritesReference
 	return nil
 }
 

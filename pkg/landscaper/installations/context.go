@@ -7,6 +7,7 @@ package installations
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -208,17 +209,22 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	lsCtx := &lsv1alpha1.Context{}
 	var overwriter componentoverwrites.Overwriter
-	cvo := &lsv1alpha1.ComponentVersionOverwrites{}
+	var cvo *lsv1alpha1.ComponentVersionOverwrites
 	if len(inst.Spec.Context) != 0 {
 		if err := kubeClient.Get(ctx, kutil.ObjectKey(inst.Spec.Context, inst.Namespace), lsCtx); err != nil {
 			return ExternalContext{}, lserrors.NewWrappedError(err,
 				"Context", "GetContext", err.Error())
 		}
-		if err := kubeClient.Get(ctx, kutil.ObjectKey(inst.Spec.Context, inst.Namespace), cvo); err != nil {
-			if !apierrors.IsNotFound(err) {
+
+		// check for ComponentVersionOverwrites
+		if len(lsCtx.ComponentVersionOverwritesReference) > 0 {
+			cvo = &lsv1alpha1.ComponentVersionOverwrites{}
+			if err := kubeClient.Get(ctx, kutil.ObjectKey(inst.Spec.Context, inst.Namespace), cvo); err != nil {
+				if apierrors.IsNotFound(err) {
+					return ExternalContext{}, lserrors.NewWrappedError(err, "ComponentVersionOverwrites", "GetComponentVersionOverwrites", fmt.Sprintf("context '%s' references ComponentVersionOverwrites resource '%s', which cannot be found: %s", lsCtx.Name, lsCtx.ComponentVersionOverwritesReference, err.Error()))
+				}
 				return ExternalContext{}, lserrors.NewWrappedError(err, "ComponentVersionOverwrites", "GetComponentVersionOverwrites", err.Error())
 			}
-			cvo = nil
 		}
 	}
 

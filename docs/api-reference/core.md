@@ -359,6 +359,20 @@ map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 The key should use a dns-like syntax to express the purpose and avoid conflicts.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>componentVersionOverwrites</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object
+The overwrites object has to be in the same namespace as the context.
+If the string is empty, no overwrites will be used.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DataObject">DataObject

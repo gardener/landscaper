@@ -3511,6 +3511,14 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							},
 						},
 					},
+					"componentVersionOverwrites": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object The overwrites object has to be in the same namespace as the context. If the string is empty, no overwrites will be used.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 
@@ -216,6 +217,7 @@ func RegistryTest(f *framework.Framework) {
 				repoCtx := cds[0].GetEffectiveRepositoryContext()
 
 				By("create componentVersionOverwrite")
+				cvoName := "cvo"
 				cvo := &lsv1alpha1.ComponentVersionOverwrites{
 					Overwrites: lsv1alpha1.ComponentVersionOverwriteList{
 						{
@@ -230,9 +232,16 @@ func RegistryTest(f *framework.Framework) {
 						},
 					},
 				}
-				cvo.SetName(lsv1alpha1.DefaultContextName)
+				cvo.SetName(cvoName)
 				cvo.SetNamespace(state.Namespace)
 				utils.ExpectNoError(state.Create(ctx, cvo))
+
+				By("patch context to reference ComponentVersionOverwrites")
+				lsCtx := &lsv1alpha1.Context{}
+				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKey(lsv1alpha1.DefaultContextName, state.Namespace), lsCtx))
+				lsCtxOld := lsCtx.DeepCopy()
+				lsCtx.ComponentVersionOverwritesReference = cvoName
+				utils.ExpectNoError(state.Client.Patch(ctx, lsCtx, client.MergeFrom(lsCtxOld)))
 
 				By("create installation")
 				inst := &lsv1alpha1.Installation{}
@@ -393,6 +402,7 @@ func RegistryTest(f *framework.Framework) {
 				repoCtx := cds[0].GetEffectiveRepositoryContext()
 
 				By("create componentVersionOverwrite")
+				cvoName := "cvo"
 				cvo := &lsv1alpha1.ComponentVersionOverwrites{
 					Overwrites: lsv1alpha1.ComponentVersionOverwriteList{
 						{
@@ -418,9 +428,16 @@ func RegistryTest(f *framework.Framework) {
 						},
 					},
 				}
-				cvo.SetName(lsv1alpha1.DefaultContextName)
+				cvo.SetName(cvoName)
 				cvo.SetNamespace(state.Namespace)
 				utils.ExpectNoError(state.Create(ctx, cvo))
+
+				By("patch context to reference ComponentVersionOverwrites")
+				lsCtx := &lsv1alpha1.Context{}
+				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKey(lsv1alpha1.DefaultContextName, state.Namespace), lsCtx))
+				lsCtxOld := lsCtx.DeepCopy()
+				lsCtx.ComponentVersionOverwritesReference = cvoName
+				utils.ExpectNoError(state.Client.Patch(ctx, lsCtx, client.MergeFrom(lsCtxOld)))
 
 				By("create installation")
 				inst := &lsv1alpha1.Installation{}
@@ -599,14 +616,6 @@ func buildAndUploadComponentDescriptorsWithBlueprints(ctx context.Context, f *fr
 		utils.ExpectNoError(file.Close())
 		utils.ExpectNoError(blob.Reader.Close())
 		cd.Resources = append(cd.Resources, buildLocalFilesystemResource("blueprint", mediatype.BlueprintType, blueprintInput.MediaType, "blueprint"))
-
-		// add component references
-		// if len(cdd.cdRefs) != 0 {
-		// 	cd.ComponentReferences = make([]cdv2.ComponentReference, len(cdd.cdRefs))
-		// 	for i, cdrd := range cdd.cdRefs {
-		// 		cd.ComponentReferences[i] = adaptComponentName(&repoCtx, cdrd)
-		// 	}
-		// }
 		cd.ComponentReferences = cdd.cdRefs
 
 		// upload component descriptor
@@ -627,11 +636,6 @@ func buildAndUploadComponentDescriptorsWithBlueprints(ctx context.Context, f *fr
 
 	return cds
 }
-
-// // adaptComponentName computes the actual component name based on the source name and the actual repository
-// func adaptComponentName(repoCtx *cdv2.OCIRegistryRepository, ref cdv2.ComponentReference) cdv2.ComponentReference {
-// 	return ref
-// }
 
 func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Resource {
 	res := cdv2.Resource{}

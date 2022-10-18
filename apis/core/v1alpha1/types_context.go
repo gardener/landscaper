@@ -69,4 +69,9 @@ type Context struct {
 	// The key should use a dns-like syntax to express the purpose and avoid conflicts.
 	// +optional
 	Configurations map[string]AnyJSON `json:"configurations,omitempty"`
+	// ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object
+	// The overwrites object has to be in the same namespace as the context.
+	// If the string is empty, no overwrites will be used.
+	// +optional
+	ComponentVersionOverwritesReference string `json:"componentVersionOverwrites"`
 }
