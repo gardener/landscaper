@@ -5,19 +5,14 @@
 package componentoverwrites
 
 import (
+	"context"
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
-
-// OverwriterFunc describes a simple func that implements the overwriter interface.
-type OverwriterFunc func(reference *lsv1alpha1.ComponentDescriptorReference) bool
-
-func (f OverwriterFunc) Replace(reference *lsv1alpha1.ComponentDescriptorReference) bool {
-	return f(reference)
-}
 
 // ReferenceDiff returns a human readable diff for two refs
 func ReferenceDiff(oldRef, newRef *lsv1alpha1.ComponentDescriptorReference) string {
@@ -63,4 +58,60 @@ func repositoryContextDiff(oldCtx, newCtx *cdv2.UnstructuredTypedObject) string 
 		return fmt.Sprintf("%s (%s) -> %s (%s)", oldOciReg.BaseURL, oldOciReg.ComponentNameMapping, newOciReg.BaseURL, newOciReg.ComponentNameMapping)
 	}
 	return defaultDiff
+}
+
+var _ ctf.ComponentResolver = overwriteResolver{}
+
+type overwriteResolver struct {
+	overwriter Overwriter
+	resolver   ctf.ComponentResolver
+}
+
+// OverwriteResolver returns a new OverwriteResolver
+// OverwriteResolver is a ctf.ComponentResolver, which applies the given overwrites before resolving with the given resolver.
+func OverwriteResolver(resolver ctf.ComponentResolver, overwriter Overwriter) overwriteResolver {
+	return overwriteResolver{
+		overwriter: overwriter,
+		resolver:   resolver,
+	}
+}
+
+// toCDRef converts a repository, name, and version into a component descriptor reference
+func toCDRef(repoCtx cdv2.Repository, name, version string) (*lsv1alpha1.ComponentDescriptorReference, error) {
+	cdRef := &lsv1alpha1.ComponentDescriptorReference{
+		ComponentName: name,
+		Version:       version,
+	}
+	if repoCtx != nil {
+		repoRefConverted, err := cdv2.NewUnstructured(repoCtx)
+		if err != nil {
+			return nil, err
+		}
+		cdRef.RepositoryContext = &repoRefConverted
+	}
+	return cdRef, nil
+}
+
+func (or overwriteResolver) Resolve(ctx context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, error) {
+	if or.overwriter != nil {
+		cdRef, err := toCDRef(repoCtx, name, version)
+		if err != nil {
+			return nil, err
+		}
+		or.overwriter.Replace(cdRef)
+		return or.resolver.Resolve(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
+	}
+	return or.resolver.Resolve(ctx, repoCtx, name, version)
+}
+
+func (or overwriteResolver) ResolveWithBlobResolver(ctx context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
+	if or.overwriter != nil {
+		cdRef, err := toCDRef(repoCtx, name, version)
+		if err != nil {
+			return nil, nil, err
+		}
+		or.overwriter.Replace(cdRef)
+		return or.resolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
+	}
+	return or.resolver.ResolveWithBlobResolver(ctx, repoCtx, name, version)
 }
