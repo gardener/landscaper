@@ -211,6 +211,7 @@ func autoConvert_v1alpha1_Auth_To_helm_Auth(in *Auth, out *helm.Auth, s conversi
 	out.URL = in.URL
 	out.CustomCAData = in.CustomCAData
 	out.AuthHeader = in.AuthHeader
+	out.SecretRef = (*corev1alpha1.LocalSecretReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 
@@ -223,6 +224,7 @@ func autoConvert_helm_Auth_To_v1alpha1_Auth(in *helm.Auth, out *Auth, s conversi
 	out.URL = in.URL
 	out.CustomCAData = in.CustomCAData
 	out.AuthHeader = in.AuthHeader
+	out.SecretRef = (*corev1alpha1.LocalSecretReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 

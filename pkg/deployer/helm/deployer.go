@@ -11,17 +11,15 @@ import (
 	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"github.com/gardener/landscaper/pkg/utils"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 const (
@@ -72,7 +70,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 	}
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 
-	files, crds, values, ch, err := helm.Template(ctx)
+	files, crds, values, ch, err := helm.Template(ctx, d.lsClient)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "Template", err.Error())
 		return err

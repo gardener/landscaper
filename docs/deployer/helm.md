@@ -327,7 +327,7 @@ If your helm chart repository is protected proceed as follows:
 
 1) Create a [context CR](../usage/Context.md) in the same namespace as your installation.
 
-```
+```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Context
 metadata:
@@ -352,9 +352,43 @@ The field `repositoryContext` contains the base URL of your component repository
 The field `configurations` contains an entry `helmChartRepoCredentials` with the URL and the authentication header of your 
 protected helm chart repo (you might configure more than one).
 
+You can specify the auth header either in the Context resource as shown in the example above, or alternatively in a 
+Secret. If you use a Secret, it must belong to the same namespace as the Context, and the Context must contain a 
+reference to the Secret. Here is an example:
+
+Secret containing the auth header: 
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-helm-chart-repo-access
+  namespace: example  # same namespace as the Context
+stringData:
+  authHeader: "Basic dX3d...cmQ="
+```
+
+Context with reference to the Secret:
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Context
+metadata:
+  name: helm-repo-protected
+  namespace: example
+...
+configurations:
+  helmChartRepoCredentials:
+    auths:
+      - url: "your.protected.helmchart.repo.com"
+        secretRef: 
+          name: my-helm-chart-repo-access  # name of the secret
+          key:  authHeader                 # key of the item in the secret (optional, the default is "authHeader")
+```
+
 2) Use the context in your installation
 
-```
+```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:

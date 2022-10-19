@@ -190,6 +190,11 @@ type Auth struct {
 	// +optional
 	CustomCAData string `json:"customCAData,omitempty"`
 	// AuthHeader contains the value that will be set in the "Authorization" header when fetching the Chart, e.g.
-	// "Basic dX...3dvcmQ=".
+	// "Basic dX...3dvcmQ=". Exactly one of the fields AuthHeader and SecretRef must be set.
+	// +optional
 	AuthHeader string `json:"authHeader,omitempty"`
+	// Reference to a secret containing the AuthHeader
+	// Exactly one of the fields AuthHeader and SecretRef must be set.
+	// +optional
+	SecretRef *lsv1alpha1.LocalSecretReference `json:"secretRef,omitempty"`
 }

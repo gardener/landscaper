@@ -14,31 +14,32 @@ import (
 	"strings"
 	"time"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	"sigs.k8s.io/yaml"
-
-	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"github.com/pkg/errors"
-	"helm.sh/helm/v3/pkg/repo"
-
 	"golang.org/x/oauth2/google"
+	"helm.sh/helm/v3/pkg/repo"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 const (
 	defaultTimeoutSeconds = 180
+	authHeaderDefaultKey  = "authHeader"
 )
 
 type HelmChartRepoClient struct {
-	auths []helmv1alpha1.Auth
+	auths            []helmv1alpha1.Auth
+	contextNamespace string
+	lsClient         client.Client
 }
 
-func NewHelmChartRepoClient(context *lsv1alpha1.Context) (*HelmChartRepoClient, error) {
+func NewHelmChartRepoClient(context *lsv1alpha1.Context, lsClient client.Client) (*HelmChartRepoClient, error) {
 	currOp := "NewHelmChartRepoClient"
 	auths := []helmv1alpha1.Auth{}
 
@@ -66,7 +67,9 @@ func NewHelmChartRepoClient(context *lsv1alpha1.Context) (*HelmChartRepoClient, 
 	}
 
 	return &HelmChartRepoClient{
-		auths: auths,
+		auths:            auths,
+		contextNamespace: context.Namespace,
+		lsClient:         lsClient,
 	}, nil
 }
 
@@ -102,7 +105,7 @@ func (c *HelmChartRepoClient) executeGetRequest(ctx context.Context, rawURL stri
 		return nil, err
 	}
 
-	req, err := c.getRequest(authData, rawURL)
+	req, err := c.getRequest(ctx, authData, rawURL)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +154,7 @@ func (c *HelmChartRepoClient) getHttpClient(authData *helmv1alpha1.Auth) (*http.
 	return httpClient, nil
 }
 
-func (c *HelmChartRepoClient) getRequest(authData *helmv1alpha1.Auth, rawURL string) (*http.Request, error) {
+func (c *HelmChartRepoClient) getRequest(ctx context.Context, authData *helmv1alpha1.Auth, rawURL string) (*http.Request, error) {
 	parsedURL, err := url.ParseRequestURI(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse URL %s: %w", rawURL, err)
@@ -164,7 +167,7 @@ func (c *HelmChartRepoClient) getRequest(authData *helmv1alpha1.Auth, rawURL str
 
 	req.Header["User-Agent"] = []string{"landscaper"}
 
-	err = c.setAuthHeader(authData, req)
+	err = c.setAuthHeader(ctx, authData, req)
 	if err != nil {
 		return nil, fmt.Errorf("could not set auth header: %w", err)
 	}
@@ -172,14 +175,18 @@ func (c *HelmChartRepoClient) getRequest(authData *helmv1alpha1.Auth, rawURL str
 	return req, nil
 }
 
-func (c *HelmChartRepoClient) setAuthHeader(authData *helmv1alpha1.Auth, req *http.Request) error {
+func (c *HelmChartRepoClient) setAuthHeader(ctx context.Context, authData *helmv1alpha1.Auth, req *http.Request) error {
 	if authData == nil {
 		return nil
 	}
 
-	authHeader := authData.AuthHeader
-	if strings.HasPrefix(authData.AuthHeader, "Basic ") {
-		trimmedBasicHeader := strings.TrimPrefix(authData.AuthHeader, "Basic ")
+	authHeader, err := c.getAuthHeader(ctx, authData)
+	if err != nil {
+		return err
+	}
+
+	if strings.HasPrefix(authHeader, "Basic ") {
+		trimmedBasicHeader := strings.TrimPrefix(authHeader, "Basic ")
 		username, password, err := c.decodeBasicAuthCredentials(trimmedBasicHeader)
 		if err != nil {
 			return err
@@ -195,6 +202,38 @@ func (c *HelmChartRepoClient) setAuthHeader(authData *helmv1alpha1.Auth, req *ht
 
 	req.Header.Set("Authorization", authHeader)
 	return nil
+}
+
+func (c *HelmChartRepoClient) getAuthHeader(ctx context.Context, authData *helmv1alpha1.Auth) (string, error) {
+	if len(authData.AuthHeader) > 0 && authData.SecretRef != nil {
+		return "", fmt.Errorf("failed to get auth header: auth header and secret ref are both set")
+	}
+
+	if len(authData.AuthHeader) > 0 {
+		return authData.AuthHeader, nil
+	}
+
+	if authData.SecretRef != nil {
+		secretKey := client.ObjectKey{Name: authData.SecretRef.Name, Namespace: c.contextNamespace}
+		secret := &corev1.Secret{}
+		if err := c.lsClient.Get(ctx, secretKey, secret); err != nil {
+			return "", err
+		}
+
+		authHeaderKey := authData.SecretRef.Key
+		if len(authData.SecretRef.Key) == 0 {
+			authHeaderKey = authHeaderDefaultKey
+		}
+
+		authHeader, ok := secret.Data[authHeaderKey]
+		if !ok {
+			return "", fmt.Errorf("failed to get auth header: key %s not found in secret", authHeaderKey)
+		}
+
+		return string(authHeader), nil
+	}
+
+	return "", fmt.Errorf("failed to get auth header: neither auth header nor secret ref is set")
 }
 
 func (c *HelmChartRepoClient) decodeBasicAuthCredentials(base64EncodedBasicAuthCredentials string) (string, string, error) {

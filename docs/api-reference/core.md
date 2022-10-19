@@ -4186,6 +4186,44 @@ ValueRef
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.LocalSecretReference">LocalSecretReference
+</h3>
+<p>
+<p>LocalSecretReference is a reference to data in a secret.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the secret</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>key</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Key is the name of the key in the secret that holds the data.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.LsHealthCheckStatus">LsHealthCheckStatus
 (<code>string</code> alias)</p></h3>
 <p>
