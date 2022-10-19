@@ -124,8 +124,9 @@ func DeployerManagementTests(f *framework.Framework) {
 				testutil.ExpectNoError(err)
 
 				err = agent.AddToManager(ctx, logging.Discard(), mgr, mgr, config.AgentConfiguration{
-					Name:      "testenv",
-					Namespace: state.Namespace,
+					Name:                "testenv",
+					Namespace:           state.Namespace,
+					LandscaperNamespace: f.LsNamespace,
 				})
 				testutil.ExpectNoError(err)
 
