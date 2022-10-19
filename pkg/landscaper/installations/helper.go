@@ -30,6 +30,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
 var componentInstallationGVK schema.GroupVersionKind
@@ -81,14 +82,10 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 		ref = inst.Spec.ComponentDescriptor.Inline.ObjectMeta
 	} else if inst.Spec.ComponentDescriptor.Reference != nil {
 		// case remote reference
-		refCopy := inst.Spec.ComponentDescriptor.Reference.DeepCopy()
-		if overwriter != nil {
-			overwriter.Replace(refCopy)
-		}
-		repoCtx = refCopy.RepositoryContext
-		ref = refCopy.ObjectMeta()
+		repoCtx = inst.Spec.ComponentDescriptor.Reference.RepositoryContext
+		ref = inst.Spec.ComponentDescriptor.Reference.ObjectMeta()
 	}
-	return compRepo.ResolveWithBlobResolver(ctx, repoCtx, ref.GetName(), ref.GetVersion())
+	return cdutils.ResolveWithBlobResolverWithOverwriter(ctx, compRepo, repoCtx, ref.GetName(), ref.GetVersion(), overwriter)
 }
 
 // CreateInternalInstallation creates an internal installation for an Installation

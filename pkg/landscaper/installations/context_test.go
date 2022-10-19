@@ -11,8 +11,6 @@ import (
 	"github.com/onsi/gomega/gstruct"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-
 	testutils "github.com/gardener/landscaper/test/utils"
 
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -26,6 +24,7 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 )
 
@@ -349,7 +348,7 @@ var _ = Describe("Context", func() {
 			lsCtx := &lsv1alpha1.Context{
 				RepositoryContext: testutils.ExampleRepositoryContext(),
 			}
-			_, err := installations.ApplyComponentOverwrite(nil, nil, lsCtx, ref)
+			_, err := installations.ApplyComponentOverwrite(context.Background(), nil, nil, lsCtx, ref)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))
 		})
@@ -375,7 +374,7 @@ var _ = Describe("Context", func() {
 				},
 			})
 
-			_, err := installations.ApplyComponentOverwrite(nil, ow, lsCtx, ref)
+			_, err := installations.ApplyComponentOverwrite(context.Background(), nil, ow, lsCtx, ref)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref.RepositoryContext).To(Equal(repoCtx))
 			Expect(lsCtx.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))

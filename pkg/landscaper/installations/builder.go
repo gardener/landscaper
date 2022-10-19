@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -28,7 +27,6 @@ type OperationBuilder struct {
 	op                              *lsoperation.Operation
 	blobResolver                    ctf.BlobResolver
 	resolvedComponentDescriptorList *cdv2.ComponentDescriptorList
-	overwriter                      componentoverwrites.Overwriter
 	context                         *Scope
 }
 
@@ -69,12 +67,6 @@ func (b *OperationBuilder) WithComponentDescriptorList(list *cdv2.ComponentDescr
 // WithOperation sets the base operation.
 func (b *OperationBuilder) WithOperation(op *lsoperation.Operation) *OperationBuilder {
 	b.op = op
-	return b
-}
-
-// WithOverwriter sets an optional component overwriter.
-func (b *OperationBuilder) WithOverwriter(ow componentoverwrites.Overwriter) *OperationBuilder {
-	b.overwriter = ow
 	return b
 }
 

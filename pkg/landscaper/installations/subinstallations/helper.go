@@ -17,6 +17,7 @@ import (
 	"github.com/gardener/landscaper/apis/core/validation"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -26,7 +27,8 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 	subInstTmpl *lsv1alpha1.InstallationTemplate,
 	cd *cdv2.ComponentDescriptor,
 	compResolver ctf.ComponentResolver,
-	repositoryContext *cdv2.UnstructuredTypedObject) (*lsv1alpha1.BlueprintDefinition, *lsv1alpha1.ComponentDescriptorDefinition, error) {
+	repositoryContext *cdv2.UnstructuredTypedObject,
+	overwriter componentoverwrites.Overwriter) (*lsv1alpha1.BlueprintDefinition, *lsv1alpha1.ComponentDescriptorDefinition, error) {
 	subBlueprint := &lsv1alpha1.BlueprintDefinition{}
 
 	//store reference to parent component descriptor
@@ -59,7 +61,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 			return nil, nil, fmt.Errorf("expected a resource from the component descriptor %s", cd.Name)
 		}
 
-		subInstCompDesc, err := uri.GetComponent(cd, compResolver, repositoryContext)
+		subInstCompDesc, subInstCdRef, err := uri.GetComponent(cd, compResolver, repositoryContext, overwriter)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", cd.Name, err)
 		}
@@ -84,13 +86,8 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 		}
 
 		if cdDef.Inline == nil {
-			latestRepoCtx := subInstCompDesc.GetEffectiveRepositoryContext()
 			cdDef = &lsv1alpha1.ComponentDescriptorDefinition{
-				Reference: &lsv1alpha1.ComponentDescriptorReference{
-					RepositoryContext: latestRepoCtx,
-					ComponentName:     subInstCompDesc.Name,
-					Version:           subInstCompDesc.Version,
-				},
+				Reference: subInstCdRef,
 			}
 		}
 

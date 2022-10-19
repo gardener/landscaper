@@ -25,7 +25,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	"github.com/gardener/landscaper/apis/core/validation"
 
@@ -276,8 +275,9 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	subBlueprint, subCdDef, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
 		subInstTmpl,
 		o.ComponentDescriptor,
-		componentoverwrites.OverwriteResolver(o.ComponentsRegistry(), o.Context().External.Overwriter),
-		o.Context().External.RepositoryContext)
+		o.ComponentsRegistry(),
+		o.Context().External.RepositoryContext,
+		o.Context().External.Overwriter)
 	if err != nil {
 		return nil, err
 	}

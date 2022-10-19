@@ -20,6 +20,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -230,7 +231,7 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 
 	if cvo != nil {
 		overwriter = componentoverwrites.NewSubstitutions(cvo.Overwrites)
-		logger.Debug("Found ComponentVersionOverwrites for context", "context", inst.Spec.Context)
+		logger.Debug("Found ComponentVersionOverwrites for context", "context", inst.Spec.Context, lc.KeyResource, lsCtx.ComponentVersionOverwritesReference, lc.KeyResourceKind, "ComponentVersionOverwrites")
 	}
 
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
@@ -242,7 +243,7 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		}, nil
 	}
 
-	cond, err := ApplyComponentOverwrite(inst, overwriter, lsCtx, cdRef)
+	cond, err := ApplyComponentOverwrite(ctx, inst, overwriter, lsCtx, cdRef)
 	if err != nil {
 		return ExternalContext{}, lserrors.NewWrappedError(err,
 			"Context", "OverwriteComponentReference", err.Error())
@@ -264,7 +265,8 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 
 // ApplyComponentOverwrite applies a component overwrite for the component reference if applicable.
 // The overwriter can be nil
-func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
+func ApplyComponentOverwrite(ctx context.Context, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 	if cdRef == nil {
 		return nil, nil
 	}
@@ -287,9 +289,13 @@ func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter component
 	overwritten := overwriter.Replace(cdRef)
 	if overwritten {
 		diff := componentoverwrites.ReferenceDiff(oldRef, cdRef)
+		logger.Info("Component reference has been overwritten",
+			"repositoryContext", diff.OverwriteToString(componentoverwrites.RepoCtx, true),
+			"componentName", diff.OverwriteToString(componentoverwrites.ComponentName, true),
+			"version", diff.OverwriteToString(componentoverwrites.Version, true))
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 			"FoundOverwrite",
-			diff)
+			diff.String())
 		return &cond, nil
 	}
 

@@ -16,6 +16,7 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 )
 
 const Scheme = "cd"
@@ -125,39 +126,50 @@ func (u *URI) Get(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolv
 }
 
 // GetComponent resolves to the component descriptor specified by the URI.
-// If a resource is specified, the component descriptor of the resource is returned.
-func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject) (*cdv2.ComponentDescriptor, error) {
+// If a resource is specified, the component descriptor of the resource is returned, in combination with the reference from which it was resolved.
+// ComponentVersionOverwrites are taken into account, but unlike the returned component, the reference is not overwritten.
+func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (*cdv2.ComponentDescriptor, *lsv1alpha1.ComponentDescriptorReference, error) {
 	var (
 		ctx       = context.Background()
 		component = cd
+		cdRef     = &lsv1alpha1.ComponentDescriptorReference{
+			RepositoryContext: cd.GetEffectiveRepositoryContext(),
+			ComponentName:     cd.Name,
+			Version:           cd.Version,
+		}
 	)
 	defer ctx.Done()
 	for i, elem := range u.Path {
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
 		case ComponentReferences:
-			refs, err := cd.GetComponentReferencesByName(elem.Value)
+			refs, err := component.GetComponentReferencesByName(elem.Value)
 			if err != nil || len(refs) == 0 {
-				return nil, fmt.Errorf("component %s cannot be found", elem.Value)
+				return nil, nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
 			ref := refs[0]
-			component, err = compResolver.Resolve(ctx, repositoryContext, ref.ComponentName, ref.Version)
+			cdRef = &lsv1alpha1.ComponentDescriptorReference{
+				RepositoryContext: repositoryContext,
+				ComponentName:     ref.ComponentName,
+				Version:           ref.Version,
+			}
+			component, err = ResolveWithOverwriter(ctx, compResolver, repositoryContext, ref.ComponentName, ref.Version, overwriter)
 			if err != nil {
-				return nil, fmt.Errorf("component %s cannot be found", elem.Value)
+				return nil, nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
 			if isLast {
-				return component, nil
+				return component, cdRef, nil
 			}
 		case Resources:
 			if !isLast {
-				return nil, fmt.Errorf("the selector seems to contain more path segements after a resource")
+				return nil, nil, fmt.Errorf("the selector seems to contain more path segements after a resource")
 			}
-			return component, nil
+			return component, cdRef, nil
 		default:
-			return nil, fmt.Errorf("unknown keyword %s", elem.Keyword)
+			return nil, nil, fmt.Errorf("unknown keyword %s", elem.Keyword)
 		}
 	}
-	return component, nil
+	return component, cdRef, nil
 }
 
 // GetResource resolves to a resource specified by the URI.
