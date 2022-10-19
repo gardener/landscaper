@@ -71,7 +71,7 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 		SecretRef(&lsv1alpha1.SecretReference{
 			ObjectReference: lsv1alpha1.ObjectReference{
 				Name:      a.TargetSecretName(),
-				Namespace: a.config.Namespace,
+				Namespace: a.config.LandscaperNamespace,
 			},
 			Key: lsv1alpha1.DefaultKubeconfigKey,
 		}).Build()

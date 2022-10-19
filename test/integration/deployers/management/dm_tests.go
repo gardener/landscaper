@@ -123,6 +123,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				})
 				testutil.ExpectNoError(err)
 
+				ginkgo.By("Adding agent with LandscaperNamespace: " + f.LsNamespace)
 				err = agent.AddToManager(ctx, logging.Discard(), mgr, mgr, config.AgentConfiguration{
 					Name:                "testenv",
 					Namespace:           state.Namespace,
