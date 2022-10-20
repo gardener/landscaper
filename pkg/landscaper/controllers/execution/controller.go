@@ -8,8 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	lsutil "github.com/gardener/landscaper/pkg/utils"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,6 +24,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -308,7 +307,7 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 
 	exec.Status.LastError = lserrors.TryUpdateLsError(exec.Status.LastError, lsErr)
 
-	if lsErr != nil {
+	if lsErr != nil && !lserrors.ContainsErrorCode(lsErr, lsv1alpha1.ErrorUnfinished) {
 		logger.Error(lsErr, "setExecutionPhaseAndUpdate")
 	}
 
