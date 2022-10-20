@@ -40,7 +40,7 @@ var ComponentVersionOverwritesDefinition = lsschema.CustomResourceDefinition{
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ComponentVersionOverwrites are resources that can hold any kind json or yaml data.
+// ComponentVersionOverwrites contain overwrites for specific (versions of) components.
 type ComponentVersionOverwrites struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

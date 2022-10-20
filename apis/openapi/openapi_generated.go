@@ -3241,7 +3241,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrites(ref common.
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ComponentVersionOverwrites are resources that can hold any kind json or yaml data.",
+				Description: "ComponentVersionOverwrites contain overwrites for specific (versions of) components.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {

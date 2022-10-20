@@ -211,7 +211,7 @@ The templates must return a list of deploy item templates.</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrites">ComponentVersionOverwrites
 </h3>
 <p>
-<p>ComponentVersionOverwrites are resources that can hold any kind json or yaml data.</p>
+<p>ComponentVersionOverwrites contain overwrites for specific (versions of) components.</p>
 </p>
 <table>
 <thead>

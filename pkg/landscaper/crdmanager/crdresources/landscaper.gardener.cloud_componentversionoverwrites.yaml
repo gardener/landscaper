@@ -17,8 +17,8 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ComponentVersionOverwrites are resources that can hold any kind
-          json or yaml data.
+        description: ComponentVersionOverwrites contain overwrites for specific (versions
+          of) components.
         properties:
           overwrites:
             description: Overwrites defines a list of component overwrites
