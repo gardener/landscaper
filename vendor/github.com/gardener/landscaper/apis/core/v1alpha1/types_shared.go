@@ -159,6 +159,8 @@ const (
 	ErrorCyclicDependencies ErrorCode = "ERR_CYCLIC_DEPENDENCIES"
 	// ErrorWebhook indicates that there is an intermediate problem with the webhook.
 	ErrorWebhook ErrorCode = "ERR_WEBHOOK"
+	// ErrorUnfinished indicates that there are unfinished sub-objects.
+	ErrorUnfinished ErrorCode = "ERR_UNFINISHED"
 )
 
 // UnrecoverableErrorCodes defines unrecoverable error codes
