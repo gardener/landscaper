@@ -133,7 +133,7 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000135)
 		} else if !deployItemClassification.AllSucceeded() {
 			// remain in progressing in all other cases
-			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items")
+			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items", lsv1alpha1.ErrorUnfinished)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000136)
 		} else {
 			// all succeeded; go to next phase
