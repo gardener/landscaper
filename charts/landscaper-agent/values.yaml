@@ -27,7 +27,7 @@ agent:
 #   insecureSkipVerify: false
 #   secrets: {}
 ##    <name>: <docker config json
-
+#  landscaperNamespace: "" # namespace of installations for the default deployer (helm, manifest ...)
 
 image:
   repository: eu.gcr.io/gardener-project/landscaper/landscaper-agent
