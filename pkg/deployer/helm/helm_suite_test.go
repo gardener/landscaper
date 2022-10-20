@@ -12,27 +12,23 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/json"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/json"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -86,7 +82,7 @@ var _ = Describe("Template", func() {
 		lsCtx.Namespace = item.Namespace
 		h, err := helm.New(helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
 		Expect(err).ToNot(HaveOccurred())
-		files, crds, _, _, err := h.Template(ctx)
+		files, crds, _, _, err := h.Template(ctx, nil)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(crds).To(HaveKey("testchart/crds/crontabs.yaml"))
 		Expect(files).To(HaveKey("testchart/templates/secret.yaml"))

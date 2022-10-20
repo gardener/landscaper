@@ -136,6 +136,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition":            schema_landscaper_apis_core_v1alpha1_InstallationTemplateBlueprintDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition":                               schema_landscaper_apis_core_v1alpha1_JSONSchemaDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.KubernetesClusterTargetConfig":                      schema_landscaper_apis_core_v1alpha1_KubernetesClusterTargetConfig(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference":                               schema_landscaper_apis_core_v1alpha1_LocalSecretReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheck":                                      schema_landscaper_apis_core_v1alpha1_LsHealthCheck(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheckList":                                  schema_landscaper_apis_core_v1alpha1_LsHealthCheckList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference":                               schema_landscaper_apis_core_v1alpha1_NamedObjectReference(ref),
@@ -5726,6 +5727,36 @@ func schema_landscaper_apis_core_v1alpha1_KubernetesClusterTargetConfig(ref comm
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_LocalSecretReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "LocalSecretReference is a reference to data in a secret.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the secret",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Key is the name of the key in the secret that holds the data.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_LsHealthCheck(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -7589,14 +7620,22 @@ func schema_apis_deployer_helm_v1alpha1_Auth(ref common.ReferenceCallback) commo
 					},
 					"authHeader": {
 						SchemaProps: spec.SchemaProps{
-							Description: "AuthHeader contains the value that will be set in the \"Authorization\" header when fetching the Chart, e.g. \"Basic dX...3dvcmQ=\".",
+							Description: "AuthHeader contains the value that will be set in the \"Authorization\" header when fetching the Chart, e.g. \"Basic dX...3dvcmQ=\". Exactly one of the fields AuthHeader and SecretRef must be set.",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"secretRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Reference to a secret containing the AuthHeader Exactly one of the fields AuthHeader and SecretRef must be set.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"),
 						},
 					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"},
 	}
 }
 

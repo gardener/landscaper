@@ -279,6 +279,15 @@ type SecretReference struct {
 	Key string `json:"key"`
 }
 
+// LocalSecretReference is a reference to data in a secret.
+type LocalSecretReference struct {
+	// Name is the name of the secret
+	Name string `json:"name"`
+	// Key is the name of the key in the secret that holds the data.
+	// +optional
+	Key string `json:"key"`
+}
+
 // ConfigMapReference is reference to data in a configmap.
 // The configmap can also be in a different namespace.
 type ConfigMapReference struct {

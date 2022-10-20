@@ -11,16 +11,11 @@ import (
 	"errors"
 	"fmt"
 
-	"helm.sh/helm/v3/pkg/chart"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
-
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/mandelsoft/vfs/pkg/osfs"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,19 +25,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/pkg/deployer/lib"
-
-	"github.com/gardener/landscaper/pkg/api"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	helmv1alpha1validation "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation"
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
-	"github.com/gardener/landscaper/pkg/utils"
-
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
+	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 const (
@@ -125,7 +120,7 @@ func New(helmconfig helmv1alpha1.Configuration,
 
 // Template loads the specified helm chart
 // and templates it with the given values.
-func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, error) {
+func (h *Helm) Template(ctx context.Context, lsClient client.Client) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, error) {
 	currOp := "TemplateChart"
 
 	restConfig, _, _, err := h.TargetClient(ctx)
@@ -145,7 +140,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "BuildOCIClient", err.Error())
 	}
 
-	helmChartRepoClient, err := helmchartrepo.NewHelmChartRepoClient(h.Context)
+	helmChartRepoClient, err := helmchartrepo.NewHelmChartRepoClient(h.Context, lsClient)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
