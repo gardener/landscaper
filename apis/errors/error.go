@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -31,7 +32,15 @@ type Error struct {
 // Error implements the error interface
 func (e Error) Error() string {
 	if e.err != nil {
-		return e.err.Error()
+		internalErr := e.err.Error()
+		if len(e.lsErr.Message) > 0 {
+			if !strings.HasSuffix(e.lsErr.Message, internalErr) {
+				// if the developer has not already included the original error in the message, let's add it
+				return fmt.Sprintf("%s: %s", e.lsErr.Message, internalErr)
+			}
+			return e.lsErr.Message
+		}
+		return internalErr
 	}
 	return fmt.Sprintf("Op: %s - Reason: %s - Message: %s", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
 }
