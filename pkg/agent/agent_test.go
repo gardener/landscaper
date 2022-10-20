@@ -40,6 +40,8 @@ var _ = Describe("Agent", func() {
 		agConfig = &config.AgentConfiguration{}
 		agConfig.Name = "testenv"
 		agConfig.Namespace = state.Namespace
+		agConfig.LandscaperNamespace = state.Namespace
+
 		ag = agent.New(testenv.Client,
 			testenv.Env.Config,
 			api.LandscaperScheme,
@@ -73,7 +75,7 @@ var _ = Describe("Agent", func() {
 				Namespace: state.Namespace,
 				Token:     "test-token",
 			})
-			_, err := ag.EnsureHostResources(ctx, testenv.Client)
+			_, err := ag.EnsureHostResources(ctx, testenv.Client, testenv.Client)
 			testutils.ExpectNoError(err)
 
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey(agent.DeployerClusterRoleName, ""), &rbacv1.ClusterRole{})).To(Succeed())

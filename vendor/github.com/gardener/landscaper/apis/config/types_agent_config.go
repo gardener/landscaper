@@ -28,4 +28,10 @@ type AgentConfiguration struct {
 	// TargetSelectors defines the target selector that is applied to all installed deployers
 	// +optional
 	TargetSelectors []lsv1alpha1.TargetSelector `json:"targetSelectors,omitempty"`
+
+	// LandscaperNamespace is the namespace in the landscaper cluster where the installations and target for the
+	// deployers are stored.
+	// Defaults to ls-system
+	// +optional
+	LandscaperNamespace string `json:"landscaperNamespace,omitempty"`
 }

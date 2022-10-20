@@ -83,6 +83,9 @@ kind: AgentConfiguration
 
 name: {{ default .Release.Name .Values.agent.name }}
 namespace: {{default .Release.Namespace .Values.agent.namespace }}
+{{- if .Values.agent.landscaperNamespace }}
+landscaperNamespace: {{ .Values.agent.landscaperNamespace }}
+{{ end }}
 {{- if .Values.agent.registryConfig }}
 oci:
   allowPlainHttp: {{ .Values.agent.registryConfig.allowPlainHttpRegistries | default false }}

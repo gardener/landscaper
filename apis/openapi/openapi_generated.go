@@ -1118,6 +1118,13 @@ func schema_gardener_landscaper_apis_config_AgentConfiguration(ref common.Refere
 							},
 						},
 					},
+					"landscaperNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LandscaperNamespace is the namespace in the landscaper cluster where the installations and target for the deployers are stored. Defaults to ls-system",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
@@ -1668,6 +1675,13 @@ func schema_gardener_landscaper_apis_config_LandscaperAgentConfiguration(ref com
 							},
 						},
 					},
+					"landscaperNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LandscaperNamespace is the namespace in the landscaper cluster where the installations and target for the deployers are stored. Defaults to ls-system",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"disable", "name"},
 			},
@@ -1992,6 +2006,13 @@ func schema_landscaper_apis_config_v1alpha1_AgentConfiguration(ref common.Refere
 									},
 								},
 							},
+						},
+					},
+					"landscaperNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LandscaperNamespace is the namespace in the landscaper cluster where the installations and target for the deployers are stored. Defaults to ls-system",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -2538,6 +2559,13 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperAgentConfiguration(ref com
 									},
 								},
 							},
+						},
+					},
+					"landscaperNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LandscaperNamespace is the namespace in the landscaper cluster where the installations and target for the deployers are stored. Defaults to ls-system",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},

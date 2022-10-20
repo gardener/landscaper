@@ -65,6 +65,11 @@ func DeployerManagementTests(f *framework.Framework) {
 		})
 
 		ginkgo.AfterEach(func() {
+			if ginkgo.CurrentSpecReport().Failed() {
+				ginkgo.By("Do not cleanup environments (outer loop)")
+				return
+			}
+
 			defer ctx.Done()
 			drList := &lsv1alpha1.DeployerRegistrationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, drList))
@@ -118,9 +123,11 @@ func DeployerManagementTests(f *framework.Framework) {
 				})
 				testutil.ExpectNoError(err)
 
+				ginkgo.By("Adding agent with LandscaperNamespace: " + f.LsNamespace)
 				err = agent.AddToManager(ctx, logging.Discard(), mgr, mgr, config.AgentConfiguration{
-					Name:      "testenv",
-					Namespace: state.Namespace,
+					Name:                "testenv",
+					Namespace:           state.Namespace,
+					LandscaperNamespace: f.LsNamespace,
 				})
 				testutil.ExpectNoError(err)
 
@@ -134,6 +141,11 @@ func DeployerManagementTests(f *framework.Framework) {
 			})
 
 			ginkgo.AfterEach(func() {
+				if ginkgo.CurrentSpecReport().Failed() {
+					ginkgo.By("Do not cleanup environments (inner loop)")
+					return
+				}
+
 				// cancel mgr context to close the manager watches.
 				cancel()
 				wg.Wait()

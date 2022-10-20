@@ -268,6 +268,7 @@ func autoConvert_v1alpha1_AgentConfiguration_To_config_AgentConfiguration(in *Ag
 	out.Namespace = in.Namespace
 	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
 	out.TargetSelectors = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelectors))
+	out.LandscaperNamespace = in.LandscaperNamespace
 	return nil
 }
 
@@ -281,6 +282,7 @@ func autoConvert_config_AgentConfiguration_To_v1alpha1_AgentConfiguration(in *co
 	out.Namespace = in.Namespace
 	out.OCI = (*OCIConfiguration)(unsafe.Pointer(in.OCI))
 	out.TargetSelectors = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelectors))
+	out.LandscaperNamespace = in.LandscaperNamespace
 	return nil
 }
 

@@ -54,7 +54,7 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 	if _, err := agent.EnsureLandscaperResources(ctx, lsClient, hostClient); err != nil {
 		return fmt.Errorf("unable to ensure landscaper resources: %w", err)
 	}
-	if _, err := agent.EnsureHostResources(ctx, hostClient); err != nil {
+	if _, err := agent.EnsureHostResources(ctx, hostClient, lsClient); err != nil {
 		return fmt.Errorf("unable to ensure host resources: %w", err)
 	}
 
