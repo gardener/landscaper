@@ -220,7 +220,7 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		// check for ComponentVersionOverwrites
 		if len(lsCtx.ComponentVersionOverwritesReference) > 0 {
 			cvo = &lsv1alpha1.ComponentVersionOverwrites{}
-			if err := kubeClient.Get(ctx, kutil.ObjectKey(inst.Spec.Context, inst.Namespace), cvo); err != nil {
+			if err := kubeClient.Get(ctx, kutil.ObjectKey(lsCtx.ComponentVersionOverwritesReference, inst.Namespace), cvo); err != nil {
 				if apierrors.IsNotFound(err) {
 					return ExternalContext{}, lserrors.NewWrappedError(err, "ComponentVersionOverwrites", "GetComponentVersionOverwrites", fmt.Sprintf("context '%s' references ComponentVersionOverwrites resource '%s', which cannot be found: %s", lsCtx.Name, lsCtx.ComponentVersionOverwritesReference, err.Error()))
 				}
