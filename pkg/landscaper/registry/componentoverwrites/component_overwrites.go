@@ -112,7 +112,10 @@ func (d *ComponentDescriptorReferenceDiff) OverwriteToString(aspect cdRefAspect,
 // String returns a human-readable description of which parts of the component descriptor reference have been overwritten.
 func (d *ComponentDescriptorReferenceDiff) String() string {
 	if d.IsAnyOverwritten() {
-		return fmt.Sprintf("Component reference has been overwritten: \n%s\n%s\n%s", d.OverwriteToString(RepoCtx, true), d.OverwriteToString(ComponentName, true), d.OverwriteToString(Version, true))
+		return fmt.Sprintf(`Component reference has been overwritten:
+%s
+%s
+%s`, d.OverwriteToString(RepoCtx, true), d.OverwriteToString(ComponentName, true), d.OverwriteToString(Version, true))
 	}
 	return "Component reference has not been overwritten."
 }
