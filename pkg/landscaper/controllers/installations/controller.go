@@ -8,13 +8,8 @@ import (
 	"context"
 	"fmt"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
-
-	"github.com/google/uuid"
-
 	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,22 +18,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
-	"github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 const (
@@ -259,7 +253,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
-	if lsError != nil {
+	if lsError != nil && !lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorUnfinished) {
 		logger.Error(lsError, "setInstallationPhaseAndUpdate:"+lsError.Error())
 	}
 
