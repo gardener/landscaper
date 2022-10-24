@@ -30,7 +30,7 @@ spec:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
     kind: ProviderConfiguration
 
-    updateStrategy: update | patch # optional; defaults to update
+    updateStrategy: update | patch | merge | mergeOverwrite # optional; defaults to update
 
     # Configuration of the readiness checks for the resources.
     # optional
@@ -132,6 +132,12 @@ spec:
           kind: Secret
           jsonPath: ".data.somekey" # points to the value in the resource that is being exported
 ```
+__Update Strategy__:
+
+- `update`: ...
+- `patch`: ...
+- `merge`: ...
+- `mergeOverwrite`: ...
 
 __Policy__:
 

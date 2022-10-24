@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/imdario/mergo"
 	"sort"
 	"sync"
 	"time"
@@ -211,6 +212,7 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 			return nil, fmt.Errorf("unable to get object: %w", err)
 		}
 		// inject labels
+		a.injectLabels(obj)
 		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
 		if err := a.kubeClient.Create(ctx, obj); err != nil {
 			return nil, fmt.Errorf("unable to create resource %s: %w", key.String(), err)
@@ -238,24 +240,51 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 		return mr, nil
 	}
 
-	// inject manifest specific labels
-	a.injectLabels(obj)
-	kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
-
-	// Set the required and immutable fields from the current object.
-	// Update fails if these fields are missing
-	if err := kutil.SetRequiredNestedFieldsFromObj(&currObj, obj); err != nil {
-		return mr, err
-	}
-
 	switch a.updateStrategy {
 	case manifestv1alpha2.UpdateStrategyUpdate:
-		if err := a.kubeClient.Update(ctx, obj); err != nil {
-			return mr, fmt.Errorf("unable to update resource %s: %w", key.String(), err)
-		}
+		fallthrough
 	case manifestv1alpha2.UpdateStrategyPatch:
-		if err := a.kubeClient.Patch(ctx, obj, client.MergeFrom(&currObj)); err != nil {
-			return mr, fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
+		// inject manifest specific labels
+		a.injectLabels(obj)
+		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
+
+		// Set the required and immutable fields from the current object.
+		// Update fails if these fields are missing
+		if err := kutil.SetRequiredNestedFieldsFromObj(&currObj, obj); err != nil {
+			return mr, err
+		}
+
+		if a.updateStrategy == manifestv1alpha2.UpdateStrategyUpdate {
+			if err := a.kubeClient.Update(ctx, obj); err != nil {
+				return mr, fmt.Errorf("unable to update resource %s: %w", key.String(), err)
+			}
+		} else {
+			if err := a.kubeClient.Patch(ctx, obj, client.MergeFrom(&currObj)); err != nil {
+				return mr, fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
+			}
+		}
+	case manifestv1alpha2.UpdateStrategyMerge:
+		fallthrough
+	case manifestv1alpha2.UpdateStrategyMergeOverwrite:
+		var mergeOpts []func(*mergo.Config)
+		if a.updateStrategy == manifestv1alpha2.UpdateStrategyMergeOverwrite {
+			mergeOpts = []func(*mergo.Config){
+				mergo.WithOverride,
+			}
+		} else {
+			mergeOpts = []func(*mergo.Config){}
+		}
+
+		if err := mergo.Merge(&currObj.Object, obj.Object, mergeOpts...); err != nil {
+			return mr, fmt.Errorf("unable to merge changes for resource %s: %w", key.String(), err)
+		}
+
+		// inject manifest specific labels
+		a.injectLabels(&currObj)
+		kutil.SetMetaDataLabel(&currObj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
+
+		if err := a.kubeClient.Update(ctx, &currObj); err != nil {
+			return mr, fmt.Errorf("unable to update resource %s: %w", key.String(), err)
 		}
 	default:
 		return mr, fmt.Errorf("%s is not a valid update strategy", a.updateStrategy)

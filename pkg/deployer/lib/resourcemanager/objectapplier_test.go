@@ -216,7 +216,7 @@ var _ = Describe("ObjectApplier", func() {
 	It("should create a namespace before other resources", func() {
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
-		cm.Namespace = "test"
+		cm.Namespace = state.Namespace
 		cm.Data = map[string]string{
 			"key": "val",
 		}
@@ -260,7 +260,7 @@ var _ = Describe("ObjectApplier", func() {
 	It("should not update immutable resources", func() {
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
-		cm.Namespace = "test"
+		cm.Namespace = state.Namespace
 		cm.Data = map[string]string{
 			"key": "val",
 		}
@@ -318,5 +318,397 @@ var _ = Describe("ObjectApplier", func() {
 
 		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cm)).ToNot(HaveOccurred())
 		Expect(cm.Data).To(HaveKeyWithValue("key", "val"))
+	})
+
+	It("should update objects correctly when update strategy is selected", func() {
+		// CREATE
+
+		cm := &corev1.ConfigMap{}
+		cm.Name = "my-cm"
+		cm.Namespace = state.Namespace
+		cm.SetLabels(map[string]string{
+			"defaultLabel": "defaultVal",
+		})
+		cm.Data = map[string]string{
+			"key": "val",
+		}
+		cmRaw, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts := resourcemanager.ManifestApplierOptions{
+			DeployItemName:   "test-di",
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ManagePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+			Labels: map[string]string{
+				"managedLabel": "managedVal",
+			},
+		}
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		cmRead := &corev1.ConfigMap{}
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cmRead)).ToNot(HaveOccurred())
+		Expect(cmRead.Labels).To(HaveKeyWithValue(manifestv1alpha2.ManagedDeployItemLabel, opts.DeployItemName))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("managedLabel", "managedVal"))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("defaultLabel", "defaultVal"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("key", "val"))
+
+		// UPDATE
+
+		modifiedCm := &corev1.ConfigMap{}
+		Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(cm), modifiedCm)).To(Succeed())
+		modifiedCm.SetAnnotations(map[string]string{
+			"modified": "True",
+		})
+		modifiedCm.SetLabels(map[string]string{
+			manifestv1alpha2.ManagedDeployItemLabel: "invalid",
+		})
+		modifiedCm.Data["addedKey"] = "val1"
+		Expect(state.Client.Update(ctx, modifiedCm)).To(Succeed())
+
+		cm.Data["key"] = "valUpdated"
+		cmRaw, err = kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts = resourcemanager.ManifestApplierOptions{
+			DeployItemName:   "test-di",
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ManagePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+			Labels: map[string]string{
+				"managedLabel": "managedVal",
+			},
+		}
+		managedResources, err = resourcemanager.ApplyManifests(ctx, opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cmRead)).ToNot(HaveOccurred())
+		Expect(cmRead.Labels).To(HaveKeyWithValue(manifestv1alpha2.ManagedDeployItemLabel, opts.DeployItemName))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("managedLabel", "managedVal"))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("defaultLabel", "defaultVal"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("key", "valUpdated"))
+		Expect(cmRead.Data).ToNot(HaveKeyWithValue("addedKey", "val1"))
+		Expect(cmRead.Annotations).ToNot(HaveKeyWithValue("modified", "True"))
+	})
+
+	It("should update objects correctly when patch strategy is selected", func() {
+		// CREATE
+
+		cm := &corev1.ConfigMap{}
+		cm.Name = "my-cm"
+		cm.Namespace = state.Namespace
+		cm.SetLabels(map[string]string{
+			"defaultLabel": "defaultVal",
+		})
+		cm.Data = map[string]string{
+			"key": "val",
+		}
+		cmRaw, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts := resourcemanager.ManifestApplierOptions{
+			DeployItemName:   "test-di",
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyPatch,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ManagePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+			Labels: map[string]string{
+				"managedLabel": "managedVal",
+			},
+		}
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		cmRead := &corev1.ConfigMap{}
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cmRead)).ToNot(HaveOccurred())
+		Expect(cmRead.Labels).To(HaveKeyWithValue(manifestv1alpha2.ManagedDeployItemLabel, opts.DeployItemName))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("managedLabel", "managedVal"))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("defaultLabel", "defaultVal"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("key", "val"))
+
+		// UPDATE
+
+		modifiedCm := &corev1.ConfigMap{}
+		Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(cm), modifiedCm)).To(Succeed())
+		modifiedCm.SetAnnotations(map[string]string{
+			"modified": "True",
+		})
+		modifiedCm.SetLabels(map[string]string{
+			manifestv1alpha2.ManagedDeployItemLabel: "invalid",
+		})
+		modifiedCm.Data["addedKey"] = "val1"
+		Expect(state.Client.Update(ctx, modifiedCm)).To(Succeed())
+
+		cm.Data["key"] = "valUpdated"
+		cmRaw, err = kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts = resourcemanager.ManifestApplierOptions{
+			DeployItemName:   "test-di",
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyPatch,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ManagePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+			Labels: map[string]string{
+				"managedLabel": "managedVal",
+			},
+		}
+		managedResources, err = resourcemanager.ApplyManifests(ctx, opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cmRead)).ToNot(HaveOccurred())
+		Expect(cmRead.Labels).To(HaveKeyWithValue(manifestv1alpha2.ManagedDeployItemLabel, opts.DeployItemName))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("managedLabel", "managedVal"))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("defaultLabel", "defaultVal"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("key", "valUpdated"))
+		Expect(cmRead.Data).ToNot(HaveKeyWithValue("addedKey", "val1"))
+		Expect(cmRead.Annotations).ToNot(HaveKeyWithValue("modified", "True"))
+	})
+
+	It("should update objects correctly when merge strategy is selected", func() {
+		// CREATE
+
+		cm := &corev1.ConfigMap{}
+		cm.Name = "my-cm"
+		cm.Namespace = state.Namespace
+		cm.SetLabels(map[string]string{
+			"defaultLabel": "defaultVal",
+		})
+		cm.Data = map[string]string{
+			"key": "val",
+		}
+		cmRaw, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts := resourcemanager.ManifestApplierOptions{
+			DeployItemName:   "test-di",
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyMerge,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ManagePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+			Labels: map[string]string{
+				"managedLabel": "managedVal",
+			},
+		}
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		cmRead := &corev1.ConfigMap{}
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cmRead)).ToNot(HaveOccurred())
+		Expect(cmRead.Labels).To(HaveKeyWithValue(manifestv1alpha2.ManagedDeployItemLabel, opts.DeployItemName))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("managedLabel", "managedVal"))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("defaultLabel", "defaultVal"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("key", "val"))
+
+		// UPDATE
+
+		modifiedCm := &corev1.ConfigMap{}
+		Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(cm), modifiedCm)).To(Succeed())
+		modifiedCm.SetAnnotations(map[string]string{
+			"modified": "True",
+		})
+		modifiedCm.SetLabels(map[string]string{
+			manifestv1alpha2.ManagedDeployItemLabel: "invalid",
+		})
+		modifiedCm.Data["addedKey"] = "val1"
+		Expect(state.Client.Update(ctx, modifiedCm)).To(Succeed())
+
+		cm.Data["key"] = "valUpdated"
+		cmRaw, err = kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts = resourcemanager.ManifestApplierOptions{
+			DeployItemName:   "test-di",
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyMerge,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ManagePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+			Labels: map[string]string{
+				"managedLabel": "managedVal",
+			},
+		}
+		managedResources, err = resourcemanager.ApplyManifests(ctx, opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cmRead)).ToNot(HaveOccurred())
+		Expect(cmRead.Labels).To(HaveKeyWithValue(manifestv1alpha2.ManagedDeployItemLabel, opts.DeployItemName))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("managedLabel", "managedVal"))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("defaultLabel", "defaultVal"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("key", "val"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("addedKey", "val1"))
+		Expect(cmRead.Annotations).To(HaveKeyWithValue("modified", "True"))
+	})
+
+	It("should update objects correctly when mergeOverwrite strategy is selected", func() {
+		// CREATE
+
+		cm := &corev1.ConfigMap{}
+		cm.Name = "my-cm"
+		cm.Namespace = state.Namespace
+		cm.SetLabels(map[string]string{
+			"defaultLabel": "defaultVal",
+		})
+		cm.Data = map[string]string{
+			"key": "val",
+		}
+		cmRaw, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts := resourcemanager.ManifestApplierOptions{
+			DeployItemName:   "test-di",
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyMergeOverwrite,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ManagePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+			Labels: map[string]string{
+				"managedLabel": "managedVal",
+			},
+		}
+		managedResources, err := resourcemanager.ApplyManifests(ctx, opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		cmRead := &corev1.ConfigMap{}
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cmRead)).ToNot(HaveOccurred())
+		Expect(cmRead.Labels).To(HaveKeyWithValue(manifestv1alpha2.ManagedDeployItemLabel, opts.DeployItemName))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("managedLabel", "managedVal"))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("defaultLabel", "defaultVal"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("key", "val"))
+
+		// UPDATE
+
+		modifiedCm := &corev1.ConfigMap{}
+		Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(cm), modifiedCm)).To(Succeed())
+		modifiedCm.SetAnnotations(map[string]string{
+			"modified": "True",
+		})
+		modifiedCm.SetLabels(map[string]string{
+			manifestv1alpha2.ManagedDeployItemLabel: "invalid",
+		})
+		modifiedCm.Data["addedKey"] = "val1"
+		Expect(state.Client.Update(ctx, modifiedCm)).To(Succeed())
+
+		cm.Data["key"] = "valUpdated"
+		cmRaw, err = kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		opts = resourcemanager.ManifestApplierOptions{
+			DeployItemName:   "test-di",
+			Decoder:          api.NewDecoder(scheme.Scheme),
+			KubeClient:       testenv.Client,
+			Clientset:        clientset,
+			DefaultNamespace: state.Namespace,
+			DeleteTimeout:    10 * time.Second,
+			UpdateStrategy:   manifestv1alpha2.UpdateStrategyMergeOverwrite,
+			Manifests: []managedresource.Manifest{
+				{
+					Manifest: cmRaw,
+					Policy:   managedresource.ManagePolicy,
+				},
+			},
+			ManagedResources: managedresource.ManagedResourceStatusList{},
+			Labels: map[string]string{
+				"managedLabel": "managedVal",
+			},
+		}
+		managedResources, err = resourcemanager.ApplyManifests(ctx, opts)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(managedResources).To(HaveLen(1))
+		Expect(managedResources[0].Resource.Name).To(Equal("my-cm"))
+
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(cm), cmRead)).ToNot(HaveOccurred())
+		Expect(cmRead.Labels).To(HaveKeyWithValue(manifestv1alpha2.ManagedDeployItemLabel, opts.DeployItemName))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("managedLabel", "managedVal"))
+		Expect(cmRead.Labels).To(HaveKeyWithValue("defaultLabel", "defaultVal"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("key", "valUpdated"))
+		Expect(cmRead.Data).To(HaveKeyWithValue("addedKey", "val1"))
+		Expect(cmRead.Annotations).To(HaveKeyWithValue("modified", "True"))
 	})
 })
