@@ -7,7 +7,9 @@ package helm
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -24,6 +26,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	helmv1alpha1validation "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation"
@@ -216,7 +219,17 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 		return restConfig, kubeClient, clientset, nil
 	}
 	if h.Target != nil {
-		kubeconfig, err := clientcmd.NewClientConfigFromBytes(h.Target.Content())
+		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
+		if err := json.Unmarshal(h.Target.Content(), targetConfig); err != nil {
+			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
+		}
+
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.Target.Namespace, h.lsKubeClient)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
 		if err != nil {
 			return nil, nil, nil, err
 		}
