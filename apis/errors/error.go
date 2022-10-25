@@ -31,18 +31,19 @@ type Error struct {
 
 // Error implements the error interface
 func (e Error) Error() string {
+	message := e.lsErr.Message
 	if e.err != nil {
 		internalErr := e.err.Error()
 		if len(e.lsErr.Message) > 0 {
 			if !strings.HasSuffix(e.lsErr.Message, internalErr) {
 				// if the developer has not already included the original error in the message, let's add it
-				return fmt.Sprintf("%s: %s", e.lsErr.Message, internalErr)
+				message = fmt.Sprintf("%s: %s", e.lsErr.Message, internalErr)
 			}
-			return e.lsErr.Message
+		} else {
+			message = internalErr
 		}
-		return internalErr
 	}
-	return fmt.Sprintf("Op: %s - Reason: %s - Message: %s", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
+	return fmt.Sprintf("Op: %s - Reason: %s - Message: %s", e.lsErr.Operation, e.lsErr.Reason, message)
 }
 
 // LandscaperError returns the wrapped landscaper error.
