@@ -8958,6 +8958,38 @@ func schema_apis_deployer_utils_managedresource_Manifest(ref common.ReferenceCal
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
+					"annotateBeforeCreate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"annotateBeforeDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},

@@ -60,4 +60,10 @@ type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
 	// ManagedResources contains all kubernetes resources that are deployed by the deployer.
 	ManagedResources managedresource.ManagedResourceStatusList `json:"managedResources,omitempty"`
+	// AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.
+	// +optional
+	AnnotateBeforeCreate map[string]string `json:"annotateBeforeCreate,omitempty"`
+	// AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.
+	// +optional
+	AnnotateBeforeDelete map[string]string `json:"annotateBeforeDelete,omitempty"`
 }

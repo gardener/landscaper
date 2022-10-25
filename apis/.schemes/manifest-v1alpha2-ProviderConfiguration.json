@@ -133,6 +133,22 @@
       "description": "Manifest defines a manifest that is managed by the deployer.",
       "type": "object",
       "properties": {
+        "annotateBeforeCreate": {
+          "description": "AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "annotateBeforeDelete": {
+          "description": "AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "manifest": {
           "description": "Manifest defines the raw k8s manifest.",
           "$ref": "#/definitions/pkg-runtime-RawExtension"

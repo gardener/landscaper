@@ -93,6 +93,16 @@ spec:
 
     manifests: # list of kubernetes manifests
     - policy: manage | fallback | ignore | keep | immutable
+      # Optional: A map of annotations that are only added to the manifest when it is first created on the target.
+      # These annotations are not getting re-applied during an update of the manifest.
+      annotateBeforeCreate:
+        annotationA: valueA
+        annotationB: valueB
+      # Optional: A map of annotations that are only added to the manifest when before it is being deleted on the target.
+      annotateBeforeDelete:
+        annotationA: valueA
+        annotationB: valueB
+      # the manifest specification
       manifest:
         apiVersion: v1
         kind: Secret
