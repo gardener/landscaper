@@ -7,9 +7,7 @@ package manifest
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -19,7 +17,7 @@ import (
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
-	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -49,7 +47,7 @@ type Manifest struct {
 	Configuration  *manifestv1alpha2.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
-	Target                *lsv1alpha1.Target
+	Target                *targetresolver.ResolvedTarget
 	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
 	ProviderStatus        *manifestv1alpha2.ProviderStatus
 
@@ -68,7 +66,7 @@ func New(lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	configuration *manifestv1alpha2.Configuration,
 	item *lsv1alpha1.DeployItem,
-	target *lsv1alpha1.Target) (*Manifest, error) {
+	rt *targetresolver.ResolvedTarget) (*Manifest, error) {
 
 	config := &manifestv1alpha2.ProviderConfiguration{}
 	currOp := "InitManifestOperation"
@@ -97,7 +95,7 @@ func New(lsKubeClient client.Client,
 		hostKubeClient:        hostKubeClient,
 		Configuration:         configuration,
 		DeployItem:            item,
-		Target:                target,
+		Target:                rt,
 		ProviderConfiguration: config,
 		ProviderStatus:        status,
 	}, nil
@@ -137,27 +135,7 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 		return restConfig, kubeClient, clientset, nil
 	}
 	if m.Target != nil {
-		var kubeconfigBytes []byte
-		var err error
-
-		if m.Target.Spec.SecretRef != nil {
-			kubeconfigBytes, err = lib.GetKubeconfigFromSecretRef(ctx, m.Target.Spec.SecretRef, m.Target.Namespace, m.lsKubeClient)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-		} else {
-			targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
-			if err = json.Unmarshal(m.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
-				return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
-			}
-
-			kubeconfigBytes, err = lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.Target.Namespace, m.lsKubeClient)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-		}
-
-		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
+		kubeconfig, err := clientcmd.NewClientConfigFromBytes(m.Target.Content())
 		if err != nil {
 			return nil, nil, nil, err
 		}

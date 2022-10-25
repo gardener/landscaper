@@ -19,6 +19,7 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -62,8 +63,8 @@ type deployer struct {
 	hooks       extension.ReconcileExtensionHooks
 }
 
-func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	helm, err := New(d.config, d.lsClient, d.hostClient, di, target, lsCtx, d.sharedCache)
+func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *targetresolver.ResolvedTarget) error {
+	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "New", err.Error())
 		return err
@@ -84,8 +85,8 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 	return helm.ApplyFiles(ctx, files, crds, exports, ch)
 }
 
-func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	helm, err := New(d.config, d.lsClient, d.hostClient, di, target, lsCtx, d.sharedCache)
+func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *targetresolver.ResolvedTarget) error {
+	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
 		return err
 	}
@@ -93,7 +94,7 @@ func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *ls
 	return helm.DeleteFiles(ctx)
 }
 
-func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *targetresolver.ResolvedTarget) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
 }

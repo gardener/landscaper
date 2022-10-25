@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -68,7 +69,7 @@ type deployer struct {
 	hooks            extension.ReconcileExtensionHooks
 }
 
-func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.Target) error {
+func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *targetresolver.ResolvedTarget) error {
 	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache)
 	if err != nil {
 		return err
@@ -76,7 +77,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 	return containerOp.Reconcile(ctx, container.OperationReconcile)
 }
 
-func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *targetresolver.ResolvedTarget) error {
 	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache)
 	if err != nil {
 		return err
@@ -84,7 +85,7 @@ func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv
 	return containerOp.Delete(ctx)
 }
 
-func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *targetresolver.ResolvedTarget) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
 }

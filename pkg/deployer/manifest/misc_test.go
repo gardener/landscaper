@@ -25,6 +25,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	secretresolver "github.com/gardener/landscaper/pkg/deployer/lib/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -64,6 +65,10 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, target)).To(Succeed())
 
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
 		cm.Namespace = state.Namespace
@@ -88,7 +93,7 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -121,6 +126,10 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, target)).To(Succeed())
 
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
 		cm.Namespace = state.Namespace
@@ -145,7 +154,7 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).NotTo(Succeed())
