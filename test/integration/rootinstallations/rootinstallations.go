@@ -60,14 +60,10 @@ func RootInstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst2, path.Join(testdataDir, "installation-root-trigger", "installation-2.yaml")))
 
 			By("Trigger 1st root installation")
-			instOld1 := &lsv1alpha1.Installation{}
-			utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst1), instOld1))
-			inst1 = &lsv1alpha1.Installation{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(inst1, path.Join(testdataDir, "installation-root-trigger", "installation-1.yaml")))
-			utils.SetInstallationNamespace(inst1, state.Namespace)
+			utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst1), inst1))
+			instOld1 := inst1.DeepCopy()
 			metav1.SetMetaDataAnnotation(&inst1.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
-			inst1.ObjectMeta.ResourceVersion = instOld1.ObjectMeta.ResourceVersion
-			utils.ExpectNoError(state.Update(ctx, inst1))
+			utils.ExpectNoError(state.Client.Patch(ctx, inst1, client.MergeFrom(instOld1)))
 
 			By("Wait for 1st installation to finish")
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
