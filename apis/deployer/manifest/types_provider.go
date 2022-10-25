@@ -47,8 +47,10 @@ type ProviderConfiguration struct {
 type UpdateStrategy string
 
 const (
-	UpdateStrategyUpdate UpdateStrategy = "update"
-	UpdateStrategyPatch  UpdateStrategy = "patch"
+	UpdateStrategyUpdate         UpdateStrategy = "update"
+	UpdateStrategyPatch          UpdateStrategy = "patch"
+	UpdateStrategyMerge          UpdateStrategy = "merge"
+	UpdateStrategyMergeOverwrite UpdateStrategy = "mergeOverwrite"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

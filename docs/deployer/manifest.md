@@ -30,7 +30,7 @@ spec:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
     kind: ProviderConfiguration
 
-    updateStrategy: update | patch # optional; defaults to update
+    updateStrategy: update | patch | merge | mergeOverwrite # optional; defaults to update
 
     # Configuration of the readiness checks for the resources.
     # optional
@@ -132,6 +132,14 @@ spec:
           kind: Secret
           jsonPath: ".data.somekey" # points to the value in the resource that is being exported
 ```
+__Update Strategy__:
+
+The update strategy defines the behavior of the manifest deployer when a resource for a rendered manifest already exists on the target cluster.
+
+- `update`: The resources on the cluster will be updated with the results of the rendered manifests (default). Any changes to the resources, applied externally on the cluster, may be lost after the update.
+- `patch`: The manifest deployer will calculate a JSON diff between the resources on the cluster and the rendered manifests. The diff will be applied as a patch. Any changes to the resources, applied externally on the cluster, may be lost after the update.
+- `merge`: The manifest deployer will merge the results of the rendered manifests into the resources on the cluster. Fields that already exist in the resources on the cluster, will not be overwritten.
+- `mergeOverwrite`: The manifest deployer will merge the results of the rendered manifests into the resources on the cluster. Fields that already exist in the resources on the cluster, will be overwritten when the rendered field is not empty.
 
 __Policy__:
 
