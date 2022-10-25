@@ -8,10 +8,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/imdario/mergo"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/imdario/mergo"
 
 	corev1 "k8s.io/api/core/v1"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
