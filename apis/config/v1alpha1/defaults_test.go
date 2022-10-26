@@ -60,7 +60,6 @@ var _ = Describe("Defaults", func() {
 			checkCommonConfig(&cfg.Controllers.Installations.CommonControllerConfig)
 			checkCommonConfig(&cfg.Controllers.Executions.CommonControllerConfig)
 			checkCommonConfig(&cfg.Controllers.DeployItems.CommonControllerConfig)
-			checkCommonConfig(&cfg.Controllers.ComponentOverwrites.CommonControllerConfig)
 			checkCommonConfig(&cfg.Controllers.Contexts.CommonControllerConfig)
 		})
 	})

@@ -112,43 +112,43 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ComponentOverwrite)(nil), (*core.ComponentOverwrite)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentOverwrite_To_core_ComponentOverwrite(a.(*ComponentOverwrite), b.(*core.ComponentOverwrite), scope)
+	if err := s.AddGeneratedConversionFunc((*ComponentVersionOverwrite)(nil), (*core.ComponentVersionOverwrite)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ComponentVersionOverwrite_To_core_ComponentVersionOverwrite(a.(*ComponentVersionOverwrite), b.(*core.ComponentVersionOverwrite), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentOverwrite)(nil), (*ComponentOverwrite)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentOverwrite_To_v1alpha1_ComponentOverwrite(a.(*core.ComponentOverwrite), b.(*ComponentOverwrite), scope)
+	if err := s.AddGeneratedConversionFunc((*core.ComponentVersionOverwrite)(nil), (*ComponentVersionOverwrite)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ComponentVersionOverwrite_To_v1alpha1_ComponentVersionOverwrite(a.(*core.ComponentVersionOverwrite), b.(*ComponentVersionOverwrite), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ComponentOverwriteReference)(nil), (*core.ComponentOverwriteReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteReference(a.(*ComponentOverwriteReference), b.(*core.ComponentOverwriteReference), scope)
+	if err := s.AddGeneratedConversionFunc((*ComponentVersionOverwriteReference)(nil), (*core.ComponentVersionOverwriteReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ComponentVersionOverwriteReference_To_core_ComponentVersionOverwriteReference(a.(*ComponentVersionOverwriteReference), b.(*core.ComponentVersionOverwriteReference), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentOverwriteReference)(nil), (*ComponentOverwriteReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentOverwriteReference_To_v1alpha1_ComponentOverwriteReference(a.(*core.ComponentOverwriteReference), b.(*ComponentOverwriteReference), scope)
+	if err := s.AddGeneratedConversionFunc((*core.ComponentVersionOverwriteReference)(nil), (*ComponentVersionOverwriteReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ComponentVersionOverwriteReference_To_v1alpha1_ComponentVersionOverwriteReference(a.(*core.ComponentVersionOverwriteReference), b.(*ComponentVersionOverwriteReference), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ComponentOverwrites)(nil), (*core.ComponentOverwrites)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentOverwrites_To_core_ComponentOverwrites(a.(*ComponentOverwrites), b.(*core.ComponentOverwrites), scope)
+	if err := s.AddGeneratedConversionFunc((*ComponentVersionOverwrites)(nil), (*core.ComponentVersionOverwrites)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ComponentVersionOverwrites_To_core_ComponentVersionOverwrites(a.(*ComponentVersionOverwrites), b.(*core.ComponentVersionOverwrites), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentOverwrites)(nil), (*ComponentOverwrites)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentOverwrites_To_v1alpha1_ComponentOverwrites(a.(*core.ComponentOverwrites), b.(*ComponentOverwrites), scope)
+	if err := s.AddGeneratedConversionFunc((*core.ComponentVersionOverwrites)(nil), (*ComponentVersionOverwrites)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ComponentVersionOverwrites_To_v1alpha1_ComponentVersionOverwrites(a.(*core.ComponentVersionOverwrites), b.(*ComponentVersionOverwrites), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ComponentOverwritesList)(nil), (*core.ComponentOverwritesList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentOverwritesList_To_core_ComponentOverwritesList(a.(*ComponentOverwritesList), b.(*core.ComponentOverwritesList), scope)
+	if err := s.AddGeneratedConversionFunc((*ComponentVersionOverwritesList)(nil), (*core.ComponentVersionOverwritesList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ComponentVersionOverwritesList_To_core_ComponentVersionOverwritesList(a.(*ComponentVersionOverwritesList), b.(*core.ComponentVersionOverwritesList), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentOverwritesList)(nil), (*ComponentOverwritesList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentOverwritesList_To_v1alpha1_ComponentOverwritesList(a.(*core.ComponentOverwritesList), b.(*ComponentOverwritesList), scope)
+	if err := s.AddGeneratedConversionFunc((*core.ComponentVersionOverwritesList)(nil), (*ComponentVersionOverwritesList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ComponentVersionOverwritesList_To_v1alpha1_ComponentVersionOverwritesList(a.(*core.ComponentVersionOverwritesList), b.(*ComponentVersionOverwritesList), scope)
 	}); err != nil {
 		return err
 	}
@@ -1075,102 +1075,102 @@ func Convert_core_ComponentDescriptorReference_To_v1alpha1_ComponentDescriptorRe
 	return autoConvert_core_ComponentDescriptorReference_To_v1alpha1_ComponentDescriptorReference(in, out, s)
 }
 
-func autoConvert_v1alpha1_ComponentOverwrite_To_core_ComponentOverwrite(in *ComponentOverwrite, out *core.ComponentOverwrite, s conversion.Scope) error {
-	if err := Convert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteReference(&in.Component, &out.Component, s); err != nil {
+func autoConvert_v1alpha1_ComponentVersionOverwrite_To_core_ComponentVersionOverwrite(in *ComponentVersionOverwrite, out *core.ComponentVersionOverwrite, s conversion.Scope) error {
+	if err := Convert_v1alpha1_ComponentVersionOverwriteReference_To_core_ComponentVersionOverwriteReference(&in.Source, &out.Source, s); err != nil {
 		return err
 	}
-	if err := Convert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteReference(&in.Target, &out.Target, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_ComponentOverwrite_To_core_ComponentOverwrite is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentOverwrite_To_core_ComponentOverwrite(in *ComponentOverwrite, out *core.ComponentOverwrite, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentOverwrite_To_core_ComponentOverwrite(in, out, s)
-}
-
-func autoConvert_core_ComponentOverwrite_To_v1alpha1_ComponentOverwrite(in *core.ComponentOverwrite, out *ComponentOverwrite, s conversion.Scope) error {
-	if err := Convert_core_ComponentOverwriteReference_To_v1alpha1_ComponentOverwriteReference(&in.Component, &out.Component, s); err != nil {
-		return err
-	}
-	if err := Convert_core_ComponentOverwriteReference_To_v1alpha1_ComponentOverwriteReference(&in.Target, &out.Target, s); err != nil {
+	if err := Convert_v1alpha1_ComponentVersionOverwriteReference_To_core_ComponentVersionOverwriteReference(&in.Substitution, &out.Substitution, s); err != nil {
 		return err
 	}
 	return nil
 }
 
-// Convert_core_ComponentOverwrite_To_v1alpha1_ComponentOverwrite is an autogenerated conversion function.
-func Convert_core_ComponentOverwrite_To_v1alpha1_ComponentOverwrite(in *core.ComponentOverwrite, out *ComponentOverwrite, s conversion.Scope) error {
-	return autoConvert_core_ComponentOverwrite_To_v1alpha1_ComponentOverwrite(in, out, s)
+// Convert_v1alpha1_ComponentVersionOverwrite_To_core_ComponentVersionOverwrite is an autogenerated conversion function.
+func Convert_v1alpha1_ComponentVersionOverwrite_To_core_ComponentVersionOverwrite(in *ComponentVersionOverwrite, out *core.ComponentVersionOverwrite, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ComponentVersionOverwrite_To_core_ComponentVersionOverwrite(in, out, s)
 }
 
-func autoConvert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteReference(in *ComponentOverwriteReference, out *core.ComponentOverwriteReference, s conversion.Scope) error {
+func autoConvert_core_ComponentVersionOverwrite_To_v1alpha1_ComponentVersionOverwrite(in *core.ComponentVersionOverwrite, out *ComponentVersionOverwrite, s conversion.Scope) error {
+	if err := Convert_core_ComponentVersionOverwriteReference_To_v1alpha1_ComponentVersionOverwriteReference(&in.Source, &out.Source, s); err != nil {
+		return err
+	}
+	if err := Convert_core_ComponentVersionOverwriteReference_To_v1alpha1_ComponentVersionOverwriteReference(&in.Substitution, &out.Substitution, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_core_ComponentVersionOverwrite_To_v1alpha1_ComponentVersionOverwrite is an autogenerated conversion function.
+func Convert_core_ComponentVersionOverwrite_To_v1alpha1_ComponentVersionOverwrite(in *core.ComponentVersionOverwrite, out *ComponentVersionOverwrite, s conversion.Scope) error {
+	return autoConvert_core_ComponentVersionOverwrite_To_v1alpha1_ComponentVersionOverwrite(in, out, s)
+}
+
+func autoConvert_v1alpha1_ComponentVersionOverwriteReference_To_core_ComponentVersionOverwriteReference(in *ComponentVersionOverwriteReference, out *core.ComponentVersionOverwriteReference, s conversion.Scope) error {
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.ComponentName = in.ComponentName
 	out.Version = in.Version
 	return nil
 }
 
-// Convert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteReference is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteReference(in *ComponentOverwriteReference, out *core.ComponentOverwriteReference, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteReference(in, out, s)
+// Convert_v1alpha1_ComponentVersionOverwriteReference_To_core_ComponentVersionOverwriteReference is an autogenerated conversion function.
+func Convert_v1alpha1_ComponentVersionOverwriteReference_To_core_ComponentVersionOverwriteReference(in *ComponentVersionOverwriteReference, out *core.ComponentVersionOverwriteReference, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ComponentVersionOverwriteReference_To_core_ComponentVersionOverwriteReference(in, out, s)
 }
 
-func autoConvert_core_ComponentOverwriteReference_To_v1alpha1_ComponentOverwriteReference(in *core.ComponentOverwriteReference, out *ComponentOverwriteReference, s conversion.Scope) error {
+func autoConvert_core_ComponentVersionOverwriteReference_To_v1alpha1_ComponentVersionOverwriteReference(in *core.ComponentVersionOverwriteReference, out *ComponentVersionOverwriteReference, s conversion.Scope) error {
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.ComponentName = in.ComponentName
 	out.Version = in.Version
 	return nil
 }
 
-// Convert_core_ComponentOverwriteReference_To_v1alpha1_ComponentOverwriteReference is an autogenerated conversion function.
-func Convert_core_ComponentOverwriteReference_To_v1alpha1_ComponentOverwriteReference(in *core.ComponentOverwriteReference, out *ComponentOverwriteReference, s conversion.Scope) error {
-	return autoConvert_core_ComponentOverwriteReference_To_v1alpha1_ComponentOverwriteReference(in, out, s)
+// Convert_core_ComponentVersionOverwriteReference_To_v1alpha1_ComponentVersionOverwriteReference is an autogenerated conversion function.
+func Convert_core_ComponentVersionOverwriteReference_To_v1alpha1_ComponentVersionOverwriteReference(in *core.ComponentVersionOverwriteReference, out *ComponentVersionOverwriteReference, s conversion.Scope) error {
+	return autoConvert_core_ComponentVersionOverwriteReference_To_v1alpha1_ComponentVersionOverwriteReference(in, out, s)
 }
 
-func autoConvert_v1alpha1_ComponentOverwrites_To_core_ComponentOverwrites(in *ComponentOverwrites, out *core.ComponentOverwrites, s conversion.Scope) error {
+func autoConvert_v1alpha1_ComponentVersionOverwrites_To_core_ComponentVersionOverwrites(in *ComponentVersionOverwrites, out *core.ComponentVersionOverwrites, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
-	out.Overwrites = *(*core.ComponentOverwriteList)(unsafe.Pointer(&in.Overwrites))
+	out.Overwrites = *(*core.ComponentVersionOverwriteList)(unsafe.Pointer(&in.Overwrites))
 	return nil
 }
 
-// Convert_v1alpha1_ComponentOverwrites_To_core_ComponentOverwrites is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentOverwrites_To_core_ComponentOverwrites(in *ComponentOverwrites, out *core.ComponentOverwrites, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentOverwrites_To_core_ComponentOverwrites(in, out, s)
+// Convert_v1alpha1_ComponentVersionOverwrites_To_core_ComponentVersionOverwrites is an autogenerated conversion function.
+func Convert_v1alpha1_ComponentVersionOverwrites_To_core_ComponentVersionOverwrites(in *ComponentVersionOverwrites, out *core.ComponentVersionOverwrites, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ComponentVersionOverwrites_To_core_ComponentVersionOverwrites(in, out, s)
 }
 
-func autoConvert_core_ComponentOverwrites_To_v1alpha1_ComponentOverwrites(in *core.ComponentOverwrites, out *ComponentOverwrites, s conversion.Scope) error {
+func autoConvert_core_ComponentVersionOverwrites_To_v1alpha1_ComponentVersionOverwrites(in *core.ComponentVersionOverwrites, out *ComponentVersionOverwrites, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
-	out.Overwrites = *(*ComponentOverwriteList)(unsafe.Pointer(&in.Overwrites))
+	out.Overwrites = *(*ComponentVersionOverwriteList)(unsafe.Pointer(&in.Overwrites))
 	return nil
 }
 
-// Convert_core_ComponentOverwrites_To_v1alpha1_ComponentOverwrites is an autogenerated conversion function.
-func Convert_core_ComponentOverwrites_To_v1alpha1_ComponentOverwrites(in *core.ComponentOverwrites, out *ComponentOverwrites, s conversion.Scope) error {
-	return autoConvert_core_ComponentOverwrites_To_v1alpha1_ComponentOverwrites(in, out, s)
+// Convert_core_ComponentVersionOverwrites_To_v1alpha1_ComponentVersionOverwrites is an autogenerated conversion function.
+func Convert_core_ComponentVersionOverwrites_To_v1alpha1_ComponentVersionOverwrites(in *core.ComponentVersionOverwrites, out *ComponentVersionOverwrites, s conversion.Scope) error {
+	return autoConvert_core_ComponentVersionOverwrites_To_v1alpha1_ComponentVersionOverwrites(in, out, s)
 }
 
-func autoConvert_v1alpha1_ComponentOverwritesList_To_core_ComponentOverwritesList(in *ComponentOverwritesList, out *core.ComponentOverwritesList, s conversion.Scope) error {
+func autoConvert_v1alpha1_ComponentVersionOverwritesList_To_core_ComponentVersionOverwritesList(in *ComponentVersionOverwritesList, out *core.ComponentVersionOverwritesList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]core.ComponentOverwrites)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]core.ComponentVersionOverwrites)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
-// Convert_v1alpha1_ComponentOverwritesList_To_core_ComponentOverwritesList is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentOverwritesList_To_core_ComponentOverwritesList(in *ComponentOverwritesList, out *core.ComponentOverwritesList, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentOverwritesList_To_core_ComponentOverwritesList(in, out, s)
+// Convert_v1alpha1_ComponentVersionOverwritesList_To_core_ComponentVersionOverwritesList is an autogenerated conversion function.
+func Convert_v1alpha1_ComponentVersionOverwritesList_To_core_ComponentVersionOverwritesList(in *ComponentVersionOverwritesList, out *core.ComponentVersionOverwritesList, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ComponentVersionOverwritesList_To_core_ComponentVersionOverwritesList(in, out, s)
 }
 
-func autoConvert_core_ComponentOverwritesList_To_v1alpha1_ComponentOverwritesList(in *core.ComponentOverwritesList, out *ComponentOverwritesList, s conversion.Scope) error {
+func autoConvert_core_ComponentVersionOverwritesList_To_v1alpha1_ComponentVersionOverwritesList(in *core.ComponentVersionOverwritesList, out *ComponentVersionOverwritesList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]ComponentOverwrites)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]ComponentVersionOverwrites)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
-// Convert_core_ComponentOverwritesList_To_v1alpha1_ComponentOverwritesList is an autogenerated conversion function.
-func Convert_core_ComponentOverwritesList_To_v1alpha1_ComponentOverwritesList(in *core.ComponentOverwritesList, out *ComponentOverwritesList, s conversion.Scope) error {
-	return autoConvert_core_ComponentOverwritesList_To_v1alpha1_ComponentOverwritesList(in, out, s)
+// Convert_core_ComponentVersionOverwritesList_To_v1alpha1_ComponentVersionOverwritesList is an autogenerated conversion function.
+func Convert_core_ComponentVersionOverwritesList_To_v1alpha1_ComponentVersionOverwritesList(in *core.ComponentVersionOverwritesList, out *ComponentVersionOverwritesList, s conversion.Scope) error {
+	return autoConvert_core_ComponentVersionOverwritesList_To_v1alpha1_ComponentVersionOverwritesList(in, out, s)
 }
 
 func autoConvert_v1alpha1_Condition_To_core_Condition(in *Condition, out *core.Condition, s conversion.Scope) error {
@@ -1236,6 +1236,7 @@ func autoConvert_v1alpha1_Context_To_core_Context(in *Context, out *core.Context
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.RegistryPullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Configurations = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.Configurations))
+	out.ComponentVersionOverwritesReference = in.ComponentVersionOverwritesReference
 	return nil
 }
 
@@ -1249,6 +1250,7 @@ func autoConvert_core_Context_To_v1alpha1_Context(in *core.Context, out *Context
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.RegistryPullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Configurations = *(*map[string]AnyJSON)(unsafe.Pointer(&in.Configurations))
+	out.ComponentVersionOverwritesReference = in.ComponentVersionOverwritesReference
 	return nil
 }
 

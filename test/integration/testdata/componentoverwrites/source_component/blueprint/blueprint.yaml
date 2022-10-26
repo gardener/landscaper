@@ -1,0 +1,14 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+subinstallations:
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: intermediate
+  blueprint:
+    ref: cd://componentReferences/intermediate/resources/blueprint
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: referenced
+  blueprint:
+    ref: cd://componentReferences/referenced/resources/blueprint

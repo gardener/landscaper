@@ -7,21 +7,26 @@ package installations
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
-// Context contains the visible installations of a specific installation.
+// Scope contains the visible installations of a specific installation.
 // This context is later used to validate and get import data
-type Context struct {
+type Scope struct {
 	// Name is the name of the current installation's context.
 	// By default, it is the source name of the parent.
 	Name string
@@ -38,7 +43,7 @@ type Context struct {
 
 // SetInstallationContext determines the current context and updates the operation context.
 func (o *Operation) SetInstallationContext(ctx context.Context) error {
-	newCtx, err := GetInstallationContext(ctx, o.Client(), o.Inst.GetInstallation(), o.Overwriter)
+	newCtx, err := GetInstallationContext(ctx, o.Client(), o.Inst.GetInstallation())
 	if err != nil {
 		return err
 	}
@@ -51,14 +56,13 @@ func (o *Operation) SetInstallationContext(ctx context.Context) error {
 // The context is later used to validate and get imported data.
 func GetInstallationContext(ctx context.Context,
 	kubeClient client.Client,
-	inst *lsv1alpha1.Installation,
-	overwriter componentoverwrites.Overwriter) (*Context, error) {
+	inst *lsv1alpha1.Installation) (*Scope, error) {
 	parentInst, siblingInstallations, err := GetParentAndSiblings(ctx, kubeClient, inst)
 	if err != nil {
 		return nil, err
 	}
 
-	externalCtx, err := GetExternalContext(ctx, kubeClient, inst, overwriter)
+	externalCtx, err := GetExternalContext(ctx, kubeClient, inst)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +81,7 @@ func GetInstallationContext(ctx context.Context,
 		ctxName = lsv1alpha1helper.DataObjectSourceFromInstallation(parentInst)
 	}
 
-	return &Context{
+	return &Scope{
 		Name:   ctxName,
 		Parent: CreateInternalInstallationBase(parentInst),
 		// siblings are all encompassed installation of the parent installation
@@ -96,6 +100,8 @@ type ExternalContext struct {
 	ComponentName string
 	// ComponentVersion defines the version of the component.
 	ComponentVersion string
+	// Overwriter is the component version overwriter used for this installation.
+	Overwriter componentoverwrites.Overwriter
 }
 
 // ComponentDescriptorRef returns the component descriptor reference for the current installation
@@ -200,24 +206,44 @@ func (o *Operation) IsRoot() bool {
 var MissingRepositoryContextError = errors.New("RepositoryContextMissing")
 
 // GetExternalContext resolves the context for an installation and applies defaults or overwrites if applicable.
-func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter) (ExternalContext, error) {
+func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (ExternalContext, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	lsCtx := &lsv1alpha1.Context{}
+	var overwriter componentoverwrites.Overwriter
+	var cvo *lsv1alpha1.ComponentVersionOverwrites
 	if len(inst.Spec.Context) != 0 {
 		if err := kubeClient.Get(ctx, kutil.ObjectKey(inst.Spec.Context, inst.Namespace), lsCtx); err != nil {
 			return ExternalContext{}, lserrors.NewWrappedError(err,
 				"Context", "GetContext", err.Error())
 		}
+
+		// check for ComponentVersionOverwrites
+		if len(lsCtx.ComponentVersionOverwritesReference) > 0 {
+			cvo = &lsv1alpha1.ComponentVersionOverwrites{}
+			if err := kubeClient.Get(ctx, kutil.ObjectKey(lsCtx.ComponentVersionOverwritesReference, inst.Namespace), cvo); err != nil {
+				if apierrors.IsNotFound(err) {
+					return ExternalContext{}, lserrors.NewWrappedError(err, "ComponentVersionOverwrites", "GetComponentVersionOverwrites", fmt.Sprintf("context '%s' references ComponentVersionOverwrites resource '%s', which cannot be found: %s", lsCtx.Name, lsCtx.ComponentVersionOverwritesReference, err.Error()))
+				}
+				return ExternalContext{}, lserrors.NewWrappedError(err, "ComponentVersionOverwrites", "GetComponentVersionOverwrites", err.Error())
+			}
+		}
+	}
+
+	if cvo != nil {
+		overwriter = componentoverwrites.NewSubstitutions(cvo.Overwrites)
+		logger.Debug("Found ComponentVersionOverwrites for context", "context", inst.Spec.Context, lc.KeyResource, lsCtx.ComponentVersionOverwritesReference, lc.KeyResourceKind, "ComponentVersionOverwrites")
 	}
 
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
 	if cdRef == nil {
 		// no component descriptor is configured
 		return ExternalContext{
-			Context: *lsCtx,
+			Context:    *lsCtx,
+			Overwriter: overwriter,
 		}, nil
 	}
 
-	cond, err := ApplyComponentOverwrite(inst, overwriter, lsCtx, cdRef)
+	cond, err := ApplyComponentOverwrite(ctx, inst, overwriter, lsCtx, cdRef)
 	if err != nil {
 		return ExternalContext{}, lserrors.NewWrappedError(err,
 			"Context", "OverwriteComponentReference", err.Error())
@@ -233,13 +259,14 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		Context:          *lsCtx,
 		ComponentName:    cdRef.ComponentName,
 		ComponentVersion: cdRef.Version,
+		Overwriter:       overwriter,
 	}, nil
 }
 
 // ApplyComponentOverwrite applies a component overwrite for the component reference if applicable.
 // The overwriter can be nil
-func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter,
-	lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
+func ApplyComponentOverwrite(ctx context.Context, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 	if cdRef == nil {
 		return nil, nil
 	}
@@ -259,16 +286,16 @@ func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter component
 
 	oldRef := cdRef.DeepCopy()
 
-	overwritten, err := overwriter.Replace(cdRef)
-	if err != nil {
-		return nil, lserrors.NewWrappedError(err,
-			"HandleComponentReference", "OverwriteComponentReference", err.Error())
-	}
+	overwritten := overwriter.Replace(cdRef)
 	if overwritten {
 		diff := componentoverwrites.ReferenceDiff(oldRef, cdRef)
+		logger.Info("Component reference has been overwritten",
+			"repositoryContext", diff.OverwriteToString(componentoverwrites.RepoCtx, true),
+			"componentName", diff.OverwriteToString(componentoverwrites.ComponentName, true),
+			"version", diff.OverwriteToString(componentoverwrites.Version, true))
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 			"FoundOverwrite",
-			diff)
+			diff.String())
 		return &cond, nil
 	}
 

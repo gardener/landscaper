@@ -55,8 +55,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ContextList{},
 		&LsHealthCheck{},
 		&LsHealthCheckList{},
-		&ComponentOverwrites{},
-		&ComponentOverwritesList{},
+		&ComponentVersionOverwrites{},
+		&ComponentVersionOverwritesList{},
 		&Environment{},
 		&EnvironmentList{},
 		&DeployerRegistration{},
@@ -86,7 +86,7 @@ var ResourceDefinition = func() lsschema.CustomResourceDefinitions {
 			LsHealthCheckDefinition,
 			DeployerRegistrationDefinition,
 			EnvironmentDefinition,
-			ComponentOverwritesDefinition,
+			ComponentVersionOverwritesDefinition,
 		},
 	}
 }()

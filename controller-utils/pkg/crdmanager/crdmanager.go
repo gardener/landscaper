@@ -16,6 +16,7 @@ import (
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -97,6 +98,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 
 	err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
 		aggregatedStatus := true
+		causingCRDs := sets.NewString()
 
 		for _, crd := range crdList {
 			if !aggregatedStatus {
@@ -113,14 +115,17 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 				case v1.Established:
 					if crdCondition.Status != v1.ConditionTrue {
 						aggregatedStatus = false
+						causingCRDs.Insert(crd.Name)
 					}
 				case v1.NamesAccepted:
 					if crdCondition.Status == v1.ConditionFalse {
 						aggregatedStatus = false
+						causingCRDs.Insert(crd.Name)
 					}
 				}
 			}
 		}
+		logger.Debug("Not all CRDs are ready", "unreadyCRDs", causingCRDs.List())
 		return aggregatedStatus, nil
 	})
 

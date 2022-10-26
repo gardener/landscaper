@@ -176,8 +176,7 @@ field `component-descriptor`.
 
 ### Reference by Component Version
 
-A component descriptor can be identified by its name and version. With this identity 
-it is resolved within a defined repository context as described in the [component descriptor spec](https://gardener.github.io/component-spec/component_descriptor_registries.html).
+A component descriptor can be identified by its name and version. Additionally, it is resolved within a defined [repository context](./RepositoryContext.md).
 This repository context SHOULD be defined by the [Context](./Context.md) that is referenced by the installation.
 Optionally the repository context can explicitly be overwritten in the reference.
 

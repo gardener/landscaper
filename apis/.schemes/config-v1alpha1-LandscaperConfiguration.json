@@ -72,19 +72,6 @@
         }
       }
     },
-    "config-v1alpha1-ComponentOverwritesController": {
-      "description": "ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.",
-      "type": "object",
-      "required": [
-        "CommonControllerConfig"
-      ],
-      "properties": {
-        "CommonControllerConfig": {
-          "default": {},
-          "$ref": "#/definitions/config-v1alpha1-CommonControllerConfig"
-        }
-      }
-    },
     "config-v1alpha1-ContextControllerConfig": {
       "description": "ContextControllerConfig contains the context specific configuration.",
       "type": "object",
@@ -150,15 +137,9 @@
         "installations",
         "executions",
         "deployItems",
-        "componentOverwrites",
         "contexts"
       ],
       "properties": {
-        "componentOverwrites": {
-          "description": "ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.",
-          "default": {},
-          "$ref": "#/definitions/config-v1alpha1-ComponentOverwritesController"
-        },
         "contexts": {
           "description": "Contexts contains the controller config that reconciles context objects.",
           "default": {},

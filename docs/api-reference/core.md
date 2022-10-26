@@ -12,7 +12,7 @@ Resource Types:
 <ul><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint</a>
 </li><li>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwrites">ComponentOverwrites</a>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrites">ComponentVersionOverwrites</a>
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.Context">Context</a>
 </li><li>
@@ -208,10 +208,10 @@ The templates must return a list of deploy item templates.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentOverwrites">ComponentOverwrites
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrites">ComponentVersionOverwrites
 </h3>
 <p>
-<p>ComponentOverwrites are resources that can hold any kind json or yaml data.</p>
+<p>ComponentVersionOverwrites contain overwrites for specific (versions of) components.</p>
 </p>
 <table>
 <thead>
@@ -236,7 +236,7 @@ landscaper.gardener.cloud/v1alpha1
 <code>kind</code></br>
 string
 </td>
-<td><code>ComponentOverwrites</code></td>
+<td><code>ComponentVersionOverwrites</code></td>
 </tr>
 <tr>
 <td>
@@ -256,8 +256,8 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>overwrites</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwriteList">
-ComponentOverwriteList
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwriteList">
+ComponentVersionOverwriteList
 </a>
 </em>
 </td>
@@ -357,6 +357,20 @@ map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 <em>(Optional)</em>
 <p>Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
 The key should use a dns-like syntax to express the purpose and avoid conflicts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>componentVersionOverwrites</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object
+The overwrites object has to be in the same namespace as the context.
+If the string is empty, no overwrites will be used.</p>
 </td>
 </tr>
 </tbody>
@@ -1768,10 +1782,10 @@ string
 (<code>string</code> alias)</p></h3>
 <p>
 </p>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentOverwrite">ComponentOverwrite
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrite">ComponentVersionOverwrite
 </h3>
 <p>
-<p>ComponentOverwrite defines an overwrite for a specific component and/or version of a component.</p>
+<p>ComponentVersionOverwrite defines an overwrite for a specific component and/or version of a component.</p>
 </p>
 <table>
 <thead>
@@ -1783,41 +1797,40 @@ string
 <tbody>
 <tr>
 <td>
-<code>component</code></br>
+<code>source</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwriteReference">
-ComponentOverwriteReference
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwriteReference">
+ComponentVersionOverwriteReference
 </a>
 </em>
 </td>
 <td>
-<p>Component defines the component that should be replaced.
-The version is optional and will default to all found versions</p>
+<p>Source defines the component that should be replaced.</p>
 </td>
 </tr>
 <tr>
 <td>
-<code>target</code></br>
+<code>substitution</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwriteReference">
-ComponentOverwriteReference
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwriteReference">
+ComponentVersionOverwriteReference
 </a>
 </em>
 </td>
 <td>
-<p>Target defines the replacement target for the component or version.</p>
+<p>Substitution defines the replacement target for the component or version.</p>
 </td>
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentOverwriteReference">ComponentOverwriteReference
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwriteReference">ComponentVersionOverwriteReference
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwrite">ComponentOverwrite</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrite">ComponentVersionOverwrite</a>)
 </p>
 <p>
-<p>ComponentOverwriteReference defines a component reference by</p>
+<p>ComponentVersionOverwriteReference defines a component reference by</p>
 </p>
 <table>
 <thead>

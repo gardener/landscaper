@@ -307,7 +307,8 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 			subInstTmpl,
 			input.ComponentDescriptor,
 			r.componentResolver,
-			r.getRepositoryContext(input))
+			r.getRepositoryContext(input),
+			nil)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to get blueprint definition for subinstallation %q: %w", subInstTmpl.Name, err)
 		}

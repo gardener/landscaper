@@ -29,10 +29,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	coctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/componentoverwrites"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/healthcheck"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	"github.com/gardener/landscaper/pkg/agent"
 
@@ -41,10 +39,11 @@ import (
 	install "github.com/gardener/landscaper/apis/core/install"
 	deployitemctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	executionactrl "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
-	installationsctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/version"
 
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	installationsctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 
 	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
 )
@@ -146,12 +145,7 @@ func (o *Options) run(ctx context.Context) error {
 	install.Install(lsMgr.GetScheme())
 
 	ctrlLogger := o.Log.WithName("controllers")
-	componentOverwriteMgr := componentoverwrites.New()
-	if err := coctrl.AddControllerToManager(ctrlLogger, lsMgr, componentOverwriteMgr, o.Config.Controllers.ComponentOverwrites); err != nil {
-		return fmt.Errorf("unable to setup commponent overwrites controller: %w", err)
-	}
-
-	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, componentOverwriteMgr, o.Config); err != nil {
+	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 

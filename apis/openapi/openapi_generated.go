@@ -36,7 +36,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config.AgentConfiguration":                                        schema_gardener_landscaper_apis_config_AgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.BlueprintStore":                                            schema_gardener_landscaper_apis_config_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config.CommonControllerConfig":                                    schema_gardener_landscaper_apis_config_CommonControllerConfig(ref),
-		"github.com/gardener/landscaper/apis/config.ComponentOverwritesController":                             schema_gardener_landscaper_apis_config_ComponentOverwritesController(ref),
 		"github.com/gardener/landscaper/apis/config.ContextControllerConfig":                                   schema_gardener_landscaper_apis_config_ContextControllerConfig(ref),
 		"github.com/gardener/landscaper/apis/config.ContextControllerDefaultConfig":                            schema_gardener_landscaper_apis_config_ContextControllerDefaultConfig(ref),
 		"github.com/gardener/landscaper/apis/config.ContextsController":                                        schema_gardener_landscaper_apis_config_ContextsController(ref),
@@ -59,7 +58,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config/v1alpha1.AgentConfiguration":                               schema_landscaper_apis_config_v1alpha1_AgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore":                                   schema_landscaper_apis_config_v1alpha1_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig":                           schema_landscaper_apis_config_v1alpha1_CommonControllerConfig(ref),
-		"github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController":                    schema_landscaper_apis_config_v1alpha1_ComponentOverwritesController(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.ContextControllerConfig":                          schema_landscaper_apis_config_v1alpha1_ContextControllerConfig(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.ContextControllerDefaultConfig":                   schema_landscaper_apis_config_v1alpha1_ContextControllerDefaultConfig(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.ContextsController":                               schema_landscaper_apis_config_v1alpha1_ContextsController(ref),
@@ -87,10 +85,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ClusterRestConfig":                                  schema_landscaper_apis_core_v1alpha1_ClusterRestConfig(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition":                      schema_landscaper_apis_core_v1alpha1_ComponentDescriptorDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference":                       schema_landscaper_apis_core_v1alpha1_ComponentDescriptorReference(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrite":                                 schema_landscaper_apis_core_v1alpha1_ComponentOverwrite(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwriteReference":                        schema_landscaper_apis_core_v1alpha1_ComponentOverwriteReference(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrites":                                schema_landscaper_apis_core_v1alpha1_ComponentOverwrites(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwritesList":                            schema_landscaper_apis_core_v1alpha1_ComponentOverwritesList(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrite":                          schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrite(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference":                 schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwriteReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrites":                         schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrites(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwritesList":                     schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwritesList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Condition":                                          schema_landscaper_apis_core_v1alpha1_Condition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference":                                 schema_landscaper_apis_core_v1alpha1_ConfigMapReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Context":                                            schema_landscaper_apis_core_v1alpha1_Context(ref),
@@ -1211,28 +1209,6 @@ func schema_gardener_landscaper_apis_config_CommonControllerConfig(ref common.Re
 	}
 }
 
-func schema_gardener_landscaper_apis_config_ComponentOverwritesController(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"CommonControllerConfig": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/gardener/landscaper/apis/config.CommonControllerConfig"),
-						},
-					},
-				},
-				Required: []string{"CommonControllerConfig"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.CommonControllerConfig"},
-	}
-}
-
 func schema_gardener_landscaper_apis_config_ContextControllerConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1362,13 +1338,6 @@ func schema_gardener_landscaper_apis_config_Controllers(ref common.ReferenceCall
 							Ref:         ref("github.com/gardener/landscaper/apis/config.DeployItemsController"),
 						},
 					},
-					"ComponentOverwrites": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/config.ComponentOverwritesController"),
-						},
-					},
 					"Contexts": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Contexts contains the controller config that reconciles context objects.",
@@ -1377,11 +1346,11 @@ func schema_gardener_landscaper_apis_config_Controllers(ref common.ReferenceCall
 						},
 					},
 				},
-				Required: []string{"SyncPeriod", "Installations", "Executions", "DeployItems", "ComponentOverwrites", "Contexts"},
+				Required: []string{"SyncPeriod", "Installations", "Executions", "DeployItems", "Contexts"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.ComponentOverwritesController", "github.com/gardener/landscaper/apis/config.ContextsController", "github.com/gardener/landscaper/apis/config.DeployItemsController", "github.com/gardener/landscaper/apis/config.ExecutionsController", "github.com/gardener/landscaper/apis/config.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/gardener/landscaper/apis/config.ContextsController", "github.com/gardener/landscaper/apis/config.DeployItemsController", "github.com/gardener/landscaper/apis/config.ExecutionsController", "github.com/gardener/landscaper/apis/config.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -2101,28 +2070,6 @@ func schema_landscaper_apis_config_v1alpha1_CommonControllerConfig(ref common.Re
 	}
 }
 
-func schema_landscaper_apis_config_v1alpha1_ComponentOverwritesController(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"CommonControllerConfig": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
-						},
-					},
-				},
-				Required: []string{"CommonControllerConfig"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
-	}
-}
-
 func schema_landscaper_apis_config_v1alpha1_ContextControllerConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2252,13 +2199,6 @@ func schema_landscaper_apis_config_v1alpha1_Controllers(ref common.ReferenceCall
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemsController"),
 						},
 					},
-					"componentOverwrites": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController"),
-						},
-					},
 					"contexts": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Contexts contains the controller config that reconciles context objects.",
@@ -2267,11 +2207,11 @@ func schema_landscaper_apis_config_v1alpha1_Controllers(ref common.ReferenceCall
 						},
 					},
 				},
-				Required: []string{"syncPeriod", "installations", "executions", "deployItems", "componentOverwrites", "contexts"},
+				Required: []string{"syncPeriod", "installations", "executions", "deployItems", "contexts"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController", "github.com/gardener/landscaper/apis/config/v1alpha1.ContextsController", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemsController", "github.com/gardener/landscaper/apis/config/v1alpha1.ExecutionsController", "github.com/gardener/landscaper/apis/config/v1alpha1.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/gardener/landscaper/apis/config/v1alpha1.ContextsController", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemsController", "github.com/gardener/landscaper/apis/config/v1alpha1.ExecutionsController", "github.com/gardener/landscaper/apis/config/v1alpha1.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -3230,41 +3170,41 @@ func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorReference(ref commo
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_ComponentOverwrite(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrite(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ComponentOverwrite defines an overwrite for a specific component and/or version of a component.",
+				Description: "ComponentVersionOverwrite defines an overwrite for a specific component and/or version of a component.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"component": {
+					"source": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Component defines the component that should be replaced. The version is optional and will default to all found versions",
+							Description: "Source defines the component that should be replaced.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwriteReference"),
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference"),
 						},
 					},
-					"target": {
+					"substitution": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Target defines the replacement target for the component or version.",
+							Description: "Substitution defines the replacement target for the component or version.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwriteReference"),
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference"),
 						},
 					},
 				},
-				Required: []string{"component", "target"},
+				Required: []string{"source", "substitution"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwriteReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference"},
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_ComponentOverwriteReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwriteReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ComponentOverwriteReference defines a component reference by",
+				Description: "ComponentVersionOverwriteReference defines a component reference by",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"repositoryContext": {
@@ -3297,11 +3237,11 @@ func schema_landscaper_apis_core_v1alpha1_ComponentOverwriteReference(ref common
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_ComponentOverwrites(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrites(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ComponentOverwrites are resources that can hold any kind json or yaml data.",
+				Description: "ComponentVersionOverwrites contain overwrites for specific (versions of) components.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -3332,7 +3272,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentOverwrites(ref common.Referen
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrite"),
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrite"),
 									},
 								},
 							},
@@ -3342,15 +3282,15 @@ func schema_landscaper_apis_core_v1alpha1_ComponentOverwrites(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrite", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrite", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_ComponentOverwritesList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwritesList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ComponentOverwritesList contains a list of ComponentOverwrites",
+				Description: "ComponentVersionOverwritesList contains a list of ComponentVersionOverwrites",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -3380,7 +3320,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentOverwritesList(ref common.Ref
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrites"),
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrites"),
 									},
 								},
 							},
@@ -3391,7 +3331,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentOverwritesList(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrites", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrites", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -3569,6 +3509,14 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 									},
 								},
 							},
+						},
+					},
+					"componentVersionOverwrites": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object The overwrites object has to be in the same namespace as the context. If the string is empty, no overwrites will be used.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},

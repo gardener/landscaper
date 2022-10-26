@@ -276,7 +276,8 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		subInstTmpl,
 		o.ComponentDescriptor,
 		o.ComponentsRegistry(),
-		o.Context().External.RepositoryContext)
+		o.Context().External.RepositoryContext,
+		o.Context().External.Overwriter)
 	if err != nil {
 		return nil, err
 	}

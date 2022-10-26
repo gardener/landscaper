@@ -18,21 +18,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
+	"github.com/gardener/landscaper/pkg/utils"
+
+	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-	"github.com/gardener/landscaper/pkg/utils"
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 const (
@@ -44,13 +46,11 @@ func NewController(logger logging.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
-	overwriter componentoverwrites.Overwriter,
 	lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
 
 	ctrl := &Controller{
-		log:                 logger,
-		LsConfig:            lsConfig,
-		ComponentOverwriter: overwriter,
+		log:      logger,
+		LsConfig: lsConfig,
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -80,10 +80,9 @@ func NewTestActuator(op operation.Operation, logger logging.Logger, configuratio
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
-	log                 logging.Logger
-	LsConfig            *config.LandscaperConfiguration
-	SharedCache         cache.Cache
-	ComponentOverwriter componentoverwrites.Overwriter
+	log         logging.Logger
+	LsConfig    *config.LandscaperConfiguration
+	SharedCache cache.Cache
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -163,7 +162,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
-	lsCtx, err := installations.GetInstallationContext(ctx, c.Client(), inst, c.ComponentOverwriter)
+	lsCtx, err := installations.GetInstallationContext(ctx, c.Client(), inst)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
@@ -188,7 +187,6 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "InitInstallationOperation", err.Error())
 	}
-	instOp.SetOverwriter(c.ComponentOverwriter)
 	return instOp, nil
 }
 

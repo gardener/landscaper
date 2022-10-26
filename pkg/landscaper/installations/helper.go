@@ -21,8 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -31,6 +29,8 @@ import (
 	lscheme "github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
 var componentInstallationGVK schema.GroupVersionKind
@@ -68,7 +68,7 @@ func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) 
 
 // ResolveComponentDescriptor resolves the component descriptor of a installation.
 // Inline Component Descriptors take precedence
-func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
+func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResolver, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
 	if inst.Spec.ComponentDescriptor == nil || (inst.Spec.ComponentDescriptor.Reference == nil && inst.Spec.ComponentDescriptor.Inline == nil) {
 		return nil, nil, nil
 	}
@@ -80,13 +80,12 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 	if inst.Spec.ComponentDescriptor.Inline != nil {
 		repoCtx = inst.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext()
 		ref = inst.Spec.ComponentDescriptor.Inline.ObjectMeta
-	}
-	// case remote reference
-	if inst.Spec.ComponentDescriptor.Reference != nil {
+	} else if inst.Spec.ComponentDescriptor.Reference != nil {
+		// case remote reference
 		repoCtx = inst.Spec.ComponentDescriptor.Reference.RepositoryContext
 		ref = inst.Spec.ComponentDescriptor.Reference.ObjectMeta()
 	}
-	return compRepo.ResolveWithBlobResolver(ctx, repoCtx, ref.GetName(), ref.GetVersion())
+	return cdutils.ResolveWithBlobResolverWithOverwriter(ctx, compRepo, repoCtx, ref.GetName(), ref.GetVersion(), overwriter)
 }
 
 // CreateInternalInstallation creates an internal installation for an Installation
@@ -107,12 +106,11 @@ func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentR
 func CreateInternalInstallationWithContext(ctx context.Context,
 	inst *lsv1alpha1.Installation,
 	kubeClient client.Client,
-	compResolver ctf.ComponentResolver,
-	overwriter componentoverwrites.Overwriter) (*InstallationImportsAndBlueprint, error) {
+	compResolver ctf.ComponentResolver) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}
-	lsCtx, err := GetExternalContext(ctx, kubeClient, inst, overwriter)
+	lsCtx, err := GetExternalContext(ctx, kubeClient, inst)
 	if err != nil {
 		return nil, err
 	}
