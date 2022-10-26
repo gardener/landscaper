@@ -136,11 +136,15 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 
 	if m.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range m.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
+			timeout := customReadinessCheckConfig.Timeout
+			if timeout == nil {
+				timeout = m.ProviderConfiguration.ReadinessChecks.Timeout
+			}
 			customReadinessCheck := health.CustomReadinessCheck{
 				Context:          ctx,
 				Client:           client,
 				CurrentOp:        "CustomCheckResourcesReadinessManifest",
-				Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
+				Timeout:          timeout,
 				ManagedResources: managedresources,
 				Configuration:    customReadinessCheckConfig,
 			}

@@ -6,6 +6,9 @@ package manifest_test
 
 import (
 	"context"
+	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -373,5 +376,91 @@ var _ = Describe("", func() {
 		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
 		Expect(cm.Annotations).ToNot(HaveKeyWithValue("init", "True"))
 		Expect(cm.Annotations).To(HaveKeyWithValue("always", "True"))
+	})
+
+	It("should respect the custom readiness check timeout when set", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-cm",
+				Namespace: state.Namespace,
+			},
+			Data: map[string]string{
+				"key": "val",
+			},
+		}
+		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		requirementValue := map[string]string{
+			"value": "true",
+		}
+		requirementValueMarshaled, err := json.Marshal(requirementValue)
+		Expect(err).ToNot(HaveOccurred())
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{
+			ReadinessChecks: readinesschecks.ReadinessCheckConfiguration{
+				Timeout: &lsv1alpha1.Duration{
+					Duration: 1 * time.Second,
+				},
+				CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
+					{
+						Timeout: &lsv1alpha1.Duration{
+							Duration: 1 * time.Minute,
+						},
+						Name: "my-check",
+						Resource: []lsv1alpha1.TypedObjectReference{
+							{
+								APIVersion: "v1",
+								Kind:       "ConfigMap",
+								ObjectReference: lsv1alpha1.ObjectReference{
+									Name:      "my-cm",
+									Namespace: state.Namespace,
+								},
+							},
+						},
+						Requirements: []readinesschecks.RequirementSpec{
+							{
+								JsonPath: ".data.ready",
+								Operator: selection.Equals,
+								Value: []runtime.RawExtension{
+									{
+										Raw: requirementValueMarshaled,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:   managedresource.ManagePolicy,
+				Manifest: rawCM,
+			},
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		go func() {
+			defer GinkgoRecover()
+			time.Sleep(2 * time.Second)
+			Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+			cm.Data["ready"] = "true"
+			Expect(state.Client.Update(ctx, cm)).To(Succeed())
+		}()
+		Expect(m.Reconcile(ctx)).To(Succeed())
 	})
 })
