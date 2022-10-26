@@ -6,6 +6,7 @@ package secret
 
 import (
 	"context"
+	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -30,6 +31,10 @@ func (srr SecretRefResolver) Resolve(ctx context.Context, target *lsv1alpha1.Tar
 	rt := NewResolvedTarget(target)
 
 	if target.Spec.SecretRef != nil {
+		if len(target.Spec.SecretRef.Namespace) > 0 && target.Spec.SecretRef.Namespace != target.Namespace {
+			return nil, fmt.Errorf("namespace of secret ref %s differs from target namespace %s", target.Spec.SecretRef.Namespace, target.Namespace)
+		}
+
 		var err error
 		_, rt.Resolved, _, err = lsutils.ResolveSecretReference(ctx, srr.Client, target.Spec.SecretRef)
 		if err != nil {
