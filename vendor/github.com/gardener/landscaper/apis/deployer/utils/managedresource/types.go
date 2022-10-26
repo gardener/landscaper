@@ -37,6 +37,12 @@ type Manifest struct {
 	Policy ManifestPolicy `json:"policy,omitempty"`
 	// Manifest defines the raw k8s manifest.
 	Manifest *runtime.RawExtension `json:"manifest,omitempty"`
+	// AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.
+	// +optional
+	AnnotateBeforeCreate map[string]string `json:"annotateBeforeCreate,omitempty"`
+	// AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.
+	// +optional
+	AnnotateBeforeDelete map[string]string `json:"annotateBeforeDelete,omitempty"`
 }
 
 // ManagedResourceStatusList describes a list of managed resource statuses.

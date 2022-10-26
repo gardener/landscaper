@@ -148,6 +148,20 @@ func (in *ProviderStatus) DeepCopyInto(out *ProviderStatus) {
 		*out = make(managedresource.ManagedResourceStatusList, len(*in))
 		copy(*out, *in)
 	}
+	if in.AnnotateBeforeCreate != nil {
+		in, out := &in.AnnotateBeforeCreate, &out.AnnotateBeforeCreate
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.AnnotateBeforeDelete != nil {
+		in, out := &in.AnnotateBeforeDelete, &out.AnnotateBeforeDelete
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

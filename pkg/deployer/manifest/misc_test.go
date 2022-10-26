@@ -6,12 +6,15 @@ package manifest_test
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
@@ -144,5 +147,231 @@ var _ = Describe("", func() {
 		Expect(m.Reconcile(ctx)).NotTo(Succeed())
 
 		Expect(state.Client.Delete(ctx, secretNamespaceObj)).To(Succeed())
+	})
+
+	It("should add before delete annotations when manifest is being deleted", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-cm",
+				Namespace: state.Namespace,
+				Finalizers: []string{
+					"kubernetes.io/test",
+				},
+			},
+			Data: map[string]string{
+				"key": "val",
+			},
+		}
+		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:   managedresource.ManagePolicy,
+				Manifest: rawCM,
+				AnnotateBeforeDelete: map[string]string{
+					"to-be-deleted": "True",
+				},
+			},
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Annotations).ToNot(HaveKeyWithValue("to-be-deleted", "True"))
+
+		Expect(m.Delete(ctx)).ToNot(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
+		Expect(cm.ObjectMeta.DeletionTimestamp).ToNot(BeNil())
+
+		cm.ObjectMeta.Finalizers = nil
+		Expect(state.Client.Update(ctx, cm)).To(Succeed())
+
+		Eventually(func() error {
+			return m.Delete(ctx)
+		}, 1*time.Second).WithTimeout(1 * time.Minute).Should(Succeed())
+	})
+
+	It("should add before delete annotations when manifest is being deleted (with additional annotations)", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-cm",
+				Namespace: state.Namespace,
+				Finalizers: []string{
+					"kubernetes.io/test",
+				},
+				Annotations: map[string]string{
+					"always": "True",
+				},
+			},
+			Data: map[string]string{
+				"key": "val",
+			},
+		}
+		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:   managedresource.ManagePolicy,
+				Manifest: rawCM,
+				AnnotateBeforeDelete: map[string]string{
+					"to-be-deleted": "True",
+				},
+			},
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Annotations).ToNot(HaveKeyWithValue("to-be-deleted", "True"))
+		Expect(cm.Annotations).To(HaveKeyWithValue("always", "True"))
+
+		Expect(m.Delete(ctx)).ToNot(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
+		Expect(cm.Annotations).To(HaveKeyWithValue("always", "True"))
+		Expect(cm.ObjectMeta.DeletionTimestamp).ToNot(BeNil())
+
+		cm.ObjectMeta.Finalizers = nil
+		Expect(state.Client.Update(ctx, cm)).To(Succeed())
+
+		Eventually(func() error {
+			return m.Delete(ctx)
+		}, 1*time.Second).WithTimeout(1 * time.Minute).Should(Succeed())
+	})
+
+	It("should add before create annotations when manifest is being created", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-cm",
+				Namespace: state.Namespace,
+			},
+			Data: map[string]string{
+				"key": "val",
+			},
+		}
+		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:   managedresource.ManagePolicy,
+				Manifest: rawCM,
+				AnnotateBeforeCreate: map[string]string{
+					"init": "True",
+				},
+			},
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Annotations).To(HaveKeyWithValue("init", "True"))
+
+		cm.Annotations = nil
+		Expect(state.Client.Update(ctx, cm))
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Annotations).ToNot(HaveKeyWithValue("init", "True"))
+	})
+
+	It("should add before create annotations when manifest is being created (with additional annotations)", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-cm",
+				Namespace: state.Namespace,
+				Annotations: map[string]string{
+					"always": "True",
+				},
+			},
+			Data: map[string]string{
+				"key": "val",
+			},
+		}
+		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:   managedresource.ManagePolicy,
+				Manifest: rawCM,
+				AnnotateBeforeCreate: map[string]string{
+					"init": "True",
+				},
+			},
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Annotations).To(HaveKeyWithValue("init", "True"))
+		Expect(cm.Annotations).To(HaveKeyWithValue("always", "True"))
+
+		cm.Annotations = nil
+		Expect(state.Client.Update(ctx, cm))
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Annotations).ToNot(HaveKeyWithValue("init", "True"))
+		Expect(cm.Annotations).To(HaveKeyWithValue("always", "True"))
 	})
 })

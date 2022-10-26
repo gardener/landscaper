@@ -97,6 +97,8 @@ type Manifest struct {
 	Policy managedresource.ManifestPolicy `json:"policy,omitempty"`
 	// Manifest defines the raw k8s manifest.
 	Manifest *runtime.RawExtension `json:"manifest,omitempty"`
+	// AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.
+	AnnotateBeforeCreate map[string]string `json:"annotateBeforeCreate,omitempty"`
 }
 
 // NewManifestApplier creates a new manifest deployer
@@ -215,6 +217,20 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 		// inject labels
 		a.injectLabels(obj)
 		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
+
+		if manifest.AnnotateBeforeCreate != nil {
+			objAnnotations := obj.GetAnnotations()
+			if objAnnotations == nil {
+				objAnnotations = manifest.AnnotateBeforeCreate
+			} else {
+				if err := mergo.Merge(&objAnnotations, manifest.AnnotateBeforeCreate, mergo.WithOverride); err != nil {
+					return nil, fmt.Errorf("unable to set annotations before create for resource %s: %w", key.String(), err)
+				}
+			}
+
+			obj.SetAnnotations(objAnnotations)
+		}
+
 		if err := a.kubeClient.Create(ctx, obj); err != nil {
 			return nil, fmt.Errorf("unable to create resource %s: %w", key.String(), err)
 		}
@@ -381,9 +397,10 @@ func (a *ManifestApplier) prepareManifests() error {
 		kind := typeMeta.GetObjectKind().GroupVersionKind().Kind
 
 		manifest := &Manifest{
-			TypeMeta: typeMeta,
-			Policy:   obj.Policy,
-			Manifest: obj.Manifest,
+			TypeMeta:             typeMeta,
+			Policy:               obj.Policy,
+			Manifest:             obj.Manifest,
+			AnnotateBeforeCreate: obj.AnnotateBeforeCreate,
 		}
 		// add to specific execution group
 		if kind == "CustomResourceDefinition" {

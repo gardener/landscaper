@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/imdario/mergo"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -194,6 +196,23 @@ func (m *Manifest) Delete(ctx context.Context) error {
 		if mr.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(&currObj, manifestv1alpha2.ManagedDeployItemLabel, m.DeployItem.Name) {
 			logger.Info("Resource is already managed, skip delete", lc.KeyResource, key.String())
 			continue
+		}
+
+		if m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete != nil {
+			objAnnotations := currObj.GetAnnotations()
+			if objAnnotations == nil {
+				objAnnotations = m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete
+			} else {
+				if err := mergo.Merge(&objAnnotations, m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete, mergo.WithOverride); err != nil {
+					logger.Error(err, "unable to merge resource annotations with before delete annotations", lc.KeyResource, key.String())
+				}
+			}
+
+			currObj.SetAnnotations(objAnnotations)
+
+			if err := kubeClient.Update(ctx, &currObj); err != nil {
+				logger.Error(err, "unable to update resource with before delete annotations", lc.KeyResource, key.String())
+			}
 		}
 
 		if err := kubeClient.Delete(ctx, obj); err != nil {
