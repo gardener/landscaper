@@ -3016,7 +3016,7 @@ func Convert_core_TargetSyncList_To_v1alpha1_TargetSyncList(in *core.TargetSyncL
 }
 
 func autoConvert_v1alpha1_TargetSyncSpec_To_core_TargetSyncSpec(in *TargetSyncSpec, out *core.TargetSyncSpec, s conversion.Scope) error {
-	if err := Convert_v1alpha1_SecretReference_To_core_SecretReference(&in.SecretRef, &out.SecretRef, s); err != nil {
+	if err := Convert_v1alpha1_LocalSecretReference_To_core_LocalSecretReference(&in.SecretRef, &out.SecretRef, s); err != nil {
 		return err
 	}
 	out.SourceNamespace = in.SourceNamespace
@@ -3030,7 +3030,7 @@ func Convert_v1alpha1_TargetSyncSpec_To_core_TargetSyncSpec(in *TargetSyncSpec, 
 }
 
 func autoConvert_core_TargetSyncSpec_To_v1alpha1_TargetSyncSpec(in *core.TargetSyncSpec, out *TargetSyncSpec, s conversion.Scope) error {
-	if err := Convert_core_SecretReference_To_v1alpha1_SecretReference(&in.SecretRef, &out.SecretRef, s); err != nil {
+	if err := Convert_core_LocalSecretReference_To_v1alpha1_LocalSecretReference(&in.SecretRef, &out.SecretRef, s); err != nil {
 		return err
 	}
 	out.SourceNamespace = in.SourceNamespace

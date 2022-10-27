@@ -38,7 +38,7 @@ type TargetSync struct {
 // TargetSyncSpec contains the specification for a TargetSync.
 type TargetSyncSpec struct {
 	// SecretRef references the secret that contains the kubeconfig to the name.
-	SecretRef SecretReference `json:"secretRef"`
+	SecretRef LocalSecretReference `json:"secretRef"`
 
 	// SourceNamespace describes the namespace from where the secrets should be synced
 	SourceNamespace string `json:"sourceNamespace"`

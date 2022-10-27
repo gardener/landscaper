@@ -7,9 +7,11 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"k8s.io/utils/pointer"
 	"os"
+
+	"k8s.io/utils/pointer"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"k8s.io/client-go/tools/clientcmd"
 

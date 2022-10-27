@@ -6,7 +6,6 @@ package targetsync
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -222,33 +221,22 @@ func (c *TargetSyncController) handleSecret(ctx context.Context, targetSync *lsv
 }
 
 func (c *TargetSyncController) createOrUpdateTarget(ctx context.Context, targetSync *lsv1alpha1.TargetSync, secret *corev1.Secret) error {
-	config := lsv1alpha1.KubernetesClusterTargetConfig{
-		Kubeconfig: lsv1alpha1.ValueRef{
-			SecretRef: &lsv1alpha1.SecretReference{
-				ObjectReference: lsv1alpha1.ObjectReference{
-					Name:      secret.Name,
-					Namespace: targetSync.Namespace,
-				},
-				Key: lsv1alpha1.DefaultKubeconfigKey,
-			},
-		},
-	}
-
-	configBytes, err := json.Marshal(config)
-	if err != nil {
-		return err
-	}
-
 	targetSpec := lsv1alpha1.TargetSpec{
-		Configuration: lsv1alpha1.NewAnyJSON(configBytes),
-		Type:          lsv1alpha1.KubernetesClusterTargetType,
+		Type: lsv1alpha1.KubernetesClusterTargetType,
+		SecretRef: &lsv1alpha1.SecretReference{
+			ObjectReference: lsv1alpha1.ObjectReference{
+				Name:      secret.Name,
+				Namespace: targetSync.Namespace,
+			},
+			Key: lsv1alpha1.DefaultKubeconfigKey,
+		},
 	}
 
 	newTarget := &lsv1alpha1.Target{
 		ObjectMeta: controllerruntime.ObjectMeta{Name: secret.Name, Namespace: targetSync.Namespace},
 	}
 
-	_, err = controllerruntime.CreateOrUpdate(ctx, c.lsClient, newTarget, func() error {
+	_, err := controllerruntime.CreateOrUpdate(ctx, c.lsClient, newTarget, func() error {
 		newTarget.Spec = targetSpec
 		newTarget.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,

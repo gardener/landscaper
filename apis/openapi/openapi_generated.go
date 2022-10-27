@@ -6656,7 +6656,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCal
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef references the secret that contains the kubeconfig to the name.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"),
 						},
 					},
 					"sourceNamespace": {
@@ -6680,7 +6680,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"},
 	}
 }
 

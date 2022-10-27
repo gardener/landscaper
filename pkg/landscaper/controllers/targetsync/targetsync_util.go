@@ -51,7 +51,7 @@ func getSourceRestConfig(ctx context.Context, targetSync *lsv1alpha1.TargetSync,
 }
 
 func resolveSecretRef(ctx context.Context, targetClient client.Client,
-	secretRef lsv1alpha1.SecretReference, namespace string) ([]byte, error) {
+	secretRef lsv1alpha1.LocalSecretReference, namespace string) ([]byte, error) {
 
 	secret := &corev1.Secret{}
 	secretKey := client.ObjectKey{

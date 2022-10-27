@@ -1508,8 +1508,8 @@ TargetSyncSpec
 <td>
 <code>secretRef</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
+<a href="#landscaper.gardener.cloud/v1alpha1.LocalSecretReference">
+LocalSecretReference
 </a>
 </em>
 </td>
@@ -4319,6 +4319,10 @@ ValueRef
 <h3 id="landscaper.gardener.cloud/v1alpha1.LocalSecretReference">LocalSecretReference
 </h3>
 <p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSyncSpec">TargetSyncSpec</a>)
+</p>
+<p>
 <p>LocalSecretReference is a reference to data in a secret.</p>
 </p>
 <table>
@@ -4641,7 +4645,6 @@ string
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.TargetSyncSpec">TargetSyncSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef</a>)
 </p>
 <p>
@@ -5205,8 +5208,8 @@ Exactly one of the fields Configuration and SecretRef must be set</p>
 <td>
 <code>secretRef</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
+<a href="#landscaper.gardener.cloud/v1alpha1.LocalSecretReference">
+LocalSecretReference
 </a>
 </em>
 </td>
