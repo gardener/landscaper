@@ -57,6 +57,7 @@ var _ = Describe("Init e2e", func() {
 		Expect(os.Setenv(container.StatePathName, container.StatePath)).To(Succeed())
 		Expect(os.Setenv(container.ContentPathName, container.ContentPath)).To(Succeed())
 		Expect(os.Setenv(container.ComponentDescriptorPathName, container.ComponentDescriptorPath)).To(Succeed())
+		Expect(os.Setenv(container.TargetPathName, container.TargetPath)).To(Succeed())
 	})
 
 	AfterEach(func() {

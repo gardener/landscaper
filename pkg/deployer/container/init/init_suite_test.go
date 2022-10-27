@@ -49,6 +49,7 @@ var _ = Describe("Constructor", func() {
 		Expect(os.Setenv(container.StatePathName, container.StatePath)).To(Succeed())
 		Expect(os.Setenv(container.ContentPathName, container.ContentPath)).To(Succeed())
 		Expect(os.Setenv(container.ComponentDescriptorPathName, container.ComponentDescriptorPath)).To(Succeed())
+		Expect(os.Setenv(container.TargetPathName, container.TargetPath)).To(Succeed())
 
 		utils.ExpectNoError(os.Setenv(container.DeployItemName, "dummy"))
 		utils.ExpectNoError(os.Setenv(container.DeployItemNamespaceName, "val"))

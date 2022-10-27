@@ -98,6 +98,11 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				operationName, "SyncConfiguration", err.Error())
 		}
 
+		if err := c.SyncTarget(ctx, defaultLabels); err != nil {
+			return lserrors.NewWrappedError(err,
+				operationName, "SyncTarget", err.Error())
+		}
+
 		imagePullSecret, blueprintSecret, componentDescriptorSecret, err := c.parseAndSyncSecrets(ctx, defaultLabels)
 		if err != nil {
 			return lserrors.NewWrappedError(err,
@@ -121,6 +126,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			InitContainerServiceAccountSecret: c.InitContainerServiceAccountSecret,
 			WaitContainerServiceAccountSecret: c.WaitContainerServiceAccountSecret,
 			ConfigurationSecretName:           ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
+			TargetSecretName:                  TargetSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
 
 			ImagePullSecret:               imagePullSecret,
 			BluePrintPullSecret:           blueprintSecret,
@@ -614,6 +620,24 @@ func (c *Container) SyncConfiguration(ctx context.Context, defaultLabels map[str
 		return nil
 	}); err != nil {
 		return fmt.Errorf("unable to sync provider configuration to host cluster: %w", err)
+	}
+	return nil
+}
+
+// SyncTarget syncs the deployitem's target content as secret to the host cluster.
+func (c *Container) SyncTarget(ctx context.Context, defaultLabels map[string]string) error {
+	secret := &corev1.Secret{}
+	secret.Name = TargetSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
+	secret.Namespace = c.Configuration.Namespace
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, secret, func() error {
+		InjectDefaultLabels(secret, defaultLabels)
+		kutil.SetMetaDataLabel(&secret.ObjectMeta, container.ContainerDeployerTypeLabel, "target")
+		secret.Data = map[string][]byte{
+			container.TargetFileName: c.Target.Content(),
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("unable to sync target content to host cluster: %w", err)
 	}
 	return nil
 }

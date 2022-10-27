@@ -97,6 +97,9 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 	if err := fs.MkdirAll(path.Dir(opts.ComponentDescriptorFilePath), os.ModePerm); err != nil {
 		return err
 	}
+	if err := fs.MkdirAll(path.Dir(opts.TargetFilePath), os.ModePerm); err != nil {
+		return err
+	}
 	if err := fs.MkdirAll(opts.ContentDirPath, os.ModePerm); err != nil {
 		return err
 	}

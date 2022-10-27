@@ -26,6 +26,7 @@ type options struct {
 	ImportsFilePath             string
 	ExportsFilePath             string
 	ComponentDescriptorFilePath string
+	TargetFilePath              string
 	ContentDirPath              string
 	StateDirPath                string
 	RegistrySecretBasePath      string
@@ -44,6 +45,7 @@ func (o *options) Complete() {
 	o.ImportsFilePath = os.Getenv(container.ImportsPathName)
 	o.ExportsFilePath = os.Getenv(container.ExportsPathName)
 	o.ComponentDescriptorFilePath = os.Getenv(container.ComponentDescriptorPathName)
+	o.TargetFilePath = os.Getenv(container.TargetPathName)
 	o.ContentDirPath = os.Getenv(container.ContentPathName)
 	o.StateDirPath = os.Getenv(container.StatePathName)
 	o.RegistrySecretBasePath = os.Getenv(container.RegistrySecretBasePathName)
@@ -75,6 +77,9 @@ func (o *options) Validate() error {
 	}
 	if len(o.ComponentDescriptorFilePath) == 0 {
 		err = multierror.Append(err, fmt.Errorf("%s has to be defined", container.ComponentDescriptorPathName))
+	}
+	if len(o.TargetFilePath) == 0 {
+		err = multierror.Append(err, fmt.Errorf("%s has to be defined", container.TargetPathName))
 	}
 	if len(o.ContentDirPath) == 0 {
 		err = multierror.Append(err, fmt.Errorf("%s has to be defined", container.ContentPathName))

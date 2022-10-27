@@ -13,6 +13,7 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -55,6 +56,7 @@ type Container struct {
 	Context               *lsv1alpha1.Context
 	ProviderStatus        *containerv1alpha1.ProviderStatus
 	ProviderConfiguration *containerv1alpha1.ProviderConfiguration
+	Target                *targetresolver.ResolvedTarget
 
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
@@ -69,7 +71,8 @@ func New(lsClient,
 	config containerv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
 	lsCtx *lsv1alpha1.Context,
-	sharedCache cache.Cache) (*Container, error) {
+	sharedCache cache.Cache,
+	rt *targetresolver.ResolvedTarget) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := api.NewDecoder(Scheme)
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
@@ -100,6 +103,7 @@ func New(lsClient,
 		ProviderStatus:        status,
 		ProviderConfiguration: providerConfig,
 		sharedCache:           sharedCache,
+		Target:                rt,
 	}, nil
 }
 
