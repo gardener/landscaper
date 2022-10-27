@@ -117,6 +117,15 @@ func (e *ObjectNotReadyError) Error() string {
 		e.err.Error())
 }
 
+func NewObjectNotReadyError(u *unstructured.Unstructured, err error) *ObjectNotReadyError {
+	return &ObjectNotReadyError{
+		objectGVK:       u.GroupVersionKind().String(),
+		objectName:      u.GetName(),
+		objectNamespace: u.GetNamespace(),
+		err:             err,
+	}
+}
+
 // IsObjectReady gets an updated version of an object and checks if it is ready.
 func IsObjectReady(ctx context.Context, kubeClient client.Client, obj *unstructured.Unstructured,
 	checkObject checkObjectFunc) error {
@@ -135,13 +144,8 @@ func IsObjectReady(ctx context.Context, kubeClient client.Client, obj *unstructu
 
 	objLog.Debug("Getting resource status")
 	if err := checkObject(obj); err != nil {
-		objLog.Debug("Resource status", lc.KeyStatus, StatusNotReady)
-		return &ObjectNotReadyError{
-			objectGVK:       obj.GroupVersionKind().String(),
-			objectName:      obj.GetName(),
-			objectNamespace: obj.GetNamespace(),
-			err:             err,
-		}
+		objLog.Debug("Resource status", lc.KeyStatus, StatusNotReady, "reason", err.Error())
+		return err
 	}
 
 	objLog.Debug("Resource status", lc.KeyStatus, StatusReady)
