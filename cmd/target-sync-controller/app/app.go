@@ -7,6 +7,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"k8s.io/utils/pointer"
 	"os"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -21,8 +23,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	lsconfig "github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	"github.com/gardener/landscaper/pkg/version"
+
+	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
 )
 
 // NewTargetSyncControllerCommand creates a new command for the landscaper service controller
@@ -80,6 +85,12 @@ func (o *options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to setup manager for target sync controller: %w", err)
 	}
 
+	if o.installCrd {
+		if err := o.ensureCRDs(ctx, lsMgr); err != nil {
+			return err
+		}
+	}
+
 	lsinstall.Install(lsMgr.GetScheme())
 
 	ctrlLogger := o.Log.WithName("controllers")
@@ -87,10 +98,33 @@ func (o *options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to setup landscaper deployments controller for target sync controller: %w", err)
 	}
 
-	o.Log.Info("starting the controller for target")
+	o.Log.Info("starting the controller for target sync")
 	if err := lsMgr.Start(ctx); err != nil {
 		o.Log.Error(err, "error while running manager for target sync controller")
 		os.Exit(1)
 	}
+	return nil
+}
+
+func (o *options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {
+	ctx = logging.NewContext(ctx, logging.Wrap(ctrl.Log.WithName("crdManager")))
+	crdConfig := lsconfig.CrdManagementConfiguration{
+		DeployCustomResourceDefinitions: pointer.Bool(true),
+		ForceUpdate:                     pointer.Bool(true),
+	}
+
+	lsConfig := lsconfig.LandscaperConfiguration{
+		CrdManagement: crdConfig,
+	}
+	crdmgr, err := crdmanager.NewCrdManager(mgr, &lsConfig)
+
+	if err != nil {
+		return fmt.Errorf("unable to setup CRD manager: %w", err)
+	}
+
+	if err := crdmgr.EnsureCRDs(ctx); err != nil {
+		return fmt.Errorf("failed to handle CRDs: %w", err)
+	}
+
 	return nil
 }

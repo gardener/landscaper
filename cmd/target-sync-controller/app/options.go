@@ -18,6 +18,7 @@ import (
 type options struct {
 	Log                      logging.Logger
 	landscaperKubeconfigPath string
+	installCrd               bool
 }
 
 // NewOptions returns a new options instance
@@ -28,6 +29,7 @@ func NewOptions() *options {
 // AddFlags adds flags passed via command line
 func (o *options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.landscaperKubeconfigPath, "landscaper-kubeconfig", "", "Specify the path to the landscaper kubeconfig cluster")
+	fs.BoolVar(&o.installCrd, "install-crd", false, "If true install CRDs")
 	logging.InitFlags(fs)
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 }
