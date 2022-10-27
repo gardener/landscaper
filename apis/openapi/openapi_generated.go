@@ -133,7 +133,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplate":                               schema_landscaper_apis_core_v1alpha1_InstallationTemplate(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition":            schema_landscaper_apis_core_v1alpha1_InstallationTemplateBlueprintDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition":                               schema_landscaper_apis_core_v1alpha1_JSONSchemaDefinition(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.KubernetesClusterTargetConfig":                      schema_landscaper_apis_core_v1alpha1_KubernetesClusterTargetConfig(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference":                               schema_landscaper_apis_core_v1alpha1_LocalSecretReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheck":                                      schema_landscaper_apis_core_v1alpha1_LsHealthCheck(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheckList":                                  schema_landscaper_apis_core_v1alpha1_LsHealthCheckList(ref),
@@ -163,11 +162,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TemplateExecutor":                                   schema_landscaper_apis_core_v1alpha1_TemplateExecutor(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation":                                      schema_landscaper_apis_core_v1alpha1_TokenRotation(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference":                               schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef":                                           schema_landscaper_apis_core_v1alpha1_ValueRef(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":                      schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedObjectReference":                           schema_landscaper_apis_core_v1alpha1_VersionedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":                         schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.valueRefJSON":                                       schema_landscaper_apis_core_v1alpha1_valueRefJSON(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Configuration":                        schema_apis_deployer_container_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec":                        schema_apis_deployer_container_v1alpha1_ContainerSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus":                      schema_apis_deployer_container_v1alpha1_ContainerStatus(ref),
@@ -5657,29 +5654,6 @@ func schema_landscaper_apis_core_v1alpha1_JSONSchemaDefinition(ref common.Refere
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_KubernetesClusterTargetConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "KubernetesClusterTargetConfig defines the landscaper kubernetes cluster target config.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig defines kubeconfig as string.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef"),
-						},
-					},
-				},
-				Required: []string{"kubeconfig"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef"},
-	}
-}
-
 func schema_landscaper_apis_core_v1alpha1_LocalSecretReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6919,18 +6893,6 @@ func schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref common.Refere
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_ValueRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ValueRef holds a value that can be either defined by string or by a secret ref.",
-				Type:        v1alpha1.ValueRef{}.OpenAPISchemaType(),
-				Format:      v1alpha1.ValueRef{}.OpenAPISchemaFormat(),
-			},
-		},
-	}
-}
-
 func schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -7035,26 +6997,6 @@ func schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref common.
 				Required: []string{"componentName", "resourceName", "version"},
 			},
 		},
-	}
-}
-
-func schema_landscaper_apis_core_v1alpha1_valueRefJSON(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "valueRefJSON is a helper struct to decode json into a secret ref object.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"secretRef": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
 	}
 }
 

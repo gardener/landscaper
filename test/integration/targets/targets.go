@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
@@ -67,9 +68,9 @@ func TargetTests(f *framework.Framework) {
 			targetKey := client.ObjectKey{Namespace: state.Namespace, Name: "target-1"}
 			target = &lsv1alpha1.Target{}
 			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
-			targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
+			targetConfig := &targettypes.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, targetConfig)
-			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig 1"))
+			Expect(targetConfig.Kubeconfig).To(Equal("dummy kubeconfig 1"))
 
 			// Create Installation that exports a Target "target-2"
 
@@ -91,9 +92,9 @@ func TargetTests(f *framework.Framework) {
 			targetKey = client.ObjectKey{Namespace: state.Namespace, Name: "target-2"}
 			target = &lsv1alpha1.Target{}
 			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
-			targetConfig = &lsv1alpha1.KubernetesClusterTargetConfig{}
+			targetConfig = &targettypes.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, &targetConfig)
-			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig 2"))
+			Expect(targetConfig.Kubeconfig).To(Equal("dummy kubeconfig 2"))
 
 			// Create an Installation that imports a target list consisting of "target-1" and  "target-2"
 
@@ -334,9 +335,9 @@ func TargetTests(f *framework.Framework) {
 			targetKey := client.ObjectKey{Namespace: state.Namespace, Name: "target-1"}
 			target = &lsv1alpha1.Target{}
 			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
-			targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
+			targetConfig := &targettypes.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, targetConfig)
-			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig"))
+			Expect(targetConfig.Kubeconfig).To(Equal("dummy kubeconfig"))
 
 			// Update DataObject
 
@@ -352,9 +353,9 @@ func TargetTests(f *framework.Framework) {
 			By("Check exported Target")
 			target = &lsv1alpha1.Target{}
 			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
-			targetConfig = &lsv1alpha1.KubernetesClusterTargetConfig{}
+			targetConfig = &targettypes.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, targetConfig)
-			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig modified"))
+			Expect(targetConfig.Kubeconfig).To(Equal("dummy kubeconfig modified"))
 		})
 	})
 }

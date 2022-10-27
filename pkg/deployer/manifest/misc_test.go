@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
@@ -57,7 +57,7 @@ var _ = Describe("", func() {
 		kSecret.Name = "my-target"
 		kSecret.Namespace = state.Namespace
 		kSecret.Data = map[string][]byte{
-			lsv1alpha1.DefaultKubeconfigKey: kubeconfigBytes,
+			targettypes.DefaultKubeconfigKey: kubeconfigBytes,
 		}
 		Expect(state.Create(ctx, kSecret)).To(Succeed())
 
@@ -118,7 +118,7 @@ var _ = Describe("", func() {
 		kSecret.Name = "my-target"
 		kSecret.Namespace = secretNamespace
 		kSecret.Data = map[string][]byte{
-			lsv1alpha1.DefaultKubeconfigKey: kubeconfigBytes,
+			targettypes.DefaultKubeconfigKey: kubeconfigBytes,
 		}
 		Expect(state.Create(ctx, kSecret)).To(Succeed())
 

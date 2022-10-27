@@ -30,6 +30,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
@@ -67,13 +68,13 @@ func New(lsClient client.Client,
 // like the Environment and the Target are registered in the landscaper cluster.
 func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostClient client.Client) (*lsv1alpha1.Environment, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "EnsureLandscaperResources")
-	target, err := utils.NewTargetBuilder(string(lsv1alpha1.KubernetesClusterTargetType)).
+	target, err := utils.NewTargetBuilder(string(targettypes.KubernetesClusterTargetType)).
 		SecretRef(&lsv1alpha1.SecretReference{
 			ObjectReference: lsv1alpha1.ObjectReference{
 				Name:      a.TargetSecretName(),
 				Namespace: a.config.LandscaperNamespace,
 			},
-			Key: lsv1alpha1.DefaultKubeconfigKey,
+			Key: targettypes.DefaultKubeconfigKey,
 		}).Build()
 	if err != nil {
 		return nil, err
@@ -194,7 +195,7 @@ func (a *Agent) EnsureHostResources(ctx context.Context, hostClient, lsClient cl
 
 	if _, err := controllerutil.CreateOrUpdate(ctx, lsClient, secret, func() error {
 		secret.Data = map[string][]byte{
-			lsv1alpha1.DefaultKubeconfigKey: kubeconfigBytes,
+			targettypes.DefaultKubeconfigKey: kubeconfigBytes,
 		}
 		return nil
 	}); err != nil {

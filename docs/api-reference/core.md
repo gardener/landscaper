@@ -4303,34 +4303,6 @@ encoding/json.RawMessage
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.KubernetesClusterTargetConfig">KubernetesClusterTargetConfig
-</h3>
-<p>
-<p>KubernetesClusterTargetConfig defines the landscaper kubernetes cluster target config.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>kubeconfig</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">
-ValueRef
-</a>
-</em>
-</td>
-<td>
-<p>Kubeconfig defines kubeconfig as string.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.LocalSecretReference">LocalSecretReference
 </h3>
 <p>
@@ -4659,8 +4631,7 @@ string
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>)
 </p>
 <p>
 <p>SecretReference is reference to data in a secret.
@@ -5577,48 +5548,6 @@ ObjectReference
 <p>
 (Members of <code>ObjectReference</code> are embedded into this type.)
 </p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.KubernetesClusterTargetConfig">KubernetesClusterTargetConfig</a>)
-</p>
-<p>
-<p>ValueRef holds a value that can be either defined by string or by a secret ref.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>-</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>secretRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
-</a>
-</em>
-</td>
-<td>
-<p>deprecated</p>
 </td>
 </tr>
 </tbody>

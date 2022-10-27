@@ -5,13 +5,9 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lsschema "github.com/gardener/landscaper/apis/schema"
-
-	"github.com/gardener/landscaper/apis/core"
 )
 
 // TargetType defines the type of the target.
@@ -113,70 +109,3 @@ type TargetTemplate struct {
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
-
-//////////////////////////////
-//     Target Types         //
-//////////////////////////////
-// todo: refactor to own package
-
-// KubernetesClusterTargetType defines the landscaper kubernetes cluster target.
-const KubernetesClusterTargetType TargetType = core.GroupName + "/kubernetes-cluster"
-
-// KubernetesClusterTargetConfig defines the landscaper kubernetes cluster target config.
-type KubernetesClusterTargetConfig struct {
-	// Kubeconfig defines kubeconfig as string.
-	Kubeconfig ValueRef `json:"kubeconfig"`
-}
-
-// DefaultKubeconfigKey is the default that is used to hold a kubeconfig.
-const DefaultKubeconfigKey = "kubeconfig"
-
-// ValueRef holds a value that can be either defined by string or by a secret ref.
-type ValueRef struct {
-	StrVal *string `json:"-"`
-
-	// deprecated
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
-}
-
-// valueRefJSON is a helper struct to decode json into a secret ref object.
-type valueRefJSON struct {
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
-}
-
-// MarshalJSON implements the json marshaling for a JSON
-func (v ValueRef) MarshalJSON() ([]byte, error) {
-	if v.StrVal != nil {
-		return json.Marshal(v.StrVal)
-	}
-	ref := valueRefJSON{
-		SecretRef: v.SecretRef,
-	}
-	return json.Marshal(ref)
-}
-
-// UnmarshalJSON implements json unmarshaling for a JSON
-func (v *ValueRef) UnmarshalJSON(data []byte) error {
-	if data[0] == '"' {
-		var strVal string
-		if err := json.Unmarshal(data, &strVal); err != nil {
-			return err
-		}
-		v.StrVal = &strVal
-		return nil
-	}
-	ref := &valueRefJSON{}
-	if err := json.Unmarshal(data, ref); err != nil {
-		return err
-	}
-	v.SecretRef = ref.SecretRef
-	return nil
-}
-
-func (v ValueRef) OpenAPISchemaType() []string {
-	return []string{
-		"object",
-		"string",
-	}
-}
-func (v ValueRef) OpenAPISchemaFormat() string { return "" }

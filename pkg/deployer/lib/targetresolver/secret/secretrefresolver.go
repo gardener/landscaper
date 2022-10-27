@@ -7,10 +7,11 @@ package secret
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	. "github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ TargetResolver = SecretRefResolver{}
