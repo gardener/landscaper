@@ -5,8 +5,9 @@
 package v1alpha2
 
 import (
-	"github.com/gardener/landscaper/apis/deployer/manifest"
 	"k8s.io/apimachinery/pkg/conversion"
+
+	"github.com/gardener/landscaper/apis/deployer/manifest"
 )
 
 // Convert_manifest_ProviderStatus_To_v1alpha2_ProviderStatus is a manual conversion function

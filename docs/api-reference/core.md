@@ -33,6 +33,8 @@ Resource Types:
 <a href="#landscaper.gardener.cloud/v1alpha1.LsHealthCheck">LsHealthCheck</a>
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.Target">Target</a>
+</li><li>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSync">TargetSync</a>
 </li></ul>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint
 </h3>
@@ -1440,6 +1442,121 @@ Exactly one of the fields Configuration and SecretRef must be set</p>
 </td>
 </tr>
 </table>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.TargetSync">TargetSync
+</h3>
+<p>
+<p>The TargetSync is created targets from secrets.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+landscaper.gardener.cloud/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>TargetSync</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSyncSpec">
+TargetSyncSpec
+</a>
+</em>
+</td>
+<td>
+<p>Spec contains the specification</p>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>secretRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
+SecretReference
+</a>
+</em>
+</td>
+<td>
+<p>SecretRef references the secret that contains the kubeconfig to the name.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sourceNamespace</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>SourceNamespace describes the namespace from where the secrets should be synced</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretNameExpression</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SecretNameExpression defines the names of the secrets which should be synced via a regular expression according
+to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</a>
+if not set all secrets are synced</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSyncStatus">
+TargetSyncStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Status contains the status</p>
 </td>
 </tr>
 </tbody>
@@ -4524,6 +4641,7 @@ string
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSyncSpec">TargetSyncSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef</a>)
 </p>
 <p>
@@ -5062,6 +5180,106 @@ SecretReference
 <em>(Optional)</em>
 <p>Reference to a secret containing the target type specific configuration.
 Exactly one of the fields Configuration and SecretRef must be set</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.TargetSyncSpec">TargetSyncSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSync">TargetSync</a>)
+</p>
+<p>
+<p>TargetSyncSpec contains the specification for a TargetSync.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>secretRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
+SecretReference
+</a>
+</em>
+</td>
+<td>
+<p>SecretRef references the secret that contains the kubeconfig to the name.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sourceNamespace</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>SourceNamespace describes the namespace from where the secrets should be synced</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretNameExpression</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SecretNameExpression defines the names of the secrets which should be synced via a regular expression according
+to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</a>
+if not set all secrets are synced</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.TargetSyncStatus">TargetSyncStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSync">TargetSync</a>)
+</p>
+<p>
+<p>TargetSyncStatus contains the status of a TargetSync.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>observedGeneration</code></br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ObservedGeneration is the most recent generation observed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastErrors</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LastErrors describe the last errors</p>
 </td>
 </tr>
 </tbody>
