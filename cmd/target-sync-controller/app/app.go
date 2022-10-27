@@ -9,6 +9,10 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/client-go/tools/clientcmd"
+
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
@@ -46,7 +50,8 @@ func NewTargetSyncControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
-	o.Log.Info(fmt.Sprintf("Start Target Sync Controller with version %q", version.Get().String()))
+	setupLogger := o.Log.WithName("setup for target sync controller")
+	setupLogger.Info("Starting TargetSync Controller", lc.KeyVersion, version.Get().String())
 
 	opts := manager.Options{
 		LeaderElection:     false,
@@ -55,21 +60,36 @@ func (o *options) run(ctx context.Context) error {
 		NewClient:          lsutils.NewUncachedClient,
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
+	data, err := os.ReadFile(o.landscaperKubeconfigPath)
 	if err != nil {
-		return fmt.Errorf("unable to setup manager: %w", err)
+		return fmt.Errorf("unable to read landscaper kubeconfig for target sync controller from %s: %w", o.landscaperKubeconfigPath, err)
 	}
 
-	lsinstall.Install(mgr.GetScheme())
+	client, err := clientcmd.NewClientConfigFromBytes(data)
+	if err != nil {
+		return fmt.Errorf("unable to build landscaper cluster client for target sync controller from %s: %w", o.landscaperKubeconfigPath, err)
+	}
+
+	lsConfig, err := client.ClientConfig()
+	if err != nil {
+		return fmt.Errorf("unable to build landscaper cluster rest client for target sync controller from %s: %w", o.landscaperKubeconfigPath, err)
+	}
+
+	lsMgr, err := ctrl.NewManager(lsConfig, opts)
+	if err != nil {
+		return fmt.Errorf("unable to setup manager for target sync controller: %w", err)
+	}
+
+	lsinstall.Install(lsMgr.GetScheme())
 
 	ctrlLogger := o.Log.WithName("controllers")
-	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, mgr); err != nil {
-		return fmt.Errorf("unable to setup landscaper deployments controller: %w", err)
+	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, lsMgr); err != nil {
+		return fmt.Errorf("unable to setup landscaper deployments controller for target sync controller: %w", err)
 	}
 
-	o.Log.Info("starting the controllers")
-	if err := mgr.Start(ctx); err != nil {
-		o.Log.Error(err, "error while running manager")
+	o.Log.Info("starting the controller for target")
+	if err := lsMgr.Start(ctx); err != nil {
+		o.Log.Error(err, "error while running manager for target sync controller")
 		os.Exit(1)
 	}
 	return nil

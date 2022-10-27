@@ -54,15 +54,15 @@ func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Man
 
 // Controller is the TargetSync controller
 type TargetSyncController struct {
-	log    logging.Logger
-	client client.Client
+	log      logging.Logger
+	lsClient client.Client
 }
 
 // NewController returns a new TargetSync controller
 func NewTargetSyncController(logger logging.Logger, c client.Client, scheme *runtime.Scheme) (reconcile.Reconciler, error) {
 	ctrl := &TargetSyncController{
-		log:    logger,
-		client: c,
+		log:      logger,
+		lsClient: c,
 	}
 
 	return ctrl, nil
@@ -73,7 +73,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
 
 	targetSync := &lsv1alpha1.TargetSync{}
-	if err := c.client.Get(ctx, req.NamespacedName, targetSync); err != nil {
+	if err := c.lsClient.Get(ctx, req.NamespacedName, targetSync); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -84,7 +84,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	// set finalizer
 	if targetSync.DeletionTimestamp.IsZero() && !kutils.HasFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
-		if err := c.client.Update(ctx, targetSync); err != nil {
+		if err := c.lsClient.Update(ctx, targetSync); err != nil {
 			return reconcile.Result{}, err
 		}
 		// do not return here because the controller only watches for particular events and setting a finalizer is not part of this
@@ -117,7 +117,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 		err = fmt.Errorf("more than one TargetSync object in the same namespace is not allowed")
 		errors = append(errors, err)
 	} else {
-		sourceClient, err := getSourceClient(ctx, targetSync, c.client, nil)
+		sourceClient, err := getSourceClient(ctx, targetSync, c.lsClient, nil)
 		if err != nil {
 			errors = append(errors, err)
 		} else {
@@ -133,7 +133,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 	targetSync.Status.LastErrors = errorStrings
 	targetSync.Status.ObservedGeneration = targetSync.GetGeneration()
 
-	if err = c.client.Status().Update(ctx, targetSync); err != nil {
+	if err = c.lsClient.Status().Update(ctx, targetSync); err != nil {
 		return err
 	}
 
@@ -153,7 +153,7 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 		targetSync.Status.LastErrors = errorStrings
 		targetSync.Status.ObservedGeneration = targetSync.GetGeneration()
 
-		if internalErr := c.client.Status().Update(ctx, targetSync); err != nil {
+		if internalErr := c.lsClient.Status().Update(ctx, targetSync); err != nil {
 			return internalErr
 		}
 
@@ -161,7 +161,7 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 	}
 
 	controllerutil.RemoveFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
-	if err := c.client.Update(ctx, targetSync); err != nil {
+	if err := c.lsClient.Update(ctx, targetSync); err != nil {
 		return lserrors.NewWrappedError(err, "handleDelete", "RemoveFinalizer", err.Error())
 	}
 
@@ -197,12 +197,12 @@ func (c *TargetSyncController) handleSecrets(ctx context.Context, targetSync *ls
 	if len(errors) == 0 {
 		for key := range oldTargets {
 			secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
-			if err = c.client.Delete(ctx, &secret); err != nil {
+			if err = c.lsClient.Delete(ctx, &secret); err != nil {
 				errors = append(errors, err)
 			}
 
 			target := lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
-			if err = c.client.Delete(ctx, &target); err != nil {
+			if err = c.lsClient.Delete(ctx, &target); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -248,7 +248,7 @@ func (c *TargetSyncController) createOrUpdateTarget(ctx context.Context, targetS
 		ObjectMeta: controllerruntime.ObjectMeta{Name: secret.Name, Namespace: targetSync.Namespace},
 	}
 
-	_, err = controllerruntime.CreateOrUpdate(ctx, c.client, newTarget, func() error {
+	_, err = controllerruntime.CreateOrUpdate(ctx, c.lsClient, newTarget, func() error {
 		newTarget.Spec = targetSpec
 		newTarget.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
@@ -264,7 +264,7 @@ func (c *TargetSyncController) createOrUpdateSecret(ctx context.Context, targetS
 		ObjectMeta: controllerruntime.ObjectMeta{Name: secret.Name, Namespace: targetSync.Namespace},
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, c.client, newSecret, func() error {
+	_, err := controllerruntime.CreateOrUpdate(ctx, c.lsClient, newSecret, func() error {
 		newSecret.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
@@ -280,25 +280,25 @@ func (c *TargetSyncController) createOrUpdateSecret(ctx context.Context, targetS
 
 func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targetSync *lsv1alpha1.TargetSync) error {
 	secrets := &corev1.SecretList{}
-	if err := c.client.List(ctx, secrets, client.InNamespace(targetSync.Namespace),
+	if err := c.lsClient.List(ctx, secrets, client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		return err
 	}
 
 	for _, nextSecret := range secrets.Items {
-		if err := c.client.Delete(ctx, &nextSecret); err != nil {
+		if err := c.lsClient.Delete(ctx, &nextSecret); err != nil {
 			return err
 		}
 	}
 
 	targets := &lsv1alpha1.TargetList{}
-	if err := c.client.List(ctx, targets, client.InNamespace(targetSync.Namespace),
+	if err := c.lsClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		return err
 	}
 
 	for _, nextTarget := range targets.Items {
-		if err := c.client.Delete(ctx, &nextTarget); err != nil {
+		if err := c.lsClient.Delete(ctx, &nextTarget); err != nil {
 			return err
 		}
 	}
@@ -310,12 +310,12 @@ func (c *TargetSyncController) fetchTargetSyncsAndSyncedTargets(ctx context.Cont
 	targetSync *lsv1alpha1.TargetSync) (*lsv1alpha1.TargetSyncList, map[string]*lsv1alpha1.Target, error) {
 
 	targetSyncs := &lsv1alpha1.TargetSyncList{}
-	if err := c.client.List(ctx, targetSyncs, client.InNamespace(targetSync.Namespace)); err != nil {
+	if err := c.lsClient.List(ctx, targetSyncs, client.InNamespace(targetSync.Namespace)); err != nil {
 		return nil, nil, err
 	}
 
 	targets := &lsv1alpha1.TargetList{}
-	if err := c.client.List(ctx, targets, client.InNamespace(targetSync.Namespace),
+	if err := c.lsClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		return nil, nil, err
 	}

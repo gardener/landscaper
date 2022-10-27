@@ -16,7 +16,8 @@ import (
 
 // options holds the landscaper service controller options
 type options struct {
-	Log logging.Logger // Log is the logger instance
+	Log                      logging.Logger
+	landscaperKubeconfigPath string
 }
 
 // NewOptions returns a new options instance
@@ -26,6 +27,7 @@ func NewOptions() *options {
 
 // AddFlags adds flags passed via command line
 func (o *options) AddFlags(fs *flag.FlagSet) {
+	fs.StringVar(&o.landscaperKubeconfigPath, "landscaper-kubeconfig", "", "Specify the path to the landscaper kubeconfig cluster")
 	logging.InitFlags(fs)
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 }
