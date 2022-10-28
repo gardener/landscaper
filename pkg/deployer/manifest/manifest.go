@@ -7,7 +7,6 @@ package manifest
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -23,6 +22,8 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 
 	"github.com/gardener/landscaper/pkg/utils"
+
+	"k8s.io/apimachinery/pkg/util/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
@@ -140,7 +141,7 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 	}
 	if m.Target != nil {
 		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-		if err := json.Unmarshal(m.Target.Content(), targetConfig); err != nil {
+		if err := yaml.Unmarshal(m.Target.Content(), targetConfig); err != nil {
 			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 

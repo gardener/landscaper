@@ -7,7 +7,6 @@ package helm
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -19,11 +18,11 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
@@ -220,7 +219,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 	}
 	if h.Target != nil {
 		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-		if err := json.Unmarshal(h.Target.Content(), targetConfig); err != nil {
+		if err := yaml.Unmarshal(h.Target.Content(), targetConfig); err != nil {
 			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 

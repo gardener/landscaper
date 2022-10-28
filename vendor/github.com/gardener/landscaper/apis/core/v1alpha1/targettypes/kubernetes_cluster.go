@@ -33,6 +33,11 @@ type ValueRef struct {
 	SecretRef *v1alpha1.SecretReference `json:"secretRef,omitempty"`
 }
 
+// kubeconfigJSON is a helper struct for decoding.
+type kubeconfigJSON struct {
+	Kubeconfig *ValueRef `json:"kubeconfig"`
+}
+
 // valueRefJSON is a helper struct to decode json into a secret ref object.
 type valueRefJSON struct {
 	SecretRef *v1alpha1.SecretReference `json:"secretRef,omitempty"`
@@ -67,6 +72,17 @@ func (v *ValueRef) UnmarshalJSON(data []byte) error {
 	}
 	v.StrVal = pointer.String(string(data))
 	return nil
+}
+
+func (kc *KubernetesClusterTargetConfig) UnmarshalJSON(data []byte) error {
+	kj := &kubeconfigJSON{}
+	err := json.Unmarshal(data, kj)
+	if err == nil && kj.Kubeconfig != nil {
+		// parsing was successful
+		kc.Kubeconfig = *kj.Kubeconfig
+		return nil
+	}
+	return kc.Kubeconfig.UnmarshalJSON(data)
 }
 
 func (v ValueRef) OpenAPISchemaType() []string {
