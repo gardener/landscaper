@@ -115,7 +115,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 
 	errors := []error{}
 
-	targetSyncs, oldTargets, err := c.fetchTargetSyncsAndSyncedTargets(ctx, targetSync)
+	targetSyncs, oldTargets, err := c.fetchTargetSyncsAndOldTargets(ctx, targetSync)
 
 	if err != nil {
 		errors = append(errors, err)
@@ -323,7 +323,7 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	return nil
 }
 
-func (c *TargetSyncController) fetchTargetSyncsAndSyncedTargets(ctx context.Context,
+func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context,
 	targetSync *lsv1alpha1.TargetSync) (*lsv1alpha1.TargetSyncList, map[string]*lsv1alpha1.Target, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
