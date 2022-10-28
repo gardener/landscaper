@@ -58,6 +58,9 @@ The entries of a *TargetSync* object have the following meaning:
   yaml in its data section under the specified *key*. This kubeconfig must provide access to the secrets which 
   should be synchronized. This secrets must be created together with the *TargetSync* object. 
 
+An example how to create a *TargetSync* object could be found 
+[here](https://github.com/gardener/landscaper-examples/tree/master/sync-targets).
+
 
 
 
