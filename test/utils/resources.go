@@ -194,7 +194,9 @@ func CreateKubernetesTargetFromSecret(namespace, name string, secret *corev1.Sec
 			Name:      secret.Name,
 			Namespace: secret.Namespace,
 		},
-		Key: key,
+	}
+	if key != targettypes.DefaultKubeconfigKey {
+		target.Spec.SecretRef.Key = key
 	}
 
 	return target, nil

@@ -218,15 +218,16 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 		// resolve Target reference, if any
 		var rt *targetresolver.ResolvedTarget
-		if target.Spec.SecretRef != nil {
-			sr := secretresolver.New(c.lsClient)
-			rt, err = sr.Resolve(ctx, target)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("error resolving secret reference (%s/%s#%s) in target '%s/%s': %w", target.Spec.SecretRef.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name, err)
+		if target != nil {
+			if target.Spec.SecretRef != nil {
+				sr := secretresolver.New(c.lsClient)
+				rt, err = sr.Resolve(ctx, target)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("error resolving secret reference (%s/%s#%s) in target '%s/%s': %w", target.Spec.SecretRef.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name, err)
+				}
+			} else {
+				rt = targetresolver.NewResolvedTarget(target)
 			}
-		} else {
-			// dummy resolved target
-			rt = targetresolver.NewResolvedTarget(target)
 		}
 
 		var err lserrors.LsError

@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -65,10 +66,6 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, target)).To(Succeed())
 
-		sr := secretresolver.New(state.Client)
-		rt, err := sr.Resolve(ctx, target)
-		Expect(err).ToNot(HaveOccurred())
-
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
 		cm.Namespace = state.Namespace
@@ -76,6 +73,10 @@ var _ = Describe("", func() {
 			"key": "val",
 		}
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
@@ -103,65 +104,6 @@ var _ = Describe("", func() {
 		Expect(cmRes.Data).To(HaveKeyWithValue("key", "val"))
 	})
 
-	It("should fail if the secret ref has another namespace than the target", func() {
-		secretNamespace := state.Namespace + "alt"
-		secretNamespaceObj := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: secretNamespace,
-			},
-		}
-		Expect(state.Create(ctx, secretNamespaceObj)).To(Succeed())
-
-		kubeconfigBytes, err := kutil.GenerateKubeconfigBytes(testenv.Env.Config)
-		Expect(err).ToNot(HaveOccurred())
-		kSecret := &corev1.Secret{}
-		kSecret.Name = "my-target"
-		kSecret.Namespace = secretNamespace
-		kSecret.Data = map[string][]byte{
-			targettypes.DefaultKubeconfigKey: kubeconfigBytes,
-		}
-		Expect(state.Create(ctx, kSecret)).To(Succeed())
-
-		target, err := utils.CreateKubernetesTargetFromSecret(state.Namespace, "my-target", kSecret)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(state.Create(ctx, target)).To(Succeed())
-
-		sr := secretresolver.New(state.Client)
-		rt, err := sr.Resolve(ctx, target)
-		Expect(err).ToNot(HaveOccurred())
-
-		cm := &corev1.ConfigMap{}
-		cm.Name = "my-cm"
-		cm.Namespace = state.Namespace
-		cm.Data = map[string]string{
-			"key": "val",
-		}
-		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
-		Expect(err).ToNot(HaveOccurred())
-
-		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
-		manifestConfig.Manifests = []managedresource.Manifest{
-			{
-				Policy:   managedresource.ManagePolicy,
-				Manifest: rawCM,
-			},
-		}
-		item, err := manifest.NewDeployItemBuilder().
-			Key(state.Namespace, "myitem").
-			ProviderConfig(manifestConfig).
-			Target(target.Namespace, target.Name).
-			Build()
-		Expect(err).ToNot(HaveOccurred())
-		Expect(state.Create(ctx, item)).To(Succeed())
-
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
-		Expect(err).ToNot(HaveOccurred())
-
-		Expect(m.Reconcile(ctx)).NotTo(Succeed())
-
-		Expect(state.Client.Delete(ctx, secretNamespaceObj)).To(Succeed())
-	})
-
 	It("should add before delete annotations when manifest is being deleted", func() {
 		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
@@ -182,6 +124,10 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
 		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
 		manifestConfig.Manifests = []managedresource.Manifest{
 			{
@@ -200,7 +146,7 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -243,6 +189,10 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
 		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
 		manifestConfig.Manifests = []managedresource.Manifest{
 			{
@@ -261,7 +211,7 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -300,6 +250,10 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
 		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
 		manifestConfig.Manifests = []managedresource.Manifest{
 			{
@@ -318,7 +272,7 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -353,6 +307,10 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
 		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
 		manifestConfig.Manifests = []managedresource.Manifest{
 			{
@@ -371,7 +329,7 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -409,6 +367,10 @@ var _ = Describe("", func() {
 			"value": "true",
 		}
 		requirementValueMarshaled, err := json.Marshal(requirementValue)
+		Expect(err).ToNot(HaveOccurred())
+
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		manifestConfig := &manifestv1alpha2.ProviderConfiguration{
@@ -461,7 +423,7 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		go func() {

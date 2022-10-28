@@ -7,6 +7,8 @@ package targettypes
 import (
 	"encoding/json"
 
+	"k8s.io/utils/pointer"
+
 	"github.com/gardener/landscaper/apis/core"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
@@ -49,19 +51,21 @@ func (v ValueRef) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements json unmarshaling for a JSON
 func (v *ValueRef) UnmarshalJSON(data []byte) error {
-	if data[0] == '"' {
-		var strVal string
-		if err := json.Unmarshal(data, &strVal); err != nil {
-			return err
-		}
+	ref := &valueRefJSON{}
+	err := json.Unmarshal(data, ref)
+	if err == nil && ref.SecretRef != nil {
+		// parsing into secret reference was successful
+		v.SecretRef = ref.SecretRef
+		return nil
+	}
+	// parse into string instead
+	var strVal string
+	err = json.Unmarshal(data, &strVal)
+	if err == nil {
 		v.StrVal = &strVal
 		return nil
 	}
-	ref := &valueRefJSON{}
-	if err := json.Unmarshal(data, ref); err != nil {
-		return err
-	}
-	v.SecretRef = ref.SecretRef
+	v.StrVal = pointer.String(string(data))
 	return nil
 }
 
