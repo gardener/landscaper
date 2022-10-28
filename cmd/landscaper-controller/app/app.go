@@ -44,6 +44,7 @@ import (
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	installationsctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
 
 	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
 )
@@ -195,6 +196,10 @@ func (o *Options) run(ctx context.Context) error {
 			&o.Config.DeployerManagement.Agent.AgentConfiguration, o.Config.LsDeployments, o.Deployer.EnabledDeployers); err != nil {
 			return fmt.Errorf("unable to register health check controller: %w", err)
 		}
+	}
+
+	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, lsMgr); err != nil {
+		return fmt.Errorf("unable to register target sync controller: %w", err)
 	}
 
 	setupLogger.Info("starting the controllers")
