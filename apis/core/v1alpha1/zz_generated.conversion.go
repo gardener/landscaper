@@ -3016,10 +3016,10 @@ func Convert_core_TargetSyncList_To_v1alpha1_TargetSyncList(in *core.TargetSyncL
 }
 
 func autoConvert_v1alpha1_TargetSyncSpec_To_core_TargetSyncSpec(in *TargetSyncSpec, out *core.TargetSyncSpec, s conversion.Scope) error {
+	out.SourceNamespace = in.SourceNamespace
 	if err := Convert_v1alpha1_LocalSecretReference_To_core_LocalSecretReference(&in.SecretRef, &out.SecretRef, s); err != nil {
 		return err
 	}
-	out.SourceNamespace = in.SourceNamespace
 	out.SecretNameExpression = in.SecretNameExpression
 	return nil
 }
@@ -3030,10 +3030,10 @@ func Convert_v1alpha1_TargetSyncSpec_To_core_TargetSyncSpec(in *TargetSyncSpec, 
 }
 
 func autoConvert_core_TargetSyncSpec_To_v1alpha1_TargetSyncSpec(in *core.TargetSyncSpec, out *TargetSyncSpec, s conversion.Scope) error {
+	out.SourceNamespace = in.SourceNamespace
 	if err := Convert_core_LocalSecretReference_To_v1alpha1_LocalSecretReference(&in.SecretRef, &out.SecretRef, s); err != nil {
 		return err
 	}
-	out.SourceNamespace = in.SourceNamespace
 	out.SecretNameExpression = in.SecretNameExpression
 	return nil
 }
@@ -3045,6 +3045,7 @@ func Convert_core_TargetSyncSpec_To_v1alpha1_TargetSyncSpec(in *core.TargetSyncS
 
 func autoConvert_v1alpha1_TargetSyncStatus_To_core_TargetSyncStatus(in *TargetSyncStatus, out *core.TargetSyncStatus, s conversion.Scope) error {
 	out.ObservedGeneration = in.ObservedGeneration
+	out.LastUpdateTime = in.LastUpdateTime
 	out.LastErrors = *(*[]string)(unsafe.Pointer(&in.LastErrors))
 	return nil
 }
@@ -3056,6 +3057,7 @@ func Convert_v1alpha1_TargetSyncStatus_To_core_TargetSyncStatus(in *TargetSyncSt
 
 func autoConvert_core_TargetSyncStatus_To_v1alpha1_TargetSyncStatus(in *core.TargetSyncStatus, out *TargetSyncStatus, s conversion.Scope) error {
 	out.ObservedGeneration = in.ObservedGeneration
+	out.LastUpdateTime = in.LastUpdateTime
 	out.LastErrors = *(*[]string)(unsafe.Pointer(&in.LastErrors))
 	return nil
 }

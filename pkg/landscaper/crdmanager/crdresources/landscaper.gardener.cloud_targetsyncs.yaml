@@ -28,7 +28,7 @@ spec:
                 type: string
               secretRef:
                 description: SecretRef references the secret that contains the kubeconfig
-                  to the name.
+                  to the namespace of the secrets to be synced.
                 properties:
                   key:
                     description: Key is the name of the key in the secret that holds
@@ -45,8 +45,8 @@ spec:
                   secrets should be synced
                 type: string
             required:
-            - secretRef
             - sourceNamespace
+            - secretRef
             type: object
           status:
             description: Status contains the status
@@ -56,10 +56,16 @@ spec:
                 items:
                   type: string
                 type: array
+              lastUpdateTime:
+                description: Last time the status.
+                format: date-time
+                type: string
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed.
                 format: int64
                 type: integer
+            required:
+            - lastUpdateTime
             type: object
         required:
         - spec

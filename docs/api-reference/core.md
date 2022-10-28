@@ -1506,6 +1506,17 @@ TargetSyncSpec
 <table>
 <tr>
 <td>
+<code>sourceNamespace</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>SourceNamespace describes the namespace from where the secrets should be synced</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>secretRef</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.LocalSecretReference">
@@ -1514,18 +1525,7 @@ LocalSecretReference
 </em>
 </td>
 <td>
-<p>SecretRef references the secret that contains the kubeconfig to the name.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>sourceNamespace</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>SourceNamespace describes the namespace from where the secrets should be synced</p>
+<p>SecretRef references the secret that contains the kubeconfig to the namespace of the secrets to be synced.</p>
 </td>
 </tr>
 <tr>
@@ -5206,6 +5206,17 @@ Exactly one of the fields Configuration and SecretRef must be set</p>
 <tbody>
 <tr>
 <td>
+<code>sourceNamespace</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>SourceNamespace describes the namespace from where the secrets should be synced</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>secretRef</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.LocalSecretReference">
@@ -5214,18 +5225,7 @@ LocalSecretReference
 </em>
 </td>
 <td>
-<p>SecretRef references the secret that contains the kubeconfig to the name.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>sourceNamespace</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>SourceNamespace describes the namespace from where the secrets should be synced</p>
+<p>SecretRef references the secret that contains the kubeconfig to the namespace of the secrets to be synced.</p>
 </td>
 </tr>
 <tr>
@@ -5271,6 +5271,19 @@ int64
 <td>
 <em>(Optional)</em>
 <p>ObservedGeneration is the most recent generation observed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastUpdateTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>Last time the status.</p>
 </td>
 </tr>
 <tr>

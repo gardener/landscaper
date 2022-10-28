@@ -57,8 +57,7 @@ func NewTargetSyncControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
-	setupLogger := o.Log.WithName("setup for target sync controller")
-	setupLogger.Info("Starting TargetSync Controller", lc.KeyVersion, version.Get().String())
+	o.Log.Info("Starting TargetSync Controller", lc.KeyVersion, version.Get().GitVersion)
 
 	opts := manager.Options{
 		LeaderElection:     false,
@@ -95,8 +94,7 @@ func (o *options) run(ctx context.Context) error {
 
 	lsinstall.Install(lsMgr.GetScheme())
 
-	ctrlLogger := o.Log.WithName("controllers")
-	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, lsMgr); err != nil {
+	if err := targetsync.AddControllerToManagerForTargetSyncs(o.Log, lsMgr); err != nil {
 		return fmt.Errorf("unable to setup landscaper deployments controller for target sync controller: %w", err)
 	}
 

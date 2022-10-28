@@ -35,11 +35,11 @@ type TargetSync struct {
 
 // TargetSyncSpec contains the specification for a TargetSync.
 type TargetSyncSpec struct {
-	// SecretRef references the secret that contains the kubeconfig to the name.
-	SecretRef LocalSecretReference `json:"secretRef"`
-
 	// SourceNamespace describes the namespace from where the secrets should be synced
 	SourceNamespace string `json:"sourceNamespace"`
+
+	// SecretRef references the secret that contains the kubeconfig to the namespace of the secrets to be synced.
+	SecretRef LocalSecretReference `json:"secretRef"`
 
 	// SecretNameExpression defines the names of the secrets which should be synced via a regular expression according
 	// to https://github.com/google/re2/wiki/Syntax
@@ -53,6 +53,9 @@ type TargetSyncStatus struct {
 	// ObservedGeneration is the most recent generation observed.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration"`
+
+	// Last time the status.
+	LastUpdateTime metav1.Time `json:"lastUpdateTime"`
 
 	// LastErrors describe the last errors
 	// +optional

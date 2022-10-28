@@ -6652,19 +6652,19 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCal
 				Description: "TargetSyncSpec contains the specification for a TargetSync.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"secretRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SecretRef references the secret that contains the kubeconfig to the name.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"),
-						},
-					},
 					"sourceNamespace": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SourceNamespace describes the namespace from where the secrets should be synced",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"secretRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecretRef references the secret that contains the kubeconfig to the namespace of the secrets to be synced.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"),
 						},
 					},
 					"secretNameExpression": {
@@ -6676,7 +6676,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCal
 						},
 					},
 				},
-				Required: []string{"secretRef", "sourceNamespace"},
+				Required: []string{"sourceNamespace", "secretRef"},
 			},
 		},
 		Dependencies: []string{
@@ -6699,6 +6699,13 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncStatus(ref common.ReferenceC
 							Format:      "int64",
 						},
 					},
+					"lastUpdateTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Last time the status.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
 					"lastErrors": {
 						SchemaProps: spec.SchemaProps{
 							Description: "LastErrors describe the last errors",
@@ -6715,8 +6722,11 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncStatus(ref common.ReferenceC
 						},
 					},
 				},
+				Required: []string{"lastUpdateTime"},
 			},
 		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 

@@ -40,6 +40,7 @@ func (o *options) Complete(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	log = log.WithName("target sync")
 	o.Log = log
 	ctrl.SetLogger(log.Logr())
 
