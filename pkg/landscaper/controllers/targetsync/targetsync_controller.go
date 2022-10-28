@@ -256,9 +256,7 @@ func (c *TargetSyncController) createOrUpdateSecret(ctx context.Context, targetS
 		newSecret.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
-		newSecret.Data = map[string][]byte{
-			lsv1alpha1.DefaultKubeconfigKey: secret.Data[lsv1alpha1.DefaultKubeconfigKey],
-		}
+		newSecret.Data = secret.Data
 		newSecret.Type = secret.Type
 		return nil
 	})
