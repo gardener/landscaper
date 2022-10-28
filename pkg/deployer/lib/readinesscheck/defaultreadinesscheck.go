@@ -77,6 +77,7 @@ func (d *DefaultReadinessCheck) filterObjects(objects []*unstructured.Unstructur
 // DefaultCheckObject checks if the object is ready and returns an error otherwise.
 // A non-managed object returns nil.
 func (d *DefaultReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
+	var checkErr error
 	gk := u.GroupVersionKind().GroupKind()
 	switch gk.String() {
 	case "Pod":
@@ -84,40 +85,45 @@ func (d *DefaultReadinessCheck) CheckObject(u *unstructured.Unstructured) error 
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, pod); err != nil {
 			return err
 		}
-		return CheckPod(pod)
+		checkErr = CheckPod(pod)
 	case "Deployment.apps":
 		dp := &appsv1.Deployment{}
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, dp); err != nil {
 			return err
 		}
-		return CheckDeployment(dp)
+		checkErr = CheckDeployment(dp)
 	case "ReplicaSet.apps":
 		rs := &appsv1.ReplicaSet{}
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, rs); err != nil {
 			return err
 		}
-		return CheckReplicaSet(rs)
+		checkErr = CheckReplicaSet(rs)
 	case "StatefulSet.apps":
 		sts := &appsv1.StatefulSet{}
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sts); err != nil {
 			return err
 		}
-		return CheckStatefulSet(sts)
+		checkErr = CheckStatefulSet(sts)
 	case "DaemonSet.apps":
 		ds := &appsv1.DaemonSet{}
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, ds); err != nil {
 			return err
 		}
-		return CheckDaemonSet(ds)
+		checkErr = CheckDaemonSet(ds)
 	case "ReplicationController":
 		rc := &corev1.ReplicationController{}
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, rc); err != nil {
 			return err
 		}
-		return CheckReplicationController(rc)
+		checkErr = CheckReplicationController(rc)
 	default:
 		return nil
 	}
+
+	if checkErr != nil {
+		return NewObjectNotReadyError(u, checkErr)
+	}
+	return nil
 }
 
 func (d *DefaultReadinessCheck) isCheckRelevant(u *unstructured.Unstructured) bool {

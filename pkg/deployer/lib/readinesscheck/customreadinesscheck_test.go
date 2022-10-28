@@ -6,6 +6,7 @@ package readinesscheck
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,9 +20,11 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var _ = Describe("Custom health checks", func() {
@@ -211,6 +214,82 @@ var _ = Describe("Custom health checks", func() {
 
 		obj := getObjectsByTypedReference(objectRefs, selector)
 		Expect(obj).To(HaveLen(2))
+	})
+
+	It("should continuously check for requirements being fulfilled", func() {
+		testFileName := "04-configmap.yaml"
+
+		testObjects, objectRefs := loadSingleObjectFromFile(testFileName)
+		Expect(testObjects).To(HaveLen(1))
+		customHealthCheck.ManagedResources = objectRefs
+		ref := customHealthCheck.ManagedResources[0]
+
+		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
+			Name:     "check " + ref.Kind,
+			Resource: []lsv1alpha1.TypedObjectReference{ref},
+			Requirements: []health.RequirementSpec{
+				{
+					JsonPath: ".data.readyOne",
+					Operator: selection.Exists,
+				},
+				{
+					JsonPath: "data.readyTwo",
+					Operator: selection.Equals,
+					Value:    getRawValues("Yes"),
+				},
+				{
+					JsonPath: "data.invalid",
+					Operator: selection.DoesNotExist,
+				},
+			},
+		}
+
+		go func() {
+			defer GinkgoRecover()
+			cm := &corev1.ConfigMap{}
+			Expect(state.Client.Get(customHealthCheck.Context,
+				types.NamespacedName{
+					Name:      customHealthCheck.ManagedResources[0].Name,
+					Namespace: state.Namespace}, cm)).To(Succeed())
+
+			time.Sleep(1 * time.Second)
+			cm.Data["readyOne"] = "created"
+			Expect(state.Client.Update(customHealthCheck.Context, cm)).To(Succeed())
+
+			time.Sleep(1 * time.Second)
+			cm.Data["readyTwo"] = "No"
+			Expect(state.Client.Update(customHealthCheck.Context, cm)).To(Succeed())
+
+			time.Sleep(1 * time.Second)
+			cm.Data["readyTwo"] = "Yes"
+			Expect(state.Client.Update(customHealthCheck.Context, cm)).To(Succeed())
+		}()
+
+		Eventually(func() bool {
+			expectedErr := &ObjectNotReadyError{}
+			cm := &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "v1",
+					"kind":       "ConfigMap",
+				},
+			}
+			Expect(state.Client.Get(customHealthCheck.Context,
+				types.NamespacedName{
+					Name:      customHealthCheck.ManagedResources[0].Name,
+					Namespace: state.Namespace}, cm)).To(Succeed())
+			if err := customHealthCheck.CheckObject(cm); err != nil {
+				if errors.As(err, &expectedErr) {
+					return false
+				} else {
+					Fail("error during custom health check")
+				}
+			}
+
+			Expect(cm.Object["data"]).To(HaveKeyWithValue("readyOne", "created"))
+			Expect(cm.Object["data"]).To(HaveKeyWithValue("readyTwo", "Yes"))
+			Expect(cm.Object["data"]).ToNot(HaveKey("invalid"))
+			return true
+		}).WithTimeout(1 * time.Minute).Should(BeTrue())
 	})
 })
 

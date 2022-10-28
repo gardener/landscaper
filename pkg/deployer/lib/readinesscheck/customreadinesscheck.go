@@ -77,14 +77,14 @@ func (c *CustomReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
 
 		if fieldDoesNotExist(fields) {
 			if requirement.Operator == selection.DoesNotExist {
-				return nil
+				continue
 			}
-			return lserror.NewError(c.CurrentOp, "object check", fmt.Sprintf("field with JSON path %s does not exist", requirement.JsonPath))
+			return NewObjectNotReadyError(u, lserror.NewError(c.CurrentOp, "object check", fmt.Sprintf("field with JSON path %s does not exist", requirement.JsonPath)))
 		}
 
 		if requirement.Operator == selection.Exists {
 			// field exists and that is all we need to know for selection.Exists
-			return nil
+			continue
 		}
 
 		requirementValues, err := parseRequirementValues(requirement.Value)
@@ -100,11 +100,8 @@ func (c *CustomReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
 				}
 
 				if !ok {
-					return lserror.NewError(c.CurrentOp, "check object values",
-						fmt.Sprintf("resource %s %s/%s does not fulfil resource condition field %s", u.GroupVersionKind().String(),
-							u.GetName(),
-							u.GetNamespace(),
-							requirement.JsonPath))
+					return NewObjectNotReadyError(u, lserror.NewError(c.CurrentOp, "check object values",
+						fmt.Sprintf("resource requirement is not fulfiled for field %s", requirement.JsonPath)))
 				}
 			}
 		}
