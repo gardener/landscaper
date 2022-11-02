@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/client-go/tools/clientcmd"
+
 	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -360,9 +362,9 @@ func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context
 	return targetSyncs, targetMap, nil
 }
 
-func (c *TargetSyncController) refreshToken(ctx context.Context, sync *lsv1alpha1.TargetSync, restConfig *rest.Config) error {
-	if sync.Spec.TokenRotation != nil {
-		if sync.Status.LastTokenRotationTime == nil || time.Since(sync.Status.LastTokenRotationTime.Time) > time.Hour*24*60 {
+func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv1alpha1.TargetSync, restConfig *rest.Config) error {
+	if targetSync.Spec.TokenRotation != nil {
+		if targetSync.Status.LastTokenRotationTime == nil || time.Since(targetSync.Status.LastTokenRotationTime.Time) > time.Hour*24*60 {
 			var expirationInSeconds int64 = 60 * 60 * 24 * 90
 
 			treq := &authenticationv1.TokenRequest{
@@ -376,14 +378,42 @@ func (c *TargetSyncController) refreshToken(ctx context.Context, sync *lsv1alpha
 				return err
 			}
 
-			treq, err = clientset.CoreV1().ServiceAccounts(sync.Spec.SourceNamespace).CreateToken(ctx,
-				sync.Spec.TokenRotation.ServiceAccountName, treq, metav1.CreateOptions{})
+			treq, err = clientset.CoreV1().ServiceAccounts(targetSync.Spec.SourceNamespace).CreateToken(ctx,
+				targetSync.Spec.TokenRotation.ServiceAccountName, treq, metav1.CreateOptions{})
+			if err != nil {
+				return err
+			}
 
+			err = c.rotateTokenInSecret(ctx, targetSync, treq.Status.Token)
 			if err != nil {
 				return err
 			}
 
 		}
+	}
+
+	return nil
+}
+
+func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSync *lsv1alpha1.TargetSync, newToken string) error {
+	secret := &corev1.Secret{}
+	secretKey := client.ObjectKey{
+		Namespace: targetSync.Namespace,
+		Name:      targetSync.Spec.SecretRef.Name,
+	}
+
+	if err := c.lsClient.Get(ctx, secretKey, secret); err != nil {
+		return err
+	}
+
+	kubeconfigBytes := secret.Data[targetSync.Spec.SecretRef.Key]
+	if len(kubeconfigBytes) == 0 {
+		return fmt.Errorf("no kubeconfig in secret to rotate")
+	}
+
+	_, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
+	if err != nil {
+		return err
 	}
 
 	return nil
