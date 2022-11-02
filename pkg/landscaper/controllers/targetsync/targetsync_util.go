@@ -14,21 +14,21 @@ import (
 )
 
 func getSourceClient(ctx context.Context, targetSync *lsv1alpha1.TargetSync, targetClient client.Client,
-	schema *runtime.Scheme) (client.Client, error) {
+	schema *runtime.Scheme) (client.Client, *rest.Config, error) {
 
 	restConfig, err := getSourceRestConfig(ctx, targetSync, targetClient)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	cl, err := client.New(restConfig, client.Options{
 		Scheme: schema,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return cl, nil
+	return cl, restConfig, nil
 }
 
 func getSourceRestConfig(ctx context.Context, targetSync *lsv1alpha1.TargetSync, targetClient client.Client) (*rest.Config, error) {

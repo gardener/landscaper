@@ -1542,6 +1542,21 @@ to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google
 if not set all secrets are synced</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>tokenRotation</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TokenRotation">
+TokenRotation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the
+secrets to sync. The token expires after 90 days and will be rotated every 45 days.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -5242,6 +5257,21 @@ to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google
 if not set all secrets are synced</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>tokenRotation</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TokenRotation">
+TokenRotation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the
+secrets to sync. The token expires after 90 days and will be rotated every 45 days.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.TargetSyncStatus">TargetSyncStatus
@@ -5296,6 +5326,20 @@ Kubernetes meta/v1.Time
 <td>
 <em>(Optional)</em>
 <p>LastErrors describe the last errors</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastTokenRotationTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Last time the token was rotated</p>
 </td>
 </tr>
 </tbody>
@@ -5453,6 +5497,35 @@ and a valid yaml/json for spiff.</p>
 <p>
 <p>TemplateType describes the template mechanism.</p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.TokenRotation">TokenRotation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSyncSpec">TargetSyncSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>serviceAccountName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ServiceAccountName defines the name of the service account for which a new token is requested</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.TypedObjectReference">TypedObjectReference
 </h3>
 <p>

@@ -44,6 +44,17 @@ spec:
                 description: SourceNamespace describes the namespace from where the
                   secrets should be synced
                 type: string
+              tokenRotation:
+                description: TokenRotation defines the data to perform an automatic
+                  rotation of the token to access the source cluster with the secrets
+                  to sync. The token expires after 90 days and will be rotated every
+                  45 days.
+                properties:
+                  serviceAccountName:
+                    description: ServiceAccountName defines the name of the service
+                      account for which a new token is requested
+                    type: string
+                type: object
             required:
             - sourceNamespace
             - secretRef
@@ -56,6 +67,10 @@ spec:
                 items:
                   type: string
                 type: array
+              lastTokenRotationTime:
+                description: Last time the token was rotated
+                format: date-time
+                type: string
               lastUpdateTime:
                 description: Last time the status.
                 format: date-time

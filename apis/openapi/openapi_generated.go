@@ -161,6 +161,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSyncStatus":                                   schema_landscaper_apis_core_v1alpha1_TargetSyncStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetTemplate":                                     schema_landscaper_apis_core_v1alpha1_TargetTemplate(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TemplateExecutor":                                   schema_landscaper_apis_core_v1alpha1_TemplateExecutor(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation":                                      schema_landscaper_apis_core_v1alpha1_TokenRotation(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference":                               schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef":                                           schema_landscaper_apis_core_v1alpha1_ValueRef(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":                      schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
@@ -6675,12 +6676,18 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"tokenRotation": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the secrets to sync. The token expires after 90 days and will be rotated every 45 days.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation"),
+						},
+					},
 				},
 				Required: []string{"sourceNamespace", "secretRef"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation"},
 	}
 }
 
@@ -6719,6 +6726,12 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncStatus(ref common.ReferenceC
 									},
 								},
 							},
+						},
+					},
+					"lastTokenRotationTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Last time the token was rotated",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 				},
@@ -6840,6 +6853,25 @@ func schema_landscaper_apis_core_v1alpha1_TemplateExecutor(ref common.ReferenceC
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_TokenRotation(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccountName defines the name of the service account for which a new token is requested",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

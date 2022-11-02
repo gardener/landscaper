@@ -9,6 +9,11 @@ import (
 	"fmt"
 	"time"
 
+	authenticationv1 "k8s.io/api/authentication/v1"
+	"k8s.io/client-go/kubernetes"
+
+	"k8s.io/client-go/rest"
+
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -123,12 +128,18 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 		err = fmt.Errorf("more than one TargetSync object in the same namespace is not allowed")
 		errors = append(errors, err)
 	} else {
-		sourceClient, err := getSourceClient(ctx, targetSync, c.lsClient, nil)
+		sourceClient, restConfig, err := getSourceClient(ctx, targetSync, c.lsClient, nil)
 		if err != nil {
 			logger.Error(err, "fetching source client for target sync object failed")
 			errors = append(errors, err)
 		} else {
-			errors = c.handleSecrets(ctx, targetSync, sourceClient, oldTargets)
+			err = c.refreshToken(ctx, targetSync, restConfig)
+			if err != nil {
+				logger.Error(err, "refreshing token failed")
+				errors = append(errors, err)
+			} else {
+				errors = c.handleSecrets(ctx, targetSync, sourceClient, oldTargets)
+			}
 		}
 	}
 
@@ -347,4 +358,33 @@ func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context
 	}
 
 	return targetSyncs, targetMap, nil
+}
+
+func (c *TargetSyncController) refreshToken(ctx context.Context, sync *lsv1alpha1.TargetSync, restConfig *rest.Config) error {
+	if sync.Spec.TokenRotation != nil {
+		if sync.Status.LastTokenRotationTime == nil || time.Since(sync.Status.LastTokenRotationTime.Time) > time.Hour*24*60 {
+			var expirationInSeconds int64 = 60 * 60 * 24 * 90
+
+			treq := &authenticationv1.TokenRequest{
+				Spec: authenticationv1.TokenRequestSpec{
+					ExpirationSeconds: &expirationInSeconds,
+				},
+			}
+
+			clientset, err := kubernetes.NewForConfig(restConfig)
+			if err != nil {
+				return err
+			}
+
+			treq, err = clientset.CoreV1().ServiceAccounts(sync.Spec.SourceNamespace).CreateToken(ctx,
+				sync.Spec.TokenRotation.ServiceAccountName, treq, metav1.CreateOptions{})
+
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+
+	return nil
 }

@@ -48,6 +48,16 @@ type TargetSyncSpec struct {
 	// if not set all secrets are synced
 	// +optional
 	SecretNameExpression string `json:"secretNameExpression"`
+
+	// TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the
+	// secrets to sync. The token expires after 90 days and will be rotated every 45 days.
+	// +optional
+	TokenRotation *TokenRotation `json:"tokenRotation,omitempty"`
+}
+
+type TokenRotation struct {
+	// ServiceAccountName defines the name of the service account for which a new token is requested
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // TargetSyncStatus contains the status of a TargetSync.
@@ -62,6 +72,10 @@ type TargetSyncStatus struct {
 	// LastErrors describe the last errors
 	// +optional
 	LastErrors []string `json:"lastErrors,omitempty"`
+
+	// Last time the token was rotated
+	// +optional
+	LastTokenRotationTime *metav1.Time `json:"lastTokenRotationTime,omitempty"`
 }
 
 var TargetSyncDefinition = lsschema.CustomResourceDefinition{
