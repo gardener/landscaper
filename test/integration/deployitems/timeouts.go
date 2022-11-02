@@ -32,9 +32,9 @@ func RegisterTests(f *framework.Framework) {
 
 const (
 	waitingForDeployItems     = 5 * time.Second  // how long to wait for the landscaper to create deploy items from the installation
-	deployItemPickupTimeout   = 10 * time.Second // the landscaper has to be configured accordingly for this test to work!
-	deployItemAbortingTimeout = 10 * time.Second // the landscaper has to be configured accordingly for this test to work!
-	waitingForReconcile       = 10 * time.Second // how long to wait for the landscaper or the deployer to reconcile and update the deploy item
+	deployItemPickupTimeout   = 30 * time.Second // the landscaper has to be configured accordingly for this test to work!
+	deployItemAbortingTimeout = 30 * time.Second // the landscaper has to be configured accordingly for this test to work!
+	waitingForReconcile       = 30 * time.Second // how long to wait for the landscaper or the deployer to reconcile and update the deploy item
 	resyncTime                = 1 * time.Second  // after which time to check again if the condition was not fulfilled the last time
 )
 
