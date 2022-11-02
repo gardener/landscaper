@@ -7,9 +7,8 @@ package targetsync
 import (
 	"context"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"time"
-
-	"k8s.io/client-go/tools/clientcmd"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
@@ -411,8 +410,57 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 		return fmt.Errorf("no kubeconfig in secret to rotate")
 	}
 
-	_, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
+	kubeConfic := map[string]interface{}{}
+	if err := yaml.Unmarshal(kubeconfigBytes, kubeConfic); err != nil {
+		return err
+	}
+
+	var item interface{}
+	var ok bool
+
+	item, ok = kubeConfic["users"]
+	if !ok || item == nil {
+		return fmt.Errorf("no users in kubeconfig")
+	}
+	var users []interface{}
+	users, ok = item.([]interface{})
+	if !ok || len(users) != 1 {
+		return fmt.Errorf("users in kubeconfig invalid")
+	}
+
+	item = users[0]
+	userEntry, ok := item.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("userEntry in kubeconfig invalid")
+	}
+
+	item, ok = userEntry["user"]
+	if !ok {
+		return fmt.Errorf("no user in user entry in kubeconfig ")
+	}
+
+	user, ok := item.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("user in user entry has wrong format in kubeconfig ")
+	}
+
+	user["token"] = newToken
+
+	kubeconfigBytes, err := yaml.Marshal(kubeConfic)
 	if err != nil {
+		return err
+	}
+
+	secret.Data[targetSync.Spec.SecretRef.Key] = kubeconfigBytes
+
+	if err := c.lsClient.Update(ctx, secret); err != nil {
+		return err
+	}
+
+	now := metav1.Now()
+	targetSync.Status.LastTokenRotationTime = &now
+
+	if err := c.lsClient.Status().Update(ctx, targetSync); err != nil {
 		return err
 	}
 
