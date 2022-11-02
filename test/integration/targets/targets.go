@@ -70,7 +70,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
 			targetConfig := &targettypes.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, targetConfig)
-			Expect(targetConfig.Kubeconfig).To(Equal("dummy kubeconfig 1"))
+			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig 1"))
 
 			// Create Installation that exports a Target "target-2"
 
@@ -94,7 +94,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
 			targetConfig = &targettypes.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, &targetConfig)
-			Expect(targetConfig.Kubeconfig).To(Equal("dummy kubeconfig 2"))
+			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig 2"))
 
 			// Create an Installation that imports a target list consisting of "target-1" and  "target-2"
 
@@ -337,7 +337,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
 			targetConfig := &targettypes.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, targetConfig)
-			Expect(targetConfig.Kubeconfig).To(Equal("dummy kubeconfig"))
+			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig"))
 
 			// Update DataObject
 
@@ -355,7 +355,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Get(ctx, targetKey, target))
 			targetConfig = &targettypes.KubernetesClusterTargetConfig{}
 			utils.GetTargetConfiguration(target, targetConfig)
-			Expect(targetConfig.Kubeconfig).To(Equal("dummy kubeconfig modified"))
+			Expect(*targetConfig.Kubeconfig.StrVal).To(Equal("dummy kubeconfig modified"))
 		})
 	})
 }
