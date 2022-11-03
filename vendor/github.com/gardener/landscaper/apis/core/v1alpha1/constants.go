@@ -48,6 +48,9 @@ const (
 	// TouchAnnotation can be used to trigger a reconciliation event for a landscaper resource.
 	TouchAnnotation = LandscaperDomain + "/touch"
 
+	// RotateTokenAnnotation is the annotation that specifies to rotate a token (used e.g. in the context of TargetSyncObjects)
+	RotateTokenAnnotation = LandscaperDomain + "/rotate-token"
+
 	// Labels
 
 	// LandscaperComponentLabelName is the name of the labels the holds the information about landscaper components.

@@ -7,8 +7,9 @@ package targetsync
 import (
 	"context"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
@@ -363,7 +364,13 @@ func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context
 
 func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv1alpha1.TargetSync, restConfig *rest.Config) error {
 	if targetSync.Spec.TokenRotation != nil {
-		if targetSync.Status.LastTokenRotationTime == nil || time.Since(targetSync.Status.LastTokenRotationTime.Time) > time.Hour*24*60 {
+
+		logger, ctx := logging.FromContextOrNew(ctx, nil)
+		if metav1.HasAnnotation(targetSync.ObjectMeta, lsv1alpha1.RotateTokenAnnotation) ||
+			targetSync.Status.LastTokenRotationTime == nil ||
+			time.Since(targetSync.Status.LastTokenRotationTime.Time) > time.Hour*24*60 {
+
+			// 90 days
 			var expirationInSeconds int64 = 60 * 60 * 24 * 90
 
 			treq := &authenticationv1.TokenRequest{
@@ -374,17 +381,20 @@ func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv
 
 			clientset, err := kubernetes.NewForConfig(restConfig)
 			if err != nil {
+				logger.Error(err, "fetching client set for refreshing token failed for sync object")
 				return err
 			}
 
 			treq, err = clientset.CoreV1().ServiceAccounts(targetSync.Spec.SourceNamespace).CreateToken(ctx,
 				targetSync.Spec.TokenRotation.ServiceAccountName, treq, metav1.CreateOptions{})
 			if err != nil {
+				logger.Error(err, "fetching token failed for sync object")
 				return err
 			}
 
 			err = c.rotateTokenInSecret(ctx, targetSync, treq.Status.Token)
 			if err != nil {
+				logger.Error(err, "rotating token in secret failed for sync object")
 				return err
 			}
 
@@ -395,6 +405,7 @@ func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv
 }
 
 func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSync *lsv1alpha1.TargetSync, newToken string) error {
+
 	secret := &corev1.Secret{}
 	secretKey := client.ObjectKey{
 		Namespace: targetSync.Namespace,
@@ -405,9 +416,9 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 		return err
 	}
 
-	kubeconfigBytes := secret.Data[targetSync.Spec.SecretRef.Key]
-	if len(kubeconfigBytes) == 0 {
-		return fmt.Errorf("no kubeconfig in secret to rotate")
+	kubeconfigBytes, ok := secret.Data[targetSync.Spec.SecretRef.Key]
+	if !ok || len(kubeconfigBytes) == 0 {
+		return fmt.Errorf("no kubeconfig in secret to rotate for sync object")
 	}
 
 	kubeConfic := map[string]interface{}{}
@@ -416,32 +427,31 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 	}
 
 	var item interface{}
-	var ok bool
 
 	item, ok = kubeConfic["users"]
 	if !ok || item == nil {
-		return fmt.Errorf("no users in kubeconfig")
+		return fmt.Errorf("no users in kubeconfig for sync object")
 	}
 	var users []interface{}
 	users, ok = item.([]interface{})
 	if !ok || len(users) != 1 {
-		return fmt.Errorf("users in kubeconfig invalid")
+		return fmt.Errorf("users in kubeconfig invalid for sync object")
 	}
 
 	item = users[0]
 	userEntry, ok := item.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("userEntry in kubeconfig invalid")
+		return fmt.Errorf("userEntry in kubeconfig invalid for sync object")
 	}
 
 	item, ok = userEntry["user"]
 	if !ok {
-		return fmt.Errorf("no user in user entry in kubeconfig ")
+		return fmt.Errorf("no user in user entry in kubeconfig for sync object")
 	}
 
 	user, ok := item.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("user in user entry has wrong format in kubeconfig ")
+		return fmt.Errorf("user in user entry has wrong format in kubeconfig for sync object")
 	}
 
 	user["token"] = newToken
