@@ -48,12 +48,11 @@ spec:
                 description: TokenRotation defines the data to perform an automatic
                   rotation of the token to access the source cluster with the secrets
                   to sync. The token expires after 90 days and will be rotated every
-                  45 days.
+                  60 days.
                 properties:
-                  serviceAccountName:
-                    description: ServiceAccountName defines the name of the service
-                      account for which a new token is requested
-                    type: string
+                  enabled:
+                    description: Enabled defines if automatic token is executed
+                    type: boolean
                 type: object
             required:
             - sourceNamespace

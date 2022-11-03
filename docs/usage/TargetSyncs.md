@@ -47,6 +47,8 @@ spec:
   secretRef:
     key: <some key>
     name: example-target-sync
+  tokenRotation: # optional
+    serviceAccountName: <service account name>
 ```
 
 The entries of a *TargetSync* object have the following meaning:
@@ -58,9 +60,17 @@ The entries of a *TargetSync* object have the following meaning:
 - secretRef: A reference to a secret in the same namespace as the *TargetSync* object containing a kubeconfig 
   yaml in its data section under the specified *key*. This kubeconfig must provide access to the secrets which 
   should be synchronized. This secret must be created together with the *TargetSync* object. 
+- tokenRotation: Will be explained in the next chapter.
 
 An example how to create a *TargetSync* object could be found 
 [here](https://github.com/gardener/landscaper-examples/tree/master/sync-targets).
+
+## Token Rotation
+
+In the field `tokenRotation.serviceAccountName` you could specify the service account name of a service account in the
+namespace from where the secrets should be synced. In that case the token in the kubeconfig of the secret referenced by
+the *TargetSync* object in `spec.secretRef` if rotated every 60 days whereby the lifetime of every token is 60 days.
+The service account used here is the same the one from which the initial kubeconfig in the referenced secret comes. 
 
 
 

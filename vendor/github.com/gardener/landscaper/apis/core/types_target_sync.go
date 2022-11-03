@@ -48,14 +48,14 @@ type TargetSyncSpec struct {
 	SecretNameExpression string `json:"secretNameExpression"`
 
 	// TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the
-	// secrets to sync. The token expires after 90 days and will be rotated every 45 days.
+	// secrets to sync. The token expires after 90 days and will be rotated every 60 days.
 	// +optional
 	TokenRotation *TokenRotation `json:"tokenRotation,omitempty"`
 }
 
 type TokenRotation struct {
-	// ServiceAccountName defines the name of the service account for which a new token is requested
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// Enabled defines if automatic token is executed
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // TargetSyncStatus contains the status of a TargetSync.

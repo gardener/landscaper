@@ -6678,7 +6678,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCal
 					},
 					"tokenRotation": {
 						SchemaProps: spec.SchemaProps{
-							Description: "TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the secrets to sync. The token expires after 90 days and will be rotated every 45 days.",
+							Description: "TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the secrets to sync. The token expires after 90 days and will be rotated every 60 days.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation"),
 						},
 					},
@@ -6862,10 +6862,10 @@ func schema_landscaper_apis_core_v1alpha1_TokenRotation(ref common.ReferenceCall
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"serviceAccountName": {
+					"enabled": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ServiceAccountName defines the name of the service account for which a new token is requested",
-							Type:        []string{"string"},
+							Description: "Enabled defines if automatic token is executed",
+							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},

@@ -363,36 +363,35 @@ func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context
 }
 
 func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv1alpha1.TargetSync, restConfig *rest.Config) error {
-	if targetSync.Spec.TokenRotation != nil {
+	if targetSync.Spec.TokenRotation != nil && targetSync.Spec.TokenRotation.Enabled {
 
 		logger, ctx := logging.FromContextOrNew(ctx, nil)
 		if metav1.HasAnnotation(targetSync.ObjectMeta, lsv1alpha1.RotateTokenAnnotation) ||
 			targetSync.Status.LastTokenRotationTime == nil ||
 			time.Since(targetSync.Status.LastTokenRotationTime.Time) > time.Hour*24*60 {
 
-			// 90 days
-			var expirationInSeconds int64 = 60 * 60 * 24 * 90
-
-			treq := &authenticationv1.TokenRequest{
-				Spec: authenticationv1.TokenRequestSpec{
-					ExpirationSeconds: &expirationInSeconds,
-				},
-			}
-
-			clientset, err := kubernetes.NewForConfig(restConfig)
+			secret, kubeconfigObject, err := c.fetchSecretAndKubeconfigObject(ctx, targetSync)
 			if err != nil {
-				logger.Error(err, "fetching client set for refreshing token failed for sync object")
+				logger.Error(err, "fetching secret and kubeconfig failed for sync object")
 				return err
 			}
 
-			treq, err = clientset.CoreV1().ServiceAccounts(targetSync.Spec.SourceNamespace).CreateToken(ctx,
-				targetSync.Spec.TokenRotation.ServiceAccountName, treq, metav1.CreateOptions{})
+			serviceAccountName, user, err := c.getServiceAccountNameAndUser(kubeconfigObject)
 			if err != nil {
-				logger.Error(err, "fetching token failed for sync object")
+				logger.Error(err, "fetching service account name and user failed for sync object")
 				return err
 			}
 
-			err = c.rotateTokenInSecret(ctx, targetSync, treq.Status.Token)
+			// fetch new token
+			newToken, err := c.fetchNewToken(ctx, targetSync.Spec.SourceNamespace, serviceAccountName, restConfig)
+			if err != nil {
+				logger.Error(err, "fetching new token for sync object")
+				return err
+			}
+
+			user["token"] = newToken
+
+			err = c.rotateTokenInSecret(ctx, targetSync, secret, kubeconfigObject)
 			if err != nil {
 				logger.Error(err, "rotating token in secret failed for sync object")
 				return err
@@ -404,7 +403,8 @@ func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv
 	return nil
 }
 
-func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSync *lsv1alpha1.TargetSync, newToken string) error {
+func (c *TargetSyncController) fetchSecretAndKubeconfigObject(ctx context.Context,
+	targetSync *lsv1alpha1.TargetSync) (*corev1.Secret, map[string]interface{}, error) {
 
 	secret := &corev1.Secret{}
 	secretKey := client.ObjectKey{
@@ -413,50 +413,26 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 	}
 
 	if err := c.lsClient.Get(ctx, secretKey, secret); err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	kubeconfigBytes, ok := secret.Data[targetSync.Spec.SecretRef.Key]
 	if !ok || len(kubeconfigBytes) == 0 {
-		return fmt.Errorf("no kubeconfig in secret to rotate for sync object")
+		return nil, nil, fmt.Errorf("no kubeconfig in secret to rotate for sync object")
 	}
 
 	kubeConfic := map[string]interface{}{}
 	if err := yaml.Unmarshal(kubeconfigBytes, kubeConfic); err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	var item interface{}
+	return secret, kubeConfic, nil
+}
 
-	item, ok = kubeConfic["users"]
-	if !ok || item == nil {
-		return fmt.Errorf("no users in kubeconfig for sync object")
-	}
-	var users []interface{}
-	users, ok = item.([]interface{})
-	if !ok || len(users) != 1 {
-		return fmt.Errorf("users in kubeconfig invalid for sync object")
-	}
+func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSync *lsv1alpha1.TargetSync, secret *corev1.Secret,
+	kubeConfigObject map[string]interface{}) error {
 
-	item = users[0]
-	userEntry, ok := item.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("userEntry in kubeconfig invalid for sync object")
-	}
-
-	item, ok = userEntry["user"]
-	if !ok {
-		return fmt.Errorf("no user in user entry in kubeconfig for sync object")
-	}
-
-	user, ok := item.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("user in user entry has wrong format in kubeconfig for sync object")
-	}
-
-	user["token"] = newToken
-
-	kubeconfigBytes, err := yaml.Marshal(kubeConfic)
+	kubeconfigBytes, err := yaml.Marshal(kubeConfigObject)
 	if err != nil {
 		return err
 	}
@@ -469,10 +445,81 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 
 	now := metav1.Now()
 	targetSync.Status.LastTokenRotationTime = &now
+	targetSync.Status.LastUpdateTime = now
 
 	if err := c.lsClient.Status().Update(ctx, targetSync); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (c *TargetSyncController) getServiceAccountNameAndUser(
+	kubeConfigObject map[string]interface{}) (string, map[string]interface{}, error) {
+
+	var item interface{}
+
+	item, ok := kubeConfigObject["users"]
+	if !ok || item == nil {
+		return "", nil, fmt.Errorf("no users in kubeconfig for sync object")
+	}
+	var users []interface{}
+	users, ok = item.([]interface{})
+	if !ok || len(users) != 1 {
+		return "", nil, fmt.Errorf("users in kubeconfig invalid for sync object")
+	}
+
+	item = users[0]
+	userEntry, ok := item.(map[string]interface{})
+	if !ok {
+		return "", nil, fmt.Errorf("userEntry in kubeconfig invalid for sync object")
+	}
+
+	item, ok = userEntry["name"]
+	if !ok {
+		return "", nil, fmt.Errorf("no name in user entry in kubeconfig for sync object")
+	}
+	serviceAccountName, ok := item.(string)
+	if !ok {
+		return "", nil, fmt.Errorf("no name in user entry in kubeconfig for sync object")
+	}
+
+	item, ok = userEntry["user"]
+	if !ok {
+		return "", nil, fmt.Errorf("no user in user entry in kubeconfig for sync object")
+	}
+
+	user, ok := item.(map[string]interface{})
+	if !ok {
+		return "", nil, fmt.Errorf("user in user entry has wrong format in kubeconfig for sync object")
+	}
+
+	return serviceAccountName, user, nil
+}
+
+func (c *TargetSyncController) fetchNewToken(ctx context.Context, namespace, serviceAccountName string, restConfig *rest.Config) (string, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	var expirationInSeconds int64 = 60 * 60 * 24 * 90
+
+	treq := &authenticationv1.TokenRequest{
+		Spec: authenticationv1.TokenRequestSpec{
+			ExpirationSeconds: &expirationInSeconds,
+		},
+	}
+
+	clientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		logger.Error(err, "fetching client set for refreshing token failed for sync object")
+		return "", err
+	}
+
+	treq, err = clientset.CoreV1().ServiceAccounts(namespace).CreateToken(ctx,
+		serviceAccountName, treq, metav1.CreateOptions{})
+	if err != nil {
+		logger.Error(err, "fetching token failed for sync object")
+		return "", err
+	}
+
+	return treq.Status.Token, nil
 }

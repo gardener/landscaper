@@ -3140,7 +3140,7 @@ func Convert_core_TemplateExecutor_To_v1alpha1_TemplateExecutor(in *core.Templat
 }
 
 func autoConvert_v1alpha1_TokenRotation_To_core_TokenRotation(in *TokenRotation, out *core.TokenRotation, s conversion.Scope) error {
-	out.ServiceAccountName = in.ServiceAccountName
+	out.Enabled = in.Enabled
 	return nil
 }
 
@@ -3150,7 +3150,7 @@ func Convert_v1alpha1_TokenRotation_To_core_TokenRotation(in *TokenRotation, out
 }
 
 func autoConvert_core_TokenRotation_To_v1alpha1_TokenRotation(in *core.TokenRotation, out *TokenRotation, s conversion.Scope) error {
-	out.ServiceAccountName = in.ServiceAccountName
+	out.Enabled = in.Enabled
 	return nil
 }
 

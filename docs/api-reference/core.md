@@ -1554,7 +1554,7 @@ TokenRotation
 <td>
 <em>(Optional)</em>
 <p>TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the
-secrets to sync. The token expires after 90 days and will be rotated every 45 days.</p>
+secrets to sync. The token expires after 90 days and will be rotated every 60 days.</p>
 </td>
 </tr>
 </table>
@@ -5269,7 +5269,7 @@ TokenRotation
 <td>
 <em>(Optional)</em>
 <p>TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the
-secrets to sync. The token expires after 90 days and will be rotated every 45 days.</p>
+secrets to sync. The token expires after 90 days and will be rotated every 60 days.</p>
 </td>
 </tr>
 </tbody>
@@ -5515,13 +5515,13 @@ and a valid yaml/json for spiff.</p>
 <tbody>
 <tr>
 <td>
-<code>serviceAccountName</code></br>
+<code>enabled</code></br>
 <em>
-string
+bool
 </em>
 </td>
 <td>
-<p>ServiceAccountName defines the name of the service account for which a new token is requested</p>
+<p>Enabled defines if automatic token is executed</p>
 </td>
 </tr>
 </tbody>
