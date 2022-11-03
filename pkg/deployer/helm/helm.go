@@ -37,7 +37,6 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
-	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -64,7 +63,7 @@ type Helm struct {
 	Configuration  helmv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
-	Target                *targetresolver.ResolvedTarget
+	Target                *lsv1alpha1.ResolvedTarget
 	Context               *lsv1alpha1.Context
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
@@ -80,7 +79,7 @@ func New(helmconfig helmv1alpha1.Configuration,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	item *lsv1alpha1.DeployItem,
-	rt *targetresolver.ResolvedTarget,
+	rt *lsv1alpha1.ResolvedTarget,
 	lsCtx *lsv1alpha1.Context,
 	sharedCache cache.Cache) (*Helm, error) {
 
@@ -219,7 +218,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 	}
 	if h.Target != nil {
 		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-		if err := yaml.Unmarshal(h.Target.Content(), targetConfig); err != nil {
+		if err := yaml.Unmarshal([]byte(h.Target.Content), targetConfig); err != nil {
 			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 

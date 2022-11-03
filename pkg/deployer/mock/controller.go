@@ -27,7 +27,6 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
-	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type mock.
@@ -55,7 +54,7 @@ type deployer struct {
 	hooks      extension.ReconcileExtensionHooks
 }
 
-func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *targetresolver.ResolvedTarget) error {
+func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.ResolvedTarget) error {
 	config, err := d.getConfig(ctx, di)
 	if err != nil {
 		return err
@@ -84,11 +83,11 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 	return d.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000059, di)
 }
 
-func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *targetresolver.ResolvedTarget) error {
+func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.ResolvedTarget) error {
 	return d.ensureDeletion(ctx, di)
 }
 
-func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *targetresolver.ResolvedTarget) error {
+func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.ResolvedTarget) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
 }

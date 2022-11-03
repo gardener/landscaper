@@ -234,7 +234,7 @@ func (b *TargetBuilder) Build() (*lsv1alpha1.Target, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode target config: %w", err)
 		}
-		target.Spec.Configuration = lsv1alpha1.NewAnyJSON(configBytes)
+		target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer(configBytes)
 	}
 
 	if b.Ref != nil {

@@ -33,7 +33,7 @@ var _ = Describe("ReadinessCheck", func() {
 	var (
 		ctx    context.Context
 		state  *envtest.State
-		target *targetresolver.ResolvedTarget
+		target *lsv1alpha1.ResolvedTarget
 	)
 
 	BeforeEach(func() {

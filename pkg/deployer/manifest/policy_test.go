@@ -74,7 +74,7 @@ var _ = Describe("Policy", func() {
 		ctx       context.Context
 		state     *envtest.State
 		configMap *corev1.ConfigMap
-		target    *targetresolver.ResolvedTarget
+		target    *lsv1alpha1.ResolvedTarget
 	)
 
 	BeforeEach(func() {

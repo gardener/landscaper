@@ -173,7 +173,7 @@ targetExports: []
 			},
 			Spec: lsv1alpha1.TargetSpec{
 				Type:          targettypes.KubernetesClusterTargetType,
-				Configuration: lsv1alpha1.NewAnyJSON([]byte("{ \"kubeconfig\": \"{}\" }")),
+				Configuration: lsv1alpha1.NewAnyJSONPointer([]byte("{ \"kubeconfig\": \"{}\" }")),
 			},
 		}
 

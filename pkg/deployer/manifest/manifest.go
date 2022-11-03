@@ -19,7 +19,6 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	"github.com/gardener/landscaper/pkg/deployer/lib"
-	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -52,7 +51,7 @@ type Manifest struct {
 	Configuration  *manifestv1alpha2.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
-	Target                *targetresolver.ResolvedTarget
+	Target                *lsv1alpha1.ResolvedTarget
 	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
 	ProviderStatus        *manifestv1alpha2.ProviderStatus
 
@@ -71,7 +70,7 @@ func New(lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	configuration *manifestv1alpha2.Configuration,
 	item *lsv1alpha1.DeployItem,
-	rt *targetresolver.ResolvedTarget) (*Manifest, error) {
+	rt *lsv1alpha1.ResolvedTarget) (*Manifest, error) {
 
 	config := &manifestv1alpha2.ProviderConfiguration{}
 	currOp := "InitManifestOperation"
@@ -141,7 +140,7 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 	}
 	if m.Target != nil {
 		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-		if err := yaml.Unmarshal(m.Target.Content(), targetConfig); err != nil {
+		if err := yaml.Unmarshal([]byte(m.Target.Content), targetConfig); err != nil {
 			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 

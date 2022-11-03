@@ -1342,6 +1342,10 @@ string
 <h3 id="landscaper.gardener.cloud/v1alpha1.Target">Target
 </h3>
 <p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ResolvedTarget">ResolvedTarget</a>)
+</p>
+<p>
 <p>Target defines a specific data object that defines target environment.
 Every deploy item can have a target which is used by the deployer to install the specific application.</p>
 </p>
@@ -4540,6 +4544,47 @@ k8s.io/apimachinery/pkg/selection.Operator
 <p>In huge majority of cases we have at most one value here.
 It is generally faster to operate on a single-element slice
 than on a single-element map, so we have a slice here.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ResolvedTarget">ResolvedTarget
+</h3>
+<p>
+<p>ResolvedTarget is a helper struct to store a target together with the content of its resolved secret reference.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>target</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Target">
+Target
+</a>
+</em>
+</td>
+<td>
+<p>Target contains the original target.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>content</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Content contains the content of the target.
+If the target has a secret reference, this field should be filled by a TargetResolver.
+Otherwise, the inline configuration of the target is put here.</p>
 </td>
 </tr>
 </tbody>

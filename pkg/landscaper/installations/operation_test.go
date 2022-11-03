@@ -57,7 +57,7 @@ var _ = Describe("Operation", func() {
 				"lab": "val2",
 			}
 			target.Spec.Type = "test-type"
-			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("true"))
+			target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer([]byte("true"))
 			targetObj, err := utils.JSONSerializeToGenericObject(target)
 			testutils.ExpectNoError(err)
 
@@ -94,7 +94,7 @@ var _ = Describe("Operation", func() {
 				"lab": "val4",
 			}
 			target.Spec.Type = "test-type-2"
-			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("false"))
+			target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer([]byte("false"))
 			targetObj, err = utils.JSONSerializeToGenericObject(target)
 			testutils.ExpectNoError(err)
 			op.Inst.SetImports(map[string]interface{}{
@@ -213,7 +213,7 @@ var _ = Describe("Operation", func() {
 				"lab": "val2",
 			}
 			target.Spec.Type = "test-type"
-			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("true"))
+			target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer([]byte("true"))
 
 			targetExtension := dataobjects.NewTargetExtension(target, nil)
 			targetExtensions := []*dataobjects.TargetExtension{
@@ -252,7 +252,7 @@ var _ = Describe("Operation", func() {
 				"lab": "val4",
 			}
 			target.Spec.Type = "test-type-2"
-			target.Spec.Configuration = lsv1alpha1.NewAnyJSON([]byte("false"))
+			target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer([]byte("false"))
 
 			targetExtension = dataobjects.NewTargetExtension(target, nil)
 			targetExtensions = []*dataobjects.TargetExtension{

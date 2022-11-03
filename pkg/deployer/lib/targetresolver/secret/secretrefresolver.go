@@ -27,7 +27,7 @@ func New(c client.Client) *SecretRefResolver {
 	}
 }
 
-func (srr SecretRefResolver) Resolve(ctx context.Context, target *lsv1alpha1.Target) (*ResolvedTarget, error) {
+func (srr SecretRefResolver) Resolve(ctx context.Context, target *lsv1alpha1.Target) (*lsv1alpha1.ResolvedTarget, error) {
 	rt := NewResolvedTarget(target)
 
 	if target.Spec.SecretRef != nil {
@@ -35,11 +35,11 @@ func (srr SecretRefResolver) Resolve(ctx context.Context, target *lsv1alpha1.Tar
 			return nil, fmt.Errorf("namespace of secret ref %s differs from target namespace %s", target.Spec.SecretRef.Namespace, target.Namespace)
 		}
 
-		var err error
-		_, rt.Resolved, _, err = lsutils.ResolveSecretReference(ctx, srr.Client, target.Spec.SecretRef)
+		_, rawContent, _, err := lsutils.ResolveSecretReference(ctx, srr.Client, target.Spec.SecretRef)
 		if err != nil {
 			return nil, err
 		}
+		rt.Content = string(rawContent)
 	}
 
 	return rt, nil

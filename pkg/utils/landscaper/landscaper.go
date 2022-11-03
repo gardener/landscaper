@@ -200,7 +200,7 @@ func BuildKubernetesTarget(target *lsv1alpha1.Target, restConfig *rest.Config) e
 	}
 
 	target.Spec.Type = targettypes.KubernetesClusterTargetType
-	target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
+	target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer(data)
 
 	return nil
 }

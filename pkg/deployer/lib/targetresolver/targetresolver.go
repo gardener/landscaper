@@ -12,30 +12,17 @@ import (
 
 type TargetResolver interface {
 	// Resolve resolves the reference in the given Target, if possible.
-	Resolve(context.Context, *lsv1alpha1.Target) (*ResolvedTarget, error)
-}
-
-type ResolvedTarget struct {
-	// Target contains the original target.
-	*lsv1alpha1.Target
-
-	// Resolved contains the content of the resolved reference.
-	Resolved []byte
+	Resolve(context.Context, *lsv1alpha1.Target) (*lsv1alpha1.ResolvedTarget, error)
 }
 
 // NewResolvedTarget is a constructor for ResolvedTarget.
-// Note that this type should usually come from a call to Resolve instead of being constructed manually.
-func NewResolvedTarget(target *lsv1alpha1.Target) *ResolvedTarget {
-	return &ResolvedTarget{
+// It puts the target's inline configuration into the Content field, if the target doesn't contain a secret reference.
+func NewResolvedTarget(target *lsv1alpha1.Target) *lsv1alpha1.ResolvedTarget {
+	res := &lsv1alpha1.ResolvedTarget{
 		Target: target,
 	}
-}
-
-// Content returns the (potentially resolved) content of the Target.
-// If the Target has a resolved reference, it returns Resolved. Otherwise, it returns the inline config of the Target.
-func (rt *ResolvedTarget) Content() []byte {
-	if rt.Resolved != nil {
-		return rt.Resolved
+	if target.Spec.SecretRef == nil {
+		res.Content = string(target.Spec.Configuration.RawMessage)
 	}
-	return rt.Target.Spec.Configuration.RawMessage
+	return res
 }

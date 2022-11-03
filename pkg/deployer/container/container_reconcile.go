@@ -632,8 +632,12 @@ func (c *Container) SyncTarget(ctx context.Context, defaultLabels map[string]str
 	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, secret, func() error {
 		InjectDefaultLabels(secret, defaultLabels)
 		kutil.SetMetaDataLabel(&secret.ObjectMeta, container.ContainerDeployerTypeLabel, "target")
+		data, err := json.Marshal(c.Target)
+		if err != nil {
+			return fmt.Errorf("error marshalling resolvedtarget struct into json: %w", err)
+		}
 		secret.Data = map[string][]byte{
-			container.TargetFileName: c.Target.Content(),
+			container.TargetFileName: data,
 		}
 		return nil
 	}); err != nil {

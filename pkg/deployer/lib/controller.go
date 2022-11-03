@@ -45,11 +45,11 @@ import (
 // Deployer defines a controller that acts upon deployitems.
 type Deployer interface {
 	// Reconcile the deployitem.
-	Reconcile(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *targetresolver.ResolvedTarget) error
+	Reconcile(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.ResolvedTarget) error
 	// Delete the deployitem.
-	Delete(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *targetresolver.ResolvedTarget) error
+	Delete(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.ResolvedTarget) error
 	// Abort the deployitem progress.
-	Abort(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *targetresolver.ResolvedTarget) error
+	Abort(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.ResolvedTarget) error
 	// ExtensionHooks returns all registered extension hooks.
 	ExtensionHooks() extension.ReconcileExtensionHooks
 }
@@ -217,7 +217,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 
 		// resolve Target reference, if any
-		var rt *targetresolver.ResolvedTarget
+		var rt *lsv1alpha1.ResolvedTarget
 		if target != nil {
 			if target.Spec.SecretRef != nil {
 				sr := secretresolver.New(c.lsClient)
@@ -274,7 +274,7 @@ func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.
 	return target, true, nil
 }
 
-func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem, rt *targetresolver.ResolvedTarget) lserrors.LsError {
+func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
 	if !controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000050, deployItem); err != nil {
@@ -288,7 +288,7 @@ func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, d
 }
 
 func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem,
-	rt *targetresolver.ResolvedTarget) lserrors.LsError {
+	rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItem.ObjectMeta) {
 		logger.Info("Deleting deployitem %s without uninstall", deployItem.Name)

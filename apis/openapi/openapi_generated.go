@@ -140,6 +140,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference":                                    schema_landscaper_apis_core_v1alpha1_ObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.RemoteBlueprintReference":                           schema_landscaper_apis_core_v1alpha1_RemoteBlueprintReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Requirement":                                        schema_landscaper_apis_core_v1alpha1_Requirement(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ResolvedTarget":                                     schema_landscaper_apis_core_v1alpha1_ResolvedTarget(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResourceReference":                                  schema_landscaper_apis_core_v1alpha1_ResourceReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SecretLabelSelectorRef":                             schema_landscaper_apis_core_v1alpha1_SecretLabelSelectorRef(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference":                                    schema_landscaper_apis_core_v1alpha1_SecretReference(ref),
@@ -5915,6 +5916,36 @@ func schema_landscaper_apis_core_v1alpha1_Requirement(ref common.ReferenceCallba
 				Required: []string{"key", "operator"},
 			},
 		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_ResolvedTarget(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ResolvedTarget is a helper struct to store a target together with the content of its resolved secret reference.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"target": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Target contains the original target.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Target"),
+						},
+					},
+					"content": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Content contains the content of the target. If the target has a secret reference, this field should be filled by a TargetResolver. Otherwise, the inline configuration of the target is put here.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"target", "content"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Target"},
 	}
 }
 
