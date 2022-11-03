@@ -31,7 +31,9 @@ metadata:
 spec:
   type: landscaper.gardener.cloud/container
 
-  target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
+  target:
+    # only used to determine which instance of the container deployer is responsible,
+    # unless it is used explicitly in the custom code
     name: my-cluster
     namespace: test
 
@@ -69,6 +71,62 @@ When the image with your program is executed, it gets access to particular infor
   corresponding DeployItem was deleted and some optional cleanup could be done.
 - *Imports* are provided as a json file at the path given by the env var `IMPORTS_PATH`.
 - *Exports* should be written to a json or yaml file at the path given by the env var `EXPORTS_PATH`.
+- The content of the Target referenced in `.spec.target` is stored in a file at the path given by the env var `TARGET_PATH`.
+  - The file contains a json struct with two fields, `target` and `content`.
+    The first one contains the actual target, as it was read from the cluster, marshalled into json.
+    The second one contains the content of the target. If the target's `spec.secretRef` is set, this is the content of the resolved secret reference. Otherwise, the value is identical to the target's `spec.config`.
+
+    **Example**
+
+    Target:
+    ```yaml
+    apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: Target
+    metadata:
+      name: my-target
+      namespace: my-namespace
+    spec:
+      type: landscaper.gardener.cloud/my-target-type
+      secretRef:
+        key: secret1
+        name: my-secret
+    ```
+
+    Secret:
+    ```yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: my-secret
+      namespace: my-namespace
+    type: Opaque
+    data:
+      secret1: "eyJmb28iOiAiYmFyIn0=" # {"foo": "bar"}
+    ```
+
+    Content of the file at `TARGET_PATH`:
+    ```json
+    {
+      "target": {
+        "kind": "Target",
+        "apiVersion": "landscaper.gardener.cloud/v1alpha1",
+        "metadata": {
+          "name": "my-target",
+          "namespace": "my-namespace",
+        },
+        "spec": {
+          "type": "landscaper.gardener.cloud/my-target-type",
+          "secretRef": {
+            "name": "my-secret",
+            "key": "secret1"
+          }
+        }
+      },
+      "content": "{\"foo\": \"bar\"}"
+    }
+    ```
+
+    If the target didn't contain a secret reference, but `config: {foo: bar}` instead, the value of the `content` field would be the same.
 - An optional *state* should be written to the directory given by the env var `STATE_PATH`. The complete state 
   directory will be tarred and managed by Landscaper(:warning: no symlinks). The last state data are provided 
   in the next execution or your program. 
