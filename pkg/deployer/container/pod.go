@@ -258,6 +258,7 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		waitServiceAccountVolume,
 		sharedVolume,
 		configurationVolume,
+		targetVolume,
 	}
 
 	initMounts := []corev1.VolumeMount{configurationVolumeMount, targetVolumeMount, initServiceAccountMount, sharedVolumeMount}

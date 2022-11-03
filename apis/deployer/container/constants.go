@@ -87,7 +87,7 @@ const TargetPathName = "TARGET_PATH"
 const TargetFileName = "target.json"
 
 // TargetPath is the path to the target content file.
-var TargetPath = filepath.Join(SharedBasePath, TargetFileName)
+var TargetPath = filepath.Join(SharedBasePath, "targets", TargetFileName)
 
 // ContentPathName is the name of the env var that points to the blob content of the definition.
 const ContentPathName = "CONTENT_PATH"
