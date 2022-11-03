@@ -45,7 +45,7 @@ import (
 // AddControllerToManagerForTargetSyncs adds the controller to the manager
 func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Manager) error {
 	log := logger.Reconciles("targetSync", "TargetSync")
-	ctrl, err := NewTargetSyncController(log, mgr.GetClient())
+	ctrl, err := NewTargetSyncController(log, mgr.GetClient(), NewDefaultSourceClientProvider())
 	if err != nil {
 		return err
 	}
@@ -59,17 +59,19 @@ func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Man
 		Complete(ctrl)
 }
 
-// Controller is the TargetSync controller
+// TargetSyncController is the TargetSync controller
 type TargetSyncController struct {
-	log      logging.Logger
-	lsClient client.Client
+	log                  logging.Logger
+	lsClient             client.Client
+	sourceClientProvider SourceClientProvider
 }
 
-// NewController returns a new TargetSync controller
-func NewTargetSyncController(logger logging.Logger, c client.Client) (reconcile.Reconciler, error) {
+// NewTargetSyncController returns a new TargetSync controller
+func NewTargetSyncController(logger logging.Logger, c client.Client, p SourceClientProvider) (reconcile.Reconciler, error) {
 	ctrl := &TargetSyncController{
-		log:      logger,
-		lsClient: c,
+		log:                  logger,
+		lsClient:             c,
+		sourceClientProvider: p,
 	}
 
 	return ctrl, nil
@@ -130,7 +132,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 		err = fmt.Errorf("more than one TargetSync object in the same namespace is not allowed")
 		errors = append(errors, err)
 	} else {
-		sourceClient, restConfig, err := getSourceClient(ctx, targetSync, c.lsClient, nil)
+		sourceClient, restConfig, err := c.sourceClientProvider.GetSourceClient(ctx, targetSync, c.lsClient, nil)
 		if err != nil {
 			logger.Error(err, "fetching source client for target sync object failed")
 			errors = append(errors, err)

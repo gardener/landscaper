@@ -39,8 +39,8 @@ A *TargetSync* object looks as follows:
 ```yaml
 kind: TargetSync
 metadata:
-  name: <Namespace 1>
-  namespace: <some name>
+  name: <some name>
+  namespace: <Namespace 1>
 spec:
   sourceNamespace: <Other-Namespace 1>
   secretNameExpression: <some regex e.g. "\.kubeconfig$">

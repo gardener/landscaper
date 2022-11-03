@@ -236,7 +236,7 @@ func (f *Framework) WaitForSystemComponents(ctx context.Context) error {
 // NewState creates a new state with a test namespace.
 // It also returns a cleanup function that should be called when the test has finished.
 func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, error) {
-	state, err := envtest.InitStateWithNamespace(ctx, f.Client, f.logger)
+	state, err := envtest.InitStateWithNamespace(ctx, f.Client, f.logger, false)
 	if err != nil {
 		return nil, nil, err
 	}
