@@ -48,7 +48,7 @@ spec:
     key: <some key>
     name: example-target-sync
   tokenRotation: # optional
-    serviceAccountName: <service account name>
+    enabled: true/false
 ```
 
 The entries of a *TargetSync* object have the following meaning:
@@ -67,13 +67,33 @@ An example how to create a *TargetSync* object could be found
 
 ## Token Rotation
 
-In the field `tokenRotation.serviceAccountName` you could specify the service account name of a service account in the
-namespace from where the secrets should be synced. In that case the token in the kubeconfig of the secret referenced by
-the *TargetSync* object in `spec.secretRef` if rotated every 60 days whereby the lifetime of every token is 60 days.
-The service account used here is the same the one from which the initial kubeconfig in the referenced secret comes. 
+If the field `tokenRotation.enabled` is set on true, the token in the kubeconfig of the secret referenced by
+the *TargetSync* object in `spec.secretRef` if rotated every 60 days whereby the lifetime of new every token is 60 
+days. Thereby it is assumed that the kubeconfig in the secret has the following format (this is the format if you 
+download the kubeconfig of a Gardener service account, from the Gardener dashboard):
 
+```yaml
+apiVersion: v1
+kind: Config
+current-context: ...
+contexts:
+  - name: ...
+    context:
+      cluster: ...
+      user: ...
+      namespace: ...
+clusters:
+  - name: ...
+    cluster:
+      server: https://...
+users:
+  - name: <service account name>
+    user:
+      token: >-
+        eyJhbGciOiJSUzI1NiIsImtpZCI6IjBCOXVYUkd2ck0zdC1TMVUtMXFESWRNc1BPYzR...
+```
 
-
+Token rotation requires that the corresponding service account is allowed to request new tokens for itself.
 
 
 
