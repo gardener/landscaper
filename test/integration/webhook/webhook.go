@@ -146,5 +146,29 @@ func WebhookTest(f *framework.Framework) {
 			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
 			Expect(err.Error()).To(HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
 		})
+
+		It("should block invalid Target resources", func() {
+			// create invalid target (config and secretRef set)
+			target := &lsv1alpha1.Target{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-target",
+					Namespace: state.Namespace,
+				},
+				Spec: lsv1alpha1.TargetSpec{
+					Type:          "landscaper.gardener.cloud/test",
+					Configuration: lsv1alpha1.NewAnyJSONPointer([]byte("foo")),
+					SecretRef: &lsv1alpha1.SecretReference{
+						ObjectReference: lsv1alpha1.ObjectReference{
+							Name:      "foo",
+							Namespace: state.Namespace,
+						},
+					},
+				},
+			}
+
+			err := state.Create(ctx, target)
+			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
+			Expect(err.Error()).To(HavePrefix("admission webhook \"targets.validation.landscaper.gardener.cloud\" denied the request"))
+		})
 	})
 }

@@ -33,6 +33,11 @@ func defaultWebhookedResources() map[string]webhook.WebhookedResourceDefinition 
 			APIVersions:  []string{"v1alpha1"},
 			ResourceName: "executions",
 		},
+		"targets": {
+			APIGroup:     "landscaper.gardener.cloud",
+			APIVersions:  []string{"v1alpha1"},
+			ResourceName: "targets",
+		},
 	}
 }
 

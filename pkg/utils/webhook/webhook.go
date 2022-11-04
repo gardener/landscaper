@@ -28,13 +28,16 @@ import (
 func ValidatorFromResourceType(log logging.Logger, kubeClient client.Client, scheme *runtime.Scheme, resource string) (GenericValidator, error) {
 	abstrVal := newAbstractedValidator(log, kubeClient, scheme)
 	var val GenericValidator
-	if resource == "installations" {
+	switch resource {
+	case "installations":
 		val = &InstallationValidator{abstrVal}
-	} else if resource == "deployitems" {
+	case "deployitems":
 		val = &DeployItemValidator{abstrVal}
-	} else if resource == "executions" {
+	case "executions":
 		val = &ExecutionValidator{abstrVal}
-	} else {
+	case "targets":
+		val = &TargetValidator{abstrVal}
+	default:
 		return nil, fmt.Errorf("unable to find validator for resource type %q", resource)
 	}
 	return val, nil
@@ -187,4 +190,39 @@ func (ev *ExecutionValidator) handlePrivate(ctx context.Context, req admission.R
 	}
 
 	return admission.Allowed("Execution is valid")
+}
+
+// TARGET
+
+// TargetValidator represents a validator for a Target
+type TargetValidator struct{ abstractValidator }
+
+// Handle handles a request to the webhook
+func (tv *TargetValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	logger := tv.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+	ctx = logging.NewContext(ctx, logger)
+
+	timeBefore := time.Now()
+	result := tv.handlePrivate(ctx, req)
+
+	logIfDurationExceeded(ctx, timeBefore)
+
+	return result
+}
+
+func (tv *TargetValidator) handlePrivate(ctx context.Context, req admission.Request) admission.Response {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "TargetValidator.handlePrivate"})
+
+	logger.Debug("Received request")
+
+	t := &lscore.Target{}
+	if _, _, err := tv.decoder.Decode(req.Object.Raw, nil, t); err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if errs := validation.ValidateTarget(t); len(errs) > 0 {
+		return admission.Denied(errs.ToAggregate().Error())
+	}
+
+	return admission.Allowed("Target is valid")
 }
