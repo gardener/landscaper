@@ -184,7 +184,7 @@ type TargetBuilder struct {
 	Type          string
 	ObjectKey     *lsv1alpha1.ObjectReference
 	Configuration interface{}
-	Ref           *lsv1alpha1.SecretReference
+	Ref           *lsv1alpha1.LocalSecretReference
 	annotations   map[string]string
 }
 
@@ -219,7 +219,7 @@ func (b *TargetBuilder) Config(obj interface{}) *TargetBuilder {
 	return b
 }
 
-func (b *TargetBuilder) SecretRef(secretRef *lsv1alpha1.SecretReference) *TargetBuilder {
+func (b *TargetBuilder) SecretRef(secretRef *lsv1alpha1.LocalSecretReference) *TargetBuilder {
 	b.Ref = secretRef
 	return b
 }

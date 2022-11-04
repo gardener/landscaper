@@ -223,7 +223,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 				sr := secretresolver.New(c.lsClient)
 				rt, err = sr.Resolve(ctx, target)
 				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("error resolving secret reference (%s/%s#%s) in target '%s/%s': %w", target.Spec.SecretRef.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name, err)
+					return reconcile.Result{}, fmt.Errorf("error resolving secret reference (%s/%s#%s) in target '%s/%s': %w", target.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name, err)
 				}
 			} else {
 				rt = targetresolver.NewResolvedTarget(target)

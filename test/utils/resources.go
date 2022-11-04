@@ -189,11 +189,8 @@ func CreateKubernetesTargetFromSecret(namespace, name string, secret *corev1.Sec
 	target.Namespace = namespace
 
 	target.Spec.Type = targettypes.KubernetesClusterTargetType
-	target.Spec.SecretRef = &lsv1alpha1.SecretReference{
-		ObjectReference: lsv1alpha1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
+	target.Spec.SecretRef = &lsv1alpha1.LocalSecretReference{
+		Name: secret.Name,
 	}
 	if key != targettypes.DefaultKubeconfigKey {
 		target.Spec.SecretRef.Key = key

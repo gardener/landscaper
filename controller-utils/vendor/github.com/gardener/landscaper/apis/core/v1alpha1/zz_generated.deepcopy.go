@@ -2227,7 +2227,7 @@ func (in *TargetSpec) DeepCopyInto(out *TargetSpec) {
 	}
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		*out = new(SecretReference)
+		*out = new(LocalSecretReference)
 		**out = **in
 	}
 	return

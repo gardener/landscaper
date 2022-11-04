@@ -21,7 +21,7 @@ func NewResolvedTarget(target *lsv1alpha1.Target) *lsv1alpha1.ResolvedTarget {
 	res := &lsv1alpha1.ResolvedTarget{
 		Target: target,
 	}
-	if target.Spec.SecretRef == nil {
+	if target.Spec.SecretRef == nil && target.Spec.Configuration != nil {
 		res.Content = string(target.Spec.Configuration.RawMessage)
 	}
 	return res

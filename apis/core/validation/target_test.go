@@ -30,11 +30,8 @@ var _ = Describe("Target", func() {
 			t := &core.Target{
 				Spec: core.TargetSpec{
 					Configuration: core.NewAnyJSONPointer([]byte("foo")),
-					SecretRef: &core.SecretReference{
-						ObjectReference: core.ObjectReference{
-							Name:      "foo",
-							Namespace: "bar",
-						},
+					SecretRef: &core.LocalSecretReference{
+						Name: "foo",
 					},
 				},
 			}
@@ -49,11 +46,8 @@ var _ = Describe("Target", func() {
 		It("should accept a Target with a secretRef", func() {
 			t := &core.Target{
 				Spec: core.TargetSpec{
-					SecretRef: &core.SecretReference{
-						ObjectReference: core.ObjectReference{
-							Name:      "foo",
-							Namespace: "bar",
-						},
+					SecretRef: &core.LocalSecretReference{
+						Name: "foo",
 					},
 				},
 			}

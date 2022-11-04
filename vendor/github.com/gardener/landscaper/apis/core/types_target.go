@@ -46,7 +46,7 @@ type TargetSpec struct {
 	// Reference to a secret containing the target type specific configuration.
 	// Exactly one of the fields Configuration and SecretRef must be set
 	// +optional
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
+	SecretRef *LocalSecretReference `json:"secretRef,omitempty"`
 }
 
 // TargetTemplate exposes specific parts of a target that are used in the exports

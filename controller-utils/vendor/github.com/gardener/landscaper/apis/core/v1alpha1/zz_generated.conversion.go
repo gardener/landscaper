@@ -2978,7 +2978,7 @@ func Convert_core_TargetSelector_To_v1alpha1_TargetSelector(in *core.TargetSelec
 func autoConvert_v1alpha1_TargetSpec_To_core_TargetSpec(in *TargetSpec, out *core.TargetSpec, s conversion.Scope) error {
 	out.Type = core.TargetType(in.Type)
 	out.Configuration = (*core.AnyJSON)(unsafe.Pointer(in.Configuration))
-	out.SecretRef = (*core.SecretReference)(unsafe.Pointer(in.SecretRef))
+	out.SecretRef = (*core.LocalSecretReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 
@@ -2990,7 +2990,7 @@ func Convert_v1alpha1_TargetSpec_To_core_TargetSpec(in *TargetSpec, out *core.Ta
 func autoConvert_core_TargetSpec_To_v1alpha1_TargetSpec(in *core.TargetSpec, out *TargetSpec, s conversion.Scope) error {
 	out.Type = TargetType(in.Type)
 	out.Configuration = (*AnyJSON)(unsafe.Pointer(in.Configuration))
-	out.SecretRef = (*SecretReference)(unsafe.Pointer(in.SecretRef))
+	out.SecretRef = (*LocalSecretReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 
