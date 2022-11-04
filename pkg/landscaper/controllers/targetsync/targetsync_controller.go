@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/utils/pointer"
+
 	"gopkg.in/yaml.v3"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
@@ -115,7 +117,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 
 	return reconcile.Result{
 		Requeue:      true,
-		RequeueAfter: time.Minute * 5,
+		RequeueAfter: requeueInterval,
 	}, nil
 }
 
@@ -367,44 +369,48 @@ func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context
 }
 
 func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv1alpha1.TargetSync, restConfig *rest.Config) error {
-	if targetSync.Spec.TokenRotation != nil && targetSync.Spec.TokenRotation.Enabled {
-
+	if c.isTokenRotationEnabled(targetSync) && c.isTokenRotationDue(targetSync) {
 		logger, ctx := logging.FromContextOrNew(ctx, nil)
-		if metav1.HasAnnotation(targetSync.ObjectMeta, lsv1alpha1.RotateTokenAnnotation) ||
-			targetSync.Status.LastTokenRotationTime == nil ||
-			time.Since(targetSync.Status.LastTokenRotationTime.Time) > time.Hour*24*60 {
 
-			secret, kubeconfigObject, err := c.fetchSecretAndKubeconfigObject(ctx, targetSync)
-			if err != nil {
-				logger.Error(err, "fetching secret and kubeconfig failed for sync object")
-				return err
-			}
+		secret, kubeconfigObject, err := c.fetchSecretAndKubeconfigObject(ctx, targetSync)
+		if err != nil {
+			logger.Error(err, "fetching secret and kubeconfig failed for sync object")
+			return err
+		}
 
-			serviceAccountName, user, err := c.getServiceAccountNameAndUser(kubeconfigObject)
-			if err != nil {
-				logger.Error(err, "fetching service account name and user failed for sync object")
-				return err
-			}
+		serviceAccountName, user, err := c.getServiceAccountNameAndUser(kubeconfigObject)
+		if err != nil {
+			logger.Error(err, "fetching service account name and user failed for sync object")
+			return err
+		}
 
-			// fetch new token
-			newToken, err := c.fetchNewToken(ctx, targetSync.Spec.SourceNamespace, serviceAccountName, restConfig)
-			if err != nil {
-				logger.Error(err, "fetching new token for sync object")
-				return err
-			}
+		// fetch new token
+		newToken, err := c.fetchNewToken(ctx, targetSync.Spec.SourceNamespace, serviceAccountName, restConfig)
+		if err != nil {
+			logger.Error(err, "fetching new token for sync object")
+			return err
+		}
 
-			user["token"] = newToken
+		user["token"] = newToken
 
-			err = c.rotateTokenInSecret(ctx, targetSync, secret, kubeconfigObject)
-			if err != nil {
-				logger.Error(err, "rotating token in secret failed for sync object")
-				return err
-			}
-
+		err = c.rotateTokenInSecret(ctx, targetSync, secret, kubeconfigObject)
+		if err != nil {
+			logger.Error(err, "rotating token in secret failed for sync object")
+			return err
 		}
 	}
 
 	return nil
+}
+
+func (c *TargetSyncController) isTokenRotationEnabled(targetSync *lsv1alpha1.TargetSync) bool {
+	return targetSync.Spec.TokenRotation != nil && targetSync.Spec.TokenRotation.Enabled
+}
+
+func (c *TargetSyncController) isTokenRotationDue(targetSync *lsv1alpha1.TargetSync) bool {
+	return metav1.HasAnnotation(targetSync.ObjectMeta, lsv1alpha1.RotateTokenAnnotation) ||
+		targetSync.Status.LastTokenRotationTime == nil ||
+		time.Since(targetSync.Status.LastTokenRotationTime.Time) > tokenRotationInterval
 }
 
 func (c *TargetSyncController) fetchSecretAndKubeconfigObject(ctx context.Context,
@@ -503,11 +509,9 @@ func (c *TargetSyncController) getServiceAccountNameAndUser(
 func (c *TargetSyncController) fetchNewToken(ctx context.Context, namespace, serviceAccountName string, restConfig *rest.Config) (string, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
-	var expirationInSeconds int64 = 60 * 60 * 24 * 90
-
 	treq := &authenticationv1.TokenRequest{
 		Spec: authenticationv1.TokenRequestSpec{
-			ExpirationSeconds: &expirationInSeconds,
+			ExpirationSeconds: pointer.Int64(tokenExpirationSeconds),
 		},
 	}
 

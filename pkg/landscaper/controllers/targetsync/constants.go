@@ -4,9 +4,16 @@
 
 package targetsync
 
-import lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+import (
+	"time"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+)
 
 const (
-	labelKeyTargetSync = lsv1alpha1.LandscaperDomain + "/targetsync"
-	labelValueOk       = "ok"
+	requeueInterval              = 5 * time.Minute
+	tokenRotationInterval        = 60 * 24 * 60 * 60 * time.Second
+	tokenExpirationSeconds int64 = 90 * 24 * 60 * 60
+	labelKeyTargetSync           = lsv1alpha1.LandscaperDomain + "/targetsync"
+	labelValueOk                 = "ok"
 )
