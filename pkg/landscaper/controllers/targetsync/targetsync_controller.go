@@ -447,7 +447,6 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 
 	now := metav1.Now()
 	targetSync.Status.LastTokenRotationTime = &now
-	targetSync.Status.LastUpdateTime = now
 
 	if err := c.lsClient.Status().Update(ctx, targetSync); err != nil {
 		return err

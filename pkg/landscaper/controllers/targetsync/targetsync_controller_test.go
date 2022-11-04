@@ -6,6 +6,10 @@ package targetsync
 
 import (
 	"context"
+	"time"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -66,18 +70,34 @@ var _ = Describe("TargetSync Controller", func() {
 		}
 
 		checkTargetAndSecretDoNotExist := func(ctx context.Context, secretName string) {
-			target := &lsv1alpha1.Target{}
-			target.Name = secretName
-			target.Namespace = state.Namespace
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(target), target)).NotTo(Succeed())
+			Expect(wait.PollImmediate(time.Second, 10*time.Second, func() (done bool, err error) {
 
-			secret := &corev1.Secret{}
-			secret.Name = secretName
-			secret.Namespace = state.Namespace
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(secret), secret)).NotTo(Succeed())
+				target := &lsv1alpha1.Target{}
+				target.Name = secretName
+				target.Namespace = state.Namespace
+				err1 := state.Client.Get(ctx, kutil.ObjectKeyFromObject(target), target)
+				if err1 == nil {
+					return false, nil
+				} else if !errors.IsNotFound(err1) {
+					return false, err1
+				}
+
+				secret := &corev1.Secret{}
+				secret.Name = secretName
+				secret.Namespace = state.Namespace
+				err2 := state.Client.Get(ctx, kutil.ObjectKeyFromObject(target), target)
+				if err2 == nil {
+					return false, nil
+				} else if !errors.IsNotFound(err2) {
+					return false, err2
+				}
+
+				return true, nil
+
+			})).To(Succeed())
 		}
 
-		It("should sync targets", func() {
+		It("should sync Secrets and react to their updates", func() {
 			ctx := context.Background()
 
 			const (
@@ -97,9 +117,8 @@ var _ = Describe("TargetSync Controller", func() {
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
 
-			for _, secretName := range []string{secretName1, secretName2} {
-				checkTargetAndSecret(ctx, secretName)
-			}
+			checkTargetAndSecret(ctx, secretName1)
+			checkTargetAndSecret(ctx, secretName2)
 
 			// Update secret
 
@@ -112,9 +131,8 @@ var _ = Describe("TargetSync Controller", func() {
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
 
-			for _, secretName := range []string{secretName1, secretName2} {
-				checkTargetAndSecret(ctx, secretName)
-			}
+			checkTargetAndSecret(ctx, secretName1)
+			checkTargetAndSecret(ctx, secretName2)
 
 			// Delete secret
 
@@ -124,6 +142,54 @@ var _ = Describe("TargetSync Controller", func() {
 
 			checkTargetAndSecretDoNotExist(ctx, secretName1)
 			checkTargetAndSecret(ctx, secretName2)
+		})
+
+		It("should react to updates of the TargetSync object", func() {
+			ctx := context.Background()
+
+			const (
+				targetSyncName = "test-target-sync"
+				secretName1    = "cluster1.kubeconfig"
+				secretName2    = "cluster2.kubeconfig"
+			)
+
+			var err error
+			state, err = testenv.InitResourcesWithTwoNamespaces(ctx, "./testdata/state/test1")
+			Expect(err).ToNot(HaveOccurred())
+
+			tgs := &lsv1alpha1.TargetSync{}
+			tgs.Name = targetSyncName
+			tgs.Namespace = state.Namespace
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
+
+			checkTargetAndSecret(ctx, secretName1)
+			checkTargetAndSecret(ctx, secretName2)
+
+			// Update TargetSync object
+
+			tgs = &lsv1alpha1.TargetSync{}
+			tgs.Name = targetSyncName
+			tgs.Namespace = state.Namespace
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+
+			tgs.Spec.SecretNameExpression = "^" + secretName1 + "$"
+			testutils.ExpectNoError(state.Client.Update(ctx, tgs))
+
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
+
+			checkTargetAndSecret(ctx, secretName1)
+			checkTargetAndSecretDoNotExist(ctx, secretName2)
+
+			// Delete TargetSync object
+
+			testutils.ExpectNoError(state.Client.Delete(ctx, tgs))
+
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
+
+			checkTargetAndSecretDoNotExist(ctx, secretName1)
+			checkTargetAndSecretDoNotExist(ctx, secretName2)
 		})
 
 		It("should not sync if there is more than one TargetSync object", func() {
