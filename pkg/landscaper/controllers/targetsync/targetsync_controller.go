@@ -152,9 +152,10 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 		errorStrings = append(errorStrings, nextError.Error())
 	}
 
+	now := metav1.Now()
 	targetSync.Status.LastErrors = errorStrings
 	targetSync.Status.ObservedGeneration = targetSync.GetGeneration()
-	targetSync.Status.LastUpdateTime = metav1.Now()
+	targetSync.Status.LastUpdateTime = &now
 
 	if err = c.lsClient.Status().Update(ctx, targetSync); err != nil {
 		logger.Error(err, "updating status at the end of reconcile of target sync object failed")
@@ -176,9 +177,10 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 	if err != nil {
 		errorStrings = append(errorStrings, err.Error())
 
+		now := metav1.Now()
 		targetSync.Status.LastErrors = errorStrings
 		targetSync.Status.ObservedGeneration = targetSync.GetGeneration()
-		targetSync.Status.LastUpdateTime = metav1.Now()
+		targetSync.Status.LastUpdateTime = &now
 
 		if internalErr := c.lsClient.Status().Update(ctx, targetSync); err != nil {
 			logger.Error(err, "updating status with error for deleting target sync object failed")

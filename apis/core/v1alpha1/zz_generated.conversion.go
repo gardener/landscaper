@@ -3057,7 +3057,7 @@ func Convert_core_TargetSyncSpec_To_v1alpha1_TargetSyncSpec(in *core.TargetSyncS
 
 func autoConvert_v1alpha1_TargetSyncStatus_To_core_TargetSyncStatus(in *TargetSyncStatus, out *core.TargetSyncStatus, s conversion.Scope) error {
 	out.ObservedGeneration = in.ObservedGeneration
-	out.LastUpdateTime = in.LastUpdateTime
+	out.LastUpdateTime = (*metav1.Time)(unsafe.Pointer(in.LastUpdateTime))
 	out.LastErrors = *(*[]string)(unsafe.Pointer(&in.LastErrors))
 	out.LastTokenRotationTime = (*metav1.Time)(unsafe.Pointer(in.LastTokenRotationTime))
 	return nil
@@ -3070,7 +3070,7 @@ func Convert_v1alpha1_TargetSyncStatus_To_core_TargetSyncStatus(in *TargetSyncSt
 
 func autoConvert_core_TargetSyncStatus_To_v1alpha1_TargetSyncStatus(in *core.TargetSyncStatus, out *TargetSyncStatus, s conversion.Scope) error {
 	out.ObservedGeneration = in.ObservedGeneration
-	out.LastUpdateTime = in.LastUpdateTime
+	out.LastUpdateTime = (*metav1.Time)(unsafe.Pointer(in.LastUpdateTime))
 	out.LastErrors = *(*[]string)(unsafe.Pointer(&in.LastErrors))
 	out.LastTokenRotationTime = (*metav1.Time)(unsafe.Pointer(in.LastTokenRotationTime))
 	return nil

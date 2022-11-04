@@ -66,7 +66,7 @@ type TargetSyncStatus struct {
 
 	// Last time the status was updated
 	// +optional
-	LastUpdateTime metav1.Time `json:"lastUpdateTime"`
+	LastUpdateTime *metav1.Time `json:"lastUpdateTime,omitempty"`
 
 	// LastErrors describe the last errors
 	// +optional
