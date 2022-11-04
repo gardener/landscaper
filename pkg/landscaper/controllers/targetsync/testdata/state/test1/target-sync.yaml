@@ -9,5 +9,3 @@ spec:
     key: kubeconfig
     name: test-target-sync
   sourceNamespace: {{ .Namespace2 }}
-status:
-  lastUpdateTime: "2022-11-02T14:31:19Z"

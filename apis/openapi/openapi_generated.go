@@ -6708,7 +6708,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncStatus(ref common.ReferenceC
 					},
 					"lastUpdateTime": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Last time the status.",
+							Description: "Last time the status was updated",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
@@ -6735,7 +6735,6 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncStatus(ref common.ReferenceC
 						},
 					},
 				},
-				Required: []string{"lastUpdateTime"},
 			},
 		},
 		Dependencies: []string{

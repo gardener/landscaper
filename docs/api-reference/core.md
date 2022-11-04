@@ -5313,7 +5313,8 @@ Kubernetes meta/v1.Time
 </em>
 </td>
 <td>
-<p>Last time the status.</p>
+<em>(Optional)</em>
+<p>Last time the status was updated</p>
 </td>
 </tr>
 <tr>
