@@ -1,0 +1,13 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: TargetSync
+metadata:
+  name: test-target-sync-1
+  namespace: {{ .Namespace }}
+spec:
+  secretNameExpression: \.kubeconfig$
+  secretRef:
+    key: kubeconfig
+    name: test-target-sync
+  sourceNamespace: {{ .Namespace2 }}
+status:
+  lastUpdateTime: "2022-11-02T14:31:19Z"
