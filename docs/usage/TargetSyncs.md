@@ -37,6 +37,7 @@ for a namespace, the Landscaper stops synchronizing secrets for this namespace a
 A *TargetSync* object looks as follows:
 
 ```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: TargetSync
 metadata:
   name: <some name>
