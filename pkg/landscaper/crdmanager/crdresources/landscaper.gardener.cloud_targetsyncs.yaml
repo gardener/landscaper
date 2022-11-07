@@ -1,0 +1,94 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: targetsyncs.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: TargetSync
+    plural: targetsyncs
+    shortNames:
+    - tgs
+    singular: targetsync
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: The TargetSync is created targets from secrets.
+        properties:
+          spec:
+            description: Spec contains the specification
+            properties:
+              secretNameExpression:
+                description: SecretNameExpression defines the names of the secrets
+                  which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax
+                  if not set all secrets are synced
+                type: string
+              secretRef:
+                description: SecretRef references the secret that contains the kubeconfig
+                  to the namespace of the secrets to be synced.
+                properties:
+                  key:
+                    description: Key is the name of the key in the secret that holds
+                      the data.
+                    type: string
+                  name:
+                    description: Name is the name of the secret
+                    type: string
+                required:
+                - name
+                type: object
+              sourceNamespace:
+                description: SourceNamespace describes the namespace from where the
+                  secrets should be synced
+                type: string
+              tokenRotation:
+                description: TokenRotation defines the data to perform an automatic
+                  rotation of the token to access the source cluster with the secrets
+                  to sync. The token expires after 90 days and will be rotated every
+                  60 days.
+                properties:
+                  enabled:
+                    description: Enabled defines if automatic token is executed
+                    type: boolean
+                type: object
+            required:
+            - sourceNamespace
+            - secretRef
+            type: object
+          status:
+            description: Status contains the status
+            properties:
+              lastErrors:
+                description: LastErrors describe the last errors
+                items:
+                  type: string
+                type: array
+              lastTokenRotationTime:
+                description: Last time the token was rotated
+                format: date-time
+                type: string
+              lastUpdateTime:
+                description: Last time the status was updated
+                format: date-time
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

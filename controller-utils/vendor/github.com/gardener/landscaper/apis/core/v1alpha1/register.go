@@ -61,6 +61,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&EnvironmentList{},
 		&DeployerRegistration{},
 		&DeployerRegistrationList{},
+		&TargetSync{},
+		&TargetSyncList{},
 	)
 	if err := RegisterConversions(scheme); err != nil {
 		return err
@@ -87,6 +89,7 @@ var ResourceDefinition = func() lsschema.CustomResourceDefinitions {
 			DeployerRegistrationDefinition,
 			EnvironmentDefinition,
 			ComponentVersionOverwritesDefinition,
+			TargetSyncDefinition,
 		},
 	}
 }()

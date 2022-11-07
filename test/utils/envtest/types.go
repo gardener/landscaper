@@ -20,6 +20,7 @@ var (
 	DeployItemGVK   schema.GroupVersionKind
 	DataObjectGVK   schema.GroupVersionKind
 	TargetGVK       schema.GroupVersionKind
+	TargetSyncGVK   schema.GroupVersionKind
 	ContextGVK      schema.GroupVersionKind
 	SecretGVK       schema.GroupVersionKind
 	ConfigMapGVK    schema.GroupVersionKind
@@ -36,6 +37,8 @@ func init() {
 	DataObjectGVK, err = apiutil.GVKForObject(&lsv1alpha1.DataObject{}, api.LandscaperScheme)
 	utilruntime.Must(err)
 	TargetGVK, err = apiutil.GVKForObject(&lsv1alpha1.Target{}, api.LandscaperScheme)
+	utilruntime.Must(err)
+	TargetSyncGVK, err = apiutil.GVKForObject(&lsv1alpha1.TargetSync{}, api.LandscaperScheme)
 	utilruntime.Must(err)
 	ContextGVK, err = apiutil.GVKForObject(&lsv1alpha1.Context{}, api.LandscaperScheme)
 	utilruntime.Must(err)

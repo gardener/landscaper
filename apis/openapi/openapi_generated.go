@@ -155,8 +155,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetList":                                         schema_landscaper_apis_core_v1alpha1_TargetList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector":                                     schema_landscaper_apis_core_v1alpha1_TargetSelector(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSpec":                                         schema_landscaper_apis_core_v1alpha1_TargetSpec(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSync":                                         schema_landscaper_apis_core_v1alpha1_TargetSync(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSyncList":                                     schema_landscaper_apis_core_v1alpha1_TargetSyncList(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSyncSpec":                                     schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSyncStatus":                                   schema_landscaper_apis_core_v1alpha1_TargetSyncStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetTemplate":                                     schema_landscaper_apis_core_v1alpha1_TargetTemplate(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TemplateExecutor":                                   schema_landscaper_apis_core_v1alpha1_TemplateExecutor(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation":                                      schema_landscaper_apis_core_v1alpha1_TokenRotation(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference":                               schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef":                                           schema_landscaper_apis_core_v1alpha1_ValueRef(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":                      schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
@@ -6542,6 +6547,200 @@ func schema_landscaper_apis_core_v1alpha1_TargetSpec(ref common.ReferenceCallbac
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_TargetSync(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "The TargetSync is created targets from secrets.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec contains the specification",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetSyncSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status contains the status",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetSyncStatus"),
+						},
+					},
+				},
+				Required: []string{"spec"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSyncSpec", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSyncStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_TargetSyncList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TargetSyncList contains a list of TargetSync objects",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetSync"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSync", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TargetSyncSpec contains the specification for a TargetSync.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"sourceNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SourceNamespace describes the namespace from where the secrets should be synced",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"secretRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecretRef references the secret that contains the kubeconfig to the namespace of the secrets to be synced.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"),
+						},
+					},
+					"secretNameExpression": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecretNameExpression defines the names of the secrets which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax if not set all secrets are synced",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"tokenRotation": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the secrets to sync. The token expires after 90 days and will be rotated every 60 days.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation"),
+						},
+					},
+				},
+				Required: []string{"sourceNamespace", "secretRef"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_TargetSyncStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TargetSyncStatus contains the status of a TargetSync.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ObservedGeneration is the most recent generation observed.",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"lastUpdateTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Last time the status was updated",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"lastErrors": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastErrors describe the last errors",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"lastTokenRotationTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Last time the token was rotated",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_TargetTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6652,6 +6851,25 @@ func schema_landscaper_apis_core_v1alpha1_TemplateExecutor(ref common.ReferenceC
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_TokenRotation(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enabled defines if automatic token is executed",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

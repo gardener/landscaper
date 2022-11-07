@@ -38,11 +38,13 @@ type State struct {
 	mux           sync.Mutex
 	Client        client.Client
 	Namespace     string
+	Namespace2    string
 	Installations map[string]*lsv1alpha1.Installation
 	Executions    map[string]*lsv1alpha1.Execution
 	DeployItems   map[string]*lsv1alpha1.DeployItem
 	DataObjects   map[string]*lsv1alpha1.DataObject
 	Targets       map[string]*lsv1alpha1.Target
+	TargetSyncs   map[string]*lsv1alpha1.TargetSync
 	Secrets       map[string]*corev1.Secret
 	ConfigMaps    map[string]*corev1.ConfigMap
 	Generic       map[string]client.Object
@@ -62,6 +64,7 @@ func NewState(log utils.Logger) *State {
 		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
 		DataObjects:   make(map[string]*lsv1alpha1.DataObject),
 		Targets:       make(map[string]*lsv1alpha1.Target),
+		TargetSyncs:   make(map[string]*lsv1alpha1.TargetSync),
 		Secrets:       make(map[string]*corev1.Secret),
 		ConfigMaps:    make(map[string]*corev1.ConfigMap),
 		Generic:       make(map[string]client.Object),
@@ -97,6 +100,8 @@ func (s *State) AddResources(objects ...client.Object) error {
 			s.DataObjects[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		case *lsv1alpha1.Target:
 			s.Targets[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
+		case *lsv1alpha1.TargetSync:
+			s.TargetSyncs[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		case *corev1.Secret:
 			// add stringdata and data
 			if o.Data == nil {
@@ -431,6 +436,11 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 			return err
 		}
 	}
+	for _, obj := range s.TargetSyncs {
+		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+			return err
+		}
+	}
 	for _, obj := range s.Secrets {
 		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
 			return err
@@ -459,8 +469,22 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 		}
 	}
 
+	if err := s.cleanupNamespace(ctx, c, s.Namespace, options, timeout); err != nil {
+		return err
+	}
+
+	if len(s.Namespace2) > 0 {
+		if err := s.cleanupNamespace(ctx, c, s.Namespace2, options, timeout); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *State) cleanupNamespace(ctx context.Context, c client.Client, namespace string, options *CleanupOptions, timeout *time.Duration) error {
 	ns := &corev1.Namespace{}
-	ns.Name = s.Namespace
+	ns.Name = namespace
 	if err := c.Delete(ctx, ns); err != nil {
 		return err
 	}

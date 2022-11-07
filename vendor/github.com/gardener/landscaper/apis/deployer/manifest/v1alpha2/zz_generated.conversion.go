@@ -75,7 +75,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*manifest.ProviderStatus)(nil), (*ProviderStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+	if err := s.AddConversionFunc((*manifest.ProviderStatus)(nil), (*ProviderStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_manifest_ProviderStatus_To_v1alpha2_ProviderStatus(a.(*manifest.ProviderStatus), b.(*ProviderStatus), scope)
 	}); err != nil {
 		return err
