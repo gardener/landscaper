@@ -198,7 +198,7 @@ func (c *Constructor) aggregateTargetsInContext(ctx context.Context) (map[string
 
 	aggTargets := map[string]interface{}{}
 	for _, target := range targetList.Items {
-		meta := dataobjects.GetMetadataFromObject(&target, target.Spec.Configuration.RawMessage)
+		meta := dataobjects.GetMetadataFromObject(&target, dataobjects.GetHashableContent(&target))
 		raw, err := json.Marshal(target)
 		if err != nil {
 			return nil, fmt.Errorf("error while encoding target %s: %w", target.Name, err)

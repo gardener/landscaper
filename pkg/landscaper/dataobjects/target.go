@@ -6,6 +6,7 @@ package dataobjects
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +29,8 @@ type TargetExtension struct {
 // NewTargetExtension creates a new internal target instance from a raw target.
 func NewTargetExtension(target *lsv1alpha1.Target, targetImport *lsv1alpha1.TargetImport) *TargetExtension {
 	metadata := Metadata{}
-	if target != nil && target.Spec.Configuration.RawMessage != nil {
-		metadata = GetMetadataFromObject(target, target.Spec.Configuration.RawMessage)
+	if target != nil {
+		metadata = GetMetadataFromObject(target, GetHashableContent(target))
 	}
 	return &TargetExtension{
 		target:   target,
@@ -93,8 +94,23 @@ func (t *TargetExtension) Apply(target *lsv1alpha1.Target) error {
 		kutil.SetMetaDataLabel(target, key, val)
 	}
 	tmpMetadata := t.metadata
-	tmpMetadata.Hash = generateHash(t.target.Spec.Configuration.RawMessage)
+	tmpMetadata.Hash = generateHash(GetHashableContent(t.target))
 	SetMetadataFromObject(target, tmpMetadata)
+	return nil
+}
+
+// GetHashableContent returns the value of the Target based on which its hash can be computed.
+// This is either .Spec.Configuration.RawMessage or a json representation of .Spec.SecretRef.
+// If neither is set (or the given target is nil), nil is returned.
+func GetHashableContent(t *lsv1alpha1.Target) []byte {
+	if t == nil {
+		return nil
+	}
+	if t.Spec.Configuration != nil {
+		return t.Spec.Configuration.RawMessage
+	} else if t.Spec.SecretRef != nil {
+		return []byte(fmt.Sprintf(`{"secretRef": {"name": "%s", "key": "%s"}}`, t.Spec.SecretRef.Name, t.Spec.SecretRef.Key))
+	}
 	return nil
 }
 
