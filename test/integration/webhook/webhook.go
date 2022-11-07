@@ -156,7 +156,7 @@ func WebhookTest(f *framework.Framework) {
 				},
 				Spec: lsv1alpha1.TargetSpec{
 					Type:          "landscaper.gardener.cloud/test",
-					Configuration: lsv1alpha1.NewAnyJSONPointer([]byte("foo")),
+					Configuration: lsv1alpha1.NewAnyJSONPointer([]byte(`{"foo": "bar"}`)),
 					SecretRef: &lsv1alpha1.LocalSecretReference{
 						Name: "foo",
 					},
