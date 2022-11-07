@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -64,8 +65,7 @@ var _ = Describe("TargetSync Controller", func() {
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(secret), secret))
 
 			Expect(target.Spec.SecretRef.Name).To(Equal(secret.Name))
-			Expect(target.Spec.SecretRef.Namespace).To(Equal(secret.Namespace))
-			Expect(target.Spec.Type).To(Equal(lsv1alpha1.KubernetesClusterTargetType))
+			Expect(target.Spec.Type).To(Equal(targettypes.KubernetesClusterTargetType))
 			Expect(secret.Data).To(Equal(sourceSecret.Data))
 		}
 
