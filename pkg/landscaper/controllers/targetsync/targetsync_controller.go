@@ -9,39 +9,31 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/utils/pointer"
-
-	"gopkg.in/yaml.v3"
-
-	authenticationv1 "k8s.io/api/authentication/v1"
-	"k8s.io/client-go/kubernetes"
-
-	"k8s.io/client-go/rest"
-
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	corev1 "k8s.io/api/core/v1"
-	controllerruntime "sigs.k8s.io/controller-runtime"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-
 	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
+	"gopkg.in/yaml.v3"
+	authenticationv1 "k8s.io/api/authentication/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+	"k8s.io/utils/pointer"
+	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutils "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 // AddControllerToManagerForTargetSyncs adds the controller to the manager
@@ -378,7 +370,7 @@ func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv
 			return err
 		}
 
-		serviceAccountName, user, err := c.getServiceAccountNameAndUser(kubeconfigObject)
+		serviceAccountName, user, err := c.getServiceAccountNameAndAuthInfo(kubeconfigObject)
 		if err != nil {
 			logger.Error(err, "fetching service account name and user failed for sync object")
 			return err
@@ -391,7 +383,7 @@ func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv
 			return err
 		}
 
-		user["token"] = newToken
+		user.Token = newToken
 
 		err = c.rotateTokenInSecret(ctx, targetSync, secret, kubeconfigObject)
 		if err != nil {
@@ -414,7 +406,7 @@ func (c *TargetSyncController) isTokenRotationDue(targetSync *lsv1alpha1.TargetS
 }
 
 func (c *TargetSyncController) fetchSecretAndKubeconfigObject(ctx context.Context,
-	targetSync *lsv1alpha1.TargetSync) (*corev1.Secret, map[string]interface{}, error) {
+	targetSync *lsv1alpha1.TargetSync) (*corev1.Secret, *clientcmdapi.Config, error) {
 
 	secret := &corev1.Secret{}
 	secretKey := client.ObjectKey{
@@ -431,18 +423,28 @@ func (c *TargetSyncController) fetchSecretAndKubeconfigObject(ctx context.Contex
 		return nil, nil, fmt.Errorf("no kubeconfig in secret to rotate for sync object")
 	}
 
-	kubeConfic := map[string]interface{}{}
-	if err := yaml.Unmarshal(kubeconfigBytes, kubeConfic); err != nil {
+	clientConfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
+	if err != nil {
 		return nil, nil, err
 	}
 
-	return secret, kubeConfic, nil
+	kubeConfig, err := clientConfig.RawConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return secret, &kubeConfig, nil
 }
 
 func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSync *lsv1alpha1.TargetSync, secret *corev1.Secret,
-	kubeConfigObject map[string]interface{}) error {
+	kubeConfigObject *clientcmdapi.Config) error {
 
-	kubeconfigBytes, err := yaml.Marshal(kubeConfigObject)
+	kubeConfigObjectV1 := clientcmdapiv1.Config{}
+	if err := clientcmdapiv1.Convert_api_Config_To_v1_Config(kubeConfigObject, &kubeConfigObjectV1, nil); err != nil {
+		return err
+	}
+
+	kubeconfigBytes, err := yaml.Marshal(kubeConfigObjectV1)
 	if err != nil {
 		return err
 	}
@@ -453,57 +455,27 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 		return err
 	}
 
-	now := metav1.Now()
-	targetSync.Status.LastTokenRotationTime = &now
-
-	if err := c.lsClient.Status().Update(ctx, targetSync); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func (c *TargetSyncController) getServiceAccountNameAndUser(
-	kubeConfigObject map[string]interface{}) (string, map[string]interface{}, error) {
+func (c *TargetSyncController) getServiceAccountNameAndAuthInfo(
+	kubeConfigObject *clientcmdapi.Config) (string, *clientcmdapi.AuthInfo, error) {
 
-	var item interface{}
-
-	item, ok := kubeConfigObject["users"]
-	if !ok || item == nil {
-		return "", nil, fmt.Errorf("no users in kubeconfig for sync object")
-	}
-	var users []interface{}
-	users, ok = item.([]interface{})
-	if !ok || len(users) != 1 {
-		return "", nil, fmt.Errorf("users in kubeconfig invalid for sync object")
+	authInfos := kubeConfigObject.AuthInfos
+	if len(authInfos) != 1 {
+		return "", nil, fmt.Errorf("authInfos in kubeconfig invalid for sync object")
 	}
 
-	item = users[0]
-	userEntry, ok := item.(map[string]interface{})
-	if !ok {
-		return "", nil, fmt.Errorf("userEntry in kubeconfig invalid for sync object")
+	serviceAccountName := ""
+	var authInfo *clientcmdapi.AuthInfo
+
+	for k, v := range authInfos {
+		serviceAccountName = k
+		authInfo = v
+		break
 	}
 
-	item, ok = userEntry["name"]
-	if !ok {
-		return "", nil, fmt.Errorf("no name in user entry in kubeconfig for sync object")
-	}
-	serviceAccountName, ok := item.(string)
-	if !ok {
-		return "", nil, fmt.Errorf("no name in user entry in kubeconfig for sync object")
-	}
-
-	item, ok = userEntry["user"]
-	if !ok {
-		return "", nil, fmt.Errorf("no user in user entry in kubeconfig for sync object")
-	}
-
-	user, ok := item.(map[string]interface{})
-	if !ok {
-		return "", nil, fmt.Errorf("user in user entry has wrong format in kubeconfig for sync object")
-	}
-
-	return serviceAccountName, user, nil
+	return serviceAccountName, authInfo, nil
 }
 
 func (c *TargetSyncController) fetchNewToken(ctx context.Context, namespace, serviceAccountName string, restConfig *rest.Config) (string, error) {
