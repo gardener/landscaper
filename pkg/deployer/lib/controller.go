@@ -188,6 +188,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			return reconcile.Result{}, err
 		}
 
+		logger.Error(nil, "generating a new jobID, because of a test-reconcile annotation")
 		di.Status.JobID = uuid.New().String()
 		if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000148, di); err != nil {
 			return reconcile.Result{}, err
