@@ -71,7 +71,7 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 		obj.DeployerManagement.Agent.Namespace = obj.DeployerManagement.Namespace
 	}
 	if len(obj.DeployerManagement.Agent.LandscaperNamespace) == 0 {
-		obj.DeployerManagement.Agent.LandscaperNamespace = obj.DeployerManagement.Agent.Namespace
+		obj.DeployerManagement.Agent.LandscaperNamespace = obj.DeployerManagement.Namespace
 	}
 	if obj.DeployerManagement.Agent.OCI == nil {
 		obj.DeployerManagement.Agent.OCI = obj.Registry.OCI

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	lsutil "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/go-logr/logr"
@@ -180,6 +182,21 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
 	}
 
+	if lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation) {
+
+		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		logger.Info("generating a new jobID, because of a test-reconcile annotation")
+		di.Status.JobID = uuid.New().String()
+		if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000148, di); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{}, nil
+	}
+
 	if di.Status.GetJobID() != di.Status.JobIDFinished {
 		if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
 			di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
@@ -205,6 +222,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 		return reconcile.Result{}, c.handleReconcileResult(ctx, err, old, di)
 	} else {
+		logger.Info("deploy item not reconciled because no new job ID")
 		return reconcile.Result{}, nil
 	}
 }
@@ -287,6 +305,18 @@ func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1
 
 	if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000004, di); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *controller) removeTestReconcileAnnotation(ctx context.Context, di *lsv1alpha1.DeployItem) lserrors.LsError {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(di).String()})
+
+	logger.Info("remove test-reconcile annotation")
+	delete(di.Annotations, lsv1alpha1.OperationAnnotation)
+	if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000149, di); client.IgnoreNotFound(err) != nil {
+		return lserrors.NewWrappedError(err, "RemoveTestReconcileAnnotation", "UpdateDeployItem", err.Error())
 	}
 
 	return nil

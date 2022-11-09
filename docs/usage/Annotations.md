@@ -48,6 +48,16 @@ Afterwards the annotation is removed from the execution.
 
 Setting this annotation at a deploy item has no effect.
 
+## Test Reconcile Annotation
+
+**Annotation:** `landscaper.gardener.cloud/operation: test-reconcile`
+
+With this annotation the processing of a deploy item could be started. This annotation must be used only in test
+scenarios because it breaks the overall logic of the processing of installations and their sub-installations, executions
+and deploy items.
+
+This annotation has no effect at installations and executions.
+
 ## Delete-Without-Uninstall Annotation
 
 **Annotation:** `landscaper.gardener.cloud/delete-without-uninstall: true`
@@ -60,3 +70,5 @@ afterwards a deletion of the installation has the following effect:
   deploy items such that they could be deleted.
 
 Note that you have to add the annotation **before** you delete the installation.
+
+

@@ -211,14 +211,11 @@ type Error struct {
 type Operation string
 
 const (
-	// ReconcileOperation is an annotation for the landscaper to reconcile resources (installations, subinstallations,
-	// executions, deploy items). If set at an installations/execution it triggers a reconcile for all dependent
-	// resources for which something has changed (spec or imports) or which are in a failed state with a save strategy
-	// (e.g. no predecessor is running).
-	// If set at a deploy item it triggers a reconcile even if nothing has changed or the phase is not failed.
+	// ReconcileOperation is an annotation for the landscaper to reconcile root installations.
+	// If set it triggers a reconciliation for all dependent resources.
 	ReconcileOperation Operation = "reconcile"
 
-	// ForceReconcileOperation forces the landscaper to not wait for children (executions nor subinstallations) to be completed.
+	// ForceReconcileOperation is currently not used.
 	ForceReconcileOperation Operation = "force-reconcile"
 
 	// AbortOperation is the annotation to let the landscaper abort all currently running children and itself.
@@ -228,6 +225,10 @@ const (
 	// installation and its subinstallations. It differs from abort by not waiting some time such that the responsible
 	// deployer could do some cleanup.
 	InterruptOperation Operation = "interrupt"
+
+	// TestReconcileOperation is only used for test purposes. If set at a DeployItem, it triggers a reconciliation
+	// of that DeployItem. It must not be used in a productive scenario.
+	TestReconcileOperation Operation = "test-reconcile"
 )
 
 // ObjectReference is the reference to a kubernetes object.
