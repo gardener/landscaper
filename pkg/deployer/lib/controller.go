@@ -188,7 +188,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			return reconcile.Result{}, err
 		}
 
-		logger.Error(nil, "generating a new jobID, because of a test-reconcile annotation")
+		logger.Info("generating a new jobID, because of a test-reconcile annotation")
 		di.Status.JobID = uuid.New().String()
 		if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000148, di); err != nil {
 			return reconcile.Result{}, err
@@ -313,7 +313,7 @@ func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1
 func (c *controller) removeTestReconcileAnnotation(ctx context.Context, di *lsv1alpha1.DeployItem) lserrors.LsError {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(di).String()})
 
-	logger.Error(nil, "remove test-reconcile annotation: this is only an error if this happens on a productive system")
+	logger.Info("remove test-reconcile annotation")
 	delete(di.Annotations, lsv1alpha1.OperationAnnotation)
 	if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000149, di); client.IgnoreNotFound(err) != nil {
 		return lserrors.NewWrappedError(err, "RemoveTestReconcileAnnotation", "UpdateDeployItem", err.Error())
