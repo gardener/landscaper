@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v3"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserrors "github.com/gardener/landscaper/apis/errors"
