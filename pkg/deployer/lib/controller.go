@@ -222,6 +222,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 		return reconcile.Result{}, c.handleReconcileResult(ctx, err, old, di)
 	} else {
+		logger.Info("deploy item not reconciled because no new job ID")
 		return reconcile.Result{}, nil
 	}
 }
