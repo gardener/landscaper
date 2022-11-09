@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -32,6 +33,7 @@ import (
 	"github.com/gardener/component-cli/ociclient/credentials"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	containercore "github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/container"
@@ -162,6 +164,17 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			return fmt.Errorf("unable to write imported values: %w", err)
 		}
 	}
+
+	// copy target to shared volume
+	targetSource := filepath.Join(containercore.TargetInitDir, containercore.TargetFileName)
+	targetContent, err := vfs.ReadFile(fs, targetSource)
+	if err != nil {
+		return fmt.Errorf("error reading target content from '%s': %w", targetSource, err)
+	}
+	if err := vfs.WriteFile(fs, opts.TargetFilePath, targetContent, os.ModePerm); err != nil {
+		return fmt.Errorf("error writing target content to '%s': %w", opts.TargetFilePath, err)
+	}
+	log.Info("Copied target content to shared volume.")
 
 	log.Info("Restoring state")
 	if err := state.New(kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StateDirPath).WithFs(fs).Restore(ctx); err != nil {

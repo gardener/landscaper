@@ -208,20 +208,16 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 			},
 		},
 	}
-	targetVolumeMount := corev1.VolumeMount{
+	targetInitVolumeMount := corev1.VolumeMount{
 		Name:      targetVolume.Name,
 		ReadOnly:  true,
-		MountPath: filepath.Dir(container.TargetPath),
+		MountPath: container.TargetInitDir,
 	}
 
 	additionalInitEnvVars := []corev1.EnvVar{
 		{
 			Name:  container.ConfigurationPathName,
 			Value: container.ConfigurationPath,
-		},
-		{
-			Name:  container.TargetPathName,
-			Value: container.TargetPath,
 		},
 		{
 			Name:  container.DeployItemName,
@@ -261,7 +257,7 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		targetVolume,
 	}
 
-	initMounts := []corev1.VolumeMount{configurationVolumeMount, targetVolumeMount, initServiceAccountMount, sharedVolumeMount}
+	initMounts := []corev1.VolumeMount{configurationVolumeMount, targetInitVolumeMount, initServiceAccountMount, sharedVolumeMount}
 
 	for name, v := range map[string]string{
 		"blueprint-pull-secret": opts.BluePrintPullSecret,
