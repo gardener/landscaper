@@ -2,14 +2,14 @@ exports:
   landscaperControllerKubeconfigYaml: |
     apiVersion: v1
     kind: Config
-    current-context: virtual-cluster
+    current-context: landscaper-cluster
     contexts:
-    - name: virtual-cluster
+    - name: landscaper-cluster
       context:
-        cluster: virtual-cluster
+        cluster: landscaper-cluster
         user: landscaper-controller
     clusters:
-    - name: virtual-cluster
+    - name: landscaper-cluster
       cluster:
         certificate-authority-data: {{ index .values "deployitems" "landscaper-rbac" "landscaperControllerCaCrt" }}
         server: {{ index .values "dataobjects" "shootClusterEndpoint" }}:443
@@ -21,14 +21,14 @@ exports:
   landscaperWebhooksKubeconfigYaml: |
     apiVersion: v1
     kind: Config
-    current-context: virtual-cluster
+    current-context: landscaper-cluster
     contexts:
-    - name: virtual-cluster
+    - name: landscaper-cluster
       context:
-        cluster: virtual-cluster
+        cluster: landscaper-cluster
         user: landscaper-webhooks
     clusters:
-    - name: virtual-cluster
+    - name: landscaper-cluster
       cluster:
         certificate-authority-data: {{ index .values "deployitems" "landscaper-rbac" "landscaperWebhooksCaCrt" }}
         server: {{ index .values "dataobjects" "shootClusterEndpoint" }}:443
@@ -40,14 +40,14 @@ exports:
   landscaperUserKubeconfigYaml: |
     apiVersion: v1
     kind: Config
-    current-context: virtual-cluster
+    current-context: landscaper-cluster
     contexts:
-    - name: virtual-cluster
+    - name: landscaper-cluster
       context:
-        cluster: virtual-cluster
+        cluster: landscaper-cluster
         user: landscaper-user
     clusters:
-    - name: virtual-cluster
+    - name: landscaper-cluster
       cluster:
         certificate-authority-data: {{ index .values "deployitems" "landscaper-rbac" "landscaperUserCaCrt" }}
         server: {{ index .values "dataobjects" "shootClusterEndpoint" }}:443
