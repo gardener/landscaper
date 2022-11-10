@@ -17,12 +17,17 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/pkg/deployer/container"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/utils"
 
@@ -236,5 +241,166 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(json.Unmarshal(stateExport.Data.RawMessage, &stateData))
 		Expect(stateData).To(HaveKey("count"))
 		Expect(stateData["count"]).To(BeEquivalentTo(2))
+	})
+
+	Context("Targets", func() {
+
+		var (
+			cdi                           *lsv1alpha1.DeployItem
+			targetName                    = "test-target"
+			secretName                    = "test-secret"
+			targetContent                 = []byte(`{"foo": "bar"}`)
+			expectedTargetContentAsObject interface{}
+		)
+
+		BeforeEach(func() {
+			utils.ExpectNoError(json.Unmarshal(targetContent, &expectedTargetContentAsObject))
+			conf := containerv1alpha1.ProviderConfiguration{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "container.deployer.landscaper.gardener.cloud/v1alpha1",
+					Kind:       "ProviderConfiguration",
+				},
+				Image:   "alpine",
+				Command: []string{"/bin/sh"},
+				Args:    []string{"-c", "cp $TARGET_PATH $EXPORTS_PATH"},
+			}
+			rawConf, err := json.Marshal(conf)
+			utils.ExpectNoError(err)
+
+			cdi = &lsv1alpha1.DeployItem{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-",
+					Namespace:    state.Namespace,
+				},
+				Spec: lsv1alpha1.DeployItemSpec{
+					Type: container.Type,
+					Target: &lsv1alpha1.ObjectReference{
+						Name:      targetName,
+						Namespace: state.Namespace,
+					},
+					Configuration: &runtime.RawExtension{
+						Raw: rawConf,
+					},
+				},
+			}
+			lsv1alpha1helper.SetOperation(&cdi.ObjectMeta, lsv1alpha1.TestReconcileOperation)
+		})
+
+		It("should make the Target content available inside the container - inline configuration", func() {
+			target := &lsv1alpha1.Target{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      targetName,
+					Namespace: state.Namespace,
+				},
+				Spec: lsv1alpha1.TargetSpec{
+					Type:          "landscaper.gardener.cloud/test",
+					Configuration: lsv1alpha1.NewAnyJSONPointer(targetContent),
+				},
+			}
+			utils.ExpectNoError(state.Create(ctx, target))
+			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
+
+			utils.ExpectNoError(state.Create(ctx, cdi))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhaseSucceeded, 3*time.Minute))
+
+			exportSecret := &v1.Secret{}
+			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
+			Expect(exportSecret.Data).To(HaveKey(lsv1alpha1.DataObjectSecretDataKey))
+			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
+			rt := &lsv1alpha1.ResolvedTarget{}
+			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
+			Expect(rt.Target).To(Equal(target))
+			var actualTargetContentAsObject interface{}
+			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
+			Expect(actualTargetContentAsObject).To(Equal(expectedTargetContentAsObject))
+		})
+
+		It("should make the Target content available inside the container - secretRef with key", func() {
+			secretKey := "key"
+			secret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secretName,
+					Namespace: state.Namespace,
+				},
+				Data: map[string][]byte{
+					secretKey: targetContent,
+				},
+			}
+			utils.ExpectNoError(state.Create(ctx, secret))
+			target := &lsv1alpha1.Target{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      targetName,
+					Namespace: state.Namespace,
+				},
+				Spec: lsv1alpha1.TargetSpec{
+					Type: "landscaper.gardener.cloud/test",
+					SecretRef: &lsv1alpha1.LocalSecretReference{
+						Name: secretName,
+						Key:  secretKey,
+					},
+				},
+			}
+			utils.ExpectNoError(state.Create(ctx, target))
+			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
+
+			utils.ExpectNoError(state.Create(ctx, cdi))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhaseSucceeded, 3*time.Minute))
+
+			exportSecret := &v1.Secret{}
+			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
+			Expect(exportSecret.Data).To(HaveKey(lsv1alpha1.DataObjectSecretDataKey))
+			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
+			rt := &lsv1alpha1.ResolvedTarget{}
+			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
+			Expect(rt.Target).To(Equal(target))
+			var actualTargetContentAsObject interface{}
+			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
+			Expect(actualTargetContentAsObject).To(Equal(expectedTargetContentAsObject))
+		})
+
+		It("should make the Target content available inside the container - secretRef without key", func() {
+			targetContentAsStringMap := map[string]string{}
+			utils.ExpectNoError(json.Unmarshal(targetContent, &targetContentAsStringMap))
+			secret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secretName,
+					Namespace: state.Namespace,
+				},
+				Data: map[string][]byte{},
+			}
+			for k, v := range targetContentAsStringMap {
+				secret.Data[k] = []byte(v)
+			}
+			utils.ExpectNoError(state.Create(ctx, secret))
+			target := &lsv1alpha1.Target{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      targetName,
+					Namespace: state.Namespace,
+				},
+				Spec: lsv1alpha1.TargetSpec{
+					Type: "landscaper.gardener.cloud/test",
+					SecretRef: &lsv1alpha1.LocalSecretReference{
+						Name: secretName,
+					},
+				},
+			}
+			utils.ExpectNoError(state.Create(ctx, target))
+			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
+
+			utils.ExpectNoError(state.Create(ctx, cdi))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhaseSucceeded, 3*time.Minute))
+
+			exportSecret := &v1.Secret{}
+			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
+			Expect(exportSecret.Data).To(HaveKey(lsv1alpha1.DataObjectSecretDataKey))
+			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
+			rt := &lsv1alpha1.ResolvedTarget{}
+			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
+			Expect(rt.Target).To(Equal(target))
+			var actualTargetContentAsObject interface{}
+			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
+			Expect(actualTargetContentAsObject).To(Equal(expectedTargetContentAsObject))
+		})
+
 	})
 }
