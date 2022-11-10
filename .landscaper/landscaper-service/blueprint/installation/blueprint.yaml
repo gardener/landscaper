@@ -75,11 +75,18 @@ exports:
         The API server endpoint at which the landscaper is available.
       type: string
 
-  - name: landscaperClusterKubeconfig
+  - name: landscaperUserKubeconfig
     type: data
     schema:
       description: |
-        The Kubernetes kubeconfig which can be used to connect to the API server (Base64 encoded).
+        The user kubeconfig which can be used to connect to the API server (Base64 encoded).
+      type: string
+
+  - name: landscaperAdminKubeconfig
+    type: data
+    schema:
+      description: |
+        The admin kubeconfig which can be used to connect to the API server (Base64 encoded).
       type: string
 
 exportExecutions:
@@ -88,7 +95,8 @@ exportExecutions:
     template: |
       exports:
         landscaperClusterEndpoint: {{ .values.dataobjects.shootClusterEndpoint }}
-        landscaperClusterKubeconfig: {{ .values.dataobjects.landscaperUserKubeconfigYaml | b64enc }}
+        landscaperUserKubeconfig: {{ .values.dataobjects.landscaperUserKubeconfigYaml | b64enc }}
+        landscaperAdminKubeconfig: {{ .values.dataobjects.shootClusterKubeconfig | b64enc }}
 
 subinstallations:
   - file: /shoot-cluster-subinst.yaml
