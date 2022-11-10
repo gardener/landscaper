@@ -74,7 +74,7 @@ When the image with your program is executed, it gets access to particular infor
 - The content of the Target referenced in `.spec.target` is stored in a file at the path given by the env var `TARGET_PATH`.
   - The file contains a json struct with two fields, `target` and `content`.
     The first one contains the actual target, as it was read from the cluster, marshalled into json.
-    The second one contains the content of the target. If the target's `spec.secretRef` is set, this is the content of the resolved secret reference. Otherwise, the value is identical to the target's `spec.config`.
+    The second one contains the content of the target. If the target's `spec.secretRef` is set, this is the content of the resolved secret reference. Otherwise, the value is identical (JSON-wise) to the target's `spec.config`.
 
     **Example**
 
