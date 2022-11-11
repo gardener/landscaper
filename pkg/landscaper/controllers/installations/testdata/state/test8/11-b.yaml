@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: b
+  namespace: {{ .Namespace }}
+  deletionTimestamp: "2021-11-11T11:11:00Z"
+  labels:
+    "landscaper.gardener.cloud/encompassed-by": root
+  annotations:
+    "landscaper.gardener.cloud/subinstallation-name": b
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: Installation
+    name: root
+    uid: abc-def-root
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
+spec:
+
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: example.com/root
+
+  blueprint:
+    ref:
+      resourceName: res-b
+
+  imports:
+    data:
+    - name: b.a
+      dataRef: a.z
+
+  exports:
+    data:
+    - name: b.y
+      dataRef: b.z
+
+status:
+  phase: DeleteFailed
+  jobID: job2
+  jobIDFinished: job2
+  configGeneration: ""
+
+  imports:
+  - name: b.a
+    configGeneration: ""
+
