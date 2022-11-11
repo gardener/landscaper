@@ -25,7 +25,7 @@ imports:
     type: data
     schema:
       description: |
-        The "targetClusterNamespace" is the namespace in the target shoot cluster into which the landscaper resources are getting installed.
+        The "targetClusterNamespace" is the namespace in the target shoot cluster into which the deployer installations are getting installed.
       type: string
 
   - name: shootName
