@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 imports:
-  shootCluster:
+  gardenerServiceAccount:
     metadata:
-      name: test-cluster
+      name: service-account
       namespace: default
     spec:
       type: landscaper.gardener.cloud/kubernetes-cluster
@@ -16,7 +16,7 @@ imports:
           clusters:
             - name: test
               cluster:
-                server: 'https://api.test.local'
+                server: 'https://api.gardener.service.account.local'
                 certificate-authority-data: >-
                   askadsklasoijasdlm
           contexts:
@@ -31,5 +31,17 @@ imports:
                 token: >-
                   abcdefghij
 
-  targetClusterNamespace: "default"
-  shootClusterEndpoint: "10.0.0.1"
+  name: test-shoot
+  namespace: garden-test
+  labels:
+    landscaper-service.gardener.cloud.tenantid: "12345"
+    landscaper-service.gardener.cloud.deploymentid: "00001"
+
+  shootConfig:
+    provider:
+      type: gcp
+      zone: europe-west1-c
+    region: europe-west1
+    secretBindingName: shoot-cluster-gcp-secret
+    kubernetes:
+      version: 1.24.6

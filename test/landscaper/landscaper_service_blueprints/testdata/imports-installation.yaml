@@ -31,11 +31,51 @@ imports:
                 token: >-
                   abcdefghij
 
+  gardenerServiceAccount:
+    metadata:
+      name: service-account
+      namespace: default
+    spec:
+      type: landscaper.gardener.cloud/kubernetes-cluster
+      config:
+        kubeconfig: |
+          apiVersion: v1
+          kind: Config
+          clusters:
+            - name: test
+              cluster:
+                server: 'https://api.gardener.service.account.local'
+                certificate-authority-data: >-
+                  askadsklasoijasdlm
+          contexts:
+            - name: test
+              context:
+                cluster: test
+                user: testuser
+          current-context: test
+          users:
+            - name: testuser
+              user:
+                token: >-
+                  abcdefghij
+
   hostingClusterNamespace: "default"
-  deleteHostingClusterNamespace: true
-  virtualClusterNamespace: "default"
-  providerType: "gcp"
-  dnsAccessDomain: "test.local"
+  targetClusterNamespace: "ls-system"
+
+  shootName: test-shoot
+  shootNamespace: garden-test
+  shootLabels:
+    landscaper-service.gardener.cloud.tenantid: "12345"
+    landscaper-service.gardener.cloud.deploymentid: "00001"
+
+  shootConfig:
+    provider:
+      type: gcp
+      zone: europe-west1-c
+    region: europe-west1
+    secretBindingName: shoot-cluster-gcp-secret
+    kubernetes:
+      version: 1.24.6
 
   registryConfig:
     cache:
@@ -46,7 +86,7 @@ imports:
 
   landscaperConfig:
     landscaper:
-      verbosity: 2
+      verbosity: info
       replicas: 1
       resources: {}
     webhooksServer:
@@ -60,7 +100,7 @@ imports:
       helm:
         resources: {}
       container:
-        verbosity: 10
+        verbosity: debug
         replicas: 1
         resources: {}
       manifest:
