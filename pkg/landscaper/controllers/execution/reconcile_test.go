@@ -7,6 +7,8 @@ package execution_test
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -96,6 +98,67 @@ var _ = Describe("Reconcile", func() {
 		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))).To(BeTrue(), "expect the deploy item to be deleted")
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))).To(BeTrue(), "expect the execution to be deleted")
+	})
+
+	It("should cleanup the abort annotation of deploy items", func() {
+		ctx := context.Background()
+
+		var err error
+		state, err = testenv.InitResources(ctx, "./testdata/test3")
+		testutils.ExpectNoError(err)
+		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+
+		// Read execution
+		exec := state.Executions[state.Namespace+"/exec-1"]
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
+
+		// Reconcile the execution
+		_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
+
+		// Check orphaned deploy item
+		di := state.DeployItems[state.Namespace+"/di-b"]
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+		Expect(di.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, lsv1alpha1.AbortOperation))
+		Expect(di.ObjectMeta.Annotations).NotTo(HaveKey(lsv1alpha1.AbortTimestampAnnotation))
+		Expect(di.Status.JobID).To(Equal(exec.Status.JobID))
+
+		// Delete orphaned deploy item
+		Expect(state.Client.Delete(ctx, di)).To(Succeed())
+		controllerutil.RemoveFinalizer(di, lsv1alpha1.LandscaperFinalizer)
+		Expect(state.Client.Update(ctx, di)).To(Succeed())
+
+		// Reconcile the execution
+		_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
+
+		// Check deploy item
+		di = state.DeployItems[state.Namespace+"/di-a"]
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+		Expect(di.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, lsv1alpha1.AbortOperation))
+		Expect(di.ObjectMeta.Annotations).NotTo(HaveKey(lsv1alpha1.AbortTimestampAnnotation))
+		Expect(di.Status.JobID).To(Equal(exec.Status.JobID))
+	})
+
+	It("should cleanup the abort annotation of deploy items during delete", func() {
+		ctx := context.Background()
+
+		var err error
+		state, err = testenv.InitResources(ctx, "./testdata/test4")
+		testutils.ExpectNoError(err)
+		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+
+		// Read execution
+		exec := state.Executions[state.Namespace+"/exec-1"]
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
+
+		// Reconcile the execution
+		_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
+
+		// Check deploy item
+		di := state.DeployItems[state.Namespace+"/di-a"]
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+
+		Expect(di.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, lsv1alpha1.AbortOperation))
+		Expect(di.ObjectMeta.Annotations).NotTo(HaveKey(lsv1alpha1.AbortTimestampAnnotation))
 	})
 
 	Context("Context", func() {
