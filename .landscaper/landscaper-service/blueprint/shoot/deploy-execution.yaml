@@ -36,7 +36,7 @@ deployItems:
                 values:
                   - value: "True"
 
-      deleteTimeout: 30m
+      deleteTimeout: 120m
 
       manifests:
         - policy: manage
