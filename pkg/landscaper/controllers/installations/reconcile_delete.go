@@ -25,13 +25,15 @@ import (
 
 var (
 	SiblingImportError = errors.New("a sibling still imports some of the exports")
+	SiblingDeleteError = errors.New("deletion of a sibling failed")
 )
 
 func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (fatalError lserrors.LsError, normalError lserrors.LsError) {
 	op := "handleDeletionPhaseInit"
 
-	if err := c.deleteAllowed(ctx, inst); err != nil {
-		return nil, lserrors.NewWrappedError(err, op, "deleteAllowed", err.Error())
+	fatalError, normalError = c.deleteAllowed(ctx, inst)
+	if fatalError != nil || normalError != nil {
+		return fatalError, normalError
 	}
 
 	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
@@ -177,42 +179,67 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 	return true, false, nil
 }
 
-func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Installation) (fatalError lserrors.LsError, normalError lserrors.LsError) {
 	op := "DeleteInstallationAllowed"
 
 	v, ok := inst.GetAnnotations()[lsv1alpha1.DeleteIgnoreSuccessors]
 	if ok && v == "true" {
-		return nil
+		return nil, nil
 	}
 
 	_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
 	if err != nil {
-		return lserrors.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			op, "CalculateInstallationContext", err.Error(), lsv1alpha1.ErrorInternalProblem)
 	}
 
 	// check if suitable for deletion
-	if checkIfSiblingImports(inst, installations.CreateInternalInstallationBases(siblings...)) {
-		return lserrors.NewWrappedError(SiblingImportError,
-			op, "SiblingImport", SiblingImportError.Error())
-	}
-
-	return nil
+	return checkIfSiblingImports(inst, installations.CreateInternalInstallationBases(siblings...))
 }
 
 // checkIfSiblingImports checks if a sibling imports any of the installations exports.
-func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installations.InstallationAndImports) bool {
+func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installations.InstallationAndImports) (fatalError lserrors.LsError, normalError lserrors.LsError) {
 	for _, sibling := range siblings {
-		for _, dataImport := range inst.Spec.Exports.Data {
-			if sibling.IsImportingData(dataImport.DataRef) {
-				return true
-			}
-		}
-		for _, targetImport := range inst.Spec.Exports.Targets {
-			if sibling.IsImportingData(targetImport.Target) {
-				return true
-			}
+		if isSuccessor(inst, sibling) {
+			return checkSuccessorSibling(inst, sibling)
 		}
 	}
+
+	return nil, nil
+}
+
+// isSuccessor determines whether the given sibling imports any DataObject or Target that the given inst exports.
+func isSuccessor(inst *lsv1alpha1.Installation, sibling *installations.InstallationAndImports) bool {
+	for _, dataImport := range inst.Spec.Exports.Data {
+		if sibling.IsImportingData(dataImport.DataRef) {
+			return true
+		}
+	}
+
+	for _, targetImport := range inst.Spec.Exports.Targets {
+		if sibling.IsImportingData(targetImport.Target) {
+			return true
+		}
+	}
+
 	return false
+}
+
+// checkSuccessorSibling is called during the deletion of an installation (parameter "inst")
+// for each successor sibling that still exists (parameter "sibling"). There are two cases:
+//   - If the deletion of "sibling" has failed (with same jobID), the deletion of "inst" must also fail.
+//     This is achieved by a fatal error.
+//   - Otherwise, the existence of "sibling" means that "inst" cannot yet be deleted, but must be checked again later.
+//     This is achieved by a normal error.
+func checkSuccessorSibling(inst *lsv1alpha1.Installation, sibling *installations.InstallationAndImports) (fatalError lserrors.LsError, normalError lserrors.LsError) {
+	op := "CheckSuccessorSibling"
+
+	if inst.Status.JobID == sibling.GetInstallation().Status.JobIDFinished &&
+		sibling.GetInstallation().Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed {
+		return lserrors.NewWrappedError(SiblingDeleteError,
+			op, "SiblingDeleteError", SiblingDeleteError.Error()), nil
+	}
+
+	return nil, lserrors.NewWrappedError(SiblingImportError,
+		op, "SiblingImport", SiblingImportError.Error())
 }

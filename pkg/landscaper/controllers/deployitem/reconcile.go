@@ -170,8 +170,6 @@ func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, di *lsv
 	logger = logger.WithValues(lc.KeyMethod, "writeAbortingTimeoutExceeded")
 	logger.Info("aborting timeout occurred")
 
-	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
-
 	di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
 	di.Status.JobIDFinished = di.Status.GetJobID()
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
@@ -186,11 +184,6 @@ func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, di *lsv
 	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000111, di); err != nil {
 		// we might need to expose this as event on the deploy item
 		logger.Error(err, "unable to set deployitem status")
-		return err
-	}
-
-	if err := con.Writer().UpdateDeployItem(ctx, read_write_layer.W000109, di); err != nil {
-		logger.Error(err, "unable to update deploy item")
 		return err
 	}
 

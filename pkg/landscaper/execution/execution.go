@@ -60,8 +60,6 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 }
 
 func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassification, lserrors.LsError) {
-	op := "TriggerDeployItems"
-
 	items, orphaned, lsErr := o.getDeployItems(ctx)
 	if lsErr != nil {
 		return nil, lsErr
@@ -78,17 +76,8 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 		if !classificationOfOrphans.HasFailedItems() {
 			deletableItems := classificationOfOrphans.GetRunnableItems()
 			for _, item := range deletableItems {
-				key := kutil.ObjectKeyFromObject(item.DeployItem)
-				di := &lsv1alpha1.DeployItem{}
-				if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
-					return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
-				}
-
-				di.Status.SetJobID(o.exec.Status.JobID)
-				now := metav1.Now()
-				di.Status.JobIDGenerationTime = &now
-				if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
-					return nil, lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
+				if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+					return nil, err
 				}
 			}
 		}
@@ -106,17 +95,8 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 	if !classification.HasFailedItems() {
 		runnableItems := classification.GetRunnableItems()
 		for _, item := range runnableItems {
-			key := kutil.ObjectKeyFromObject(item.DeployItem)
-			di := &lsv1alpha1.DeployItem{}
-			if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
-				return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
-			}
-
-			di.Status.SetJobID(o.exec.Status.JobID)
-			now := metav1.Now()
-			di.Status.JobIDGenerationTime = &now
-			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000089, di); err != nil {
-				return nil, lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
+			if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -151,22 +131,37 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 	if !classification.HasFailedItems() {
 		deletableItems := classification.GetRunnableItems()
 		for _, item := range deletableItems {
-			key := kutil.ObjectKeyFromObject(item.DeployItem)
-			di := &lsv1alpha1.DeployItem{}
-			if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
-				return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
-			}
-
-			di.Status.SetJobID(o.exec.Status.JobID)
-			now := metav1.Now()
-			di.Status.JobIDGenerationTime = &now
-			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
-				return nil, lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
+			if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+				return nil, err
 			}
 		}
 	}
 
 	return classification, nil
+}
+
+func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.DeployItem) lserrors.LsError {
+	op := "TriggerDeployItem"
+
+	key := kutil.ObjectKeyFromObject(di)
+	di = &lsv1alpha1.DeployItem{}
+	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
+		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
+	}
+
+	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
+	if err := o.Writer().UpdateDeployItem(ctx, read_write_layer.W000109, di); err != nil {
+		return lserrors.NewWrappedError(err, op, "UpdateDeployItem", err.Error())
+	}
+
+	di.Status.SetJobID(o.exec.Status.JobID)
+	now := metav1.Now()
+	di.Status.JobIDGenerationTime = &now
+	if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
+		return lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
+	}
+
+	return nil
 }
 
 func (o *Operation) getDeployItems(ctx context.Context) ([]*executionItem, []lsv1alpha1.DeployItem, lserrors.LsError) {

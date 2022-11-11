@@ -108,6 +108,29 @@ var _ = Describe("Delete", func() {
 			Expect(ann).To(Equal("true"))
 
 		})
+
+		It("should fail if a successor has failed", func() {
+			ctx := context.Background()
+
+			var err error
+			state, err = testenv.InitResources(ctx, "./testdata/state/test8")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+
+			inst := state.Installations[state.Namespace+"/a"]
+			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleteFailed)).To(BeTrue())
+			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeTrue())
+
+			inst = state.Installations[state.Namespace+"/root"]
+			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleteFailed)).To(BeTrue())
+			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeTrue())
+		})
 	})
 
 	Context("Controller", func() {
@@ -216,5 +239,4 @@ var _ = Describe("Delete", func() {
 			}, 20*time.Second, 1*time.Second).Should(Succeed(), "the installation should be deleted")
 		})
 	})
-
 })
