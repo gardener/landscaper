@@ -80,6 +80,18 @@ const ComponentDescriptorPathName = "COMPONENT_DESCRIPTOR_PATH"
 // ComponentDescriptorPath is the path to the component descriptor file.
 var ComponentDescriptorPath = filepath.Join(SharedBasePath, "component_descriptor.json")
 
+// TargetPathName is the name of the env var that points to the target content.
+const TargetPathName = "TARGET_PATH"
+
+// TargetFileName is the name of the file that contains the target content.
+const TargetFileName = "target.json"
+
+// TargetPath is the path to the target content file.
+var TargetPath = filepath.Join(SharedBasePath, "targets", TargetFileName)
+
+// TargetInitDir is the directory in which the target is mounted in the init container, which then copies it to TargetPath.
+var TargetInitDir = filepath.Join(BasePath, "targets")
+
 // ContentPathName is the name of the env var that points to the blob content of the definition.
 const ContentPathName = "CONTENT_PATH"
 
@@ -149,6 +161,10 @@ var (
 		{
 			Name:  ComponentDescriptorPathName,
 			Value: ComponentDescriptorPath,
+		},
+		{
+			Name:  TargetPathName,
+			Value: TargetPath,
 		},
 		{
 			Name:  ContentPathName,

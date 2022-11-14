@@ -213,11 +213,11 @@ var _ = Describe("Constructor", func() {
 			for _, next := range res {
 				if next.GetMetadata().Key == "root.y" {
 					Expect(next.GetTarget().Spec.Type).To(Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")))
-					Expect(next.GetTarget().Spec.Configuration).To(Equal(lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-a"`)}))
+					Expect(next.GetTarget().Spec.Configuration).To(Equal(&lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-a"`)}))
 					Expect(next.GetMetadata().SourceType).To(Equal((lsv1alpha1.ExportDataObjectSourceType)))
 				} else {
 					Expect(next.GetTarget().Spec.Type).To(Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")))
-					Expect(next.GetTarget().Spec.Configuration).To(Equal(lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-e"`)}))
+					Expect(next.GetTarget().Spec.Configuration).To(Equal(&lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-e"`)}))
 					Expect(next.GetMetadata().SourceType).To(Equal((lsv1alpha1.ExportDataObjectSourceType)))
 					Expect(next.GetMetadata().Key).To(Equal(("root.z")))
 				}

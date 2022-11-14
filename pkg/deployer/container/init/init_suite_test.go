@@ -37,6 +37,7 @@ var _ = Describe("Constructor", func() {
 	var (
 		ctrl       *gomock.Controller
 		fakeClient *mock_client.MockClient
+		fs         vfs.FileSystem
 	)
 
 	BeforeEach(func() {
@@ -49,10 +50,15 @@ var _ = Describe("Constructor", func() {
 		Expect(os.Setenv(container.StatePathName, container.StatePath)).To(Succeed())
 		Expect(os.Setenv(container.ContentPathName, container.ContentPath)).To(Succeed())
 		Expect(os.Setenv(container.ComponentDescriptorPathName, container.ComponentDescriptorPath)).To(Succeed())
+		Expect(os.Setenv(container.TargetPathName, container.TargetPath)).To(Succeed())
 
 		utils.ExpectNoError(os.Setenv(container.DeployItemName, "dummy"))
 		utils.ExpectNoError(os.Setenv(container.DeployItemNamespaceName, "val"))
 		utils.ExpectNoError(os.Setenv(container.PodNamespaceName, "default"))
+
+		fs = memoryfs.New()
+		Expect(fs.MkdirAll(container.TargetInitDir, os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, filepath.Join(container.TargetInitDir, container.TargetFileName), []byte(`{"foo": "bar"}`), os.ModePerm)).To(Succeed()) // fake target file
 	})
 
 	AfterEach(func() {
@@ -65,15 +71,14 @@ var _ = Describe("Constructor", func() {
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete()
-		memFs := memoryfs.New()
 
 		file, err := os.ReadFile("./testdata/00-di-simple.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
-		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
+		Expect(fs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, fs)).To(Succeed())
 
-		dataBytes, err := vfs.ReadFile(memFs, container.ImportsPath)
+		dataBytes, err := vfs.ReadFile(fs, container.ImportsPath)
 		Expect(err).ToNot(HaveOccurred())
 		var data interface{}
 		Expect(json.Unmarshal(dataBytes, &data)).To(Succeed())
@@ -86,15 +91,14 @@ var _ = Describe("Constructor", func() {
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete()
-		memFs := memoryfs.New()
 
 		file, err := os.ReadFile("./testdata/01-di-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
-		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
+		Expect(fs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, fs)).To(Succeed())
 
-		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		info, err := vfs.ReadDir(fs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(info).To(HaveLen(1))
 		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
@@ -106,15 +110,14 @@ var _ = Describe("Constructor", func() {
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete()
-		memFs := memoryfs.New()
 
 		file, err := os.ReadFile("./testdata/02-di-inline-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
-		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
+		Expect(fs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, fs)).To(Succeed())
 
-		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		info, err := vfs.ReadDir(fs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(info).To(HaveLen(1))
 		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
@@ -126,15 +129,14 @@ var _ = Describe("Constructor", func() {
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete()
-		memFs := memoryfs.New()
 
 		file, err := os.ReadFile("./testdata/01-di-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
-		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
+		Expect(fs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, fs)).To(Succeed())
 
-		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
+		data, err := vfs.ReadFile(fs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
 
 		cd := &cdv2.ComponentDescriptorList{}
@@ -148,15 +150,14 @@ var _ = Describe("Constructor", func() {
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete()
-		memFs := memoryfs.New()
 
 		file, err := os.ReadFile("./testdata/03-di-inline-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
-		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
+		Expect(fs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, fs)).To(Succeed())
 
-		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
+		data, err := vfs.ReadFile(fs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
 
 		cd := &cdv2.ComponentDescriptorList{}
@@ -170,15 +171,14 @@ var _ = Describe("Constructor", func() {
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete()
-		memFs := memoryfs.New()
 
 		file, err := os.ReadFile("./testdata/04-di-inline-bp-no-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
-		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
+		Expect(fs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, fs)).To(Succeed())
 
-		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		info, err := vfs.ReadDir(fs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(info).To(HaveLen(1))
 		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
@@ -190,20 +190,19 @@ var _ = Describe("Constructor", func() {
 		fakeClient.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete()
-		memFs := memoryfs.New()
 
 		file, err := os.ReadFile("./testdata/05-di-inline-bp-inline-cd.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
-		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
+		Expect(fs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, fs)).To(Succeed())
 
-		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		info, err := vfs.ReadDir(fs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(info).To(HaveLen(1))
 		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
 
-		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
+		data, err := vfs.ReadFile(fs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
 		cd := &cdv2.ComponentDescriptorList{}
 		Expect(codec.Decode(data, cd)).To(Succeed())
@@ -217,15 +216,14 @@ var _ = Describe("Constructor", func() {
 		opts := &options{}
 		opts.Complete()
 		opts.RegistrySecretBasePath = "/unexisting/path"
-		memFs := memoryfs.New()
 
 		file, err := os.ReadFile("./testdata/01-di-blueprint.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
-		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, opts, fakeClient, memFs)).To(Succeed())
+		Expect(fs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(fs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, opts, fakeClient, fs)).To(Succeed())
 
-		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		info, err := vfs.ReadDir(fs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(info).To(HaveLen(1))
 		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))

@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutils "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -258,13 +259,10 @@ func (c *TargetSyncController) handleSecret(ctx context.Context, targetSync *lsv
 
 func (c *TargetSyncController) createOrUpdateTarget(ctx context.Context, targetSync *lsv1alpha1.TargetSync, secret *corev1.Secret) error {
 	targetSpec := lsv1alpha1.TargetSpec{
-		Type: lsv1alpha1.KubernetesClusterTargetType,
-		SecretRef: &lsv1alpha1.SecretReference{
-			ObjectReference: lsv1alpha1.ObjectReference{
-				Name:      secret.Name,
-				Namespace: targetSync.Namespace,
-			},
-			Key: lsv1alpha1.DefaultKubeconfigKey,
+		Type: targettypes.KubernetesClusterTargetType,
+		SecretRef: &lsv1alpha1.LocalSecretReference{
+			Name: secret.Name,
+			Key:  targettypes.DefaultKubeconfigKey,
 		},
 	}
 

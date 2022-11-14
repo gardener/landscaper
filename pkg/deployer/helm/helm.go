@@ -7,7 +7,6 @@ package helm
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -19,13 +18,14 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	helmv1alpha1validation "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation"
@@ -63,7 +63,7 @@ type Helm struct {
 	Configuration  helmv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
-	Target                *lsv1alpha1.Target
+	Target                *lsv1alpha1.ResolvedTarget
 	Context               *lsv1alpha1.Context
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
@@ -79,7 +79,7 @@ func New(helmconfig helmv1alpha1.Configuration,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	item *lsv1alpha1.DeployItem,
-	target *lsv1alpha1.Target,
+	rt *lsv1alpha1.ResolvedTarget,
 	lsCtx *lsv1alpha1.Context,
 	sharedCache cache.Cache) (*Helm, error) {
 
@@ -110,7 +110,7 @@ func New(helmconfig helmv1alpha1.Configuration,
 		hostKubeClient:        hostKubeClient,
 		Configuration:         helmconfig,
 		DeployItem:            item,
-		Target:                target,
+		Target:                rt,
 		Context:               lsCtx,
 		ProviderConfiguration: config,
 		ProviderStatus:        status,
@@ -217,24 +217,14 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 		return restConfig, kubeClient, clientset, nil
 	}
 	if h.Target != nil {
-		var kubeconfigBytes []byte
-		var err error
+		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
+		if err := yaml.Unmarshal([]byte(h.Target.Content), targetConfig); err != nil {
+			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
+		}
 
-		if h.Target.Spec.SecretRef != nil {
-			kubeconfigBytes, err = lib.GetKubeconfigFromSecretRef(ctx, h.Target.Spec.SecretRef, h.Target.Namespace, h.lsKubeClient)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-		} else {
-			targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
-			if err = json.Unmarshal(h.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
-				return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
-			}
-
-			kubeconfigBytes, err = lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.Target.Namespace, h.lsKubeClient)
-			if err != nil {
-				return nil, nil, nil, err
-			}
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.Target.Namespace, h.lsKubeClient)
+		if err != nil {
+			return nil, nil, nil, err
 		}
 
 		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)

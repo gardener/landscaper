@@ -85,6 +85,12 @@ func NewAnyJSON(data []byte) AnyJSON {
 	}
 }
 
+// NewAnyJSONPointer returns a pointer to a new any json object.
+func NewAnyJSONPointer(data []byte) *AnyJSON {
+	tmp := NewAnyJSON(data)
+	return &tmp
+}
+
 // MarshalJSON implements the json marshaling for a JSON
 func (s AnyJSON) MarshalJSON() ([]byte, error) {
 	return s.RawMessage.MarshalJSON()

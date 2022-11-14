@@ -68,23 +68,23 @@ type deployer struct {
 	hooks            extension.ReconcileExtensionHooks
 }
 
-func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.Target) error {
-	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache)
+func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
+	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache, rt)
 	if err != nil {
 		return err
 	}
 	return containerOp.Reconcile(ctx, container.OperationReconcile)
 }
 
-func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache)
+func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
+	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache, rt)
 	if err != nil {
 		return err
 	}
 	return containerOp.Delete(ctx)
 }
 
-func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.ResolvedTarget) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
 }
@@ -95,7 +95,7 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
 	// TODO: parse provider configuration directly and do not init the container helper struct
-	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, nil, d.sharedCache)
+	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, nil, d.sharedCache, nil)
 	if err != nil {
 		return nil, err
 	}

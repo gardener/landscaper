@@ -12,7 +12,7 @@ The target type `landscaper.gardener.cloud/kubernetes-cluster` contains the acce
 
 **Type**: `landscaper.gardener.cloud/kubernetes-cluster`
 
-There are three variants for the configuration of targets of type  `landscaper.gardener.cloud/kubernetes-cluster`
+There are two variants for the configuration of targets of type  `landscaper.gardener.cloud/kubernetes-cluster`
 
 **Config Variant 1**:
 
@@ -34,24 +34,7 @@ spec:
 
 **Config Variant 2**:
 
-This variant contains the kubeconfig in a secrets referenced in the `config` section. The key in the data section, where
-to find the kubeconfig, could be specified. Currently, the secret must be in the same namespace as the target.
-
-```yaml
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Target
-metadata:
-    name: ...
-    namespace: ...
-spec:
-    config:
-      secretRef:
-        name: my-secret
-        namespace: default
-        key: kubeconfig # optional will default to "kubeconfig"
-```
-
-**Config Variant 3**:
+**DEPRECATED: use the Target's `spec.secretRef` field instead**
 
 This variant contains the kubeconfig in a secrets referenced under an entry `kubeconfig` in the `config` section. The 
 key in the data section, where to find the kubeconfig, could be specified. This is the old format before secret references 

@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
@@ -171,8 +172,8 @@ targetExports: []
 				Namespace: "default",
 			},
 			Spec: lsv1alpha1.TargetSpec{
-				Type:          lsv1alpha1.KubernetesClusterTargetType,
-				Configuration: lsv1alpha1.NewAnyJSON([]byte("{ \"kubeconfig\": \"{}\" }")),
+				Type:          targettypes.KubernetesClusterTargetType,
+				Configuration: lsv1alpha1.NewAnyJSONPointer([]byte("{ \"kubeconfig\": \"{}\" }")),
 			},
 		}
 
@@ -221,7 +222,7 @@ targetExports: []
 		target := &lsv1alpha1.Target{}
 		err = json.Unmarshal(marshalledTarget, target)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(target.Spec.Type).To(Equal(lsv1alpha1.KubernetesClusterTargetType))
+		Expect(target.Spec.Type).To(Equal(targettypes.KubernetesClusterTargetType))
 		Expect(target.Spec.Configuration).ToNot(BeNil())
 
 		Expect(callbacks.installations).To(HaveLen(4))

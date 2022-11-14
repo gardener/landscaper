@@ -1342,6 +1342,10 @@ string
 <h3 id="landscaper.gardener.cloud/v1alpha1.Target">Target
 </h3>
 <p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ResolvedTarget">ResolvedTarget</a>)
+</p>
+<p>
 <p>Target defines a specific data object that defines target environment.
 Every deploy item can have a target which is used by the deployer to install the specific application.</p>
 </p>
@@ -1430,8 +1434,8 @@ Exactly one of the fields Configuration and SecretRef must be set</p>
 <td>
 <code>secretRef</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
+<a href="#landscaper.gardener.cloud/v1alpha1.LocalSecretReference">
+LocalSecretReference
 </a>
 </em>
 </td>
@@ -4303,38 +4307,11 @@ encoding/json.RawMessage
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.KubernetesClusterTargetConfig">KubernetesClusterTargetConfig
-</h3>
-<p>
-<p>KubernetesClusterTargetConfig defines the landscaper kubernetes cluster target config.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>kubeconfig</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">
-ValueRef
-</a>
-</em>
-</td>
-<td>
-<p>Kubeconfig defines kubeconfig as string.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.LocalSecretReference">LocalSecretReference
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSyncSpec">TargetSyncSpec</a>)
 </p>
 <p>
@@ -4572,6 +4549,47 @@ than on a single-element map, so we have a slice here.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ResolvedTarget">ResolvedTarget
+</h3>
+<p>
+<p>ResolvedTarget is a helper struct to store a target together with the content of its resolved secret reference.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>target</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Target">
+Target
+</a>
+</em>
+</td>
+<td>
+<p>Target contains the original target.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>content</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Content contains the content of the target.
+If the target has a secret reference, this field should be filled by a TargetResolver.
+Otherwise, the inline configuration of the target is put here.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ResourceReference">ResourceReference
 </h3>
 <p>
@@ -4658,9 +4676,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>)
 </p>
 <p>
 <p>SecretReference is reference to data in a secret.
@@ -5189,8 +5205,8 @@ Exactly one of the fields Configuration and SecretRef must be set</p>
 <td>
 <code>secretRef</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
+<a href="#landscaper.gardener.cloud/v1alpha1.LocalSecretReference">
+LocalSecretReference
 </a>
 </em>
 </td>
@@ -5577,48 +5593,6 @@ ObjectReference
 <p>
 (Members of <code>ObjectReference</code> are embedded into this type.)
 </p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.KubernetesClusterTargetConfig">KubernetesClusterTargetConfig</a>)
-</p>
-<p>
-<p>ValueRef holds a value that can be either defined by string or by a secret ref.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>-</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>secretRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
-</a>
-</em>
-</td>
-<td>
-<p>deprecated</p>
 </td>
 </tr>
 </tbody>

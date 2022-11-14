@@ -57,6 +57,12 @@ func ConfigurationSecretName(deployItemNamespace, deployItemName string) string 
 	return fmt.Sprintf("%s-%s-config", deployItemNamespace, deployItemName)
 }
 
+// TargetSecretName generates the secret name for the imported secret.
+// todo: use container identity
+func TargetSecretName(deployItemNamespace, deployItemName string) string {
+	return fmt.Sprintf("%s-%s-target", deployItemNamespace, deployItemName)
+}
+
 // ImagePullSecretName generates the secret name for the image pull secret.
 // todo: use container identity
 func ImagePullSecretName(deployItemNamespace, deployItemName string) string {
@@ -107,6 +113,7 @@ type PodOptions struct {
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
 	ConfigurationSecretName           string
+	TargetSecretName                  string
 	ImagePullSecret                   string
 	BluePrintPullSecret               string
 	ComponentDescriptorPullSecret     string
@@ -193,6 +200,20 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		MountPath: filepath.Dir(container.ConfigurationPath),
 	}
 
+	targetVolume := corev1.Volume{
+		Name: "target",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: opts.TargetSecretName,
+			},
+		},
+	}
+	targetInitVolumeMount := corev1.VolumeMount{
+		Name:      targetVolume.Name,
+		ReadOnly:  true,
+		MountPath: container.TargetInitDir,
+	}
+
 	additionalInitEnvVars := []corev1.EnvVar{
 		{
 			Name:  container.ConfigurationPathName,
@@ -233,9 +254,10 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		waitServiceAccountVolume,
 		sharedVolume,
 		configurationVolume,
+		targetVolume,
 	}
 
-	initMounts := []corev1.VolumeMount{configurationVolumeMount, initServiceAccountMount, sharedVolumeMount}
+	initMounts := []corev1.VolumeMount{configurationVolumeMount, targetInitVolumeMount, initServiceAccountMount, sharedVolumeMount}
 
 	for name, v := range map[string]string{
 		"blueprint-pull-secret": opts.BluePrintPullSecret,

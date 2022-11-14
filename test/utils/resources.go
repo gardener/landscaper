@@ -13,8 +13,10 @@ import (
 	"path/filepath"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -24,7 +26,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -138,7 +139,7 @@ func CreateOrUpdateTarget(ctx context.Context, client client.Client, namespace, 
 
 	_, err = controllerutil.CreateOrUpdate(ctx, client, target, func() error {
 		target.Spec.Type = lsv1alpha1.TargetType(ttype)
-		target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
+		target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer(data)
 		return nil
 	})
 	if err != nil {
@@ -154,8 +155,8 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 		return nil, err
 	}
 
-	config := lsv1alpha1.KubernetesClusterTargetConfig{
-		Kubeconfig: lsv1alpha1.ValueRef{
+	config := targettypes.KubernetesClusterTargetConfig{
+		Kubeconfig: targettypes.ValueRef{
 			StrVal: pointer.StringPtr(string(data)),
 		},
 	}
@@ -168,8 +169,8 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 	target.Name = name
 	target.Namespace = namespace
 
-	target.Spec.Type = lsv1alpha1.KubernetesClusterTargetType
-	target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
+	target.Spec.Type = targettypes.KubernetesClusterTargetType
+	target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer(data)
 
 	return target, nil
 }
@@ -187,13 +188,12 @@ func CreateKubernetesTargetFromSecret(namespace, name string, secret *corev1.Sec
 	target.Name = name
 	target.Namespace = namespace
 
-	target.Spec.Type = lsv1alpha1.KubernetesClusterTargetType
-	target.Spec.SecretRef = &lsv1alpha1.SecretReference{
-		ObjectReference: lsv1alpha1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-		Key: key,
+	target.Spec.Type = targettypes.KubernetesClusterTargetType
+	target.Spec.SecretRef = &lsv1alpha1.LocalSecretReference{
+		Name: secret.Name,
+	}
+	if key != targettypes.DefaultKubeconfigKey {
+		target.Spec.SecretRef.Key = key
 	}
 
 	return target, nil
@@ -235,7 +235,7 @@ func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client
 func BuildTargetAndSecretFromKubernetesTarget(target *lsv1alpha1.Target) (*lsv1alpha1.Target, *corev1.Secret, error) {
 	const key = "kubeconfig"
 
-	config := lsv1alpha1.KubernetesClusterTargetConfig{}
+	config := targettypes.KubernetesClusterTargetConfig{}
 	if err := json.Unmarshal(target.Spec.Configuration.RawMessage, &config); err != nil {
 		return nil, nil, err
 	}
@@ -354,9 +354,9 @@ func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Envir
 		testenv.Client,
 		di.Spec.Target.Namespace,
 		di.Spec.Target.Name,
-		string(lsv1alpha1.KubernetesClusterTargetType),
-		lsv1alpha1.KubernetesClusterTargetConfig{
-			Kubeconfig: lsv1alpha1.ValueRef{
+		string(targettypes.KubernetesClusterTargetType),
+		targettypes.KubernetesClusterTargetConfig{
+			Kubeconfig: targettypes.ValueRef{
 				StrVal: pointer.StringPtr(string(kubeconfigBytes)),
 			},
 		},

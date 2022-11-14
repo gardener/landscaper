@@ -57,6 +57,7 @@ var _ = Describe("Init e2e", func() {
 		Expect(os.Setenv(container.StatePathName, container.StatePath)).To(Succeed())
 		Expect(os.Setenv(container.ContentPathName, container.ContentPath)).To(Succeed())
 		Expect(os.Setenv(container.ComponentDescriptorPathName, container.ComponentDescriptorPath)).To(Succeed())
+		Expect(os.Setenv(container.TargetPathName, container.TargetPath)).To(Succeed())
 	})
 
 	AfterEach(func() {
@@ -79,6 +80,9 @@ var _ = Describe("Init e2e", func() {
 		utils.ExpectNoError(os.Setenv(container.DeployItemName, di.Name))
 		utils.ExpectNoError(os.Setenv(container.DeployItemNamespaceName, di.Namespace))
 		utils.ExpectNoError(os.Setenv(container.PodNamespaceName, testState.Namespace))
+
+		Expect(resFs.MkdirAll(container.TargetInitDir, os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(resFs, filepath.Join(container.TargetInitDir, container.TargetFileName), []byte(`{"foo": "bar"}`), os.ModePerm)).To(Succeed()) // fake target file
 
 		utils.ExpectNoError(fs.MkdirAll(container.StatePath, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))

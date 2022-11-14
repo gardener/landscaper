@@ -31,12 +31,13 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
 // GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
 // If the config defines the target from a secret that secret is read from all provided clients.
-func GetKubeconfigFromTargetConfig(ctx context.Context, config *lsv1alpha1.KubernetesClusterTargetConfig,
+func GetKubeconfigFromTargetConfig(ctx context.Context, config *targettypes.KubernetesClusterTargetConfig,
 	targetNamespace string, lsClient client.Client) ([]byte, error) {
 	if config.Kubeconfig.StrVal != nil {
 		return []byte(*config.Kubeconfig.StrVal), nil
@@ -65,7 +66,7 @@ func GetKubeconfigFromSecretRef(ctx context.Context, ref *lsv1alpha1.SecretRefer
 	}
 
 	if len(ref.Key) == 0 {
-		ref.Key = lsv1alpha1.DefaultKubeconfigKey
+		ref.Key = targettypes.DefaultKubeconfigKey
 	}
 
 	kubeconfig, ok := secret.Data[ref.Key]

@@ -21,6 +21,7 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
@@ -91,9 +92,9 @@ var _ = Describe("Helm Deployer", func() {
 			testenv.Client,
 			di.Spec.Target.Namespace,
 			di.Spec.Target.Name,
-			string(lsv1alpha1.KubernetesClusterTargetType),
-			lsv1alpha1.KubernetesClusterTargetConfig{
-				Kubeconfig: lsv1alpha1.ValueRef{
+			string(targettypes.KubernetesClusterTargetType),
+			targettypes.KubernetesClusterTargetConfig{
+				Kubeconfig: targettypes.ValueRef{
 					StrVal: pointer.StringPtr(string(kubeconfigBytes)),
 				},
 			},

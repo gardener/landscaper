@@ -5,13 +5,9 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lsschema "github.com/gardener/landscaper/apis/schema"
-
-	"github.com/gardener/landscaper/apis/core"
 )
 
 // TargetType defines the type of the target.
@@ -86,12 +82,12 @@ type TargetSpec struct {
 	// Configuration contains the target type specific configuration.
 	// Exactly one of the fields Configuration and SecretRef must be set
 	// +optional
-	Configuration AnyJSON `json:"config,omitempty"`
+	Configuration *AnyJSON `json:"config,omitempty"`
 
 	// Reference to a secret containing the target type specific configuration.
 	// Exactly one of the fields Configuration and SecretRef must be set
 	// +optional
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
+	SecretRef *LocalSecretReference `json:"secretRef,omitempty"`
 }
 
 // TargetTemplate exposes specific parts of a target that are used in the exports
@@ -114,69 +110,13 @@ type TargetTemplate struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-//////////////////////////////
-//     Target Types         //
-//////////////////////////////
-// todo: refactor to own package
+// ResolvedTarget is a helper struct to store a target together with the content of its resolved secret reference.
+type ResolvedTarget struct {
+	// Target contains the original target.
+	*Target `json:"target"`
 
-// KubernetesClusterTargetType defines the landscaper kubernetes cluster target.
-const KubernetesClusterTargetType TargetType = core.GroupName + "/kubernetes-cluster"
-
-// KubernetesClusterTargetConfig defines the landscaper kubernetes cluster target config.
-type KubernetesClusterTargetConfig struct {
-	// Kubeconfig defines kubeconfig as string.
-	Kubeconfig ValueRef `json:"kubeconfig"`
+	// Content contains the content of the target.
+	// If the target has a secret reference, this field should be filled by a TargetResolver.
+	// Otherwise, the inline configuration of the target is put here.
+	Content string `json:"content"`
 }
-
-// DefaultKubeconfigKey is the default that is used to hold a kubeconfig.
-const DefaultKubeconfigKey = "kubeconfig"
-
-// ValueRef holds a value that can be either defined by string or by a secret ref.
-type ValueRef struct {
-	StrVal *string `json:"-"`
-
-	// deprecated
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
-}
-
-// valueRefJSON is a helper struct to decode json into a secret ref object.
-type valueRefJSON struct {
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
-}
-
-// MarshalJSON implements the json marshaling for a JSON
-func (v ValueRef) MarshalJSON() ([]byte, error) {
-	if v.StrVal != nil {
-		return json.Marshal(v.StrVal)
-	}
-	ref := valueRefJSON{
-		SecretRef: v.SecretRef,
-	}
-	return json.Marshal(ref)
-}
-
-// UnmarshalJSON implements json unmarshaling for a JSON
-func (v *ValueRef) UnmarshalJSON(data []byte) error {
-	if data[0] == '"' {
-		var strVal string
-		if err := json.Unmarshal(data, &strVal); err != nil {
-			return err
-		}
-		v.StrVal = &strVal
-		return nil
-	}
-	ref := &valueRefJSON{}
-	if err := json.Unmarshal(data, ref); err != nil {
-		return err
-	}
-	v.SecretRef = ref.SecretRef
-	return nil
-}
-
-func (v ValueRef) OpenAPISchemaType() []string {
-	return []string{
-		"object",
-		"string",
-	}
-}
-func (v ValueRef) OpenAPISchemaFormat() string { return "" }

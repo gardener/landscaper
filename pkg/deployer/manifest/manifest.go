@@ -7,7 +7,6 @@ package manifest
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -23,7 +22,10 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils"
 
+	"k8s.io/apimachinery/pkg/util/yaml"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 
@@ -49,7 +51,7 @@ type Manifest struct {
 	Configuration  *manifestv1alpha2.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
-	Target                *lsv1alpha1.Target
+	Target                *lsv1alpha1.ResolvedTarget
 	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
 	ProviderStatus        *manifestv1alpha2.ProviderStatus
 
@@ -68,7 +70,7 @@ func New(lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	configuration *manifestv1alpha2.Configuration,
 	item *lsv1alpha1.DeployItem,
-	target *lsv1alpha1.Target) (*Manifest, error) {
+	rt *lsv1alpha1.ResolvedTarget) (*Manifest, error) {
 
 	config := &manifestv1alpha2.ProviderConfiguration{}
 	currOp := "InitManifestOperation"
@@ -97,7 +99,7 @@ func New(lsKubeClient client.Client,
 		hostKubeClient:        hostKubeClient,
 		Configuration:         configuration,
 		DeployItem:            item,
-		Target:                target,
+		Target:                rt,
 		ProviderConfiguration: config,
 		ProviderStatus:        status,
 	}, nil
@@ -137,24 +139,14 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 		return restConfig, kubeClient, clientset, nil
 	}
 	if m.Target != nil {
-		var kubeconfigBytes []byte
-		var err error
+		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
+		if err := yaml.Unmarshal([]byte(m.Target.Content), targetConfig); err != nil {
+			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
+		}
 
-		if m.Target.Spec.SecretRef != nil {
-			kubeconfigBytes, err = lib.GetKubeconfigFromSecretRef(ctx, m.Target.Spec.SecretRef, m.Target.Namespace, m.lsKubeClient)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-		} else {
-			targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
-			if err = json.Unmarshal(m.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
-				return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
-			}
-
-			kubeconfigBytes, err = lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.Target.Namespace, m.lsKubeClient)
-			if err != nil {
-				return nil, nil, nil, err
-			}
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.Target.Namespace, m.lsKubeClient)
+		if err != nil {
+			return nil, nil, nil, err
 		}
 
 		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)

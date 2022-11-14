@@ -20,6 +20,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
@@ -188,8 +189,8 @@ func BuildKubernetesTarget(target *lsv1alpha1.Target, restConfig *rest.Config) e
 		return err
 	}
 
-	config := lsv1alpha1.KubernetesClusterTargetConfig{
-		Kubeconfig: lsv1alpha1.ValueRef{
+	config := targettypes.KubernetesClusterTargetConfig{
+		Kubeconfig: targettypes.ValueRef{
 			StrVal: pointer.StringPtr(string(data)),
 		},
 	}
@@ -198,8 +199,8 @@ func BuildKubernetesTarget(target *lsv1alpha1.Target, restConfig *rest.Config) e
 		return err
 	}
 
-	target.Spec.Type = lsv1alpha1.KubernetesClusterTargetType
-	target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
+	target.Spec.Type = targettypes.KubernetesClusterTargetType
+	target.Spec.Configuration = lsv1alpha1.NewAnyJSONPointer(data)
 
 	return nil
 }

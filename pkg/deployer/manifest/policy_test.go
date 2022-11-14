@@ -20,6 +20,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -73,7 +74,7 @@ var _ = Describe("Policy", func() {
 		ctx       context.Context
 		state     *envtest.State
 		configMap *corev1.ConfigMap
-		target    *lsv1alpha1.Target
+		target    *lsv1alpha1.ResolvedTarget
 	)
 
 	BeforeEach(func() {
@@ -83,9 +84,10 @@ var _ = Describe("Policy", func() {
 		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
-		target, err = utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		rawTarget, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(state.Create(ctx, target)).To(Succeed())
+		Expect(state.Create(ctx, rawTarget)).To(Succeed())
+		target = targetresolver.NewResolvedTarget(rawTarget)
 
 		configMap = &corev1.ConfigMap{}
 		configMap.Name = "my-cm"
@@ -102,7 +104,7 @@ var _ = Describe("Policy", func() {
 
 	Context("Manage", func() {
 		It("should create a configured configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.ManagePolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ManagePolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -114,7 +116,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should update the created configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.ManagePolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ManagePolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -137,7 +139,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should delete a created configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.ManagePolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ManagePolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -156,7 +158,7 @@ var _ = Describe("Policy", func() {
 
 	Context("Fallback", func() {
 		It("should create a configured configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.FallbackPolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -168,7 +170,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should update the created configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.FallbackPolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -191,7 +193,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should not update the created configmap when the deployer label is not matching", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.FallbackPolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -217,7 +219,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should delete a created configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.FallbackPolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -234,7 +236,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should not delete a created configmap when the deployer label is not matching", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.FallbackPolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -255,7 +257,7 @@ var _ = Describe("Policy", func() {
 
 	Context("Keep", func() {
 		It("should create a configured configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.KeepPolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.KeepPolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -267,7 +269,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should update the created configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.KeepPolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.KeepPolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -290,7 +292,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should not delete a created configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.KeepPolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.KeepPolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -308,7 +310,7 @@ var _ = Describe("Policy", func() {
 
 	Context("Ignore", func() {
 		It("should not create a configured configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.IgnorePolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.IgnorePolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -321,7 +323,7 @@ var _ = Describe("Policy", func() {
 
 	Context("Immutable", func() {
 		It("should create a configured configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.ImmutablePolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ImmutablePolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -333,7 +335,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should not update the created configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.ImmutablePolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ImmutablePolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -356,7 +358,7 @@ var _ = Describe("Policy", func() {
 		})
 
 		It("should delete a created configmap", func() {
-			deployItem := createDeployItem(ctx, state, "my-deployitem", target, configMap, managedresource.ImmutablePolicy)
+			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ImmutablePolicy)
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
