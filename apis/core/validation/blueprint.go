@@ -255,9 +255,9 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 		allErrs             = field.ErrorList{}
 		names               = sets.NewString()
 		importedDataObjects = make([]Import, 0)
-		exportedDataObjects = sets.NewString()
+		exportedDataObjects = map[string]string{}
 		importedTargets     = make([]Import, 0)
-		exportedTargets     = sets.NewString()
+		exportedTargets     = map[string]string{}
 
 		blueprintDataImports   = sets.NewString()
 		blueprintTargetImports = sets.NewString()
@@ -308,14 +308,15 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 		//}
 
 		for i, do := range instTmpl.Exports.Data {
-			dataPath := instPath.Child("exports").Child("data").Index(i).Key(do.Name)
-			if exportedDataObjects.Has(do.DataRef) {
-				allErrs = append(allErrs, field.Forbidden(dataPath, "export is already exported by another installation"))
+			dataPath := instPath.Child("exports").Child("data").Index(i).Key(fmt.Sprintf("%s/%s", do.Name, do.DataRef))
+			if dup, ok := exportedDataObjects[do.DataRef]; ok {
+				allErrs = append(allErrs, field.Forbidden(dataPath, fmt.Sprintf("data export '%s' is already exported by %s", do.DataRef, dup)))
+			} else {
+				exportedDataObjects[do.DataRef] = dataPath.String()
 			}
 			if blueprintDataImports.Has(do.DataRef) {
 				allErrs = append(allErrs, field.Forbidden(dataPath, "export is imported by its parent"))
 			}
-			exportedDataObjects.Insert(do.DataRef)
 		}
 		for i, do := range instTmpl.Imports.Data {
 			importedDataObjects = append(importedDataObjects, Import{
@@ -324,14 +325,15 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 			})
 		}
 		for i, target := range instTmpl.Exports.Targets {
-			targetPath := instPath.Child("exports").Child("targets").Index(i).Key(target.Name)
-			if exportedTargets.Has(target.Target) {
-				allErrs = append(allErrs, field.Forbidden(targetPath, "export is already exported by another installation"))
+			targetPath := instPath.Child("exports").Child("targets").Index(i).Key(fmt.Sprintf("%s/%s", target.Name, target.Target))
+			if dup, ok := exportedTargets[target.Target]; ok {
+				allErrs = append(allErrs, field.Forbidden(targetPath, fmt.Sprintf("target export '%s' is already exported by %s", target.Target, dup)))
+			} else {
+				exportedTargets[target.Target] = targetPath.String()
 			}
 			if blueprintTargetImports.Has(target.Target) {
 				allErrs = append(allErrs, field.Forbidden(targetPath, "export is imported by its parent"))
 			}
-			exportedTargets.Insert(target.Target)
 		}
 		for i, target := range instTmpl.Imports.Targets {
 			impPath := instPath.Child("imports").Child("targets").Index(i).Key(target.Name)
@@ -364,8 +366,8 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 	}
 
 	// validate that all imported values are either satisfied by the blueprint or by another sibling
-	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintDataImports, exportedDataObjects, importedDataObjects)...)
-	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintTargetImports, exportedTargets, importedTargets)...)
+	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintDataImports, sets.StringKeySet(exportedDataObjects), importedDataObjects)...)
+	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintTargetImports, sets.StringKeySet(exportedTargets), importedTargets)...)
 
 	return allErrs
 }
