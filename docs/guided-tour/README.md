@@ -14,6 +14,8 @@ Prerequisites:
 
 [Upgrading the Hello World Example](./basics/upgrade)
 
+[Manifest Deployer Example](./basics/manifest-deployer)
+
 ## Recovering from Errors
 
 [Handling an Immediate Error](./error-handling/immediate-error)
@@ -24,7 +26,7 @@ Prerequisites:
 
 <!--
 Delete without uninstall
-Upgrade
+
 Observed generation, jobID, jobIDFinished
 
 Deploying a blueprint to multiple targets/target list

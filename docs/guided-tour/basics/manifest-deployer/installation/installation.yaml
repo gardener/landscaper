@@ -1,0 +1,53 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: hello-world
+  namespace: example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+
+spec:
+
+  # Set values for the import parameters of the blueprint
+  imports:
+    targets:
+      - name: cluster        # name of an import parameter of the blueprint
+        target: my-cluster   # name of the Target custom resource containing the kubeconfig of the target cluster
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+          jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+          imports:
+            - name: cluster                                             # name of the import parameter
+              targetType: landscaper.gardener.cloud/kubernetes-cluster  # type of the import parameter
+
+          deployExecutions:
+            - name: default
+              type: GoTemplate
+              template: |
+                deployItems:
+                  - name: default-deploy-item
+                    type: landscaper.gardener.cloud/kubernetes-manifest
+          
+                    target:
+                      import: cluster   # "cluster" is the name of an import parameter
+          
+                    config:
+                      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+                      kind: ProviderConfiguration
+                      updateStrategy: update
+                      manifests:
+                        - policy: manage
+                          manifest:
+                            apiVersion: v1
+                            kind: ConfigMap
+                            metadata:
+                              name: hello-world
+                              namespace: example
+                            data:
+                              testData: hello
