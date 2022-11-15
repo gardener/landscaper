@@ -48,7 +48,7 @@ func CheckForCyclesAndDuplicateExports(instTemplates []*lsv1alpha1.InstallationT
 	hasCycle, cycle := g.hasCycle()
 
 	if hasCycle {
-		return nil, fmt.Errorf("the subinstallations have a cycle: %s", cycle)
+		return nil, fmt.Errorf("the subinstallations have a cycle: %s", strings.Join(cycle, " -{depends_on}-> "))
 	}
 
 	if computeOrder {
