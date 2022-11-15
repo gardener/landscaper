@@ -99,7 +99,7 @@ func (r *installationNode) fetchPredecessors(otherNodes []*installationNode) (se
 
 	if hasDuplicateExports {
 		msg := strings.Builder{}
-		msg.WriteString("the following exports are exported by multiple siblings:")
+		msg.WriteString("the following exports are exported by multiple nested installations:")
 		dupExpFound := false
 		for exp, sources := range dataExports {
 			if sources.Len() > 1 {

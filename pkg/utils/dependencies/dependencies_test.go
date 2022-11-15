@@ -13,6 +13,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 )
 
 var _ = Describe("Cyclic Dependency Determination Tests", func() {
@@ -108,6 +109,45 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 			sortInstallationTemplatesAlphabetically(tmpls)
 			_, err := CheckForCyclesAndDuplicateExports(tmpls, true)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(SatisfyAll(ContainSubstring("c -{depends_on}-> e"), ContainSubstring("d -{depends_on}-> c"), ContainSubstring("e -{depends_on}-> d")))
+		})
+
+		It("should detect duplicate data exports", func() {
+			deps := map[string][]string{
+				"a": nil,
+				"b": {"a"},
+				"c": nil,
+			}
+			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
+			sortInstallationTemplatesAlphabetically(tmpls)
+			tmpls[0].Exports.Data = append(tmpls[0].Exports.Data, lsv1alpha1.DataExport{Name: "addExp", DataRef: "addExp"})
+			tmpls[len(tmpls)-1].Exports.Data = tmpls[0].Exports.Data
+			_, err := CheckForCyclesAndDuplicateExports(tmpls, true)
+			Expect(err).To(HaveOccurred())
+			matchers := []types.GomegaMatcher{}
+			for _, exp := range tmpls[0].Exports.Data {
+				matchers = append(matchers, ContainSubstring("'%s' is exported by [%s]", exp.DataRef, strings.Join([]string{tmpls[0].Name, tmpls[len(tmpls)-1].Name}, ", ")))
+			}
+			Expect(err.Error()).To(SatisfyAll(matchers...))
+		})
+
+		It("should detect duplicate target exports", func() {
+			deps := map[string][]string{
+				"a": nil,
+				"b": {"a"},
+				"c": nil,
+			}
+			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(targetDependency))
+			sortInstallationTemplatesAlphabetically(tmpls)
+			tmpls[0].Exports.Targets = append(tmpls[0].Exports.Targets, lsv1alpha1.TargetExport{Name: "addExp", Target: "addExp"})
+			tmpls[len(tmpls)-1].Exports.Targets = tmpls[0].Exports.Targets
+			_, err := CheckForCyclesAndDuplicateExports(tmpls, true)
+			Expect(err).To(HaveOccurred())
+			matchers := []types.GomegaMatcher{}
+			for _, exp := range tmpls[0].Exports.Targets {
+				matchers = append(matchers, ContainSubstring("'%s' is exported by [%s]", exp.Target, strings.Join([]string{tmpls[0].Name, tmpls[len(tmpls)-1].Name}, ", ")))
+			}
+			Expect(err.Error()).To(SatisfyAll(matchers...))
 		})
 
 	})
