@@ -14,9 +14,6 @@
     "region": {
       "type": "string"
     },
-    "secretBindingName": {
-      "type": "string"
-    },
     "kubernetes": {
       "$ref": "#definitions/kubernetesConfig"
     },

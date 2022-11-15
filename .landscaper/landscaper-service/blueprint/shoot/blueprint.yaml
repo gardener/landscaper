@@ -18,6 +18,12 @@ imports:
     schema:
       type: string
 
+  - name: secretBindingName
+    required: true
+    type: data
+    schema:
+      type: string
+
   - name: labels
     required: false
     type: data

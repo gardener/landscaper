@@ -40,6 +40,12 @@ imports:
     schema:
       $ref: "cd://resources/landscaper-config-definition"
 
+  - name: webhooksHostName
+    required: true
+    type: data
+    schema:
+      type: string
+
 deployExecutions:
   - name: deploy-execution
     file: /deploy-execution.yaml

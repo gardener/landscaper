@@ -127,6 +127,11 @@ webhooksServer:
   # Required when "landscaperKubeconfig" is defined.
   certificatesNamespace: ""
 
+  # Specify to create a webhooks server ingress in combination with "landscaperKubeconfig".
+  # This is needed when the webhooks server pod is placed on a different cluster than the landscaper resources.
+  # ingress:
+  #  host: webhooks.ingress.mydomain.net
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""

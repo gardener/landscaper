@@ -1,0 +1,23 @@
+{{- if .Values.webhooksServer.ingress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "landscaper.webhooks.fullname" . }}
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+spec:
+  rules:
+    - host: {{ .Values.webhooksServer.ingress.host }}
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "landscaper.webhooks.fullname" . }}
+                port:
+                  number: {{ .Values.webhooksServer.servicePort }}
+{{- end }}

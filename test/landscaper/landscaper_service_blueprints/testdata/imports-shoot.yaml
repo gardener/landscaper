@@ -33,6 +33,7 @@ imports:
 
   name: test-shoot
   namespace: garden-test
+  secretBindingName: shoot-cluster-gcp-secret
   labels:
     landscaper-service.gardener.cloud.tenantid: "12345"
     landscaper-service.gardener.cloud.deploymentid: "00001"
@@ -42,6 +43,5 @@ imports:
       type: gcp
       zone: europe-west1-c
     region: europe-west1
-    secretBindingName: shoot-cluster-gcp-secret
     kubernetes:
       version: 1.24.6

@@ -40,6 +40,12 @@ imports:
     schema:
       type: string
 
+  - name: shootSecretBindingName
+    required: true
+    type: data
+    schema:
+      type: string
+
   - name: shootLabels
     required: false
     type: data
@@ -66,6 +72,14 @@ imports:
       description: |
         The landscaper deployment configuration.
       $ref: "cd://resources/landscaper-config-definition"
+
+  - name: webhooksHostName
+    required: true
+    type: data
+    schema:
+      description: |
+        The host name which is used to create the landscaper webhooks ingress.
+      type: string
 
 exports:
   - name: landscaperClusterEndpoint

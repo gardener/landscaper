@@ -23,3 +23,5 @@ imports:
       dataRef: registryConfig
     - name: landscaperConfig
       dataRef: landscaperConfig
+    - name: webhooksHostName
+      dataRef: webhooksHostName
