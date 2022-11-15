@@ -1,9 +1,15 @@
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package dependencies
 
 import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/gardener/landscaper/pkg/utils/dependencies/queue"
 )
 
 type graph struct {
@@ -14,6 +20,22 @@ type graph struct {
 	alreadyCheckedElements sets.String
 }
 
+// nodeWithPath stores a node of a graph as well as the path that led to this node.
+// This is a helper struct for the breadth first search below.
+type nodeWithPath struct {
+	node string
+	path []string
+}
+
+func (nwp nodeWithPath) hasVisitedBefore(elem string) bool {
+	for _, p := range nwp.path {
+		if p == elem {
+			return true
+		}
+	}
+	return false
+}
+
 func newGraph(edges map[string]sets.String) *graph {
 	return &graph{
 		edges:                  edges,
@@ -22,44 +44,37 @@ func newGraph(edges map[string]sets.String) *graph {
 }
 
 func (g *graph) hasCycle() (bool, []string) {
+	graphNodes := queue.New[nodeWithPath]()
 	for node := range g.edges {
-		visited := make(map[string]bool, 0)
-		hasCycle, cycle := g.canReachCycle(node, visited)
-		if hasCycle {
-			return true, append(cycle, node)
-		}
+		graphNodes.Append(nodeWithPath{
+			node: node,
+			path: []string{node},
+		})
 	}
-
-	return false, nil
+	// start a breadth first search for cycles from all graph nodes simultaneously
+	shortestCycle := g.breadthFirstSearchForCycles(graphNodes)
+	return shortestCycle != nil, shortestCycle
 }
 
-// canReachCycle returns true if starting from the given node one can reach an element of a cycle.
-// Assumptions: 1. from each visited element there exists a path to the given node, and
-// 2. the node itself is not a visited element.
-func (g *graph) canReachCycle(node string, visited map[string]bool) (bool, []string) {
-	if g.alreadyCheckedElements.Has(node) {
-		return false, nil
-	}
-
-	visited[node] = true
-
-	successors := g.edges[node]
-	for succ := range successors {
-		if visited[succ] {
-			return true, []string{succ}
-		} else {
-			hasCycle, cycle := g.canReachCycle(succ, visited)
-			if hasCycle {
-				return true, append(cycle, succ)
+// breadthFirstSearchForCycles searches the graph for cycles.
+// It returns the first cycle found.
+// If no cycle is found, nil is returned.
+func (g *graph) breadthFirstSearchForCycles(todo queue.Queue[nodeWithPath]) []string {
+	for !todo.IsEmpty() {
+		cur, _ := todo.Pop()
+		successors := g.edges[cur.node]
+		for _, succ := range successors.List() {
+			newPath := append(cur.path, succ)
+			if cur.hasVisitedBefore(succ) {
+				return newPath
 			}
+			todo.Append(nodeWithPath{
+				node: succ,
+				path: newPath,
+			})
 		}
 	}
-
-	visited[node] = false
-
-	g.alreadyCheckedElements.Insert(node)
-
-	return false, nil
+	return nil
 }
 
 func (g *graph) getReverseOrder() ([]string, error) {

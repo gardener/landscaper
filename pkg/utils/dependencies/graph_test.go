@@ -41,7 +41,7 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 
 			hasCycle, cycle := newGraph(deps).hasCycle()
 			Expect(hasCycle).To(BeTrue())
-			Expect(cycle).To(CyclicEqual("a", "b", "c"))
+			Expect(cycle).To(CyclicEqual("c", "b", "a"))
 		})
 
 		It("should detect one-elemented cyclic dependencies", func() {
@@ -77,7 +77,8 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 
 			hasCycle, cycle := newGraph(deps).hasCycle()
 			Expect(hasCycle).To(BeTrue())
-			Expect(cycle).To(SatisfyAny(CyclicEqual("c", "d", "a", "b"), CyclicEqual("c", "d")))
+			// logic detects only the shortest cycle
+			Expect(cycle).To(CyclicEqual("c", "d"))
 		})
 
 		It("should order the graph correctly according to its edges", func() {
