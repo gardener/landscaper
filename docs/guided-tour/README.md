@@ -3,7 +3,7 @@
 This document contains a guided tour presenting the different Landscaper features by examples.
 
 Prerequisites:
-- [Running Landscaper instance](docs/gettingstarted/install-landscaper-controller.md)
+- [Running Landscaper instance](../gettingstarted/install-landscaper-controller.md)
 
 
 ## A Hello World Example
