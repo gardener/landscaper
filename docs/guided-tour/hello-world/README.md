@@ -7,7 +7,7 @@ It deploys just a ConfigMap. We have uploaded the chart to a
 [public registry](eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0) from where the Landscaper 
 reads it during the deployment.
 
-Altogether, there occur three clusters in this example:
+There are three clusters in total in this example:
 
 - the **Landscaper Host Cluster**, on which the Landscaper runs;
 - the **target cluster**, on which the Helm chart shall be deployed.
