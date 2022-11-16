@@ -26,9 +26,9 @@ Prerequisites:
 
 <!--
 Delete without uninstall
-
 Observed generation, jobID, jobIDFinished
-
 Deploying a blueprint to multiple targets/target list
-Pull secrets
+Pull secrets for helm chart repo (with and without secret ref)
+context to access oci registry
+timeouts
 -->
