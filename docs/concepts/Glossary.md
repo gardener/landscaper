@@ -2,6 +2,10 @@
 
   - [_Aggregated Blueprint_](#aggregated-blueprint)
   - [_Blueprint_](#blueprint)
+  - [_Cluster_](#cluster)
+    - [_Landscaper Host Cluster_](#landscaper-host-cluster)
+    - [_Landscaper Resource Cluster_](#landscaper-resource-cluster)
+    - [_Target Cluster_](#target-cluster)
   - [_Component Descriptor_](#component-descriptor)
   - [_Context_](#context)
   - [_DataObject_](#dataobject)
@@ -17,8 +21,8 @@
     - [Blueprint Import](#blueprint-import)
     - [Installation Import](#installation-import)
   - [_Installation_](#installation)
-  - [_Sibling Installations_](#sibling-installations)
-  - [_Sub-Installation_](#sub-installation)
+    - [_Sibling Installations_](#sibling-installations)
+    - [_Sub-Installation_](#sub-installation)
   - [_SubinstallationExecution_](#subinstallationexecution)
   - [_Target_](#target)
   - [_Template_](#template)
@@ -45,6 +49,27 @@ Blueprints in a nutshell:
     - [DeployItems](#deployitem) or
     - [Sub-Installations](#sub-installation)
     - [Output](#export)
+
+[↑](#glossary)
+
+#### _Clusters_
+
+There are 3 different cluster types mentioned throughout the documentation: Landscaper Host Cluster, Landscaper 
+Resource Cluster, Target Cluster
+
+##### Landscaper Host Cluster
+
+The Landscaper Host Cluster, is the cluster on which the Landscaper runs.
+
+##### Landscaper Resource Cluster
+
+The Landscaper Resource Cluster, is the cluster on which custom resources like Targets and Installations can be created,
+that are watched by the Landscaper.
+
+##### Target Cluster
+
+A target cluster is a cluster on which the Landscaper deploys applications. One Landscaper can deploy applications
+to different target clusters.
 
 [↑](#glossary)
 
