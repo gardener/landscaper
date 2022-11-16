@@ -5,7 +5,7 @@ Afterwards, we will upgrade the Installation so that it deploys the newer versio
 
 You can find the new Helm chart [here](chart/hello-world). It replaces the ConfigMap of the original chart version by
 a Secret. We have uploaded the new chart version to the
-[public registry](eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.1).
+[public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.1).
 
 
 ## Procedure
