@@ -449,11 +449,11 @@ var _ = Describe("Blueprint", func() {
 					[]*core.InstallationTemplate{tmpl1, tmpl2})
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeForbidden),
-					"Field": Equal("b[0].exports.data[0][myimport]"),
+					"Field": Equal("b[0].exports.data[0][myimport/myimportref]"),
 				}))))
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeForbidden),
-					"Field": Equal("b[1].exports.data[0][mysecondexport]"),
+					"Field": Equal("b[1].exports.data[0][mysecondexport/mysecondexportref]"),
 				}))))
 			})
 
@@ -494,11 +494,11 @@ var _ = Describe("Blueprint", func() {
 					[]*core.InstallationTemplate{tmpl1, tmpl2})
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeForbidden),
-					"Field": Equal("b[0].exports.targets[0][myimport]"),
+					"Field": Equal("b[0].exports.targets[0][myimport/myimportref]"),
 				}))))
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeForbidden),
-					"Field": Equal("b[1].exports.targets[0][mysecondexport]"),
+					"Field": Equal("b[1].exports.targets[0][mysecondexport/mysecondexportref]"),
 				}))))
 			})
 		})

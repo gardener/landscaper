@@ -1,7 +1,13 @@
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package dependencies
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -17,7 +23,7 @@ func FetchPredecessorsFromInstallation(installation *lsv1alpha1.Installation,
 		otherNodes = append(otherNodes, newInstallationNodeFromInstallation(next))
 	}
 
-	predecessors, _ := instNode.fetchPredecessors(otherNodes, false)
+	predecessors, _ := instNode.fetchPredecessors(otherNodes)
 	return predecessors
 }
 
@@ -30,9 +36,9 @@ func CheckForCyclesAndDuplicateExports(instTemplates []*lsv1alpha1.InstallationT
 
 	edges := map[string]sets.String{}
 	for _, next := range instNodes {
-		predecessors, hasDublicateExports := next.fetchPredecessors(instNodes, true)
-		if hasDublicateExports {
-			return nil, fmt.Errorf("the installation %s gets imports with same name from different predecessors", next.name)
+		predecessors, err := next.fetchPredecessors(instNodes)
+		if err != nil {
+			return nil, err
 		}
 		edges[next.name] = predecessors
 	}
@@ -42,7 +48,7 @@ func CheckForCyclesAndDuplicateExports(instTemplates []*lsv1alpha1.InstallationT
 	hasCycle, cycle := g.hasCycle()
 
 	if hasCycle {
-		return nil, fmt.Errorf("the subinstallations have a cycle: %s", cycle)
+		return nil, fmt.Errorf("the subinstallations have a cycle: %s", strings.Join(cycle, " -{depends_on}-> "))
 	}
 
 	if computeOrder {
@@ -88,11 +94,33 @@ func newInstallationNodeFromInstallationTemplate(installation *lsv1alpha1.Instal
 	}
 }
 
-func (r *installationNode) fetchPredecessors(otherNodes []*installationNode, checkDuplicateExports bool) (sets.String, bool) {
-	dataExports, targetExports, hasDuplicateExports := r.getExportMaps(otherNodes, checkDuplicateExports)
+func (r *installationNode) fetchPredecessors(otherNodes []*installationNode) (sets.String, error) {
+	dataExports, targetExports, hasDuplicateExports := r.getExportMaps(otherNodes)
 
 	if hasDuplicateExports {
-		return nil, hasDuplicateExports
+		msg := strings.Builder{}
+		msg.WriteString("the following exports are exported by multiple nested installations:")
+		dupExpFound := false
+		for exp, sources := range dataExports {
+			if sources.Len() > 1 {
+				if !dupExpFound {
+					dupExpFound = true
+					msg.WriteString("\n  data exports:")
+				}
+				msg.WriteString(fmt.Sprintf("\n    '%s' is exported by [%s]", exp, strings.Join(sources.List(), ", ")))
+			}
+		}
+		dupExpFound = false
+		for exp, sources := range targetExports {
+			if sources.Len() > 1 {
+				if !dupExpFound {
+					dupExpFound = true
+					msg.WriteString("\n  target exports:")
+				}
+				msg.WriteString(fmt.Sprintf("\n    '%s' is exported by [%s]", exp, strings.Join(sources.List(), ", ")))
+			}
+		}
+		return nil, errors.New(msg.String())
 	}
 
 	predecessors := sets.NewString()
@@ -101,11 +129,11 @@ func (r *installationNode) fetchPredecessors(otherNodes []*installationNode, che
 			// only dataRef imports can refer to sibling exports
 			continue
 		}
-		source, ok := dataExports[imp.DataRef]
+		sources, ok := dataExports[imp.DataRef]
 		if ok {
 			// no sibling exports this import, it has to come from the parent
 			// this is already checked by validation, no need to verify it here
-			predecessors.Insert(source)
+			predecessors.Insert(sources.UnsortedList()...)
 		}
 	}
 
@@ -122,22 +150,25 @@ func (r *installationNode) fetchPredecessors(otherNodes []*installationNode, che
 		}
 
 		for _, target := range targets {
-			source, ok := targetExports[target]
+			sources, ok := targetExports[target]
 			if !ok {
 				// no sibling exports this import, it has to come from the parent
 				// this is already checked by validation, no need to verify it here
 				continue
 			}
-			predecessors.Insert(source)
+			predecessors.Insert(sources.UnsortedList()...)
 		}
 	}
 
-	return predecessors, hasDuplicateExports
+	return predecessors, nil
 }
 
-func (r *installationNode) getExportMaps(otherNodes []*installationNode, checkDuplicateExports bool) (map[string]string, map[string]string, bool) {
-	dataExports := map[string]string{}
-	targetExports := map[string]string{}
+// getExportMaps returns a mapping from sibling export names to the exporting siblings' names.
+// If for any given key the length of its value (a set) is greater than 1, this means that two or more siblings define the same export.
+// The third returned parameter indicates whether this has happened or not (true in case of duplicate exports).
+func (r *installationNode) getExportMaps(otherNodes []*installationNode) (map[string]sets.String, map[string]sets.String, bool) {
+	dataExports := map[string]sets.String{}
+	targetExports := map[string]sets.String{}
 	hasDuplicateExports := false
 
 	for _, sibling := range otherNodes {
@@ -146,18 +177,30 @@ func (r *installationNode) getExportMaps(otherNodes []*installationNode, checkDu
 			continue
 		}
 		for _, exp := range sibling.exports.Data {
-			_, ok := dataExports[exp.DataRef]
-			if checkDuplicateExports && ok {
-				return nil, nil, true
+			var de sets.String
+			var ok bool
+			de, ok = dataExports[exp.DataRef]
+			if !ok {
+				de = sets.NewString()
 			}
-			dataExports[exp.DataRef] = sibling.name
+			de.Insert(sibling.name)
+			if !hasDuplicateExports && de.Len() > 1 {
+				hasDuplicateExports = true
+			}
+			dataExports[exp.DataRef] = de
 		}
 		for _, exp := range sibling.exports.Targets {
-			_, ok := targetExports[exp.Target]
-			if checkDuplicateExports && ok {
-				return nil, nil, true
+			var te sets.String
+			var ok bool
+			te, ok = targetExports[exp.Target]
+			if !ok {
+				te = sets.NewString()
 			}
-			targetExports[exp.Target] = sibling.name
+			te.Insert(sibling.name)
+			if !hasDuplicateExports && te.Len() > 1 {
+				hasDuplicateExports = true
+			}
+			targetExports[exp.Target] = te
 		}
 	}
 

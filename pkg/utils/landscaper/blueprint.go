@@ -277,7 +277,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 	if len(installationTemplates) > 0 {
 		installationTemplates, err = dependencies.CheckForCyclesAndDuplicateExports(installationTemplates, true)
 		if err != nil {
-			return nil, nil, fmt.Errorf("unable for order subinstallations of blueprint: %w", err)
+			return nil, nil, fmt.Errorf("unable to order subinstallations of blueprint: %w", err)
 		}
 	}
 
