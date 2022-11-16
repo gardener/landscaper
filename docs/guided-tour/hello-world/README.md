@@ -4,7 +4,7 @@ In this example, we use the Landscaper to deploy a Helm chart.
 
 Our [hello-world Helm chart](chart/hello-world) is minimalistic to concentrate on Landscaper rather than Helm features. 
 It deploys just a ConfigMap. We have uploaded the chart to a 
-[public registry](eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0) from where the Landscaper 
+[public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0) from where the Landscaper 
 reads it during the deployment.
 
 There are three clusters in total in this example:
