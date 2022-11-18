@@ -1,0 +1,19 @@
+deployItems:
+  - name: default-deploy-item
+    type: landscaper.gardener.cloud/helm
+
+    target:
+      import: cluster  # "cluster" is the name of an import in the blueprint
+
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      name: hello-world
+      namespace: example
+
+      chart:
+        {{ $chartResource := getResource .cd "name" "hello-world-chart" }}
+        ref: {{ $chartResource.access.imageReference }}
+
+      values:
+        testData: hello
