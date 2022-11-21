@@ -6,6 +6,9 @@ This document contains a guided tour presenting the different Landscaper feature
 
 For all examples you need a [running Landscaper instance](../gettingstarted/install-landscaper-controller.md).
 
+A convenient tool that we will often use in the examples is the 
+[Landscaper CLI](https://github.com/gardener/landscapercli). 
+
 In all examples there are 3 kubernetes clusters involved:
 
 - the **Landscaper Host Cluster**, on which the Landscaper runs;

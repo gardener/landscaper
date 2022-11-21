@@ -15,6 +15,7 @@
 # limitations under the License.
 
 COMPONENT_DIR="$(dirname $0)/.."
-TRANSPORT_FILE=${COMPONENT_DIR}/commands/transport.tar
+BLUEPRINT_DIR="${COMPONENT_DIR}/blueprint"
+OCI_ARTIFACT_REF="eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0"
 
-../../../../../hack/examples/create-and-push-component.sh "${COMPONENT_DIR}" "${TRANSPORT_FILE}"
+landscaper-cli blueprints push "${OCI_ARTIFACT_REF}" "${BLUEPRINT_DIR}"

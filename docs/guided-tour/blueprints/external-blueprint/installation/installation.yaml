@@ -10,7 +10,7 @@ spec:
 
   componentDescriptor:
     ref:
-      componentName: github.com/gardener/landscaper-examples/guided-tour/blueprints/simple
+      componentName: github.com/gardener/landscaper-examples/guided-tour/external-blueprint
       version: 1.0.0
       repositoryContext:
         baseUrl: eu.gcr.io/gardener-project/landscaper/examples

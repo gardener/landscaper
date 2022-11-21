@@ -12,22 +12,43 @@ For example, if we want to deploy the same Helm chart on several clusters, we wo
 for each cluster. All these Installations would only reference the blueprint instead of containing it inline.
 This is only possible if we store the blueprint at a referencable location, e.g. an OCI registry.
 
-If you want to explore the blueprint you can find it [here](./blueprint). Note that the blueprint is a directory, and
-not just the [blueprint/blueprint.yaml](./blueprint/blueprint.yaml) file.
+
+## The Example Blueprint
+
+You can find the blueprint for the current example [here](./blueprint). 
+Note that the blueprint is a directory, and not just the [blueprint/blueprint.yaml](./blueprint/blueprint.yaml) file.
+In future examples the blueprint directory will contain further files.
 
 We have uploaded the blueprint
-[here](https://console.cloud.google.com/gcr/images/gardener-project/eu/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/blueprints/simple?project=gardener-project)
+[here](https://eu.gcr.io/gardener-project/landscaper/examples/blueprints/external-blueprint)
 into an OCI registry, from where the Landscaper can access it.
+You can find the command that we have used to upload the blueprint in the script 
+[commands/push-blueprint.sh](./commands/push-blueprint.sh).
+
+
+## The Component Descriptor
+
+An Installation references its blueprint indirectly via a so-called 
+[component descriptor](../../../concepts/Glossary.md#_component-descriptor_).
+In general, we use the component descriptor to collect all required resources for a deployment of a component.
+The [component descriptor for the current example](./component-descriptor.yaml) contains only one resource, namely the 
+blueprint. We will describe component descriptors more detailed in later examples.
+
+We have uploaded the component descriptor for our example
+[here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/external-blueprint)
+into an OCI registry, from where the Landscaper can access it.
+You can find the command that we have used to upload the component descriptor in the script
+[commands/push-blueprint.sh](./commands/create-and-push-component.sh).
 
 
 ## Referencing the Blueprint in the Installation
 
-The [Installation](./installation/installation.yaml) references the component and blueprint as follows:  
+The [Installation](./installation/installation.yaml) references the component descriptor and blueprint as follows:  
 
 ```yaml
 componentDescriptor:
  ref:
-   componentName: github.com/gardener/landscaper-examples/guided-tour/blueprints/simple
+   componentName: github.com/gardener/landscaper-examples/guided-tour/external-blueprint
    version: 1.0.0
    repositoryContext:
      baseUrl: eu.gcr.io/gardener-project/landscaper/examples
