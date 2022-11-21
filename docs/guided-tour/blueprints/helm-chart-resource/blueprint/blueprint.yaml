@@ -13,18 +13,19 @@ deployExecutions:
       deployItems:
         - name: default-deploy-item
           type: landscaper.gardener.cloud/helm
-      
+
           target:
             import: cluster   # "cluster" is the name of an import parameter
-      
+
           config:
             apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
             kind: ProviderConfiguration
             name: hello-world
             namespace: example
-      
+
             chart:
-              ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
-            
+              {{ $chartResource := getResource .cd "name" "hello-world-chart" }}
+              ref: {{ $chartResource.access.imageReference }}
+
             values:
               testData: hello

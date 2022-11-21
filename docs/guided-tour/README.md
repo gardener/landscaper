@@ -21,25 +21,27 @@ cluster. This is the easiest setup when you start working with the Landscaper.
 
 ## A Hello World Example
 
-[Hello World Example](./hello-world)
+[1. Hello World Example](./hello-world)
 
 ## Basics
 
-[Upgrading the Hello World Example](./basics/upgrade)
+[2. Upgrading the Hello World Example](./basics/upgrade)
 
-[Manifest Deployer Example](./basics/manifest-deployer)
+[3. Manifest Deployer Example](./basics/manifest-deployer)
 
 ## Recovering from Errors
 
-[Handling an Immediate Error](./error-handling/immediate-error)
+[4. Handling an Immediate Error](./error-handling/immediate-error)
 
-[Handling a Timeout Error](./error-handling/timeout-error)
+[5. Handling a Timeout Error](./error-handling/timeout-error)
 
-[Handling a Delete Error](./error-handling/delete-error)
+[6. Handling a Delete Error](./error-handling/delete-error)
 
 ## Blueprints and Components
 
-[An Installation with an Externally Stored Blueprint](./blueprints/external-blueprint)
+[7. An Installation with an Externally Stored Blueprint](./blueprints/external-blueprint)
+
+[8. Helm Chart Resources in the Component Descriptor](./blueprints/helm-chart-resource)
 
 
 <!--
@@ -49,4 +51,6 @@ Deploying a blueprint to multiple targets/target list
 Pull secrets for helm chart repo (with and without secret ref)
 context to access oci registry
 timeouts
+
+Make use of temp files in the scripts that upload a component descriptor
 -->
