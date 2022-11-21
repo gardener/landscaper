@@ -7,6 +7,22 @@ imports:
     targetType: landscaper.gardener.cloud/kubernetes-cluster  # type of the import parameter
 
 deployExecutions:
-  - name: default-deploy-execution
-    file: /deploy-execution.yaml
+  - name: default
     type: GoTemplate
+    template: |
+      deployItems:
+        - name: default-deploy-item
+          type: landscaper.gardener.cloud/helm
+      
+          target:
+            import: cluster   # "cluster" is the name of an import parameter
+      
+          config:
+            apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+            kind: ProviderConfiguration
+            name: hello-world
+            namespace: example
+            chart:
+              ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
+            values:
+              testData: hello

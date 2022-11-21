@@ -8,3 +8,12 @@ input:
   mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
   compress: true
 ...
+---
+name: hello-world-chart
+type: helm.io/chart
+version: 1.0.0
+relation: external
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
+...

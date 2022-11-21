@@ -34,6 +34,11 @@ cluster. This is the easiest setup when you start working with the Landscaper.
 
 [Handling a Delete Error](./error-handling/delete-error)
 
+## Blueprints and Components
+
+[An Installation with an Externally Stored Blueprint](./blueprints/simple)
+
+
 <!--
 Delete without uninstall
 Observed generation, jobID, jobIDFinished
