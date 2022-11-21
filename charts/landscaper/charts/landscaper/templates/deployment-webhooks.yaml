@@ -43,7 +43,11 @@ spec:
           args:
           {{- if .Values.webhooksServer.landscaperKubeconfig }}
           - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          {{- if .Values.webhooksServer.ingress }}
+          - --webhook-url=https://{{ .Values.webhooksServer.ingress.host }}
+          {{- else }}
           - --webhook-url=https://{{ include "landscaper.webhooks.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.webhooksServer.servicePort }}
+          {{- end }}
           - --certificates-namespace={{ .Values.webhooksServer.certificatesNamespace }}
           {{- else }}
           - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.webhooks.fullname" . }}

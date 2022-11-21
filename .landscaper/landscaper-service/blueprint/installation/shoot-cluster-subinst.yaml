@@ -18,6 +18,8 @@ imports:
       dataRef: shootNamespace
     - name: labels
       dataRef: shootLabels
+    - name: secretBindingName
+      dataRef: shootSecretBindingName
     - name: shootConfig
       dataRef: shootConfig
 

@@ -65,3 +65,5 @@ imports:
       manifest:
         resources: {}
 
+  webhooksHostName: lswh.ingress.shoot.external
+

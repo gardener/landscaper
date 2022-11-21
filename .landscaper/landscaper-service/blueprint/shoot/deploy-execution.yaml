@@ -10,6 +10,7 @@ deployItems:
       name: shoot-cluster
       updateStrategy: mergeOverwrite
       readinessChecks:
+        disableDefault: true
         custom:
           - name: APIServerAvailable
             timeout: 30m
@@ -36,7 +37,7 @@ deployItems:
                 values:
                   - value: "True"
 
-      deleteTimeout: 120m
+      deleteTimeout: 30m
 
       manifests:
         - policy: manage
@@ -48,6 +49,8 @@ deployItems:
             metadata:
               name: {{ .imports.name }}
               namespace: {{ .imports.namespace }}
+              annotations:
+                shoot.gardener.cloud/cleanup-extended-apis-finalize-grace-period-seconds: '30'
             {{ if .imports.labels }}
               labels:
 {{ toYaml .imports.labels | indent 16 }}
@@ -89,11 +92,11 @@ deployItems:
                 services: 100.64.0.0/13
               cloudProfileName: {{ .imports.shootConfig.provider.type }}
               region: {{ .imports.shootConfig.region }}
-              secretBindingName: {{ .imports.shootConfig.secretBindingName }}
+              secretBindingName: {{ .imports.secretBindingName }}
               kubernetes:
                 version: {{ .imports.shootConfig.kubernetes.version }}
+                enableStaticTokenKubeconfig: true
               purpose: production
-              enableStaticTokenKubeconfig: true
               maintenance:
                 timeWindow:
                   begin: {{ dig "shootConfig" "maintenance" "timeWindow" "begin" "050000+0200" .imports }}
@@ -103,7 +106,7 @@ deployItems:
                   machineImageVersion: {{ dig "shootConfig" "maintenance" "autoUpdate" "machineImageVersion" true .imports }}
 
       exports:
-        defaultTimeout: 120m
+        defaultTimeout: 30m
         exports:
           - key: shootClusterKubeconfig
             jsonPath: .data.kubeconfig

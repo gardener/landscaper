@@ -85,6 +85,9 @@ deployItems:
           disableWebhooks: []
           certificatesNamespace: {{ .imports.targetClusterNamespace }}
 
+          ingress:
+            host: {{ .imports.webhooksHostName }}
+
         service:
           type: ClusterIP
           port: 80
