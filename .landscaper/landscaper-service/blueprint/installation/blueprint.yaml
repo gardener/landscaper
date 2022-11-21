@@ -7,10 +7,6 @@ imports:
     required: true
     targetType: landscaper.gardener.cloud/kubernetes-cluster
 
-  - name: gardenerServiceAccount
-    required: true
-    targetType: landscaper.gardener.cloud/kubernetes-cluster
-
   - name: hostingClusterNamespace
     required: true
     type: data
@@ -20,44 +16,38 @@ imports:
         Only one landscaper server per namespace can be installed.
       type: string
 
-  - name: targetClusterNamespace
+  - name: deleteHostingClusterNamespace
+    type: data
+    schema:
+      description: |
+        Specifies whether the "hostingClusterNamespace" is getting deleted before the installation.
+      type: boolean
+
+  - name: virtualClusterNamespace
     required: true
     type: data
     schema:
       description: |
-        The "targetClusterNamespace" is the namespace in the target shoot cluster into which the deployer installations are getting installed.
+        The "virtualClusterNamespace" is the namespace in the virtual cluster into which the landscaper resources are getting installed.
       type: string
 
-  - name: shootName
+  - name: providerType
+    type: data
     required: true
-    type: data
-    schema:
-      type: string
-
-  - name: shootNamespace
-    required: true
-    type: data
-    schema:
-      type: string
-
-  - name: shootSecretBindingName
-    required: true
-    type: data
-    schema:
-      type: string
-
-  - name: shootLabels
-    required: false
-    type: data
-    schema:
-      type: object
-
-  - name: shootConfig
-    type: data
     schema:
       description: |
-        The "shootConfig" Specifies the gardener shoot configuration.
-      $ref: "cd://resources/shoot-config-definition"
+        The underlying infrastructure provider of the "hostingCluster" Kubernetes cluster.
+        Currently, supported values: "gcp", "aws", "alicloud"
+      type: string
+
+  - name: dnsAccessDomain
+    type: data
+    required: true
+    schema:
+      description: |
+        The DNS domain at which the landscaper service should be accessible.
+        Used for certificate generation.
+      type: string
 
   - name: registryConfig
     type: data
@@ -73,14 +63,6 @@ imports:
         The landscaper deployment configuration.
       $ref: "cd://resources/landscaper-config-definition"
 
-  - name: webhooksHostName
-    required: true
-    type: data
-    schema:
-      description: |
-        The host name which is used to create the landscaper webhooks ingress.
-      type: string
-
 exports:
   - name: landscaperClusterEndpoint
     type: data
@@ -89,18 +71,11 @@ exports:
         The API server endpoint at which the landscaper is available.
       type: string
 
-  - name: landscaperUserKubeconfig
+  - name: landscaperClusterKubeconfig
     type: data
     schema:
       description: |
-        The user kubeconfig which can be used to connect to the API server (Base64 encoded).
-      type: string
-
-  - name: landscaperAdminKubeconfig
-    type: data
-    schema:
-      description: |
-        The admin kubeconfig which can be used to connect to the API server (Base64 encoded).
+        The Kubernetes kubeconfig which can be used to connect to the API server (Base64 encoded).
       type: string
 
 exportExecutions:
@@ -108,11 +83,10 @@ exportExecutions:
     type: GoTemplate
     template: |
       exports:
-        landscaperClusterEndpoint: {{ .values.dataobjects.shootClusterEndpoint }}
-        landscaperUserKubeconfig: {{ .values.dataobjects.landscaperUserKubeconfigYaml | b64enc }}
-        landscaperAdminKubeconfig: {{ .values.dataobjects.shootClusterKubeconfig | b64enc }}
+        landscaperClusterEndpoint: {{ .values.dataobjects.virtualGardenEndpoint }}
+        landscaperClusterKubeconfig: {{ .values.dataobjects.landscaperUserKubeconfigYaml | b64enc }}
 
 subinstallations:
-  - file: /shoot-cluster-subinst.yaml
+  - file: /virtual-garden-subinst.yaml
   - file: /landscaper-rbac-subinst.yaml
   - file: /landscaper-deployment-subinst.yaml

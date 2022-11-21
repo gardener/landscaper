@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 imports:
-  shootCluster:
+  virtualCluster:
     metadata:
       name: test-cluster
       namespace: default
@@ -31,5 +31,5 @@ imports:
                 token: >-
                   abcdefghij
 
-  targetClusterNamespace: "default"
-  shootClusterEndpoint: "10.0.0.1"
+  virtualClusterNamespace: "default"
+  virtualClusterEndpoint: "10.0.0.1"
