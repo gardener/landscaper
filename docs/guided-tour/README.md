@@ -39,7 +39,7 @@ cluster. This is the easiest setup when you start working with the Landscaper.
 
 ## Blueprints and Components
 
-[An Installation with an Externally Stored Blueprint](./blueprints/simple)
+[An Installation with an Externally Stored Blueprint](./blueprints/external-blueprint)
 
 
 <!--
