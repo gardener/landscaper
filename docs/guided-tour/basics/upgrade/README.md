@@ -1,5 +1,7 @@
 # Upgrading the Hello World Example
 
+For prerequisites [see](../../README.md#prerequisites-and-basic-definitions).
+
 In this example, we start by deploying the hello-world Helm chart in its original version `1.0.0`. 
 Afterwards, we will upgrade the Installation so that it deploys the newer version `1.0.1` of the chart.
 

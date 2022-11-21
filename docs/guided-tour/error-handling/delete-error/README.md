@@ -44,6 +44,8 @@ kubectl annotate installation -n example hello-world landscaper.gardener.cloud/o
 
 ### Recreate the Target
 
+For prerequisites [see](../../README.md#prerequisites-and-basic-definitions).
+
 The usual way to resolve the failed Installation is to recreate the target and re-trigger the deletion of the
 installation by setting the `reconcile` annotation:
 

@@ -1,5 +1,7 @@
 # Manifest Deployer Example
 
+For prerequisites [see](../../README.md#prerequisites-and-basic-definitions).
+
 The Landscaper offers different deployers: 
 
 - the [Helm Deployer](../../../deployer/helm.md)

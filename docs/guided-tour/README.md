@@ -2,9 +2,19 @@
 
 This document contains a guided tour presenting the different Landscaper features by examples.
 
-Prerequisites:
-- [Running Landscaper instance](../gettingstarted/install-landscaper-controller.md)
+## Prerequisites and Basic Definitions
 
+For all examples you need a [running Landscaper instance](../gettingstarted/install-landscaper-controller.md).
+
+In all examples there are 3 kubernetes clusters involved:
+
+- the **Landscaper Host Cluster**, on which the Landscaper runs;
+- the **target cluster**, on which the Helm chart shall be deployed.
+- the **Landscaper Resource Cluster**, on which the custom resources are stored that are watched by the Landscaper.
+  These custom resources define what should be deployed on which target cluster.
+
+It is possible that some or all of these clusters coincide, e.g. in the most simplistic approach you have only one
+cluster. This is the easiest setup when you start working with the Landscaper.
 
 ## A Hello World Example
 
