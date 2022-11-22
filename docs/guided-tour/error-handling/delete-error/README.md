@@ -1,5 +1,7 @@
 # Handling a Delete Error
 
+For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+
 In this example, we deploy again the Helm chart of the hello-world example and then delete it again whereby we provoke
 an error by removing the target before. 
 

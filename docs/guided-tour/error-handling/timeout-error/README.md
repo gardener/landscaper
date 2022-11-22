@@ -1,6 +1,6 @@
 # Handling a Timeout Error
 
-For prerequisites [see](../../README.md#prerequisites-and-basic-definitions).
+For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
 
 In this example, we try again to deploy the Helm chart of the hello-world example.
 To demonstrate another error situation, we have manipulated the [Installation](./installation/installation.yaml). 

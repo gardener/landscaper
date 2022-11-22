@@ -19,7 +19,7 @@ Note that the blueprint is a directory, and not just the [blueprint/blueprint.ya
 In future examples the blueprint directory will contain further files.
 
 We have uploaded the blueprint
-[here](https://eu.gcr.io/gardener-project/landscaper/examples/blueprints/external-blueprint)
+[here](https://eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint)
 into an OCI registry, from where the Landscaper can access it.
 You can find the commands that we have used to upload the blueprint in the script 
 [commands/push-blueprint.sh](./commands/push-blueprint.sh).
@@ -37,7 +37,7 @@ We have uploaded the component descriptor for our example
 [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/external-blueprint)
 into an OCI registry, from where the Landscaper can access it.
 You can find the command that we have used to upload the component descriptor in the script
-[commands/push-blueprint.sh](./commands/push-component-descriptor.sh).
+[commands/push-component-descriptor.sh](./commands/push-component-descriptor.sh).
 
 
 ## Referencing the Blueprint in the Installation
@@ -59,7 +59,7 @@ blueprint:
 
 - The field `context` contains the name of a custom resource of kind [Context](../../../usage/Context.md) 
   in the same namespace as the Installation on the Landscaper resource cluster.
-  The [Context resource](./installation/context.yaml) contains the information in which registry the component 
+  [Our Context resource](./installation/context.yaml) contains the information in which registry the component 
   descriptor and blueprint are stored.
 
 - The fields `componentDescriptor.ref.componentName` and `componentDescriptor.ref.version` are then used to locate the 
@@ -72,7 +72,7 @@ blueprint:
 
 ## Procedure
 
-The procedure to deploy the helm chart with the Landscaper is the same as before:
+The procedure to deploy the helm chart with the Landscaper is:
 
 1. Insert in file [target.yaml](installation/target.yaml) the kubeconfig of your target cluster.
 

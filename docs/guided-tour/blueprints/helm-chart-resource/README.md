@@ -44,7 +44,7 @@ chart:
 
 Note that the deploy execution is a Go template. Landscaper provides a function `getResource` which is used here to get
 the resource entry with name `hello-world-chart` from the component descriptor. The variable `chartResource` has then
-resource entry as value, and the expression `ref: {{ $chartResource.access.imageReference }}` evaluates to the same
+the resource entry as value, and the expression `ref: {{ $chartResource.access.imageReference }}` evaluates to the same
 value as before.
 
 

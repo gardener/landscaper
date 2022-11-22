@@ -1,6 +1,6 @@
 # Hello World Example
 
-For prerequisites [see](../README.md#prerequisites-and-basic-definitions).
+For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
 
 In this example, we use the Landscaper to deploy a Helm chart.
 
