@@ -45,12 +45,14 @@ cluster. This is the easiest setup when you start working with the Landscaper.
 
 
 <!--
-Delete without uninstall
 Observed generation, jobID, jobIDFinished
+Delete without uninstall
 Deploying a blueprint to multiple targets/target list
 Pull secrets for helm chart repo (with and without secret ref)
-context to access oci registry
-timeouts
+Pull secret in context to access a protected oci registry
+Timeouts
+Import, export
+Subinstallations
 
 Make use of temp files in the scripts that upload a component descriptor
 -->
