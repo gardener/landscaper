@@ -13,45 +13,49 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-type secretFilter struct {
-	secretNameExpression string
-	compiledExpression   *regexp.Regexp
+type nameFilter struct {
+	nameExpression     string
+	compiledExpression *regexp.Regexp
 }
 
-var _ predicate.Predicate = &secretFilter{}
+var _ predicate.Predicate = &nameFilter{}
 
-func newSecretFilter(secretNameExpression string) (*secretFilter, error) {
-	compiledExpression, err := regexp.Compile(secretNameExpression)
-	if err != nil {
-		return nil, fmt.Errorf("invalid regular expression to filter secrets: %s", secretNameExpression)
+func newNameFilter(nameExpression string) (*nameFilter, error) {
+	if nameExpression == "*" {
+		nameExpression = ".*"
 	}
 
-	return &secretFilter{
-		secretNameExpression: secretNameExpression,
-		compiledExpression:   compiledExpression,
+	compiledExpression, err := regexp.Compile(nameExpression)
+	if err != nil {
+		return nil, fmt.Errorf("invalid regular expression to filter names: %s", nameExpression)
+	}
+
+	return &nameFilter{
+		nameExpression:     nameExpression,
+		compiledExpression: compiledExpression,
 	}, nil
 }
 
-func (p *secretFilter) shouldBeProcessed(obj client.Object) bool {
+func (p *nameFilter) shouldBeProcessed(obj client.Object) bool {
 	return p.compiledExpression.MatchString(obj.GetName())
 }
 
 // Create returns true if the Create event should be processed
-func (p *secretFilter) Create(event event.CreateEvent) bool {
+func (p *nameFilter) Create(event event.CreateEvent) bool {
 	return p.shouldBeProcessed(event.Object)
 }
 
 // Delete returns true if the Delete event should be processed
-func (p *secretFilter) Delete(event event.DeleteEvent) bool {
+func (p *nameFilter) Delete(event event.DeleteEvent) bool {
 	return p.shouldBeProcessed(event.Object)
 }
 
 // Update returns true if the Update event should be processed
-func (p *secretFilter) Update(event event.UpdateEvent) bool {
+func (p *nameFilter) Update(event event.UpdateEvent) bool {
 	return p.shouldBeProcessed(event.ObjectNew)
 }
 
 // Generic returns true if the Generic event should be processed
-func (p *secretFilter) Generic(event event.GenericEvent) bool {
+func (p *nameFilter) Generic(event event.GenericEvent) bool {
 	return p.shouldBeProcessed(event.Object)
 }

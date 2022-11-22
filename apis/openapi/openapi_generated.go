@@ -6675,7 +6675,15 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCal
 					},
 					"secretNameExpression": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SecretNameExpression defines the names of the secrets which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax if not set all secrets are synced",
+							Description: "SecretNameExpression defines the names of the secrets which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches all names. if not set no secrets are synced",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"shootNameExpression": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ShootNameExpression defines the names of shoot clusters for which targets with short living access data to the shoots are created via a regular expression according to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches all names. if not set no targets for the shoots are created",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",

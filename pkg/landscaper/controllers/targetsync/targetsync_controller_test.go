@@ -35,7 +35,7 @@ var _ = Describe("TargetSync Controller", func() {
 
 		BeforeEach(func() {
 			var err error
-			ctrl, err = NewTargetSyncController(logging.Discard(), testenv.Client, NewTrivialSourceClientProvider(testenv.Client))
+			ctrl, err = NewTargetSyncController(logging.Discard(), testenv.Client, NewTrivialSourceClientProvider(testenv.Client, nil))
 			Expect(err).ToNot(HaveOccurred())
 		})
 

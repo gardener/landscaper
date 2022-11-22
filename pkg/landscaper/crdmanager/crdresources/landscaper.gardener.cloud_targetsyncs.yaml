@@ -24,7 +24,8 @@ spec:
               secretNameExpression:
                 description: SecretNameExpression defines the names of the secrets
                   which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax
-                  if not set all secrets are synced
+                  with the extension that * is also a valid expression and matches
+                  all names. if not set no secrets are synced
                 type: string
               secretRef:
                 description: SecretRef references the secret that contains the kubeconfig
@@ -40,6 +41,13 @@ spec:
                 required:
                 - name
                 type: object
+              shootNameExpression:
+                description: ShootNameExpression defines the names of shoot clusters
+                  for which targets with short living access data to the shoots are
+                  created via a regular expression according to https://github.com/google/re2/wiki/Syntax
+                  with the extension that * is also a valid expression and matches
+                  all names. if not set no targets for the shoots are created
+                type: string
               sourceNamespace:
                 description: SourceNamespace describes the namespace from where the
                   secrets should be synced
