@@ -1,6 +1,6 @@
 # Helm Chart Resources in the Component Descriptor
 
-For prerequisites see [here](../README.md#prerequisites-and-basic-definitions).
+For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
 
 The blueprint of the previous examples reference the Helm chart directly like this:
 
@@ -55,10 +55,12 @@ The procedure to install the helm chart with Landscaper is the same as before:
 1. Insert in file [target.yaml](installation/target.yaml) the kubeconfig of your target cluster.
 
 2. On the Landscaper resource cluster, create namespace `example` and apply
-   the [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
+   the [context.yaml](./installation/context.yaml),
+   the [target.yaml](installation/target.yaml), and the [installation.yaml](installation/installation.yaml):
 
    ```shell
    kubectl create ns example
+   kubectl apply -f <path to context.yaml>
    kubectl apply -f <path to target.yaml>
    kubectl apply -f <path to installation.yaml>
    ```

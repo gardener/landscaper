@@ -7,14 +7,12 @@ metadata:
     landscaper.gardener.cloud/operation: reconcile
 
 spec:
+  context: landscaper-examples
 
   componentDescriptor:
     ref:
       componentName: github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource
       version: 1.0.0
-      repositoryContext:
-        baseUrl: eu.gcr.io/gardener-project/landscaper/examples
-        type: ociRegistry
 
   blueprint:
     ref:
