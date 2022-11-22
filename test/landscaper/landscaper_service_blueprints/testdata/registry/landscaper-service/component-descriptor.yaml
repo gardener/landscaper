@@ -42,15 +42,6 @@ component:
         mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
         filename: landscaper-configuration/schema.json
 
-    - type: landscaper.gardener.cloud/jsonschema
-      name: shoot-config-definition
-      relation: local
-      version: v0.20.0
-      access:
-        type: localFilesystemBlob
-        mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
-        filename: shoot-configuration/schema.json
-
     - type: helm.io/chart
       name: landscaper-controller-deployment-chart
       relation: local
@@ -84,14 +75,5 @@ component:
         type: localFilesystemBlob
         mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
         filename: landscaper-blueprint
-
-    - name: shoot-blueprint
-      type: blueprint
-      version: v0.20.0
-      relation: local
-      access:
-        type: localFilesystemBlob
-        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
-        filename: shoot-blueprint
 
   sources: []

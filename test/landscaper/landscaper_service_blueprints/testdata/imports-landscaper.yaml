@@ -32,7 +32,7 @@ imports:
                   abcdefghij
 
   hostingClusterNamespace: "default"
-  targetClusterNamespace: "ls-system"
+  virtualClusterNamespace: "default"
   landscaperControllerKubeconfigYaml: "{}"
   landscaperWebhooksKubeconfigYaml: "{}"
 
@@ -45,7 +45,7 @@ imports:
 
   landscaperConfig:
     landscaper:
-      verbosity: info
+      verbosity: 2
       replicas: 1
       resources: {}
     webhooksServer:
@@ -59,11 +59,9 @@ imports:
       helm:
         resources: {}
       container:
-        verbosity: debug
+        verbosity: 10
         replicas: 1
         resources: {}
       manifest:
         resources: {}
-
-  webhooksHostName: lswh.ingress.shoot.external
 

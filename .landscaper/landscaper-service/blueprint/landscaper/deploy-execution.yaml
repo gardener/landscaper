@@ -31,7 +31,7 @@ deployItems:
 
           deployerManagement:
             disable: false
-            namespace: {{ .imports.targetClusterNamespace }}
+            namespace: {{ .imports.virtualClusterNamespace }}
             agent:
               name: {{ .imports.hostingClusterNamespace }}
               disable: false
@@ -83,10 +83,7 @@ deployItems:
 
           servicePort: {{ .imports.landscaperConfig.webhooksServer.servicePort | default 9443 }}
           disableWebhooks: []
-          certificatesNamespace: {{ .imports.targetClusterNamespace }}
-
-          ingress:
-            host: {{ .imports.webhooksHostName }}
+          certificatesNamespace: {{ .imports.virtualClusterNamespace }}
 
         service:
           type: ClusterIP

@@ -12,7 +12,7 @@ imports:
     schema:
       type: string
 
-  - name: targetClusterNamespace
+  - name: virtualClusterNamespace
     required: true
     type: data
     schema:
@@ -39,12 +39,6 @@ imports:
     type: data
     schema:
       $ref: "cd://resources/landscaper-config-definition"
-
-  - name: webhooksHostName
-    required: true
-    type: data
-    schema:
-      type: string
 
 deployExecutions:
   - name: deploy-execution
