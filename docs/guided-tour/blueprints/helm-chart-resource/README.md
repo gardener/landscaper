@@ -9,7 +9,12 @@ chart:
   ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
 ```
 
-However, it is recommended to collect all resources of a component in its component descriptor. 
+However, it is recommended to collect all resources of a component in its component descriptor and reference these
+resources in the blueprint only by their name in the component descriptor. This has the
+advantages that you have exactly one location, listing all resources required to deploy a component and if you just
+want to update the version of a resource, you only need to update its entry in the component descriptor. No change of
+the blueprint is required.
+
 Therefore, we will now modify the previous example as follows:
 
 - We extend the resource list of the component descriptor by an entry for the Helm chart.
@@ -45,7 +50,7 @@ value as before.
 
 ## Procedure
 
-The procedure is the same as before:
+The procedure to install the helm chart with Landscaper is the same as before:
 
 1. Insert in file [target.yaml](installation/target.yaml) the kubeconfig of your target cluster.
 
@@ -57,10 +62,6 @@ The procedure is the same as before:
    kubectl apply -f <path to target.yaml>
    kubectl apply -f <path to installation.yaml>
    ```
-
-Storing the blueprint externally has the advantage that we can reuse it. If we want to deploy the same
-Helm chart to a second cluster, we create a second Target and a second Installation referencing the same component and
-blueprint.
 
 
 ## Remark on Charts Stored in a Helm Chart Repository

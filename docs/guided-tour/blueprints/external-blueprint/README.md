@@ -9,9 +9,8 @@ The installations in the previous examples had two main parts: the import of a T
 The Target defines on which specific cluster something should be deployed. 
 The blueprint defines the general deployment procedure. It is this part that we want to make reusable.
 For example, if we want to deploy the same Helm chart on several clusters, we would create a Target and an Installation
-for each cluster. All these Installations would only reference the blueprint instead of containing it inline.
-This is only possible if we store the blueprint at a referencable location, e.g. an OCI registry.
-
+for each cluster. All these Installations would only reference the same blueprint instead of containing it inline.
+This is possible if we store the blueprint at a referencable location, e.g. an OCI registry.
 
 ## The Example Blueprint
 
@@ -22,7 +21,7 @@ In future examples the blueprint directory will contain further files.
 We have uploaded the blueprint
 [here](https://eu.gcr.io/gardener-project/landscaper/examples/blueprints/external-blueprint)
 into an OCI registry, from where the Landscaper can access it.
-You can find the command that we have used to upload the blueprint in the script 
+You can find the commands that we have used to upload the blueprint in the script 
 [commands/push-blueprint.sh](./commands/push-blueprint.sh).
 
 
@@ -30,7 +29,7 @@ You can find the command that we have used to upload the blueprint in the script
 
 An Installation references its blueprint indirectly via a so-called 
 [component descriptor](../../../concepts/Glossary.md#_component-descriptor_).
-In general, we use the component descriptor to collect all required resources for a deployment of a component.
+In general, we use the component descriptor to collect all required resources for the deployment of a component.
 The [component descriptor for the current example](./component-descriptor.yaml) contains only one resource, namely the 
 blueprint. We will describe component descriptors more detailed in later examples.
 
@@ -69,7 +68,7 @@ descriptor.
 
 ## Procedure
 
-The procedure is the same as before:
+The procedure to deploy the helm chart with the Landscaper is the same as before:
 
 1. Insert in file [target.yaml](installation/target.yaml) the kubeconfig of your target cluster.
 
