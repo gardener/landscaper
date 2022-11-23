@@ -1,5 +1,7 @@
 # Handling a Delete Error
 
+For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+
 In this example, we deploy again the Helm chart of the hello-world example and then delete it again whereby we provoke
 an error by removing the target before. 
 
@@ -43,6 +45,8 @@ kubectl annotate installation -n example hello-world landscaper.gardener.cloud/o
 ## Resolve the failed Installation
 
 ### Recreate the Target
+
+For prerequisites [see](../../README.md#prerequisites-and-basic-definitions).
 
 The usual way to resolve the failed Installation is to recreate the target and re-trigger the deletion of the
 installation by setting the `reconcile` annotation:

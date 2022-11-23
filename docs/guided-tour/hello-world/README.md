@@ -1,20 +1,13 @@
 # Hello World Example
 
+For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+
 In this example, we use the Landscaper to deploy a Helm chart.
 
 Our [hello-world Helm chart](chart/hello-world) is minimalistic to concentrate on Landscaper rather than Helm features. 
 It deploys just a ConfigMap. We have uploaded the chart to a 
 [public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0) from where the Landscaper 
 reads it during the deployment.
-
-There are three clusters in total in this example:
-
-- the **Landscaper Host Cluster**, on which the Landscaper runs;
-- the **target cluster**, on which the Helm chart shall be deployed.
-- the **Landscaper Resource Cluster**, on which the custom resources are stored that are watched by the Landscaper. 
-  These custom resources define what should be deployed on which target cluster.
-
-It is possible that some or all of these clusters coincide.
 
 ## Procedure
 

@@ -1,5 +1,7 @@
 # Handling an Immediate Error
 
+For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+
 In this example, we deploy again the Helm chart of the hello-world example.
 To illustrate the error handling, we introduced an error in the Installation: a `:` is missing in the imports section
 of the blueprint in the [Installation](./installation/installation.yaml).
