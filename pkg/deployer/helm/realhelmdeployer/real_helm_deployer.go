@@ -47,6 +47,7 @@ type RealHelmDeployer struct {
 	defaultNamespace   string
 	rawValues          json.RawMessage
 	helmConfig         *helmv1alpha1.HelmDeploymentConfiguration
+	createNamespace    bool
 	targetRestConfig   *rest.Config
 	apiResourceHandler *resourcemanager.ApiResourceHandler
 }
@@ -61,6 +62,7 @@ func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderC
 		defaultNamespace:   providerConfig.Namespace,
 		rawValues:          providerConfig.Values,
 		helmConfig:         providerConfig.HelmDeploymentConfig,
+		createNamespace:    providerConfig.CreateNamespace,
 		targetRestConfig:   targetRestConfig,
 		apiResourceHandler: resourcemanager.CreateApiResourceHandler(clientset),
 	}
@@ -134,7 +136,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 	install := action.NewInstall(actionConfig)
 	install.ReleaseName = c.releaseName
 	install.Namespace = c.defaultNamespace
-	install.CreateNamespace = true
+	install.CreateNamespace = c.createNamespace
 	install.Atomic = installConfig.Atomic
 	install.Timeout = installConfig.Timeout.Duration
 
