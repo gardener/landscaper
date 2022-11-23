@@ -9,6 +9,7 @@ deployItems:
       updateStrategy: patch
       name: landscaper
       namespace: {{ .imports.hostingClusterNamespace }}
+      createNamespace: true
 
       chart:
         {{ $resource := getResource .cd "name" "landscaper-controller-deployment-chart" }}
