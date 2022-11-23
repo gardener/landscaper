@@ -22,8 +22,8 @@ const (
 	labelValueOk                = "ok"
 	annotationKeyLastTargetSync = lsv1alpha1.LandscaperDomain + "/lasttargetsync"
 	subresourceAdminkubeconfig  = "adminkubeconfig"
-	kubeconfigRefreshSeconds    = 12 * 60 * 60
-	kubeconfigExpirationSeconds = 2 * kubeconfigRefreshSeconds
+	kubeconfigRenewalSeconds    = 12 * 60 * 60
+	kubeconfigExpirationSeconds = 2 * kubeconfigRenewalSeconds
 	kubeconfigKey               = targettypes.DefaultKubeconfigKey
 )
 

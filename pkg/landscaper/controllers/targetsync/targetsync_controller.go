@@ -44,10 +44,7 @@ import (
 // AddControllerToManagerForTargetSyncs adds the controller to the manager
 func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Manager) error {
 	log := logger.Reconciles("targetSync", "TargetSync")
-	ctrl, err := NewTargetSyncController(log, mgr.GetClient(), NewDefaultSourceClientProvider())
-	if err != nil {
-		return err
-	}
+	ctrl := NewTargetSyncController(log, mgr.GetClient(), NewDefaultSourceClientProvider())
 
 	predicates := builder.WithPredicates(predicate.Or(predicate.LabelChangedPredicate{},
 		predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))
@@ -61,19 +58,17 @@ func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Man
 // TargetSyncController is the TargetSync controller
 type TargetSyncController struct {
 	log                  logging.Logger
-	lsClient             client.Client
+	targetClient         client.Client
 	sourceClientProvider SourceClientProvider
 }
 
 // NewTargetSyncController returns a new TargetSync controller
-func NewTargetSyncController(logger logging.Logger, c client.Client, p SourceClientProvider) (reconcile.Reconciler, error) {
-	ctrl := &TargetSyncController{
+func NewTargetSyncController(logger logging.Logger, targetClient client.Client, p SourceClientProvider) reconcile.Reconciler {
+	return &TargetSyncController{
 		log:                  logger,
-		lsClient:             c,
+		targetClient:         targetClient,
 		sourceClientProvider: p,
 	}
-
-	return ctrl, nil
 }
 
 // Reconcile reconciles requests for TargetSyncs
@@ -81,7 +76,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
 
 	targetSync := &lsv1alpha1.TargetSync{}
-	if err := c.lsClient.Get(ctx, req.NamespacedName, targetSync); err != nil {
+	if err := c.targetClient.Get(ctx, req.NamespacedName, targetSync); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -93,7 +88,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	// set finalizer
 	if targetSync.DeletionTimestamp.IsZero() && !kutils.HasFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
-		if err := c.lsClient.Update(ctx, targetSync); err != nil {
+		if err := c.targetClient.Update(ctx, targetSync); err != nil {
 			logger.Error(err, "adding finalizer to targetSync object failed")
 			return reconcile.Result{}, err
 		}
@@ -131,7 +126,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 		err = fmt.Errorf("more than one TargetSync object in the same namespace is not allowed")
 		errors = append(errors, err)
 	} else {
-		sourceClient, restConfig, err := c.sourceClientProvider.GetSourceClient(ctx, targetSync, c.lsClient, nil)
+		sourceClient, restConfig, err := c.sourceClientProvider.GetSourceClient(ctx, targetSync, c.targetClient, nil)
 		if err != nil {
 			logger.Error(err, "fetching source client for target sync object failed")
 			errors = append(errors, err)
@@ -156,7 +151,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 	targetSync.Status.ObservedGeneration = targetSync.GetGeneration()
 	targetSync.Status.LastUpdateTime = &now
 
-	if err = c.lsClient.Status().Update(ctx, targetSync); err != nil {
+	if err = c.targetClient.Status().Update(ctx, targetSync); err != nil {
 		logger.Error(err, "updating status at the end of reconcile of target sync object failed")
 		return err
 	}
@@ -181,7 +176,7 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 		targetSync.Status.ObservedGeneration = targetSync.GetGeneration()
 		targetSync.Status.LastUpdateTime = &now
 
-		if internalErr := c.lsClient.Status().Update(ctx, targetSync); err != nil {
+		if internalErr := c.targetClient.Status().Update(ctx, targetSync); err != nil {
 			logger.Error(err, "updating status with error for deleting target sync object failed")
 			return internalErr
 		}
@@ -190,7 +185,7 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 	}
 
 	controllerutil.RemoveFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
-	if err := c.lsClient.Update(ctx, targetSync); err != nil {
+	if err := c.targetClient.Update(ctx, targetSync); err != nil {
 		logger.Error(err, "removing finalizer for deleting target sync object failed")
 		return lserrors.NewWrappedError(err, "handleDelete", "RemoveFinalizer", err.Error())
 	}
@@ -219,22 +214,21 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 			return errors
 		}
 
-		for _, nextSecret := range secrets.Items {
-			if secrFilter.shouldBeProcessed(&nextSecret) {
-				delete(oldTargets, nextSecret.Name)
+		for _, secret := range secrets.Items {
+			if secrFilter.shouldBeProcessed(&secret) {
+				secretLogger := logger.WithValues("secret", client.ObjectKeyFromObject(&secret).String())
+				secretCtx := logging.NewContext(ctx, secretLogger)
 
-				if err = c.handleSecret(ctx, targetSync, &nextSecret); err != nil {
-					msg := fmt.Sprintf("handling secret %s of target sync object failed", client.ObjectKeyFromObject(&nextSecret).String())
-					logger.Error(err, msg)
+				delete(oldTargets, secret.Name)
+
+				if err = c.handleSecret(secretCtx, targetSync, &secret); err != nil {
+					msg := fmt.Sprintf("handling secret %s of target sync object failed", client.ObjectKeyFromObject(&secret).String())
+					secretLogger.Error(err, msg)
 					errors = append(errors, err)
 				}
 			}
 		}
 	}
-
-	// TODO: If we allow to sync by shootNameExpression and by secretNameExpresssion at the same time, there could be an
-	// overlap. The shoot handling below might overwrite a target-secret pair that we have just synced above in the secret handling.
-	// Proposal: check that one and only one of ShootNameExpression and SecretNameExpression is active.
 
 	if targetSync.Spec.ShootNameExpression != "" {
 		shootFilter, err := newNameFilter(targetSync.Spec.ShootNameExpression)
@@ -244,7 +238,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 			return errors
 		}
 
-		shootClient, err := c.sourceClientProvider.GetUnstructuredSourceClient(ctx, targetSync, c.lsClient, shootGVR)
+		shootClient, err := c.sourceClientProvider.GetUnstructuredSourceClient(ctx, targetSync, c.targetClient, shootGVR)
 		if err != nil {
 			logger.Error(err, "failed to get shhot client for target sync")
 			errors = append(errors, err)
@@ -260,12 +254,15 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 
 		for _, shoot := range shootList.Items {
 			if shootFilter.shouldBeProcessed(&shoot) {
+				shootLogger := logger.WithValues("shoot", client.ObjectKeyFromObject(&shoot).String())
+				shootCtx := logging.NewContext(ctx, shootLogger)
+
 				targetName := c.deriveTargetNameFromShootName(shoot.GetName())
 				delete(oldTargets, targetName)
 
-				if err = c.handleShoot(ctx, targetSync, shootClient, &shoot); err != nil {
+				if err = c.handleShoot(shootCtx, targetSync, shootClient, &shoot); err != nil {
 					msg := fmt.Sprintf("handling shoot %s of target sync object failed", client.ObjectKeyFromObject(&shoot).String())
-					logger.Error(err, msg)
+					shootLogger.Error(err, msg)
 					errors = append(errors, err)
 				}
 			}
@@ -275,14 +272,14 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 	if len(errors) == 0 {
 		for key := range oldTargets {
 			secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
-			if err := c.lsClient.Delete(ctx, &secret); err != nil {
+			if err := c.targetClient.Delete(ctx, &secret); err != nil {
 				msg := fmt.Sprintf("deleting old secret %s of target sync object failed", client.ObjectKeyFromObject(&secret).String())
 				logger.Error(err, msg)
 				errors = append(errors, err)
 			}
 
 			target := lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
-			if err := c.lsClient.Delete(ctx, &target); err != nil {
+			if err := c.targetClient.Delete(ctx, &target); err != nil {
 				msg := fmt.Sprintf("deleting old target %s of target sync object failed", client.ObjectKeyFromObject(&target).String())
 				logger.Error(err, msg)
 				errors = append(errors, err)
@@ -310,24 +307,18 @@ func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1
 
 	targetName := c.deriveTargetNameFromShootName(shoot.GetName())
 
-	oldTarget := &lsv1alpha1.Target{
-		ObjectMeta: controllerruntime.ObjectMeta{Name: targetName, Namespace: targetSync.Namespace},
-	}
-	err := c.lsClient.Get(ctx, client.ObjectKeyFromObject(oldTarget), oldTarget)
-	if err != nil && !apierrors.IsNotFound(err) {
+	due, err := c.isRenewalOfShortLivedKubeconfigDue(ctx, targetName, targetSync.Namespace)
+	if err != nil {
 		return err
-	} else if err == nil {
-		lastTargetSync, err := helper.GetTimestampAnnotation(oldTarget.ObjectMeta, annotationKeyLastTargetSync)
-		if err != nil {
-			logger.Error(err, "failed to get last target sync time")
-		} else if time.Since(lastTargetSync) < kubeconfigRefreshSeconds*time.Second {
-			return nil
-		}
+	} else if !due {
+		return nil
 	}
 
 	err = c.createOrUpdateTarget(ctx, targetSync, targetName, true)
 	if err != nil {
-		return err
+		msg := "targetsync for shoot failed: could not create or update target"
+		logger.Error(err, msg)
+		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
 	}
 
 	adminKubeconfigRequest := unstructured.Unstructured{
@@ -346,42 +337,84 @@ func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1
 
 	result, err := shootClient.Create(ctx, &adminKubeconfigRequest, metav1.CreateOptions{}, subresourceAdminkubeconfig)
 	if err != nil {
-		return err
+		msg := "targetsync for shoot failed at adminkubeconfigrequest"
+		logger.Error(err, msg)
+		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
 	}
 
 	kubeconfig, found, err := unstructured.NestedString(result.Object, "status", "kubeconfig")
 	if err != nil {
-		return fmt.Errorf("failed to get kubeconfig from adminkubeconfig subresource: %w", err)
+		msg := "targetsync for shoot failed: could not get kubeconfig from adminkubeconfig subresource"
+		logger.Error(err, msg)
+		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
 	} else if !found {
-		return fmt.Errorf("failed to find kubeconfig in adminkubeconfig subresource")
+		msg := "targetsync for shoot failed: could not find kubeconfig in adminkubeconfig subresource"
+		logger.Error(nil, msg)
+		return fmt.Errorf("%s; target: %s", msg, targetName)
 	}
 
 	err = c.createOrUpdateSecretForShoot(ctx, targetSync, targetName, kubeconfig)
+	if err != nil {
+		msg := "targetsync for shoot failed: could not create or update secret"
+		logger.Error(err, msg)
+		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
+	}
 
-	return err
+	return nil
+}
+
+func (c *TargetSyncController) isRenewalOfShortLivedKubeconfigDue(ctx context.Context, targetName, targetNamespace string) (due bool, err error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	oldTarget := &lsv1alpha1.Target{
+		ObjectMeta: controllerruntime.ObjectMeta{Name: targetName, Namespace: targetNamespace},
+	}
+
+	err = c.targetClient.Get(ctx, client.ObjectKeyFromObject(oldTarget), oldTarget)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Info("targetsync for shoot is due for the first time")
+			return true, nil
+		}
+
+		msg := "targetsync for shoot failed because synced target could not be read"
+		logger.Error(err, msg)
+		return false, fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
+	}
+
+	lastTargetSync, err := helper.GetTimestampAnnotation(oldTarget.ObjectMeta, annotationKeyLastTargetSync)
+	if err != nil {
+		logger.Error(err, "targetsync for shoot is due because last targetsync time could not be retrieved")
+		return true, nil
+
+	} else if time.Since(lastTargetSync) > kubeconfigRenewalSeconds*time.Second {
+		logger.Info("targetsync for shoot is due because kubeconfig will expire soon")
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (c *TargetSyncController) createOrUpdateTarget(ctx context.Context, targetSync *lsv1alpha1.TargetSync,
 	targetName string, addLastTargetSyncAnnotation bool) error {
-	targetSpec := lsv1alpha1.TargetSpec{
-		Type: targettypes.KubernetesClusterTargetType,
-		SecretRef: &lsv1alpha1.LocalSecretReference{
-			Name: targetName,
-			Key:  kubeconfigKey,
-		},
-	}
 
 	newTarget := &lsv1alpha1.Target{
 		ObjectMeta: controllerruntime.ObjectMeta{Name: targetName, Namespace: targetSync.Namespace},
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, c.lsClient, newTarget, func() error {
-		newTarget.Spec = targetSpec
+	_, err := controllerruntime.CreateOrUpdate(ctx, c.targetClient, newTarget, func() error {
 		newTarget.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
 		if addLastTargetSyncAnnotation {
 			helper.SetTimestampAnnotationNow(&newTarget.ObjectMeta, annotationKeyLastTargetSync)
+		}
+		newTarget.Spec = lsv1alpha1.TargetSpec{
+			Type: targettypes.KubernetesClusterTargetType,
+			SecretRef: &lsv1alpha1.LocalSecretReference{
+				Name: targetName,
+				Key:  kubeconfigKey,
+			},
 		}
 		return nil
 	})
@@ -394,7 +427,7 @@ func (c *TargetSyncController) createOrUpdateSecret(ctx context.Context, targetS
 		ObjectMeta: controllerruntime.ObjectMeta{Name: secret.Name, Namespace: targetSync.Namespace},
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, c.lsClient, newSecret, func() error {
+	_, err := controllerruntime.CreateOrUpdate(ctx, c.targetClient, newSecret, func() error {
 		newSecret.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
@@ -408,6 +441,7 @@ func (c *TargetSyncController) createOrUpdateSecret(ctx context.Context, targetS
 
 func (c *TargetSyncController) createOrUpdateSecretForShoot(ctx context.Context, targetSync *lsv1alpha1.TargetSync,
 	targetName string, kubeconfig string) error {
+
 	newSecret := &corev1.Secret{
 		ObjectMeta: controllerruntime.ObjectMeta{Name: targetName, Namespace: targetSync.Namespace},
 	}
@@ -417,7 +451,7 @@ func (c *TargetSyncController) createOrUpdateSecretForShoot(ctx context.Context,
 		return err
 	}
 
-	_, err = controllerruntime.CreateOrUpdate(ctx, c.lsClient, newSecret, func() error {
+	_, err = controllerruntime.CreateOrUpdate(ctx, c.targetClient, newSecret, func() error {
 		newSecret.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
@@ -435,28 +469,28 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	secrets := &corev1.SecretList{}
-	if err := c.lsClient.List(ctx, secrets, client.InNamespace(targetSync.Namespace),
+	if err := c.targetClient.List(ctx, secrets, client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "listing secrets for deleting target sync object failed")
 		return err
 	}
 
 	for _, nextSecret := range secrets.Items {
-		if err := c.lsClient.Delete(ctx, &nextSecret); err != nil {
+		if err := c.targetClient.Delete(ctx, &nextSecret); err != nil {
 			logger.Error(err, "deleting secret for deleting target sync object failed")
 			return err
 		}
 	}
 
 	targets := &lsv1alpha1.TargetList{}
-	if err := c.lsClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
+	if err := c.targetClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "listing targets for deleting target sync object failed")
 		return err
 	}
 
 	for _, nextTarget := range targets.Items {
-		if err := c.lsClient.Delete(ctx, &nextTarget); err != nil {
+		if err := c.targetClient.Delete(ctx, &nextTarget); err != nil {
 			logger.Error(err, "deleting target for deleting target sync object failed")
 			return err
 		}
@@ -470,13 +504,13 @@ func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targetSyncs := &lsv1alpha1.TargetSyncList{}
-	if err := c.lsClient.List(ctx, targetSyncs, client.InNamespace(targetSync.Namespace)); err != nil {
+	if err := c.targetClient.List(ctx, targetSyncs, client.InNamespace(targetSync.Namespace)); err != nil {
 		logger.Error(err, "fetching target sync list failed")
 		return nil, nil, err
 	}
 
 	targets := &lsv1alpha1.TargetList{}
-	if err := c.lsClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
+	if err := c.targetClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "fetching target list for target sync object failed")
 		return nil, nil, err
@@ -545,7 +579,7 @@ func (c *TargetSyncController) fetchSecretAndKubeconfigObject(ctx context.Contex
 		Name:      targetSync.Spec.SecretRef.Name,
 	}
 
-	if err := c.lsClient.Get(ctx, secretKey, secret); err != nil {
+	if err := c.targetClient.Get(ctx, secretKey, secret); err != nil {
 		return nil, nil, err
 	}
 
@@ -582,7 +616,7 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 
 	secret.Data[targetSync.Spec.SecretRef.Key] = kubeconfigBytes
 
-	if err := c.lsClient.Update(ctx, secret); err != nil {
+	if err := c.targetClient.Update(ctx, secret); err != nil {
 		return err
 	}
 
