@@ -81,7 +81,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
-		logger.Error(err, "fetching targetSync object failed")
+		logger.Error(err, "fetching targetsync object failed")
 		return reconcile.Result{}, err
 	}
 
@@ -89,7 +89,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	if targetSync.DeletionTimestamp.IsZero() && !kutils.HasFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
 		if err := c.targetClient.Update(ctx, targetSync); err != nil {
-			logger.Error(err, "adding finalizer to targetSync object failed")
+			logger.Error(err, "adding finalizer to targetsync object failed")
 			return reconcile.Result{}, err
 		}
 		// do not return here because the controller only watches for particular events and setting a finalizer is not part of this
@@ -97,12 +97,12 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 
 	if targetSync.DeletionTimestamp.IsZero() {
 		if err := c.handleReconcile(ctx, targetSync); err != nil {
-			logger.Error(err, "reconciling targetSync object failed")
+			logger.Error(err, "reconciling targetsync object failed")
 			return reconcile.Result{}, err
 		}
 	} else {
 		if err := c.handleDelete(ctx, targetSync); err != nil {
-			logger.Error(err, "deleting targetSync object failed")
+			logger.Error(err, "deleting targetsync object failed")
 			return reconcile.Result{}, err
 		}
 	}
@@ -118,7 +118,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 
 	errors := []error{}
 
-	targetSyncs, oldTargets, err := c.fetchTargetSyncsAndOldTargets(ctx, targetSync)
+	targetSyncs, err := c.fetchTargetSyncs(ctx, targetSync)
 
 	if err != nil {
 		errors = append(errors, err)
@@ -128,7 +128,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 	} else {
 		sourceClient, restConfig, err := c.sourceClientProvider.GetSourceClient(ctx, targetSync, c.targetClient, nil)
 		if err != nil {
-			logger.Error(err, "fetching source client for target sync object failed")
+			logger.Error(err, "fetching source client for targetsync object failed")
 			errors = append(errors, err)
 		} else {
 			err = c.refreshToken(ctx, targetSync, restConfig)
@@ -136,7 +136,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 				logger.Error(err, "refreshing token failed")
 				errors = append(errors, err)
 			} else {
-				errors = c.handleSecretsAndShoots(ctx, targetSync, sourceClient, oldTargets)
+				errors = c.handleSecretsAndShoots(ctx, targetSync, sourceClient)
 			}
 		}
 	}
@@ -152,7 +152,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 	targetSync.Status.LastUpdateTime = &now
 
 	if err = c.targetClient.Status().Update(ctx, targetSync); err != nil {
-		logger.Error(err, "updating status at the end of reconcile of target sync object failed")
+		logger.Error(err, "updating status at the end of reconcile of targetsync object failed")
 		return err
 	}
 
@@ -177,16 +177,17 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 		targetSync.Status.LastUpdateTime = &now
 
 		if internalErr := c.targetClient.Status().Update(ctx, targetSync); err != nil {
-			logger.Error(err, "updating status with error for deleting target sync object failed")
+			logger.Error(err, "updating status with error for deleting targetsync object failed")
 			return internalErr
 		}
 
 		return err
 	}
 
+	logger.Info("deleting targetsync object: removing finalizer")
 	controllerutil.RemoveFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
 	if err := c.targetClient.Update(ctx, targetSync); err != nil {
-		logger.Error(err, "removing finalizer for deleting target sync object failed")
+		logger.Error(err, "removing finalizer for deleting targetsync object failed")
 		return lserrors.NewWrappedError(err, "handleDelete", "RemoveFinalizer", err.Error())
 	}
 
@@ -194,35 +195,48 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 }
 
 func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targetSync *lsv1alpha1.TargetSync,
-	sourceClient client.Client, oldTargets map[string]*lsv1alpha1.Target) []error {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	sourceClient client.Client) []error {
 
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	errors := []error{}
+
+	if targetSync.Spec.SecretNameExpression != "" && targetSync.Spec.ShootNameExpression != "" {
+		msg := "a targetsync object with both, secretNameExpression and shootNameExpression, is not allowed"
+		logger.Error(nil, msg)
+		errors = append(errors, fmt.Errorf(msg))
+		return errors
+	}
+
+	oldTargets, err := c.fetchOldTargets(ctx, targetSync)
+	if err != nil {
+		errors = append(errors, err)
+		return errors
+	}
 
 	if targetSync.Spec.SecretNameExpression != "" {
 		secrFilter, err := newNameFilter(targetSync.Spec.SecretNameExpression)
 		if err != nil {
-			logger.Error(err, "building secret name filter of target sync object failed: "+targetSync.Spec.SecretNameExpression)
+			logger.Error(err, "building secret name filter of targetsync object failed: "+targetSync.Spec.SecretNameExpression)
 			errors = append(errors, err)
 			return errors
 		}
 
 		secrets := &corev1.SecretList{}
 		if err = sourceClient.List(ctx, secrets, client.InNamespace(targetSync.Spec.SourceNamespace)); err != nil {
-			logger.Error(err, "fetching secret list for target sync object failed")
+			logger.Error(err, "fetching secret list for targetsync object failed")
 			errors = append(errors, err)
 			return errors
 		}
 
 		for _, secret := range secrets.Items {
 			if secrFilter.shouldBeProcessed(&secret) {
-				secretLogger := logger.WithValues("secret", client.ObjectKeyFromObject(&secret).String())
+				secretLogger := logger.WithValues(loggingKeySecret, client.ObjectKeyFromObject(&secret).String())
 				secretCtx := logging.NewContext(ctx, secretLogger)
 
 				delete(oldTargets, secret.Name)
 
 				if err = c.handleSecret(secretCtx, targetSync, &secret); err != nil {
-					msg := fmt.Sprintf("handling secret %s of target sync object failed", client.ObjectKeyFromObject(&secret).String())
+					msg := fmt.Sprintf("handling secret %s of targetsync object failed", client.ObjectKeyFromObject(&secret).String())
 					secretLogger.Error(err, msg)
 					errors = append(errors, err)
 				}
@@ -233,21 +247,21 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 	if targetSync.Spec.ShootNameExpression != "" {
 		shootFilter, err := newNameFilter(targetSync.Spec.ShootNameExpression)
 		if err != nil {
-			logger.Error(err, "building shoot name filter of target sync object failed: "+targetSync.Spec.ShootNameExpression)
+			logger.Error(err, "building shoot name filter of targetsync object failed: "+targetSync.Spec.ShootNameExpression)
 			errors = append(errors, err)
 			return errors
 		}
 
 		shootClient, err := c.sourceClientProvider.GetUnstructuredSourceClient(ctx, targetSync, c.targetClient, shootGVR)
 		if err != nil {
-			logger.Error(err, "failed to get shhot client for target sync")
+			logger.Error(err, "failed to get shoot client for targetsync")
 			errors = append(errors, err)
 			return errors
 		}
 
 		shootList, err := shootClient.List(ctx, metav1.ListOptions{})
 		if err != nil {
-			logger.Error(err, "failed to list shoots for target sync")
+			logger.Error(err, "failed to list shoots for targetsync")
 			errors = append(errors, err)
 			return errors
 		}
@@ -261,7 +275,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 				delete(oldTargets, targetName)
 
 				if err = c.handleShoot(shootCtx, targetSync, shootClient, &shoot); err != nil {
-					msg := fmt.Sprintf("handling shoot %s of target sync object failed", client.ObjectKeyFromObject(&shoot).String())
+					msg := fmt.Sprintf("handling shoot %s of targetsync object failed", client.ObjectKeyFromObject(&shoot).String())
 					shootLogger.Error(err, msg)
 					errors = append(errors, err)
 				}
@@ -273,14 +287,14 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 		for key := range oldTargets {
 			secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
 			if err := c.targetClient.Delete(ctx, &secret); err != nil {
-				msg := fmt.Sprintf("deleting old secret %s of target sync object failed", client.ObjectKeyFromObject(&secret).String())
+				msg := fmt.Sprintf("deleting old secret %s of targetsync object failed", client.ObjectKeyFromObject(&secret).String())
 				logger.Error(err, msg)
 				errors = append(errors, err)
 			}
 
 			target := lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
 			if err := c.targetClient.Delete(ctx, &target); err != nil {
-				msg := fmt.Sprintf("deleting old target %s of target sync object failed", client.ObjectKeyFromObject(&target).String())
+				msg := fmt.Sprintf("deleting old target %s of targetsync object failed", client.ObjectKeyFromObject(&target).String())
 				logger.Error(err, msg)
 				errors = append(errors, err)
 			}
@@ -471,13 +485,15 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	secrets := &corev1.SecretList{}
 	if err := c.targetClient.List(ctx, secrets, client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
-		logger.Error(err, "listing secrets for deleting target sync object failed")
+		logger.Error(err, "listing secrets for deleting targetsync object failed")
 		return err
 	}
 
-	for _, nextSecret := range secrets.Items {
-		if err := c.targetClient.Delete(ctx, &nextSecret); err != nil {
-			logger.Error(err, "deleting secret for deleting target sync object failed")
+	for _, secret := range secrets.Items {
+		secretLogger := logger.WithValues(loggingKeySecret, client.ObjectKeyFromObject(&secret).String())
+		secretLogger.Info("deleting secret whose targetsync object is being deleted")
+		if err := c.targetClient.Delete(ctx, &secret); err != nil {
+			secretLogger.Error(err, "failed to delete secret whose targetsync object is being deleted")
 			return err
 		}
 	}
@@ -485,13 +501,15 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	targets := &lsv1alpha1.TargetList{}
 	if err := c.targetClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
-		logger.Error(err, "listing targets for deleting target sync object failed")
+		logger.Error(err, "listing targets for deleting targetsync object failed")
 		return err
 	}
 
-	for _, nextTarget := range targets.Items {
-		if err := c.targetClient.Delete(ctx, &nextTarget); err != nil {
-			logger.Error(err, "deleting target for deleting target sync object failed")
+	for _, target := range targets.Items {
+		targetLogger := logger.WithValues(loggingKeyTarget, client.ObjectKeyFromObject(&target).String())
+		targetLogger.Info("deleting target whose targetsync object is being deleted")
+		if err := c.targetClient.Delete(ctx, &target); err != nil {
+			targetLogger.Error(err, "failed to delete target whose targetsync object is being deleted")
 			return err
 		}
 	}
@@ -499,21 +517,25 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	return nil
 }
 
-func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context,
-	targetSync *lsv1alpha1.TargetSync) (*lsv1alpha1.TargetSyncList, map[string]*lsv1alpha1.Target, error) {
+func (c *TargetSyncController) fetchTargetSyncs(ctx context.Context, targetSync *lsv1alpha1.TargetSync) (*lsv1alpha1.TargetSyncList, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targetSyncs := &lsv1alpha1.TargetSyncList{}
 	if err := c.targetClient.List(ctx, targetSyncs, client.InNamespace(targetSync.Namespace)); err != nil {
-		logger.Error(err, "fetching target sync list failed")
-		return nil, nil, err
+		logger.Error(err, "targetsync failed: could not fetch targetsync list")
+		return nil, err
 	}
 
+	return targetSyncs, nil
+}
+
+func (c *TargetSyncController) fetchOldTargets(ctx context.Context, targetSync *lsv1alpha1.TargetSync) (map[string]*lsv1alpha1.Target, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
 	targets := &lsv1alpha1.TargetList{}
-	if err := c.targetClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
-		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
-		logger.Error(err, "fetching target list for target sync object failed")
-		return nil, nil, err
+	if err := c.targetClient.List(ctx, targets, client.InNamespace(targetSync.Namespace), client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
+		logger.Error(err, "targetsync failed: old targets could not be fetched")
+		return nil, err
 	}
 
 	targetMap := map[string]*lsv1alpha1.Target{}
@@ -522,7 +544,7 @@ func (c *TargetSyncController) fetchTargetSyncsAndOldTargets(ctx context.Context
 		targetMap[next.Name] = next
 	}
 
-	return targetSyncs, targetMap, nil
+	return targetMap, nil
 }
 
 func (c *TargetSyncController) refreshToken(ctx context.Context, targetSync *lsv1alpha1.TargetSync, restConfig *rest.Config) error {

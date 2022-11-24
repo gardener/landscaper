@@ -25,6 +25,9 @@ const (
 	kubeconfigRenewalSeconds    = 12 * 60 * 60
 	kubeconfigExpirationSeconds = 2 * kubeconfigRenewalSeconds
 	kubeconfigKey               = targettypes.DefaultKubeconfigKey
+
+	loggingKeySecret = "secret"
+	loggingKeyTarget = "target"
 )
 
 var (
