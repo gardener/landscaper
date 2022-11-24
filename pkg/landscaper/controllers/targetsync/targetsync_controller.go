@@ -314,13 +314,6 @@ func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1
 		return nil
 	}
 
-	err = c.createOrUpdateTarget(ctx, targetSync, targetName, true)
-	if err != nil {
-		msg := "targetsync for shoot failed: could not create or update target"
-		logger.Error(err, msg)
-		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
-	}
-
 	adminKubeconfigRequest := unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "authentication.gardener.cloud/v1alpha1",
@@ -356,6 +349,13 @@ func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1
 	err = c.createOrUpdateSecretForShoot(ctx, targetSync, targetName, kubeconfig)
 	if err != nil {
 		msg := "targetsync for shoot failed: could not create or update secret"
+		logger.Error(err, msg)
+		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
+	}
+
+	err = c.createOrUpdateTarget(ctx, targetSync, targetName, true)
+	if err != nil {
+		msg := "targetsync for shoot failed: could not create or update target"
 		logger.Error(err, msg)
 		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
 	}
