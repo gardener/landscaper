@@ -29,19 +29,21 @@ cluster. This is the easiest setup when you start working with the Landscaper.
 
 [3. Manifest Deployer Example](./basics/manifest-deployer)
 
+[4. Multiple Deployments in One Installation](./basics/multiple-deployitems)
+
 ## Recovering from Errors
 
-[4. Handling an Immediate Error](./error-handling/immediate-error)
+[5. Handling an Immediate Error](./error-handling/immediate-error)
 
-[5. Handling a Timeout Error](./error-handling/timeout-error)
+[6. Handling a Timeout Error](./error-handling/timeout-error)
 
-[6. Handling a Delete Error](./error-handling/delete-error)
+[7. Handling a Delete Error](./error-handling/delete-error)
 
 ## Blueprints and Components
 
-[7. An Installation with an Externally Stored Blueprint](./blueprints/external-blueprint)
+[8. An Installation with an Externally Stored Blueprint](./blueprints/external-blueprint)
 
-[8. Helm Chart Resources in the Component Descriptor](./blueprints/helm-chart-resource)
+[9. Helm Chart Resources in the Component Descriptor](./blueprints/helm-chart-resource)
 
 
 <!--
