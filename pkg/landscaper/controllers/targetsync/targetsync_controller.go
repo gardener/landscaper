@@ -230,7 +230,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 
 		for _, secret := range secrets.Items {
 			if secrFilter.shouldBeProcessed(&secret) {
-				secretLogger := logger.WithValues(loggingKeySecret, client.ObjectKeyFromObject(&secret).String())
+				secretLogger := logger.WithValues(lc.KeyResource, client.ObjectKeyFromObject(&secret).String())
 				secretCtx := logging.NewContext(ctx, secretLogger)
 
 				delete(oldTargets, secret.Name)
@@ -268,7 +268,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 
 		for _, shoot := range shootList.Items {
 			if shootFilter.shouldBeProcessed(&shoot) {
-				shootLogger := logger.WithValues("shoot", client.ObjectKeyFromObject(&shoot).String())
+				shootLogger := logger.WithValues(lc.KeyResource, client.ObjectKeyFromObject(&shoot).String())
 				shootCtx := logging.NewContext(ctx, shootLogger)
 
 				targetName := c.deriveTargetNameFromShootName(shoot.GetName())
@@ -490,7 +490,7 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	}
 
 	for _, secret := range secrets.Items {
-		secretLogger := logger.WithValues(loggingKeySecret, client.ObjectKeyFromObject(&secret).String())
+		secretLogger := logger.WithValues(lc.KeyResource, client.ObjectKeyFromObject(&secret).String())
 		secretLogger.Info("deleting secret whose targetsync object is being deleted")
 		if err := c.targetClient.Delete(ctx, &secret); err != nil {
 			secretLogger.Error(err, "failed to delete secret whose targetsync object is being deleted")
@@ -506,7 +506,7 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	}
 
 	for _, target := range targets.Items {
-		targetLogger := logger.WithValues(loggingKeyTarget, client.ObjectKeyFromObject(&target).String())
+		targetLogger := logger.WithValues(lc.KeyResource, client.ObjectKeyFromObject(&target).String())
 		targetLogger.Info("deleting target whose targetsync object is being deleted")
 		if err := c.targetClient.Delete(ctx, &target); err != nil {
 			targetLogger.Error(err, "failed to delete target whose targetsync object is being deleted")
