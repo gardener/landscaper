@@ -22,6 +22,7 @@ deployExecutions:
             kind: ProviderConfiguration
             name: hello-world
             namespace: example
+            createNamespace: true
       
             chart:
               ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0

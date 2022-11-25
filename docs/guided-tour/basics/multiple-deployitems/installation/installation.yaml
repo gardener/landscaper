@@ -47,6 +47,7 @@ spec:
                       kind: ProviderConfiguration
                       name: hello-world-1
                       namespace: example-1
+                      createNamespace: true
                       chart:
                         ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
                       values:
@@ -66,6 +67,7 @@ spec:
                       kind: ProviderConfiguration
                       name: hello-world-2
                       namespace: example-2
+                      createNamespace: true
                       chart:
                         ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
                       values:
