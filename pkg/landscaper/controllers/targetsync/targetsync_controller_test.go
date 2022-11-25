@@ -8,13 +8,11 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/util/wait"
-
-	corev1 "k8s.io/api/core/v1"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -34,9 +32,7 @@ var _ = Describe("TargetSync Controller", func() {
 		)
 
 		BeforeEach(func() {
-			var err error
-			ctrl, err = NewTargetSyncController(logging.Discard(), testenv.Client, NewTrivialSourceClientProvider(testenv.Client))
-			Expect(err).ToNot(HaveOccurred())
+			ctrl = NewTargetSyncController(logging.Discard(), testenv.Client, NewTrivialSourceClientProvider(testenv.Client, nil))
 		})
 
 		AfterEach(func() {

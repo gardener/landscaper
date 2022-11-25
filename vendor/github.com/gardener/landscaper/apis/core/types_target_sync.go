@@ -42,10 +42,18 @@ type TargetSyncSpec struct {
 	SecretRef LocalSecretReference `json:"secretRef"`
 
 	// SecretNameExpression defines the names of the secrets which should be synced via a regular expression according
-	// to https://github.com/google/re2/wiki/Syntax
-	// if not set all secrets are synced
+	// to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches
+	// all names.
+	// if not set no secrets are synced
 	// +optional
 	SecretNameExpression string `json:"secretNameExpression"`
+
+	// ShootNameExpression defines the names of shoot clusters for which targets with short living access data
+	// to the shoots are created via a regular expression according to https://github.com/google/re2/wiki/Syntax with
+	// the extension that * is also a valid expression and matches all names.
+	// if not set no targets for the shoots are created
+	// +optional
+	ShootNameExpression string `json:"shootNameExpression"`
 
 	// TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the
 	// secrets to sync. The token expires after 90 days and will be rotated every 60 days.

@@ -1542,8 +1542,24 @@ string
 <td>
 <em>(Optional)</em>
 <p>SecretNameExpression defines the names of the secrets which should be synced via a regular expression according
-to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</a>
-if not set all secrets are synced</p>
+to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</a> with the extension that * is also a valid expression and matches
+all names.
+if not set no secrets are synced</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>shootNameExpression</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ShootNameExpression defines the names of shoot clusters for which targets with short living access data
+to the shoots are created via a regular expression according to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</a> with
+the extension that * is also a valid expression and matches all names.
+if not set no targets for the shoots are created</p>
 </td>
 </tr>
 <tr>
@@ -5269,8 +5285,24 @@ string
 <td>
 <em>(Optional)</em>
 <p>SecretNameExpression defines the names of the secrets which should be synced via a regular expression according
-to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</a>
-if not set all secrets are synced</p>
+to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</a> with the extension that * is also a valid expression and matches
+all names.
+if not set no secrets are synced</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>shootNameExpression</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ShootNameExpression defines the names of shoot clusters for which targets with short living access data
+to the shoots are created via a regular expression according to <a href="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</a> with
+the extension that * is also a valid expression and matches all names.
+if not set no targets for the shoots are created</p>
 </td>
 </tr>
 <tr>

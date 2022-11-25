@@ -1,16 +1,23 @@
+// SPDX-FileCopyrightText: 2022 "SAP SE or an SAP affiliate company and Gardener contributors"
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package targetsync
 
 import (
 	"context"
 	"fmt"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 type SourceClientProvider interface {
@@ -19,6 +26,12 @@ type SourceClientProvider interface {
 		targetSync *lsv1alpha1.TargetSync,
 		targetClient client.Client,
 		schema *runtime.Scheme) (client.Client, *rest.Config, error)
+
+	GetUnstructuredSourceClient(
+		ctx context.Context,
+		targetSync *lsv1alpha1.TargetSync,
+		targetClient client.Client,
+		groupVersionResource schema.GroupVersionResource) (dynamic.ResourceInterface, error)
 }
 
 type DefaultSourceClientProvider struct{}
@@ -48,6 +61,27 @@ func (p *DefaultSourceClientProvider) GetSourceClient(
 	}
 
 	return cl, restConfig, nil
+}
+
+func (p *DefaultSourceClientProvider) GetUnstructuredSourceClient(
+	ctx context.Context,
+	targetSync *lsv1alpha1.TargetSync,
+	targetClient client.Client,
+	groupVersionResource schema.GroupVersionResource) (dynamic.ResourceInterface, error) {
+
+	restConfig, err := p.getSourceRestConfig(ctx, targetSync, targetClient)
+	if err != nil {
+		return nil, err
+	}
+
+	cl, err := dynamic.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create unstructured client for target sync: %w", err)
+	}
+
+	typedClient := cl.Resource(groupVersionResource).Namespace(targetSync.Spec.SourceNamespace)
+
+	return typedClient, nil
 }
 
 func (p *DefaultSourceClientProvider) getSourceRestConfig(ctx context.Context, targetSync *lsv1alpha1.TargetSync, targetClient client.Client) (*rest.Config, error) {
@@ -91,14 +125,19 @@ func (p *DefaultSourceClientProvider) resolveSecretRef(ctx context.Context, targ
 }
 
 type TrivialSourceClientProvider struct {
-	sourceClient client.Client
+	sourceClient             client.Client
+	unstructuredSourceClient dynamic.ResourceInterface
 }
 
 var _ SourceClientProvider = &TrivialSourceClientProvider{}
 
-func NewTrivialSourceClientProvider(sourceClient client.Client) SourceClientProvider {
+func NewTrivialSourceClientProvider(
+	sourceClient client.Client,
+	unstructuredSourceClient dynamic.ResourceInterface) SourceClientProvider {
+
 	return &TrivialSourceClientProvider{
-		sourceClient: sourceClient,
+		sourceClient:             sourceClient,
+		unstructuredSourceClient: unstructuredSourceClient,
 	}
 }
 
@@ -109,4 +148,13 @@ func (p *TrivialSourceClientProvider) GetSourceClient(
 	_ *runtime.Scheme) (client.Client, *rest.Config, error) {
 
 	return p.sourceClient, nil, nil
+}
+
+func (p *TrivialSourceClientProvider) GetUnstructuredSourceClient(
+	ctx context.Context,
+	targetSync *lsv1alpha1.TargetSync,
+	targetClient client.Client,
+	groupVersionResource schema.GroupVersionResource) (dynamic.ResourceInterface, error) {
+
+	return p.unstructuredSourceClient, nil
 }
