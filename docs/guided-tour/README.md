@@ -55,6 +55,9 @@ Pull secret in context to access a protected oci registry
 Timeouts
 Import, export
 Subinstallations
+deploy executions in files
+images listed in a component descriptor
+additional files in blueprint, e.g. for config data
 
 Make use of temp files in the scripts that upload a component descriptor
 -->
