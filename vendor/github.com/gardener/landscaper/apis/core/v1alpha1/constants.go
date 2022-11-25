@@ -35,6 +35,9 @@ const (
 	// are dependent installations.
 	DeleteIgnoreSuccessors = LandscaperDomain + "/delete-ignore-successors"
 
+	// ReconcileReasonAnnotation can be used to specify a reason for a reconcile operation, for example a retry.
+	ReconcileReasonAnnotation = LandscaperDomain + "/reconcile-reason"
+
 	// ReconcileTimestampAnnotation is used to recognize timeouts in deployitems
 	ReconcileTimestampAnnotation = LandscaperDomain + "/reconcile-time"
 

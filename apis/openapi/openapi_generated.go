@@ -120,6 +120,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionSpec":                                      schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionStatus":                                    schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExportDefinition":                                   schema_landscaper_apis_core_v1alpha1_ExportDefinition(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.FailedRetrySpec":                                    schema_landscaper_apis_core_v1alpha1_FailedRetrySpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.FieldValueDefinition":                               schema_landscaper_apis_core_v1alpha1_FieldValueDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ImportDefinition":                                   schema_landscaper_apis_core_v1alpha1_ImportDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus":                                       schema_landscaper_apis_core_v1alpha1_ImportStatus(ref),
@@ -142,11 +143,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Requirement":                                        schema_landscaper_apis_core_v1alpha1_Requirement(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResolvedTarget":                                     schema_landscaper_apis_core_v1alpha1_ResolvedTarget(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResourceReference":                                  schema_landscaper_apis_core_v1alpha1_ResourceReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.RetrySpec":                                          schema_landscaper_apis_core_v1alpha1_RetrySpec(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.RetryStatus":                                        schema_landscaper_apis_core_v1alpha1_RetryStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SecretLabelSelectorRef":                             schema_landscaper_apis_core_v1alpha1_SecretLabelSelectorRef(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference":                                    schema_landscaper_apis_core_v1alpha1_SecretReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.StaticDataSource":                                   schema_landscaper_apis_core_v1alpha1_StaticDataSource(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.StaticDataValueFrom":                                schema_landscaper_apis_core_v1alpha1_StaticDataValueFrom(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SubinstallationTemplate":                            schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.SuccessRetrySpec":                                   schema_landscaper_apis_core_v1alpha1_SuccessRetrySpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TLSClientConfig":                                    schema_landscaper_apis_core_v1alpha1_TLSClientConfig(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Target":                                             schema_landscaper_apis_core_v1alpha1_Target(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetExport":                                       schema_landscaper_apis_core_v1alpha1_TargetExport(ref),
@@ -4919,6 +4923,31 @@ func schema_landscaper_apis_core_v1alpha1_ExportDefinition(ref common.ReferenceC
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_FailedRetrySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"numberOfRetries": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"interval": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_FieldValueDefinition(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5405,12 +5434,17 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 							},
 						},
 					},
+					"retrySpec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.RetrySpec"),
+						},
+					},
 				},
 				Required: []string{"blueprint"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.RetrySpec"},
 	}
 }
 
@@ -5519,12 +5553,17 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"retryStatus": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.RetryStatus"),
+						},
+					},
 				},
 				Required: []string{"observedGeneration", "configGeneration"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.RetryStatus"},
 	}
 }
 
@@ -5979,6 +6018,68 @@ func schema_landscaper_apis_core_v1alpha1_ResourceReference(ref common.Reference
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_RetrySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"successRetrySpec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SuccessRetrySpec"),
+						},
+					},
+					"failedRetrySpec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.FailedRetrySpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.FailedRetrySpec", "github.com/gardener/landscaper/apis/core/v1alpha1.SuccessRetrySpec"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_RetryStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"generation": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int64",
+						},
+					},
+					"numberOfRetries": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"lastRetryTime": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"onFailed": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_SecretLabelSelectorRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6200,6 +6301,25 @@ func schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref common.Ref
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_SuccessRetrySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"interval": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
 	}
 }
 

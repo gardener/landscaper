@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: {{ .Namespace }}
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+  finalizers:
+    - finalizer.landscaper.gardener.cloud
+
+spec:
+
+  retrySpec:
+    failedRetrySpec:
+      interval: 1h
+      numberOfRetries: 3
+
+  imports:
+    targets:
+      - name: cluster
+        target: not-existing-target
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+          jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+          deployExecutions:
+            - name: default
+              type: GoTemplate
+              template: |
+                deployItems:
+                  - name: default-deploy-item
+                    type: landscaper.gardener.cloud/mock

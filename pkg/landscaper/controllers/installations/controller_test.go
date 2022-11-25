@@ -7,6 +7,8 @@ package installations_test
 import (
 	"context"
 
+	"k8s.io/utils/clock"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -43,7 +45,7 @@ var _ = Describe("Installation Controller", func() {
 
 			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 
-			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), &config.LandscaperConfiguration{
+			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
 					Local: &config.LocalRegistryConfiguration{
 						RootPath: "./testdata",

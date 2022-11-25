@@ -8,6 +8,8 @@ import (
 	"context"
 	"path/filepath"
 
+	"k8s.io/utils/clock"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -47,7 +49,7 @@ var _ = Describe("Simple", func() {
 
 		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeComponentRegistry)
 
-		instActuator = instctlr.NewTestActuator(*op, logging.Discard(), &config.LandscaperConfiguration{
+		instActuator = instctlr.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
 				Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
 			},

@@ -168,6 +168,28 @@ type InstallationSpec struct {
 	// Example: namespace: (( blueprint.exports.namespace ))
 	// +optional
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
+
+	// +optional
+	RetrySpec *RetrySpec `json:"retrySpec,omitempty"`
+}
+
+type RetrySpec struct {
+	// +optional
+	SuccessRetrySpec *SuccessRetrySpec `json:"successRetrySpec,omitempty"`
+	// +optional
+	FailedRetrySpec *FailedRetrySpec `json:"failedRetrySpec,omitempty"`
+}
+
+type SuccessRetrySpec struct {
+	// +optional
+	Interval *Duration `json:"interval,omitempty"`
+}
+
+type FailedRetrySpec struct {
+	// +optional
+	NumberOfRetries *int `json:"numberOfRetries,omitempty"`
+	// +optional
+	Interval *Duration `json:"interval,omitempty"`
 }
 
 // InstallationStatus contains the current status of a Installation.
@@ -206,6 +228,20 @@ type InstallationStatus struct {
 
 	// ImportsHash is the hash of the import data.
 	ImportsHash string `json:"importsHash,omitempty"`
+
+	// +optional
+	RetryStatus *RetryStatus `json:"retryStatus,omitempty"`
+}
+
+type RetryStatus struct {
+	// +optional
+	Generation int64 `json:"generation,omitempty"`
+	// +optional
+	NumberOfRetries int `json:"numberOfRetries,omitempty"`
+	// +optional
+	LastRetryTime metav1.Time `json:"lastRetryTime,omitempty"`
+	// +optional
+	OnFailed bool `json:"onFailed,omitempty"`
 }
 
 // InstallationImports defines import of data objects and targets.
