@@ -378,6 +378,56 @@ var _ = Describe("Blueprint", func() {
 				Expect(allErrs).To(HaveLen(0))
 			})
 
+			It("should pass if a targetlist import of a subinstallation refers to a targetlist imported by its parent", func() {
+				imports := []core.ImportDefinition{
+					{
+						FieldValueDefinition: core.FieldValueDefinition{
+							Name:       "myimportref",
+							TargetType: "mytype",
+						},
+						Type: core.ImportTypeTargetList,
+					},
+				}
+
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Name = "my-inst"
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImport{
+					{
+						Name:                "myimport",
+						TargetListReference: "myimportref",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
+				Expect(allErrs).To(HaveLen(0))
+			})
+
+			It("should pass if a target import of a subinstallation is imported as part of a targetlist by its parent", func() {
+				imports := []core.ImportDefinition{
+					{
+						FieldValueDefinition: core.FieldValueDefinition{
+							Name:       "myimportref",
+							TargetType: "mytype",
+						},
+						Type: core.ImportTypeTargetList,
+					},
+				}
+
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Name = "my-inst"
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImport{
+					{
+						Name:   "myimport",
+						Target: "myimportref[1]",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
+				Expect(allErrs).To(HaveLen(0))
+			})
+
 			It("should fail if a data import of a subinstallation is not satisfied", func() {
 				tmpl := &core.InstallationTemplate{}
 				tmpl.Blueprint.Ref = "myref"
@@ -406,6 +456,33 @@ var _ = Describe("Blueprint", func() {
 				}
 
 				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), nil, []*core.InstallationTemplate{tmpl})
+				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeNotFound),
+					"Field": Equal("b[0].imports.targets[0][myimport]"),
+				}))))
+			})
+
+			It("should fail if a target import of a subinstallation refers to a complete targetlist from its parent", func() {
+				imports := []core.ImportDefinition{
+					{
+						FieldValueDefinition: core.FieldValueDefinition{
+							Name:       "myimportref",
+							TargetType: "mytype",
+						},
+						Type: core.ImportTypeTargetList,
+					},
+				}
+
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImport{
+					{
+						Name:   "myimport",
+						Target: "myimportref",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeNotFound),
 					"Field": Equal("b[0].imports.targets[0][myimport]"),

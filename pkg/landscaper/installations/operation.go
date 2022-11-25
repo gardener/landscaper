@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -567,6 +568,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 	targetExtension.SetNamespace(o.Inst.GetInstallation().Namespace).
 		SetContext(src).
 		SetKey(importDef.Name).
+		SetIndex(nil).
 		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
 
 	targetForUpdate := &lsv1alpha1.Target{}
@@ -609,6 +611,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 		tar.SetNamespace(o.Inst.GetInstallation().Namespace).
 			SetContext(src).
 			SetKey(importDef.Name).
+			SetIndex(pointer.Int(i)).
 			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
 	}
 

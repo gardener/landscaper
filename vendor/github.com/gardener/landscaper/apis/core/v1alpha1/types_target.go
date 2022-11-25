@@ -54,6 +54,11 @@ var TargetDefinition = lsschema.CustomResourceDefinition{
 			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/key']",
 		},
 		{
+			Name:     "Idx",
+			Type:     "string",
+			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/index']",
+		},
+		{
 			Name:     "Age",
 			Type:     "date",
 			JSONPath: ".metadata.creationTimestamp",

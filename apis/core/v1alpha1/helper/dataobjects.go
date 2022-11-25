@@ -29,6 +29,8 @@ const InstallationPrefix = "Inst."
 // ExecutionPrefix is the prefix combined with execution name is used as label value. Do not change length.
 const ExecutionPrefix = "Exec."
 
+var subdomainRegex = regexp.MustCompile("^([a-z0-9]|([a-z0-9][a-z0-9.-]*[a-z0-9]))$")
+
 // GenerateDataObjectName generates the unique name for a data object exported or imported by a installation.
 // It returns a non contextified data name if the name starts with a "#".
 func GenerateDataObjectName(context string, name string) string {
@@ -36,7 +38,6 @@ func GenerateDataObjectName(context string, name string) string {
 		return strings.TrimPrefix(name, NonContextifiedPrefix)
 	}
 	// for backward compatibility, we need to hash names which are incompatible with the k8s resource naming scheme
-	subdomainRegex := regexp.MustCompile("^([a-z0-9]|([a-z0-9][a-z0-9.-]*[a-z0-9]))$")
 	if len(context) == 0 && subdomainRegex.MatchString(name) {
 		return name
 	}

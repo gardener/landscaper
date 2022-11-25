@@ -8,8 +8,11 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -39,6 +42,7 @@ type Metadata struct {
 	Source     string
 	Key        string
 	Hash       string
+	Index      *int
 }
 
 // generateHash returns the internal data generation function for dataobjects or targets.
@@ -83,6 +87,12 @@ func GetMetadataFromObject(objAcc metav1.Object, data []byte) Metadata {
 		if key, ok := labels[lsv1alpha1.DataObjectKeyLabel]; ok {
 			meta.Key = key
 		}
+		if rawIndex, ok := labels[lsv1alpha1.DataObjectIndexLabel]; ok {
+			index, err := strconv.Atoi(rawIndex)
+			if err == nil {
+				meta.Index = pointer.Int(index)
+			}
+		}
 	}
 	if hash, ok := objAcc.GetAnnotations()[lsv1alpha1.DataObjectHashAnnotation]; ok {
 		meta.Hash = hash
@@ -101,15 +111,28 @@ func SetMetadataFromObject(objAcc metav1.Object, meta Metadata) {
 	}
 	if len(meta.Context) != 0 {
 		labels[lsv1alpha1.DataObjectContextLabel] = meta.Context
+	} else {
+		delete(labels, lsv1alpha1.DataObjectContextLabel)
 	}
 	if len(meta.SourceType) != 0 {
 		labels[lsv1alpha1.DataObjectSourceTypeLabel] = string(meta.SourceType)
+	} else {
+		delete(labels, lsv1alpha1.DataObjectSourceTypeLabel)
 	}
 	if len(meta.Source) != 0 {
 		labels[lsv1alpha1.DataObjectSourceLabel] = meta.Source
+	} else {
+		delete(labels, lsv1alpha1.DataObjectSourceLabel)
 	}
 	if len(meta.Key) != 0 {
 		labels[lsv1alpha1.DataObjectKeyLabel] = meta.Key
+	} else {
+		delete(labels, lsv1alpha1.DataObjectKeyLabel)
+	}
+	if meta.Index != nil {
+		labels[lsv1alpha1.DataObjectIndexLabel] = fmt.Sprint(*meta.Index)
+	} else {
+		delete(labels, lsv1alpha1.DataObjectIndexLabel)
 	}
 
 	objAcc.SetLabels(labels)

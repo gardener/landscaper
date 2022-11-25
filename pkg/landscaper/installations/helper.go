@@ -179,7 +179,6 @@ func GetTargets(ctx context.Context,
 	contextName string,
 	inst *lsv1alpha1.Installation,
 	targetImport lsv1alpha1.TargetImport) ([]*dataobjects.TargetExtension, []string, error) {
-	// get deploy item from current context
 	var targets []*dataobjects.TargetExtension
 	var targetImportReferences []string
 	if len(targetImport.Target) != 0 {
@@ -215,7 +214,6 @@ func GetTargets(ctx context.Context,
 
 // GetTargetImport fetches the target import from the cluster.
 func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *lsv1alpha1.Installation, targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetExtension, error) {
-	// get deploy item from current context
 	targetName := targetImport.Target
 	target := &lsv1alpha1.Target{}
 	targetName = lsv1alpha1helper.GenerateDataObjectName(contextName, targetName)
