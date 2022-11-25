@@ -64,6 +64,11 @@ you can inspect the status of the installation with the following command, execu
 landscaper-cli inst inspect -n example hello-world
 ```
 
+Another important entry of the status section of an installation is the `observedGeneration`. It describes to which 
+version of the Installation, defined by its `generation`, the current status refers. So to check if the latest
+version of an Installation was processed, you must check in the status if the `phase` is equal to `Succeeded` or `Failed`
+(or `DeleteFailed` if the deletion of the installation failed) and `generation` is equal to `observedGeneration`.
+
 On the target cluster, you should find the ConfigMap, that was deployed as part of the Helm chart:
 
 ```shell

@@ -47,7 +47,6 @@ cluster. This is the easiest setup when you start working with the Landscaper.
 
 
 <!--
-Observed generation, jobID, jobIDFinished
 Delete without uninstall
 Deploying a blueprint to multiple targets/target list
 Pull secrets for helm chart repo (with and without secret ref)
