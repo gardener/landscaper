@@ -16,6 +16,6 @@
 
 COMPONENT_DIR="$(dirname $0)/.."
 BLUEPRINT_DIR="${COMPONENT_DIR}/blueprint"
-OCI_ARTIFACT_REF="eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0"
+OCI_ARTIFACT_REF="eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/helm-chart-resource:1.0.0"
 
 landscaper-cli blueprints push "${OCI_ARTIFACT_REF}" "${BLUEPRINT_DIR}"
