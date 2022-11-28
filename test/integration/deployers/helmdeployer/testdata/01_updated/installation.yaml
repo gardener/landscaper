@@ -43,7 +43,7 @@ spec:
                       kind: ProviderConfiguration
                       name: inline-helm
                       namespace: example
-
+                      createNamespace: true
                       chart:
                         helmChartRepo:
                           helmChartRepoUrl: 
