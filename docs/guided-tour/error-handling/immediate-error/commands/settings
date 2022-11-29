@@ -1,4 +1,4 @@
-# Path to the kubeconfig of the Landscaper data cluster
+# Path to the kubeconfig of the Landscaper resource cluster
 LS_DATA_KUBECONFIG=...
 
 # Path to the kubeconfig of the target cluster

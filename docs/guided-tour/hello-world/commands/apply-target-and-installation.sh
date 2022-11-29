@@ -18,7 +18,7 @@ COMPONENT_DIR="$(dirname $0)/.."
 
 source ${COMPONENT_DIR}/commands/settings
 
-# create namespace "example" on the landscaper data cluster
+# create namespace "example" on the landscaper resource cluster
 kubectl create ns example --kubeconfig="${LS_DATA_KUBECONFIG}"
 
 # create target
