@@ -57,6 +57,8 @@ spec:
     targets:
     - name: targetExp
       target: targetExp
+    - name: targetExpFromList
+      target: targetExpFromList
 
   exportDataMappings:
     additionalDataExp: (( "mapping-" exports.dataExp ))
@@ -99,6 +101,9 @@ spec:
           - name: targetExp
             type: target
             targetType: landscaper.gardener.cloud/mock
+          - name: targetExpFromList
+            type: target
+            targetType: landscaper.gardener.cloud/mock
           
           exportExecutions:
           - type: GoTemplate
@@ -106,6 +111,7 @@ spec:
               exports:
                 dataExp: {{ .values.dataobjects.subDataExp }}
                 targetExp: {{ toJson .values.targets.subTargetExp.spec }}
+                targetExpFromList: {{ toJson .values.targets.subTargetExpFromList.spec }}
 
           subinstallations:
           - apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -120,6 +126,8 @@ spec:
               targets:
               - name: subTargetImp
                 target: targetImp
+              - name: subTargetImpFromList
+                target: "targetListImp[0]"
               - name: subTargetListImp
                 targetListRef: targetListImp
               - name: subEmptyTargetListImp
@@ -131,6 +139,8 @@ spec:
               targets:
               - name: subTargetExp
                 target: subTargetExp
+              - name: subTargetExpFromList
+                target: subTargetExpFromList
             blueprint:
               filesystem:
                 blueprint.yaml: |
@@ -161,6 +171,9 @@ spec:
                   - name: subTargetImp
                     type: target
                     targetType: landscaper.gardener.cloud/mock
+                  - name: subTargetImpFromList
+                    type: target
+                    targetType: landscaper.gardener.cloud/mock
                   - name: subTargetListImp
                     type: targetList
                     targetType: landscaper.gardener.cloud/mock
@@ -175,9 +188,13 @@ spec:
                   - name: subTargetExp
                     type: target
                     targetType: landscaper.gardener.cloud/mock
+                  - name: subTargetExpFromList
+                    type: target
+                    targetType: landscaper.gardener.cloud/mock
                   exportExecutions:
                   - type: Spiff
                     template:
                       exports:
                         subDataExp: (( values.dataobjects.subDataImp ))
                         subTargetExp: (( values.targets.subTargetImp.spec ))
+                        subTargetExpFromList: (( values.targets.subTargetImpFromList.spec ))
