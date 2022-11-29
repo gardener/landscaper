@@ -42,7 +42,8 @@ deployExecutions:
 
         name: test
         namespace: {{ .imports.namespace }}
-
+        createNamespace: true
+        
         exportsFromManifests:
         - key: ingressClass
           jsonPath: .Values.controller.ingressClass

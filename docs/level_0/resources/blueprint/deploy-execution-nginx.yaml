@@ -14,3 +14,4 @@ deployItems:
 
     name: nginx
     namespace: first-example
+    createNamespace: true

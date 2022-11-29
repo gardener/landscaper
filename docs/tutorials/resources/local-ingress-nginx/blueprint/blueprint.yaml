@@ -39,7 +39,8 @@ deployExecutions:
 
         name: test
         namespace: {{ .imports.namespace }}
-
+        createNamespace: true
+        
         values:
           controller:
             livenessProbe:
