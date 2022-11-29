@@ -63,7 +63,6 @@ deployExecutions:
         updateStrategy: update
         name: {{ .imports.releaseName }}
         namespace: {{ .imports.releaseNamespace }}
-        createNamespace: true
         helmDeployment: false
         chart:
           {{ $resource := getResource .cd "name" "container-deployer-chart" }}
