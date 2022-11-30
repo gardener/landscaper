@@ -1,23 +1,23 @@
 # Guided Tour
 
-This document contains a guided tour presenting the different Landscaper features by examples.
+In this tour, you will learn about the different Landscaper features by simple examples. 
 
 ## Prerequisites and Basic Definitions
 
-For all examples you need a [running Landscaper instance](../gettingstarted/install-landscaper-controller.md).
+- For all examples, you need a [running Landscaper instance](../gettingstarted/install-landscaper-controller.md).
 
-A convenient tool that we will often use in the examples is the 
+- A convenient tool we will often use in the following examples is the 
 [Landscaper CLI](https://github.com/gardener/landscapercli). 
 
-In all examples there are 3 kubernetes clusters involved:
+- During the following exercises, you might need to change files, provided with the examples. For this, you should simply clone this repository and do the required changes on your local files. You could also fork the repo and work on your fork.
 
-- the **Landscaper Host Cluster**, on which the Landscaper runs;
-- the **target cluster**, on which the Helm chart shall be deployed.
-- the **Landscaper Resource Cluster**, on which the custom resources are stored that are watched by the Landscaper.
-  These custom resources define what should be deployed on which target cluster.
+- In all examples, 3 Kubernetes clusters are involved:
 
-It is possible that some or all of these clusters coincide, e.g. in the most simplistic approach you have only one
-cluster. This is the easiest setup when you start working with the Landscaper.
+  - the **Landscaper Host Cluster**, on which the Landscaper runs
+  - the **target cluster**, on which the deployments will be done
+  - the **Landscaper Resource Cluster**, on which the various custom resources are stored. These custom resources are watched by the Landscaper, and define which deployments should happen on which target cluster.
+
+  It is possible that some or all of these clusters coincide, e.g. in the most simplistic approach, you have only one cluster. Such a "one-cluster-setup" is the easiest way to start working with the Landscaper.
 
 ## A Hello World Example
 
