@@ -1,0 +1,49 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+imports:
+  - name: cluster                                             # name of the import parameter
+    targetType: landscaper.gardener.cloud/kubernetes-cluster  # type of the import parameter
+
+  - name: release  # "release" is the name of the import parameter
+    type: data
+    schema:
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+
+  - name: text  # "text" is  the name of the import parameter
+    type: data
+    schema:
+      type: string
+
+deployExecutions:
+  - name: default
+    type: GoTemplate
+    template: |
+      deployItems:
+        - name: default-deploy-item
+          type: landscaper.gardener.cloud/helm
+
+          target:
+            import: cluster   # "cluster" is the name of an import parameter
+
+          config:
+            apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+            kind: ProviderConfiguration
+            name: {{ .imports.release.name }}
+            namespace: {{ .imports.release.namespace }}
+            createNamespace: true
+
+            chart:
+              {{ $chartResource := getResource .cd "name" "echo-server-chart" }}
+              ref: {{ $chartResource.access.imageReference }}
+
+            values:
+              {{ $imageResource := getResource .cd "name" "echo-server-image" }}
+              image: {{ $imageResource.access.imageReference }}
+              text: {{ .imports.text }}
