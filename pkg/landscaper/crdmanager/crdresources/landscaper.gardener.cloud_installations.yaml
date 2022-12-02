@@ -536,6 +536,26 @@ spec:
                   - name
                   type: object
                 type: array
+              retrySpec:
+                properties:
+                  failedRetrySpec:
+                    properties:
+                      interval:
+                        description: Duration is a wrapper for time.Duration that
+                          implements JSON marshalling and openapi scheme.
+                        type: string
+                      numberOfRetries:
+                        format: int32
+                        type: integer
+                    type: object
+                  successRetrySpec:
+                    properties:
+                      interval:
+                        description: Duration is a wrapper for time.Duration that
+                          implements JSON marshalling and openapi scheme.
+                        type: string
+                    type: object
+                type: object
             required:
             - blueprint
             type: object
@@ -759,6 +779,23 @@ spec:
               phase:
                 description: InstallationPhase is the current phase of the installation.
                 type: string
+              retryStatus:
+                properties:
+                  generation:
+                    format: int64
+                    type: integer
+                  lastRetryTime:
+                    description: Time is a wrapper around time.Time which supports
+                      correct marshaling to YAML and JSON.  Wrappers are provided
+                      for many of the factory methods that the time package offers.
+                    format: date-time
+                    type: string
+                  numberOfRetries:
+                    format: int32
+                    type: integer
+                  onFailed:
+                    type: boolean
+                type: object
             required:
             - observedGeneration
             - configGeneration

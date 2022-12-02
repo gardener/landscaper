@@ -4,7 +4,7 @@ _Installations_ are Kubernetes resources that represent concrete instantiations 
 [_Blueprints_](./Blueprints.md). The task of an _Installation_ is to provide
 dedicated values for the imports of the referenced _Blueprint_ and to forward
 values provided for the exports of the _Blueprint_ to _DataObjects_ and _Targets_
-into the scope it is livining in. Additionally the installation contains the
+into the scope it is livining in. Additionally, the installation contains the
 state of its executed blueprint.
 
 The import values can be taken from _DataObjects_, _Targets_, _ConfigMaps_ or 
@@ -867,3 +867,78 @@ spec:
 ## Operations
 
 An operator can set annotations manually to enforce a specific behavior ([see](./Annotations.md)).
+
+## Automatic Reconciliation/Processing of Installations
+
+By default, the Landscaper only processes an installation if the annotation `landscaper.gardener.cloud/operation: reconcile` is set.
+Then it removes that annotation and starts processing the installation. If this succeeds the field `status.phase` of the
+installation is set to `Succeeded`, if not it is set to `Failed` or `DeleteFailed`. To restart the processing, it is
+required to set the annotation `landscaper.gardener.cloud/operation: reconcile` again. More details about this could be
+found [here](../technical/installation_controller.md).
+
+You could also configure an automatic repeated processing for an installation. Therefore, you must add the following 
+to the `spec`:
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: my-installation
+spec:
+  retrySpec:  # triggers automatic reconciliation
+    successRetrySpec: {} # triggers the automatic reconcile for succeeded installations (optional)
+    failedRetrySpec: {} # triggers the automatic reconcile for failed installations (optional)
+
+```
+
+With such a configuration containing `successRetrySpec`, the processing of an installation, which is in a successful 
+final state, i.e. its `status.phase` equals `Succeeded`, is reconciled/processed again every 24 hours. If `successRetrySpec`
+is missing, no automatic retry of succeeded installations happens.
+
+When the configuration contains `failedRetrySpec` the processing of an installation, which is in a failed
+final state, i.e. its `status.phase` equals `Failed` or `DeleteFailed`, is reconciled/processed again every 5 minutes.
+
+Landscaper triggers the automatic reconcile by adding the annotation `landscaper.gardener.cloud/operation: reconcile` 
+to the installation.
+
+There are further settings possible for the automatic retry mechanism:
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: my-installation
+spec:
+  retrySpec: {
+    successRetrySpec:
+      interval: <some-duration, e.g. 5s>
+    
+    failedRetrySpec:
+      interval: <some-duration, e.g. 5s>
+      numberOfRetries: <some-number, e.g. 10>
+  }
+
+```
+
+The additional fields have the following meanings:
+
+- **successRetrySpec.interval**: This field allows to specify a different interval between two subsequent automatic retries
+  of succeeded installations.
+
+- **failedRetrySpec.interval**: This field allows to specify a different interval between two subsequent automatic retries 
+  of failed installations.
+
+- **failedRetrySpec.numberOfRetries**: With this field, you can restrict the maximal number of retries of failed 
+  installations. The counter for the already executed retries is automatically reset to 0 if
+  - the specification of an installation is changed, resulting in a change of the generation number or
+  - the installation went into a successful final state or
+  - the reconciliation is triggered by setting the `landscaper.gardener.cloud/operation: reconcile` from outside. This
+    includes the case that a predecessor root installations triggers the installation when it finished its work.
+
+
+Be aware that the automatic reconcile mechanism does not start the processing of a new installation. This must still be 
+triggered by setting the annotation `landscaper.gardener.cloud/operation: reconcile`. This is also true if you change
+the spec, the labels or annotations of an installations. If you want to start the reconciliation, you need to add this
+annotation. With this strategy, it is possible to make different changes before starting the processing. If you
+do not want this behaviour, you could just always add the reconcile annotation together with any changes of the 
+installation. 

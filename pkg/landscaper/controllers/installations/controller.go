@@ -7,6 +7,7 @@ package installations
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"
@@ -14,27 +15,25 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
-	"github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 const (
@@ -50,6 +49,7 @@ func NewController(logger logging.Logger,
 
 	ctrl := &Controller{
 		log:      logger,
+		clock:    clock.RealClock{},
 		LsConfig: lsConfig,
 	}
 
@@ -68,19 +68,22 @@ func NewController(logger logging.Logger,
 }
 
 // NewTestActuator creates a new Controller that is only meant for testing.
-func NewTestActuator(op operation.Operation, logger logging.Logger, configuration *config.LandscaperConfiguration) *Controller {
-	a := &Controller{
+func NewTestActuator(op operation.Operation, logger logging.Logger, passiveClock clock.PassiveClock,
+	configuration *config.LandscaperConfiguration) *Controller {
+
+	return &Controller{
 		log:       logger,
+		clock:     passiveClock,
 		Operation: op,
 		LsConfig:  configuration,
 	}
-	return a
 }
 
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
 	log         logging.Logger
+	clock       clock.PassiveClock
 	LsConfig    *config.LandscaperConfiguration
 	SharedCache cache.Cache
 }
@@ -98,7 +101,46 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	// default the installation as it not done by the Controller runtime
+	if err := c.updateInstallationWithDefaults(ctx, inst); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return c.handleAutomaticReconcile(ctx, inst)
+}
+
+func (c *Controller) updateInstallationWithDefaults(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	oldInst := inst.DeepCopy()
+
+	// default the installation as it not done by the Controller runtime
 	api.LandscaperScheme.Default(inst)
+
+	if !reflect.DeepEqual(&inst.Spec, &oldInst.Spec) {
+		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000065, inst); err != nil {
+			logger.Error(err, "failed to update installation with defaults")
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+	retryHelper := newRetryHelper(c.Client(), c.clock)
+
+	if err := retryHelper.preProcessRetry(ctx, inst); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	result, err := c.reconcileInstallation(ctx, inst)
+
+	result, err = retryHelper.recomputeRetry(ctx, inst, result, err)
+
+	return result, err
+}
+
+func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)

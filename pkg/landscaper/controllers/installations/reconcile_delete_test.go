@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/utils/clock"
+
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -56,7 +58,7 @@ var _ = Describe("Delete", func() {
 
 			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 
-			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), &config.LandscaperConfiguration{
+			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
 					Local: &config.LocalRegistryConfiguration{
 						RootPath: "./testdata",

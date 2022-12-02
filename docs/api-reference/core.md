@@ -1114,6 +1114,19 @@ Missing keys will be defaulted to their respective data export.
 Example: namespace: (( blueprint.exports.namespace ))</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>retrySpec</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.RetrySpec">
+RetrySpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -2997,7 +3010,9 @@ Error
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.FailedRetrySpec">FailedRetrySpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.SuccessRetrySpec">SuccessRetrySpec</a>)
 </p>
 <p>
 <p>Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.</p>
@@ -3515,6 +3530,48 @@ This field should be set and will likely be mandatory in future.</p>
 <p>
 <p>ExportType is a string alias</p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.FailedRetrySpec">FailedRetrySpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.RetrySpec">RetrySpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>numberOfRetries</code></br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>interval</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.FieldValueDefinition">FieldValueDefinition
 </h3>
 <p>
@@ -4084,6 +4141,19 @@ Missing keys will be defaulted to their respective data export.
 Example: namespace: (( blueprint.exports.namespace ))</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>retrySpec</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.RetrySpec">
+RetrySpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus
@@ -4236,6 +4306,19 @@ string
 </td>
 <td>
 <p>ImportsHash is the hash of the import data.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>retryStatus</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.RetryStatus">
+RetryStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
 </td>
 </tr>
 </tbody>
@@ -4647,6 +4730,114 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.RetrySpec">RetrySpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>successRetrySpec</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SuccessRetrySpec">
+SuccessRetrySpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>failedRetrySpec</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.FailedRetrySpec">
+FailedRetrySpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.RetryStatus">RetryStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>generation</code></br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>numberOfRetries</code></br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastRetryTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>onFailed</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.SecretLabelSelectorRef">SecretLabelSelectorRef
 </h3>
 <p>
@@ -4866,6 +5057,37 @@ InstallationTemplate
 </p>
 <em>(Optional)</em>
 <p>An inline subinstallation template.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.SuccessRetrySpec">SuccessRetrySpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.RetrySpec">RetrySpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>interval</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
 </td>
 </tr>
 </tbody>

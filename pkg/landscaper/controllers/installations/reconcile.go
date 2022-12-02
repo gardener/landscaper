@@ -43,6 +43,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		}
 
 		inst.Status.InstallationPhase = nextPhase
+		inst.Status.ObservedGeneration = inst.GetGeneration()
 
 		// do not use setInstallationPhaseAndUpdate because jobIDFinished should not be set here
 		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000115, inst); err != nil {
@@ -52,6 +53,8 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseInit {
 		fatalError, normalError := c.handlePhaseInit(ctx, inst)
+
+		inst.Status.ObservedGeneration = inst.GetGeneration()
 
 		if fatalError != nil && !lsutil.IsRecoverableError(fatalError) {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError, read_write_layer.W000087)
@@ -501,7 +504,6 @@ func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *install
 	}
 
 	inst.GetInstallation().Status.Imports = inst.ImportStatus().GetStatus()
-	inst.GetInstallation().Status.ObservedGeneration = inst.GetInstallation().Generation
 	return nil
 }
 
@@ -511,6 +513,7 @@ func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *lsv1al
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		logger.Debug("remove reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+		delete(inst.Annotations, lsv1alpha1.ReconcileReasonAnnotation)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst); client.IgnoreNotFound(err) != nil {
 			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateInstallation", err.Error())
 		}
