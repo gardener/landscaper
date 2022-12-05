@@ -173,7 +173,7 @@ Blueprints describe formal imports. A formal import parameter has a name and a *
 
 - **`targetList`**
 
-  This type can be used if, instead of a single target object, an arbitrary number of targets should be imported. All targets imported as part of a targetlist import must have the same `targetType`.
+  This type can be used if, instead of a single target object, an arbitrary number of targets should be imported. All targets imported as part of a targetlist import must have the same `targetType`. For more information on how to work with TargetList imports, see the documentation [here](./TargetLists.md).
 
 
 - **`componentDescriptor`**
@@ -954,28 +954,4 @@ subinstallationExecutions:
       blueprint:
         ref: cd://componentReferences/ingress/resources/blueprint
       ...
-```
-
-### Hints for using Nested Installations
-
-#### TargetList Imports in nested installations
-
-To import a targetlist that has been imported by an installation, use `targetListRef` to reference the name of the parent import.
-
-```yaml
-imports:
-  targets:
-  - name: "my-foo-targets"
-    targets: # targetlist import
-    - foo
-    - foobar
-    - foobaz
-subinstallations:
-- apiVersion: landscaper.gardener.cloud/v1alpha1
-  kind: InstallationTemplate
-  name: mysubinst
-  imports:
-    targets:
-    - name: "also-my-foo-targets"
-      targetListRef: "my-foo-targets"
 ```

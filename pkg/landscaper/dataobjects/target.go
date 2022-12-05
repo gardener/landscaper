@@ -82,6 +82,12 @@ func (t *TargetExtension) SetKey(key string) *TargetExtension {
 	return t
 }
 
+// SetIndex sets the index (for list-type objects)
+func (t *TargetExtension) SetIndex(idx *int) *TargetExtension {
+	t.metadata.Index = idx
+	return t
+}
+
 // Apply applies data and metadata to an existing target (except owner references).
 func (t *TargetExtension) Apply(target *lsv1alpha1.Target) error {
 	target.Name = lsv1alpha1helper.GenerateDataObjectName(t.metadata.Context, t.metadata.Key)

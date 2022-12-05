@@ -35,6 +35,9 @@ const DataObjectKeyLabel = "data.landscaper.gardener.cloud/key"
 // DataObjectSourceLabel defines the name of the label that specifies the source of the dataobject.
 const DataObjectSourceLabel = "data.landscaper.gardener.cloud/source"
 
+// DataObjectIndexLabel defines the name of the annotation that specifies the index of the dataobject (for list-type imports)
+const DataObjectIndexLabel = "data.landscaper.gardener.cloud/index"
+
 // DataObjectHashAnnotation defines the name of the annotation that specifies the hash of the data.
 const DataObjectHashAnnotation = "data.landscaper.gardener.cloud/hash"
 

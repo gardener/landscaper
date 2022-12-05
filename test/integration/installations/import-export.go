@@ -139,7 +139,7 @@ func ImportExportTests(f *framework.Framework) {
 				}),
 			))
 
-			// target export
+			// target exports
 			By("verify target exports")
 			labels[lsv1alpha1.DataObjectKeyLabel] = "targetExp"
 			rawTargetExports := &lsv1alpha1.TargetList{}
@@ -151,7 +151,23 @@ func ImportExportTests(f *framework.Framework) {
 					targetExports = append(targetExports, elem)
 				}
 			}
-			Expect(targetExports).To(HaveLen(1), "there should be exactly one root-level target export")
+			Expect(targetExports).To(HaveLen(1), "there should be exactly one root-level target export for targetExp")
+			Expect(targetExports).To(ContainElement(MatchFields(IgnoreExtras, Fields{
+				"Spec": BeEquivalentTo(expectedTargetExport),
+			})))
+
+			// target export from list import
+			labels[lsv1alpha1.DataObjectKeyLabel] = "targetExpFromList"
+			rawTargetExports = &lsv1alpha1.TargetList{}
+			utils.ExpectNoError(f.Client.List(ctx, rawTargetExports, client.InNamespace(state.Namespace), client.MatchingLabels(labels)))
+			targetExports = []lsv1alpha1.Target{}
+			for _, elem := range rawTargetExports.Items {
+				con, ok := elem.Labels[lsv1alpha1.DataObjectContextLabel]
+				if !ok || len(con) == 0 {
+					targetExports = append(targetExports, elem)
+				}
+			}
+			Expect(targetExports).To(HaveLen(1), "there should be exactly one root-level target export for targetExpFromList")
 			Expect(targetExports).To(ContainElement(MatchFields(IgnoreExtras, Fields{
 				"Spec": BeEquivalentTo(expectedTargetExport),
 			})))
