@@ -143,6 +143,8 @@ subinstallations:
 
 ## Usage Examples
 
+See also the [landscaper examples](https://github.com/gardener/landscaper-examples/tree/master/targetlists) for full example Installations.
+
 ### One DeployItem per Target
 
 This is probably the most prominent use-case of the feature: The Installation is supposed to perform the same action for each Target of an imported TargetList. For example, the TargetList contains kubernetes-cluster targets - basically kubeconfigs - and the Installation should deploy a manifest into each of the referenced clusters.
