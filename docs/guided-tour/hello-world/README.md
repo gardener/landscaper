@@ -2,7 +2,7 @@
 
 In this example, we use the Landscaper to deploy a simple Helm chart.
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
+For prerequisites, see [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour#prerequisites-and-basic-definitions).
 
 Our [hello-world Helm chart](chart/hello-world) is minimalistic on purpose, in order to concentrate on Landscaper rather than Helm features. Therefore, the chart only deploys a ConfigMap. We have uploaded the chart to a [public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0) from where the Landscaper reads it during the deployment.
 
