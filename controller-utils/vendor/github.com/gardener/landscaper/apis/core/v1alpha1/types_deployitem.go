@@ -121,6 +121,9 @@ type DeployItemSpec struct {
 	// Defaults to ten minutes if not specified.
 	// +optional
 	Timeout *Duration `json:"timeout,omitempty"`
+	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
+	// +optional
+	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
 }
 
 // DeployItemStatus contains the status of a deploy item.

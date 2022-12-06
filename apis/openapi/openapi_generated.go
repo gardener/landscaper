@@ -3926,6 +3926,13 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
+					"updateOnChangeOnly": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"type"},
 			},

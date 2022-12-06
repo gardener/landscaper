@@ -91,6 +91,10 @@ spec:
                 description: Type is the type of the deployer that should handle the
                   item.
                 type: string
+              updateOnChangeOnly:
+                description: UpdateOnChangeOnly specifies if redeployment is executed
+                  only if the specification of the deploy item has changed.
+                type: boolean
             required:
             - type
             type: object

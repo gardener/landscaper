@@ -582,6 +582,18 @@ Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactiv
 Defaults to ten minutes if not specified.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>updateOnChangeOnly</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -2494,6 +2506,18 @@ When the time is exceeded, the landscaper will add the abort annotation to the d
 and later put it in &lsquo;Failed&rsquo; if the deployer doesn&rsquo;t handle the abort properly.
 Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactivate the timeout).
 Defaults to ten minutes if not specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>updateOnChangeOnly</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
 </td>
 </tr>
 </tbody>

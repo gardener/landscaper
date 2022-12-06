@@ -1564,6 +1564,7 @@ func autoConvert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSp
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Timeout = (*core.Duration)(unsafe.Pointer(in.Timeout))
+	out.UpdateOnChangeOnly = in.UpdateOnChangeOnly
 	return nil
 }
 
@@ -1579,6 +1580,7 @@ func autoConvert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployI
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Timeout = (*Duration)(unsafe.Pointer(in.Timeout))
+	out.UpdateOnChangeOnly = in.UpdateOnChangeOnly
 	return nil
 }
 
