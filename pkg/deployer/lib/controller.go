@@ -9,11 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-
-	lsutil "github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/go-logr/logr"
+	"github.com/google/uuid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +35,7 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 	secretresolver "github.com/gardener/landscaper/pkg/deployer/lib/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"github.com/gardener/landscaper/pkg/version"
 )
@@ -199,41 +197,55 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if di.Status.GetJobID() != di.Status.JobIDFinished {
-		if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
-			di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
-			di.Status.DeployItemPhase == "" {
+	if di.Status.GetJobID() == di.Status.JobIDFinished {
+		logger.Info("deploy item not reconciled because no new job ID")
+		return reconcile.Result{}, nil
+	}
 
-			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+	if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
+		di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
+		di.Status.DeployItemPhase == "" {
 
-			if di.DeletionTimestamp.IsZero() {
-				if di.Spec.UpdateOnChangeOnly &&
-					di.GetGeneration() == di.Status.ObservedGeneration &&
-					di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded {
-					di.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-					c.updateDiValuesForNewReconcile(ctx, di)
-					return reconcile.Result{}, c.handleReconcileResult(ctx, nil, old, di)
-				}
-				di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseProgressing
-			} else {
-				di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseDeleting
+		// The deployitem has a new jobID, but the phase is still finished from before
+
+		if di.DeletionTimestamp.IsZero() {
+			if di.Spec.UpdateOnChangeOnly &&
+				di.GetGeneration() == di.Status.ObservedGeneration &&
+				di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded {
+
+				// deployitem is unchanged and succeeded, and no reconcile desired in this case
+				di.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+				c.updateDiValuesForNewReconcile(ctx, di)
+				return reconcile.Result{}, c.handleReconcileResult(ctx, nil, old, di)
 			}
 
+			// initialize deployitem for reconcile
+			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+			di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseProgressing
+			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
+				return reconcile.Result{}, err
+			}
+		} else {
+
+			// initialize deployitem for delete
+			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+			di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseDeleting
 			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
 				return reconcile.Result{}, err
 			}
 		}
+	}
 
-		var err lserrors.LsError
-		if di.DeletionTimestamp.IsZero() {
-			err = c.reconcile(ctx, lsCtx, di, rt)
-		} else {
-			err = c.delete(ctx, lsCtx, di, rt)
-		}
-		return reconcile.Result{}, c.handleReconcileResult(ctx, err, old, di)
+	// Deployitem has been initialized, proceed with reconcile/delete
+
+	var lsError lserrors.LsError
+	if di.DeletionTimestamp.IsZero() {
+		lsError = c.reconcile(ctx, lsCtx, di, rt)
+		return reconcile.Result{}, c.handleReconcileResult(ctx, lsError, old, di)
+
 	} else {
-		logger.Info("deploy item not reconciled because no new job ID")
-		return reconcile.Result{}, nil
+		lsError = c.delete(ctx, lsCtx, di, rt)
+		return reconcile.Result{}, c.handleReconcileResult(ctx, lsError, old, di)
 	}
 }
 
