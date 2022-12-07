@@ -527,6 +527,10 @@ A deployitem specification has the following fields:
 
   If the import refers to a targetlist import, `index` specifies the list index of the referenced target.
 
+  - **`updateOnChangeOnly`** *bool*
+
+  If set on true, a successfully processed deployitem is only deployed again, if something has changed in its spec. 
+
 
   - **`name`** *string (deprecated)*
 

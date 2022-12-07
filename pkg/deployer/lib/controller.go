@@ -9,11 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-
-	lsutil "github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/go-logr/logr"
+	"github.com/google/uuid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +35,7 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
 	secretresolver "github.com/gardener/landscaper/pkg/deployer/lib/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"github.com/gardener/landscaper/pkg/version"
 )
@@ -167,7 +165,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	c.lsScheme.Default(di)
 
-	target, shouldReconcile, err := c.checkTargetResponsibility(ctx, logger, di)
+	rt, shouldReconcile, err := c.checkTargetResponsibilityAndResolve(ctx, logger, di)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -199,52 +197,90 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if di.Status.GetJobID() != di.Status.JobIDFinished {
-		if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
-			di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
-			di.Status.DeployItemPhase == "" {
+	if di.Status.GetJobID() == di.Status.JobIDFinished {
+		logger.Info("deploy item not reconciled because no new job ID")
+		return reconcile.Result{}, nil
+	}
 
-			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-			if di.DeletionTimestamp.IsZero() {
-				di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseProgressing
-			} else {
-				di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseDeleting
+	if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
+		di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
+		di.Status.DeployItemPhase == "" {
+
+		// The deployitem has a new jobID, but the phase is still finished from before
+
+		if di.DeletionTimestamp.IsZero() {
+			if di.Spec.UpdateOnChangeOnly &&
+				di.GetGeneration() == di.Status.ObservedGeneration &&
+				di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded {
+
+				// deployitem is unchanged and succeeded, and no reconcile desired in this case
+				di.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+				c.updateDiValuesForNewReconcile(ctx, di)
+				return reconcile.Result{}, c.handleReconcileResult(ctx, nil, old, di)
 			}
 
+			// initialize deployitem for reconcile
+			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+			di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseProgressing
+			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
+				return reconcile.Result{}, err
+			}
+		} else {
+
+			// initialize deployitem for delete
+			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+			di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseDeleting
 			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
 				return reconcile.Result{}, err
 			}
 		}
+	}
 
-		// resolve Target reference, if any
-		var rt *lsv1alpha1.ResolvedTarget
-		if target != nil {
-			if target.Spec.SecretRef != nil {
-				sr := secretresolver.New(c.lsClient)
-				rt, err = sr.Resolve(ctx, target)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("error resolving secret reference (%s/%s#%s) in target '%s/%s': %w", target.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name, err)
-				}
-			} else {
-				rt = targetresolver.NewResolvedTarget(target)
-			}
-		}
+	// Deployitem has been initialized, proceed with reconcile/delete
 
-		var err lserrors.LsError
-		if di.DeletionTimestamp.IsZero() {
-			err = c.reconcile(ctx, lsCtx, di, rt)
-		} else {
-			err = c.delete(ctx, lsCtx, di, rt)
-		}
-		return reconcile.Result{}, c.handleReconcileResult(ctx, err, old, di)
+	var lsError lserrors.LsError
+	if di.DeletionTimestamp.IsZero() {
+		lsError = c.reconcile(ctx, lsCtx, di, rt)
+		return reconcile.Result{}, c.handleReconcileResult(ctx, lsError, old, di)
+
 	} else {
-		logger.Info("deploy item not reconciled because no new job ID")
-		return reconcile.Result{}, nil
+		lsError = c.delete(ctx, lsCtx, di, rt)
+		return reconcile.Result{}, c.handleReconcileResult(ctx, lsError, old, di)
 	}
 }
 
 func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem) error {
 	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsClient, c.lsEventRecorder)
+}
+
+func (c *controller) checkTargetResponsibilityAndResolve(ctx context.Context, log logging.Logger,
+	deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.ResolvedTarget, bool, error) {
+
+	target, responsible, err := c.checkTargetResponsibility(ctx, log, deployItem)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !responsible {
+		return nil, false, nil
+	}
+
+	// resolve Target reference, if any
+	var rt *lsv1alpha1.ResolvedTarget
+	if target != nil {
+		if target.Spec.SecretRef != nil {
+			sr := secretresolver.New(c.lsClient)
+			rt, err = sr.Resolve(ctx, target)
+			if err != nil {
+				return nil, false, fmt.Errorf("error resolving secret reference (%s/%s#%s) in target '%s/%s': %w",
+					target.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name, err)
+			}
+		} else {
+			rt = targetresolver.NewResolvedTarget(target)
+		}
+	}
+
+	return rt, true, nil
 }
 
 func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.Logger, deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, error) {
@@ -313,17 +349,21 @@ func (c *controller) Writer() *read_write_layer.Writer {
 }
 
 func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1.DeployItem) error {
-	di.Status.ObservedGeneration = di.Generation
-	now := metav1.Now()
-	di.Status.LastReconcileTime = &now
-	di.Status.Deployer = c.info
-	lsutil.InitErrors(&di.Status)
+	c.updateDiValuesForNewReconcile(ctx, di)
 
 	if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000004, di); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (c *controller) updateDiValuesForNewReconcile(ctx context.Context, di *lsv1alpha1.DeployItem) {
+	di.Status.ObservedGeneration = di.Generation
+	now := metav1.Now()
+	di.Status.LastReconcileTime = &now
+	di.Status.Deployer = c.info
+	lsutil.InitErrors(&di.Status)
 }
 
 func (c *controller) removeTestReconcileAnnotation(ctx context.Context, di *lsv1alpha1.DeployItem) lserrors.LsError {

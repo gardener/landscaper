@@ -582,6 +582,18 @@ Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactiv
 Defaults to ten minutes if not specified.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>updateOnChangeOnly</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -2615,6 +2627,18 @@ Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactiv
 Defaults to ten minutes if not specified.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>updateOnChangeOnly</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus
@@ -2904,6 +2928,18 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </td>
 <td>
 <p>DependsOn lists deploy items that need to be executed before this one</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>updateOnChangeOnly</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
 </td>
 </tr>
 </tbody>

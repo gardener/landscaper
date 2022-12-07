@@ -132,4 +132,8 @@ type DeployItemTemplate struct {
 
 	// DependsOn lists deploy items that need to be executed before this one
 	DependsOn []string `json:"dependsOn,omitempty"`
+
+	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
+	// +optional
+	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
 }
