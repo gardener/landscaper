@@ -61,13 +61,13 @@ func (r *retryHelper) preProcessRetry(ctx context.Context, inst *lsv1alpha1.Inst
 // mechanism (as opposed to reconcile annotations set by a user, for example). This distinction is necessary for the
 // reset of the retry status.
 func (r *retryHelper) hasReconcileReasonRetry(obj metav1.ObjectMeta) bool {
-	reason, found := obj.GetAnnotations()[string(lsv1alpha1.ReconcileReasonAnnotation)]
+	reason, found := obj.GetAnnotations()[lsv1alpha1.ReconcileReasonAnnotation]
 	return found && reason == reconcileReasonRetry
 }
 
 func (r *retryHelper) recomputeRetry(ctx context.Context, inst *lsv1alpha1.Installation, oldResult reconcile.Result, oldError error) (reconcile.Result, error) {
 
-	if metav1.HasAnnotation(inst.ObjectMeta, string(lsv1alpha1.OperationAnnotation)) {
+	if metav1.HasAnnotation(inst.ObjectMeta, lsv1alpha1.OperationAnnotation) {
 		return oldResult, oldError
 	}
 
@@ -76,11 +76,11 @@ func (r *retryHelper) recomputeRetry(ctx context.Context, inst *lsv1alpha1.Insta
 		return oldResult, oldError
 	}
 
-	if inst.Status.RetryStatus != nil {
-		if inst.Status.RetryStatus.Generation != inst.GetGeneration() ||
-			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded && inst.Status.RetryStatus.OnFailed) ||
-			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseFailed && !inst.Status.RetryStatus.OnFailed) ||
-			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed && !inst.Status.RetryStatus.OnFailed) {
+	if inst.Status.AutomaticReconcileStatus != nil {
+		if inst.Status.AutomaticReconcileStatus.Generation != inst.GetGeneration() ||
+			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded && inst.Status.AutomaticReconcileStatus.OnFailed) ||
+			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseFailed && !inst.Status.AutomaticReconcileStatus.OnFailed) ||
+			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed && !inst.Status.AutomaticReconcileStatus.OnFailed) {
 
 			if err := r.resetRetryStatus(ctx, inst); err != nil {
 				return reconcile.Result{}, err
@@ -92,7 +92,7 @@ func (r *retryHelper) recomputeRetry(ctx context.Context, inst *lsv1alpha1.Insta
 		return r.recomputeRetryForFailed(ctx, inst, oldResult, oldError)
 
 	} else if r.isRetryActivatedForSucceeded(inst) && r.isSucceeded(inst) {
-		return r.recomputeRetryForNewAndSucceeded(ctx, inst, oldResult, oldError)
+		return r.recomputeRetryForNewAndSucceeded(ctx, inst)
 
 	} else {
 		return oldResult, oldError
@@ -105,12 +105,12 @@ func (r *retryHelper) isFailed(inst *lsv1alpha1.Installation) bool {
 }
 
 func (r *retryHelper) isRetryActivatedForFailed(inst *lsv1alpha1.Installation) bool {
-	return inst.Spec.RetrySpec != nil && inst.Spec.RetrySpec.FailedRetrySpec != nil &&
-		(inst.Spec.RetrySpec.FailedRetrySpec.NumberOfRetries == nil || *inst.Spec.RetrySpec.FailedRetrySpec.NumberOfRetries > 0)
+	return inst.Spec.AutomaticReconcile != nil && inst.Spec.AutomaticReconcile.FailedReconcile != nil &&
+		(inst.Spec.AutomaticReconcile.FailedReconcile.NumberOfReconciles == nil || *inst.Spec.AutomaticReconcile.FailedReconcile.NumberOfReconciles > 0)
 }
 
 func (r *retryHelper) recomputeRetryForFailed(ctx context.Context, inst *lsv1alpha1.Installation, oldResult reconcile.Result, oldError error) (reconcile.Result, error) {
-	retryStatus := inst.Status.RetryStatus
+	retryStatus := inst.Status.AutomaticReconcileStatus
 
 	// first failure, or installation changed
 	if retryStatus == nil {
@@ -133,7 +133,7 @@ func (r *retryHelper) recomputeRetryForFailed(ctx context.Context, inst *lsv1alp
 			return reconcile.Result{}, err
 		}
 
-		numEntries := retryStatus.NumberOfRetries + 1
+		numEntries := retryStatus.NumberOfReconciles + 1
 		if err := r.updateRetryStatus(ctx, inst, numEntries, true); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -152,11 +152,11 @@ func (r *retryHelper) updateRetryStatus(ctx context.Context, inst *lsv1alpha1.In
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	// set inst.Status.RetryFailedStatus
-	inst.Status.RetryStatus = &lsv1alpha1.RetryStatus{
-		Generation:      inst.GetGeneration(),
-		NumberOfRetries: numRetries,
-		LastRetryTime:   r.metaNow(),
-		OnFailed:        onFailed,
+	inst.Status.AutomaticReconcileStatus = &lsv1alpha1.AutomaticReconcileStatus{
+		Generation:         inst.GetGeneration(),
+		NumberOfReconciles: numRetries,
+		LastReconcileTime:  r.metaNow(),
+		OnFailed:           onFailed,
 	}
 
 	logger.Info("update retry status", "numberOfRetries", numRetries, "onFailed", onFailed)
@@ -172,7 +172,7 @@ func (r *retryHelper) resetRetryStatus(ctx context.Context, inst *lsv1alpha1.Ins
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	logger.Info("reset retry status")
-	inst.Status.RetryStatus = nil
+	inst.Status.AutomaticReconcileStatus = nil
 	if err := r.writer.UpdateInstallationStatus(ctx, read_write_layer.W000027, inst); err != nil {
 		logger.Error(err, "failed to reset retry status")
 		return err
@@ -186,11 +186,11 @@ func (r *retryHelper) isSucceeded(inst *lsv1alpha1.Installation) bool {
 }
 
 func (r *retryHelper) isRetryActivatedForSucceeded(inst *lsv1alpha1.Installation) bool {
-	return inst.Spec.RetrySpec != nil && inst.Spec.RetrySpec.SuccessRetrySpec != nil
+	return inst.Spec.AutomaticReconcile != nil && inst.Spec.AutomaticReconcile.SucceededReconcile != nil
 }
 
-func (r *retryHelper) recomputeRetryForNewAndSucceeded(ctx context.Context, inst *lsv1alpha1.Installation, oldResult reconcile.Result, oldError error) (reconcile.Result, error) {
-	retryStatus := inst.Status.RetryStatus
+func (r *retryHelper) recomputeRetryForNewAndSucceeded(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+	retryStatus := inst.Status.AutomaticReconcileStatus
 
 	if retryStatus == nil {
 		if err := r.updateRetryStatus(ctx, inst, 0, false); err != nil {
@@ -205,7 +205,7 @@ func (r *retryHelper) recomputeRetryForNewAndSucceeded(ctx context.Context, inst
 			return reconcile.Result{}, err
 		}
 
-		numEntries := retryStatus.NumberOfRetries + 1
+		numEntries := retryStatus.NumberOfReconciles + 1
 		if err := r.updateRetryStatus(ctx, inst, numEntries, false); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -236,11 +236,11 @@ func (r *retryHelper) addReconcileAnnotation(ctx context.Context, inst *lsv1alph
 
 func (r *retryHelper) maxNumberOfRetriesDoneForFailed(inst *lsv1alpha1.Installation) bool {
 	alreadyExecutedRetries := 0
-	if inst.Status.RetryStatus != nil {
-		alreadyExecutedRetries = inst.Status.RetryStatus.NumberOfRetries
+	if inst.Status.AutomaticReconcileStatus != nil {
+		alreadyExecutedRetries = inst.Status.AutomaticReconcileStatus.NumberOfReconciles
 	}
-	return inst.Spec.RetrySpec.FailedRetrySpec.NumberOfRetries != nil &&
-		*inst.Spec.RetrySpec.FailedRetrySpec.NumberOfRetries <= alreadyExecutedRetries
+	return inst.Spec.AutomaticReconcile.FailedReconcile.NumberOfReconciles != nil &&
+		*inst.Spec.AutomaticReconcile.FailedReconcile.NumberOfReconciles <= alreadyExecutedRetries
 }
 
 func (r *retryHelper) isNextRetryDueForFailed(inst *lsv1alpha1.Installation) bool {
@@ -260,17 +260,17 @@ func (r *retryHelper) getDurationUntilNextRetryForSucceeded(inst *lsv1alpha1.Ins
 }
 
 func (r *retryHelper) getNextRetryTimeForFailed(inst *lsv1alpha1.Installation) time.Time {
-	lastRetryTime := inst.Status.RetryStatus.LastRetryTime.Time // TODO
+	lastRetryTime := inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time // TODO
 	return lastRetryTime.Add(r.getRetryIntervalForFailed(inst))
 }
 
 func (r *retryHelper) getNextRetryTimeForSucceeded(inst *lsv1alpha1.Installation) time.Time {
-	lastRetryTime := inst.Status.RetryStatus.LastRetryTime.Time // TODO
+	lastRetryTime := inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time // TODO
 	return lastRetryTime.Add(r.getRetryIntervalForSucceeded(inst))
 }
 
 func (r *retryHelper) getRetryIntervalForFailed(inst *lsv1alpha1.Installation) time.Duration {
-	retryInterval := inst.Spec.RetrySpec.FailedRetrySpec.Interval
+	retryInterval := inst.Spec.AutomaticReconcile.FailedReconcile.Interval
 	if retryInterval == nil {
 		return defaultRetryDurationForFailed
 	}
@@ -278,7 +278,7 @@ func (r *retryHelper) getRetryIntervalForFailed(inst *lsv1alpha1.Installation) t
 }
 
 func (r *retryHelper) getRetryIntervalForSucceeded(inst *lsv1alpha1.Installation) time.Duration {
-	retryInterval := inst.Spec.RetrySpec.SuccessRetrySpec.Interval
+	retryInterval := inst.Spec.AutomaticReconcile.SucceededReconcile.Interval
 	if retryInterval == nil {
 		return defaultRetryDurationForNewAndSucceeded
 	}

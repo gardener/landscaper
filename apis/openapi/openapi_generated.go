@@ -78,6 +78,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config/v1alpha1.OCIConfiguration":                                 schema_landscaper_apis_config_v1alpha1_OCIConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration":                            schema_landscaper_apis_config_v1alpha1_RegistryConfiguration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON":                                            schema_landscaper_apis_core_v1alpha1_AnyJSON(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile":                                 schema_landscaper_apis_core_v1alpha1_AutomaticReconcile(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus":                           schema_landscaper_apis_core_v1alpha1_AutomaticReconcileStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Blueprint":                                          schema_landscaper_apis_core_v1alpha1_Blueprint(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition":                                schema_landscaper_apis_core_v1alpha1_BlueprintDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintStaticDataSource":                          schema_landscaper_apis_core_v1alpha1_BlueprintStaticDataSource(ref),
@@ -120,7 +122,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionSpec":                                      schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionStatus":                                    schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExportDefinition":                                   schema_landscaper_apis_core_v1alpha1_ExportDefinition(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.FailedRetrySpec":                                    schema_landscaper_apis_core_v1alpha1_FailedRetrySpec(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.FailedReconcile":                                    schema_landscaper_apis_core_v1alpha1_FailedReconcile(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.FieldValueDefinition":                               schema_landscaper_apis_core_v1alpha1_FieldValueDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ImportDefinition":                                   schema_landscaper_apis_core_v1alpha1_ImportDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus":                                       schema_landscaper_apis_core_v1alpha1_ImportStatus(ref),
@@ -143,14 +145,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Requirement":                                        schema_landscaper_apis_core_v1alpha1_Requirement(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResolvedTarget":                                     schema_landscaper_apis_core_v1alpha1_ResolvedTarget(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResourceReference":                                  schema_landscaper_apis_core_v1alpha1_ResourceReference(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.RetrySpec":                                          schema_landscaper_apis_core_v1alpha1_RetrySpec(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.RetryStatus":                                        schema_landscaper_apis_core_v1alpha1_RetryStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SecretLabelSelectorRef":                             schema_landscaper_apis_core_v1alpha1_SecretLabelSelectorRef(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference":                                    schema_landscaper_apis_core_v1alpha1_SecretReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.StaticDataSource":                                   schema_landscaper_apis_core_v1alpha1_StaticDataSource(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.StaticDataValueFrom":                                schema_landscaper_apis_core_v1alpha1_StaticDataValueFrom(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SubinstallationTemplate":                            schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.SuccessRetrySpec":                                   schema_landscaper_apis_core_v1alpha1_SuccessRetrySpec(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.SucceededReconcile":                                 schema_landscaper_apis_core_v1alpha1_SucceededReconcile(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TLSClientConfig":                                    schema_landscaper_apis_core_v1alpha1_TLSClientConfig(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Target":                                             schema_landscaper_apis_core_v1alpha1_Target(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetExport":                                       schema_landscaper_apis_core_v1alpha1_TargetExport(ref),
@@ -2806,6 +2806,76 @@ func schema_landscaper_apis_core_v1alpha1_AnyJSON(ref common.ReferenceCallback) 
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_AutomaticReconcile(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AutomaticReconcile allows to configure automatically repeated reconciliations.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"succeededReconcile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations. If not set, no such automatically repeated reconciliations are triggered.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SucceededReconcile"),
+						},
+					},
+					"failedReconcile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FailedReconcile allows to configure automatically repeated reconciliations for failed installations. If not set, no such automatically repeated reconciliations are triggered.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.FailedReconcile"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.FailedReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.SucceededReconcile"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_AutomaticReconcileStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AutomaticReconcileStatus describes the status of automatically triggered reconciles.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"generation": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Generation describes the generation of the installation for which the status holds.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"numberOfReconciles": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NumberOfReconciles is the number of automatic reconciles for the installation with the stored generation.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"lastReconcileTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastReconcileTime is the time of the last automatically triggered reconcile.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"onFailed": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnFailed is true if the last automatically triggered reconcile was done for a failed installation.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_Blueprint(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4923,21 +4993,24 @@ func schema_landscaper_apis_core_v1alpha1_ExportDefinition(ref common.ReferenceC
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_FailedRetrySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_landscaper_apis_core_v1alpha1_FailedReconcile(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "FailedReconcile allows to configure automatically repeated reconciliations for failed installations",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"numberOfRetries": {
+					"numberOfReconciles": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
+							Description: "NumberOfReconciles specifies the maximal number of automatically repeated reconciliations. If not set, no upper limit exists.",
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 					"interval": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+							Description: "Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 5 minutes is used.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 				},
@@ -5434,9 +5507,10 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 							},
 						},
 					},
-					"retrySpec": {
+					"automaticReconcile": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.RetrySpec"),
+							Description: "AutomaticReconcile allows to configure automatically repeated reconciliations.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile"),
 						},
 					},
 				},
@@ -5444,7 +5518,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.RetrySpec"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
 	}
 }
 
@@ -5553,9 +5627,10 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							Format:      "",
 						},
 					},
-					"retryStatus": {
+					"automaticReconcileStatus": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.RetryStatus"),
+							Description: "AutomaticReconcileStatus describes the status of automatically triggered reconciles.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus"),
 						},
 					},
 				},
@@ -5563,7 +5638,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.RetryStatus"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
 	}
 }
 
@@ -6018,68 +6093,6 @@ func schema_landscaper_apis_core_v1alpha1_ResourceReference(ref common.Reference
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_RetrySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"successRetrySpec": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SuccessRetrySpec"),
-						},
-					},
-					"failedRetrySpec": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.FailedRetrySpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.FailedRetrySpec", "github.com/gardener/landscaper/apis/core/v1alpha1.SuccessRetrySpec"},
-	}
-}
-
-func schema_landscaper_apis_core_v1alpha1_RetryStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"generation": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
-						},
-					},
-					"numberOfRetries": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"lastRetryTime": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
-						},
-					},
-					"onFailed": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-	}
-}
-
 func schema_landscaper_apis_core_v1alpha1_SecretLabelSelectorRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6304,15 +6317,17 @@ func schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref common.Ref
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_SuccessRetrySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_landscaper_apis_core_v1alpha1_SucceededReconcile(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"interval": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+							Description: "Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 24 hours is used.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 				},

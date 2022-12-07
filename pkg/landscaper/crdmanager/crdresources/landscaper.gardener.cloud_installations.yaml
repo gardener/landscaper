@@ -31,6 +31,39 @@ spec:
           spec:
             description: Spec contains the specification for a installation.
             properties:
+              automaticReconcile:
+                description: AutomaticReconcile allows to configure automatically
+                  repeated reconciliations.
+                properties:
+                  failedReconcile:
+                    description: FailedReconcile allows to configure automatically
+                      repeated reconciliations for failed installations. If not set,
+                      no such automatically repeated reconciliations are triggered.
+                    properties:
+                      interval:
+                        description: Interval specifies the interval between two subsequent
+                          repeated reconciliations. If not set, a default of 5 minutes
+                          is used.
+                        type: string
+                      numberOfReconciles:
+                        description: NumberOfReconciles specifies the maximal number
+                          of automatically repeated reconciliations. If not set, no
+                          upper limit exists.
+                        format: int32
+                        type: integer
+                    type: object
+                  succeededReconcile:
+                    description: SucceededReconcile allows to configure automatically
+                      repeated reconciliations for succeeded installations. If not
+                      set, no such automatically repeated reconciliations are triggered.
+                    properties:
+                      interval:
+                        description: Interval specifies the interval between two subsequent
+                          repeated reconciliations. If not set, a default of 24 hours
+                          is used.
+                        type: string
+                    type: object
+                type: object
               blueprint:
                 description: Blueprint is the resolved reference to the definition.
                 properties:
@@ -536,32 +569,36 @@ spec:
                   - name
                   type: object
                 type: array
-              retrySpec:
-                properties:
-                  failedRetrySpec:
-                    properties:
-                      interval:
-                        description: Duration is a wrapper for time.Duration that
-                          implements JSON marshalling and openapi scheme.
-                        type: string
-                      numberOfRetries:
-                        format: int32
-                        type: integer
-                    type: object
-                  successRetrySpec:
-                    properties:
-                      interval:
-                        description: Duration is a wrapper for time.Duration that
-                          implements JSON marshalling and openapi scheme.
-                        type: string
-                    type: object
-                type: object
             required:
             - blueprint
             type: object
           status:
             description: Status contains the status of the installation.
             properties:
+              automaticReconcileStatus:
+                description: AutomaticReconcileStatus describes the status of automatically
+                  triggered reconciles.
+                properties:
+                  generation:
+                    description: Generation describes the generation of the installation
+                      for which the status holds.
+                    format: int64
+                    type: integer
+                  lastReconcileTime:
+                    description: LastReconcileTime is the time of the last automatically
+                      triggered reconcile.
+                    format: date-time
+                    type: string
+                  numberOfReconciles:
+                    description: NumberOfReconciles is the number of automatic reconciles
+                      for the installation with the stored generation.
+                    format: int32
+                    type: integer
+                  onFailed:
+                    description: OnFailed is true if the last automatically triggered
+                      reconcile was done for a failed installation.
+                    type: boolean
+                type: object
               conditions:
                 description: Conditions contains the actual condition of a installation
                 items:
@@ -779,23 +816,6 @@ spec:
               phase:
                 description: InstallationPhase is the current phase of the installation.
                 type: string
-              retryStatus:
-                properties:
-                  generation:
-                    format: int64
-                    type: integer
-                  lastRetryTime:
-                    description: Time is a wrapper around time.Time which supports
-                      correct marshaling to YAML and JSON.  Wrappers are provided
-                      for many of the factory methods that the time package offers.
-                    format: date-time
-                    type: string
-                  numberOfRetries:
-                    format: int32
-                    type: integer
-                  onFailed:
-                    type: boolean
-                type: object
             required:
             - observedGeneration
             - configGeneration

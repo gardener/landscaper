@@ -14,10 +14,10 @@ metadata:
 
 spec:
 
-  retrySpec:
-    failedRetrySpec:
+  automaticReconcile:
+    failedReconcile:
       interval: 1h
-      numberOfRetries: 3
+      numberOfReconciles: 3
 
   imports:
     targets:

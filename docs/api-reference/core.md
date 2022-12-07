@@ -1116,15 +1116,16 @@ Example: namespace: (( blueprint.exports.namespace ))</p>
 </tr>
 <tr>
 <td>
-<code>retrySpec</code></br>
+<code>automaticReconcile</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.RetrySpec">
-RetrySpec
+<a href="#landscaper.gardener.cloud/v1alpha1.AutomaticReconcile">
+AutomaticReconcile
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
+<p>AutomaticReconcile allows to configure automatically repeated reconciliations.</p>
 </td>
 </tr>
 </table>
@@ -1651,6 +1652,124 @@ encoding/json.RawMessage
 <p>
 (Members of <code>RawMessage</code> are embedded into this type.)
 </p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.AutomaticReconcile">AutomaticReconcile
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>)
+</p>
+<p>
+<p>AutomaticReconcile allows to configure automatically repeated reconciliations.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>succeededReconcile</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SucceededReconcile">
+SucceededReconcile
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations.
+If not set, no such automatically repeated reconciliations are triggered.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>failedReconcile</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.FailedReconcile">
+FailedReconcile
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>FailedReconcile allows to configure automatically repeated reconciliations for failed installations.
+If not set, no such automatically repeated reconciliations are triggered.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.AutomaticReconcileStatus">AutomaticReconcileStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+<p>AutomaticReconcileStatus describes the status of automatically triggered reconciles.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>generation</code></br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Generation describes the generation of the installation for which the status holds.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>numberOfReconciles</code></br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NumberOfReconciles is the number of automatic reconciles for the installation with the stored generation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastReconcileTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LastReconcileTime is the time of the last automatically triggered reconcile.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>onFailed</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OnFailed is true if the last automatically triggered reconcile was done for a failed installation.</p>
 </td>
 </tr>
 </tbody>
@@ -3011,8 +3130,8 @@ Error
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.FailedRetrySpec">FailedRetrySpec</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.SuccessRetrySpec">SuccessRetrySpec</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.FailedReconcile">FailedReconcile</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.SucceededReconcile">SucceededReconcile</a>)
 </p>
 <p>
 <p>Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.</p>
@@ -3530,13 +3649,14 @@ This field should be set and will likely be mandatory in future.</p>
 <p>
 <p>ExportType is a string alias</p>
 </p>
-<h3 id="landscaper.gardener.cloud/v1alpha1.FailedRetrySpec">FailedRetrySpec
+<h3 id="landscaper.gardener.cloud/v1alpha1.FailedReconcile">FailedReconcile
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.RetrySpec">RetrySpec</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.AutomaticReconcile">AutomaticReconcile</a>)
 </p>
 <p>
+<p>FailedReconcile allows to configure automatically repeated reconciliations for failed installations</p>
 </p>
 <table>
 <thead>
@@ -3548,13 +3668,15 @@ This field should be set and will likely be mandatory in future.</p>
 <tbody>
 <tr>
 <td>
-<code>numberOfRetries</code></br>
+<code>numberOfReconciles</code></br>
 <em>
 int
 </em>
 </td>
 <td>
 <em>(Optional)</em>
+<p>NumberOfReconciles specifies the maximal number of automatically repeated reconciliations. If not set, no upper
+limit exists.</p>
 </td>
 </tr>
 <tr>
@@ -3568,6 +3690,8 @@ Duration
 </td>
 <td>
 <em>(Optional)</em>
+<p>Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default
+of 5 minutes is used.</p>
 </td>
 </tr>
 </tbody>
@@ -4143,15 +4267,16 @@ Example: namespace: (( blueprint.exports.namespace ))</p>
 </tr>
 <tr>
 <td>
-<code>retrySpec</code></br>
+<code>automaticReconcile</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.RetrySpec">
-RetrySpec
+<a href="#landscaper.gardener.cloud/v1alpha1.AutomaticReconcile">
+AutomaticReconcile
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
+<p>AutomaticReconcile allows to configure automatically repeated reconciliations.</p>
 </td>
 </tr>
 </tbody>
@@ -4310,15 +4435,16 @@ string
 </tr>
 <tr>
 <td>
-<code>retryStatus</code></br>
+<code>automaticReconcileStatus</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.RetryStatus">
-RetryStatus
+<a href="#landscaper.gardener.cloud/v1alpha1.AutomaticReconcileStatus">
+AutomaticReconcileStatus
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
+<p>AutomaticReconcileStatus describes the status of automatically triggered reconciles.</p>
 </td>
 </tr>
 </tbody>
@@ -4730,114 +4856,6 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.RetrySpec">RetrySpec
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>)
-</p>
-<p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>successRetrySpec</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SuccessRetrySpec">
-SuccessRetrySpec
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td>
-<code>failedRetrySpec</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.FailedRetrySpec">
-FailedRetrySpec
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.RetryStatus">RetryStatus
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
-</p>
-<p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>generation</code></br>
-<em>
-int64
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td>
-<code>numberOfRetries</code></br>
-<em>
-int
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td>
-<code>lastRetryTime</code></br>
-<em>
-<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
-Kubernetes meta/v1.Time
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td>
-<code>onFailed</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.SecretLabelSelectorRef">SecretLabelSelectorRef
 </h3>
 <p>
@@ -5061,13 +5079,14 @@ InstallationTemplate
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.SuccessRetrySpec">SuccessRetrySpec
+<h3 id="landscaper.gardener.cloud/v1alpha1.SucceededReconcile">SucceededReconcile
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.RetrySpec">RetrySpec</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.AutomaticReconcile">AutomaticReconcile</a>)
 </p>
 <p>
+<p>SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations</p>
 </p>
 <table>
 <thead>
@@ -5088,6 +5107,8 @@ Duration
 </td>
 <td>
 <em>(Optional)</em>
+<p>Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of
+24 hours is used.</p>
 </td>
 </tr>
 </tbody>

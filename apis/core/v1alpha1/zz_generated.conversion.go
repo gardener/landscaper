@@ -42,6 +42,26 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*AutomaticReconcile)(nil), (*core.AutomaticReconcile)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_AutomaticReconcile_To_core_AutomaticReconcile(a.(*AutomaticReconcile), b.(*core.AutomaticReconcile), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.AutomaticReconcile)(nil), (*AutomaticReconcile)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_AutomaticReconcile_To_v1alpha1_AutomaticReconcile(a.(*core.AutomaticReconcile), b.(*AutomaticReconcile), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*AutomaticReconcileStatus)(nil), (*core.AutomaticReconcileStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_AutomaticReconcileStatus_To_core_AutomaticReconcileStatus(a.(*AutomaticReconcileStatus), b.(*core.AutomaticReconcileStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.AutomaticReconcileStatus)(nil), (*AutomaticReconcileStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_AutomaticReconcileStatus_To_v1alpha1_AutomaticReconcileStatus(a.(*core.AutomaticReconcileStatus), b.(*AutomaticReconcileStatus), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*Blueprint)(nil), (*core.Blueprint)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_Blueprint_To_core_Blueprint(a.(*Blueprint), b.(*core.Blueprint), scope)
 	}); err != nil {
@@ -452,13 +472,13 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*FailedRetrySpec)(nil), (*core.FailedRetrySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_FailedRetrySpec_To_core_FailedRetrySpec(a.(*FailedRetrySpec), b.(*core.FailedRetrySpec), scope)
+	if err := s.AddGeneratedConversionFunc((*FailedReconcile)(nil), (*core.FailedReconcile)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FailedReconcile_To_core_FailedReconcile(a.(*FailedReconcile), b.(*core.FailedReconcile), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.FailedRetrySpec)(nil), (*FailedRetrySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_FailedRetrySpec_To_v1alpha1_FailedRetrySpec(a.(*core.FailedRetrySpec), b.(*FailedRetrySpec), scope)
+	if err := s.AddGeneratedConversionFunc((*core.FailedReconcile)(nil), (*FailedReconcile)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_FailedReconcile_To_v1alpha1_FailedReconcile(a.(*core.FailedReconcile), b.(*FailedReconcile), scope)
 	}); err != nil {
 		return err
 	}
@@ -682,26 +702,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*RetrySpec)(nil), (*core.RetrySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_RetrySpec_To_core_RetrySpec(a.(*RetrySpec), b.(*core.RetrySpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.RetrySpec)(nil), (*RetrySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_RetrySpec_To_v1alpha1_RetrySpec(a.(*core.RetrySpec), b.(*RetrySpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*RetryStatus)(nil), (*core.RetryStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_RetryStatus_To_core_RetryStatus(a.(*RetryStatus), b.(*core.RetryStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.RetryStatus)(nil), (*RetryStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_RetryStatus_To_v1alpha1_RetryStatus(a.(*core.RetryStatus), b.(*RetryStatus), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*SecretLabelSelectorRef)(nil), (*core.SecretLabelSelectorRef)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_SecretLabelSelectorRef_To_core_SecretLabelSelectorRef(a.(*SecretLabelSelectorRef), b.(*core.SecretLabelSelectorRef), scope)
 	}); err != nil {
@@ -752,13 +752,13 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*SuccessRetrySpec)(nil), (*core.SuccessRetrySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_SuccessRetrySpec_To_core_SuccessRetrySpec(a.(*SuccessRetrySpec), b.(*core.SuccessRetrySpec), scope)
+	if err := s.AddGeneratedConversionFunc((*SucceededReconcile)(nil), (*core.SucceededReconcile)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile(a.(*SucceededReconcile), b.(*core.SucceededReconcile), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.SuccessRetrySpec)(nil), (*SuccessRetrySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_SuccessRetrySpec_To_v1alpha1_SuccessRetrySpec(a.(*core.SuccessRetrySpec), b.(*SuccessRetrySpec), scope)
+	if err := s.AddGeneratedConversionFunc((*core.SucceededReconcile)(nil), (*SucceededReconcile)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_SucceededReconcile_To_v1alpha1_SucceededReconcile(a.(*core.SucceededReconcile), b.(*SucceededReconcile), scope)
 	}); err != nil {
 		return err
 	}
@@ -993,6 +993,54 @@ func autoConvert_core_AnyJSON_To_v1alpha1_AnyJSON(in *core.AnyJSON, out *AnyJSON
 // Convert_core_AnyJSON_To_v1alpha1_AnyJSON is an autogenerated conversion function.
 func Convert_core_AnyJSON_To_v1alpha1_AnyJSON(in *core.AnyJSON, out *AnyJSON, s conversion.Scope) error {
 	return autoConvert_core_AnyJSON_To_v1alpha1_AnyJSON(in, out, s)
+}
+
+func autoConvert_v1alpha1_AutomaticReconcile_To_core_AutomaticReconcile(in *AutomaticReconcile, out *core.AutomaticReconcile, s conversion.Scope) error {
+	out.SucceededReconcile = (*core.SucceededReconcile)(unsafe.Pointer(in.SucceededReconcile))
+	out.FailedReconcile = (*core.FailedReconcile)(unsafe.Pointer(in.FailedReconcile))
+	return nil
+}
+
+// Convert_v1alpha1_AutomaticReconcile_To_core_AutomaticReconcile is an autogenerated conversion function.
+func Convert_v1alpha1_AutomaticReconcile_To_core_AutomaticReconcile(in *AutomaticReconcile, out *core.AutomaticReconcile, s conversion.Scope) error {
+	return autoConvert_v1alpha1_AutomaticReconcile_To_core_AutomaticReconcile(in, out, s)
+}
+
+func autoConvert_core_AutomaticReconcile_To_v1alpha1_AutomaticReconcile(in *core.AutomaticReconcile, out *AutomaticReconcile, s conversion.Scope) error {
+	out.SucceededReconcile = (*SucceededReconcile)(unsafe.Pointer(in.SucceededReconcile))
+	out.FailedReconcile = (*FailedReconcile)(unsafe.Pointer(in.FailedReconcile))
+	return nil
+}
+
+// Convert_core_AutomaticReconcile_To_v1alpha1_AutomaticReconcile is an autogenerated conversion function.
+func Convert_core_AutomaticReconcile_To_v1alpha1_AutomaticReconcile(in *core.AutomaticReconcile, out *AutomaticReconcile, s conversion.Scope) error {
+	return autoConvert_core_AutomaticReconcile_To_v1alpha1_AutomaticReconcile(in, out, s)
+}
+
+func autoConvert_v1alpha1_AutomaticReconcileStatus_To_core_AutomaticReconcileStatus(in *AutomaticReconcileStatus, out *core.AutomaticReconcileStatus, s conversion.Scope) error {
+	out.Generation = in.Generation
+	out.NumberOfReconciles = in.NumberOfReconciles
+	out.LastReconcileTime = in.LastReconcileTime
+	out.OnFailed = in.OnFailed
+	return nil
+}
+
+// Convert_v1alpha1_AutomaticReconcileStatus_To_core_AutomaticReconcileStatus is an autogenerated conversion function.
+func Convert_v1alpha1_AutomaticReconcileStatus_To_core_AutomaticReconcileStatus(in *AutomaticReconcileStatus, out *core.AutomaticReconcileStatus, s conversion.Scope) error {
+	return autoConvert_v1alpha1_AutomaticReconcileStatus_To_core_AutomaticReconcileStatus(in, out, s)
+}
+
+func autoConvert_core_AutomaticReconcileStatus_To_v1alpha1_AutomaticReconcileStatus(in *core.AutomaticReconcileStatus, out *AutomaticReconcileStatus, s conversion.Scope) error {
+	out.Generation = in.Generation
+	out.NumberOfReconciles = in.NumberOfReconciles
+	out.LastReconcileTime = in.LastReconcileTime
+	out.OnFailed = in.OnFailed
+	return nil
+}
+
+// Convert_core_AutomaticReconcileStatus_To_v1alpha1_AutomaticReconcileStatus is an autogenerated conversion function.
+func Convert_core_AutomaticReconcileStatus_To_v1alpha1_AutomaticReconcileStatus(in *core.AutomaticReconcileStatus, out *AutomaticReconcileStatus, s conversion.Scope) error {
+	return autoConvert_core_AutomaticReconcileStatus_To_v1alpha1_AutomaticReconcileStatus(in, out, s)
 }
 
 func autoConvert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.Blueprint, s conversion.Scope) error {
@@ -2129,26 +2177,26 @@ func Convert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in *core.ExportD
 	return autoConvert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in, out, s)
 }
 
-func autoConvert_v1alpha1_FailedRetrySpec_To_core_FailedRetrySpec(in *FailedRetrySpec, out *core.FailedRetrySpec, s conversion.Scope) error {
-	out.NumberOfRetries = (*int)(unsafe.Pointer(in.NumberOfRetries))
+func autoConvert_v1alpha1_FailedReconcile_To_core_FailedReconcile(in *FailedReconcile, out *core.FailedReconcile, s conversion.Scope) error {
+	out.NumberOfReconciles = (*int)(unsafe.Pointer(in.NumberOfReconciles))
 	out.Interval = (*core.Duration)(unsafe.Pointer(in.Interval))
 	return nil
 }
 
-// Convert_v1alpha1_FailedRetrySpec_To_core_FailedRetrySpec is an autogenerated conversion function.
-func Convert_v1alpha1_FailedRetrySpec_To_core_FailedRetrySpec(in *FailedRetrySpec, out *core.FailedRetrySpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_FailedRetrySpec_To_core_FailedRetrySpec(in, out, s)
+// Convert_v1alpha1_FailedReconcile_To_core_FailedReconcile is an autogenerated conversion function.
+func Convert_v1alpha1_FailedReconcile_To_core_FailedReconcile(in *FailedReconcile, out *core.FailedReconcile, s conversion.Scope) error {
+	return autoConvert_v1alpha1_FailedReconcile_To_core_FailedReconcile(in, out, s)
 }
 
-func autoConvert_core_FailedRetrySpec_To_v1alpha1_FailedRetrySpec(in *core.FailedRetrySpec, out *FailedRetrySpec, s conversion.Scope) error {
-	out.NumberOfRetries = (*int)(unsafe.Pointer(in.NumberOfRetries))
+func autoConvert_core_FailedReconcile_To_v1alpha1_FailedReconcile(in *core.FailedReconcile, out *FailedReconcile, s conversion.Scope) error {
+	out.NumberOfReconciles = (*int)(unsafe.Pointer(in.NumberOfReconciles))
 	out.Interval = (*Duration)(unsafe.Pointer(in.Interval))
 	return nil
 }
 
-// Convert_core_FailedRetrySpec_To_v1alpha1_FailedRetrySpec is an autogenerated conversion function.
-func Convert_core_FailedRetrySpec_To_v1alpha1_FailedRetrySpec(in *core.FailedRetrySpec, out *FailedRetrySpec, s conversion.Scope) error {
-	return autoConvert_core_FailedRetrySpec_To_v1alpha1_FailedRetrySpec(in, out, s)
+// Convert_core_FailedReconcile_To_v1alpha1_FailedReconcile is an autogenerated conversion function.
+func Convert_core_FailedReconcile_To_v1alpha1_FailedReconcile(in *core.FailedReconcile, out *FailedReconcile, s conversion.Scope) error {
+	return autoConvert_core_FailedReconcile_To_v1alpha1_FailedReconcile(in, out, s)
 }
 
 func autoConvert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(in *FieldValueDefinition, out *core.FieldValueDefinition, s conversion.Scope) error {
@@ -2384,7 +2432,7 @@ func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installa
 		return err
 	}
 	out.ExportDataMappings = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.ExportDataMappings))
-	out.RetrySpec = (*core.RetrySpec)(unsafe.Pointer(in.RetrySpec))
+	out.AutomaticReconcile = (*core.AutomaticReconcile)(unsafe.Pointer(in.AutomaticReconcile))
 	return nil
 }
 
@@ -2408,7 +2456,7 @@ func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.Ins
 		return err
 	}
 	out.ExportDataMappings = *(*map[string]AnyJSON)(unsafe.Pointer(&in.ExportDataMappings))
-	out.RetrySpec = (*RetrySpec)(unsafe.Pointer(in.RetrySpec))
+	out.AutomaticReconcile = (*AutomaticReconcile)(unsafe.Pointer(in.AutomaticReconcile))
 	return nil
 }
 
@@ -2429,7 +2477,7 @@ func autoConvert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *Inst
 	out.JobIDFinished = in.JobIDFinished
 	out.InstallationPhase = core.InstallationPhase(in.InstallationPhase)
 	out.ImportsHash = in.ImportsHash
-	out.RetryStatus = (*core.RetryStatus)(unsafe.Pointer(in.RetryStatus))
+	out.AutomaticReconcileStatus = (*core.AutomaticReconcileStatus)(unsafe.Pointer(in.AutomaticReconcileStatus))
 	return nil
 }
 
@@ -2450,7 +2498,7 @@ func autoConvert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in *core
 	out.JobIDFinished = in.JobIDFinished
 	out.InstallationPhase = InstallationPhase(in.InstallationPhase)
 	out.ImportsHash = in.ImportsHash
-	out.RetryStatus = (*RetryStatus)(unsafe.Pointer(in.RetryStatus))
+	out.AutomaticReconcileStatus = (*AutomaticReconcileStatus)(unsafe.Pointer(in.AutomaticReconcileStatus))
 	return nil
 }
 
@@ -2753,54 +2801,6 @@ func Convert_core_ResourceReference_To_v1alpha1_ResourceReference(in *core.Resou
 	return autoConvert_core_ResourceReference_To_v1alpha1_ResourceReference(in, out, s)
 }
 
-func autoConvert_v1alpha1_RetrySpec_To_core_RetrySpec(in *RetrySpec, out *core.RetrySpec, s conversion.Scope) error {
-	out.SuccessRetrySpec = (*core.SuccessRetrySpec)(unsafe.Pointer(in.SuccessRetrySpec))
-	out.FailedRetrySpec = (*core.FailedRetrySpec)(unsafe.Pointer(in.FailedRetrySpec))
-	return nil
-}
-
-// Convert_v1alpha1_RetrySpec_To_core_RetrySpec is an autogenerated conversion function.
-func Convert_v1alpha1_RetrySpec_To_core_RetrySpec(in *RetrySpec, out *core.RetrySpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_RetrySpec_To_core_RetrySpec(in, out, s)
-}
-
-func autoConvert_core_RetrySpec_To_v1alpha1_RetrySpec(in *core.RetrySpec, out *RetrySpec, s conversion.Scope) error {
-	out.SuccessRetrySpec = (*SuccessRetrySpec)(unsafe.Pointer(in.SuccessRetrySpec))
-	out.FailedRetrySpec = (*FailedRetrySpec)(unsafe.Pointer(in.FailedRetrySpec))
-	return nil
-}
-
-// Convert_core_RetrySpec_To_v1alpha1_RetrySpec is an autogenerated conversion function.
-func Convert_core_RetrySpec_To_v1alpha1_RetrySpec(in *core.RetrySpec, out *RetrySpec, s conversion.Scope) error {
-	return autoConvert_core_RetrySpec_To_v1alpha1_RetrySpec(in, out, s)
-}
-
-func autoConvert_v1alpha1_RetryStatus_To_core_RetryStatus(in *RetryStatus, out *core.RetryStatus, s conversion.Scope) error {
-	out.Generation = in.Generation
-	out.NumberOfRetries = in.NumberOfRetries
-	out.LastRetryTime = in.LastRetryTime
-	out.OnFailed = in.OnFailed
-	return nil
-}
-
-// Convert_v1alpha1_RetryStatus_To_core_RetryStatus is an autogenerated conversion function.
-func Convert_v1alpha1_RetryStatus_To_core_RetryStatus(in *RetryStatus, out *core.RetryStatus, s conversion.Scope) error {
-	return autoConvert_v1alpha1_RetryStatus_To_core_RetryStatus(in, out, s)
-}
-
-func autoConvert_core_RetryStatus_To_v1alpha1_RetryStatus(in *core.RetryStatus, out *RetryStatus, s conversion.Scope) error {
-	out.Generation = in.Generation
-	out.NumberOfRetries = in.NumberOfRetries
-	out.LastRetryTime = in.LastRetryTime
-	out.OnFailed = in.OnFailed
-	return nil
-}
-
-// Convert_core_RetryStatus_To_v1alpha1_RetryStatus is an autogenerated conversion function.
-func Convert_core_RetryStatus_To_v1alpha1_RetryStatus(in *core.RetryStatus, out *RetryStatus, s conversion.Scope) error {
-	return autoConvert_core_RetryStatus_To_v1alpha1_RetryStatus(in, out, s)
-}
-
 func autoConvert_v1alpha1_SecretLabelSelectorRef_To_core_SecretLabelSelectorRef(in *SecretLabelSelectorRef, out *core.SecretLabelSelectorRef, s conversion.Scope) error {
 	out.Selector = *(*map[string]string)(unsafe.Pointer(&in.Selector))
 	out.Key = in.Key
@@ -2919,24 +2919,24 @@ func Convert_core_SubinstallationTemplate_To_v1alpha1_SubinstallationTemplate(in
 	return autoConvert_core_SubinstallationTemplate_To_v1alpha1_SubinstallationTemplate(in, out, s)
 }
 
-func autoConvert_v1alpha1_SuccessRetrySpec_To_core_SuccessRetrySpec(in *SuccessRetrySpec, out *core.SuccessRetrySpec, s conversion.Scope) error {
+func autoConvert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile(in *SucceededReconcile, out *core.SucceededReconcile, s conversion.Scope) error {
 	out.Interval = (*core.Duration)(unsafe.Pointer(in.Interval))
 	return nil
 }
 
-// Convert_v1alpha1_SuccessRetrySpec_To_core_SuccessRetrySpec is an autogenerated conversion function.
-func Convert_v1alpha1_SuccessRetrySpec_To_core_SuccessRetrySpec(in *SuccessRetrySpec, out *core.SuccessRetrySpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_SuccessRetrySpec_To_core_SuccessRetrySpec(in, out, s)
+// Convert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile is an autogenerated conversion function.
+func Convert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile(in *SucceededReconcile, out *core.SucceededReconcile, s conversion.Scope) error {
+	return autoConvert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile(in, out, s)
 }
 
-func autoConvert_core_SuccessRetrySpec_To_v1alpha1_SuccessRetrySpec(in *core.SuccessRetrySpec, out *SuccessRetrySpec, s conversion.Scope) error {
+func autoConvert_core_SucceededReconcile_To_v1alpha1_SucceededReconcile(in *core.SucceededReconcile, out *SucceededReconcile, s conversion.Scope) error {
 	out.Interval = (*Duration)(unsafe.Pointer(in.Interval))
 	return nil
 }
 
-// Convert_core_SuccessRetrySpec_To_v1alpha1_SuccessRetrySpec is an autogenerated conversion function.
-func Convert_core_SuccessRetrySpec_To_v1alpha1_SuccessRetrySpec(in *core.SuccessRetrySpec, out *SuccessRetrySpec, s conversion.Scope) error {
-	return autoConvert_core_SuccessRetrySpec_To_v1alpha1_SuccessRetrySpec(in, out, s)
+// Convert_core_SucceededReconcile_To_v1alpha1_SucceededReconcile is an autogenerated conversion function.
+func Convert_core_SucceededReconcile_To_v1alpha1_SucceededReconcile(in *core.SucceededReconcile, out *SucceededReconcile, s conversion.Scope) error {
+	return autoConvert_core_SucceededReconcile_To_v1alpha1_SucceededReconcile(in, out, s)
 }
 
 func autoConvert_v1alpha1_TLSClientConfig_To_core_TLSClientConfig(in *TLSClientConfig, out *core.TLSClientConfig, s conversion.Scope) error {
