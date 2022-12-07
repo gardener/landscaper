@@ -8,16 +8,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -27,6 +22,9 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 const (
@@ -118,12 +116,13 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 		}
 
 		execTemplates[i] = core.DeployItemTemplate{
-			Name:          elem.Name,
-			Type:          elem.Type,
-			Target:        target,
-			Labels:        elem.Labels,
-			Configuration: elem.Configuration,
-			DependsOn:     elem.DependsOn,
+			Name:               elem.Name,
+			Type:               elem.Type,
+			Target:             target,
+			Labels:             elem.Labels,
+			Configuration:      elem.Configuration,
+			DependsOn:          elem.DependsOn,
+			UpdateOnChangeOnly: elem.UpdateOnChangeOnly,
 		}
 	}
 
