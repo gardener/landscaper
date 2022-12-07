@@ -118,8 +118,7 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(state.Create(ctx, di, envtest.UpdateStatus(true))).To(Succeed())
 
 		// At this stage, resources are not yet ready
-		err = testutil.ShouldNotReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
-		Expect(err).To(HaveOccurred())
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 
 		// Get the managed objects from Status and set them in Ready status
 		status := &helm.ProviderStatus{}
