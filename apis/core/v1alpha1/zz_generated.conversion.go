@@ -1646,6 +1646,7 @@ func autoConvert_v1alpha1_DeployItemTemplate_To_core_DeployItemTemplate(in *Depl
 	out.Labels = *(*map[string]string)(unsafe.Pointer(&in.Labels))
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.DependsOn = *(*[]string)(unsafe.Pointer(&in.DependsOn))
+	out.UpdateOnChangeOnly = in.UpdateOnChangeOnly
 	return nil
 }
 
@@ -1661,6 +1662,7 @@ func autoConvert_core_DeployItemTemplate_To_v1alpha1_DeployItemTemplate(in *core
 	out.Labels = *(*map[string]string)(unsafe.Pointer(&in.Labels))
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.DependsOn = *(*[]string)(unsafe.Pointer(&in.DependsOn))
+	out.UpdateOnChangeOnly = in.UpdateOnChangeOnly
 	return nil
 }
 

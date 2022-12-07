@@ -4130,6 +4130,13 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref common.Referenc
 							},
 						},
 					},
+					"updateOnChangeOnly": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"name", "type", "config"},
 			},

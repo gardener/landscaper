@@ -2811,6 +2811,18 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 <p>DependsOn lists deploy items that need to be executed before this one</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>updateOnChangeOnly</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemType">DeployItemType

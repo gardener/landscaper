@@ -79,6 +79,11 @@ spec:
                     type:
                       description: DataType is the DeployItem type of the execution.
                       type: string
+                    updateOnChangeOnly:
+                      description: UpdateOnChangeOnly specifies if redeployment is
+                        executed only if the specification of the deploy item has
+                        changed.
+                      type: boolean
                   required:
                   - name
                   - type
