@@ -169,25 +169,41 @@ type InstallationSpec struct {
 	// +optional
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 
+	// AutomaticReconcile allows to configure automatically repeated reconciliations.
 	// +optional
-	RetrySpec *RetrySpec `json:"retrySpec,omitempty"`
+	AutomaticReconcile *AutomaticReconcile `json:"automaticReconcile,omitempty"`
 }
 
-type RetrySpec struct {
+// AutomaticReconcile allows to configure automatically repeated reconciliations.
+type AutomaticReconcile struct {
+	// SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations.
+	// If not set, no such automatically repeated reconciliations are triggered.
 	// +optional
-	SuccessRetrySpec *SuccessRetrySpec `json:"successRetrySpec,omitempty"`
+	SucceededReconcile *SucceededReconcile `json:"succeededReconcile,omitempty"`
+
+	// FailedReconcile allows to configure automatically repeated reconciliations for failed installations.
+	// If not set, no such automatically repeated reconciliations are triggered.
 	// +optional
-	FailedRetrySpec *FailedRetrySpec `json:"failedRetrySpec,omitempty"`
+	FailedReconcile *FailedReconcile `json:"failedReconcile,omitempty"`
 }
 
-type SuccessRetrySpec struct {
+// SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations
+type SucceededReconcile struct {
+	// Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of
+	// 24 hours is used.
 	// +optional
 	Interval *Duration `json:"interval,omitempty"`
 }
 
-type FailedRetrySpec struct {
+// FailedReconcile allows to configure automatically repeated reconciliations for failed installations
+type FailedReconcile struct {
+	// NumberOfReconciles specifies the maximal number of automatically repeated reconciliations. If not set, no upper
+	// limit exists.
 	// +optional
-	NumberOfRetries *int `json:"numberOfRetries,omitempty"`
+	NumberOfReconciles *int `json:"numberOfReconciles,omitempty"`
+
+	// Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default
+	// of 5 minutes is used.
 	// +optional
 	Interval *Duration `json:"interval,omitempty"`
 }
@@ -229,17 +245,23 @@ type InstallationStatus struct {
 	// ImportsHash is the hash of the import data.
 	ImportsHash string `json:"importsHash,omitempty"`
 
+	// AutomaticReconcileStatus describes the status of automatically triggered reconciles.
 	// +optional
-	RetryStatus *RetryStatus `json:"retryStatus,omitempty"`
+	AutomaticReconcileStatus *AutomaticReconcileStatus `json:"automaticReconcileStatus,omitempty"`
 }
 
-type RetryStatus struct {
+// AutomaticReconcileStatus describes the status of automatically triggered reconciles.
+type AutomaticReconcileStatus struct {
+	// Generation describes the generation of the installation for which the status holds.
 	// +optional
 	Generation int64 `json:"generation,omitempty"`
+	// NumberOfReconciles is the number of automatic reconciles for the installation with the stored generation.
 	// +optional
-	NumberOfRetries int `json:"numberOfRetries,omitempty"`
+	NumberOfReconciles int `json:"numberOfReconciles,omitempty"`
+	// LastReconcileTime is the time of the last automatically triggered reconcile.
 	// +optional
-	LastRetryTime metav1.Time `json:"lastRetryTime,omitempty"`
+	LastReconcileTime metav1.Time `json:"lastReconcileTime,omitempty"`
+	// OnFailed is true if the last automatically triggered reconcile was done for a failed installation.
 	// +optional
 	OnFailed bool `json:"onFailed,omitempty"`
 }
