@@ -85,7 +85,7 @@ var _ = Describe("Retry handler", func() {
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)).To(Succeed())
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // removed
 			Expect(inst.Status.JobID).NotTo(Equal(inst.Status.JobIDFinished))                                                              // new job id
-			Expect(inst.Status.RetryStatus).To(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus).To(BeNil())
 
 			// installation fails because of missing target import; retry handler directly triggers a retry
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
@@ -93,10 +93,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).To(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // added
 			Expect(inst.ObjectMeta.Annotations).To(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // added
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil()) // initialized
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(1))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t1.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil()) // initialized
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(1))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t1.UnixMilli()))
 
 			// installation gets a new job id
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
@@ -104,10 +104,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // removed
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // removed
 			Expect(inst.Status.JobID).NotTo(Equal(inst.Status.JobIDFinished))                                                              // new job id
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(1))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t1.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(1))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t1.UnixMilli()))
 
 			// reconcile fails; retry helper schedules next reconcile event
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
@@ -115,10 +115,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation)))
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(1))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t1.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(1))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t1.UnixMilli()))
 
 			// reconcile event that is too early for the next retry
 			t2 := t1.Add(30 * time.Minute)
@@ -129,10 +129,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation)))
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(1))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t1.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(1))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t1.UnixMilli()))
 
 			// 2nd retry
 
@@ -144,10 +144,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).To(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // added
 			Expect(inst.ObjectMeta.Annotations).To(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // added
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(2))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t3.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(2))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t3.UnixMilli()))
 
 			// installation gets a new job id
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
@@ -155,10 +155,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // removed
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // removed
 			Expect(inst.Status.JobID).NotTo(Equal(inst.Status.JobIDFinished))                                                              // new job id
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(2))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t3.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(2))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t3.UnixMilli()))
 
 			// reconcile fails; retry helper schedules next reconcile event
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
@@ -166,10 +166,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation)))
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(2))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t3.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(2))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t3.UnixMilli()))
 
 			// 3rd retry
 
@@ -181,10 +181,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).To(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // added
 			Expect(inst.ObjectMeta.Annotations).To(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // added
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(3))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(3))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
 
 			// installation gets a new job id
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
@@ -192,10 +192,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // removed
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // removed
 			Expect(inst.Status.JobID).NotTo(Equal(inst.Status.JobIDFinished))                                                              // new job id
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(3))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(3))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
 
 			// reconcile fails; max number of retries reached
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
@@ -203,10 +203,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation)))
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(3))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(3))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
 
 			// all retries done
 
@@ -218,10 +218,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // not added
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // not added
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(3))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(3))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
 
 			// update installation and add reconcile annotation
 
@@ -236,7 +236,7 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // removed
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // removed
 			Expect(inst.Status.JobID).NotTo(Equal(inst.Status.JobIDFinished))                                                              // new job id
-			Expect(inst.Status.RetryStatus).To(BeNil())                                                                                    // reset
+			Expect(inst.Status.AutomaticReconcileStatus).To(BeNil())                                                                       // reset
 
 			// installation fails; retry handler directly triggers a retry
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
@@ -244,10 +244,10 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.ObjectMeta.Annotations).To(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation))) // added
 			Expect(inst.ObjectMeta.Annotations).To(HaveKey(v1alpha1.ReconcileReasonAnnotation))                                         // added
 			Expect(inst.Status.JobID).To(Equal(inst.Status.JobIDFinished))
-			Expect(inst.Status.RetryStatus).NotTo(BeNil())
-			Expect(inst.Status.RetryStatus.Generation).To(Equal(inst.Generation))
-			Expect(inst.Status.RetryStatus.NumberOfRetries).To(Equal(1))
-			Expect(inst.Status.RetryStatus.LastRetryTime.Time.UnixMilli()).To(Equal(t6.UnixMilli()))
+			Expect(inst.Status.AutomaticReconcileStatus).NotTo(BeNil())
+			Expect(inst.Status.AutomaticReconcileStatus.Generation).To(Equal(inst.Generation))
+			Expect(inst.Status.AutomaticReconcileStatus.NumberOfReconciles).To(Equal(1))
+			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t6.UnixMilli()))
 		})
 	})
 })
