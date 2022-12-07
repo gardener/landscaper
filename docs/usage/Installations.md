@@ -885,17 +885,17 @@ kind: Installation
 metadata:
   name: my-installation
 spec:
-  retrySpec:  # triggers automatic reconciliation
-    successRetrySpec: {} # triggers the automatic reconcile for succeeded installations (optional)
-    failedRetrySpec: {} # triggers the automatic reconcile for failed installations (optional)
+  automaticReconcile:  # triggers automatic reconciliation
+    succeededReconcile: {} # triggers the automatic reconcile for succeeded installations (optional)
+    failedReconcile: {} # triggers the automatic reconcile for failed installations (optional)
 
 ```
 
-With such a configuration containing `successRetrySpec`, the processing of an installation, which is in a successful 
-final state, i.e. its `status.phase` equals `Succeeded`, is reconciled/processed again every 24 hours. If `successRetrySpec`
+With such a configuration containing `succeededReconcile`, the processing of an installation, which is in a successful 
+final state, i.e. its `status.phase` equals `Succeeded`, is reconciled/processed again every 24 hours. If `succeededReconcile`
 is missing, no automatic retry of succeeded installations happens.
 
-When the configuration contains `failedRetrySpec` the processing of an installation, which is in a failed
+When the configuration contains `failedReconcile` the processing of an installation, which is in a failed
 final state, i.e. its `status.phase` equals `Failed` or `DeleteFailed`, is reconciled/processed again every 5 minutes.
 
 Landscaper triggers the automatic reconcile by adding the annotation `landscaper.gardener.cloud/operation: reconcile` 
@@ -909,27 +909,27 @@ kind: Installation
 metadata:
   name: my-installation
 spec:
-  retrySpec: {
-    successRetrySpec:
+  automaticReconcile: {
+    succeededReconcile:
       interval: <some-duration, e.g. 5s>
-    
-    failedRetrySpec:
+
+    failedReconcile:
       interval: <some-duration, e.g. 5s>
-      numberOfRetries: <some-number, e.g. 10>
+      numberOfReconciles: <some-number, e.g. 10>
   }
 
 ```
 
 The additional fields have the following meanings:
 
-- **successRetrySpec.interval**: This field allows to specify a different interval between two subsequent automatic retries
+- **succeededReconcile.interval**: This field allows to specify a different interval between two subsequent automatic reconciles
   of succeeded installations.
 
-- **failedRetrySpec.interval**: This field allows to specify a different interval between two subsequent automatic retries 
+- **failedReconcile.interval**: This field allows to specify a different interval between two subsequent automatic reconciles 
   of failed installations.
 
-- **failedRetrySpec.numberOfRetries**: With this field, you can restrict the maximal number of retries of failed 
-  installations. The counter for the already executed retries is automatically reset to 0 if
+- **failedReconcile.numberOfReconciles**: With this field, you can restrict the maximal number of automatic reconciles of failed 
+  installations. The counter for the already executed automatic reconciles is automatically reset to 0 if
   - the specification of an installation is changed, resulting in a change of the generation number or
   - the installation went into a successful final state or
   - the reconciliation is triggered by setting the `landscaper.gardener.cloud/operation: reconcile` from outside. This
