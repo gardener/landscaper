@@ -6808,6 +6808,20 @@ func schema_landscaper_apis_core_v1alpha1_TargetSyncSpec(ref common.ReferenceCal
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.LocalSecretReference"),
 						},
 					},
+					"createTargetToSource": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CreateTargetToSource specifies if set on true, that also a target is created, which references the secret in SecretRef",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"targetToSourceName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetToSourceName is the name of the target referencing the secret defined in SecretRef if CreateTargetToSource is set on true. If TargetToSourceName is empty SourceNamespace is used instead.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"secretNameExpression": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretNameExpression defines the names of the secrets which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches all names. if not set no secrets are synced",

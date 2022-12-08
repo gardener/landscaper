@@ -283,13 +283,29 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 		}
 	}
 
+	if targetSync.Spec.CreateTargetToSource {
+		targetName := targetSync.Spec.TargetToSourceName
+		if targetName == "" {
+			targetName = targetSync.Spec.SourceNamespace
+		}
+		delete(oldTargets, targetName)
+		if err := c.createOrUpdateTarget(ctx, targetSync, targetName, targetSync.Spec.SecretRef.Name,
+			targetSync.Spec.SecretRef.Key, false); err != nil {
+			errors = append(errors, err)
+		}
+	}
+
 	if len(errors) == 0 {
 		for key := range oldTargets {
-			secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
-			if err := c.targetClient.Delete(ctx, &secret); err != nil {
-				msg := fmt.Sprintf("deleting old secret %s of targetsync object failed", client.ObjectKeyFromObject(&secret).String())
-				logger.Error(err, msg)
-				errors = append(errors, err)
+			nextOldTarget := oldTargets[key]
+			// do not delete the secret to the source namespace
+			if nextOldTarget.Spec.SecretRef.Name != targetSync.Spec.SecretRef.Name {
+				secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
+				if err := c.targetClient.Delete(ctx, &secret); err != nil {
+					msg := fmt.Sprintf("deleting old secret %s of targetsync object failed", client.ObjectKeyFromObject(&secret).String())
+					logger.Error(err, msg)
+					errors = append(errors, err)
+				}
 			}
 
 			target := lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
@@ -306,7 +322,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 
 func (c *TargetSyncController) handleSecret(ctx context.Context, targetSync *lsv1alpha1.TargetSync, secret *corev1.Secret) error {
 	targetName := secret.GetName()
-	err := c.createOrUpdateTarget(ctx, targetSync, targetName, false)
+	err := c.createOrUpdateTarget(ctx, targetSync, targetName, "", "", false)
 	if err != nil {
 		return err
 	}
@@ -367,7 +383,7 @@ func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1
 		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
 	}
 
-	err = c.createOrUpdateTarget(ctx, targetSync, targetName, true)
+	err = c.createOrUpdateTarget(ctx, targetSync, targetName, "", "", true)
 	if err != nil {
 		msg := "targetsync for shoot failed: could not create or update target"
 		logger.Error(err, msg)
@@ -410,7 +426,7 @@ func (c *TargetSyncController) isRenewalOfShortLivedKubeconfigDue(ctx context.Co
 }
 
 func (c *TargetSyncController) createOrUpdateTarget(ctx context.Context, targetSync *lsv1alpha1.TargetSync,
-	targetName string, addLastTargetSyncAnnotation bool) error {
+	targetName, alternativeSecretName, alternativeKubeconfigKey string, addLastTargetSyncAnnotation bool) error {
 
 	newTarget := &lsv1alpha1.Target{
 		ObjectMeta: controllerruntime.ObjectMeta{Name: targetName, Namespace: targetSync.Namespace},
@@ -423,11 +439,22 @@ func (c *TargetSyncController) createOrUpdateTarget(ctx context.Context, targetS
 		if addLastTargetSyncAnnotation {
 			helper.SetTimestampAnnotationNow(&newTarget.ObjectMeta, annotationKeyLastTargetSync)
 		}
+
+		secretName := targetName
+		if alternativeSecretName != "" {
+			secretName = alternativeSecretName
+		}
+
+		key := kubeconfigKey
+		if alternativeKubeconfigKey != "" {
+			key = alternativeKubeconfigKey
+		}
+
 		newTarget.Spec = lsv1alpha1.TargetSpec{
 			Type: targettypes.KubernetesClusterTargetType,
 			SecretRef: &lsv1alpha1.LocalSecretReference{
-				Name: targetName,
-				Key:  kubeconfigKey,
+				Name: secretName,
+				Key:  key,
 			},
 		}
 		return nil

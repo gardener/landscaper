@@ -21,6 +21,10 @@ spec:
           spec:
             description: Spec contains the specification
             properties:
+              createTargetToSource:
+                description: CreateTargetToSource specifies if set on true, that also
+                  a target is created, which references the secret in SecretRef
+                type: boolean
               secretNameExpression:
                 description: SecretNameExpression defines the names of the secrets
                   which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax
@@ -51,6 +55,11 @@ spec:
               sourceNamespace:
                 description: SourceNamespace describes the namespace from where the
                   secrets should be synced
+                type: string
+              targetToSourceName:
+                description: TargetToSourceName is the name of the target referencing
+                  the secret defined in SecretRef if CreateTargetToSource is set on
+                  true. If TargetToSourceName is empty SourceNamespace is used instead.
                 type: string
               tokenRotation:
                 description: TokenRotation defines the data to perform an automatic
