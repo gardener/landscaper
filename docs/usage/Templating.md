@@ -156,23 +156,6 @@ The following additional functions are available:
    type: ociRegistry
    imageReference: host:5000/myrepo/myimage:1.0.0
    ```
-- **`generateImageOverwrite(componentDescriptor,componentDescriptorList): ImageVector`**
-  returns the image vector overwrite for the component descriptor and the componentDescriptorList. The arguments componentDescriptor and componentDescriptorList are optional and defaulted to the current context (.cd and .components).
-  Example: 
-  ```  
-  imageVectorOverWrite:
-  {{- generateImageOverwrite | toYaml | nindent 2 }}
-  ```
-  results in something like
-  ```yaml
-  imageVectorOverWrite:
-    images:
-    - name: cloud-controller-manager
-      repository: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws
-      tag: v1.17.15
-      targetVersion: 1.17.x
-  ...
-  ```
 
 
 ##### State
@@ -225,23 +208,6 @@ The execution type to use for spiff templates is `Spiff`. The template is provid
 - **`ociRefVersion(ref string): string`**
   parses an oci reference and returns the version.
   e.g. `host:5000/myrepo/myimage:1.0.0` -> `"1.0.0"`
-- **`generateImageOverwrite(componentDescriptor,componentDescriptorList): ImageVector`**
-  returns the image vector overwrite for the component descriptor and the componentDescriptorList. The arguments componentDescriptor and componentDescriptorList are optional and defaulted to the current context (.cd and .components).
-  Example: 
-  ```yaml
-  imageVectorOverWrite:
-    (( generateImageOverwrite() ))
-  ```
-  results in something like
-  ```yaml
-  imageVectorOverWrite:
-    images:
-    - name: cloud-controller-manager
-      repository: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws
-      tag: v1.17.15
-      targetVersion: 1.17.x
-  ...
-  ```
 
 ##### State
 
