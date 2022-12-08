@@ -675,9 +675,6 @@ deployExecutions:
           {{ $component := getComponent .cd "name" "my-referenced-component" }} # get a component that is referenced
           {{ $resource := getResource $component "name" "ubuntu" }}
           usesImage: {{ $resource.access.imageReference }} # resolves to ubuntu:0.18.0
-          
-          imageVectorOverwrite: |
-            {{- generateImageOverwrite .cd .imports.my-cdlist | toYaml | nindent 12 }}
 ```
 
 <!-- TODO
@@ -706,9 +703,6 @@ deployExecutions:
           {{ $component := getComponent .cd "name" "my-referenced-component" }} # get a component that is referenced
           {{ $resource := getResource $component "name" "ubuntu" }}
           usesImage: {{ $resource.access.imageReference }} # resolves to ubuntu:0.18.0
-          
-          imageVectorOverwrite: |
-            {{- generateImageOverwrite .cd .imports.my-cdlist | toYaml | nindent 12 }}
 ``` -->
 
 
