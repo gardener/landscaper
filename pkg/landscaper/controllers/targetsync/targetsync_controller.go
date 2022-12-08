@@ -299,7 +299,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 		for key := range oldTargets {
 			nextOldTarget := oldTargets[key]
 			// do not delete the secret to the source namespace
-			if nextOldTarget.Spec.SecretRef.Name != targetSync.Spec.SecretRef.Name {
+			if !c.isTargetSyncSecret(nextOldTarget.Spec.SecretRef.Name, targetSync) {
 				secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
 				if err := c.targetClient.Delete(ctx, &secret); err != nil {
 					msg := fmt.Sprintf("deleting old secret %s of targetsync object failed", client.ObjectKeyFromObject(&secret).String())
@@ -517,11 +517,13 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	}
 
 	for _, secret := range secrets.Items {
-		secretLogger := logger.WithValues(lc.KeyResource, client.ObjectKeyFromObject(&secret).String())
-		secretLogger.Info("deleting secret whose targetsync object is being deleted")
-		if err := c.targetClient.Delete(ctx, &secret); err != nil {
-			secretLogger.Error(err, "failed to delete secret whose targetsync object is being deleted")
-			return err
+		if !c.isTargetSyncSecret(secret.Name, targetSync) {
+			secretLogger := logger.WithValues(lc.KeyResource, client.ObjectKeyFromObject(&secret).String())
+			secretLogger.Info("deleting secret whose targetsync object is being deleted")
+			if err := c.targetClient.Delete(ctx, &secret); err != nil {
+				secretLogger.Error(err, "failed to delete secret whose targetsync object is being deleted")
+				return err
+			}
 		}
 	}
 
@@ -719,4 +721,8 @@ func (c *TargetSyncController) fetchNewToken(ctx context.Context, namespace, ser
 
 func (c *TargetSyncController) deriveTargetNameFromShootName(shootName string) string {
 	return shootName
+}
+
+func (c *TargetSyncController) isTargetSyncSecret(secretName string, targetSync *lsv1alpha1.TargetSync) bool {
+	return secretName == targetSync.Spec.SecretRef.Name
 }
