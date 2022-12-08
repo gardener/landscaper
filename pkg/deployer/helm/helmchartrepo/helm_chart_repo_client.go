@@ -39,8 +39,7 @@ type HelmChartRepoClient struct {
 	lsClient         client.Client
 }
 
-func NewHelmChartRepoClient(context *lsv1alpha1.Context, lsClient client.Client) (*HelmChartRepoClient, error) {
-	currOp := "NewHelmChartRepoClient"
+func NewHelmChartRepoClient(context *lsv1alpha1.Context, lsClient client.Client) (*HelmChartRepoClient, lserrors.LsError) {
 	auths := []helmv1alpha1.Auth{}
 
 	if context != nil && context.Configurations != nil {
@@ -48,7 +47,7 @@ func NewHelmChartRepoClient(context *lsv1alpha1.Context, lsClient client.Client)
 			repoCredentials := helmv1alpha1.HelmChartRepoCredentials{}
 			err := yaml.Unmarshal(rawAuths.RawMessage, &repoCredentials)
 			if err != nil {
-				return nil, lserrors.NewWrappedError(err, currOp, "ParsingAuths", err.Error())
+				return nil, lserrors.NewWrappedError(err, "NewHelmChartRepoClient", "ParsingAuths", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 			}
 
 			auths = repoCredentials.Auths
@@ -169,7 +168,7 @@ func (c *HelmChartRepoClient) getRequest(ctx context.Context, authData *helmv1al
 
 	err = c.setAuthHeader(ctx, authData, req)
 	if err != nil {
-		return nil, fmt.Errorf("could not set auth header: %w", err)
+		return nil, lserrors.NewWrappedError(err, "getRequest", "setAuthHeader", "could not set auth header")
 	}
 
 	return req, nil
@@ -236,14 +235,16 @@ func (c *HelmChartRepoClient) getAuthHeader(ctx context.Context, authData *helmv
 	return "", fmt.Errorf("failed to get auth header: neither auth header nor secret ref is set")
 }
 
-func (c *HelmChartRepoClient) decodeBasicAuthCredentials(base64EncodedBasicAuthCredentials string) (string, string, error) {
+func (c *HelmChartRepoClient) decodeBasicAuthCredentials(base64EncodedBasicAuthCredentials string) (string, string, lserrors.LsError) {
 	decodedCredentials, err := base64.StdEncoding.DecodeString(base64EncodedBasicAuthCredentials)
 	if err != nil {
-		return "", "", errors.Wrap(err, "Couldn't decode basic auth credentials")
+		return "", "", lserrors.NewWrappedError(err, "decodeBasicAuthCredentials", "DecodeString",
+			"Couldn't decode basic auth credentials", lsv1alpha1.ErrorConfigurationProblem)
 	}
 	splittedCredentials := strings.SplitN(string(decodedCredentials), ":", 2)
 	if len(splittedCredentials) < 2 {
-		return "", "", errors.New("Password missing in credential string. Could not split by colon ':'")
+		return "", "", lserrors.NewError("decodeBasicAuthCredentials", "SplitN",
+			"Password missing in credential string. Could not split by colon ':'", lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	username := splittedCredentials[0]

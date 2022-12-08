@@ -120,7 +120,7 @@ func New(helmconfig helmv1alpha1.Configuration,
 
 // Template loads the specified helm chart
 // and templates it with the given values.
-func (h *Helm) Template(ctx context.Context, lsClient client.Client) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, error) {
+func (h *Helm) Template(ctx context.Context, lsClient client.Client) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
 	currOp := "TemplateChart"
 
 	restConfig, _, _, err := h.TargetClient(ctx)
@@ -140,9 +140,9 @@ func (h *Helm) Template(ctx context.Context, lsClient client.Client) (map[string
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "BuildOCIClient", err.Error())
 	}
 
-	helmChartRepoClient, err := helmchartrepo.NewHelmChartRepoClient(h.Context, lsClient)
-	if err != nil {
-		return nil, nil, nil, nil, err
+	helmChartRepoClient, lsError := helmchartrepo.NewHelmChartRepoClient(h.Context, lsClient)
+	if lsError != nil {
+		return nil, nil, nil, nil, lsError
 	}
 
 	ch, err := chartresolver.GetChart(ctx, ociClient, helmChartRepoClient, &h.ProviderConfiguration.Chart)

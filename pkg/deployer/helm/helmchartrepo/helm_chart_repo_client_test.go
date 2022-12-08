@@ -40,6 +40,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 
 	It("should determine an auth header from a context", func() {
 		ctx := context.Background()
+		var err error
 
 		const (
 			testURL        = "test-url"
@@ -61,6 +62,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 
 	It("should determine an auth header from a secret", func() {
 		ctx := context.Background()
+		var err error
 
 		const (
 			testURL        = "test-url"
@@ -101,6 +103,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 
 	It("should determine an auth header from a secret with default key", func() {
 		ctx := context.Background()
+		var err error
 
 		const (
 			testURL        = "test-url"
@@ -140,6 +143,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 
 	It("should fail to determine an auth header from a secret in another namespace", func() {
 		ctx := context.Background()
+		var err error
 
 		const (
 			testURL              = "test-url"
