@@ -3196,6 +3196,8 @@ func autoConvert_v1alpha1_TargetSyncSpec_To_core_TargetSyncSpec(in *TargetSyncSp
 	if err := Convert_v1alpha1_LocalSecretReference_To_core_LocalSecretReference(&in.SecretRef, &out.SecretRef, s); err != nil {
 		return err
 	}
+	out.CreateTargetToSource = in.CreateTargetToSource
+	out.TargetToSourceName = in.TargetToSourceName
 	out.SecretNameExpression = in.SecretNameExpression
 	out.ShootNameExpression = in.ShootNameExpression
 	out.TokenRotation = (*core.TokenRotation)(unsafe.Pointer(in.TokenRotation))
@@ -3212,6 +3214,8 @@ func autoConvert_core_TargetSyncSpec_To_v1alpha1_TargetSyncSpec(in *core.TargetS
 	if err := Convert_core_LocalSecretReference_To_v1alpha1_LocalSecretReference(&in.SecretRef, &out.SecretRef, s); err != nil {
 		return err
 	}
+	out.CreateTargetToSource = in.CreateTargetToSource
+	out.TargetToSourceName = in.TargetToSourceName
 	out.SecretNameExpression = in.SecretNameExpression
 	out.ShootNameExpression = in.ShootNameExpression
 	out.TokenRotation = (*TokenRotation)(unsafe.Pointer(in.TokenRotation))

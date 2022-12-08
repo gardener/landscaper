@@ -110,6 +110,28 @@ The entries of a *TargetSync* object have the following meaning:
 An example how to create a *TargetSync* object could be found 
 [here](https://github.com/gardener/landscaper-examples/tree/master/sync-targets/example1).
 
+## Target to Source Cluster
+
+It is also possible to automatically create a target to the source cluster from where the targets to the shoots
+or the secrets are synchronized. This target just references the same secret as the *TargetSync* object. This allows
+e.g. the creation of shoot cluster manifests in the source namespace if this is the namespace of a Gardener project.
+
+The required configuration in the *TargetSync* object is as follows:
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: TargetSync
+metadata:
+  name: <some name>
+  namespace: <Namespace 1>
+spec:
+  createTargetToSource: true
+  targetToSourceName: <some name> # optional
+  ...
+```
+
+*targetToSourceName* is the name of the target. If this is not set, the target gets the name of the *sourceNamespace*.
+
 ## Token Rotation
 
 If the field `tokenRotation.enabled` is set tu `true`, the token in the kubeconfig of the secret referenced by

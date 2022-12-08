@@ -41,6 +41,15 @@ type TargetSyncSpec struct {
 	// SecretRef references the secret that contains the kubeconfig to the namespace of the secrets to be synced.
 	SecretRef LocalSecretReference `json:"secretRef"`
 
+	// CreateTargetToSource specifies if set on true, that also a target is created, which references the secret in SecretRef
+	// +optional
+	CreateTargetToSource bool `json:"createTargetToSource,omitempty"`
+
+	// TargetToSourceName is the name of the target referencing the secret defined in SecretRef if CreateTargetToSource
+	// is set on true. If TargetToSourceName is empty SourceNamespace is used instead.
+	// +optional
+	TargetToSourceName string `json:"targetToSourceName,omitempty"`
+
 	// SecretNameExpression defines the names of the secrets which should be synced via a regular expression according
 	// to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches
 	// all names.

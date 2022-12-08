@@ -1560,6 +1560,31 @@ LocalSecretReference
 </tr>
 <tr>
 <td>
+<code>createTargetToSource</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CreateTargetToSource specifies if set on true, that also a target is created, which references the secret in SecretRef</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>targetToSourceName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TargetToSourceName is the name of the target referencing the secret defined in SecretRef if CreateTargetToSource
+is set on true. If TargetToSourceName is empty SourceNamespace is used instead.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>secretNameExpression</code></br>
 <em>
 string
@@ -5552,6 +5577,31 @@ LocalSecretReference
 </td>
 <td>
 <p>SecretRef references the secret that contains the kubeconfig to the namespace of the secrets to be synced.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>createTargetToSource</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CreateTargetToSource specifies if set on true, that also a target is created, which references the secret in SecretRef</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>targetToSourceName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TargetToSourceName is the name of the target referencing the secret defined in SecretRef if CreateTargetToSource
+is set on true. If TargetToSourceName is empty SourceNamespace is used instead.</p>
 </td>
 </tr>
 <tr>
