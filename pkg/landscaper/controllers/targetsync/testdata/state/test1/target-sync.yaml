@@ -9,3 +9,5 @@ spec:
     key: kubeconfig
     name: test-target-sync
   sourceNamespace: {{ .Namespace2 }}
+  createTargetToSource: true
+  targetToSourceName: test-source-target-name

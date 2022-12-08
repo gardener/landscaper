@@ -44,6 +44,17 @@ var _ = Describe("TargetSync Controller", func() {
 			}
 		})
 
+		checkTarget := func(ctx context.Context, targetName, secretRefName, secretRefKey string) {
+			target := &lsv1alpha1.Target{}
+			target.Name = targetName
+			target.Namespace = state.Namespace
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(target), target))
+
+			Expect(target.Spec.SecretRef.Name).To(Equal(secretRefName))
+			Expect(target.Spec.SecretRef.Key).To(Equal(secretRefKey))
+			Expect(target.Spec.Type).To(Equal(targettypes.KubernetesClusterTargetType))
+		}
+
 		checkTargetAndSecret := func(ctx context.Context, secretName string) {
 			sourceSecret := &corev1.Secret{}
 			sourceSecret.Name = secretName
@@ -97,9 +108,10 @@ var _ = Describe("TargetSync Controller", func() {
 			ctx := context.Background()
 
 			const (
-				targetSyncName = "test-target-sync"
-				secretName1    = "cluster1.kubeconfig"
-				secretName2    = "cluster2.kubeconfig"
+				targetSyncName   = "test-target-sync"
+				secretName1      = "cluster1.kubeconfig"
+				secretName2      = "cluster2.kubeconfig"
+				sourceTargetName = "test-source-target-name"
 			)
 
 			var err error
@@ -110,11 +122,14 @@ var _ = Describe("TargetSync Controller", func() {
 			tgs.Name = targetSyncName
 			tgs.Namespace = state.Namespace
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			tgs.Spec.CreateTargetToSource = true
+			tgs.Spec.TargetToSourceName = sourceTargetName
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
 
 			checkTargetAndSecret(ctx, secretName1)
 			checkTargetAndSecret(ctx, secretName2)
+			checkTarget(ctx, sourceTargetName, tgs.Spec.SecretRef.Name, tgs.Spec.SecretRef.Key)
 
 			// Update secret
 
