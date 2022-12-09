@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/pkg/utils"
@@ -104,12 +106,14 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 
 		// Expect that the deploy item gets deleted
-		Eventually(func() error {
-			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
-			return err
-		}, time.Minute, 5*time.Second).Should(Succeed())
+		Expect(wait.PollImmediate(5*time.Second, time.Minute, func() (done bool, err error) {
+			if _, err = ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace())); err != nil {
+				return false, nil
+			}
 
-		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
+			err = testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)
+			return err != nil && apierrors.IsNotFound(err), nil
+		})).To(Succeed())
 
 		err = testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "secret should be deleted")
@@ -169,12 +173,14 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 		// Expect that the deploy item gets deleted
-		Eventually(func() error {
-			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
-			return err
-		}, time.Minute, 5*time.Second).Should(Succeed())
+		Expect(wait.PollImmediate(5*time.Second, time.Minute, func() (done bool, err error) {
+			if _, err = ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace())); err != nil {
+				return false, nil
+			}
 
-		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
+			err = testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)
+			return err != nil && apierrors.IsNotFound(err), nil
+		})).To(Succeed())
 
 		err = testenv.Client.Get(ctx, kutil.ObjectKey("my-configmap", "default"), &corev1.ConfigMap{})
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "secret should be deleted")
@@ -191,7 +197,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)).ToNot(HaveOccurred())
 
 		// First reconcile will add a finalizer
-		_ = testutil.ShouldNotReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
@@ -215,12 +221,14 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(testutil.AddAnnotationForDeployItem(ctx, testenv, di, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")).ToNot(HaveOccurred())
 		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 		// Expect that the deploy item gets deleted
-		Eventually(func() error {
-			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
-			return err
-		}, time.Minute, 5*time.Second).Should(Succeed())
+		Expect(wait.PollImmediate(5*time.Second, time.Minute, func() (done bool, err error) {
+			if _, err = ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace())); err != nil {
+				return false, nil
+			}
 
-		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
+			err = testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)
+			return err != nil && apierrors.IsNotFound(err), nil
+		})).To(Succeed())
 	})
 })
 
@@ -270,12 +278,14 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 	Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 
 	// Expect that the deploy item gets deleted
-	Eventually(func() error {
-		_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
-		return err
-	}, time.Minute, 5*time.Second).Should(Succeed())
+	Expect(wait.PollImmediate(5*time.Second, time.Minute, func() (done bool, err error) {
+		if _, err = ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace())); err != nil {
+			return false, nil
+		}
 
-	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
+		err = testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)
+		return err != nil && apierrors.IsNotFound(err), nil
+	})).To(Succeed())
 
 	err := testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
 	Expect(apierrors.IsNotFound(err)).To(BeTrue(), "secret should be deleted")

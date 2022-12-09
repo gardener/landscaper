@@ -241,16 +241,29 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	var lsError lserrors.LsError
 	if di.DeletionTimestamp.IsZero() {
 		lsError = c.reconcile(ctx, lsCtx, di, rt)
-		return reconcile.Result{}, c.handleReconcileResult(ctx, lsError, old, di)
+		err = c.handleReconcileResult(ctx, lsError, old, di)
+		return c.buildResult(di.Status.DeployItemPhase, err)
 
 	} else {
 		lsError = c.delete(ctx, lsCtx, di, rt)
-		return reconcile.Result{}, c.handleReconcileResult(ctx, lsError, old, di)
+		err = c.handleReconcileResult(ctx, lsError, old, di)
+		return c.buildResult(di.Status.DeployItemPhase, err)
 	}
 }
 
 func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem) error {
 	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsClient, c.lsEventRecorder)
+}
+
+func (c *controller) buildResult(deployItemPhase lsv1alpha1.DeployItemPhase, err error) (reconcile.Result, error) {
+	if deployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded {
+		return reconcile.Result{}, nil
+	} else if deployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
+		return reconcile.Result{}, nil
+	} else {
+		// Init, Progressing, or Deleting
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
 }
 
 func (c *controller) checkTargetResponsibilityAndResolve(ctx context.Context, log logging.Logger,
