@@ -23,7 +23,7 @@ DISABLE_CLEANUP := false
 install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
-	@go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20221206203637-3da2de04734a
 	@$(REPO_ROOT)/hack/install-requirements.sh
 	@chmod +x $(REPO_ROOT)/apis/vendor/k8s.io/code-generator/*
 
