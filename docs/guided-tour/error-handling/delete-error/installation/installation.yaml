@@ -23,7 +23,8 @@ spec:
           jsonSchema: "https://json-schema.org/draft/2019-09/schema"
 
           imports:                   # yaml structure fixed
-            - name: cluster                                             
+            - name: cluster
+              type: target
               targetType: landscaper.gardener.cloud/kubernetes-cluster
 
           deployExecutions:

@@ -3,25 +3,52 @@
 This example is a modification of the [Echo Server Example](../../blueprints/echo-server). 
 We add import parameters to the blueprint to make some of its settings configurable: the Helm release name and namespace, 
 as well as the text of the echo server. The `Installation` will provide values for these parameters which it reads
-from `DataObject` custom resources. In some sense, you can view the blueprint as a function and the `Installation` 
-as a call of this function binding the parameters to values.
+from `DataObject` custom resources. 
+
+In some sense, you can view a blueprint as a function that executes a deployment,
+and the `Installation` as a call of this function providing values for its parameters.
 
 
 ## Declaring Import Parameters
 
-The [blueprint](./blueprint/blueprint.yaml) declares three import parameters:
+The [blueprint](./blueprint/blueprint.yaml) of the present example declares three import parameters:
+the target parameter `cluster`, and the data parameters `release` and `text`. 
 
-- and parameter `cluster` of type `landscaper.gardener.cloud/kubernetes-cluster`,
-- parameter `release` of type `object`,
-- parameter `text` of type `string`.
+```yaml
+imports:
+- name: cluster
+  type: target
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
 
-For details, see [Import Definitions](../../../usage/Blueprints.md#import-definitions)
+- name: release
+  type: data
+  schema:
+    type: object
+
+- name: text
+  type: data
+  schema:
+    type: string
+```
+
+In general, we distinguish parameters of type `target`, `targetList`, and `data`.
+
+To define target parameters more detailed, they have a `targetType`. However, currently there is only
+one supported target type, namely `landscaper.gardener.cloud/kubernetes-cluster`. A blueprint can import more than one
+target. For example, the inline blueprint
+[here](../../basics/multiple-deployitems/installation/installation.yaml)
+has two target imports. A parameter of type `targetList` allows to import a list of targets whose length is not 
+specified by the blueprint.
+
+To define data parameters more precisely, they have a `schema`, i.e. a json schema that describes the structure 
+of the data.
+
+For more details, see [Import Definitions](../../../usage/Blueprints.md#import-definitions)
 
 
 ## Using Import Parameters
 
-The blueprint uses the import parameters in the templating of `DeployItems`. Later, we will see examples 
-where import parameters are also passed to subinstallations.
+A blueprint can use its import parameters in the templating of `DeployItems`. 
 The value of an import parameter can be accessed by `.imports.<parameter name>`, for example:
 
 ```yaml
@@ -56,7 +83,7 @@ imports:
       dataRef: <name of a DataObject containing the parameter value>
 ```
 
-The `DataObjects` must belong to the same namespace as the `Installation`. Note that it is also possible to store 
+The `DataObjects` and `Targets` must belong to the same namespace as the `Installation`. Note that it is also possible to store 
 parameter values in `ConfigMaps` or `Secrets`. For more details, see [Imports](../../../usage/Installations.md#imports).
 
 
@@ -84,7 +111,7 @@ The procedure to install the helm chart with Landscaper is as follows:
 3. To try out the echo server, first define a port forwarding on the target cluster:
 
    ```shell
-   kubectl port-forward -n example service/echo-server 8080:80
+   kubectl port-forward -n example-2 service/echo 8080:80
    ```
 
    Then open `localhost:8080` in a browser.

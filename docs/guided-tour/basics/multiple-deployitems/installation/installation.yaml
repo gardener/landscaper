@@ -27,8 +27,10 @@ spec:
           # Define two import parameters
           imports:
             - name: cluster-1
+              type: target
               targetType: landscaper.gardener.cloud/kubernetes-cluster
             - name: cluster-2
+              type: target
               targetType: landscaper.gardener.cloud/kubernetes-cluster
 
           deployExecutions:

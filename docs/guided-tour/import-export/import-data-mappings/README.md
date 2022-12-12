@@ -50,7 +50,7 @@ For more details, see [Import DataMappings](../../../usage/Installations.md#impo
 
 ## The Default Mapping
 
-It is possible to skip the import data mapping for some or all import parameters of the blueprint, if no mapping is 
+It is possible to skip the import data mapping for some or all import parameters of a blueprint, if no mapping is 
 necessary, i.e. if the `DataObjects` contain the data already in the format that the blueprint expects.
 Actually, this is what happened in the [Import Parameters](../import-parameters) example.
 There we have loaded the `DataObjects` into variables `release` and `text`, whose names and structures matched already
@@ -100,7 +100,7 @@ The procedure is as follows:
 3. To try out the echo server, first define a port forwarding on the target cluster:
 
    ```shell
-   kubectl port-forward -n example service/echo-server 8080:80
+   kubectl port-forward -n example service/echo 8080:80
    ```
 
    Then open `localhost:8080` in a browser.

@@ -3,8 +3,9 @@ kind: Blueprint
 jsonSchema: "https://json-schema.org/draft/2019-09/schema"
 
 imports:
-  - name: cluster                                             # name of the import parameter
-    targetType: landscaper.gardener.cloud/kubernetes-cluster  # type of the import parameter
+  - name: cluster  # "cluster" is the name of the import parameter
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
 
   - name: release  # "release" is the name of the import parameter
     type: data
