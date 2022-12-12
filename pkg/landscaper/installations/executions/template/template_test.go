@@ -45,8 +45,16 @@ var _ = Describe("TemplateDeployExecutions", func() {
 
 	Context("Spiff", func() {
 		testdataDir := filepath.Join("./testdata", "spifftemplate")
-		runTestSuite(testdataDir, sharedTestdataDir)
-		runTestSuiteSpiff(testdataDir, sharedTestdataDir)
+		testdataDirYAML := filepath.Join(testdataDir, "yaml")
+		testdataDirText := filepath.Join(testdataDir, "text")
+		Context("YAML", func() {
+			runTestSuite(testdataDirYAML, sharedTestdataDir)
+			runTestSuiteSpiff(testdataDirYAML, sharedTestdataDir)
+		})
+		Context("Text", func() {
+			runTestSuite(testdataDirText, sharedTestdataDir)
+			runTestSuiteSpiff(testdataDirText, sharedTestdataDir)
+		})
 	})
 
 })
