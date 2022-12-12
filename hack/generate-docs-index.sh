@@ -13,6 +13,8 @@ PROJECT_ROOT="${CURRENT_DIR}"/..
 DOCS_FOLDER="${PROJECT_ROOT}/docs"
 METAFILE_NAME=".docnames"
 
+doc_index_file=${1:-"$DOCS_FOLDER/README.md"}
+
 # prints to the new doc index
 function println() {
   echo "$@" >> "$newindex"
@@ -89,4 +91,4 @@ println
   done
 )
 
-cp "$newindex" "$DOCS_FOLDER/README.md"
+cp "$newindex" "$doc_index_file"
