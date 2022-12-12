@@ -374,7 +374,7 @@
           "default": ""
         },
         "template": {
-          "description": "Template contains an optional inline template. The template has to be of string for go template and a valid yaml/json for spiff.",
+          "description": "Template contains an optional inline template. The template has to be of string for go template and either a string or valid yaml/json for spiff.",
           "$ref": "#/definitions/core-v1alpha1-AnyJSON"
         },
         "type": {

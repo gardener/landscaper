@@ -5861,7 +5861,7 @@ AnyJSON
 <td>
 <p>Template contains an optional inline template.
 The template has to be of string for go template
-and a valid yaml/json for spiff.</p>
+and either a string or valid yaml/json for spiff.</p>
 </td>
 </tr>
 </tbody>

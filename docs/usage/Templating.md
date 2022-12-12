@@ -178,13 +178,23 @@ Old state is provided via an additional `state` binding. New state is taken from
 
 #### Spiff
 
-The execution type to use for spiff templates is `Spiff`. The template is provided as YAML.
+The execution type to use for spiff templates is `Spiff`. The template can be provided as either YAML or text.
 
 **Example**
 ```yaml
 - name: my-spiff-template
   type: Spiff
   template:
+    deployItems:
+    - name: my-first-deploy-item
+      type: landscaper.gardener.cloud/mock
+      config: (( .imports.config ))
+```
+or
+```yaml
+- name: my-spiff-template
+  type: Spiff
+  template: |
     deployItems:
     - name: my-first-deploy-item
       type: landscaper.gardener.cloud/mock
