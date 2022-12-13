@@ -183,7 +183,7 @@ type TemplateExecutor struct {
 	File string `json:"file,omitempty"`
 	// Template contains an optional inline template.
 	// The template has to be of string for go template
-	// and a valid yaml/json for spiff.
+	// and either a string or valid yaml/json for spiff.
 	// + optional
 	Template AnyJSON `json:"template,omitempty"`
 }

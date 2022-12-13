@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- name: one
+  type: Spiff
+  template: |
+    deployItems:
+    - name: init
+      type: container
+      config:
+        apiVersion: example.test/v1
+        kind: Configuration
+        temp:
+          component: (( &temporary( getComponent(cd, "name", "my-referenced-component") ) ))
+          resource: (( &temporary( getResource(component, "name", "ubuntu") ) ))
+        image: (( temp.resource.access.imageReference ))

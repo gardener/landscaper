@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- name: one
+  type: Spiff
+  template: |
+    subinstallations:
+    - apiVersion: landscaper.gardener.cloud/v1alpha1
+      kind: InstallationTemplate
+      name: my-subinstallation
+      blueprint:
+        ref: "cd://resources/myblueprint"

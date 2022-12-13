@@ -212,7 +212,17 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 
 func (t *Templater) templateNode(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint) (spiffyaml.Node, error) {
 	if len(tmplExec.Template.RawMessage) != 0 {
-		return spiffyaml.Unmarshal("template", tmplExec.Template.RawMessage)
+		node, err := spiffyaml.Unmarshal("template", tmplExec.Template.RawMessage)
+		if err != nil {
+			return node, err
+		}
+		value, ok := node.Value().(string)
+		if ok {
+			// this is always expected to be an object, not a single string
+			// so try to unmarshal it again
+			return spiffyaml.Unmarshal("template", []byte(value))
+		}
+		return node, nil
 	}
 	if len(tmplExec.File) != 0 {
 		rawTemplateBytes, err := vfs.ReadFile(blueprint.Fs, tmplExec.File)
