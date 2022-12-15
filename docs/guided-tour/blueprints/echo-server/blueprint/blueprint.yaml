@@ -21,13 +21,14 @@ deployExecutions:
           config:
             apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
             kind: ProviderConfiguration
-            name: hello-world
+            name: echo-server
             namespace: example
             createNamespace: true
 
             chart:
-              {{ $chartResource := getResource .cd "name" "hello-world-chart" }}
+              {{ $chartResource := getResource .cd "name" "echo-server-chart" }}
               ref: {{ $chartResource.access.imageReference }}
 
             values:
-              testData: hello
+              {{ $imageResource := getResource .cd "name" "echo-server-image" }}
+              image: {{ $imageResource.access.imageReference }}

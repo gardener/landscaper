@@ -45,6 +45,14 @@ In this tour, you will learn about the different Landscaper features by simple e
 
 [9. Helm Chart Resources in the Component Descriptor](./blueprints/helm-chart-resource)
 
+[10. Echo Server Example](./blueprints/echo-server)
+
+## Imports and Exports
+
+[11. Import Parameters](./import-export/import-parameters)
+
+[12. Import Data Mappings](./import-export/import-data-mappings)
+
 
 <!--
 Delete without uninstall
