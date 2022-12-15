@@ -8,6 +8,9 @@ An import data mapping can for example be useful in the following situation. Sup
 and the first one exports `DataObjects` which the second one imports. If then the types of the export and import 
 parameters do not match exactly, an import data mapping in the second `Installation` can adapt the data.
 
+One can also use an import data mapping to set a fixed value for an input parameter, so that it is not necessary to
+create an extra `DataObjects` for the value.
+
 
 ## The Example Mapping
 
@@ -41,9 +44,9 @@ importDataMappings:
   text: hello
 ```
 
-Note that you must use [spiff](https://github.com/mandelsoft/spiff), rather than GoTemplate as templating language in the import data mapping. The reason is 
-that the import data mapping belongs to the yaml manifest of the `Installation`, and a GoTemplate would in general 
-not be well-formed yaml.
+Note that you must use [spiff](https://github.com/mandelsoft/spiff), rather than GoTemplate as templating language in 
+the import data mapping. The reason is that the import data mapping belongs to the yaml manifest of the `Installation`, 
+and a GoTemplate would in general not be well-formed yaml.
 
 For more details, see [Import DataMappings](../../../usage/Installations.md#import-data-mappings)
 
