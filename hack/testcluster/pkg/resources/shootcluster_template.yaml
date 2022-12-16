@@ -42,7 +42,7 @@ spec:
   region: europe-west1
   secretBindingName: shoot-cluster-canary-sap-gcp-k8s-wm-canary
   kubernetes:
-    version: 1.24.6
+    version: 1.24.7
   purpose: evaluation
   addons:
     kubernetesDashboard:
