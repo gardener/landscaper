@@ -99,7 +99,7 @@ It might take some minutes until the TLS certificate is created
 Remember, you need this URL to access the OCI registry later on:
 
 ``` bash
-export OCI_REGISTRY=o.ingress.p.democlust.shoot.k8s.myprovider.com
+OCI_REGISTRY=o.ingress.p.democlust.shoot.k8s.myprovider.com
 ```
 
 Check if all needed components of Landscaper is available:
