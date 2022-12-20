@@ -66,8 +66,8 @@ to store the artifacts created in this tutorial.
 The landscaper-cli provides a convenient quick start option for installing the Landscaper plus an OCI registry:
 
 ```bash
-export OCI_USER=oci-user
-export OCI_PASSWD='PSST!DONOTTELL!'
+OCI_USER=oci-user
+OCI_PASSWD='PSST!DONOTTELL!'
 
 landscaper-cli quickstart install \
   --kubeconfig ~/.kube/config \
