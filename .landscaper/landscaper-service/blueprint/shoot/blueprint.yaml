@@ -2,51 +2,61 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
 imports:
-  - name: hostingCluster
+  - name: gardenerServiceAccount
     required: true
     targetType: landscaper.gardener.cloud/kubernetes-cluster
 
-  - name: hostingClusterNamespace
+  - name: name
     required: true
     type: data
     schema:
       type: string
 
-  - name: targetClusterNamespace
+  - name: namespace
     required: true
     type: data
     schema:
       type: string
 
-  - name: landscaperControllerKubeconfigYaml
+  - name: secretBindingName
     required: true
     type: data
     schema:
       type: string
 
-  - name: landscaperWebhooksKubeconfigYaml
+  - name: labels
+    required: false
+    type: data
+    schema:
+      type: object
+
+  - name: shootConfig
     required: true
+    type: data
+    schema:
+      $ref: "cd://resources/shoot-config-definition"
+
+exports:
+  - name: shootClusterKubeconfig
     type: data
     schema:
       type: string
 
-  - name: registryConfig
-    type: data
-    schema:
-      $ref: "cd://resources/registry-config-definition"
-
-  - name: landscaperConfig
-    type: data
-    schema:
-      $ref: "cd://resources/landscaper-config-definition"
-
-  - name: webhooksHostName
-    required: true
+  - name: shootClusterEndpoint
     type: data
     schema:
       type: string
+
+  - name: shootCluster
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 deployExecutions:
   - name: deploy-execution
     file: /deploy-execution.yaml
+    type: GoTemplate
+
+exportExecutions:
+  - name: export-execution
+    file: /export-execution.yaml
     type: GoTemplate

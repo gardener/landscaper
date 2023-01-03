@@ -7,6 +7,7 @@ package landscaper_service_blueprints_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"io"
 	"os"
 	"path/filepath"
@@ -44,6 +45,10 @@ const (
 var filesToCopy = map[string]string{
 	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/landscaper-configuration.json"):   filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-configuration/schema.json"),
 	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/registry-configuration.json"):     filepath.Join(testData, "registry/landscaper-service/blobs/registry-configuration/schema.json"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/shoot-configuration.json"):        filepath.Join(testData, "registry/landscaper-service/blobs/shoot-configuration/schema.json"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/shoot/blueprint.yaml"):             filepath.Join(testData, "registry/landscaper-service/blobs/shoot-blueprint/blueprint.yaml"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/shoot/deploy-execution.yaml"):      filepath.Join(testData, "registry/landscaper-service/blobs/shoot-blueprint/deploy-execution.yaml"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/shoot/export-execution.yaml"):      filepath.Join(testData, "registry/landscaper-service/blobs/shoot-blueprint/export-execution.yaml"),
 	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper/blueprint.yaml"):        filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-blueprint/blueprint.yaml"),
 	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper/deploy-execution.yaml"): filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-blueprint/deploy-execution.yaml"),
 	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac/blueprint.yaml"):              filepath.Join(testData, "registry/landscaper-service/blobs/rbac-blueprint/blueprint.yaml"),
@@ -103,7 +108,6 @@ var (
 	repository          *componentsregistry.LocalRepository
 	landscaperServiceCD *cdv2.ComponentDescriptor
 	landscaperCD        *cdv2.ComponentDescriptor
-	virtualGardenCD     *cdv2.ComponentDescriptor
 	cdList              cdv2.ComponentDescriptorList
 	repositoryContext   cdv2.UnstructuredTypedObject
 )
@@ -130,14 +134,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(landscaperCD).ToNot(BeNil())
 
-	virtualGardenCD, err = registry.Resolve(ctx, repository, "github.com/gardener/virtual-garden", "v0.1.0")
-	Expect(err).ToNot(HaveOccurred())
-	Expect(landscaperCD).ToNot(BeNil())
-
 	cdList.Components = []cdv2.ComponentDescriptor{
 		*landscaperServiceCD,
 		*landscaperCD,
-		*virtualGardenCD,
 	}
 
 	repoCtx := &cdv2.OCIRegistryRepository{
@@ -174,6 +173,22 @@ var _ = Describe("Landscaper Service Component", func() {
 
 		di := out.DeployItems[0]
 		Expect(di.Spec.Type).To(Equal(helm.Type))
+	})
+
+	It("should install the shoot cluster blueprint", func() {
+		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
+		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
+			ComponentDescriptor: landscaperServiceCD,
+			Installation:        &lsv1alpha1.Installation{},
+			Blueprint:           GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/shoot")),
+		}, GetImports(filepath.Join(testData, "imports-shoot.yaml")))
+
+		testutils.ExpectNoError(err)
+		Expect(out.DeployItems).To(HaveLen(1))
+		Expect(out.Installations).To(HaveLen(0))
+
+		di := out.DeployItems[0]
+		Expect(di.Spec.Type).To(Equal(manifest.Type))
 	})
 
 	It("should install the rbac blueprint", func() {

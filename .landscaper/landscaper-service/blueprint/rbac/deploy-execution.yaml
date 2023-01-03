@@ -2,13 +2,13 @@ deployItems:
   - name: landscaper-rbac
     type: landscaper.gardener.cloud/helm
     target:
-      import: virtualCluster
+      import: shootCluster
     config:
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       kind: ProviderConfiguration
       updateStrategy: patch
       name: landscaper-rbac
-      namespace: {{ .imports.virtualClusterNamespace }}
+      namespace: {{ .imports.targetClusterNamespace }}
       createNamespace: true
 
       chart:
@@ -43,7 +43,7 @@ deployItems:
             apiVersion: v1
             kind: Secret
             name: landscaper-controller-token
-            namespace: {{ .imports.virtualClusterNamespace }}
+            namespace: {{ .imports.targetClusterNamespace }}
 
         - key: landscaperControllerCaCrt
           timeout: 10m
@@ -52,7 +52,7 @@ deployItems:
             apiVersion: v1
             kind: Secret
             name: landscaper-controller-token
-            namespace: {{ .imports.virtualClusterNamespace }}
+            namespace: {{ .imports.targetClusterNamespace }}
 
         - key: landscaperWebhooksToken
           timeout: 10m
@@ -61,7 +61,7 @@ deployItems:
             apiVersion: v1
             kind: Secret
             name: landscaper-webhooks-token
-            namespace: {{ .imports.virtualClusterNamespace }}
+            namespace: {{ .imports.targetClusterNamespace }}
 
         - key: landscaperWebhooksCaCrt
           timeout: 10m
@@ -70,7 +70,7 @@ deployItems:
             apiVersion: v1
             kind: Secret
             name: landscaper-webhooks-token
-            namespace: {{ .imports.virtualClusterNamespace }}
+            namespace: {{ .imports.targetClusterNamespace }}
 
         - key: landscaperUserToken
           timeout: 10m
@@ -79,7 +79,7 @@ deployItems:
             apiVersion: v1
             kind: Secret
             name: landscaper-user-token
-            namespace: {{ .imports.virtualClusterNamespace }}
+            namespace: {{ .imports.targetClusterNamespace }}
 
         - key: landscaperUserCaCrt
           timeout: 10m
@@ -88,4 +88,4 @@ deployItems:
             apiVersion: v1
             kind: Secret
             name: landscaper-user-token
-            namespace: {{ .imports.virtualClusterNamespace }}
+            namespace: {{ .imports.targetClusterNamespace }}

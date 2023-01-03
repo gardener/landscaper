@@ -1,0 +1,124 @@
+deployItems:
+  - name: shoot-cluster
+    type: landscaper.gardener.cloud/kubernetes-manifest
+    target:
+      import: gardenerServiceAccount
+    timeout: 35m
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      name: shoot-cluster
+      updateStrategy: mergeOverwrite
+      readinessChecks:
+        disableDefault: true
+        custom:
+          - name: APIServerAvailable
+            timeout: 30m
+            resourceSelector:
+              - apiVersion: core.gardener.cloud/v1beta1
+                kind: Shoot
+                name: {{ .imports.name }}
+                namespace: {{ .imports.namespace }}
+            requirements:
+              - jsonPath: .status.conditions[?(@.type == 'APIServerAvailable')].status
+                operator: ==
+                values:
+                  - value: "True"
+              - jsonPath: .status.conditions[?(@.type == 'ControlPlaneHealthy')].status
+                operator: ==
+                values:
+                  - value: "True"
+              - jsonPath: .status.conditions[?(@.type == 'EveryNodeReady')].status
+                operator: ==
+                values:
+                  - value: "True"
+              - jsonPath: .status.conditions[?(@.type == 'SystemComponentsHealthy')].status
+                operator: ==
+                values:
+                  - value: "True"
+
+      deleteTimeout: 30m
+
+      manifests:
+        - policy: manage
+          annotateBeforeDelete:
+            confirmation.gardener.cloud/deletion: "true"
+          manifest:
+            apiVersion: core.gardener.cloud/v1beta1
+            kind: Shoot
+            metadata:
+              name: {{ .imports.name }}
+              namespace: {{ .imports.namespace }}
+              annotations:
+                shoot.gardener.cloud/cleanup-extended-apis-finalize-grace-period-seconds: '30'
+            {{ if .imports.labels }}
+              labels:
+{{ toYaml .imports.labels | indent 16 }}
+            {{ end }}
+            spec:
+              provider:
+                type: {{ .imports.shootConfig.provider.type }}
+                infrastructureConfig:
+                  apiVersion: {{ .imports.shootConfig.provider.type }}.provider.extensions.gardener.cloud/v1alpha1
+                  kind: InfrastructureConfig
+                  networks:
+                    workers: 10.250.0.0/16
+                controlPlaneConfig:
+                  apiVersion: {{ .imports.shootConfig.provider.type }}.provider.extensions.gardener.cloud/v1alpha1
+                  kind: ControlPlaneConfig
+                  zone: {{ .imports.shootConfig.provider.zone }}
+                workers:
+                  - name: {{ trunc 15 .imports.name }}
+                    minimum:  {{ dig "shootConfig" "workers" "minimum" 1 .imports }}
+                    maximum:  {{ dig "shootConfig" "workers" "maximum" 2 .imports }}
+                    maxSurge: {{ dig "shootConfig" "workers" "maxSurge" 1 .imports }}
+                    maxUnavailable: {{ dig "shootConfig" "workers" "maxUnavailable" 0 .imports }}
+                    machine:
+                      type: {{ dig "shootConfig" "workers" "machine" "type" "n1-standard-2" .imports  }}
+                      image:
+                        name: {{ dig "shootConfig" "workers" "machine" "image" "name" "gardenlinux" .imports }}
+                        version: {{ dig "shootConfig" "workers" "machine" "image" "version" "576.12.0" .imports }}
+                    zones:
+                      - {{ .imports.shootConfig.provider.zone }}
+                    cri:
+                      name: containerd
+                    volume:
+                      type: {{ dig "shootConfig" "workers" "volume" "type" "pd-standard" .imports }}
+                      size: {{ dig "shootConfig" "workers" "volume" "size" "50Gi" .imports }}
+              networking:
+                type: calico
+                pods: 100.96.0.0/11
+                nodes: 10.250.0.0/16
+                services: 100.64.0.0/13
+              cloudProfileName: {{ .imports.shootConfig.provider.type }}
+              region: {{ .imports.shootConfig.region }}
+              secretBindingName: {{ .imports.secretBindingName }}
+              kubernetes:
+                version: {{ .imports.shootConfig.kubernetes.version }}
+                enableStaticTokenKubeconfig: true
+              purpose: production
+              maintenance:
+                timeWindow:
+                  begin: {{ dig "shootConfig" "maintenance" "timeWindow" "begin" "050000+0200" .imports }}
+                  end: {{ dig "shootConfig" "maintenance" "timeWindow" "end" "060000+0200" .imports }}
+                autoUpdate:
+                  kubernetesVersion: {{ dig "shootConfig" "maintenance" "autoUpdate" "kubernetesVersion" true .imports }}
+                  machineImageVersion: {{ dig "shootConfig" "maintenance" "autoUpdate" "machineImageVersion" true .imports }}
+
+      exports:
+        defaultTimeout: 30m
+        exports:
+          - key: shootClusterKubeconfig
+            jsonPath: .data.kubeconfig
+            fromResource:
+              apiVersion: v1
+              kind: Secret
+              name: {{ .imports.name }}.kubeconfig
+              namespace: {{ .imports.namespace }}
+          - key: shootClusterEndpoint
+            jsonPath: .status.advertisedAddresses[?(@.name == 'external')].url
+            fromResource:
+              apiVersion: core.gardener.cloud/v1beta1
+              kind: Shoot
+              name: {{ .imports.name }}
+              namespace: {{ .imports.namespace }}

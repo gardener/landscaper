@@ -8,13 +8,13 @@ blueprint:
 
 imports:
   targets:
-    - name: virtualCluster
-      target: virtualGardenCluster
+    - name: shootCluster
+      target: shootCluster
   data:
-    - name: virtualClusterNamespace
-      dataRef: virtualClusterNamespace
-    - name: virtualClusterEndpoint
-      dataRef: virtualGardenEndpoint
+    - name: targetClusterNamespace
+      dataRef: targetClusterNamespace
+    - name: shootClusterEndpoint
+      dataRef: shootClusterEndpoint
 
 exports:
   data:
