@@ -13,8 +13,8 @@ imports:
   data:
     - name: hostingClusterNamespace
       dataRef: hostingClusterNamespace
-    - name: virtualClusterNamespace
-      dataRef: virtualClusterNamespace
+    - name: targetClusterNamespace
+      dataRef: targetClusterNamespace
     - name: landscaperControllerKubeconfigYaml
       dataRef: landscaperControllerKubeconfigYaml
     - name: landscaperWebhooksKubeconfigYaml
@@ -23,3 +23,5 @@ imports:
       dataRef: registryConfig
     - name: landscaperConfig
       dataRef: landscaperConfig
+    - name: webhooksHostName
+      dataRef: webhooksHostName

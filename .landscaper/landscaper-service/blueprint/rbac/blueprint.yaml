@@ -2,17 +2,17 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
 imports:
-  - name: virtualCluster
+  - name: shootCluster
     required: true
     targetType: landscaper.gardener.cloud/kubernetes-cluster
 
-  - name: virtualClusterNamespace
+  - name: targetClusterNamespace
     required: true
     type: data
     schema:
       type: string
 
-  - name: virtualClusterEndpoint
+  - name: shootClusterEndpoint
     required: true
     type: data
     schema:

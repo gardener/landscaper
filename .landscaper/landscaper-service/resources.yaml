@@ -20,6 +20,16 @@ input:
 ...
 ---
 type: blueprint
+name: shoot-blueprint
+relation: local
+input:
+  type: dir
+  path: ./blueprint/shoot
+  mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+  compress: true
+...
+---
+type: blueprint
 name: installation-blueprint
 relation: local
 input:
@@ -44,6 +54,15 @@ relation: local
 input:
   type: file
   path: ./definition/landscaper-configuration.json
+  mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
+...
+---
+type: landscaper.gardener.cloud/jsonschema
+name: shoot-config-definition
+relation: local
+input:
+  type: file
+  path: ./definition/shoot-configuration.json
   mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
 ...
 ---

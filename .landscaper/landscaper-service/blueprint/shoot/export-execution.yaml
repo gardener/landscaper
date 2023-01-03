@@ -1,0 +1,9 @@
+exports:
+  shootClusterEndpoint: {{  index .values "deployitems" "shoot-cluster" "shootClusterEndpoint"  }}
+  shootClusterKubeconfig: |
+    {{- index .values "deployitems" "shoot-cluster" "shootClusterKubeconfig" | b64dec | nindent 4 }}
+  shootCluster:
+    type: landscaper.gardener.cloud/kubernetes-cluster
+    config:
+      kubeconfig: |
+        {{- index .values "deployitems" "shoot-cluster" "shootClusterKubeconfig" | b64dec | nindent 8 }}
