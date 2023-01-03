@@ -6,17 +6,17 @@ In this example, we start by deploying the hello-world Helm chart in its origina
 Afterwards, we will upgrade the Installation so that it deploys the newer version `1.0.1` of the chart.
 
 You can find the new Helm chart [here](chart/hello-world). It replaces the ConfigMap of the original chart version by
-a Secret. We have uploaded the new chart version to the
+a Secret. The new chart version can be found in our
 [public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.1).
 
 
 ## Procedure
 
-First, we deploy the original hello-world scenario:
+First, we deploy the original hello-world helm chart:
 
 1. Add the kubeconfig of your target cluster to your [target.yaml](installation/target.yaml) at the specified location.
 
-2. On the Landscaper resource cluster, create a namespace `example` and apply your [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
+2. On the Landscaper resource cluster, create a namespace `example` and apply your [target.yaml](installation/target.yaml) and [installation.yaml](installation/installation.yaml):
    
    ```shell
    kubectl create ns example
@@ -26,7 +26,7 @@ First, we deploy the original hello-world scenario:
 
 3. Wait until the Installation reaches phase `Succeeded` and check that the ConfigMap of the Helm chart is available in the target cluster.
 
-4. Upgrade the Installation by applying [installation-1.0.1.yaml](installation/installation-1.0.1.yaml). The upgraded Installation references the newer version `1.0.1` of the hello-world Helm chart, which simply deploys a Secret instead of a ConfigMap.
+4. Upgrade the Installation by applying [installation-1.0.1.yaml](installation/installation-1.0.1.yaml). This Installation references the newer version `1.0.1` of the hello-world Helm chart, which simply deploys a Secret instead of a ConfigMap.
 
    ```shell
    kubectl apply -f <path to installation-1.0.1.yaml>
