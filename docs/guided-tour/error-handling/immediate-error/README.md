@@ -8,7 +8,7 @@ of the blueprint in the [Installation](./installation/installation.yaml).
 
 ## Procedure
 
-In this example, we will again create a Target custom resource, containing the access information for the target cluster, and an Installation custom resource, containing the instructions to deploy our example Helm chart. 
+We will again create a Target custom resource, containing the access information for the target cluster, and an Installation custom resource, containing the instructions to deploy our example Helm chart. 
 
 1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml). 
 
