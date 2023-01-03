@@ -1,19 +1,19 @@
 # Manifest Deployer Example
 
-For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
 
-The Landscaper offers different deployers: 
+The Landscaper offers different deployers per default: 
 
 - the [Helm Deployer](../../../deployer/helm.md)
 - the [Kubernetes Manifest Deployer](../../../deployer/manifest.md), 
 - and the [Container Deployer](../../../deployer/container.md).
 
-We have already used the Helm deployer in the Hello World Example to create a ConfigMap on the target cluster.
-In the present example we show how the same task can be achieved with the Kubernetes manifest deployer.
-The Kubernetes manifest deployer is suitable if you want to deploy some Kubernetes manifests without extra building a 
-Helm chart for them. The Kubernetes manifests to be deployed are directly included in the blueprint of the Installation.
+We have already used the Helm deployer in the first Hello World Example to create a ConfigMap on the target cluster.
 
-Let's have a look into the blueprint of the [Installation](installation/installation.yaml). It contains one DeployItem:
+In the current example, we will show how the same task can be achieved with the Kubernetes manifest deployer.
+This deployer is great if you want to deploy some Kubernetes manifests without going the extra mile of building a Helm chart for these manifests. The Kubernetes manifests are directly included in the blueprint of the Installation.
+
+Let's look at the blueprint of the [Installation](installation/installation.yaml). It contains one DeployItem:
 
 ```yaml
                 deployItems:
@@ -31,19 +31,13 @@ Let's have a look into the blueprint of the [Installation](installation/installa
                               testData: hello
 ```
 
-The type `landscaper.gardener.cloud/kubernetes-manifest` tells Landscaper that the manifest deployer 
-should be used to process the DeployItem.
-A DeployItem also contains a `config` section, whose structure depends on the type. In case of the manifest deployer,
-the `config` section contains the list of Kubernetes manifest that should be applied to the target cluster. 
-In the present example, this list contains the Kubernetes manifest of the ConfigMap that we want to create. 
-
+The type `landscaper.gardener.cloud/kubernetes-manifest` tells Landscaper that the manifest deployer should be used to process the DeployItem. A DeployItem also contains a `config` section, and its structure depends on the DeployItem type. In case of the manifest deployer, the `config` section contains the list of Kubernetes manifests,which should be applied to the target cluster. In this example, the list contains one Kubernetes manifest for a ConfigMap.
 
 ## Procedure
 
-1. Insert in file [target.yaml](installation/target.yaml) the kubeconfig of your target cluster.
+1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml). 
 
-2. On the Landscaper resource cluster, create namespace `example` and apply 
-   the [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
+2. On the Landscaper resource cluster, create the namespace `example` and apply your [target.yaml](installation/target.yaml) and [installation.yaml](installation/installation.yaml):
    
    ```shell
    kubectl create ns example
