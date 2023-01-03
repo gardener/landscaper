@@ -1,21 +1,18 @@
 # Handling an Immediate Error
 
-For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
 
 In this example, we deploy again the Helm chart of the hello-world example.
-To illustrate the error handling, we introduced an error in the Installation: a `:` is missing in the imports section
+To illustrate the error handling, we have introduced an error: a `:` is missing in the imports section
 of the blueprint in the [Installation](./installation/installation.yaml).
-
 
 ## Procedure
 
-In this example we create a Target custom resource, containing the access information for the target cluster and an
-Installation custom resource containing the instructions to deploy our example Helm chart. 
+In this example, we will again create a Target custom resource, containing the access information for the target cluster, and an Installation custom resource, containing the instructions to deploy our example Helm chart. 
 
-1. Insert in file [target.yaml](installation/target.yaml) the kubeconfig of your target cluster.
+1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml). 
 
-2. On the Landscaper resource cluster, create namespace `example` and apply 
-   the [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
+2. On the Landscaper resource cluster, create namespace `example` and apply the [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
    
    ```shell
    kubectl create ns example
@@ -37,7 +34,7 @@ status:
 
 ## Deploy the fixed Installation
 
-You can find a fixed version of the Installation in 
+Here you can find a fixed version of the Installation: 
 [installation/installation-fixed.yaml](./installation/installation-fixed.yaml).
 
 Deploy this version:
@@ -46,6 +43,6 @@ Deploy this version:
 kubectl apply -f <path to installation-fixed.yaml>
 ```
 
-Note that this fixed version already contains the annotation `landscaper.gardener.cloud/operation: reconcile`, so
-that Landscaper will start processing it. After some time, the phase of the Installation should be `Succeeded` and
-the ConfigMap deployed by the Helm chart should exist on the target cluster.
+> Note that this fixed version already contains the annotation `landscaper.gardener.cloud/operation: reconcile`, so that Landscaper will start processing it. This is considered a good practice, as it eliminates the additional step of adding the reconcile annotation afterwards.
+
+After some time, the phase of the Installation should change to `Succeeded`, and the ConfigMap deployed by the Helm chart should exist on the target cluster.
