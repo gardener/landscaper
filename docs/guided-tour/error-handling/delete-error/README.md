@@ -27,7 +27,7 @@ In the next step, we will delete the target `my-cluster`:
 kubectl delete target -n example my-cluster
 ```
 
-Now, when we try to delete the Installation, there is no access information of the target cluster available from where the Helm chart should be removed. This will lead to a failing deletion of the Installation:
+Now, when we try to delete the Installation, there is no access information for the target cluster available from where the Helm chart should be removed. This will lead to a failing deletion of the Installation:
 
 ```shell
 kubectl delete installation -n example hello-world
