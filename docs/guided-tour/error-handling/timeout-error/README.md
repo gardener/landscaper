@@ -33,7 +33,7 @@ status:
 
 > Note: Whenever the state of an installation shows a `lastError`, and the phase is `Progressing`, the Landscaper will try to reconcile the installation again after a certain, steadly increasing amount of time. This is done until a timeout is reached. When this happens, the phase will change to `failed` and Landscaper stops reconciliation.
 
-Starting from the Installation, Landscaper creates further custom resources, namely DeployItems. In this concrete case, there will be only one DeployItem, that describes the Helm deployment of the hello-world chart. In the status section of the DeployItem, we find further information about the error:
+Starting from the Installation, Landscaper creates further custom resources, namely DeployItems. In this concrete case, there will be only one DeployItem, which describes the Helm deployment of the hello-world chart. In the status section of the DeployItem, we can find further information about the error:
 
 ```shell
 # Find the name of the DeployItem
