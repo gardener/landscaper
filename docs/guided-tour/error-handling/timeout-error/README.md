@@ -1,18 +1,14 @@
 # Handling a Timeout Error
 
-For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
 
-In this example, we try again to deploy the Helm chart of the hello-world example.
-To demonstrate another error situation, we have manipulated the [Installation](./installation/installation.yaml). 
-It references chart version `0.0.9`, which does not exist.
-
+In this example, we will again deploy the Helm chart of the previous hello-world example. In order to demonstrate another error situation, we have slightly changed the [Installation](./installation/installation.yaml): It references chart version `0.0.9`, which does not exist.
 
 ## Procedure
 
-1. Insert in file [target.yaml](installation/target.yaml) the kubeconfig of your target cluster.
-
-2. On the Landscaper resource cluster, create namespace `example` and apply 
-   the [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
+1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml).
+   
+2. On the Landscaper resource cluster, create namespace `example` and apply the [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
    
    ```shell
    kubectl create ns example
@@ -22,7 +18,7 @@ It references chart version `0.0.9`, which does not exist.
 
 ## Inspect the Result
 
-When the Landscaper processes the Installation, it does not find the Helm chart version `0.0.9` that is referenced 
+When the Landscaper processes the Installation, it does not find the Helm chart version `0.0.9` which is referenced 
 in the Installation. Landscaper considers this as a recoverable error situation. Therefore, the Installation remains in 
 phase `Progressing`. Landscaper will retry the processing in intervals that become increasingly larger.
 
@@ -35,9 +31,9 @@ status:
    phase: Progressing
 ```
 
-Starting from the Installation, Landscaper creates further custom resources, namely DeployItems. In the present case 
-there will be only one DeployItem, that describes the Helm deployment of the hello-world chart. In the status of the 
-DeployItem we find further information about the error:
+> Note: Whenever the state of an installation shows a `lastError`, and the phase is `Progressing`, the Landscaper will try to reconcile the installation again after a certain, steadly increasing amount of time. This is done until a timeout is reached. When this happens, the phase will change to `failed` and Landscaper stops reconciliation.
+
+Starting from the Installation, Landscaper creates further custom resources, namely DeployItems. In this concrete case, there will be only one DeployItem, that describes the Helm deployment of the hello-world chart. In the status section of the DeployItem, we find further information about the error:
 
 ```shell
 # Find the name of the DeployItem
@@ -80,33 +76,23 @@ After a few minutes, the DeployItem and the Installation will fail due to a time
 ```
 
 <details>
-Actually there are two timeouts. After the first timeout, the "progressing timeout", the DeployItem is being told to 
+Actually there are two timeouts. After the first timeout, the so-called "progressing timeout", the DeployItem is being told to 
 abort the deployment. If it does not do that before the second timeout, the "abort timeout", it fails.
 </details>
 
 As a consequence of the failure of the DeployItem, the Installation also goes into a failure state.
 
-
 ## Resolving the Error
 
-Let's resolve the error situation by fixing the Helm chart version in the Installation. There are two cases.
+Let's resolve the error by fixing the Helm chart version in the Installation (you can find the corrected Installation here: [installation/installation-fixed.yaml](./installation/installation-fixed.yaml)), but we have to distinguish between two cases:
 
-**Case 1:** The Installation has already failed due to the timeout described above. In this case we can simply apply
-the Installation with the fixed Helm chart version. Make sure that the Installation has the annotation
-`landscaper.gardener.cloud/operation: reconcile`, otherwise Landscaper will not start processing it.
+**Case 1:** The Installation has already failed due to the timeout described above. In this case, we can simply apply the Installation with the fixed Helm chart version. As usual, make sure that the Installation has the annotation `landscaper.gardener.cloud/operation: reconcile`, otherwise Landscaper will not start processing it. The [installation/installation-fixed.yaml](./installation/installation-fixed.yaml) already contains this annotation.
 
-**Case 2:** The Installation has not yet failed, but is still in an unfinished phase like `Progressing`.
-The point is that Landscaper does not take any change of the Installation spec into account as long as a deployment is 
-still running. It is incalculable what might happen when one would change an ongoing deployment in the middle of 
-the processing. Therefore, it is possible to change the Installation spec, but this change will have no effect 
-before the timeout has occurred. However, if you do not want to wait until the timeout has occurred, 
-you can **interrupt** the ongoing deployment as described below.
+**Case 2:** The Installation has not yet failed, and is still in an unfinished phase like `Progressing`. As long as a deployment is still running, Landscaper does not take any changes of the corresponding Installation into account, since it is unpredictable what might happen. Therefore, in such unfinished phases, applying a changed Installation will not have any effect until the timeout has occurred and phase `failed` has been reached (or the installation was `successfull`). However, if you do not want to wait until the timeout has occurred, you can **interrupt** the ongoing deployment as described below.
 
+### Interrupting a Deployment
 
-## Interrupting a Deployment
-
-To interrupt the ongoing deployment, add the annotation `landscaper.gardener.cloud/operation: interrupt` to the
-Installation:
+To interrupt an ongoing deployment, add the annotation `landscaper.gardener.cloud/operation: interrupt` to the Installation:
 
 ```shell
 kubectl annotate inst -n example hello-world landscaper.gardener.cloud/operation=interrupt
@@ -118,20 +104,17 @@ Alternatively, you can use the following command of the Landscaper CLI to add th
 landscaper-cli inst interrupt -n example hello-world
 ```
 
-**Warning:** Be aware that the interruption just forces the Installation and its DeployItems into a 
-final phase (`Succeeded`, `Failed`, or `DeleteFailed`). The behaviour concerning for example a Helm installation that 
-might run at that moment, is not defined. Therefore, you should interrupt a running deployment only if you are sure 
-that nothing bad can happen. It is not recommended to use this annotation in a productive environment.
+> **Warning:** Be aware that the interruption just _forces_ the Installation and its DeployItems into a final phase (`Succeeded`, `Failed`, or `DeleteFailed`). The behaviour of for example a Helm installation, which might currently run, is not defined. Therefore, you should interrupt a running deployment only if you are sure that nothing bad can happen or in Dev scenarios. It is **not advised** to use this annotation in a productive environment.
 
 ## Deploy the fixed Installation
 
-Once the Installation is in phase `Failed`, apply the Installation
-[installation/installation-fixed.yaml](./installation/installation-fixed.yaml) with the fixed Helm chart version:
+Once the Installation reaches phase `Failed`, apply the corrected one (
+[installation/installation-fixed.yaml](./installation/installation-fixed.yaml)) with the fixed Helm chart version:
 
 ```shell
 kubectl apply -f <path to installation-fixed.yaml>
 ```
 
-Note that this fixed version already contains the annotation `landscaper.gardener.cloud/operation: reconcile`, so
-that Landscaper will start processing it. After some time, the phase of the Installation should be `Succeeded` and
-the ConfigMap deployed by the Helm chart should exist on the target cluster.
+> Note that this fixed version already contains the annotation `landscaper.gardener.cloud/operation: reconcile`, so that Landscaper will start processing it.
+
+After some time, the phase of the Installation should be `Succeeded` and the ConfigMap deployed by the Helm chart should exist on the target cluster.
