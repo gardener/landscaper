@@ -33,7 +33,7 @@ Now, when we try to delete the Installation, there is no access information for 
 kubectl delete installation -n example hello-world
 ```
 
-It will take some time until the timeout occurs and the Installation fails, i.e. `phase: DeletionFailed` is being reached. You can speed this up by setting the interrupt annotation (as described in more detail in the [previous example](..//timeout-error/readme.md#interrupting-a-deployment)): 
+It will take some time until the timeout occurs and the Installation fails, i.e. `phase: DeletionFailed` is being reached. You can speed this up by setting the interrupt annotation (as described in more detail in the [previous example](..//timeout-error/README.md#interrupting-a-deployment)): 
 
 ```shell
 kubectl annotate installation -n example hello-world landscaper.gardener.cloud/operation=interrupt
