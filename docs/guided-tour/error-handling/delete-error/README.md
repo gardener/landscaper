@@ -1,15 +1,14 @@
 # Handling a Delete Error
 
-For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
 
-In this example, we deploy again the Helm chart of the hello-world example and then delete it again whereby we provoke
-an error by removing the target before. 
+In this example, we will again deploy the Helm chart of the hello-world example and then delete it again. We will provoke an error during the deletion by removing the target before the deletion happened.
 
 ## Procedure
 
 First create the Target and the Installation again:
 
-1. Insert in file [target.yaml](installation/target.yaml) the kubeconfig of your target cluster.
+1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml). 
 
 2. On the Landscaper resource cluster, create namespace `example` and apply 
    the [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
@@ -22,54 +21,48 @@ First create the Target and the Installation again:
 
 ## Delete the Target and the Installation
 
-In the next step we delete the target `my-cluster`:
+In the next step, we will delete the target `my-cluster`:
 
 ```shell
 kubectl delete target -n example my-cluster
 ```
 
-Now when we delete the Installation, there is no access information of the target cluster available from where
-the Helm chart should be removed and therefore the deletion of the Installation fails:
+Now, when we try to delete the Installation, there is no access information of the target cluster available from where the Helm chart should be removed. This will lead to a failing deletion of the Installation:
 
 ```shell
 kubectl delete installation -n example hello-world
 ```
 
-Now it requires some time until the timeout occurs and the Installation fails, i.e. `phase: DeletionFailed`. You could 
-speed this up by setting the interrupt annotation: 
+It will take some time until the timeout occurs and the Installation fails, i.e. `phase: DeletionFailed` is being reached. You can speed this up by setting the interrupt annotation (as described in more detail in the [previous example](..//timeout-error/readme.md#interrupting-a-deployment)): 
 
 ```shell
 kubectl annotate installation -n example hello-world landscaper.gardener.cloud/operation=interrupt
 ```
 
-## Resolve the failed Installation
+## Resolve the failed Deletion
 
 ### Recreate the Target
 
-For prerequisites [see](../../README.md#prerequisites-and-basic-definitions).
+For prerequisites, [see](../../README.md#prerequisites-and-basic-definitions).
 
-The usual way to resolve the failed Installation is to recreate the target and re-trigger the deletion of the
-installation by setting the `reconcile` annotation:
+The usual way to resolve this failed Deletion is to recreate the target and re-trigger the deletion of the installation by setting the `reconcile` annotation:
 
 ```shell
 kubectl apply -f <path to target.yaml>
 kubectl annotate installation -n example hello-world landscaper.gardener.cloud/operation=reconcile
 ```
 
-Now the installation is gone and the deployed Helm chart was uninstalled.
+Now the installation should be gone and the deployed Helm chart should be uninstalled.
 
 ### Force Delete
 
-If it is not possible to resolve the problems and it is ok that the deployed Helm chart is not uninstalled,
-you could use the [landscaper-cli](https://github.com/gardener/landscapercli) to remove the installation. For example,
-this is the preferred solution if the target cluster does not exist anymore. You achieve this with the following 
-command:
+If for some reason it is not possible to resolve the problems as described above and it is ok that the deployed Helm chart is not uninstalled automatically, you could use the [landscaper-cli](https://github.com/gardener/landscapercli) to remove the installation. This is the preferred solution if the target cluster does not exist anymore. You can achieve this with the following command:
 
 ```shell
 landscaper-cli installations force-delete -n example hello-world
 ```
 
-It is not recommended to use this approach, if you have a successful Installation and want to remove it without
-uninstalling the deployed components on the target cluster. In such a situation use the annotation
-`landscaper.gardener.cloud/delete-without-unstall: true`.
+> Note: It is **not recommended** to use this approach if you have a successful Installation and want to remove just the Installation, without
+uninstalling the deployed components on the target cluster. In such a situation, the annotation
+`landscaper.gardener.cloud/delete-without-unstall: true` should be used.
 
