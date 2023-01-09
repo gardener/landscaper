@@ -2,7 +2,7 @@
 
 For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
 
-In this example, we will again deploy the Helm chart of the hello-world example and then delete it again. We will provoke an error during the deletion by removing the target before the deletion happened.
+In this example, we will again deploy the Helm chart of the hello-world example and then delete it. During the deletion, an error will be provoked by removing the target before the deletion happened.
 
 ## Procedure
 
@@ -21,7 +21,7 @@ First create the Target and the Installation again:
 
 ## Delete the Target and the Installation
 
-In the next step, we will delete the target `my-cluster`:
+In the next step, delete the target `my-cluster`:
 
 ```shell
 kubectl delete target -n example my-cluster
