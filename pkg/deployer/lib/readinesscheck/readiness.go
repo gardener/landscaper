@@ -18,6 +18,7 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 )
 
 const (
@@ -35,7 +36,7 @@ type checkObjectFunc func(*unstructured.Unstructured) error
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
-	objects []*unstructured.Unstructured, fn checkObjectFunc) error {
+	objects []*unstructured.Unstructured, fn checkObjectFunc, interruptionChecker *lib.InterruptionChecker) error {
 	var (
 		wg  sync.WaitGroup
 		try int32 = 1
@@ -50,6 +51,10 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 	_ = wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
 		log.Debug("Wait until resources are ready", "try", try)
 		try++
+
+		if err := interruptionChecker.Check(ctx); err != nil {
+			return false, err
+		}
 
 		allErrors := make([]error, len(objects))
 

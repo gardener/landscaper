@@ -7,7 +7,6 @@ package resourcemanager
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"math"
 	"sync"
 	"time"
@@ -17,13 +16,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 )
 
 // ExporterOptions defines the options for the exporter.
@@ -31,10 +30,9 @@ type ExporterOptions struct {
 	KubeClient     client.Client
 	DefaultTimeout *time.Duration
 
-	DeployItem *lsv1alpha1.DeployItem
-	LsClient   client.Client
-
 	Objects managedresource.ManagedResourceStatusList
+
+	InterruptionChecker *lib.InterruptionChecker
 }
 
 // Exporter defines the export of data from manifests.
@@ -42,21 +40,18 @@ type Exporter struct {
 	kubeClient     client.Client
 	defaultTimeout time.Duration
 
-	DeployItem *lsv1alpha1.DeployItem
-	LsClient   client.Client
-
 	objects managedresource.ManagedResourceStatusList
+
+	interruptionChecker *lib.InterruptionChecker
 }
 
 // NewExporter creates a new exporter.
 func NewExporter(opts ExporterOptions) *Exporter {
 	exporter := &Exporter{
-		kubeClient:     opts.KubeClient,
-		defaultTimeout: 5 * time.Minute,
-		objects:        opts.Objects,
-
-		DeployItem: opts.DeployItem,
-		LsClient:   opts.LsClient,
+		kubeClient:          opts.KubeClient,
+		defaultTimeout:      5 * time.Minute,
+		objects:             opts.Objects,
+		interruptionChecker: opts.InterruptionChecker,
 	}
 	if opts.DefaultTimeout != nil {
 		exporter.defaultTimeout = *opts.DefaultTimeout
@@ -108,14 +103,8 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			var lastErr error
 			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func() (done bool, err error) {
 
-				di := &lsv1alpha1.DeployItem{}
-				err = read_write_layer.GetDeployItem(ctx, e.LsClient, client.ObjectKeyFromObject(e.DeployItem), di)
-				if err != nil {
+				if err := e.interruptionChecker.Check(ctx); err != nil {
 					return false, err
-				}
-
-				if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
-					return false, fmt.Errorf("interuppted during export collection")
 				}
 
 				value, err := e.doExport(ctx, export)

@@ -24,17 +24,19 @@ import (
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // CustomReadinessCheck contains all the data and methods required to kick off a custom readiness check
 type CustomReadinessCheck struct {
-	Context          context.Context
-	Client           client.Client
-	CurrentOp        string
-	Timeout          *lsv1alpha1.Duration
-	ManagedResources []lsv1alpha1.TypedObjectReference
-	Configuration    health.CustomReadinessCheckConfiguration
+	Context             context.Context
+	Client              client.Client
+	CurrentOp           string
+	Timeout             *lsv1alpha1.Duration
+	ManagedResources    []lsv1alpha1.TypedObjectReference
+	Configuration       health.CustomReadinessCheckConfiguration
+	InterruptionChecker *lib.InterruptionChecker
 }
 
 // CheckResourcesReady starts a custom readiness check by checking the readiness of the submitted resources
@@ -59,7 +61,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady() error {
 	}
 
 	timeout := c.Timeout.Duration
-	if err := WaitForObjectsReady(c.Context, timeout, c.Client, objects, c.CheckObject); err != nil {
+	if err := WaitForObjectsReady(c.Context, timeout, c.Client, objects, c.CheckObject, c.InterruptionChecker); err != nil {
 		return lserror.NewWrappedError(err,
 			c.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}
