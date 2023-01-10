@@ -247,6 +247,8 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 		opts := resourcemanager.ExporterOptions{
 			KubeClient: targetClient,
 			Objects:    managedResourceStatusList,
+			DeployItem: h.DeployItem,
+			LsClient:   h.lsKubeClient,
 		}
 		if h.Configuration.Export.DefaultTimeout != nil {
 			opts.DefaultTimeout = &h.Configuration.Export.DefaultTimeout.Duration

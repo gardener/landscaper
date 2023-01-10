@@ -95,6 +95,8 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		opts := resourcemanager.ExporterOptions{
 			KubeClient: targetClient,
 			Objects:    applier.GetManagedResourcesStatus(),
+			DeployItem: m.DeployItem,
+			LsClient:   m.lsKubeClient,
 		}
 		if m.Configuration.Export.DefaultTimeout != nil {
 			opts.DefaultTimeout = &m.Configuration.Export.DefaultTimeout.Duration

@@ -7,6 +7,7 @@ package resourcemanager
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"math"
 	"sync"
 	"time"
@@ -30,6 +31,9 @@ type ExporterOptions struct {
 	KubeClient     client.Client
 	DefaultTimeout *time.Duration
 
+	DeployItem *lsv1alpha1.DeployItem
+	LsClient   client.Client
+
 	Objects managedresource.ManagedResourceStatusList
 }
 
@@ -37,6 +41,9 @@ type ExporterOptions struct {
 type Exporter struct {
 	kubeClient     client.Client
 	defaultTimeout time.Duration
+
+	DeployItem *lsv1alpha1.DeployItem
+	LsClient   client.Client
 
 	objects managedresource.ManagedResourceStatusList
 }
@@ -47,6 +54,9 @@ func NewExporter(opts ExporterOptions) *Exporter {
 		kubeClient:     opts.KubeClient,
 		defaultTimeout: 5 * time.Minute,
 		objects:        opts.Objects,
+
+		DeployItem: opts.DeployItem,
+		LsClient:   opts.LsClient,
 	}
 	if opts.DefaultTimeout != nil {
 		exporter.defaultTimeout = *opts.DefaultTimeout
@@ -97,6 +107,17 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			}
 			var lastErr error
 			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func() (done bool, err error) {
+
+				di := &lsv1alpha1.DeployItem{}
+				err = read_write_layer.GetDeployItem(ctx, e.LsClient, client.ObjectKeyFromObject(e.DeployItem), di)
+				if err != nil {
+					return false, err
+				}
+
+				if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
+					return false, fmt.Errorf("interuppted during export collection")
+				}
+
 				value, err := e.doExport(ctx, export)
 				if err != nil {
 					log2.Debug("error while creating export", lc.KeyError, err.Error())
