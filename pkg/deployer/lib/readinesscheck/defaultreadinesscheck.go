@@ -19,6 +19,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 )
 
 // DefaultReadinessCheck contains all the data and methods required to kick off a default readiness check
@@ -29,6 +30,7 @@ type DefaultReadinessCheck struct {
 	Timeout             *lsv1alpha1.Duration
 	ManagedResources    []lsv1alpha1.TypedObjectReference
 	FailOnMissingObject bool
+	InterruptionChecker *lib.InterruptionChecker
 }
 
 // CheckResourcesReady implements the default readiness check for Kubernetes manifests
@@ -50,7 +52,7 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 	objects = d.filterObjects(objects)
 
 	timeout := d.Timeout.Duration
-	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject); err != nil {
+	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject, d.InterruptionChecker); err != nil {
 		return lserror.NewWrappedError(err,
 			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}

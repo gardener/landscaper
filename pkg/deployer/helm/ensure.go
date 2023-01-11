@@ -206,6 +206,7 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 			Timeout:             h.ProviderConfiguration.ReadinessChecks.Timeout,
 			ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 			FailOnMissingObject: failOnMissingObject,
+			InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
@@ -216,12 +217,13 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 	if h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
 			customReadinessCheck := health.CustomReadinessCheck{
-				Context:          ctx,
-				Client:           client,
-				CurrentOp:        "CustomCheckResourcesReadinessHelm",
-				Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
-				ManagedResources: h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
-				Configuration:    customReadinessCheckConfig,
+				Context:             ctx,
+				Client:              client,
+				CurrentOp:           "CustomCheckResourcesReadinessHelm",
+				Timeout:             h.ProviderConfiguration.ReadinessChecks.Timeout,
+				ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
+				Configuration:       customReadinessCheckConfig,
+				InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
 			}
 			err := customReadinessCheck.CheckResourcesReady()
 			if err != nil {
@@ -245,8 +247,9 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 	}
 	if len(exportDefinition.Exports) != 0 {
 		opts := resourcemanager.ExporterOptions{
-			KubeClient: targetClient,
-			Objects:    managedResourceStatusList,
+			KubeClient:          targetClient,
+			Objects:             managedResourceStatusList,
+			InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
 		}
 		if h.Configuration.Export.DefaultTimeout != nil {
 			opts.DefaultTimeout = &h.Configuration.Export.DefaultTimeout.Duration

@@ -9,7 +9,6 @@ import (
 	"errors"
 
 	"github.com/imdario/mergo"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -93,8 +92,9 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	if m.ProviderConfiguration.Exports != nil {
 		opts := resourcemanager.ExporterOptions{
-			KubeClient: targetClient,
-			Objects:    applier.GetManagedResourcesStatus(),
+			KubeClient:          targetClient,
+			Objects:             applier.GetManagedResourcesStatus(),
+			InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
 		}
 		if m.Configuration.Export.DefaultTimeout != nil {
 			opts.DefaultTimeout = &m.Configuration.Export.DefaultTimeout.Duration
@@ -127,6 +127,7 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 			Timeout:             m.ProviderConfiguration.ReadinessChecks.Timeout,
 			ManagedResources:    managedresources,
 			FailOnMissingObject: true,
+			InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
@@ -141,12 +142,13 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 				timeout = m.ProviderConfiguration.ReadinessChecks.Timeout
 			}
 			customReadinessCheck := health.CustomReadinessCheck{
-				Context:          ctx,
-				Client:           client,
-				CurrentOp:        "CustomCheckResourcesReadinessManifest",
-				Timeout:          timeout,
-				ManagedResources: managedresources,
-				Configuration:    customReadinessCheckConfig,
+				Context:             ctx,
+				Client:              client,
+				CurrentOp:           "CustomCheckResourcesReadinessManifest",
+				Timeout:             timeout,
+				ManagedResources:    managedresources,
+				Configuration:       customReadinessCheckConfig,
+				InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
 			}
 			err := customReadinessCheck.CheckResourcesReady()
 			if err != nil {

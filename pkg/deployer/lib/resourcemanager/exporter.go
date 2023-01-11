@@ -16,13 +16,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 )
 
 // ExporterOptions defines the options for the exporter.
@@ -31,6 +31,8 @@ type ExporterOptions struct {
 	DefaultTimeout *time.Duration
 
 	Objects managedresource.ManagedResourceStatusList
+
+	InterruptionChecker *lib.InterruptionChecker
 }
 
 // Exporter defines the export of data from manifests.
@@ -39,14 +41,17 @@ type Exporter struct {
 	defaultTimeout time.Duration
 
 	objects managedresource.ManagedResourceStatusList
+
+	interruptionChecker *lib.InterruptionChecker
 }
 
 // NewExporter creates a new exporter.
 func NewExporter(opts ExporterOptions) *Exporter {
 	exporter := &Exporter{
-		kubeClient:     opts.KubeClient,
-		defaultTimeout: 5 * time.Minute,
-		objects:        opts.Objects,
+		kubeClient:          opts.KubeClient,
+		defaultTimeout:      5 * time.Minute,
+		objects:             opts.Objects,
+		interruptionChecker: opts.InterruptionChecker,
 	}
 	if opts.DefaultTimeout != nil {
 		exporter.defaultTimeout = *opts.DefaultTimeout
@@ -97,6 +102,11 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			}
 			var lastErr error
 			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func() (done bool, err error) {
+
+				if err := e.interruptionChecker.Check(ctx); err != nil {
+					return false, err
+				}
+
 				value, err := e.doExport(ctx, export)
 				if err != nil {
 					log2.Debug("error while creating export", lc.KeyError, err.Error())
