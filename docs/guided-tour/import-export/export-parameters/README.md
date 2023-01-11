@@ -147,6 +147,11 @@ exports:
 For more details, see [Installations: Exports][5].
 
 
+The following diagram shows the linkages between Blueprint, Installation and DataObject, that we have discussed:
+
+![linkages](./linkages.png)
+
+
 ## Procedure
 
 1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml).  
