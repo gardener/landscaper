@@ -154,6 +154,8 @@ The following diagram shows the linkages between Blueprint, Installation and Dat
 
 ## Procedure
 
+To deploy the example follow the steps below:
+
 1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml).  
 
 2. On the Landscaper resource cluster, create namespace `example` and apply
