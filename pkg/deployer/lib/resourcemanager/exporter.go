@@ -96,11 +96,12 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			log2 := log.WithValues(lc.KeyExportKey, export.Key)
 
 			backoff := wait.Backoff{
-				Jitter: 1.15,
-				Steps:  math.MaxInt32,
-				Cap:    export.Timeout.Duration,
+				Duration: 2 * time.Second,
+				Jitter:   1.15,
+				Steps:    math.MaxInt32,
 			}
 			var lastErr error
+			// The waiting intervals do not increase exponentially, because no backoff factor is set
 			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func() (done bool, err error) {
 
 				if err := e.interruptionChecker.Check(ctx); err != nil {
