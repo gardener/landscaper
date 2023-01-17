@@ -1811,6 +1811,11 @@ bool
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.BasePhase">BasePhase
+(<code>string</code> alias)</p></h3>
+<p>
+<p>BasePhase is a common super type for all phases</p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.BlueprintDefinition">BlueprintDefinition
 </h3>
 <p>
@@ -2099,10 +2104,6 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentInstallationPhase">ComponentInstallationPhase
-(<code>string</code> alias)</p></h3>
-<p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrite">ComponentVersionOverwrite
 </h3>
 <p>
@@ -4785,6 +4786,11 @@ string
 <h3 id="landscaper.gardener.cloud/v1alpha1.Operation">Operation
 (<code>string</code> alias)</p></h3>
 <p>
+</p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.Phase">Phase
+</h3>
+<p>
+<p>Phase is a common interface for the different kinds of phases</p>
 </p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.RemoteBlueprintReference">RemoteBlueprintReference
 </h3>

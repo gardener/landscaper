@@ -22,9 +22,17 @@ const ExecutionManagedNameAnnotation = "execution.landscaper.gardener.cloud/name
 // ReconcileDeployItemsCondition is the Conditions type to indicate the deploy items status.
 const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
 
-type ExecutionPhase string
+type ExecutionPhase BasePhase
 
-type ExecPhase string
+func (ep ExecutionPhase) Phase() BasePhase {
+	return BasePhase(ep)
+}
+
+type ExecPhase BasePhase
+
+func (ep ExecPhase) Phase() BasePhase {
+	return BasePhase(ep)
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

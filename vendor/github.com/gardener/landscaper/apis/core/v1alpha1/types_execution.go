@@ -30,29 +30,41 @@ const ExecutionDependsOnAnnotation = "execution.landscaper.gardener.cloud/depend
 // ReconcileDeployItemsCondition is the Conditions type to indicate the deploy items status.
 const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
 
-type ExecutionPhase string
+type ExecutionPhase BasePhase
+
+var _ Phase = ExecutionPhase("")
+
+func (ep ExecutionPhase) Phase() BasePhase {
+	return BasePhase(ep)
+}
 
 const (
-	ExecutionPhaseInit        ExecutionPhase = "Init"
-	ExecutionPhaseProgressing ExecutionPhase = "Progressing"
-	ExecutionPhaseDeleting    ExecutionPhase = "Deleting"
-	ExecutionPhaseSucceeded   ExecutionPhase = "Succeeded"
-	ExecutionPhaseFailed      ExecutionPhase = "Failed"
+	ExecutionPhaseInit        ExecutionPhase = ExecutionPhase(PhaseInit)
+	ExecutionPhaseProgressing ExecutionPhase = ExecutionPhase(PhaseProgressing)
+	ExecutionPhaseDeleting    ExecutionPhase = ExecutionPhase(PhaseDeleting)
+	ExecutionPhaseSucceeded   ExecutionPhase = ExecutionPhase(PhaseSucceeded)
+	ExecutionPhaseFailed      ExecutionPhase = ExecutionPhase(PhaseFailed)
 )
 
-type ExecPhase string
+type ExecPhase BasePhase
+
+var _ Phase = ExecPhase("")
+
+func (ep ExecPhase) Phase() BasePhase {
+	return BasePhase(ep)
+}
 
 const (
-	ExecPhaseInit        ExecPhase = "Init"
-	ExecPhaseProgressing ExecPhase = "Progressing"
-	ExecPhaseCompleting  ExecPhase = "Completing"
-	ExecPhaseSucceeded   ExecPhase = "Succeeded"
-	ExecPhaseFailed      ExecPhase = "Failed"
+	ExecPhaseInit        ExecPhase = ExecPhase(PhaseInit)
+	ExecPhaseProgressing ExecPhase = ExecPhase(PhaseProgressing)
+	ExecPhaseCompleting  ExecPhase = ExecPhase(PhaseCompleting)
+	ExecPhaseSucceeded   ExecPhase = ExecPhase(PhaseSucceeded)
+	ExecPhaseFailed      ExecPhase = ExecPhase(PhaseFailed)
 
-	ExecPhaseInitDelete    ExecPhase = "InitDelete"
-	ExecPhaseTriggerDelete ExecPhase = "TriggerDelete"
-	ExecPhaseDeleting      ExecPhase = "Deleting"
-	ExecPhaseDeleteFailed  ExecPhase = "DeleteFailed"
+	ExecPhaseInitDelete    ExecPhase = ExecPhase(PhaseInitDelete)
+	ExecPhaseTriggerDelete ExecPhase = ExecPhase(PhaseTriggerDelete)
+	ExecPhaseDeleting      ExecPhase = ExecPhase(PhaseDeleting)
+	ExecPhaseDeleteFailed  ExecPhase = ExecPhase(PhaseDeleteFailed)
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
