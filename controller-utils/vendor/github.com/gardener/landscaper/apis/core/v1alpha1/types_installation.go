@@ -50,23 +50,27 @@ const ValidateExportCondition ConditionType = "ValidateExport"
 // ComponentReferenceOverwriteCondition is the Conditions type to indicate that the component reference was overwritten.
 const ComponentReferenceOverwriteCondition ConditionType = "ComponentReferenceOverwrite"
 
-type ComponentInstallationPhase string
+type InstallationPhase BasePhase
 
-type InstallationPhase string
+var _ Phase = InstallationPhase("")
+
+func (ip InstallationPhase) Phase() BasePhase {
+	return BasePhase(ip)
+}
 
 const (
-	InstallationPhaseInit            InstallationPhase = "Init"
-	InstallationPhaseCleanupOrphaned InstallationPhase = "CleanupOrphaned"
-	InstallationPhaseObjectsCreated  InstallationPhase = "ObjectsCreated"
-	InstallationPhaseProgressing     InstallationPhase = "Progressing"
-	InstallationPhaseCompleting      InstallationPhase = "Completing"
-	InstallationPhaseSucceeded       InstallationPhase = "Succeeded"
-	InstallationPhaseFailed          InstallationPhase = "Failed"
+	InstallationPhaseInit            InstallationPhase = InstallationPhase(PhaseInit)
+	InstallationPhaseCleanupOrphaned InstallationPhase = InstallationPhase(PhaseCleanupOrphaned)
+	InstallationPhaseObjectsCreated  InstallationPhase = InstallationPhase(PhaseObjectsCreated)
+	InstallationPhaseProgressing     InstallationPhase = InstallationPhase(PhaseProgressing)
+	InstallationPhaseCompleting      InstallationPhase = InstallationPhase(PhaseCompleting)
+	InstallationPhaseSucceeded       InstallationPhase = InstallationPhase(PhaseSucceeded)
+	InstallationPhaseFailed          InstallationPhase = InstallationPhase(PhaseFailed)
 
-	InstallationPhaseInitDelete    InstallationPhase = "InitDelete"
-	InstallationPhaseTriggerDelete InstallationPhase = "TriggerDelete"
-	InstallationPhaseDeleting      InstallationPhase = "Deleting"
-	InstallationPhaseDeleteFailed  InstallationPhase = "DeleteFailed"
+	InstallationPhaseInitDelete    InstallationPhase = InstallationPhase(PhaseInitDelete)
+	InstallationPhaseTriggerDelete InstallationPhase = InstallationPhase(PhaseTriggerDelete)
+	InstallationPhaseDeleting      InstallationPhase = InstallationPhase(PhaseDeleting)
+	InstallationPhaseDeleteFailed  InstallationPhase = InstallationPhase(PhaseDeleteFailed)
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

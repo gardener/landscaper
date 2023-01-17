@@ -18,14 +18,20 @@ const DeployItemValidationCondition ConditionType = "DeployItemValidation"
 // DeployItemType defines the type of the deploy item
 type DeployItemType string
 
-type DeployItemPhase string
+type DeployItemPhase BasePhase
+
+var _ Phase = DeployItemPhase("")
+
+func (dip DeployItemPhase) Phase() BasePhase {
+	return BasePhase(dip)
+}
 
 const (
-	DeployItemPhaseSucceeded   DeployItemPhase = "Succeeded"
-	DeployItemPhaseFailed      DeployItemPhase = "Failed"
-	DeployItemPhaseInit        DeployItemPhase = "Init"
-	DeployItemPhaseProgressing DeployItemPhase = "Progressing"
-	DeployItemPhaseDeleting    DeployItemPhase = "Deleting"
+	DeployItemPhaseSucceeded   DeployItemPhase = DeployItemPhase(PhaseSucceeded)
+	DeployItemPhaseFailed      DeployItemPhase = DeployItemPhase(PhaseFailed)
+	DeployItemPhaseInit        DeployItemPhase = DeployItemPhase(PhaseInit)
+	DeployItemPhaseProgressing DeployItemPhase = DeployItemPhase(PhaseProgressing)
+	DeployItemPhaseDeleting    DeployItemPhase = DeployItemPhase(PhaseDeleting)
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

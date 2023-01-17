@@ -13,7 +13,11 @@ import (
 // DeployItemType defines the type of the deploy item
 type DeployItemType string
 
-type DeployItemPhase string
+type DeployItemPhase BasePhase
+
+func (dip DeployItemPhase) Phase() BasePhase {
+	return BasePhase(dip)
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
