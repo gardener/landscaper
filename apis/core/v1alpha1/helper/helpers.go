@@ -239,11 +239,19 @@ func RemoveVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObject
 	return objects
 }
 
-func IsDeletionInstallationPhase(phase v1alpha1.InstallationPhase) bool {
-	return phase == v1alpha1.InstallationPhaseInitDelete ||
-		phase == v1alpha1.InstallationPhaseTriggerDelete ||
-		phase == v1alpha1.InstallationPhaseDeleting ||
-		phase == v1alpha1.InstallationPhaseDeleteFailed
+// IsDeletionPhase returns true if the given phase is part of the deletion process
+func IsDeletionPhase(p v1alpha1.Phase) bool {
+	return p.Phase() == v1alpha1.PhaseInitDelete ||
+		p.Phase() == v1alpha1.PhaseTriggerDelete ||
+		p.Phase() == v1alpha1.PhaseDeleting ||
+		p.Phase() == v1alpha1.PhaseDeleteFailed
+}
+
+// IsFinalPhase returns true if the given phase indicates that the object is not being processed anymore
+func IsFinalPhase(p v1alpha1.Phase) bool {
+	return p.Phase() == v1alpha1.PhaseSucceeded ||
+		p.Phase() == v1alpha1.PhaseFailed ||
+		p.Phase() == v1alpha1.PhaseDeleteFailed
 }
 
 // HasIgnoreAnnotation returns true only if the given object
