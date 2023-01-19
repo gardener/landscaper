@@ -33,7 +33,7 @@ func (c *InterruptionChecker) Check(ctx context.Context) error {
 		return err
 	}
 
-	if di.Status.DeployerPhase.IsFailed() {
+	if di.Status.Phase.IsFailed() {
 		return fmt.Errorf("interrupted during readiness check/export collection")
 	}
 

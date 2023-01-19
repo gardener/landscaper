@@ -113,7 +113,6 @@ var _ = Describe("Template", func() {
 		Eventually(func() error {
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), di)).To(Succeed())
 			if di.Status.Phase.IsFailed() &&
-				di.Status.DeployerPhase.IsFailed() &&
 				di.Status.GetJobID() == di.Status.JobIDFinished {
 				return nil
 			}

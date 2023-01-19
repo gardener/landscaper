@@ -75,7 +75,7 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			// Set a new jobID to trigger a reconcile of the deploy item
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployerPhases.Succeeded, timeout))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, timeout))
 
 			By("Check presence of Kubernetes Objects")
 			config := &manifestv1alpha2.ProviderConfiguration{}
@@ -141,7 +141,7 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			// Set a new jobID to trigger a reconcile of the deploy item
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployerPhases.Succeeded, timeout))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, timeout))
 
 			By("Check presence of Kubernetes objects")
 			config := &manifestv1alpha1.ProviderConfiguration{}

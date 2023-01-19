@@ -78,7 +78,6 @@ var _ = Describe("Reconcile", func() {
 		// set item to failed state
 		di := &items.Items[0]
 		di.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
-		di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
 		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(state.Client.Status().Update(ctx, di))
@@ -267,7 +266,6 @@ var _ = Describe("Reconcile", func() {
 
 		// set item to failed state
 		di.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
-		di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
 		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
@@ -283,7 +281,6 @@ var _ = Describe("Reconcile", func() {
 		Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
 
 		di.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
-		di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
 		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
@@ -299,7 +296,6 @@ var _ = Describe("Reconcile", func() {
 
 		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 		di.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
-		di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
 		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
@@ -401,11 +397,9 @@ var _ = Describe("Reconcile", func() {
 			// Afterwards, deploy item c should still not be triggered and the execution should still be Progressing.
 			di1.Status.JobIDFinished = currentJobID
 			di1.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
-			di1.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di1)).To(Succeed())
 
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
-			di2.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Progressing
 			Expect(state.Client.Status().Update(ctx, di1)).To(Succeed())
 
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
@@ -424,7 +418,6 @@ var _ = Describe("Reconcile", func() {
 			// The execution should still be Progressing.
 			di2.Status.JobIDFinished = currentJobID
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
-			di2.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di2)).To(Succeed())
 
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
@@ -442,7 +435,6 @@ var _ = Describe("Reconcile", func() {
 			// Afterwards, the execution should be finished.
 			di3.Status.JobIDFinished = currentJobID
 			di3.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
-			di3.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di3)).To(Succeed())
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
@@ -495,7 +487,6 @@ var _ = Describe("Reconcile", func() {
 			// Afterwards, deploy item b should be triggered.
 			di1.Status.JobIDFinished = currentJobID
 			di1.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
-			di1.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di1)).To(Succeed())
 
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
@@ -521,7 +512,6 @@ var _ = Describe("Reconcile", func() {
 			// Afterwards, deploy item c should be triggered.
 			di2.Status.JobIDFinished = currentJobID
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
-			di2.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di2)).To(Succeed())
 
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
@@ -547,7 +537,6 @@ var _ = Describe("Reconcile", func() {
 			// Afterwards, the execution should be succeeded
 			di3.Status.JobIDFinished = currentJobID
 			di3.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
-			di3.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di3)).To(Succeed())
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
