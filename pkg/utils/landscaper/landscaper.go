@@ -96,7 +96,7 @@ func WaitForDeployItemToFinish(
 	ctx context.Context,
 	kubeClient client.Reader,
 	deployItem *lsv1alpha1.DeployItem,
-	phase lsv1alpha1.DeployerPhase,
+	phase lsv1alpha1.DeployItemPhase,
 	timeout time.Duration) error {
 
 	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
@@ -105,7 +105,7 @@ func WaitForDeployItemToFinish(
 			return false, err
 		}
 		*deployItem = *updated
-		if deployItem.Status.DeployerPhase == phase {
+		if deployItem.Status.Phase == phase {
 			return true, nil
 		}
 		return false, nil

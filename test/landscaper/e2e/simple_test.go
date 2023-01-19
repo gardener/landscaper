@@ -124,7 +124,7 @@ var _ = Describe("Simple", func() {
 		diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
 		di := &lsv1alpha1.DeployItem{}
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-		Expect(di.Status.DeployerPhase).To(BeEmpty())
+		Expect(di.Status.Phase).To(BeEmpty())
 		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(BeEmpty())
 
@@ -133,7 +133,7 @@ var _ = Describe("Simple", func() {
 		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-		Expect(di.Status.DeployerPhase).To(Equal(lsv1alpha1.DeployerPhases.Succeeded))
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 
@@ -181,7 +181,7 @@ var _ = Describe("Simple", func() {
 
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
 		Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-		Expect(di.Status.DeployerPhase).To(Equal(lsv1alpha1.DeployerPhases.Succeeded))
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 		Expect(di.Status.GetJobID()).To(Equal(deletionJobID))
 		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 

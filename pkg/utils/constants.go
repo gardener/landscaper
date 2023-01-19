@@ -6,10 +6,6 @@ func IsDeployItemPhase(di *lsv1alpha1.DeployItem, phase lsv1alpha1.DeployItemPha
 	return di.Status.Phase == phase
 }
 
-func IsDeployerPhase(di *lsv1alpha1.DeployItem, phase lsv1alpha1.DeployerPhase) bool {
-	return di.Status.DeployerPhase == phase
-}
-
 func IsInstallationPhase(inst *lsv1alpha1.Installation, phase lsv1alpha1.InstallationPhase) bool {
 	return inst.Status.InstallationPhase == phase
 }

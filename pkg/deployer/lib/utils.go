@@ -157,14 +157,8 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 		lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
 	}
 
-	if deployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Failed {
-		deployItem.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
-	} else if deployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Succeeded {
-		deployItem.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
-	}
-
-	if deployItem.Status.DeployerPhase == lsv1alpha1.DeployerPhases.Succeeded ||
-		deployItem.Status.DeployerPhase == lsv1alpha1.DeployerPhases.Failed {
+	// if a reconciliation ends in a final phase, the current job is done
+	if deployItem.Status.Phase.IsFinal() {
 		deployItem.Status.JobIDFinished = deployItem.Status.GetJobID()
 	}
 

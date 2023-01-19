@@ -66,7 +66,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
 			Expect(deployItems).To(HaveLen(1))
-			Expect(deployItems[0].Status.DeployerPhase).To(Equal(lsv1alpha1.DeployerPhases.Succeeded))
+			Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 			Expect(deployItems[0].Status.JobIDFinished).To(Equal(deployItems[0].Status.GetJobID()))
 
 			// expect that the nginx deployment is successfully running
@@ -91,7 +91,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 			deployItems, err = lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
 			Expect(deployItems).To(HaveLen(1))
-			Expect(deployItems[0].Status.DeployerPhase).To(Equal(lsv1alpha1.DeployerPhases.Succeeded))
+			Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 			Expect(deployItems[0].Status.JobIDFinished).To(Equal(deployItems[0].Status.GetJobID()))
 
 			// expect that the nginx deployment is successfully running
@@ -157,7 +157,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
 			Expect(deployItems).To(HaveLen(1))
-			Expect(deployItems[0].Status.DeployerPhase).To(Equal(lsv1alpha1.DeployerPhases.Succeeded))
+			Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 			Expect(deployItems[0].Status.JobIDFinished).To(Equal(deployItems[0].Status.GetJobID()))
 
 			// expect that the nginx deployment is successfully running

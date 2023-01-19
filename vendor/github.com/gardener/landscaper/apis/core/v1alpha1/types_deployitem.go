@@ -34,7 +34,7 @@ func (p DeployItemPhase) IsFinal() bool {
 
 func (p DeployItemPhase) IsDeletion() bool {
 	switch p {
-	case DeployItemPhases.Deleting, DeployItemPhases.DeleteFailed:
+	case DeployItemPhases.InitDelete, DeployItemPhases.Deleting, DeployItemPhases.DeleteFailed:
 		return true
 	}
 	return false
@@ -51,6 +51,7 @@ var (
 		Completing,
 		Succeeded,
 		Failed,
+		InitDelete,
 		Deleting,
 		DeleteFailed DeployItemPhase
 	}{
@@ -59,6 +60,7 @@ var (
 		Completing:   DeployItemPhase(PhaseStringCompleting),
 		Succeeded:    DeployItemPhase(PhaseStringSucceeded),
 		Failed:       DeployItemPhase(PhaseStringFailed),
+		InitDelete:   DeployItemPhase(PhaseStringInitDelete),
 		Deleting:     DeployItemPhase(PhaseStringDeleting),
 		DeleteFailed: DeployItemPhase(PhaseStringDeleteFailed),
 	}

@@ -232,7 +232,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
 		utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now()))
 		ginkgo.By("Waiting for deploy item " + di.GetName() + " to succeed")
-		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployerPhases.Succeeded, 2*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 2*time.Minute))
 
 		utils.ExpectNoError(utils.DeleteDeployItemForNewReconcile(ctx, f.Client, di, 2*time.Minute))
 		utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))

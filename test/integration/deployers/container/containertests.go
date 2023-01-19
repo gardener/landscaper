@@ -301,7 +301,7 @@ func ContainerTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployerPhases.Succeeded, 3*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
 			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
@@ -344,7 +344,7 @@ func ContainerTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployerPhases.Succeeded, 3*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
 			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
@@ -388,7 +388,7 @@ func ContainerTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployerPhases.Succeeded, 3*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
 			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
