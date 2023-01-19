@@ -88,15 +88,15 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	// A final or empty execution phase means that the current job was not yet started.
 	// Switch to start phase Init / InitDelete.
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseSucceeded ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseFailed ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleteFailed ||
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded ||
+		exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Failed ||
+		exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.DeleteFailed ||
 		exec.Status.ExecutionPhase == "" {
 
 		if exec.DeletionTimestamp.IsZero() {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseInit
+			exec.Status.ExecutionPhase = lsv1alpha1.ExecutionPhases.Init
 		} else {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseInitDelete
+			exec.Status.ExecutionPhase = lsv1alpha1.ExecutionPhases.InitDelete
 		}
 
 		// do not use setExecutionPhaseAndUpdate because jobIDFinished should not be set here
@@ -105,20 +105,20 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 		}
 	}
 
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseInit {
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Init {
 		if err := c.handlePhaseInit(ctx, exec); err != nil {
 			if lsutil.IsRecoverableError(err) {
 				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000007)
 			}
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000131)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000131)
 		}
 
-		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseProgressing, nil, read_write_layer.W000132); err != nil {
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Progressing, nil, read_write_layer.W000132); err != nil {
 			return err
 		}
 	}
 
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseProgressing {
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Progressing {
 		deployItemClassification, err := c.handlePhaseProgressing(ctx, exec)
 		if err != nil {
 			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000133)
@@ -126,51 +126,51 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
 			err = lserrors.NewError(op, "handlePhaseProgressing", "has failed or missing deploy items")
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000134)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000134)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
 			err = lserrors.NewError(op, "handlePhaseProgressing", "items could not be started")
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000135)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000135)
 		} else if !deployItemClassification.AllSucceeded() {
 			// remain in progressing in all other cases
 			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items", lsv1alpha1.ErrorUnfinished)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000136)
 		} else {
 			// all succeeded; go to next phase
-			if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseCompleting, nil, read_write_layer.W000137); err != nil {
+			if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Completing, nil, read_write_layer.W000137); err != nil {
 				return err
 			}
 		}
 	}
 
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseCompleting {
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Completing {
 		if err := c.handlePhaseCompleting(ctx, exec); err != nil {
 			if lsutil.IsRecoverableError(err) {
 				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000008)
 			}
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000138)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000138)
 		}
 
-		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseSucceeded, nil, read_write_layer.W000139); err != nil {
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Succeeded, nil, read_write_layer.W000139); err != nil {
 			return err
 		}
 	}
 
 	// Handle deletion phases
 
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseInitDelete {
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.InitDelete {
 		if err := c.handlePhaseInitDelete(ctx, exec); err != nil {
 			if lsutil.IsRecoverableError(err) {
 				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000010)
 			}
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleteFailed, err, read_write_layer.W000140)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000140)
 		}
 
-		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleting, nil, read_write_layer.W000141); err != nil {
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Deleting, nil, read_write_layer.W000141); err != nil {
 			return err
 		}
 	}
 
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleting {
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Deleting {
 		deployItemClassification, err := c.handlePhaseDeleting(ctx, exec)
 		if err != nil {
 			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000142)
@@ -178,10 +178,10 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
 			err = lserrors.NewError(op, "handlePhaseDeleting", "has failed items")
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleteFailed, err, read_write_layer.W000143)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000143)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
 			err = lserrors.NewError(op, "handlePhaseDeleting", "has pending items")
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleteFailed, err, read_write_layer.W000144)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000144)
 		}
 
 		// remain in deleting in all other cases,
@@ -284,8 +284,8 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 		if item.Status.JobIDFinished != exec.Status.JobID {
 			item.Status.SetJobID(exec.Status.JobID)
 			item.Status.JobIDFinished = exec.Status.JobID
-			item.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-			item.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+			item.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
+			item.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
 			lsutil.SetLastError(&item.Status, lserrors.UpdatedError(item.Status.GetLastError(),
 				"InterruptOperation",
 				"InterruptOperation",
@@ -302,7 +302,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 }
 
 func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1alpha1.Execution,
-	phase lsv1alpha1.ExecPhase, lsErr lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
+	phase lsv1alpha1.ExecutionPhase, lsErr lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	exec.Status.LastError = lserrors.TryUpdateLsError(exec.Status.LastError, lsErr)
@@ -313,16 +313,16 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 
 	exec.Status.ExecutionPhase = phase
 
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseSucceeded ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseFailed ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleteFailed {
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded ||
+		exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Failed ||
+		exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.DeleteFailed {
 
 		exec.Status.JobIDFinished = exec.Status.JobID
 	}
 
 	if err := c.Writer().UpdateExecutionStatus(ctx, writeID, exec); err != nil {
 
-		if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleting {
+		if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Deleting {
 			// recheck if already deleted
 			execRecheck := &lsv1alpha1.Execution{}
 			errRecheck := read_write_layer.GetExecution(ctx, c.client, kutil.ObjectKey(exec.Name, exec.Namespace), execRecheck)

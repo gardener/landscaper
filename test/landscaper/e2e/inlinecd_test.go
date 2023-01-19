@@ -91,7 +91,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseProgressing))
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Progressing))
 		Expect(inst.Status.JobID).NotTo(BeEmpty())
 		Expect(inst.Status.JobIDFinished).To(BeEmpty())
 		Expect(inst.Status.ExecutionReference).ToNot(BeNil())
@@ -114,7 +114,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		_ = testutils.ShouldNotReconcile(ctx, execActuator, execReq) // not finished
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
-		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseProgressing))
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Progressing))
 		Expect(exec.Status.JobID).To(Equal(jobID))
 		Expect(exec.Status.JobIDFinished).To(BeEmpty())
 		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
@@ -125,7 +125,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
 		di := &lsv1alpha1.DeployItem{}
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-		Expect(di.Status.DeployItemPhase).To(BeEmpty())
+		Expect(di.Status.DeployerPhase).To(BeEmpty())
 		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(BeEmpty())
 
@@ -134,7 +134,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-		Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
+		Expect(di.Status.DeployerPhase).To(Equal(lsv1alpha1.DeployerPhases.Succeeded))
 		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 
@@ -143,7 +143,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		testutils.ShouldReconcile(ctx, execActuator, execReq)
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
-		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseSucceeded))
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Succeeded))
 		Expect(exec.Status.JobID).To(Equal(jobID))
 		Expect(exec.Status.JobIDFinished).To(Equal(jobID))
 		Expect(exec.Status.ExportReference).ToNot(BeNil())
@@ -153,7 +153,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		testutils.ShouldReconcile(ctx, instActuator, instReq)
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseSucceeded))
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Succeeded))
 		Expect(inst.Status.JobID).To(Equal(jobID))
 		Expect(inst.Status.JobIDFinished).To(Equal(jobID))
 
@@ -165,7 +165,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // delete execution
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseDeleting))
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Deleting))
 		Expect(inst.Status.JobID).NotTo(Equal(jobID))
 		Expect(inst.Status.JobIDFinished).To(Equal(jobID))
 
@@ -173,7 +173,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
 		Expect(exec.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseSucceeded))
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Succeeded))
 		Expect(exec.Status.JobID).To(Equal(deletionJobID))
 		Expect(exec.Status.JobIDFinished).To(Equal(jobID))
 
@@ -182,7 +182,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
 		Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-		Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
+		Expect(di.Status.DeployerPhase).To(Equal(lsv1alpha1.DeployerPhases.Succeeded))
 		Expect(di.Status.GetJobID()).To(Equal(deletionJobID))
 		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 

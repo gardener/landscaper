@@ -97,7 +97,7 @@ var _ = Describe("Delete", func() {
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleting)).To(BeTrue())
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.Deleting)).To(BeTrue())
 			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeFalse())
 
 			exec := &lsv1alpha1.Execution{}
@@ -123,14 +123,14 @@ var _ = Describe("Delete", func() {
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleteFailed)).To(BeTrue())
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.DeleteFailed)).To(BeTrue())
 			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeTrue())
 
 			inst = state.Installations[state.Namespace+"/root"]
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleteFailed)).To(BeTrue())
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.DeleteFailed)).To(BeTrue())
 			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeTrue())
 		})
 	})
@@ -178,7 +178,7 @@ var _ = Describe("Delete", func() {
 			inst := state.Installations[state.Namespace+"/a"]
 			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)).ToNot(HaveOccurred())
-			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
 			Expect(testutils.UpdateJobIdForInstallation(ctx, testenv, inst)).ToNot(HaveOccurred())
 
 			Eventually(func() error {

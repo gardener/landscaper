@@ -59,14 +59,14 @@ func AggregatedBlueprintForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, aggInst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, aggInst, lsv1alpha1.InstallationPhaseSucceeded, 4*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, aggInst, lsv1alpha1.InstallationPhases.Succeeded, 4*time.Minute))
 
 			subInstallations, err := lsutils.GetSubInstallationsOfInstallation(ctx, f.Client, aggInst)
 			utils.ExpectNoError(err)
 			Expect(subInstallations).To(HaveLen(2))
-			Expect(subInstallations[0].Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseSucceeded))
+			Expect(subInstallations[0].Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Succeeded))
 			Expect(subInstallations[0].Status.JobIDFinished).To(Equal(subInstallations[0].Status.JobID))
-			Expect(subInstallations[1].Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseSucceeded))
+			Expect(subInstallations[1].Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Succeeded))
 			Expect(subInstallations[1].Status.JobIDFinished).To(Equal(subInstallations[1].Status.JobID))
 
 			// expect that the nginx deployment is successfully running

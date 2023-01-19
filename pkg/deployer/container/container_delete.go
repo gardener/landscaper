@@ -17,7 +17,7 @@ import (
 func (c *Container) Delete(ctx context.Context) error {
 	// skip the deletion container when the force cleanup annotation is set
 	if _, ok := c.DeployItem.Annotations[container.ContainerDeployerOperationForceCleanupAnnotation]; !ok {
-		if c.ProviderStatus.LastOperation != string(container.OperationDelete) || c.DeployItem.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded {
+		if c.ProviderStatus.LastOperation != string(container.OperationDelete) || c.DeployItem.Status.Phase != lsv1alpha1.DeployItemPhases.Succeeded {
 			// do default reconcile until the pod has finished
 			return c.Reconcile(ctx, container.OperationDelete)
 		}
