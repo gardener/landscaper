@@ -52,6 +52,10 @@ func (p ExecutionPhase) IsDeletion() bool {
 	return false
 }
 
+func (p ExecutionPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
 var (
 	ExecutionPhases = struct {
 		Init,

@@ -72,6 +72,10 @@ func (p InstallationPhase) IsDeletion() bool {
 	return false
 }
 
+func (p InstallationPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
 var (
 	InstallationPhases = struct {
 		Init,
