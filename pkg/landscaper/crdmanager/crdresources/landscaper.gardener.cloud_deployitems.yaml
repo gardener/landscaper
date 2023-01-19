@@ -147,7 +147,7 @@ spec:
                   type: object
                 type: array
               deployItemPhase:
-                description: DeployItemPhase is the current phase of the deploy item.
+                description: DeployerPhase is the current phase of the deploy item.
                 type: string
               deployer:
                 description: Deployer describes the deployer that has reconciled the

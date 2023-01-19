@@ -101,3 +101,20 @@ const (
 	AbortingTimeoutReason    = "AbortingTimeout"  // for error messages
 	AbortingTimeoutOperation = "WaitingForAbort"  // for error messages
 )
+
+// define common constants for phase names here, so all phases which use any of them
+// will use the same ones
+const (
+	PhaseStringInit            string = "Init"
+	PhaseStringCleanupOrphaned string = "CleanupOrphaned"
+	PhaseStringObjectsCreated  string = "ObjectsCreated"
+	PhaseStringProgressing     string = "Progressing"
+	PhaseStringCompleting      string = "Completing"
+	PhaseStringSucceeded       string = "Succeeded"
+	PhaseStringFailed          string = "Failed"
+
+	PhaseStringInitDelete    string = "InitDelete"
+	PhaseStringTriggerDelete string = "TriggerDelete"
+	PhaseStringDeleting      string = "Deleting"
+	PhaseStringDeleteFailed  string = "DeleteFailed"
+)

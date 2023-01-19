@@ -4120,7 +4120,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 					},
 					"deployItemPhase": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeployItemPhase is the current phase of the deploy item.",
+							Description: "DeployerPhase is the current phase of the deploy item.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

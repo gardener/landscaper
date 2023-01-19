@@ -1638,7 +1638,7 @@ func Convert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployItemS
 }
 
 func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployItemStatus, out *core.DeployItemStatus, s conversion.Scope) error {
-	out.Phase = core.ExecutionPhase(in.Phase)
+	out.Phase = core.DeployItemPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
@@ -1653,7 +1653,7 @@ func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployIt
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
 	out.JobIDGenerationTime = (*metav1.Time)(unsafe.Pointer(in.JobIDGenerationTime))
-	out.DeployItemPhase = core.DeployItemPhase(in.DeployItemPhase)
+	out.DeployerPhase = core.DeployerPhase(in.DeployerPhase)
 	return nil
 }
 
@@ -1663,7 +1663,7 @@ func Convert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployItemSt
 }
 
 func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.DeployItemStatus, out *DeployItemStatus, s conversion.Scope) error {
-	out.Phase = ExecutionPhase(in.Phase)
+	out.Phase = DeployItemPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*Error)(unsafe.Pointer(in.LastError))
@@ -1678,7 +1678,7 @@ func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.Dep
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
 	out.JobIDGenerationTime = (*metav1.Time)(unsafe.Pointer(in.JobIDGenerationTime))
-	out.DeployItemPhase = DeployItemPhase(in.DeployItemPhase)
+	out.DeployerPhase = DeployerPhase(in.DeployerPhase)
 	return nil
 }
 
@@ -2128,7 +2128,7 @@ func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionS
 	out.ExecutionGenerations = *(*[]core.ExecutionGeneration)(unsafe.Pointer(&in.ExecutionGenerations))
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
-	out.ExecutionPhase = core.ExecPhase(in.ExecutionPhase)
+	out.ExecutionPhase = core.ExecutionPhase(in.ExecutionPhase)
 	return nil
 }
 
@@ -2146,7 +2146,7 @@ func autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execu
 	out.ExecutionGenerations = *(*[]ExecutionGeneration)(unsafe.Pointer(&in.ExecutionGenerations))
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
-	out.ExecutionPhase = ExecPhase(in.ExecutionPhase)
+	out.ExecutionPhase = ExecutionPhase(in.ExecutionPhase)
 	return nil
 }
 

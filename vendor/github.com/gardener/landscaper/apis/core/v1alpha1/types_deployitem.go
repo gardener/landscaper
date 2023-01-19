@@ -18,20 +18,88 @@ const DeployItemValidationCondition ConditionType = "DeployItemValidation"
 // DeployItemType defines the type of the deploy item
 type DeployItemType string
 
-type DeployItemPhase BasePhase
+type DeployItemPhase string
 
-var _ Phase = DeployItemPhase("")
-
-func (dip DeployItemPhase) Phase() BasePhase {
-	return BasePhase(dip)
+func (p DeployItemPhase) String() string {
+	return string(p)
 }
 
-const (
-	DeployItemPhaseSucceeded   DeployItemPhase = DeployItemPhase(PhaseSucceeded)
-	DeployItemPhaseFailed      DeployItemPhase = DeployItemPhase(PhaseFailed)
-	DeployItemPhaseInit        DeployItemPhase = DeployItemPhase(PhaseInit)
-	DeployItemPhaseProgressing DeployItemPhase = DeployItemPhase(PhaseProgressing)
-	DeployItemPhaseDeleting    DeployItemPhase = DeployItemPhase(PhaseDeleting)
+func (p DeployItemPhase) IsFinal() bool {
+	switch p {
+	case DeployItemPhases.Succeeded, DeployItemPhases.Failed, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployItemPhase) IsDeletion() bool {
+	switch p {
+	case DeployItemPhases.Deleting, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+var (
+	DeployItemPhases = struct {
+		Init,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		Deleting,
+		DeleteFailed DeployItemPhase
+	}{
+		Init:         DeployItemPhase(PhaseStringInit),
+		Progressing:  DeployItemPhase(PhaseStringProgressing),
+		Completing:   DeployItemPhase(PhaseStringCompleting),
+		Succeeded:    DeployItemPhase(PhaseStringSucceeded),
+		Failed:       DeployItemPhase(PhaseStringFailed),
+		Deleting:     DeployItemPhase(PhaseStringDeleting),
+		DeleteFailed: DeployItemPhase(PhaseStringDeleteFailed),
+	}
+)
+
+type DeployerPhase string
+
+func (p DeployerPhase) String() string {
+	return string(p)
+}
+
+func (p DeployerPhase) IsFinal() bool {
+	switch p {
+	case DeployerPhases.Succeeded, DeployerPhases.Failed, DeployerPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployerPhase) IsDeletion() bool {
+	switch p {
+	case DeployerPhases.Deleting, DeployerPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+var (
+	DeployerPhases = struct {
+		Init,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		Deleting,
+		DeleteFailed DeployerPhase
+	}{
+		Init:         DeployerPhase(PhaseStringInit),
+		Progressing:  DeployerPhase(PhaseStringProgressing),
+		Completing:   DeployerPhase(PhaseStringCompleting),
+		Succeeded:    DeployerPhase(PhaseStringSucceeded),
+		Failed:       DeployerPhase(PhaseStringFailed),
+		Deleting:     DeployerPhase(PhaseStringDeleting),
+		DeleteFailed: DeployerPhase(PhaseStringDeleteFailed),
+	}
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -69,9 +137,9 @@ var DeployItemDefinition = lsschema.CustomResourceDefinition{
 			JSONPath: ".status.phase",
 		},
 		{
-			Name:     "DeployItemPhase",
+			Name:     "DeployerPhase",
 			Type:     "string",
-			JSONPath: ".status.deployItemPhase",
+			JSONPath: ".Status.DeployerPhase",
 		},
 		{
 			Name:     "ExportRef",
@@ -136,7 +204,7 @@ type DeployItemSpec struct {
 // todo: add operation
 type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
-	Phase ExecutionPhase `json:"phase,omitempty"`
+	Phase DeployItemPhase `json:"phase,omitempty"`
 
 	// ObservedGeneration is the most recent generation observed for this DeployItem.
 	// It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
@@ -180,8 +248,8 @@ type DeployItemStatus struct {
 	// JobIDGenerationTime is the timestamp when the JobID was set.
 	JobIDGenerationTime *metav1.Time `json:"jobIDGenerationTime,omitempty"`
 
-	// DeployItemPhase is the current phase of the deploy item.
-	DeployItemPhase DeployItemPhase `json:"deployItemPhase,omitempty"`
+	// DeployerPhase is the current phase of the deploy item.
+	DeployerPhase DeployerPhase `json:"deployItemPhase,omitempty"`
 }
 
 func (r *DeployItemStatus) GetLastError() *Error {
