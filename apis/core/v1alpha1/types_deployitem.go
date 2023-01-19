@@ -40,6 +40,10 @@ func (p DeployItemPhase) IsDeletion() bool {
 	return false
 }
 
+func (p DeployItemPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
 var (
 	DeployItemPhases = struct {
 		Init,
@@ -80,6 +84,10 @@ func (p DeployerPhase) IsDeletion() bool {
 		return true
 	}
 	return false
+}
+
+func (p DeployerPhase) IsEmpty() bool {
+	return p.String() == ""
 }
 
 var (
