@@ -63,7 +63,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-1", "installation-v0.2.0.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			expectedData := map[string]string{"foo": "bar", "key1": "value1", "key2": "value2"}
@@ -80,7 +80,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-1", "installation-v0.3.0.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			utils.ExpectNoError(utils.CheckConfigMap(ctx, state.State, "cm-example", expectedData))
@@ -97,7 +97,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-1", "installation-v0.1.0.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			utils.ExpectNoError(utils.CheckConfigMap(ctx, state.State, "cm-example", expectedData))
@@ -134,7 +134,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-2", "installation-v0.3.0.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			expectedData := map[string]string{"foo": "bar", "key1": "value1"}
@@ -152,7 +152,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-2", "installation-v0.4.0.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			expectedData = map[string]string{"foo": "bar", "key1": "value1"}
@@ -187,7 +187,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-3", "installation.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			expectedData := map[string]string{"foo": "bar", "key1": "value1"}
@@ -209,7 +209,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-3", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			expectedData = map[string]string{"foo": "bar", "key2": "value2"}

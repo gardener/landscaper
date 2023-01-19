@@ -235,7 +235,7 @@ func checkSuccessorSibling(inst *lsv1alpha1.Installation, sibling *installations
 	op := "CheckSuccessorSibling"
 
 	if inst.Status.JobID == sibling.GetInstallation().Status.JobIDFinished &&
-		sibling.GetInstallation().Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed {
+		sibling.GetInstallation().Status.InstallationPhase == lsv1alpha1.InstallationPhases.DeleteFailed {
 		return lserrors.NewWrappedError(SiblingDeleteError,
 			op, "SiblingDeleteError", SiblingDeleteError.Error()), nil
 	}

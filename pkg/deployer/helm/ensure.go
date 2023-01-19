@@ -118,7 +118,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return err
 	}
 
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	h.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 
 	return nil
 }
@@ -289,7 +289,7 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "deleteManifests"})
 	logger.Info("Deleting files")
 
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+	h.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 
 	if h.ProviderStatus == nil || len(h.ProviderStatus.ManagedResources) == 0 {
 		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
@@ -330,7 +330,7 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "lsHealthCheckController.check"})
 	logger.Info("Deleting files with real helm deployer")
 
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+	h.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 
 	if h.ProviderStatus == nil {
 		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)

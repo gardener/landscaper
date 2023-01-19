@@ -80,14 +80,14 @@ var _ = Describe("Installation Controller", func() {
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			jobID := inst.Status.JobID
 			Expect(inst.Status.JobIDFinished).To(Equal(jobID))
-			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseSucceeded))
+			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Succeeded))
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.JobID).To(Equal(jobID))
 			Expect(inst.Status.JobIDFinished).To(Equal(jobID))
-			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseSucceeded))
+			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Succeeded))
 		})
 
 		It("should pass an interrupt annotation to an execution", func() {

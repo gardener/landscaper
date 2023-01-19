@@ -134,15 +134,15 @@ var _ = Describe("Helm Deployer", func() {
 			Expect(testenv.Client.Get(ctx, testutil.Request(obj.GetName(), obj.GetNamespace()).NamespacedName, obj)).To(Succeed())
 			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
 		}
-		di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+		di.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 		di.Status.SetJobID(di.Status.GetJobID() + "-1")
 		Expect(testenv.Client.Status().Update(ctx, di)).To(Succeed())
 
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
-		Expect(lsutils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
+		Expect(lsutils.IsDeployerPhase(di, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 
 		deploymentList := &appsv1.DeploymentList{}
 		Expect(testenv.Client.List(ctx, deploymentList, client.InNamespace(state.Namespace))).To(Succeed())

@@ -65,7 +65,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			}
 			// check if pod is in error state
 			if err := podIsInErrorState(pod); err != nil {
-				c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+				c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
 				if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000055, c.DeployItem); err != nil {
 					return err // returns the error and retry
 				}
@@ -76,13 +76,13 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				}
 				return err
 			}
-			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+			c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 			return nil
 		}
 	}
 
 	if c.shouldRunNewPod(pod) {
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Init
 		operationName := "DeployPod"
 
 		// before we start syncing lets read the current deploy item from the server
@@ -159,9 +159,9 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				operationName, "UpdatePodStatus", err.Error())
 		}
 
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 		if operation == container.OperationDelete {
-			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+			c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 		}
 
 		// we have to persist the observed changes so lets do a patch
@@ -188,10 +188,10 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			return lserrors.NewWrappedError(err,
 				operationName, "SyncExport", err.Error())
 		}
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 	}
 	if pod.Status.Phase == corev1.PodFailed {
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
 	}
 
 	c.ProviderStatus.LastOperation = string(operation)
@@ -240,7 +240,7 @@ func (c *Container) shouldRunNewPod(pod *corev1.Pod) bool {
 		}
 	}
 	// HandleAnnotationsAndGeneration will set the phase to init if either the generation changed or a ReconcileAnnotation is present
-	if c.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseInit {
+	if c.DeployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Init {
 		return true
 	}
 	return false

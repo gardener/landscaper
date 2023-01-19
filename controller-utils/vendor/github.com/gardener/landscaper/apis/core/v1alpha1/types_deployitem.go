@@ -137,9 +137,9 @@ var DeployItemDefinition = lsschema.CustomResourceDefinition{
 			JSONPath: ".status.phase",
 		},
 		{
-			Name:     "DeployItemPhase",
+			Name:     "DeployerPhase",
 			Type:     "string",
-			JSONPath: ".status.deployItemPhase",
+			JSONPath: ".Status.DeployerPhase",
 		},
 		{
 			Name:     "ExportRef",

@@ -66,10 +66,10 @@ func RootInstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Client.Patch(ctx, inst1, client.MergeFrom(instOld1)))
 
 			By("Wait for 1st installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Wait for 2nd installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst2, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst2, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			expectedData := map[string]string{"foo": "bar", "key1": "value1"}

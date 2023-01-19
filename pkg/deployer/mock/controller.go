@@ -65,11 +65,11 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 	}
 
 	if config.InitialPhase != nil {
-		if len(di.Status.Phase) == 0 || di.Status.Phase == lsv1alpha1.ExecutionPhaseInit {
+		if len(di.Status.Phase) == 0 || di.Status.Phase == lsv1alpha1.DeployItemPhases.Init {
 			di.Status.Phase = *config.InitialPhase
 		}
 	} else {
-		di.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+		di.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 	}
 
 	if config.Phase != nil {

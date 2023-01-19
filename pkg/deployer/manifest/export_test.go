@@ -101,7 +101,7 @@ var _ = Describe("Export", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
-		Expect(item.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 		Expect(item.Status.ExportReference).ToNot(BeNil())
 
 		export := &corev1.Secret{}
@@ -183,7 +183,7 @@ var _ = Describe("Export", func() {
 		}()
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
-		Expect(item.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 		Expect(item.Status.ExportReference).ToNot(BeNil())
 
 		export := &corev1.Secret{}

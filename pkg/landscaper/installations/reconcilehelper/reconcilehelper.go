@@ -188,7 +188,7 @@ func (rh *ReconcileHelper) AllPredecessorsSucceeded(installation *lsv1alpha1.Ins
 	for name := range predecessorMap {
 		predecessor := predecessorMap[name]
 
-		if predecessor.GetInstallation().Status.InstallationPhase != lsv1alpha1.InstallationPhaseSucceeded {
+		if predecessor.GetInstallation().Status.InstallationPhase != lsv1alpha1.InstallationPhases.Succeeded {
 			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which is not succeeded",
 				kutil.ObjectKeyFromObject(predecessor.GetInstallation()).String())
 		}

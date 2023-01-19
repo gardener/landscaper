@@ -169,7 +169,7 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 	}
 
 	// generate new jobID
-	isFirstDelete := !inst.DeletionTimestamp.IsZero() && !lsv1alpha1helper.IsDeletionInstallationPhase(inst.Status.InstallationPhase)
+	isFirstDelete := !inst.DeletionTimestamp.IsZero() && !inst.Status.InstallationPhase.IsDeletion()
 	if installations.IsRootInstallation(inst) &&
 		(lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || isFirstDelete) &&
 		inst.Status.JobID == inst.Status.JobIDFinished {
@@ -305,14 +305,14 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	}
 
 	inst.Status.InstallationPhase = phase
-	if phase == lsv1alpha1.InstallationPhaseFailed ||
-		phase == lsv1alpha1.InstallationPhaseSucceeded ||
-		phase == lsv1alpha1.InstallationPhaseDeleteFailed {
+	if phase == lsv1alpha1.InstallationPhases.Failed ||
+		phase == lsv1alpha1.InstallationPhases.Succeeded ||
+		phase == lsv1alpha1.InstallationPhases.DeleteFailed {
 		inst.Status.JobIDFinished = inst.Status.JobID
 	}
 
 	if err := c.Writer().UpdateInstallationStatus(ctx, writeID, inst); err != nil {
-		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleting {
+		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Deleting {
 			// recheck if already deleted
 			instRecheck := &lsv1alpha1.Installation{}
 			errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), instRecheck)

@@ -70,13 +70,13 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			}, timeoutTime, resyncTime).Should(BeTrue(), "unable to fetch deployitem")
 
 			By("verify that execution is succeeded")
-			Eventually(func() (lsv1alpha1.ExecPhase, error) {
+			Eventually(func() (lsv1alpha1.ExecutionPhase, error) {
 				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)
 				if err != nil {
 					return "", err
 				}
 				return exec.Status.ExecutionPhase, nil
-			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ExecPhaseSucceeded), "execution should be in phase '%s'", lsv1alpha1.ExecPhaseSucceeded)
+			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ExecutionPhases.Succeeded), "execution should be in phase '%s'", lsv1alpha1.ExecutionPhases.Succeeded)
 
 			oldExGen := exec.Generation
 			oldDIGen := di.Generation
