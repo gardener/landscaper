@@ -130,7 +130,11 @@ webhooksServer:
   # Specify to create a webhooks server ingress in combination with "landscaperKubeconfig".
   # This is needed when the webhooks server pod is placed on a different cluster than the landscaper resources.
   # ingress:
-  #  host: webhooks.ingress.mydomain.net
+  #   host: webhooks.ingress.mydomain.net
+  #   className: nginx
+  #   # enable the gardener dns extension to create a DNS entry for this ingress.
+  #   dns:
+  #     class: garden
 
 imagePullSecrets: []
 nameOverride: ""
