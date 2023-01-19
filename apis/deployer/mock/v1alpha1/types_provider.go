@@ -21,11 +21,11 @@ type ProviderConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
 	// Phase sets the phase of the DeployItem
-	Phase *lsv1alpha1.ExecutionPhase `json:"phase,omitempty"`
+	Phase *lsv1alpha1.DeployItemPhase `json:"phase,omitempty"`
 
 	// InitialPhase sets the phase of the DeployItem, but only if it is empty or "Init"
 	// Additionally, setting it will suppress the DeployItem phase being set to "Succeeded" after successful reconciliation
-	InitialPhase *lsv1alpha1.ExecutionPhase `json:"initialPhase,omitempty"`
+	InitialPhase *lsv1alpha1.DeployItemPhase `json:"initialPhase,omitempty"`
 
 	// ProviderStatus sets the provider status to the given value
 	ProviderStatus *runtime.RawExtension `json:"providerStatus,omitempty"`
