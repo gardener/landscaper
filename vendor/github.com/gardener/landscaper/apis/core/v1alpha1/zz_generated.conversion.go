@@ -1653,7 +1653,7 @@ func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployIt
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
 	out.JobIDGenerationTime = (*metav1.Time)(unsafe.Pointer(in.JobIDGenerationTime))
-	out.DeployerPhase = core.DeployerPhase(in.DeployerPhase)
+	out.DeployerPhase = (*string)(unsafe.Pointer(in.DeployerPhase))
 	return nil
 }
 
@@ -1678,7 +1678,7 @@ func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.Dep
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
 	out.JobIDGenerationTime = (*metav1.Time)(unsafe.Pointer(in.JobIDGenerationTime))
-	out.DeployerPhase = DeployerPhase(in.DeployerPhase)
+	out.DeployerPhase = (*string)(unsafe.Pointer(in.DeployerPhase))
 	return nil
 }
 

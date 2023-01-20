@@ -66,52 +66,6 @@ var (
 	}
 )
 
-type DeployerPhase string
-
-func (p DeployerPhase) String() string {
-	return string(p)
-}
-
-func (p DeployerPhase) IsFinal() bool {
-	switch p {
-	case DeployerPhases.Succeeded, DeployerPhases.Failed, DeployerPhases.DeleteFailed:
-		return true
-	}
-	return false
-}
-
-func (p DeployerPhase) IsDeletion() bool {
-	switch p {
-	case DeployerPhases.Deleting, DeployerPhases.DeleteFailed:
-		return true
-	}
-	return false
-}
-
-func (p DeployerPhase) IsEmpty() bool {
-	return p.String() == ""
-}
-
-var (
-	DeployerPhases = struct {
-		Init,
-		Progressing,
-		Completing,
-		Succeeded,
-		Failed,
-		Deleting,
-		DeleteFailed DeployerPhase
-	}{
-		Init:         DeployerPhase(PhaseStringInit),
-		Progressing:  DeployerPhase(PhaseStringProgressing),
-		Completing:   DeployerPhase(PhaseStringCompleting),
-		Succeeded:    DeployerPhase(PhaseStringSucceeded),
-		Failed:       DeployerPhase(PhaseStringFailed),
-		Deleting:     DeployerPhase(PhaseStringDeleting),
-		DeleteFailed: DeployerPhase(PhaseStringDeleteFailed),
-	}
-)
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItemList contains a list of DeployItems
@@ -145,11 +99,6 @@ var DeployItemDefinition = lsschema.CustomResourceDefinition{
 			Name:     "Phase",
 			Type:     "string",
 			JSONPath: ".status.phase",
-		},
-		{
-			Name:     "DeployerPhase",
-			Type:     "string",
-			JSONPath: ".Status.DeployerPhase",
 		},
 		{
 			Name:     "ExportRef",
@@ -258,8 +207,8 @@ type DeployItemStatus struct {
 	// JobIDGenerationTime is the timestamp when the JobID was set.
 	JobIDGenerationTime *metav1.Time `json:"jobIDGenerationTime,omitempty"`
 
-	// DeployerPhase is the current phase of the deploy item.
-	DeployerPhase DeployerPhase `json:"deployItemPhase,omitempty"`
+	// DeployerPhase is DEPRECATED and will soon be removed.
+	DeployerPhase *string `json:"deployItemPhase,omitempty"`
 }
 
 func (r *DeployItemStatus) GetLastError() *Error {

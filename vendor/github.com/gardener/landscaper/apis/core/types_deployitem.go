@@ -15,8 +15,6 @@ type DeployItemType string
 
 type DeployItemPhase string
 
-type DeployerPhase string
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItemList contains a list of DeployItems
@@ -120,8 +118,8 @@ type DeployItemStatus struct {
 	// JobIDGenerationTime is the timestamp when the JobID was set.
 	JobIDGenerationTime *metav1.Time `json:"jobIDGenerationTime,omitempty"`
 
-	// DeployerPhase is the current phase of the deploy item.
-	DeployerPhase DeployerPhase `json:"deployItemPhase,omitempty"`
+	// DeployerPhase is DEPRECATED and will soon be removed.
+	DeployerPhase *string `json:"deployItemPhase,omitempty"`
 }
 
 // DeployerInformation holds additional information about the deployer that

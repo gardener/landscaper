@@ -2853,13 +2853,11 @@ Kubernetes meta/v1.Time
 <td>
 <code>deployItemPhase</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployerPhase">
-DeployerPhase
-</a>
+string
 </em>
 </td>
 <td>
-<p>DeployerPhase is the current phase of the deploy item.</p>
+<p>DeployerPhase is DEPRECATED and will soon be removed.</p>
 </td>
 </tr>
 </tbody>
@@ -3105,14 +3103,6 @@ Example: namespace: (( installation.imports.namespace ))</p>
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.DeployerPhase">DeployerPhase
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>)
-</p>
-<p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployerRegistrationSpec">DeployerRegistrationSpec
 </h3>
 <p>
