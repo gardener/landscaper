@@ -73,7 +73,6 @@ Once handled by its deployer, a status similar to this one will be attached to t
 
 ```yaml
 status:
-  deployItemPhase: Succeeded
   jobID: "fgkjjdfd..."
   jobIDFinished: "fgkjjdfd..."
   observedGeneration: 1
@@ -99,7 +98,6 @@ If errors occurred while handling the deploy item, the status will contain an er
 
 ```yaml
 status:
-  deployItemPhase: Failed
   jobID: "fgkjjdfd..."
   jobIDFinished: "fgkjjdfd..."
   observedGeneration: 1
@@ -114,20 +112,20 @@ status:
     reason: PickupTimeout
 ```
 
-The most interesting part of the status is the `deployItemPhase`, the `jobId`, the `jobIdFinished` and `lastReconcileTime`. 
+The most interesting part of the status is the `phase`, the `jobId`, the `jobIdFinished` and `lastReconcileTime`. 
 The Landscaper interacts with the deployer using these fields. A deployer is only allowed to process a deploy item if 
 `jobId` is not equal to `jobIdFinished`. This way the Landscaper informs the deployer about processing a deploy item. 
 
-If `jobId` is not equal to `jobIdFinished` and `deployItemPhase` is either empty, or has the value `Succeeded` or `Failed`, 
-the deployer is allowed to process the deploy item. Then it must set `deployItemPhase` on `Processing` or `Deleting` 
+If `jobId` is not equal to `jobIdFinished` and `phase` is either empty, or has the value `Succeeded` or `Failed`, 
+the deployer is allowed to process the deploy item. Then it must set `phase` on `Processing` or `Deleting` 
 depending on if the item should be just reconciled or deleted/uninstalled. This signals the Landscaper that the deployer 
 has picked up the deploy item. Furthermore, the deployer must set `lastReconcileTime` on the current time. The Landscaper 
-checks a deploy item regularly and if `lastReconcileTime` is to old, it sees that the responsible deployer does not 
-finish within the specified timeframe and sets the deploy item on failed ([see](../usage/DeployItemTimeouts.md)). 
+checks a deploy item regularly and if `lastReconcileTime` is too old, it sees that the responsible deployer does not 
+finish within the specified timeframe and sets the deploy item on failed (see [timeouts](../usage/DeployItemTimeouts.md)). 
 
 When the reconcile or the deletion of the deploy item succeeded or failed, the deployer is required to set 
-`deployItemPhase` on `Succeeded` or `Failed` and `jobIdFinished` on the value of `jobId`. This must be done in one 
-atomic update operation because it is required that if `jobId` and `jobIdFinished` are equal, the `deployItemPhase` must 
+`phase` on `Succeeded` or `Failed` and `jobIdFinished` on the value of `jobId`. This must be done in one 
+atomic update operation because it is required that if `jobId` and `jobIdFinished` are equal, the `phase` must 
 be `Succeeded` or `Failed`. This informs the Landscaper, that the deployer has finished processing the deploy item and 
 only then the Landscaper is allowed to trigger a new operation by updating the `jobId` again. 
 
@@ -139,10 +137,12 @@ processing state, whereby the following values are allowed:
 
 - `Init`: This is more of a transition phase that shows that the deploy item is about to be handled by a deployer.
 - `Progressing`: The deploy item is currently being processed by its deployer.
+- `InitDelete` Similar to `Init`, but for deletion.
 - `Deleting`: Similar to `Processing`, but instead of being applied, the deploy item is being deleted.
 - `Succeeded`: The deploy item successfully finished processing. 
 - `Failed`: The deployer finished processing the deploy item, but it was not successful. Whenever this state is set, 
   there should be further information on what went wrong in the `status.lastError` field.
+- `DeleteFailed`: Similar to `Failed`, but for deletion.
 
 ## How is a Deployer expected to act?
 
@@ -166,7 +166,7 @@ between the landscaper and the deployer was described above.
 Now the deployer should do its magic. First it must set the status field `lastReconcileTime` on the current time thereby
 signaling the Landscaper that a deployer has picked up the deploy item.
 
-As long as the deployer is actually doing something - or waiting for something - `deployItemPhase` must be set on 
+As long as the deployer is actually doing something - or waiting for something - `phase` must be set on 
 `Processing` or `Deleting` and `jobId` remains different from `jobIdFinished`. 
 
 Some deployers need to store information in the deploy item's status during or after processing it.
@@ -181,9 +181,9 @@ There is the following important annotation that needs to be handled by the depl
 
 #### 5. Final State
 If the deployer successfully finished the task described by the deploy item, the deployer is required to set 
-`deployItemPhase` on `Succeeded` and `jobIdFinished` on the value of `jobId`.
+`phase` on `Succeeded` and `jobIdFinished` on the value of `jobId`.
 
-If it wasn't successfully and has given up trying, `deployItemPhase` has to be set on `Failed` and `jobIdFinished` 
+If it wasn't successful and has given up trying, `phase` has to be set on `Failed` (or `DeleteFailed`, respectively) and `jobIdFinished` 
 on the value of `jobId`.
 
 ## How is a Deployer installed
