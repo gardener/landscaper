@@ -105,4 +105,6 @@ func SetDefaults_DeployItem(obj *DeployItem) {
 	if len(obj.Spec.Context) == 0 {
 		obj.Spec.Context = DefaultContextName
 	}
+	// migration - can be removed, after .Status.DeployerPhase has been removed
+	obj.Status.DeployerPhase = nil
 }

@@ -804,6 +804,11 @@ func (in *DeployItemStatus) DeepCopyInto(out *DeployItemStatus) {
 		in, out := &in.JobIDGenerationTime, &out.JobIDGenerationTime
 		*out = (*in).DeepCopy()
 	}
+	if in.DeployerPhase != nil {
+		in, out := &in.DeployerPhase, &out.DeployerPhase
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 
