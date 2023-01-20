@@ -4,11 +4,15 @@ kind: Ingress
 metadata:
   name: {{ include "landscaper.webhooks.fullname" . }}
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+{{- if .Values.webhooksServer.ingress.dns }}
+    dns.gardener.cloud/class: {{ .Values.webhooksServer.ingress.dns.class }}
+    dns.gardener.cloud/dnsnames: {{ .Values.webhooksServer.ingress.host }}
+{{- end }}
   labels:
     {{- include "landscaper.labels" . | nindent 4 }}
 spec:
+  ingressClassName: {{ .Values.webhooksServer.ingress.className }}
   rules:
     - host: {{ .Values.webhooksServer.ingress.host }}
       http:

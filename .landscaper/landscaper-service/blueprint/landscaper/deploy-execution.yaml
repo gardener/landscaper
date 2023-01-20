@@ -88,6 +88,9 @@ deployItems:
 
           ingress:
             host: {{ .imports.webhooksHostName }}
+            className: nginx
+            dns:
+              class: garden
 
         service:
           type: ClusterIP
