@@ -18,30 +18,30 @@ In order to support fenced environments and automated deployer management a comp
 Analogous to the kubelet and gardenlet, we would introduce a `Landscapelet` or a `Landscaper Agent` that does exactly that.
 > Note: The purpose of Gardenlets are to manage shoot cluster and are build for scalability.
 > Whereas the Landscaper agent's purpose is to simplify the deployer lifecycle and reach fenced environments.
-> To avoid confusion the we call that component `Landscaper Agent`.
+> To avoid confusion we call that component `Landscaper Agent`.
 
-That agent would automatically register itself with a target (pointing to its own cluster) and a `Environment` resource that contains environment specific data (e.g. the target selector) for the deployers.
+That agent would automatically register itself with a target (pointing to its own cluster) and an `Environment` resource that contains environment specific data (e.g. the target selector) for the deployers.
 
 In addition, Deployers are not directly installed using installations (which is of course still possible), but by defining an installation template (called Deployer Registrations). 
 That template in conjunction with the environment is then used to generate an installation for the target.
-Therefore, registering new environment would simply require the agent to be installed and new deployer installation would be automatically created.
+Therefore, registering a new environment would simply require the agent to be installed and new deployer installation would be automatically created.
 
 > Note: To not require additional effort when installing the deployers in the same cluster as the landscaper, the agent is included in the landscaper deployment. With that no additional complexity for the operator would be added. 
 
 In order to execute the installation and install the deployers on the target cluster, the agent is shipped with a simple helm deployer. 
-All other deployers are then deployed in an order specified by their required deployers - the deployer(s) which only need a helm deployer are installed first, then the ones which depend on them, and so on.
+All other deployers are then deployed in an order specified by their required deployers - the deployers which only need a helm deployer are installed first, then the ones which depend on them, and so on.
 > e.g. if a deployer A needs deployer B to be installed. Deployer B only requires the already available helm deployer in the agent.
-> Then both installations (and their respective deployitems) are created. 
-> Deployer B would be immediately installed and as soon as it is ready Deployer B would install Deployer A.
+> Then both installations (and their respective DeployItems) are created. 
+> Deployer B would be immediately installed and as soon as it is ready. Deployer B would then install Deployer A.
 > 
-> Note that in this scenario dead-locks are possible as a dependency cycle could occur.
+> Note that in this scenario deadlocks are possible as a dependency cycle could occur.
 
 ![deployer lm](../images/LandscaperDeployerLM.png)
 
 ## Install the agent
 
 The agent is a simple kubernetes controller that includes a helm deployer that can only reconcile one specific target.
-It is provided as [helm chart](../../charts/landscaper-agent) that can be installed using helm 3 like:
+It is provided as [helm chart](../../charts/landscaper-agent) that can be installed using helm:
 ```
 helm upgrade --install my-env ./charts/landscaper-agent -f values.yaml
 ```
@@ -77,7 +77,7 @@ Assumption: Landscaper is already running in a cluster
 1. The agent is installed into another cluster and connects to the Landscaper cluster
 1. The agent creates a service account, a cluster role and a clusterrolebinding. That service is used to create a secret `default-target-access` containing the kubeconfig for the host cluster.
 1. The agent creates an environment object with the given configuration and information from the local cluster.<br>
-  The environment is created with an agent finalizer. That finalizer is never removed by the agent itself. So it has to be removed manually when an agent is deinstalled.
+  The environment is created with an agent finalizer. That finalizer is never removed by the agent itself. So it has to be removed manually when an agent is uninstalled.
     ```yaml
     apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: Environment
@@ -116,7 +116,7 @@ Assumption: Landscaper is already running in a cluster
           operator: '!'
     ```
 1. The Landscaper reacts on the new environment, adds its own finalizer `finalizer.deployermanagement.landscaper.gardener.cloud` and creates a target as specified in the environment (`spec.hostTarget`).<br>
-   Note: The secretRef points to a secret that is only accessible in the agents host cluster. So the access to the agent cluster is never stored in the landscaper cluster.
+   Note: The secretRef points to a secret that is only accessible in the agent's host cluster. So the access to the agent cluster is never stored in the landscaper cluster.
       ```yaml
       apiVersion: landscaper.gardener.cloud/v1alpha1
       kind: Target
@@ -221,8 +221,8 @@ Assumption: Landscaper is already running in a cluster
         - name: landscaperCluster
           target: '#mock-default'
     ```
-1. With that the default Landscaper installation flow starts and the execution and deployitems are created.
+1. With that the default Landscaper installation flow starts and the execution and DeployItems are created.
 1. The DeployItems are defined to use the Target created in step 4.
-   With this the helm deployer that is included in the agent will start to reconcile deploy items of type `helm`.
+   With this the helm deployer that is included in the agent will start to reconcile DeployItems of type `helm`.
 1. Deployer that are deployed using Helm are now successfully installed and connected.
    These deployer can also now start to reconcile their DeployItems with Target annotated as `landscaper.gardener.cloud/environment: <env name>`.
