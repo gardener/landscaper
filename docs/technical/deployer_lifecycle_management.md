@@ -12,7 +12,7 @@ Coming from deployers that are integrated into the landscaper it is pretty easy 
 When Landscaper is deployed in production or a fenced landscape has to be reached that approach is not suitable anymore. 
 Then all deployers that are needed in the landscape, and the fenced landscape would have to be managed on their own with their own lifecycle (create a target, create and update installations for every instance that is needed).
 Although, 90% of all deployers are currently deployed the same way with the same imports and configuration.
-In addition, it contradicts with our extensibility concept as specific deployers would be shipped the landscaper but would need their own lifecycle.
+In addition, it contradicts with our extensibility concept as specific deployers would be shipped with the landscaper but would need their own lifecycle.
 
 In order to support fenced environments and automated deployer management a component is needed that installs and upgrades deployers.
 Analogous to the kubelet and gardenlet, we would introduce a `Landscapelet` or a `Landscaper Agent` that does exactly that.
