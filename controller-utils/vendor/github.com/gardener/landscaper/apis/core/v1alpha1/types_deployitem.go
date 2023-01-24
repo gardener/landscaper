@@ -24,6 +24,7 @@ func (p DeployItemPhase) String() string {
 	return string(p)
 }
 
+// IsFinal returns true if the phase is a final phase.
 func (p DeployItemPhase) IsFinal() bool {
 	switch p {
 	case DeployItemPhases.Succeeded, DeployItemPhases.Failed, DeployItemPhases.DeleteFailed:
@@ -32,6 +33,7 @@ func (p DeployItemPhase) IsFinal() bool {
 	return false
 }
 
+// IsDeletion returns true if the phase indicates that the deployitem is being deleted.
 func (p DeployItemPhase) IsDeletion() bool {
 	switch p {
 	case DeployItemPhases.InitDelete, DeployItemPhases.Deleting, DeployItemPhases.DeleteFailed:
@@ -40,6 +42,16 @@ func (p DeployItemPhase) IsDeletion() bool {
 	return false
 }
 
+// IsFailed returns true if the phase is either 'Failed' or 'DeleteFailed'.
+func (p DeployItemPhase) IsFailed() bool {
+	switch p {
+	case DeployItemPhases.Failed, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+// IsEmpty returns true if the phase equals the empty string.
 func (p DeployItemPhase) IsEmpty() bool {
 	return p.String() == ""
 }

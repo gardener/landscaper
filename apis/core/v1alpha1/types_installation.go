@@ -56,6 +56,7 @@ func (p InstallationPhase) String() string {
 	return string(p)
 }
 
+// IsFinal returns true if the phase is a final phase.
 func (p InstallationPhase) IsFinal() bool {
 	switch p {
 	case InstallationPhases.Succeeded, InstallationPhases.Failed, InstallationPhases.DeleteFailed:
@@ -64,6 +65,7 @@ func (p InstallationPhase) IsFinal() bool {
 	return false
 }
 
+// IsDeletion returns true if the phase indicates that the installation is being deleted.
 func (p InstallationPhase) IsDeletion() bool {
 	switch p {
 	case InstallationPhases.InitDelete, InstallationPhases.TriggerDelete, InstallationPhases.Deleting, InstallationPhases.DeleteFailed:
@@ -72,6 +74,16 @@ func (p InstallationPhase) IsDeletion() bool {
 	return false
 }
 
+// IsFailed returns true if the phase is either 'Failed' or 'DeleteFailed'.
+func (p InstallationPhase) IsFailed() bool {
+	switch p {
+	case InstallationPhases.Failed, InstallationPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+// IsEmpty returns true if the phase equals the empty string.
 func (p InstallationPhase) IsEmpty() bool {
 	return p.String() == ""
 }

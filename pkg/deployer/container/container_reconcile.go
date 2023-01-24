@@ -65,7 +65,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			}
 			// check if pod is in error state
 			if err := podIsInErrorState(pod); err != nil {
-				c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
+				lsv1alpha1helper.SetDeployItemToFailed(c.DeployItem)
 				if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000055, c.DeployItem); err != nil {
 					return err // returns the error and retry
 				}
@@ -191,7 +191,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 	}
 	if pod.Status.Phase == corev1.PodFailed {
-		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
+		lsv1alpha1helper.SetDeployItemToFailed(c.DeployItem)
 	}
 
 	c.ProviderStatus.LastOperation = string(operation)
@@ -239,7 +239,6 @@ func (c *Container) shouldRunNewPod(pod *corev1.Pod) bool {
 			}
 		}
 	}
-	// HandleAnnotationsAndGeneration will set the phase to init if either the generation changed or a ReconcileAnnotation is present
 	if c.DeployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Init {
 		return true
 	}

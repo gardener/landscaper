@@ -36,6 +36,7 @@ func (p ExecutionPhase) String() string {
 	return string(p)
 }
 
+// IsFinal returns true if the phase is a final phase.
 func (p ExecutionPhase) IsFinal() bool {
 	switch p {
 	case ExecutionPhases.Succeeded, ExecutionPhases.Failed, ExecutionPhases.DeleteFailed:
@@ -44,6 +45,7 @@ func (p ExecutionPhase) IsFinal() bool {
 	return false
 }
 
+// IsDeletion returns true if the phase indicates that the execution is being deleted.
 func (p ExecutionPhase) IsDeletion() bool {
 	switch p {
 	case ExecutionPhases.InitDelete, ExecutionPhases.TriggerDelete, ExecutionPhases.Deleting, ExecutionPhases.DeleteFailed:
@@ -52,6 +54,16 @@ func (p ExecutionPhase) IsDeletion() bool {
 	return false
 }
 
+// IsFailed returns true if the phase is either 'Failed' or 'DeleteFailed'.
+func (p ExecutionPhase) IsFailed() bool {
+	switch p {
+	case ExecutionPhases.Failed, ExecutionPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+// IsEmpty returns true if the phase equals the empty string.
 func (p ExecutionPhase) IsEmpty() bool {
 	return p.String() == ""
 }
