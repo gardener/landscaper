@@ -54,7 +54,7 @@ deployItems:
             {{ end }}
             data:
               policy: |-
-{{ .imports.auditPolicy | indent 16 }}
+{{ toYaml .imports.auditPolicy | indent 16 }}
         {{ end }}
 
         - policy: manage

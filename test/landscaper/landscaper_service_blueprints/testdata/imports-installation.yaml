@@ -78,7 +78,8 @@ imports:
       version: 1.24.6
 
   subaccountId: abcdef
-  auditPolicy: foobar
+  auditPolicy:
+    foo: bar
 
   registryConfig:
     cache:

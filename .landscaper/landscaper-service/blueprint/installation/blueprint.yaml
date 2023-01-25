@@ -63,7 +63,7 @@ imports:
     required: false
     type: data
     schema:
-      type: string
+      type: object
 
   - name: subaccountId
     required: false

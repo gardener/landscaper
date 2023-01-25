@@ -178,10 +178,13 @@ var _ = Describe("Landscaper Service Component", func() {
 
 	It("should install the shoot cluster blueprint", func() {
 		imports := GetImports(filepath.Join(testData, "imports-shoot.yaml"))
-		auditPolicy, err := os.ReadFile(filepath.Join(testData, "auditpolicy.yaml"))
+		auditPolicyRaw, err := os.ReadFile(filepath.Join(testData, "auditpolicy.yaml"))
 		Expect(err).ToNot(HaveOccurred())
 
-		imports["auditPolicy"] = string(auditPolicy)
+		var auditPolicy map[string]interface{}
+		err = yaml.Unmarshal(auditPolicyRaw, &auditPolicy)
+		Expect(err).ToNot(HaveOccurred())
+		imports["auditPolicy"] = auditPolicy
 
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
 		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
