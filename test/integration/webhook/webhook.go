@@ -142,7 +142,7 @@ func WebhookTest(f *framework.Framework) {
 
 			updated := di.DeepCopy()
 			updated.Spec.Type = "other-type"
-			err = f.Client.Update(ctx, updated)
+			err = state.Update(ctx, updated)
 			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
 			Expect(err.Error()).To(HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
 		})

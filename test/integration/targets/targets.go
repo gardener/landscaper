@@ -207,7 +207,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, path.Join(testdataDir, "installation-target-root-1", "target-1-updated.yaml")))
 			target.SetNamespace(state.Namespace)
 			target.ObjectMeta.ResourceVersion = targetOld.ObjectMeta.ResourceVersion
-			utils.ExpectNoError(f.Client.Update(ctx, target))
+			utils.ExpectNoError(state.Update(ctx, target))
 
 			By("Reconcile Installation")
 			instOld := &lsv1alpha1.Installation{}
@@ -259,7 +259,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(target2, path.Join(testdataDir, "installation-target-root-1", "target-2-updated.yaml")))
 			target2.SetNamespace(state.Namespace)
 			target2.ObjectMeta.ResourceVersion = target2Old.ObjectMeta.ResourceVersion
-			utils.ExpectNoError(f.Client.Update(ctx, target2))
+			utils.ExpectNoError(state.Update(ctx, target2))
 
 			By("Reconcile Installation")
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-root-1", "installation-2.yaml")))
