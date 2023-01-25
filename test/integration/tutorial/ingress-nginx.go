@@ -82,7 +82,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Get(ctx, instKey, inst))
 			inst.Spec.ComponentDescriptor.Reference.Version = "v0.3.3"
 			lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
-			err = f.Client.Update(ctx, inst)
+			err = state.Update(ctx, inst)
 			utils.ExpectNoError(err)
 
 			// wait for installation to finish

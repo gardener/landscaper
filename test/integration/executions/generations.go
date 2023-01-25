@@ -101,7 +101,7 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			exec.Spec.DeployItems[0].Configuration = &runtime.RawExtension{
 				Raw: rawMockConfig,
 			}
-			utils.ExpectNoError(f.Client.Update(ctx, exec))
+			utils.ExpectNoError(state.Update(ctx, exec))
 
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(utils.UpdateJobIdForExecutionC(ctx, state.Client, exec)).To(Succeed())
