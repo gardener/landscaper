@@ -22,6 +22,10 @@ imports:
       dataRef: shootSecretBindingName
     - name: shootConfig
       dataRef: shootConfig
+    - name: auditPolicy
+      dataRef: auditPolicy
+    - name: subaccountId
+      dataRef: subaccountId
 
 exports:
   targets:

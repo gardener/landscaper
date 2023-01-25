@@ -7,11 +7,12 @@ package landscaper_service_blueprints_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/gardener/landscaper/pkg/deployer/manifest"
 
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -176,12 +177,18 @@ var _ = Describe("Landscaper Service Component", func() {
 	})
 
 	It("should install the shoot cluster blueprint", func() {
+		imports := GetImports(filepath.Join(testData, "imports-shoot.yaml"))
+		auditPolicy, err := os.ReadFile(filepath.Join(testData, "auditpolicy.yaml"))
+		Expect(err).ToNot(HaveOccurred())
+
+		imports["auditPolicy"] = string(auditPolicy)
+
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
 		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
 			ComponentDescriptor: landscaperServiceCD,
 			Installation:        &lsv1alpha1.Installation{},
 			Blueprint:           GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/shoot")),
-		}, GetImports(filepath.Join(testData, "imports-shoot.yaml")))
+		}, imports)
 
 		testutils.ExpectNoError(err)
 		Expect(out.DeployItems).To(HaveLen(1))

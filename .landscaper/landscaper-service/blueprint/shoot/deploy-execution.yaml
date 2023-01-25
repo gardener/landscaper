@@ -40,6 +40,23 @@ deployItems:
       deleteTimeout: 30m
 
       manifests:
+        {{ if .imports.auditPolicy }}
+        - policy: manage
+          manifest:
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: {{ .imports.name }}-audit-policy
+              namespace: {{ .imports.namespace }}
+            {{ if .imports.labels }}
+              labels:
+{{ toYaml .imports.labels | indent 16 }}
+            {{ end }}
+            data:
+              policy: |-
+{{ .imports.auditPolicy | indent 16 }}
+        {{ end }}
+
         - policy: manage
           annotateBeforeDelete:
             confirmation.gardener.cloud/deletion: "true"
@@ -51,6 +68,10 @@ deployItems:
               namespace: {{ .imports.namespace }}
               annotations:
                 shoot.gardener.cloud/cleanup-extended-apis-finalize-grace-period-seconds: '30'
+                gardener.cloud/operation: reconcile
+                {{ if .imports.subaccountId }}
+                custom.shoot.sapcloud.io/subaccountId: {{ .imports.subaccountId }}
+                {{ end }}
             {{ if .imports.labels }}
               labels:
 {{ toYaml .imports.labels | indent 16 }}
@@ -96,6 +117,13 @@ deployItems:
               kubernetes:
                 version: {{ .imports.shootConfig.kubernetes.version }}
                 enableStaticTokenKubeconfig: true
+                {{ if .imports.auditPolicy }}
+                kubeAPIServer:
+                  auditConfig:
+                    auditPolicy:
+                      configMapRef:
+                        name: {{ .imports.name }}-audit-policy
+                {{ end }}
               purpose: production
               maintenance:
                 timeWindow:
