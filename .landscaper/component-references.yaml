@@ -1,0 +1,21 @@
+---
+componentName: github.com/gardener/landscaper/container-deployer
+name: landscaper
+version: ${VERSION}
+...
+---
+componentName: github.com/gardener/landscaper/helm-deployer
+name: landscaper
+version: ${VERSION}
+...
+---
+componentName: github.com/gardener/landscaper/manifest-deployer
+name: landscaper
+version: ${VERSION}
+...
+---
+componentName: github.com/gardener/landscaper/mock-deployer
+name: landscaper
+version: ${VERSION}
+...
+

@@ -55,6 +55,10 @@ component-cli ca resources add ${LS_CA_PATH} \
     VERSION=${VERSION} \
     ${SOURCE_PATH}/.landscaper/resources.yaml
 
+component-cli ca component-references add ${LS_CA_PATH} \
+    VERSION=${VERSION} \
+    ${SOURCE_PATH}/.landscaper/component-references.yaml
+
 printf "> Add Landscaper CA to ctf\n"
 component-cli ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
 
