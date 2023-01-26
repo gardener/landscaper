@@ -45,3 +45,5 @@ imports:
     region: europe-west1
     kubernetes:
       version: 1.24.6
+
+  subaccountId: abcdef

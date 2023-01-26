@@ -36,6 +36,18 @@ imports:
     schema:
       $ref: "cd://resources/shoot-config-definition"
 
+  - name: auditPolicy
+    required: false
+    type: data
+    schema:
+      type: object
+
+  - name: subaccountId
+    required: false
+    type: data
+    schema:
+      type: string
+
 exports:
   - name: shootClusterKubeconfig
     type: data

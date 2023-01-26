@@ -59,6 +59,18 @@ imports:
         The "shootConfig" Specifies the gardener shoot configuration.
       $ref: "cd://resources/shoot-config-definition"
 
+  - name: auditPolicy
+    required: false
+    type: data
+    schema:
+      type: object
+
+  - name: subaccountId
+    required: false
+    type: data
+    schema:
+      type: string
+
   - name: registryConfig
     type: data
     schema:

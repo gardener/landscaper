@@ -77,6 +77,10 @@ imports:
     kubernetes:
       version: 1.24.6
 
+  subaccountId: abcdef
+  auditPolicy:
+    foo: bar
+
   registryConfig:
     cache:
       useInMemoryOverlay: false
