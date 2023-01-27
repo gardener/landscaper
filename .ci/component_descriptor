@@ -45,7 +45,6 @@ buildComponentArchive "container-deployer"
 buildComponentArchive "helm-deployer"
 buildComponentArchive "manifest-deployer"
 buildComponentArchive "mock-deployer"
-buildComponentArchive "landscaper-service"
 
 # add landscaper component descriptor
 printf "> Create Landscaper ca archive\n"
