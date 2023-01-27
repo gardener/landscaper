@@ -34,7 +34,6 @@
 ## Getting Started
 
 - [Installation and Configuration of Landscaper](gettingstarted/install-landscaper-controller.md)
-- [Landscaper Service](gettingstarted/install-landscaper-service.md)
 
 ## Guided Tour
 
