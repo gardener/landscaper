@@ -69,7 +69,7 @@ Component descriptor in a private registry
 Component descriptor: explain where the path segment "component-descriptor" comes from
 Timeouts
 Import, export
-Subinstallations
+Subinstallations: with subinstallation from separate components and subinstallations with several blueprints in one component
 deploy executions in files
 images listed in a component descriptor
 additional files in blueprint, e.g. for config data
