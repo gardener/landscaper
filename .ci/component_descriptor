@@ -8,10 +8,10 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-echo -n "component-cli is required to generate the component descriptors"
+echo "component-cli is required to generate the component descriptors"
 CLI_PATH="$(mktemp -d)"
 COMP_CLI=${CLI_PATH}/component-cli
-echo -n "Trying to installing component-cli to ${COMP_CLI}"
+echo "Trying to installing component-cli to ${COMP_CLI}"
 curl -L https://github.com/gardener/component-cli/releases/download/v0.48.0/componentcli-linux-amd64.gz | gzip -d > ${COMP_CLI}
 chmod +x ${COMP_CLI}
 
@@ -68,7 +68,7 @@ ${COMP_CLI} ca component-references add ${LS_CA_PATH} \
     VERSION=${VERSION} \
     ${SOURCE_PATH}/.landscaper/component-references.yaml
 
-printf ${LS_CA_PATH}
+cat ${LS_CA_PATH}/component-descriptor.yaml
 
 printf "> Add Landscaper CA to ctf\n"
 ${COMP_CLI} ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
