@@ -57,13 +57,18 @@ buildComponentArchive "mock-deployer"
 printf "> Create Landscaper ca archive\n"
 LS_CA_PATH="$(mktemp -d)"
 cp ${BASE_DEFINITION_PATH} "${LS_CA_PATH}/component-descriptor.yaml"
+
+printf "> add resources\n"
 ${COMP_CLI} ca resources add ${LS_CA_PATH} \
     VERSION=${VERSION} \
     ${SOURCE_PATH}/.landscaper/resources.yaml
 
+printf "> add component references\n"
 ${COMP_CLI} ca component-references add ${LS_CA_PATH} \
     VERSION=${VERSION} \
     ${SOURCE_PATH}/.landscaper/component-references.yaml
+
+printf ${LS_CA_PATH}
 
 printf "> Add Landscaper CA to ctf\n"
 ${COMP_CLI} ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
@@ -71,3 +76,4 @@ ${COMP_CLI} ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
 # also upload the components to a open source repo
 # todo: remove as soon as the default component repository is public
 ${COMP_CLI} ctf push --repo-ctx="eu.gcr.io/gardener-project/development" "${CTF_PATH}"
+
