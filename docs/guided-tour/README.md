@@ -73,6 +73,7 @@ Subinstallations: with subinstallation from separate components and subinstallat
 deploy executions in files
 images listed in a component descriptor
 additional files in blueprint, e.g. for config data
+component descriptor containing a local helm chart
 
 Make use of temp files in the scripts that upload a component descriptor
 -->
