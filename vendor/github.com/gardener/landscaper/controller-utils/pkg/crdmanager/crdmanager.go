@@ -15,7 +15,6 @@ import (
 	apiextinstall "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/install"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -41,14 +40,10 @@ type CRDManager struct {
 
 // NewCrdManager returns a new instance of the CRDManager
 func NewCrdManager(mgr manager.Manager, config config.CrdManagementConfiguration, crdRawDataFS *embed.FS, crdRootDir string) (*CRDManager, error) {
-	apiExtensionsScheme := runtime.NewScheme()
-	apiextinstall.Install(apiExtensionsScheme)
-	kubeClient, err := client.New(mgr.GetConfig(), client.Options{Scheme: apiExtensionsScheme})
-	if err != nil {
-		return nil, fmt.Errorf("failed to setup client to register CRDs: %w", err)
-	}
+	kubeClient := mgr.GetClient()
+	apiextinstall.Install(kubeClient.Scheme())
 
-	if _, err = crdRawDataFS.ReadDir(crdRootDir); err != nil {
+	if _, err := crdRawDataFS.ReadDir(crdRootDir); err != nil {
 		return nil, fmt.Errorf("failed to read from embedded CRDS filesystem: %w", err)
 	}
 
