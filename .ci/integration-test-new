@@ -19,13 +19,13 @@ if ! which git 1>/dev/null; then
   apk add --no-cache --no-progress git
 fi
 
-PR_ID=$(git config -f pull-request-gardener.landscaper-pr.master/.git/config pullrequest.id)
-echo "PR_ID: " $PR_ID
-
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 export SOURCE_PATH
+
+PR_ID=$(git config -f "$SOURCE_PATH/.git/config" pullrequest.id)
+echo "PR_ID: " $PR_ID
 
 GIT_COMMENT=$(git show -s --format=%s)
 echo "git comment: " $GIT_COMMENT
