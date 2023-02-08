@@ -92,12 +92,9 @@ generate: generate-code format revendor generate-docs
 install:
 	@EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) ./hack/install.sh
 
-.PHONY: prepare-docker-builder
-prepare-docker-builder:
+.PHONY: docker-images
+docker-images:
 	@$(REPO_ROOT)/hack/prepare-docker-builder.sh
-
-.PHONY: build-docker-images
-build-docker-images:
 	@echo "Building docker images for version $(EFFECTIVE_VERSION)"
 	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform linux/amd64 -t $(LANDSCAPER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target landscaper-controller .
 	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform linux/amd64 -t $(LANDSCAPER_WEBHOOKS_SERVER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target landscaper-webhooks-server .
@@ -108,9 +105,6 @@ build-docker-images:
 	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform linux/amd64 -t $(HELM_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target helm-deployer-controller .
 	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform linux/amd64 -t $(MANIFEST_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target manifest-deployer-controller .
 	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform linux/amd64 -t $(MOCK_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target mock-deployer-controller .
-
-.PHONY: docker-images
-docker-images: prepare-docker-builder build-docker-images
 
 .PHONY: docker-push
 docker-push:
