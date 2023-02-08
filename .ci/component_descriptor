@@ -8,12 +8,20 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-echo "component-cli is required to generate the component descriptors"
-CLI_PATH="$(mktemp -d)"
-COMP_CLI=${CLI_PATH}/component-cli
-echo "Trying to installing component-cli to ${COMP_CLI}"
-curl -L https://github.com/gardener/component-cli/releases/download/v0.48.0/componentcli-linux-amd64.gz | gzip -d > ${COMP_CLI}
-chmod +x ${COMP_CLI}
+if ! COMP_CLI=$(which component-cli); then
+  echo -n "component-cli is required to generate the component descriptors"
+  echo -n "Trying to installing it..."
+  CLI_PATH="$(mktemp -d)"
+  COMP_CLI=${CLI_PATH}/component-cli
+  curl -L https://github.com/gardener/component-cli/releases/download/$(curl -s https://api.github.com/repos/gardener/component-cli/releases/latest | jq -r '.tag_name')/componentcli-$(go env GOOS)-$(go env GOARCH).gz | gzip -d > ${COMP_CLI}
+  chmod +x ${COMP_CLI}
+
+  if ! which component-cli 1>/dev/null; then
+    echo -n "component-cli was successfully installed but the binary cannot be found"
+    echo -n "Try adding the \$GOPATH/bin to your \$PATH..."
+    exit 1
+  fi
+fi
 
 SOURCE_PATH="$(dirname $0)/.."
 VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
