@@ -19,7 +19,8 @@ While tools like Terraform, Helm or native Kubernetes resources work well in the
 **Work in progress... partial and unfinished documentation ahead!**
 
 ### Start Reading
-- The documentation can be found [here](docs/README.md).
+- The documentation can be found [here](docs/README.md) or you jump directly to the 
+  [Guided Tour](docs/guided-tour).
 - A list of available deployers is maintained [here](docs/deployer).
 - A glossary can be found [here](docs/concepts/Glossary.md)
 - Installation instructions can be found [here](docs/gettingstarted/install-landscaper-controller.md)
