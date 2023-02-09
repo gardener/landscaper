@@ -12,13 +12,6 @@ imports:
     schema:
       $ref: "blueprint://schemas/release.json"
 
-      type: object
-      properties:
-        name:
-          type: string
-        namespace:
-          type: string
-
   - name: text  # "text" is  the name of the import parameter
     type: data
     schema:
