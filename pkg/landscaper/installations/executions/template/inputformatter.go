@@ -32,7 +32,7 @@ func init() {
 // The TemplateInputFormatter formats the input parameter of a template in a human-readable format.
 type TemplateInputFormatter struct {
 	prettyPrint   bool
-	sensitiveKeys sets.String
+	sensitiveKeys sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 }
 
 // NewTemplateInputFormatter creates a new template input formatter.

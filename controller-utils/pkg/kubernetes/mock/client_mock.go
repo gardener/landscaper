@@ -223,7 +223,7 @@ func (m *MockClient) SubResource(arg0 string) client.SubResourceClient {
 // SubResource indicates an unexpected call of SubResource.
 func (mr *MockClientMockRecorder) SubResource(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return  mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubResource", reflect.TypeOf((*MockClient)(nil).SubResource), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubResource", reflect.TypeOf((*MockClient)(nil).SubResource), arg0)
 }
 
 // MockStatusWriter is a mock of StatusWriter interface.

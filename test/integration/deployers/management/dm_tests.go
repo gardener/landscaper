@@ -39,11 +39,10 @@ import (
 func DeployerManagementTests(f *framework.Framework) {
 	ginkgo.Describe("Deployer Management", func() {
 		var (
-			state = f.Register()
-			ctx   context.Context
-
-			previousDeployerRegistrations sets.String
-			previousEnvironments          sets.String
+			state                         = f.Register()
+			ctx                           context.Context
+			previousDeployerRegistrations sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
+			previousEnvironments          sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 		)
 
 		ginkgo.BeforeEach(func() {
@@ -222,7 +221,7 @@ func DeployerManagementTests(f *framework.Framework) {
 			instList := &lsv1alpha1.InstallationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
 			numOfInstallations := len(instList.Items)
-			previousInstallations := sets.String{}
+			previousInstallations := sets.String{} //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 			for _, inst := range instList.Items {
 				previousInstallations.Insert(inst.Name)
 			}

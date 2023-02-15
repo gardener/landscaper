@@ -45,7 +45,7 @@ type defaulterController struct {
 	eventRecorder     record.EventRecorder
 	scheme            *runtime.Scheme
 	config            config.ContextControllerConfig
-	excludeNamespaces sets.String
+	excludeNamespaces sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 }
 
 func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {

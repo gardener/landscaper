@@ -214,7 +214,7 @@ func CreateCluster(ctx context.Context, logger utils.Logger, args CreateClusterA
 	logger.Logln("Successfully created cluster")
 
 	logger.Logln("Get kubeconfig for cluster...")
-	kubeconfigBytes, err := getKubeconfigFromCluster(logger, args.RestConfig, pod)
+	kubeconfigBytes, err := getKubeconfigFromCluster(ctx, logger, args.RestConfig, pod)
 	if err != nil {
 		return fmt.Errorf("unable to read kubeconfig from pod: %w", err)
 	}
@@ -257,13 +257,13 @@ func CreateCluster(ctx context.Context, logger utils.Logger, args CreateClusterA
 	return nil
 }
 
-func getKubeconfigFromCluster(logger utils.Logger, restConfig *rest.Config, pod *corev1.Pod) ([]byte, error) {
+func getKubeconfigFromCluster(ctx context.Context, logger utils.Logger, restConfig *rest.Config, pod *corev1.Pod) ([]byte, error) {
 	var (
 		kubeconfigBytes []byte
 		err             error
 	)
 	pollErr := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) {
-		kubeconfigBytes, err = executeCommandOnPod(logger, restConfig, pod.Name, pod.Namespace, "cluster", "cat /kubeconfig.yaml")
+		kubeconfigBytes, err = executeCommandOnPod(ctx, logger, restConfig, pod.Name, pod.Namespace, "cluster", "cat /kubeconfig.yaml")
 		if err != nil {
 			return false, nil
 		}
@@ -338,7 +338,7 @@ func cleanupPod(ctx context.Context, logger utils.Logger, componentName string, 
 	return nil
 }
 
-func executeCommandOnPod(logger utils.Logger, restConfig *rest.Config, name, namespace, containerName, command string) ([]byte, error) {
+func executeCommandOnPod(ctx context.Context, logger utils.Logger, restConfig *rest.Config, name, namespace, containerName, command string) ([]byte, error) {
 	client, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes client set: %w", err)
@@ -362,7 +362,7 @@ func executeCommandOnPod(logger utils.Logger, restConfig *rest.Config, name, nam
 		return nil, fmt.Errorf("failed to initialized the command exector: %v", err)
 	}
 
-	err = executor.Stream(remotecommand.StreamOptions{
+	err = executor.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  strings.NewReader(command),
 		Stdout: &stdout,
 		Stderr: &stderr,

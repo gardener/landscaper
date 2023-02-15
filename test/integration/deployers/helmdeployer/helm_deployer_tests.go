@@ -348,7 +348,7 @@ func createHelmDeployItem(chartDir string, valuesFile string, name string, targe
 	config := &helmv1alpha1.ProviderConfiguration{
 		Name:           name,
 		Namespace:      target.Namespace,
-		HelmDeployment: pointer.BoolPtr(useHelmDeployment),
+		HelmDeployment: pointer.Bool(useHelmDeployment),
 		Values:         valuesBytes,
 		Chart:          *chartArchive,
 		Exports:        exports,

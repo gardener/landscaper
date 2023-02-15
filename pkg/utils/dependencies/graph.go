@@ -13,11 +13,11 @@ import (
 )
 
 type graph struct {
-	edges map[string]sets.String
+	edges map[string]sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 
 	// alreadyCheckedElements contains elements of which it is already known that they cannot reach a cycle.
 	// The set is initially empty and grows during the algorithm.
-	alreadyCheckedElements sets.String
+	alreadyCheckedElements sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 }
 
 // nodeWithPath stores a node of a graph as well as the path that led to this node.
@@ -36,7 +36,7 @@ func (nwp nodeWithPath) hasVisitedBefore(elem string) bool {
 	return false
 }
 
-func newGraph(edges map[string]sets.String) *graph {
+func newGraph(edges map[string]sets.String) *graph { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	return &graph{
 		edges:                  edges,
 		alreadyCheckedElements: sets.NewString(),

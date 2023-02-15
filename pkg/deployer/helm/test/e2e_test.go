@@ -95,7 +95,7 @@ var _ = Describe("Helm Deployer", func() {
 			string(targettypes.KubernetesClusterTargetType),
 			targettypes.KubernetesClusterTargetConfig{
 				Kubeconfig: targettypes.ValueRef{
-					StrVal: pointer.StringPtr(string(kubeconfigBytes)),
+					StrVal: pointer.String(string(kubeconfigBytes)),
 				},
 			},
 		)

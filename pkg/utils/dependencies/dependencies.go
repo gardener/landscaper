@@ -15,7 +15,7 @@ import (
 )
 
 func FetchPredecessorsFromInstallation(installation *lsv1alpha1.Installation,
-	otherInstallations []*lsv1alpha1.Installation) sets.String {
+	otherInstallations []*lsv1alpha1.Installation) sets.String { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	instNode := newInstallationNodeFromInstallation(installation)
 
 	otherNodes := []*installationNode{}
@@ -34,7 +34,7 @@ func CheckForCyclesAndDuplicateExports(instTemplates []*lsv1alpha1.InstallationT
 		instNodes = append(instNodes, newInstallationNodeFromInstallationTemplate(next))
 	}
 
-	edges := map[string]sets.String{}
+	edges := map[string]sets.String{} //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	for _, next := range instNodes {
 		predecessors, err := next.fetchPredecessors(instNodes)
 		if err != nil {
@@ -94,7 +94,7 @@ func newInstallationNodeFromInstallationTemplate(installation *lsv1alpha1.Instal
 	}
 }
 
-func (r *installationNode) fetchPredecessors(otherNodes []*installationNode) (sets.String, error) {
+func (r *installationNode) fetchPredecessors(otherNodes []*installationNode) (sets.String, error) { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	dataExports, targetExports, hasDuplicateExports := r.getExportMaps(otherNodes)
 
 	if hasDuplicateExports {
@@ -166,9 +166,9 @@ func (r *installationNode) fetchPredecessors(otherNodes []*installationNode) (se
 // getExportMaps returns a mapping from sibling export names to the exporting siblings' names.
 // If for any given key the length of its value (a set) is greater than 1, this means that two or more siblings define the same export.
 // The third returned parameter indicates whether this has happened or not (true in case of duplicate exports).
-func (r *installationNode) getExportMaps(otherNodes []*installationNode) (map[string]sets.String, map[string]sets.String, bool) {
-	dataExports := map[string]sets.String{}
-	targetExports := map[string]sets.String{}
+func (r *installationNode) getExportMaps(otherNodes []*installationNode) (map[string]sets.String, map[string]sets.String, bool) { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
+	dataExports := map[string]sets.String{}   //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
+	targetExports := map[string]sets.String{} //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	hasDuplicateExports := false
 
 	for _, sibling := range otherNodes {
@@ -177,7 +177,7 @@ func (r *installationNode) getExportMaps(otherNodes []*installationNode) (map[st
 			continue
 		}
 		for _, exp := range sibling.exports.Data {
-			var de sets.String
+			var de sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 			var ok bool
 			de, ok = dataExports[exp.DataRef]
 			if !ok {
@@ -190,7 +190,7 @@ func (r *installationNode) getExportMaps(otherNodes []*installationNode) (map[st
 			dataExports[exp.DataRef] = de
 		}
 		for _, exp := range sibling.exports.Targets {
-			var te sets.String
+			var te sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 			var ok bool
 			te, ok = targetExports[exp.Target]
 			if !ok {
