@@ -21,7 +21,9 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/utils/token"
 )
 
 // LandscaperSprigFuncMap returns the sanitized spring function map.
@@ -50,6 +52,8 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"getResources":         getResourcesGoFunc(cd),
 		"getComponent":         getComponentGoFunc(cd, cdList),
 		"getRepositoryContext": getEffectiveRepositoryContextGoFunc,
+
+		"getShootAdminKubeconfig": getShootAdminKubeconfigGoFunc(),
 
 		"generateImageOverwrite": generateImageVectorGoFunc(cd, cdList),
 	}
@@ -280,5 +284,35 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 			panic(err)
 		}
 		return parsedImageVector
+	}
+}
+
+func getShootAdminKubeconfigGoFunc() func(args ...interface{}) string {
+	return func(args ...interface{}) string {
+		if len(args) != 3 {
+			panic("expected 3 arguments: target for garden project, shoot name, shoot namespace")
+		}
+
+		targetObj := args[0]
+		shootName := args[1].(string)
+		shootNamespace := args[2].(string)
+
+		targetBytes, err := json.Marshal(targetObj)
+		if err != nil {
+			panic(fmt.Errorf("expected a target object as 1st argument: error during marshaling: %w", err))
+		}
+
+		target := &v1alpha1.Target{}
+		err = json.Unmarshal(targetBytes, target)
+		if err != nil {
+			panic(fmt.Errorf("expected a target object as 1st argument: error during unmarshaling: %w", err))
+		}
+
+		shootAdminKubeconfig, err := token.GetShootAdminKubeconfigUsingGardenTarget(context.Background(), target, shootName, shootNamespace)
+		if err != nil {
+			panic(err)
+		}
+
+		return shootAdminKubeconfig
 	}
 }
