@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/containerd/containerd v1.6.12
+	github.com/containerd/containerd v1.6.18
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.66
