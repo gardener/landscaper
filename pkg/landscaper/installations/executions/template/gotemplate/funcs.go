@@ -291,32 +291,39 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 	}
 }
 
-func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver) func(args ...interface{}) string {
-	return func(args ...interface{}) string {
+func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver) func(args ...interface{}) (string, error) {
+	return func(args ...interface{}) (string, error) {
 		if len(args) != 3 {
-			panic("expected 3 arguments: target for garden project, shoot name, shoot namespace")
+			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects 3 arguments: shoot name, shoot namespace, and target for garden project ")
 		}
 
-		targetObj := args[0]
-		shootName := args[1].(string)
-		shootNamespace := args[2].(string)
+		shootName, ok := args[0].(string)
+		if !ok {
+			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects a string as 1st argument, namely the shoot name")
+		}
 
+		shootNamespace, ok := args[1].(string)
+		if !ok {
+			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects a string as 2nd argument, namely the shoot namespace")
+		}
+
+		targetObj := args[2]
 		targetBytes, err := json.Marshal(targetObj)
 		if err != nil {
-			panic(fmt.Errorf("expected a target object as 1st argument: error during marshaling: %w", err))
+			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects a target object as 3rd argument: error during marshaling: %w", err)
 		}
 
 		target := &v1alpha1.Target{}
 		err = json.Unmarshal(targetBytes, target)
 		if err != nil {
-			panic(fmt.Errorf("expected a target object as 1st argument: error during unmarshaling: %w", err))
+			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects a target object as 3rd argument: error during unmarshaling: %w", err)
 		}
 
 		shootAdminKubeconfig, err := token.GetShootAdminKubeconfigUsingGardenTarget(context.Background(), target, targetResolver, shootName, shootNamespace)
 		if err != nil {
-			panic(err)
+			return "", err
 		}
 
-		return shootAdminKubeconfig
+		return shootAdminKubeconfig, nil
 	}
 }
