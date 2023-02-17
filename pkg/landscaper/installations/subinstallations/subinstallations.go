@@ -9,30 +9,23 @@ import (
 	"fmt"
 	"reflect"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/gardener/landscaper/pkg/utils/dependencies"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
-
-	"github.com/gardener/landscaper/apis/core/validation"
-
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/core/validation"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
+	"github.com/gardener/landscaper/pkg/utils/dependencies"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.
@@ -201,7 +194,8 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 			KubeClient: o.Client(),
 			Inst:       o.Inst.GetInstallation(),
 		}
-		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
+		targetResolver := secretresolver.New(o.Client())
+		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler, targetResolver), spiff.New(templateStateHandler))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
 				o.Context().External.InjectComponentDescriptorRef(o.Inst.GetInstallation().DeepCopy()),

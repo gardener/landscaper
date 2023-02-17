@@ -13,6 +13,8 @@ import (
 	"strings"
 	gotmpl "text/template"
 
+	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+
 	"github.com/Masterminds/sprig/v3"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
@@ -36,7 +38,9 @@ func LandscaperSprigFuncMap() gotmpl.FuncMap {
 
 // LandscaperTplFuncMap contains all additional landscaper functions that are
 // available in the executors templates.
-func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, blobResolver ctf.BlobResolver) map[string]interface{} {
+func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList,
+	blobResolver ctf.BlobResolver, targetResolver targetresolver.TargetResolver) map[string]interface{} {
+
 	funcs := map[string]interface{}{
 		"readFile": readFileFunc(fs),
 		"readDir":  readDir(fs),
@@ -53,7 +57,7 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"getComponent":         getComponentGoFunc(cd, cdList),
 		"getRepositoryContext": getEffectiveRepositoryContextGoFunc,
 
-		"getShootAdminKubeconfig": getShootAdminKubeconfigGoFunc(),
+		"getShootAdminKubeconfig": getShootAdminKubeconfigGoFunc(targetResolver),
 
 		"generateImageOverwrite": generateImageVectorGoFunc(cd, cdList),
 	}
@@ -287,7 +291,7 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 	}
 }
 
-func getShootAdminKubeconfigGoFunc() func(args ...interface{}) string {
+func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver) func(args ...interface{}) string {
 	return func(args ...interface{}) string {
 		if len(args) != 3 {
 			panic("expected 3 arguments: target for garden project, shoot name, shoot namespace")

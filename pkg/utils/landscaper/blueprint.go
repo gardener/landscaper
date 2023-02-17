@@ -135,7 +135,7 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, 
 
 	templateStateHandler := template.NewMemoryStateHandler()
 	formatter := template.NewTemplateInputFormatter(true)
-	exports, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
+	exports, err := template.New(gotemplate.New(blobResolver, templateStateHandler, nil).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateExportExecutions(template.NewExportExecutionOptions(template.NewBlueprintExecutionOptions(input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList, imports), values))
 
 	if err != nil {
@@ -165,7 +165,7 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 
 	templateStateHandler := template.NewMemoryStateHandler()
 	formatter := template.NewTemplateInputFormatter(true)
-	executions, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
+	executions, err := template.New(gotemplate.New(blobResolver, templateStateHandler, nil).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateDeployExecutions(template.NewDeployExecutionOptions(template.NewBlueprintExecutionOptions(
 			input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList,
 			imports)))
@@ -283,7 +283,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 
 	templateStateHandler := template.NewMemoryStateHandler()
 	formatter := template.NewTemplateInputFormatter(true)
-	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
+	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler, nil).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList,
 				imports)))
