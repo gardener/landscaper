@@ -32,11 +32,11 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
-	"github.com/gardener/landscaper/pkg/deployer/lib/targetresolver"
-	secretresolver "github.com/gardener/landscaper/pkg/deployer/lib/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/version"
 )
 
