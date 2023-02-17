@@ -11,6 +11,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
+	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 )
 
 const (
@@ -19,15 +20,25 @@ const (
 )
 
 // GetShootAdminKubeconfigUsingGardenTarget returns a short-lived admin kubeconfig for the specified shoot as base64 encoded string.
-func GetShootAdminKubeconfigUsingGardenTarget(ctx context.Context, target *v1alpha1.Target, shootName, shootNamespace string) (string, error) {
-	targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-	err := json.Unmarshal(target.Spec.Configuration.RawMessage, targetConfig)
+func GetShootAdminKubeconfigUsingGardenTarget(ctx context.Context,
+	target *v1alpha1.Target, targetResolver targetresolver.TargetResolver,
+	shootName, shootNamespace string) (string, error) {
+
+	resolvedTarget, err := targetResolver.Resolve(ctx, target)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("admin kubeconfig request: could not resolve target: %w", err)
+	}
+
+	targetConfig := &targettypes.KubernetesClusterTargetConfig{}
+	err = json.Unmarshal([]byte(resolvedTarget.Content), targetConfig)
+	if err != nil {
+		return "", fmt.Errorf("admin kubeconfig request: failed to unmarshal target config: %w", err)
+	}
+	if targetConfig.Kubeconfig.StrVal == nil {
+		return "", fmt.Errorf("admin kubeconfig request: target config contains no kubeconfig: %w", err)
 	}
 
 	gardenKubeconfigBytes := []byte(*targetConfig.Kubeconfig.StrVal)
-
 	return getShootAdminKubeconfigUsingGardenKubeconfig(ctx, gardenKubeconfigBytes, shootName, shootNamespace)
 }
 
@@ -35,7 +46,7 @@ func GetShootAdminKubeconfigUsingGardenTarget(ctx context.Context, target *v1alp
 func getShootAdminKubeconfigUsingGardenKubeconfig(ctx context.Context, gardenKubeconfigBytes []byte, shootName, shootNamespace string) (string, error) {
 	shootClient, err := getShootClient(gardenKubeconfigBytes)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("admin kubeconfig request: could not get shoot client: %w", err)
 	}
 
 	return getShootAdminKubeconfigUsingClient(ctx, shootClient, shootName, shootNamespace)
@@ -61,7 +72,7 @@ func getShootAdminKubeconfigUsingClient(ctx context.Context, shootClient dynamic
 	namespacedShootClient := shootClient.Namespace(shootNamespace)
 	result, err := namespacedShootClient.Create(ctx, &adminKubeconfigRequest, metav1.CreateOptions{}, subresourceAdminKubeconfig)
 	if err != nil {
-		return "", fmt.Errorf("admin kubeconfig request failed: %w", err)
+		return "", fmt.Errorf("admin kubeconfig request: request failed: %w", err)
 	}
 
 	shootKubeconfigBase64, found, err := unstructured.NestedString(result.Object, "status", "kubeconfig")

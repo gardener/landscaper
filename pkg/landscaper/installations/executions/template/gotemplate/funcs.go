@@ -312,7 +312,7 @@ func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver)
 			panic(fmt.Errorf("expected a target object as 1st argument: error during unmarshaling: %w", err))
 		}
 
-		shootAdminKubeconfig, err := token.GetShootAdminKubeconfigUsingGardenTarget(context.Background(), target, shootName, shootNamespace)
+		shootAdminKubeconfig, err := token.GetShootAdminKubeconfigUsingGardenTarget(context.Background(), target, targetResolver, shootName, shootNamespace)
 		if err != nil {
 			panic(err)
 		}
