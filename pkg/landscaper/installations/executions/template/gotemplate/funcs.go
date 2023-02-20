@@ -319,11 +319,12 @@ func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver)
 			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects a target object as 3rd argument: error during unmarshaling: %w", err)
 		}
 
-		shootAdminKubeconfig, err := token.GetShootAdminKubeconfigUsingGardenTarget(context.Background(), target, targetResolver, shootName, shootNamespace)
+		ctx := context.Background()
+		shootClient, err := token.NewShootClientFromTarget(ctx, target, targetResolver)
 		if err != nil {
 			return "", err
 		}
 
-		return shootAdminKubeconfig, nil
+		return shootClient.GetShootAdminKubeconfig(ctx, shootName, shootNamespace)
 	}
 }
