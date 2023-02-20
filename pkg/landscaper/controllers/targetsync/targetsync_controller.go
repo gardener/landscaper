@@ -16,7 +16,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -39,6 +38,7 @@ import (
 	kutils "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/utils/token"
 )
 
 // AddControllerToManagerForTargetSyncs adds the controller to the manager
@@ -252,14 +252,14 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 			return errors
 		}
 
-		shootClient, err := c.sourceClientProvider.GetUnstructuredSourceClient(ctx, targetSync, c.targetClient, shootGVR)
+		shootClient, err := c.sourceClientProvider.GetSourceShootClient(ctx, targetSync, c.targetClient)
 		if err != nil {
 			logger.Error(err, "failed to get shoot client for targetsync")
 			errors = append(errors, err)
 			return errors
 		}
 
-		shootList, err := shootClient.List(ctx, metav1.ListOptions{})
+		shootList, err := shootClient.ListShoots(ctx, targetSync.Spec.SourceNamespace)
 		if err != nil {
 			logger.Error(err, "failed to list shoots for targetsync")
 			errors = append(errors, err)
@@ -332,7 +332,7 @@ func (c *TargetSyncController) handleSecret(ctx context.Context, targetSync *lsv
 }
 
 func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1alpha1.TargetSync,
-	shootClient dynamic.ResourceInterface, shoot *unstructured.Unstructured) error {
+	shootClient *token.ShootClient, shoot *unstructured.Unstructured) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targetName := c.deriveTargetNameFromShootName(shoot.GetName())
@@ -344,36 +344,11 @@ func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1
 		return nil
 	}
 
-	adminKubeconfigRequest := unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "authentication.gardener.cloud/v1alpha1",
-			"kind":       "AdminKubeconfigRequest",
-			"metadata": map[string]interface{}{
-				"namespace": shoot.GetNamespace(),
-				"name":      shoot.GetName(),
-			},
-			"spec": map[string]interface{}{
-				"expirationSeconds": kubeconfigExpirationSeconds,
-			},
-		},
-	}
-
-	result, err := shootClient.Create(ctx, &adminKubeconfigRequest, metav1.CreateOptions{}, subresourceAdminkubeconfig)
+	kubeconfig, err := shootClient.GetShootAdminKubeconfig(ctx, shoot.GetName(), shoot.GetNamespace(), kubeconfigExpirationSeconds)
 	if err != nil {
-		msg := "targetsync for shoot failed at adminkubeconfigrequest"
+		msg := "targetsync for shoot failed to get admin kubeconfig"
 		logger.Error(err, msg)
 		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
-	}
-
-	kubeconfig, found, err := unstructured.NestedString(result.Object, "status", "kubeconfig")
-	if err != nil {
-		msg := "targetsync for shoot failed: could not get kubeconfig from adminkubeconfig subresource"
-		logger.Error(err, msg)
-		return fmt.Errorf("%s; target: %s, error: %w", msg, targetName, err)
-	} else if !found {
-		msg := "targetsync for shoot failed: could not find kubeconfig in adminkubeconfig subresource"
-		logger.Error(nil, msg)
-		return fmt.Errorf("%s; target: %s", msg, targetName)
 	}
 
 	err = c.createOrUpdateSecretForShoot(ctx, targetSync, targetName, kubeconfig)

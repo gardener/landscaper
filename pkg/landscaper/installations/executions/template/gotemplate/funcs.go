@@ -28,6 +28,10 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/token"
 )
 
+const (
+	kubeconfigExpirationSeconds = 24 * 60 * 60
+)
+
 // LandscaperSprigFuncMap returns the sanitized spring function map.
 func LandscaperSprigFuncMap() gotmpl.FuncMap {
 	fm := sprig.FuncMap()
@@ -325,6 +329,6 @@ func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver)
 			return "", err
 		}
 
-		return shootClient.GetShootAdminKubeconfig(ctx, shootName, shootNamespace)
+		return shootClient.GetShootAdminKubeconfig(ctx, shootName, shootNamespace, kubeconfigExpirationSeconds)
 	}
 }

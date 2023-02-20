@@ -16,18 +16,13 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 )
 
-const (
-	subresourceAdminKubeconfig  = "adminkubeconfig"
-	kubeconfigExpirationSeconds = 24 * 60 * 60
-)
+const subresourceAdminKubeconfig = "adminkubeconfig"
 
-var (
-	shootGVR = schema.GroupVersionResource{
-		Group:    "core.gardener.cloud",
-		Version:  "v1beta1",
-		Resource: "shoots",
-	}
-)
+var shootGVR = schema.GroupVersionResource{
+	Group:    "core.gardener.cloud",
+	Version:  "v1beta1",
+	Resource: "shoots",
+}
 
 type ShootClient struct {
 	unstructuredClient dynamic.NamespaceableResourceInterface
@@ -74,7 +69,7 @@ func (c *ShootClient) ListShoots(ctx context.Context, shootNamespace string) (*u
 }
 
 // GetShootAdminKubeconfig returns a short-lived admin kubeconfig for the specified shoot as base64 encoded string.
-func (c *ShootClient) GetShootAdminKubeconfig(ctx context.Context, shootName, shootNamespace string) (string, error) {
+func (c *ShootClient) GetShootAdminKubeconfig(ctx context.Context, shootName, shootNamespace string, kubeconfigExpirationSeconds int) (string, error) {
 
 	adminKubeconfigRequest := unstructured.Unstructured{
 		Object: map[string]interface{}{
