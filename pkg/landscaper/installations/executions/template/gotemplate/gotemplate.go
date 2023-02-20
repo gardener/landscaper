@@ -42,7 +42,7 @@ func New(blobResolver ctf.BlobResolver, state lstmpl.GenericStateHandler, target
 	return &Templater{
 		blobResolver:   blobResolver,
 		state:          state,
-		inputFormatter: lstmpl.NewTemplateInputFormatter(false, "imports", "values", "state"),
+		inputFormatter: lstmpl.NewTemplateInputFormatter(false, "imports", "targets", "values", "state"),
 		targetResolver: targetResolver,
 	}
 }
