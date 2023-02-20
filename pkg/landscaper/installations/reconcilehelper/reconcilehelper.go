@@ -143,6 +143,7 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 	return returnAndSetCondition(true), nil
 }
 
+//nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 func (rh *ReconcileHelper) GetPredecessors(installation *lsv1alpha1.Installation, predecessorNames sets.String) (map[string]*installations.InstallationAndImports, error) {
 	predecessorMap := map[string]*installations.InstallationAndImports{}
 
@@ -247,6 +248,7 @@ func (rh *ReconcileHelper) fetchImports() error {
 	return nil
 }
 
+//nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 func (rh *ReconcileHelper) FetchPredecessors() sets.String {
 	inst := rh.Inst.GetInstallation()
 	siblingInsts := []*lsv1alpha1.Installation{}

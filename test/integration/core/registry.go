@@ -526,7 +526,7 @@ func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f 
 	helmInput := input.BlobInput{
 		Type:             input.DirInputType,
 		Path:             helmChartDir,
-		CompressWithGzip: pointer.BoolPtr(true),
+		CompressWithGzip: pointer.Bool(true),
 	}
 	blob, err := helmInput.Read(ctx, osfs.New(), "")
 	utils.ExpectNoError(err)
@@ -543,7 +543,7 @@ func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f 
 		Type:             input.DirInputType,
 		Path:             blueprintDir,
 		MediaType:        mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String(),
-		CompressWithGzip: pointer.BoolPtr(true),
+		CompressWithGzip: pointer.Bool(true),
 	}
 	blob, err = blueprintInput.Read(ctx, osfs.New(), "")
 	utils.ExpectNoError(err)
@@ -604,7 +604,7 @@ func buildAndUploadComponentDescriptorsWithBlueprints(ctx context.Context, f *fr
 			Type:             input.DirInputType,
 			Path:             cdd.blueprintDir,
 			MediaType:        mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String(),
-			CompressWithGzip: pointer.BoolPtr(true),
+			CompressWithGzip: pointer.Bool(true),
 		}
 		blob, err := blueprintInput.Read(ctx, osfs.New(), "")
 		utils.ExpectNoError(err)

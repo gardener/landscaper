@@ -157,7 +157,7 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 
 	config := targettypes.KubernetesClusterTargetConfig{
 		Kubeconfig: targettypes.ValueRef{
-			StrVal: pointer.StringPtr(string(data)),
+			StrVal: pointer.String(string(data)),
 		},
 	}
 	data, err = json.Marshal(config)
@@ -357,7 +357,7 @@ func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Envir
 		string(targettypes.KubernetesClusterTargetType),
 		targettypes.KubernetesClusterTargetConfig{
 			Kubeconfig: targettypes.ValueRef{
-				StrVal: pointer.StringPtr(string(kubeconfigBytes)),
+				StrVal: pointer.String(string(kubeconfigBytes)),
 			},
 		},
 	)

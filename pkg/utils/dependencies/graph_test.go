@@ -21,7 +21,7 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 	Context("DetermineCyclicDependencies", func() {
 
 		It("should not detect cyclic dependencies if there aren't any", func() {
-			deps := map[string]sets.String{
+			deps := map[string]sets.String{ //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 				"c": sets.NewString().Insert("b"),
 				"b": sets.NewString().Insert("a"),
 				"a": sets.NewString(),
@@ -33,7 +33,7 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 		})
 
 		It("should detect simple cyclic dependencies", func() {
-			deps := map[string]sets.String{
+			deps := map[string]sets.String{ //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 				"c": sets.NewString().Insert("b"),
 				"b": sets.NewString().Insert("a"),
 				"a": sets.NewString().Insert("c"),
@@ -45,7 +45,7 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 		})
 
 		It("should detect one-elemented cyclic dependencies", func() {
-			deps := map[string]sets.String{
+			deps := map[string]sets.String{ //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 				"a": sets.NewString().Insert("a"),
 			}
 
@@ -55,7 +55,7 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 		})
 
 		It("should detect multiple independent cycles", func() {
-			deps := map[string]sets.String{
+			deps := map[string]sets.String{ //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 				"d": sets.NewString().Insert("c"),
 				"c": sets.NewString().Insert("d"),
 				"b": sets.NewString().Insert("a"),
@@ -68,7 +68,7 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 		})
 
 		It("should detect multiple connected cycles", func() {
-			deps := map[string]sets.String{
+			deps := map[string]sets.String{ //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 				"b": sets.NewString().Insert("a"),
 				"a": sets.NewString().Insert("d"),
 				"d": sets.NewString().Insert("c"),
@@ -82,7 +82,7 @@ var _ = Describe("Cyclic Dependency Determination Tests", func() {
 		})
 
 		It("should order the graph correctly according to its edges", func() {
-			deps := map[string]sets.String{
+			deps := map[string]sets.String{ //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 				"a": sets.NewString().Insert("c"),
 				"b": sets.NewString().Insert("f", "e"),
 				"c": sets.NewString().Insert("d", "e"),

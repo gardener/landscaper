@@ -333,9 +333,9 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 	pod.Labels[container.ContainerDeployerDeployItemGenerationLabel] = strconv.Itoa(int(opts.DeployItemGeneration))
 	pod.Finalizers = []string{container.ContainerDeployerFinalizer}
 
-	pod.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
+	pod.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 	pod.Spec.RestartPolicy = corev1.RestartPolicyNever
-	pod.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(300)
+	pod.Spec.TerminationGracePeriodSeconds = pointer.Int64(300)
 	pod.Spec.Volumes = volumes
 	pod.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser:  pointer.Int64(1000),

@@ -33,7 +33,7 @@ import (
 type Dumper struct {
 	kubeClient    client.Client
 	kubeClientSet kubernetes.Interface
-	namespaces    sets.String
+	namespaces    sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	lsNamespace   string
 	logger        utils.Logger
 	startTime     time.Time

@@ -20,7 +20,7 @@ const conflictModifierFormatString = "%s_conflict(%d)"
 // and replace them to avoid conflicts.
 type KeyConflictPreventionLayer struct {
 	logr.LogSink
-	keys sets.String
+	keys sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 }
 
 // PreventKeyConflicts takes a logr.Logger and wraps a KeyConflictPreventionLayer around its LogSink.

@@ -191,7 +191,7 @@ func BuildKubernetesTarget(target *lsv1alpha1.Target, restConfig *rest.Config) e
 
 	config := targettypes.KubernetesClusterTargetConfig{
 		Kubeconfig: targettypes.ValueRef{
-			StrVal: pointer.StringPtr(string(data)),
+			StrVal: pointer.String(string(data)),
 		},
 	}
 	data, err = json.Marshal(config)
