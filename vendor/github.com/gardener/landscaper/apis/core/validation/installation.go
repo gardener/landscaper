@@ -98,7 +98,7 @@ func ValidateInstallationImports(imports core.InstallationImports, fldPath *fiel
 }
 
 // ValidateInstallationDataImports validates the data imports of an Installation
-func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
+func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	allErrs := field.ErrorList{}
 
 	for idx, imp := range imports {
@@ -128,7 +128,7 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 }
 
 // ValidateInstallationTargetImports validates the target imports of an Installation
-func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
+func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	allErrs := field.ErrorList{}
 
 	for idx, imp := range imports {

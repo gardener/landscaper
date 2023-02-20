@@ -86,10 +86,10 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 // SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.
 func SetDefaults_CrdManagementConfiguration(obj *CrdManagementConfiguration) {
 	if obj.DeployCustomResourceDefinitions == nil {
-		obj.DeployCustomResourceDefinitions = pointer.BoolPtr(true)
+		obj.DeployCustomResourceDefinitions = pointer.Bool(true)
 	}
 	if obj.ForceUpdate == nil {
-		obj.ForceUpdate = pointer.BoolPtr(true)
+		obj.ForceUpdate = pointer.Bool(true)
 	}
 }
 

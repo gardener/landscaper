@@ -34,7 +34,7 @@ func SetDefaults_DefinitionImport(imports *ImportDefinitionList) {
 	for i := 0; i < len(*imports); i++ {
 		imp := &(*imports)[i]
 		if imp.Required == nil {
-			imp.Required = pointer.BoolPtr(true)
+			imp.Required = pointer.Bool(true)
 		}
 		SetDefaults_DefinitionImport(&imp.ConditionalImports)
 		if imp.Schema != nil && len(imp.TargetType) != 0 {

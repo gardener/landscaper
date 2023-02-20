@@ -75,7 +75,7 @@ func ValidateDeployItemTemplateList(fldPath *field.Path, list core.DeployItemTem
 // 1. a list of Cycle objects, representing found cyclic dependencies
 // 2. a list of UndefinedDeployItemReference objects, representing found dependencies to undefined deploy items
 // 3. a set of all deploy item templates (referenced by name) that have already been checked (necessary to avoid finding the same cycle multiple times)
-func getCyclesAndUndefinedDependencies(list core.DeployItemTemplateList, index int, visited visitedList, done sets.String) ([]Cycle, []UndefinedDeployItemReference, sets.String) {
+func getCyclesAndUndefinedDependencies(list core.DeployItemTemplateList, index int, visited visitedList, done sets.String) ([]Cycle, []UndefinedDeployItemReference, sets.String) { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	current := list[index]
 	cycles := []Cycle{}
 	undefined := []UndefinedDeployItemReference{}
