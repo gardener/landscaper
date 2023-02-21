@@ -338,34 +338,39 @@ func getServiceAccountTokenGoFunc(targetResolver targetresolver.TargetResolver) 
 	return func(args ...interface{}) (string, error) {
 		if len(args) != 4 {
 			return "", fmt.Errorf("templating function getServiceAccountToken expects 4 arguments: " +
-				"service account name, service account namespace, duration, and target")
+				"service account name, service account namespace, expiration seconds, and target")
 		}
 
 		serviceAccountName, ok := args[0].(string)
 		if !ok {
-			return "", fmt.Errorf("templating function getServiceAccountToken expects a string as 1st argument, namely the service account name")
+			return "", fmt.Errorf("templating function getServiceAccountToken expects a string as 1st argument, " +
+				"namely the service account name")
 		}
 
 		serviceAccountNamespace, ok := args[1].(string)
 		if !ok {
-			return "", fmt.Errorf("templating function getServiceAccountToken expects a string as 2nd argument, namely the service account namespace")
+			return "", fmt.Errorf("templating function getServiceAccountToken expects a string as 2nd argument, " +
+				"namely the service account namespace")
 		}
 
 		expirationSeconds, ok := args[2].(int)
 		if !ok {
-			return "", fmt.Errorf("templating function getServiceAccountToken expects an integer as 3rd argument, namely the expiration seconds")
+			return "", fmt.Errorf("templating function getServiceAccountToken expects an integer as 3rd argument, " +
+				"namely the expiration seconds")
 		}
 
 		targetObj := args[3]
 		targetBytes, err := json.Marshal(targetObj)
 		if err != nil {
-			return "", fmt.Errorf("templating function getServiceAccountToken expects a target object as 4th argument: error during marshaling: %w", err)
+			return "", fmt.Errorf("templating function getServiceAccountToken expects a target object as 4th argument: "+
+				"error during marshaling: %w", err)
 		}
 
 		target := &v1alpha1.Target{}
 		err = json.Unmarshal(targetBytes, target)
 		if err != nil {
-			return "", fmt.Errorf("templating function getServiceAccountToken expects a target object as 4th argument: error during unmarshaling: %w", err)
+			return "", fmt.Errorf("templating function getServiceAccountToken expects a target object as 4th argument: "+
+				"error during unmarshaling: %w", err)
 		}
 
 		ctx := context.Background()
