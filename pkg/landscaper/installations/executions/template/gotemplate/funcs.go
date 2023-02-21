@@ -351,7 +351,7 @@ func getServiceAccountTokenGoFunc(targetResolver targetresolver.TargetResolver) 
 			return "", fmt.Errorf("templating function getServiceAccountToken expects a string as 2nd argument, namely the service account namespace")
 		}
 
-		expirationSeconds, ok := args[2].(int64)
+		expirationSeconds, ok := args[2].(int)
 		if !ok {
 			return "", fmt.Errorf("templating function getServiceAccountToken expects an integer as 3rd argument, namely the expiration seconds")
 		}
@@ -374,6 +374,7 @@ func getServiceAccountTokenGoFunc(targetResolver targetresolver.TargetResolver) 
 			return "", err
 		}
 
-		return tokenClient.GetServiceAccountToken(ctx, serviceAccountName, serviceAccountNamespace, expirationSeconds)
+		expirationSeconds64 := int64(expirationSeconds)
+		return tokenClient.GetServiceAccountToken(ctx, serviceAccountName, serviceAccountNamespace, expirationSeconds64)
 	}
 }
