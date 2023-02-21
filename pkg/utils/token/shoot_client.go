@@ -31,12 +31,12 @@ type ShootClient struct {
 func NewShootClient(gardenKubeconfigBytes []byte) (*ShootClient, error) {
 	restConfig, err := clientcmd.RESTConfigFromKubeConfig(gardenKubeconfigBytes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get rest config: %w", err)
+		return nil, fmt.Errorf("shoot client: unable to get rest config: %w", err)
 	}
 
 	cl, err := dynamic.NewForConfig(restConfig)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create shoot client: %w", err)
+		return nil, fmt.Errorf("shoot client: unable to create dynamic client: %w", err)
 	}
 
 	return &ShootClient{

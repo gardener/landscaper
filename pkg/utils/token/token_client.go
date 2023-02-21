@@ -64,10 +64,10 @@ func (c *TokenClient) GetServiceAccountToken(ctx context.Context, serviceAccount
 		},
 	}
 
-	tokenRequest, err := c.clientset.CoreV1().ServiceAccounts(serviceAccountNamespace).CreateToken(ctx,
-		serviceAccountName, tokenRequest, metav1.CreateOptions{})
+	serviceAccountClient := c.clientset.CoreV1().ServiceAccounts(serviceAccountNamespace)
+	tokenRequest, err := serviceAccountClient.CreateToken(ctx, serviceAccountName, tokenRequest, metav1.CreateOptions{})
 	if err != nil {
-		return "", fmt.Errorf("token client: failed to fetch token: %w", err)
+		return "", fmt.Errorf("token client: token request failed: %w", err)
 	}
 
 	return tokenRequest.Status.Token, nil
