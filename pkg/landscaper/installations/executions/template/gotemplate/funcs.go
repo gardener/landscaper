@@ -62,6 +62,7 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"getRepositoryContext": getEffectiveRepositoryContextGoFunc,
 
 		"getShootAdminKubeconfig": getShootAdminKubeconfigGoFunc(targetResolver),
+		"getServiceAccountToken":  getServiceAccountTokenGoFunc(targetResolver),
 
 		"generateImageOverwrite": generateImageVectorGoFunc(cd, cdList),
 	}
@@ -330,5 +331,49 @@ func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver)
 		}
 
 		return shootClient.GetShootAdminKubeconfig(ctx, shootName, shootNamespace, kubeconfigExpirationSeconds)
+	}
+}
+
+func getServiceAccountTokenGoFunc(targetResolver targetresolver.TargetResolver) func(args ...interface{}) (string, error) {
+	return func(args ...interface{}) (string, error) {
+		if len(args) != 4 {
+			return "", fmt.Errorf("templating function getServiceAccountToken expects 4 arguments: " +
+				"service account name, service account namespace, duration, and target")
+		}
+
+		serviceAccountName, ok := args[0].(string)
+		if !ok {
+			return "", fmt.Errorf("templating function getServiceAccountToken expects a string as 1st argument, namely the service account name")
+		}
+
+		serviceAccountNamespace, ok := args[1].(string)
+		if !ok {
+			return "", fmt.Errorf("templating function getServiceAccountToken expects a string as 2nd argument, namely the service account namespace")
+		}
+
+		expirationSeconds, ok := args[2].(int64)
+		if !ok {
+			return "", fmt.Errorf("templating function getServiceAccountToken expects an integer as 3rd argument, namely the expiration seconds")
+		}
+
+		targetObj := args[3]
+		targetBytes, err := json.Marshal(targetObj)
+		if err != nil {
+			return "", fmt.Errorf("templating function getServiceAccountToken expects a target object as 4th argument: error during marshaling: %w", err)
+		}
+
+		target := &v1alpha1.Target{}
+		err = json.Unmarshal(targetBytes, target)
+		if err != nil {
+			return "", fmt.Errorf("templating function getServiceAccountToken expects a target object as 4th argument: error during unmarshaling: %w", err)
+		}
+
+		ctx := context.Background()
+		tokenClient, err := token.NewTokenClientFromTarget(ctx, target, targetResolver)
+		if err != nil {
+			return "", err
+		}
+
+		return tokenClient.GetServiceAccountToken(ctx, serviceAccountName, serviceAccountNamespace, expirationSeconds)
 	}
 }
