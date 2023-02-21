@@ -9,27 +9,25 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
+	"github.com/mandelsoft/spiff/spiffing"
+	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
-
-	"github.com/mandelsoft/spiff/spiffing"
-	spiffyaml "github.com/mandelsoft/spiff/yaml"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 // Constructor is a struct that contains all values
@@ -81,7 +79,8 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		KubeClient: c.Client(),
 		Inst:       c.Inst.GetInstallation(),
 	}
-	exports, err := template.New(gotemplate.New(c.BlobResolver, stateHdlr), spiff.New(stateHdlr)).
+	targetResolver := secretresolver.New(c.Client())
+	exports, err := template.New(gotemplate.New(c.BlobResolver, stateHdlr, targetResolver), spiff.New(stateHdlr)).
 		TemplateExportExecutions(template.NewExportExecutionOptions(template.NewBlueprintExecutionOptions(
 			c.Inst.GetInstallation(), c.Inst.GetBlueprint(), c.ComponentDescriptor, c.ResolvedComponentDescriptorList, c.Inst.GetImports()),
 			internalExports))

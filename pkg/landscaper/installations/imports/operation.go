@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 const (
@@ -43,7 +43,8 @@ func (o *ImportOperation) Ensure(ctx context.Context, inst *installations.Instal
 		KubeClient: o.Client(),
 		Inst:       inst.GetInstallation(),
 	}
-	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
+	targetResolver := secretresolver.New(o.Client())
+	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler, targetResolver), spiff.New(templateStateHandler))
 	errors, bindings, err := tmpl.TemplateImportExecutions(
 		template.NewBlueprintExecutionOptions(
 			o.Context().External.InjectComponentDescriptorRef(inst.GetInstallation()),

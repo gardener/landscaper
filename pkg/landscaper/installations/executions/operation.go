@@ -25,6 +25,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 const (
@@ -59,7 +60,8 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 		KubeClient: o.Client(),
 		Inst:       inst.GetInstallation(),
 	}
-	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
+	targetResolver := secretresolver.New(o.Client())
+	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler, targetResolver), spiff.New(templateStateHandler))
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(

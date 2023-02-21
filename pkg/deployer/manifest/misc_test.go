@@ -26,8 +26,8 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	secretresolver "github.com/gardener/landscaper/pkg/deployer/lib/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )

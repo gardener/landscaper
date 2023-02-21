@@ -11,6 +11,8 @@ import (
 	"fmt"
 	gotmpl "text/template"
 
+	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -32,14 +34,16 @@ type Templater struct {
 	blobResolver   ctf.BlobResolver
 	state          lstmpl.GenericStateHandler
 	inputFormatter *lstmpl.TemplateInputFormatter
+	targetResolver targetresolver.TargetResolver
 }
 
 // New creates a new go template execution templater.
-func New(blobResolver ctf.BlobResolver, state lstmpl.GenericStateHandler) *Templater {
+func New(blobResolver ctf.BlobResolver, state lstmpl.GenericStateHandler, targetResolver targetresolver.TargetResolver) *Templater {
 	return &Templater{
 		blobResolver:   blobResolver,
 		state:          state,
-		inputFormatter: lstmpl.NewTemplateInputFormatter(false, "imports", "values", "state"),
+		inputFormatter: lstmpl.NewTemplateInputFormatter(false, "imports", "targets", "values", "state"),
+		targetResolver: targetResolver,
 	}
 }
 
@@ -55,9 +59,11 @@ type TemplateExecution struct {
 	includedNames map[string]int
 }
 
-func NewTemplateExecution(blueprint *blueprints.Blueprint, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, blobResolver ctf.BlobResolver) *TemplateExecution {
+func NewTemplateExecution(blueprint *blueprints.Blueprint, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList,
+	blobResolver ctf.BlobResolver, targetResolver targetresolver.TargetResolver) *TemplateExecution {
+
 	t := &TemplateExecution{
-		funcMap:       LandscaperTplFuncMap(blueprint.Fs, cd, cdList, blobResolver),
+		funcMap:       LandscaperTplFuncMap(blueprint.Fs, cd, cdList, blobResolver, targetResolver),
 		blueprint:     blueprint,
 		includedNames: map[string]int{},
 	}
@@ -110,7 +116,7 @@ func (t Templater) Type() lsv1alpha1.TemplateType {
 }
 
 func (t *Templater) TemplateExecution(rawTemplate string, blueprint *blueprints.Blueprint, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) ([]byte, error) {
-	te := NewTemplateExecution(blueprint, cd, cdList, t.blobResolver)
+	te := NewTemplateExecution(blueprint, cd, cdList, t.blobResolver, t.targetResolver)
 	return te.Execute(rawTemplate, values)
 }
 
