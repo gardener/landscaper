@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -9,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/utils/pointer"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -17,7 +19,8 @@ import (
 )
 
 type TokenClient struct {
-	clientset *kubernetes.Clientset
+	kubeconfig []byte
+	clientset  *kubernetes.Clientset
 }
 
 func NewTokenClient(kubeconfigBytes []byte) (*TokenClient, error) {
@@ -32,7 +35,8 @@ func NewTokenClient(kubeconfigBytes []byte) (*TokenClient, error) {
 	}
 
 	return &TokenClient{
-		clientset: clientset,
+		kubeconfig: kubeconfigBytes,
+		clientset:  clientset,
 	}, nil
 }
 
@@ -71,4 +75,52 @@ func (c *TokenClient) GetServiceAccountToken(ctx context.Context, serviceAccount
 	}
 
 	return tokenRequest.Status.Token, nil
+}
+
+func (c *TokenClient) GetServiceAccountKubeconfig(ctx context.Context, serviceAccountName, serviceAccountNamespace string,
+	expirationSeconds int64) (string, error) {
+
+	token, err := c.GetServiceAccountToken(ctx, serviceAccountName, serviceAccountNamespace, expirationSeconds)
+	if err != nil {
+		return "", err
+	}
+
+	config, err := clientcmd.Load(c.kubeconfig)
+	if err != nil {
+		return "", fmt.Errorf("token client: failed to load config: %w", err)
+	}
+
+	context, ok := config.Contexts[config.CurrentContext]
+	if !ok || context == nil {
+		return "", fmt.Errorf("token client: current context not found: %w", err)
+	}
+
+	context.AuthInfo = serviceAccountName
+	config.Contexts = map[string]*api.Context{
+		config.CurrentContext: context,
+	}
+
+	config.AuthInfos = map[string]*api.AuthInfo{
+		serviceAccountName: &api.AuthInfo{
+			Token: token,
+		},
+	}
+
+	cluster, ok := config.Clusters[context.Cluster]
+	if !ok || context == nil {
+		return "", fmt.Errorf("token client: current cluster not found: %w", err)
+	}
+
+	config.Clusters = map[string]*api.Cluster{
+		context.Cluster: cluster,
+	}
+
+	serviceAccountKubeconfig, err := clientcmd.Write(*config)
+	if err != nil {
+		return "", fmt.Errorf("token client: failed to write config: %w", err)
+	}
+
+	serviceAccountKubeconfig64 := base64.StdEncoding.EncodeToString(serviceAccountKubeconfig)
+
+	return serviceAccountKubeconfig64, nil
 }
