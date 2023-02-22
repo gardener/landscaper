@@ -12,7 +12,24 @@ echo "component-cli is required to generate the component descriptors"
 CLI_PATH="$(mktemp -d)"
 COMP_CLI=${CLI_PATH}/component-cli
 echo "Trying to installing component-cli to ${COMP_CLI}"
-curl -L https://github.com/gardener/component-cli/releases/download/v0.48.0/componentcli-$(go env GOOS)-$(go env GOARCH).gz | gzip -d > ${COMP_CLI}
+OS="$(uname -o | awk '{print tolower($0)}')"
+ARCH="$(uname -m | awk '{print tolower($0)}')"
+
+if [[ ${OS} == *"linux"* ]]; then
+  OS="linux"
+fi
+if [[ ${OS} == *"darwin"* ]]; then
+  OS="darwin"
+fi
+
+if [[ ${ARCH} == *"x86_64"* ]]; then
+  ARCH="amd64"
+fi
+if [[ ${ARCH} == *"arm64"* ]]; then
+  ARCH="arm64"
+fi
+
+curl -L https://github.com/gardener/component-cli/releases/download/v0.48.0/componentcli-${OS}-${ARCH}.gz | gzip -d > ${COMP_CLI}
 chmod +x ${COMP_CLI}
 
 SOURCE_PATH="$(dirname $0)/.."
