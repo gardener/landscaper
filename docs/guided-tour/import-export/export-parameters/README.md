@@ -144,8 +144,10 @@ exports:
       dataRef: <name of a DataObject in which the value will be stored>
 ```
 
-For more details, see [Installations: Exports][5].
+An important point with respect to the fields `target` and `dataRef` is that these should contain a valid name for
+a k8s object. Otherwise, the Landsaper creates a hash for the name of the k8s object containing the export data. 
 
+For more details, see [Installations: Exports][5].
 
 The following diagram shows the linkages between Blueprint, Installation and DataObject, that we have discussed:
 
