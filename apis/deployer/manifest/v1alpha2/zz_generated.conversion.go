@@ -13,14 +13,13 @@ package v1alpha2
 import (
 	unsafe "unsafe"
 
-	conversion "k8s.io/apimachinery/pkg/conversion"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-
 	core "github.com/gardener/landscaper/apis/core"
 	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	managedresource "github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+	conversion "k8s.io/apimachinery/pkg/conversion"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 func init() {
