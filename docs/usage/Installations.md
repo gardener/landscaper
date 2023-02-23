@@ -103,7 +103,7 @@ spec:
   exports:
     data:
     - name: "" # logical internal name
-      dataRef: "" # reference a contextified data object or a global dataobject with a '#' prefix.
+      dataRef: "" # reference a contextified data object or a global dataobject.
 #      secretRef: # reference a secret
 #        name: ""
 #        namespace: ""
@@ -114,7 +114,7 @@ spec:
 #        key: ""
     targets:
     - name: "" # logical internal name
-      target: "" # reference a contextified target or a global taret with a '#' prefix.
+      target: "" # reference a contextified target or a global target.
 
 status:
   phase: Init | ObjectsCreated | Progressing | Completing | Succeeded | Failed | InitDelete | TriggerDelete | Deleting | DeleteFailed
@@ -525,10 +525,7 @@ They are defined by the following fields:
   
 _DataObjects_ are the internal format of the landscaper for its data flow,
 therefore they are [scoped](#scopes) by default and can also be referenced directly
-by their name. To reference a _DataObject_ by its global name directly,
-prefix the `dataRef` with `#` (deprecated). This way it is possible for nested 
-installations to access global data. Because this violates the contract of
-the blueprint, this feature is deprecated.
+by their name.
 
 
 **Example**
@@ -716,9 +713,9 @@ An export declaration uses the following fields:
 
 - **`dataRef`** *string*
 
-  This field can be used to specify the name of a _DataObject_ in the parent [scope](#scopes) 
-  of an installation that should be created. For top-level installations the name
-  must comply to the Kubernetes rules for object names.
+  This field can be used to specify the name of a _DataObject_ in the parent [scope](#scopes) of an installation that 
+  should be created. For top-level installations the name should comply to the Kubernetes rules for object names, 
+  otherwise the Landscaper creates a hash for the name of the k8s object containing the export data.
 
 Export to secrets or configmaps are not possible.
 
