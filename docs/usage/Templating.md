@@ -156,6 +156,61 @@ The following additional functions are available:
    type: ociRegistry
    imageReference: host:5000/myrepo/myimage:1.0.0
    ```
+  
+- **`getShootAdminKubeconfig(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+  returns a temporary admin kubeconfig for a Gardener Shoot cluster as described 
+  [here](https://github.com/gardener/gardener/blob/master/docs/usage/shoot_access.md#shootsadminkubeconfig-subresource). 
+  The kubeconfig is returned as base64 encoded string.  
+
+  Arguments:
+  - `shootName` the name of the shoot cluster  
+  - `shootNamespace` the namespace of the Gardener project to which the Shoot belongs: `garden-<PROJECT NAME>`  
+  - `expirationSeconds` the number of seconds after which the kubeconfig expires.  
+  - `target` a Target that contains a kubeconfig for the Gardener project to which the Shoot belongs.  
+
+  Here is an example of an export execution that uses the `getShootAdminKubeconfig` function. 
+  ```yaml
+  export-execution.yaml: |
+    exports:
+      {{- $kubeconfig := getShootAdminKubeconfig .imports.shootName .imports.shootNamespace 86400 .imports.gardenerServiceAccount | b64dec }}
+      shootAdminKubeconfig: |
+        {{- nindent 4 $kubeconfig }}
+      shootAdminTarget:
+        type: landscaper.gardener.cloud/kubernetes-cluster
+        config:
+          kubeconfig: |
+            {{- nindent 8 $kubeconfig }}
+  ```
+  It constructs two export values: `shootAdminKubeconfig` returns the kubeconfig as string, and `shootAdminTarget` 
+  returns the kubeconfig wrapped in a Target. You can find the full example 
+  [here](https://github.com/gardener/landscaper-examples/tree/master/manifest-deployer/shoot-admin-kubeconfig).  
+
+- **`getServiceAccountKubeconfig(serviceAccountName, serviceAccountNamespace string, expirationSeconds int, target Target): string`**
+  returns a kubeconfig for a cluster. The kubeconfig will contain a token obtained by a 
+  [token request](https://kubernetes.io/docs/reference/kubernetes-api/authentication-resources/token-request-v1/) 
+  for the specified ServiceAccount. The kubeconfig is returned as base64 encoded string.
+
+  Arguments:
+  - `serviceAccountName` the name of the ServiceAccount  
+  - `serviceAccountNamespace` the namespace of the ServiceAccount  
+  - `expirationSeconds` the number of seconds after which the kubeconfig expires.  
+  - `target` a Target that contains a kubeconfig for the cluster.  
+
+  Example:
+  ```yaml
+  export-execution.yaml: |
+    exports:
+      {{- $kubeconfig := getServiceAccountKubeconfig .imports.serviceAccountName .imports.serviceAccountNamespace 7776000 .imports.cluster | b64dec }}
+      serviceAccountKubeconfig: |
+        {{- nindent 4 $kubeconfig }}
+      serviceAccountTarget:
+        type: landscaper.gardener.cloud/kubernetes-cluster
+        config:
+          kubeconfig: |
+            {{- nindent 8 $kubeconfig }}
+  ```
+  You can find the full example
+  [here](https://github.com/gardener/landscaper-examples/tree/master/manifest-deployer/service-account-kubeconfig).
 
 
 ##### State
