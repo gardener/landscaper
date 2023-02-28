@@ -54,26 +54,3 @@ In this tour, you will learn about the different Landscaper features by simple e
 [12. Import Data Mappings](./import-export/import-data-mappings)
 
 [13. Export Parameters](./import-export/export-parameters)
-
-
-<!--
-Delete without uninstall
-automatic reconcile
-reconcile updateOnChangeOnly
-Reuse scenario: deploy a blueprint to multiple targets (or target list)
-Reuse scenario: upgrade of the component in several Installations
-Pull secrets for helm chart repo (with and without secret ref)
-Pull secret in context to access a protected oci registry
-Helm chart in a private OCI registry, and the difference to a private Helm chart repo
-Component descriptor in a private registry
-Component descriptor: explain where the path segment "component-descriptor" comes from
-Timeouts
-Import, export
-Subinstallations: with subinstallation from separate components and subinstallations with several blueprints in one component
-deploy executions in files
-images listed in a component descriptor
-additional files in blueprint, e.g. for config data
-component descriptor containing a local helm chart
-
-Make use of temp files in the scripts that upload a component descriptor
--->
