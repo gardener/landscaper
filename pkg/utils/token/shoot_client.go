@@ -69,7 +69,7 @@ func (c *ShootClient) ListShoots(ctx context.Context, shootNamespace string) (*u
 }
 
 // GetShootAdminKubeconfig returns a short-lived admin kubeconfig for the specified shoot as base64 encoded string.
-func (c *ShootClient) GetShootAdminKubeconfig(ctx context.Context, shootName, shootNamespace string, kubeconfigExpirationSeconds int) (string, error) {
+func (c *ShootClient) GetShootAdminKubeconfig(ctx context.Context, shootName, shootNamespace string, kubeconfigExpirationSeconds int64) (string, error) {
 
 	adminKubeconfigRequest := unstructured.Unstructured{
 		Object: map[string]interface{}{

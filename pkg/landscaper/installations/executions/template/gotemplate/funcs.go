@@ -308,9 +308,9 @@ func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver)
 			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects a string as 2nd argument, namely the shoot namespace")
 		}
 
-		expirationSeconds, ok := args[2].(int)
-		if !ok {
-			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects an integer as 3rd argument, namely the expiration seconds")
+		expirationSeconds, err := toInt64(args[2])
+		if err != nil {
+			return "", fmt.Errorf("templating function getShootAdminKubeconfig expects an integer as 3rd argument, namely the expiration seconds: %w", err)
 		}
 
 		targetObj := args[3]
@@ -351,9 +351,9 @@ func getServiceAccountKubeconfigGoFunc(targetResolver targetresolver.TargetResol
 			return "", fmt.Errorf("templating function getServiceAccountToken expects a string as 2nd argument, namely the service account namespace")
 		}
 
-		expirationSeconds, ok := args[2].(int)
-		if !ok {
-			return "", fmt.Errorf("templating function getServiceAccountToken expects an integer as 3rd argument, namely the expiration seconds")
+		expirationSeconds, err := toInt64(args[2])
+		if err != nil {
+			return "", fmt.Errorf("templating function getServiceAccountToken expects an integer as 3rd argument, namely the expiration seconds: %w", err)
 		}
 
 		targetObj := args[3]
@@ -374,8 +374,7 @@ func getServiceAccountKubeconfigGoFunc(targetResolver targetresolver.TargetResol
 			return "", err
 		}
 
-		expirationSeconds64 := int64(expirationSeconds)
-		return tokenClient.GetServiceAccountKubeconfig(ctx, serviceAccountName, serviceAccountNamespace, expirationSeconds64)
+		return tokenClient.GetServiceAccountKubeconfig(ctx, serviceAccountName, serviceAccountNamespace, expirationSeconds)
 	}
 }
 
@@ -409,5 +408,26 @@ func getOidcKubeconfigGoFunc(targetResolver targetresolver.TargetResolver) func(
 
 		ctx := context.Background()
 		return token.BuildOIDCKubeconfig(ctx, issuerURL, clientID, target, targetResolver)
+	}
+}
+
+func toInt64(value interface{}) (int64, error) {
+	switch n := value.(type) {
+	case int64:
+		return n, nil
+	case int32:
+		return int64(n), nil
+	case int16:
+		return int64(n), nil
+	case int8:
+		return int64(n), nil
+	case int:
+		return int64(n), nil
+	case float64:
+		return int64(n), nil
+	case float32:
+		return int64(n), nil
+	default:
+		return 0, fmt.Errorf("unsupported type %T", value)
 	}
 }
