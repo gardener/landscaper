@@ -109,7 +109,10 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 }
 
 func (con *controller) isPickupTimeoutExceeded(di *lsv1alpha1.DeployItem) (bool, *time.Duration) {
-	waitingForPickupDuration := time.Since(di.Status.JobIDGenerationTime.Time)
+	waitingForPickupDuration := time.Duration(0)
+	if di.Status.JobIDGenerationTime != nil {
+		waitingForPickupDuration = time.Since(di.Status.JobIDGenerationTime.Time)
+	}
 	if waitingForPickupDuration >= con.pickupTimeout {
 		return true, nil
 	}
