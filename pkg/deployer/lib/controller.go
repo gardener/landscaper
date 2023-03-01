@@ -215,6 +215,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			}
 
 			// initialize deployitem for reconcile
+			logger.Debug("Setting deployitem to phase 'Init'", "updateOnChangeOnly", di.Spec.UpdateOnChangeOnly, lc.KeyGeneration, di.GetGeneration(), lc.KeyObservedGeneration, di.Status.ObservedGeneration, lc.KeyDeployItemPhase, di.Status.Phase)
 			di.Status.Phase = lsv1alpha1.DeployItemPhases.Init
 			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
 				return reconcile.Result{}, err
