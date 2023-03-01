@@ -182,7 +182,8 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
 	}
 
-	if lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation) {
+	testReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
+	if testReconcileAnnotation {
 
 		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
 			return reconcile.Result{}, err
@@ -207,10 +208,10 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		if di.DeletionTimestamp.IsZero() {
 			if di.Spec.UpdateOnChangeOnly &&
 				di.GetGeneration() == di.Status.ObservedGeneration &&
-				di.Status.Phase == lsv1alpha1.DeployItemPhases.Succeeded {
+				di.Status.Phase == lsv1alpha1.DeployItemPhases.Succeeded &&
+				!testReconcileAnnotation {
 
 				// deployitem is unchanged and succeeded, and no reconcile desired in this case
-				c.updateDiValuesForNewReconcile(ctx, di)
 				return reconcile.Result{}, c.handleReconcileResult(ctx, nil, old, di)
 			}
 
