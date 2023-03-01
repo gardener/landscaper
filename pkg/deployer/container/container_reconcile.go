@@ -82,7 +82,6 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	}
 
 	if c.shouldRunNewPod(ctx, pod) {
-		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Init
 		operationName := "DeployPod"
 
 		// before we start syncing lets read the current deploy item from the server
