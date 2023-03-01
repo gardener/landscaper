@@ -82,7 +82,6 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	}
 
 	if c.shouldRunNewPod(ctx, pod) {
-		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Init
 		operationName := "DeployPod"
 
 		// before we start syncing lets read the current deploy item from the server
@@ -188,9 +187,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			return lserrors.NewWrappedError(err,
 				operationName, "SyncExport", err.Error())
 		}
-		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
-	}
-	if pod.Status.Phase == corev1.PodFailed {
+	} else if pod.Status.Phase == corev1.PodFailed {
 		lsv1alpha1helper.SetDeployItemToFailed(c.DeployItem)
 	}
 
