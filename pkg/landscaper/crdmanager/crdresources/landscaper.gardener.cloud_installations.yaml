@@ -474,11 +474,7 @@ spec:
                                 that holds the data.
                               type: string
                             name:
-                              description: Name is the name of the kubernetes object.
-                              type: string
-                            namespace:
-                              description: Namespace is the namespace of kubernetes
-                                object.
+                              description: Name is the name of the configmap
                               type: string
                           required:
                           - name
@@ -501,11 +497,7 @@ spec:
                                 that holds the data.
                               type: string
                             name:
-                              description: Name is the name of the kubernetes object.
-                              type: string
-                            namespace:
-                              description: Namespace is the namespace of kubernetes
-                                object.
+                              description: Name is the name of the secret
                               type: string
                           required:
                           - name

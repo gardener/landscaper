@@ -13,11 +13,12 @@ SPDX-License-Identifier: Apache-2.0
 package openapi
 
 import (
-	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	common "k8s.io/kube-openapi/pkg/common"
 	spec "k8s.io/kube-openapi/pkg/validation/spec"
+
+	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {

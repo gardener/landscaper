@@ -14,14 +14,15 @@ import (
 	json "encoding/json"
 	unsafe "unsafe"
 
+	conversion "k8s.io/apimachinery/pkg/conversion"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+
 	config "github.com/gardener/landscaper/apis/config"
 	core "github.com/gardener/landscaper/apis/core"
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helm "github.com/gardener/landscaper/apis/deployer/helm"
 	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	managedresource "github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-	conversion "k8s.io/apimachinery/pkg/conversion"
-	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 func init() {

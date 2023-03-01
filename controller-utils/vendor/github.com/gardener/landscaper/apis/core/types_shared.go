@@ -306,6 +306,15 @@ type ConfigMapReference struct {
 	Key string `json:"key"`
 }
 
+// LocalConfigMapReference is a reference to data in a configmap.
+type LocalConfigMapReference struct {
+	// Name is the name of the configmap
+	Name string `json:"name"`
+	// Key is the name of the key in the configmap that holds the data.
+	// +optional
+	Key string `json:"key"`
+}
+
 // ComponentDescriptorKind is the kind of a component descriptor.
 // It can be a component or a resource.
 type ComponentDescriptorKind string
