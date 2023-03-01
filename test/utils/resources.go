@@ -275,19 +275,6 @@ func GetTargetConfiguration(target *lsv1alpha1.Target, config interface{}) {
 	ExpectNoError(json.Unmarshal(target.Spec.Configuration.RawMessage, config))
 }
 
-func SetInstallationNamespace(inst *lsv1alpha1.Installation, namespace string) {
-	inst.Namespace = namespace
-	for i := range inst.Spec.Imports.Data {
-		data := &inst.Spec.Imports.Data[i]
-		if data.ConfigMapRef != nil {
-			data.ConfigMapRef.Namespace = namespace
-		}
-		if data.SecretRef != nil {
-			data.SecretRef.Namespace = namespace
-		}
-	}
-}
-
 // BuildContainerDeployItem builds a new deploy item of type container.
 func BuildContainerDeployItem(configuration *containerv1alpha1.ProviderConfiguration) *lsv1alpha1.DeployItem {
 	di, err := container.NewDeployItemBuilder().

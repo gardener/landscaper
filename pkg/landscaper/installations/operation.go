@@ -221,9 +221,11 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 		if len(def.DataRef) != 0 {
 			importStatus.DataRef = def.DataRef
 		} else if def.SecretRef != nil {
-			importStatus.SecretRef = fmt.Sprintf("%s#%s", def.SecretRef.NamespacedName().String(), def.SecretRef.Key)
+			secretRef := lsutil.SecretRefFromLocalRef(def.SecretRef, o.Inst.GetInstallation().Namespace)
+			importStatus.SecretRef = fmt.Sprintf("%s#%s", secretRef.NamespacedName().String(), secretRef.Key)
 		} else if def.ConfigMapRef != nil {
-			importStatus.ConfigMapRef = fmt.Sprintf("%s#%s", def.ConfigMapRef.NamespacedName().String(), def.ConfigMapRef.Key)
+			configMapRef := lsutil.ConfigMapRefFromLocalRef(def.ConfigMapRef, o.Inst.GetInstallation().Namespace)
+			importStatus.ConfigMapRef = fmt.Sprintf("%s#%s", configMapRef.NamespacedName().String(), configMapRef.Key)
 		}
 
 		o.Inst.ImportStatus().Update(importStatus)

@@ -62,7 +62,7 @@ func CreateInstallationFromFile(ctx context.Context, state *envtest.State, inst 
 	if err := ReadResourceFromFile(inst, path); err != nil {
 		return err
 	}
-	SetInstallationNamespace(inst, state.Namespace)
+	inst.Namespace = state.Namespace
 	if err := state.Create(ctx, inst); err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func UpdateInstallationFromFile(ctx context.Context, state *envtest.State, inst 
 	if err := ReadResourceFromFile(inst, path); err != nil {
 		return err
 	}
-	SetInstallationNamespace(inst, state.Namespace)
+	inst.Namespace = state.Namespace
 	inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
 	return state.Update(ctx, inst)
 }

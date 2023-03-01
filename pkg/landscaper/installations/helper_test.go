@@ -122,12 +122,9 @@ var _ = Describe("helper", func() {
 
 			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
 				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      cm.Name,
-						Namespace: cm.Namespace,
-					},
-					Key: "key1",
+				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+					Name: cm.Name,
+					Key:  "key1",
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -148,12 +145,9 @@ var _ = Describe("helper", func() {
 
 			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
 				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      cm.Name,
-						Namespace: cm.Namespace,
-					},
-					Key: "key1",
+				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+					Name: cm.Name,
+					Key:  "key1",
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -178,12 +172,9 @@ var _ = Describe("helper", func() {
 
 			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
 				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      cm.Name,
-						Namespace: cm.Namespace,
-					},
-					Key: "",
+				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+					Name: cm.Name,
+					Key:  "",
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -217,12 +208,9 @@ var _ = Describe("helper", func() {
 
 			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
 				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      cm.Name,
-						Namespace: cm.Namespace,
-					},
-					Key: "",
+				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+					Name: cm.Name,
+					Key:  "",
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -252,12 +240,9 @@ var _ = Describe("helper", func() {
 
 			_, _, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
 				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      cm.Name,
-						Namespace: cm.Namespace,
-					},
-					Key: "key2",
+				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+					Name: cm.Name,
+					Key:  "key2",
 				},
 			})
 			Expect(err).To(HaveOccurred())
@@ -276,12 +261,9 @@ var _ = Describe("helper", func() {
 
 			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
 				Name: "imp",
-				SecretRef: &lsv1alpha1.SecretReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      secret.Name,
-						Namespace: secret.Namespace,
-					},
-					Key: "key1",
+				SecretRef: &lsv1alpha1.LocalSecretReference{
+					Name: secret.Name,
+					Key:  "key1",
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -306,12 +288,9 @@ var _ = Describe("helper", func() {
 
 			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
 				Name: "imp",
-				SecretRef: &lsv1alpha1.SecretReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      secret.Name,
-						Namespace: secret.Namespace,
-					},
-					Key: "",
+				SecretRef: &lsv1alpha1.LocalSecretReference{
+					Name: secret.Name,
+					Key:  "",
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -341,12 +320,9 @@ var _ = Describe("helper", func() {
 
 			_, _, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
 				Name: "imp",
-				SecretRef: &lsv1alpha1.SecretReference{
-					ObjectReference: lsv1alpha1.ObjectReference{
-						Name:      secret.Name,
-						Namespace: secret.Namespace,
-					},
-					Key: "key2",
+				SecretRef: &lsv1alpha1.LocalSecretReference{
+					Name: secret.Name,
+					Key:  "key2",
 				},
 			})
 			Expect(err).To(HaveOccurred())
