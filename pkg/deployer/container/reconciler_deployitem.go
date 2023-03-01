@@ -73,6 +73,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 	if err != nil {
 		return err
 	}
+	ctx = logging.NewContext(ctx, d.log)
 	return containerOp.Reconcile(ctx, container.OperationReconcile)
 }
 
@@ -81,6 +82,7 @@ func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv
 	if err != nil {
 		return err
 	}
+	ctx = logging.NewContext(ctx, d.log)
 	return containerOp.Delete(ctx)
 }
 

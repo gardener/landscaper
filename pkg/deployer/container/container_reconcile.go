@@ -81,7 +81,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 	}
 
-	if c.shouldRunNewPod(pod) {
+	if c.shouldRunNewPod(ctx, pod) {
 		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Init
 		operationName := "DeployPod"
 
@@ -227,10 +227,12 @@ func (c *Container) collectAndSetPodStatus(pod *corev1.Pod) error {
 	return nil
 }
 
-func (c *Container) shouldRunNewPod(pod *corev1.Pod) bool {
+func (c *Container) shouldRunNewPod(ctx context.Context, pod *corev1.Pod) bool {
 	// if there is already a pod we need to be sure that the current observed generation is not already run.
+	genString := ""
 	if pod != nil {
-		if genString, ok := pod.Annotations[container.ContainerDeployerDeployItemGenerationLabel]; ok {
+		ok := false
+		if genString, ok = pod.Labels[container.ContainerDeployerDeployItemGenerationLabel]; ok {
 			gen, err := strconv.Atoi(genString)
 			if err == nil {
 				if int64(gen) == c.DeployItem.Generation {
@@ -241,6 +243,8 @@ func (c *Container) shouldRunNewPod(pod *corev1.Pod) bool {
 	}
 	// HandleAnnotationsAndGeneration will set the phase to init if either the generation changed or a ReconcileAnnotation is present
 	if c.DeployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Init {
+		logger, _ := logging.FromContextOrNew(ctx, nil)
+		logger.Debug("New pod required", "podExists", pod != nil, "podGenerationLabel", genString, lc.KeyDeployItemPhase, c.DeployItem.Status.Phase)
 		return true
 	}
 	return false
