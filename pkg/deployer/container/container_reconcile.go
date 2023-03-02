@@ -16,6 +16,7 @@ import (
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/deployer/lib"
@@ -49,6 +50,7 @@ import (
 // todo: do retries on failure: difference between main container failure and init/wait container failure
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
 	pod, err := c.getPod(ctx)
+	logger := logging.FromContextOrDiscard(ctx)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return lserrors.NewWrappedError(err,
 			"Reconcile", "FetchRunningPod", err.Error())
@@ -59,7 +61,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	// do nothing if the pod is still running
 	if pod != nil {
 		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
-			if err := c.collectAndSetPodStatus(pod); err != nil {
+			if err := c.collectAndSetPodStatus(pod, false); err != nil {
 				return lserrors.NewWrappedError(err,
 					"Reconcile", "UpdatePodStatus", err.Error())
 			}
@@ -153,7 +155,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 		// update status
 		c.ProviderStatus.LastOperation = string(operation)
-		if err := c.collectAndSetPodStatus(pod); err != nil {
+		if err := c.collectAndSetPodStatus(pod, false); err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "UpdatePodStatus", err.Error())
 		}
@@ -177,42 +179,44 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		return nil
 	}
 
-	if pod == nil {
-		return nil
-	}
 	operationName := "Complete"
-
-	if pod.Status.Phase == corev1.PodSucceeded {
-		if err := c.SyncExport(ctx); err != nil {
-			return lserrors.NewWrappedError(err,
-				operationName, "SyncExport", err.Error())
+	if pod != nil {
+		podSucceeded := pod.Status.Phase == corev1.PodSucceeded
+		if podSucceeded {
+			if err := c.SyncExport(ctx); err != nil {
+				return lserrors.NewWrappedError(err,
+					operationName, "SyncExport", err.Error())
+			}
+		} else if pod.Status.Phase == corev1.PodFailed {
+			lsv1alpha1helper.SetDeployItemToFailed(c.DeployItem)
 		}
-	} else if pod.Status.Phase == corev1.PodFailed {
-		lsv1alpha1helper.SetDeployItemToFailed(c.DeployItem)
-	}
 
-	c.ProviderStatus.LastOperation = string(operation)
-	if err := c.collectAndSetPodStatus(pod); err != nil {
-		return lserrors.NewWrappedError(err,
-			"Reconcile", "UpdatePodStatus", err.Error())
-	}
+		c.ProviderStatus.LastOperation = string(operation)
+		if err := c.collectAndSetPodStatus(pod, podSucceeded); err != nil {
+			return lserrors.NewWrappedError(err,
+				"Reconcile", "UpdatePodStatus", err.Error())
+		}
 
-	if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000066, c.DeployItem); err != nil {
-		return lserrors.NewWrappedError(err,
-			operationName, "UpdateDeployItemStatus", err.Error())
+		// only remove the finalizer if we get the status of the pod
+		if err := c.CleanupPod(ctx, pod); err != nil {
+			return err
+		}
 	}
-
-	// only remove the finalizer if we get the status of the pod
-	if err := c.CleanupPod(ctx, pod); err != nil {
-		return err
+	if c.ProviderStatus != nil && c.ProviderStatus.PodStatus != nil && c.ProviderStatus.PodStatus.LastSuccessfulJobID != nil && *c.ProviderStatus.PodStatus.LastSuccessfulJobID == c.DeployItem.Status.JobID {
+		logger.Debug("Setting phase to 'Succeeded', because pod was seen successfully finished for current jobID", lc.KeyJobID, c.DeployItem.Status.JobID)
+		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 	}
 	return nil
 }
 
 // collectAndSetPodStatus the pod status and updates the container provider status
-func (c *Container) collectAndSetPodStatus(pod *corev1.Pod) error {
+func (c *Container) collectAndSetPodStatus(pod *corev1.Pod, updateLastSuccessfulJobID bool) error {
 	c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
-	if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
+	var jobID *string
+	if updateLastSuccessfulJobID {
+		jobID = pointer.String(c.DeployItem.Status.JobID)
+	}
+	if err := setStatusFromPod(pod, c.ProviderStatus, jobID); err != nil {
 		return err
 	}
 
@@ -238,22 +242,33 @@ func (c *Container) shouldRunNewPod(ctx context.Context, pod *corev1.Pod) bool {
 			}
 		}
 	}
-	// HandleAnnotationsAndGeneration will set the phase to init if either the generation changed or a ReconcileAnnotation is present
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	if c.ProviderStatus != nil && c.ProviderStatus.PodStatus != nil && c.ProviderStatus.PodStatus.LastSuccessfulJobID != nil && *c.ProviderStatus.PodStatus.LastSuccessfulJobID == c.DeployItem.Status.JobID {
+		logger.Debug("No new pod required, pod for current JobID has successfully finished", lc.KeyJobID, c.DeployItem.Status.JobID, lc.KeyJobIDFinished, c.DeployItem.Status.JobIDFinished)
+		return false
+	}
 	if c.DeployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Init {
-		logger, _ := logging.FromContextOrNew(ctx, nil)
-		logger.Debug("New pod required", "podExists", pod != nil, "podGenerationLabel", genString, lc.KeyDeployItemPhase, c.DeployItem.Status.Phase)
+		var lsji *string
+		if c.ProviderStatus != nil && c.ProviderStatus.PodStatus != nil {
+			lsji = c.ProviderStatus.PodStatus.LastSuccessfulJobID
+		}
+		logger.Debug("New pod required", "podExists", pod != nil, "podGenerationLabel", genString, lc.KeyDeployItemPhase, c.DeployItem.Status.Phase, "podStatusLastSuccessfulJobID", lsji)
 		return true
 	}
 	return false
 }
 
-func setStatusFromPod(pod *corev1.Pod, providerStatus *containerv1alpha1.ProviderStatus) error {
+func setStatusFromPod(pod *corev1.Pod, providerStatus *containerv1alpha1.ProviderStatus, currentJobID *string) error {
 	podStatus := &containerv1alpha1.PodStatus{
 		PodName: pod.Name,
 		LastRun: &pod.CreationTimestamp,
 	}
 	if providerStatus.PodStatus != nil {
 		podStatus = providerStatus.PodStatus
+	}
+
+	if currentJobID != nil {
+		podStatus.LastSuccessfulJobID = currentJobID
 	}
 
 	if mainContainerStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName); err == nil {
