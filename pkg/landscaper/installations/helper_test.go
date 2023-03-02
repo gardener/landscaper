@@ -10,14 +10,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -120,13 +120,20 @@ var _ = Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
-				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
-					Name: cm.Name,
-					Key:  "key1",
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "",
+				installations.NewInstallationAndImports(&lsv1alpha1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: cm.Namespace,
+					},
+				}),
+				lsv1alpha1.DataImport{
+					Name: "imp",
+					ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+						Name: cm.Name,
+						Key:  "key1",
+					},
 				},
-			})
+			)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner).To(BeNil())
 			Expect(do.Data).To(Equal("val1"))
@@ -143,13 +150,20 @@ var _ = Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
-				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
-					Name: cm.Name,
-					Key:  "key1",
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "",
+				installations.NewInstallationAndImports(&lsv1alpha1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: cm.Namespace,
+					},
+				}),
+				lsv1alpha1.DataImport{
+					Name: "imp",
+					ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+						Name: cm.Name,
+						Key:  "key1",
+					},
 				},
-			})
+			)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner).To(BeNil())
 			Expect(do.Data).To(Equal("val1"))
@@ -170,13 +184,20 @@ var _ = Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
-				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
-					Name: cm.Name,
-					Key:  "",
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "",
+				installations.NewInstallationAndImports(&lsv1alpha1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: cm.Namespace,
+					},
+				}),
+				lsv1alpha1.DataImport{
+					Name: "imp",
+					ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+						Name: cm.Name,
+						Key:  "",
+					},
 				},
-			})
+			)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner).To(BeNil())
 
@@ -206,13 +227,20 @@ var _ = Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
-				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
-					Name: cm.Name,
-					Key:  "",
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "",
+				installations.NewInstallationAndImports(&lsv1alpha1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: cm.Namespace,
+					},
+				}),
+				lsv1alpha1.DataImport{
+					Name: "imp",
+					ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+						Name: cm.Name,
+						Key:  "",
+					},
 				},
-			})
+			)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner).To(BeNil())
 
@@ -238,13 +266,20 @@ var _ = Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			_, _, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
-				Name: "imp",
-				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
-					Name: cm.Name,
-					Key:  "key2",
+			_, _, err := installations.GetDataImport(ctx, kubeClient, "",
+				installations.NewInstallationAndImports(&lsv1alpha1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: cm.Namespace,
+					},
+				}),
+				lsv1alpha1.DataImport{
+					Name: "imp",
+					ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+						Name: cm.Name,
+						Key:  "key2",
+					},
 				},
-			})
+			)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -259,13 +294,20 @@ var _ = Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
 
-			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
-				Name: "imp",
-				SecretRef: &lsv1alpha1.LocalSecretReference{
-					Name: secret.Name,
-					Key:  "key1",
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "",
+				installations.NewInstallationAndImports(&lsv1alpha1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: secret.Namespace,
+					},
+				}),
+				lsv1alpha1.DataImport{
+					Name: "imp",
+					SecretRef: &lsv1alpha1.LocalSecretReference{
+						Name: secret.Name,
+						Key:  "key1",
+					},
 				},
-			})
+			)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner).To(BeNil())
 			Expect(do.Data).To(Equal("val1"))
@@ -286,13 +328,20 @@ var _ = Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
 
-			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
-				Name: "imp",
-				SecretRef: &lsv1alpha1.LocalSecretReference{
-					Name: secret.Name,
-					Key:  "",
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "",
+				installations.NewInstallationAndImports(&lsv1alpha1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: secret.Namespace,
+					},
+				}),
+				lsv1alpha1.DataImport{
+					Name: "imp",
+					SecretRef: &lsv1alpha1.LocalSecretReference{
+						Name: secret.Name,
+						Key:  "",
+					},
 				},
-			})
+			)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner).To(BeNil())
 
@@ -318,13 +367,20 @@ var _ = Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
 
-			_, _, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationAndImports{}, lsv1alpha1.DataImport{
-				Name: "imp",
-				SecretRef: &lsv1alpha1.LocalSecretReference{
-					Name: secret.Name,
-					Key:  "key2",
+			_, _, err := installations.GetDataImport(ctx, kubeClient, "",
+				installations.NewInstallationAndImports(&lsv1alpha1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: secret.Namespace,
+					},
+				}),
+				lsv1alpha1.DataImport{
+					Name: "imp",
+					SecretRef: &lsv1alpha1.LocalSecretReference{
+						Name: secret.Name,
+						Key:  "key2",
+					},
 				},
-			})
+			)
 			Expect(err).To(HaveOccurred())
 		})
 
