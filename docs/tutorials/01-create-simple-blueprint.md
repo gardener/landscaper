@@ -513,7 +513,6 @@ imports:
     configMapRef:
       key: "namespace"
       name: "my-imports" # name of the configmap;
-      # namespace: default # the namespace will be defaulted to the namespace of the installation.
 
 ```
 
