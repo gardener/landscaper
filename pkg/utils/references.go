@@ -42,6 +42,16 @@ func StringMapToRawMessageMap(m map[string]string) (map[string]json.RawMessage, 
 	return n, nil
 }
 
+func SecretRefFromLocalRef(localSecretRef *lsv1alpha1.LocalSecretReference, namespace string) *lsv1alpha1.SecretReference {
+	return &lsv1alpha1.SecretReference{
+		ObjectReference: lsv1alpha1.ObjectReference{
+			Name:      localSecretRef.Name,
+			Namespace: namespace,
+		},
+		Key: localSecretRef.Key,
+	}
+}
+
 // ResolveSecretReference is an auxiliary function that fetches the content of a secret as specified by the given SecretReference
 // The first returned value is the complete secret content, the second one the specified key (if set), the third one is the generation of the secret
 func ResolveSecretReference(ctx context.Context, kubeClient client.Client, secretRef *lsv1alpha1.SecretReference) (map[string][]byte, []byte, int64, error) {
@@ -74,6 +84,16 @@ func ResolveSecretReference(ctx context.Context, kubeClient client.Client, secre
 	}
 
 	return completeData, data, secret.Generation, nil
+}
+
+func ConfigMapRefFromLocalRef(localConfigMapRef *lsv1alpha1.LocalConfigMapReference, namespace string) *lsv1alpha1.ConfigMapReference {
+	return &lsv1alpha1.ConfigMapReference{
+		ObjectReference: lsv1alpha1.ObjectReference{
+			Name:      localConfigMapRef.Name,
+			Namespace: namespace,
+		},
+		Key: localConfigMapRef.Key,
+	}
 }
 
 // ResolveConfigMapReference is an auxiliary function that fetches the content of a configmap as specified by the given ConfigMapReference

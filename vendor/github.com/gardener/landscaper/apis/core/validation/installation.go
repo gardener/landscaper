@@ -107,11 +107,11 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 		allErrs = append(allErrs, ValidateExactlyOneOf(impPath, imp, "DataRef", "SecretRef", "ConfigMapRef")...)
 
 		if imp.SecretRef != nil {
-			allErrs = append(allErrs, ValidateSecretReference(*imp.SecretRef, impPath.Child("secretRef"))...)
+			allErrs = append(allErrs, ValidateLocalSecretReference(*imp.SecretRef, impPath.Child("secretRef"))...)
 		}
 
 		if imp.ConfigMapRef != nil {
-			allErrs = append(allErrs, ValidateConfigMapReference(*imp.ConfigMapRef, impPath.Child("configMapRef"))...)
+			allErrs = append(allErrs, ValidateLocalConfigMapReference(*imp.ConfigMapRef, impPath.Child("configMapRef"))...)
 		}
 
 		if imp.Name == "" {
@@ -232,16 +232,20 @@ func ValidateObjectReferenceList(orl []core.ObjectReference, fldPath *field.Path
 	return allErrs
 }
 
-// ValidateSecretReference validates that the secret reference is valid
-func ValidateSecretReference(sr core.SecretReference, fldPath *field.Path) field.ErrorList {
+// ValidateLocalSecretReference validates that the local secret reference is valid
+func ValidateLocalSecretReference(sr core.LocalSecretReference, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, ValidateObjectReference(sr.ObjectReference, fldPath)...)
+	if sr.Name == "" {
+		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "name must not be empty"))
+	}
 	return allErrs
 }
 
-// ValidateConfigMapReference validates that the secret reference is valid
-func ValidateConfigMapReference(cmr core.ConfigMapReference, fldPath *field.Path) field.ErrorList {
+// ValidateLocalConfigMapReference validates that the local configmap reference is valid
+func ValidateLocalConfigMapReference(cmr core.LocalConfigMapReference, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, ValidateObjectReference(cmr.ObjectReference, fldPath)...)
+	if cmr.Name == "" {
+		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "name must not be empty"))
+	}
 	return allErrs
 }

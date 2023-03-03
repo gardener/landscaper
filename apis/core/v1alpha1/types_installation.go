@@ -306,12 +306,12 @@ type DataImport struct {
 	// SecretRef defines a data reference from a secret.
 	// This method is not allowed in installation templates.
 	// +optional
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
+	SecretRef *LocalSecretReference `json:"secretRef,omitempty"`
 
 	// ConfigMapRef defines a data reference from a configmap.
 	// This method is not allowed in installation templates.
 	// +optional
-	ConfigMapRef *ConfigMapReference `json:"configMapRef,omitempty"`
+	ConfigMapRef *LocalConfigMapReference `json:"configMapRef,omitempty"`
 }
 
 // DataExport is a data object export.

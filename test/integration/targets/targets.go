@@ -214,7 +214,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld))
 			inst = &lsv1alpha1.Installation{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-root-1", "installation-1.yaml")))
-			utils.SetInstallationNamespace(inst, state.Namespace)
+			inst.Namespace = state.Namespace
 			inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
 			utils.ExpectNoError(state.Update(ctx, inst))
 

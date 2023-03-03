@@ -143,7 +143,8 @@ func GetDataImport(ctx context.Context,
 		}
 	}
 	if dataImport.SecretRef != nil {
-		_, data, gen, err := lsutils.ResolveSecretReference(ctx, kubeClient, dataImport.SecretRef)
+		secretRef := lsutils.SecretRefFromLocalRef(dataImport.SecretRef, inst.GetInstallation().GetNamespace())
+		_, data, gen, err := lsutils.ResolveSecretReference(ctx, kubeClient, secretRef)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -153,7 +154,8 @@ func GetDataImport(ctx context.Context,
 		rawDataObject.SetGeneration(gen)
 	}
 	if dataImport.ConfigMapRef != nil {
-		_, data, gen, err := lsutils.ResolveConfigMapReference(ctx, kubeClient, dataImport.ConfigMapRef)
+		configMapRef := lsutils.ConfigMapRefFromLocalRef(dataImport.ConfigMapRef, inst.GetInstallation().GetNamespace())
+		_, data, gen, err := lsutils.ResolveConfigMapReference(ctx, kubeClient, configMapRef)
 		if err != nil {
 			return nil, nil, err
 		}

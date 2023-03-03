@@ -89,20 +89,6 @@ func SetDefaults_Installation(obj *Installation) {
 	if len(obj.Spec.Context) == 0 {
 		obj.Spec.Context = DefaultContextName
 	}
-
-	// default the namespace of imports
-	for i, dataImport := range obj.Spec.Imports.Data {
-		if dataImport.ConfigMapRef != nil {
-			if len(dataImport.ConfigMapRef.Namespace) == 0 {
-				obj.Spec.Imports.Data[i].ConfigMapRef.Namespace = obj.GetNamespace()
-			}
-		}
-		if dataImport.SecretRef != nil {
-			if len(dataImport.SecretRef.Namespace) == 0 {
-				obj.Spec.Imports.Data[i].SecretRef.Namespace = obj.GetNamespace()
-			}
-		}
-	}
 }
 
 // SetDefaults_Execution sets default values for Execution objects

@@ -214,22 +214,16 @@ var _ = Describe("Installation", func() {
 					},
 					{
 						Name: "bar",
-						SecretRef: &core.SecretReference{
-							ObjectReference: core.ObjectReference{
-								Name:      "mysecret",
-								Namespace: "default",
-							},
-							Key: "config",
+						SecretRef: &core.LocalSecretReference{
+							Name: "mysecret",
+							Key:  "config",
 						},
 					},
 					{
 						Name: "foobar",
-						ConfigMapRef: &core.ConfigMapReference{
-							ObjectReference: core.ObjectReference{
-								Name:      "myconfigmap",
-								Namespace: "default",
-							},
-							Key: "config",
+						ConfigMapRef: &core.LocalConfigMapReference{
+							Name: "myconfigmap",
+							Key:  "config",
 						},
 					},
 				},
@@ -416,7 +410,7 @@ var _ = Describe("Installation", func() {
 				Data: []core.DataImport{
 					{
 						Name:      "imp",
-						SecretRef: &core.SecretReference{},
+						SecretRef: &core.LocalSecretReference{},
 					},
 				},
 			}
@@ -426,10 +420,6 @@ var _ = Describe("Installation", func() {
 				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("imports.data[0].secretRef.name"),
 			}))))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("imports.data[0].secretRef.namespace"),
-			}))))
 		})
 
 		It("should fail if secret imports contain empty values", func() {
@@ -437,7 +427,7 @@ var _ = Describe("Installation", func() {
 				Data: []core.DataImport{
 					{
 						Name:         "imp",
-						ConfigMapRef: &core.ConfigMapReference{},
+						ConfigMapRef: &core.LocalConfigMapReference{},
 					},
 				},
 			}
@@ -447,10 +437,6 @@ var _ = Describe("Installation", func() {
 				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("imports.data[0].configMapRef.name"),
 			}))))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("imports.data[0].configMapRef.namespace"),
-			}))))
 		})
 
 		It("should fail if a secret and a configmap is defined for the same import", func() {
@@ -458,8 +444,8 @@ var _ = Describe("Installation", func() {
 				Data: []core.DataImport{
 					{
 						Name:         "imp",
-						SecretRef:    &core.SecretReference{},
-						ConfigMapRef: &core.ConfigMapReference{},
+						SecretRef:    &core.LocalSecretReference{},
+						ConfigMapRef: &core.LocalConfigMapReference{},
 					},
 				},
 			}

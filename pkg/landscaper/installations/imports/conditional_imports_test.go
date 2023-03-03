@@ -107,15 +107,15 @@ var _ = Describe("ConditionalImports", func() {
 		// add imports to installation
 		inst.Spec.Imports.Data = append(inst.Spec.Imports.Data, lsv1alpha1.DataImport{
 			Name: "rootcond.foo",
-			ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-				Key:             "foo",
-				ObjectReference: cmRef,
+			ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+				Key:  "foo",
+				Name: cmRef.Name,
 			},
 		}, lsv1alpha1.DataImport{
 			Name: "rootcond.bar",
-			ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-				Key:             "bar",
-				ObjectReference: cmRef,
+			ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+				Key:  "bar",
+				Name: cmRef.Name,
 			},
 		})
 		utils.ExpectNoError(fakeClient.Update(ctx, inst))
@@ -166,9 +166,9 @@ var _ = Describe("ConditionalImports", func() {
 		// add imports to installation
 		inst.Spec.Imports.Data = append(inst.Spec.Imports.Data, lsv1alpha1.DataImport{
 			Name: "rootcond.foo",
-			ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-				Key:             "foo",
-				ObjectReference: cmRef,
+			ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+				Key:  "foo",
+				Name: cmRef.Name,
 			},
 		})
 		utils.ExpectNoError(fakeClient.Update(ctx, inst))

@@ -74,11 +74,9 @@ spec:
       dataRef: "" # reference a contextified data object or a global dataobject with a '#' prefix.
 #      secretRef: # reference a secret
 #        name: ""
-#        namespace: ""
 #        key: ""
 #      configMapRef: # reference a configmap
 #        name: ""
-#        namespace: ""
 #        key: ""
     targets:
     - name: "" # logical internal name
@@ -106,11 +104,9 @@ spec:
       dataRef: "" # reference a contextified data object or a global dataobject.
 #      secretRef: # reference a secret
 #        name: ""
-#        namespace: ""
 #        key: ""
 #      configMapRef: # reference a configmap
 #        name: ""
-#        namespace: ""
 #        key: ""
     targets:
     - name: "" # logical internal name
@@ -487,7 +483,7 @@ They are defined by the following fields:
 - **`secretRef`** *struct (optional)*
 
   This field can be used to import the data provided by a Kubernetes _Secret_ with the given
-  name.
+  name. The _Secret_ must have to the same namespace as the Installation. 
 
   Exactly one of `dataRef`, `confimapRef` or `secretRef` must be given.
 
@@ -495,9 +491,6 @@ They are defined by the following fields:
 
   - **`name`** *string*<br/>
     The name of the _Secret_.
-  
-  - **`namespace`** *string (optional)*<br/>
-    The namespace of the _Secret_
 
   - **`key`** *string (optional)*<br/>
     The key of the secret field to use. If the key is not given, the complete
@@ -506,7 +499,7 @@ They are defined by the following fields:
 - **`configMapRef`** *struct (optional)*
 
   This field can be used to import the data provided by a Kubernetes _ConfigMap_ with the given
-  name.
+  name. The _ConfigMap_ must have to the same namespace as the Installation.
 
   Exactly one of `dataRef`, `confimapRef` or `secretRef` must be given.
 
@@ -514,9 +507,6 @@ They are defined by the following fields:
 
   - **`name`** *string*<br/>
     The name of the _ConfigMap_
-
-  - **`namespace`** *string (optional)*<br/>
-    The namespace of the _ConfigMap_.
 
   - **`key`** *string (optional)*<br/>
     The key of the configmap field to use. If the key is not given, the complete
@@ -537,12 +527,10 @@ imports:
   - name: secret
     secretRef: 
       name: "my-secret"
-      namespace: "" #  optional, defaulted to installation namespace
       key: "" # optional
   - name: configmap
     configMapRef: 
       name: "my-configmap"
-      namespace: "" #  optional, defaulted to installation namespace
       key: "" # optional
 ```
 

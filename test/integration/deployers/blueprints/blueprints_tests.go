@@ -156,10 +156,6 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 			"values": "{}",
 		}
 		utils.ExpectNoError(state.Create(ctx, cm))
-		cmRef := lsv1alpha1.ObjectReference{
-			Name:      cm.Name,
-			Namespace: cm.Namespace,
-		}
 
 		// build installation
 		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository(framework.OpenSourceRepositoryContext, ""))
@@ -189,23 +185,23 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		inst.Spec.Imports.Data = []lsv1alpha1.DataImport{
 			{
 				Name: "releaseName",
-				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-					ObjectReference: cmRef,
-					Key:             "releaseName",
+				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+					Name: cm.Name,
+					Key:  "releaseName",
 				},
 			},
 			{
 				Name: "releaseNamespace",
-				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-					ObjectReference: cmRef,
-					Key:             "releaseNamespace",
+				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+					Name: cm.Name,
+					Key:  "releaseNamespace",
 				},
 			},
 			{
 				Name: "values",
-				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
-					ObjectReference: cmRef,
-					Key:             "values",
+				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+					Name: cm.Name,
+					Key:  "values",
 				},
 			},
 		}

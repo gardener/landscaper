@@ -2331,10 +2331,6 @@ string
 <h3 id="landscaper.gardener.cloud/v1alpha1.ConfigMapReference">ConfigMapReference
 </h3>
 <p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>)
-</p>
-<p>
 <p>ConfigMapReference is reference to data in a configmap.
 The configmap can also be in a different namespace.</p>
 </p>
@@ -2474,8 +2470,8 @@ defaults to &ldquo;v1&rdquo;</p>
 <td>
 <code>secretRef</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
-SecretReference
+<a href="#landscaper.gardener.cloud/v1alpha1.LocalSecretReference">
+LocalSecretReference
 </a>
 </em>
 </td>
@@ -2489,8 +2485,8 @@ This method is not allowed in installation templates.</p>
 <td>
 <code>configMapRef</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ConfigMapReference">
-ConfigMapReference
+<a href="#landscaper.gardener.cloud/v1alpha1.LocalConfigMapReference">
+LocalConfigMapReference
 </a>
 </em>
 </td>
@@ -4593,10 +4589,53 @@ encoding/json.RawMessage
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.LocalConfigMapReference">LocalConfigMapReference
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>)
+</p>
+<p>
+<p>LocalConfigMapReference is a reference to data in a configmap.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the configmap</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>key</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Key is the name of the key in the configmap that holds the data.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.LocalSecretReference">LocalSecretReference
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSyncSpec">TargetSyncSpec</a>)
 </p>
@@ -4960,10 +4999,6 @@ string
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.SecretReference">SecretReference
 </h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>)
-</p>
 <p>
 <p>SecretReference is reference to data in a secret.
 The secret can also be in a different namespace.</p>

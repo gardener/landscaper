@@ -311,11 +311,11 @@ var _ = Describe("Blueprint", func() {
 			tmpl.Imports.Data = []core.DataImport{
 				{
 					Name:      "myimport",
-					SecretRef: &core.SecretReference{ObjectReference: core.ObjectReference{Name: "mysecret"}},
+					SecretRef: &core.LocalSecretReference{Name: "mysecret"},
 				},
 				{
 					Name:         "mysecondimport",
-					ConfigMapRef: &core.ConfigMapReference{ObjectReference: core.ObjectReference{Name: "mycm"}},
+					ConfigMapRef: &core.LocalConfigMapReference{Name: "mycm"},
 				},
 			}
 
