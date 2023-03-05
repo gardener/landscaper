@@ -6,7 +6,32 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 )
+
+func ExpandManagedResourceManifests(origManifests []managedresource.Manifest) ([]managedresource.Manifest, error) {
+	result := []managedresource.Manifest{}
+
+	for i := range origManifests {
+		origManifest := &origManifests[i]
+		rawExtensions, err := expandManifest(origManifest.Manifest)
+		if err != nil {
+			return nil, fmt.Errorf("unable to expand managed resource manifests: %w", err)
+		}
+
+		for k := range rawExtensions {
+			result = append(result, managedresource.Manifest{
+				Policy:               origManifest.Policy,
+				Manifest:             rawExtensions[k],
+				AnnotateBeforeCreate: origManifest.AnnotateBeforeCreate,
+				AnnotateBeforeDelete: origManifest.AnnotateBeforeDelete,
+			})
+		}
+	}
+
+	return result, nil
+}
 
 func ExpandManifests(manifests []*runtime.RawExtension) ([]*runtime.RawExtension, error) {
 	result := []*runtime.RawExtension{}
