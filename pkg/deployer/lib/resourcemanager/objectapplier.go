@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/imdario/mergo"
-
 	corev1 "k8s.io/api/core/v1"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,13 +25,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 )
 
 // ApplyManifests creates or updates all configured manifests.
@@ -389,7 +388,13 @@ func (a *ManifestApplier) prepareManifests() error {
 	a.manifestExecutions = [3][]*Manifest{}
 	crdNamespacedInfo := map[string]bool{}
 	todo := []*Manifest{}
-	for _, obj := range a.manifests {
+
+	managedResourceManifests, err := lib.ExpandManagedResourceManifests(a.manifests)
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range managedResourceManifests {
 		typeMeta := metav1.TypeMeta{}
 		if err := json.Unmarshal(obj.Manifest.Raw, &typeMeta); err != nil {
 			return fmt.Errorf("unable to parse type metadata: %w", err)

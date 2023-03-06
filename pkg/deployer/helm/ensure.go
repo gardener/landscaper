@@ -154,6 +154,12 @@ func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds m
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
 	}
+
+	objects, err = deployerlib.ExpandManifests(objects)
+	if err != nil {
+		return nil, lserrors.NewWrappedError(err, currOp, "ExpandManifests", err.Error())
+	}
+
 	crdObjects, err := kutil.ParseFilesToRawExtension(logger, crds)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
