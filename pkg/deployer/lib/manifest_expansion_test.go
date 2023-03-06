@@ -60,6 +60,28 @@ var _ = Describe("Manifest expansion", func() {
 		}))
 	})
 
+	It("should handle an empty list as list", func() {
+		manifests := []*runtime.RawExtension{
+			raw(v1.ConfigMapList{Items: []v1.ConfigMap{}}),
+		}
+
+		expanded, err := ExpandManifests(manifests)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(expanded).To(HaveLen(0))
+	})
+
+	It("should handle a normal object not as list", func() {
+		manifests := []*runtime.RawExtension{
+			raw(buildConfigMap("cm1")),
+		}
+
+		expanded, err := ExpandManifests(manifests)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(expanded).To(Equal([]*runtime.RawExtension{
+			raw(buildConfigMap("cm1")),
+		}))
+	})
+
 	It("should expand managed resource manifests", func() {
 		manifests := []managedresource.Manifest{
 			{Policy: managedresource.ManagePolicy, Manifest: raw(buildConfigMap("cm1"))},
