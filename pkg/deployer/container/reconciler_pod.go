@@ -7,8 +7,9 @@ package container
 import (
 	"context"
 
-	lserror "github.com/gardener/landscaper/apis/errors"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -55,17 +56,21 @@ func NewPodReconciler(
 
 func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	_, ctx = r.log.StartReconcileAndAddToContext(ctx, req)
-	deployItem, lsCtx, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, req)
+	deployItem, _, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, req)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if deployItem == nil {
 		return reconcile.Result{}, nil
 	}
+
+	// annotate deployitem so it gets reconciled
 	old := deployItem.DeepCopy()
-	err = r.diRec.Reconcile(ctx, lsCtx, deployItem, nil)
-	lsErr := lserror.BuildLsErrorOrNil(err, "Reconcile", "Reconcile")
-	return reconcile.Result{}, deployerlib.HandleReconcileResult(ctx, lsErr, old, deployItem, r.lsClient, r.lsEventRecorder)
+	lsv1alpha1helper.Touch(&deployItem.ObjectMeta)
+	if err = read_write_layer.NewWriter(r.lsClient).PatchDeployItem(ctx, read_write_layer.W000030, deployItem, client.MergeFrom(old)); err != nil {
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{}, nil
 }
 
 // PodEventHandler implements the controller runtime handler interface

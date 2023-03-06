@@ -163,6 +163,13 @@ func (w *Writer) UpdateDeployItem(ctx context.Context, writeID WriteID, deployIt
 	return errorWithWriteID(err, writeID)
 }
 
+func (w *Writer) PatchDeployItem(ctx context.Context, writeID WriteID, deployItem *lsv1alpha1.DeployItem, patchData client.Patch) error {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(deployItem)
+	err := patch(ctx, w.client, deployItem, patchData)
+	w.logDeployItemUpdate(ctx, writeID, opDISpec, deployItem, generationOld, resourceVersionOld, err)
+	return errorWithWriteID(err, writeID)
+}
+
 func (w *Writer) UpdateDeployItemStatus(ctx context.Context, writeID WriteID, deployItem *lsv1alpha1.DeployItem) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(deployItem)
 	err := updateStatus(ctx, w.client.Status(), deployItem)
@@ -191,6 +198,10 @@ func createOrUpdateCore(ctx context.Context, c client.Client, object client.Obje
 
 func update(ctx context.Context, c client.Client, object client.Object) error {
 	return c.Update(ctx, object)
+}
+
+func patch(ctx context.Context, c client.Client, object client.Object, patchData client.Patch) error {
+	return c.Patch(ctx, object, patchData)
 }
 
 func updateStatus(ctx context.Context, c client.StatusWriter, object client.Object) error {
