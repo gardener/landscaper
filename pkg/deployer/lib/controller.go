@@ -228,7 +228,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		} else {
 
 			// initialize deployitem for delete
-			di.Status.Phase = lsv1alpha1.DeployItemPhases.Init
+			di.Status.Phase = lsv1alpha1.DeployItemPhases.InitDelete
 			di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Deleting
 			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
 				return reconcile.Result{}, err
