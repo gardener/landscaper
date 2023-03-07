@@ -132,8 +132,8 @@ func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1a
 
 	di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
 	di.Status.JobIDFinished = di.Status.GetJobID()
-	di.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
 	di.Status.ObservedGeneration = di.Generation
+	lsv1alpha1helper.SetDeployItemToFailed(di)
 	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
 		lsv1alpha1.PickupTimeoutOperation,
 		lsv1alpha1.PickupTimeoutReason,
@@ -175,8 +175,8 @@ func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, di *lsv
 
 	di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
 	di.Status.JobIDFinished = di.Status.GetJobID()
-	di.Status.Phase = lsv1alpha1.DeployItemPhases.Failed
 	di.Status.ObservedGeneration = di.Generation
+	lsv1alpha1helper.SetDeployItemToFailed(di)
 	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
 		lsv1alpha1.AbortingTimeoutOperation,
 		lsv1alpha1.AbortingTimeoutReason,
