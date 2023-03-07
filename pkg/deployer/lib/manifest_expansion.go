@@ -54,7 +54,7 @@ func expandManifest(manifest *runtime.RawExtension) ([]*runtime.RawExtension, er
 		return nil, fmt.Errorf("unable to expand manifest: %w", err)
 	}
 
-	if len(manifestList.Items) == 0 {
+	if manifestList.Items == nil {
 		return []*runtime.RawExtension{manifest}, nil
 	}
 
