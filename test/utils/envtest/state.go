@@ -538,7 +538,8 @@ func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, t
 }
 
 // CleanupForInstallation cleans up an installation from a cluster
-func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation, timeout time.Duration) error {
+func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation,
+	timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
