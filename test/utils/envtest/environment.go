@@ -84,6 +84,11 @@ func (e *Environment) Start() (client.Client, error) {
 	return fakeClient, nil
 }
 
+func (e *Environment) GetWithRetry(ctx context.Context, log utils.Logger, key client.ObjectKey, obj client.Object,
+	opts ...client.GetOption) error {
+	return GetWithRetry(ctx, e.Client, log, key, obj, opts...)
+}
+
 // Stop stops the running dev environment
 func (e *Environment) Stop() error {
 	return e.Env.Stop()

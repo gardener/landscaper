@@ -12,12 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-
 	"github.com/pkg/errors"
-
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +25,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 )
 
 // State contains the state of initialized fake client
@@ -82,6 +79,10 @@ func NewStateWithClient(log utils.Logger, kubeClient client.Client) *State {
 // HasClient returns whether a client is configured or not
 func (s *State) HasClient() bool {
 	return s.Client != nil
+}
+
+func (s *State) GetWithRetry(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	return GetWithRetry(ctx, s.Client, s.log, key, obj, opts...)
 }
 
 // AddResources to the current state
@@ -153,15 +154,12 @@ func (s *State) CreateWithClient(ctx context.Context, c client.Client, obj clien
 		return err
 	}
 	tmp := obj.DeepCopyObject().(client.Object)
-	if err := c.Create(ctx, obj); err != nil {
-		if s.checkIfSporadicError(err) {
-			s.log.Logln("state CreateWithClient-create failed but retried: " + err.Error())
-			if err := c.Create(ctx, obj); err != nil {
-				return err
-			}
 
-		}
-		return err
+	if retryError := RetrySporadic(s.log, func() error {
+		return c.Create(ctx, obj)
+	}); retryError != nil {
+		s.log.Logln("state CreateWithClient-create failed: " + retryError.Error())
+		return retryError
 	}
 
 	tmp.SetName(obj.GetName())
@@ -189,7 +187,7 @@ func (s *State) CreateWithClient(ctx context.Context, c client.Client, obj clien
 	return s.AddResources(tmp)
 }
 
-// CreateWithClient creates or updates a kubernetes resource and adds it to the current state
+// CreateWithClientAndRetries creates or updates a kubernetes resource and adds it to the current state
 func (s *State) CreateWithClientAndRetries(ctx context.Context, c client.Client, obj client.Object, opts ...CreateOption) error {
 	options := &CreateOptions{}
 	if err := options.ApplyOptions(opts...); err != nil {
@@ -197,16 +195,11 @@ func (s *State) CreateWithClientAndRetries(ctx context.Context, c client.Client,
 	}
 	tmp := obj.DeepCopyObject().(client.Object)
 
-	for i := 0; i < 10; i++ {
-		err := c.Create(ctx, obj)
-		if err == nil {
-			break
-		} else if s.checkIfSporadicError(err) {
-			s.log.Logln("state CreateWithClient-create failed but retried: " + err.Error())
-			time.Sleep(5 * time.Second)
-		} else {
-			return err
-		}
+	if retryError := RetrySporadic(s.log, func() error {
+		return c.Create(ctx, obj)
+	}); retryError != nil {
+		s.log.Logln("state CreateWithClientAndRetries-create failed: " + retryError.Error())
+		return retryError
 	}
 
 	tmp.SetName(obj.GetName())
@@ -245,17 +238,13 @@ func (s *State) Update(ctx context.Context, obj client.Object, opts ...client.Up
 }
 
 func (s *State) UpdateWithClient(ctx context.Context, cl client.Client, obj client.Object, opts ...client.UpdateOption) error {
-	for i := 0; i < 10; i++ {
-		err := cl.Update(ctx, obj, opts...)
-		if err == nil {
-			break
-		} else if s.checkIfSporadicError(err) {
-			s.log.Logln("state Update failed but retried: " + err.Error())
-			time.Sleep(5 * time.Second)
-		} else {
-			return err
-		}
+	if retryError := RetrySporadic(s.log, func() error {
+		return cl.Update(ctx, obj, opts...)
+	}); retryError != nil {
+		s.log.Logln("state Update failed: " + retryError.Error())
+		return retryError
 	}
+
 	return nil
 }
 
@@ -412,12 +401,12 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, obj := range s.DeployItems {
-		if err := CleanupForDeployItem(ctx, c, obj, *timeout); err != nil {
+		if err := s.CleanupForDeployItem(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.Executions {
-		if err := CleanupForExecution(ctx, c, obj, *timeout); err != nil {
+		if err := s.CleanupForExecution(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
@@ -508,12 +497,6 @@ func (s *State) CleanupState(ctx context.Context, opts ...CleanupOption) error {
 	return s.CleanupStateWithClient(ctx, s.Client, opts...)
 }
 
-func (s *State) checkIfSporadicError(err error) bool {
-	return strings.Contains(err.Error(), "connection refused") ||
-		strings.Contains(err.Error(), "context deadline exceeded") ||
-		strings.Contains(err.Error(), "failed to call webhook")
-}
-
 // CleanupForObject cleans up a object from a cluster
 func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
@@ -566,7 +549,7 @@ func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj
 	}
 
 	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
-		if err := removeFinalizer(ctx, c, obj); err != nil {
+		if err := s.removeFinalizerWithRetry(ctx, c, obj); err != nil {
 			return err
 		}
 	}
@@ -574,7 +557,7 @@ func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj
 }
 
 // CleanupForExecution cleans up an execution from a cluster
-func CleanupForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.Execution, timeout time.Duration) error {
+func (s *State) CleanupForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.Execution, timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -594,7 +577,7 @@ func CleanupForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.E
 	}
 
 	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
-		if err := removeFinalizer(ctx, c, obj); err != nil {
+		if err := s.removeFinalizerWithRetry(ctx, c, obj); err != nil {
 			return err
 		}
 	}
@@ -603,7 +586,7 @@ func CleanupForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.E
 }
 
 // CleanupForDeployItem cleans up a deploy item from a cluster
-func CleanupForDeployItem(ctx context.Context, c client.Client, obj *lsv1alpha1.DeployItem, timeout time.Duration) error {
+func (s *State) CleanupForDeployItem(ctx context.Context, c client.Client, obj *lsv1alpha1.DeployItem, timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -623,7 +606,7 @@ func CleanupForDeployItem(ctx context.Context, c client.Client, obj *lsv1alpha1.
 	}
 
 	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
-		if err := removeFinalizer(ctx, c, obj); err != nil {
+		if err := s.removeFinalizerWithRetry(ctx, c, obj); err != nil {
 			return err
 		}
 	}
@@ -727,6 +710,33 @@ func WaitForObjectToBeDeleted(ctx context.Context, c client.Client, obj client.O
 		}
 		return fmt.Errorf("deletion timeout: %s", string(d))
 	}
+	return nil
+}
+
+func (s *State) removeFinalizerWithRetry(ctx context.Context, c client.Client, obj client.Object) error {
+	if len(obj.GetFinalizers()) == 0 {
+		return nil
+	}
+
+	if err := c.Get(ctx, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()), obj); err != nil {
+		return err
+	}
+	currObj := obj.DeepCopyObject().(client.Object)
+	obj.SetFinalizers([]string{})
+	patch := client.MergeFrom(currObj)
+
+	if retryError := RetrySporadic(s.log, func() error {
+		if err := c.Patch(ctx, obj, patch); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		return nil
+	}); retryError != nil {
+		return fmt.Errorf("unable to remove finalizer from object: %w", retryError)
+	}
+
 	return nil
 }
 

@@ -352,7 +352,7 @@ func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Envir
 	gomega.Expect(state.AddResources(target)).To(gomega.Succeed())
 
 	old := &lsv1alpha1.DeployItem{}
-	if err := testenv.Client.Get(ctx, kutil.ObjectKey(di.Name, di.Namespace), old); err != nil {
+	if err := testenv.GetWithRetry(ctx, nil, kutil.ObjectKey(di.Name, di.Namespace), old); err != nil {
 		if apierrors.IsNotFound(err) {
 			gomega.Expect(state.Create(ctx, di, envtest.UpdateStatus(true))).To(gomega.Succeed())
 			return di
