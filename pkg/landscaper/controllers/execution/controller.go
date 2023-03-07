@@ -19,7 +19,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
@@ -58,7 +57,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
+	if exec.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000086, exec); err != nil {
 			return reconcile.Result{}, err
@@ -88,10 +87,7 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	// A final or empty execution phase means that the current job was not yet started.
 	// Switch to start phase Init / InitDelete.
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Failed ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.DeleteFailed ||
-		exec.Status.ExecutionPhase == "" {
+	if exec.Status.ExecutionPhase.IsFinal() || exec.Status.ExecutionPhase.IsEmpty() {
 
 		if exec.DeletionTimestamp.IsZero() {
 			exec.Status.ExecutionPhase = lsv1alpha1.ExecutionPhases.Init
@@ -313,9 +309,7 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 
 	exec.Status.ExecutionPhase = phase
 
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Failed ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.DeleteFailed {
+	if exec.Status.ExecutionPhase.IsFinal() {
 
 		exec.Status.JobIDFinished = exec.Status.JobID
 	}

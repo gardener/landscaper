@@ -79,8 +79,7 @@ func (r *retryHelper) recomputeRetry(ctx context.Context, inst *lsv1alpha1.Insta
 	if inst.Status.AutomaticReconcileStatus != nil {
 		if inst.Status.AutomaticReconcileStatus.Generation != inst.GetGeneration() ||
 			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Succeeded && inst.Status.AutomaticReconcileStatus.OnFailed) ||
-			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Failed && !inst.Status.AutomaticReconcileStatus.OnFailed) ||
-			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.DeleteFailed && !inst.Status.AutomaticReconcileStatus.OnFailed) {
+			(inst.Status.InstallationPhase.IsFailed() && !inst.Status.AutomaticReconcileStatus.OnFailed) {
 
 			if err := r.resetRetryStatus(ctx, inst); err != nil {
 				return reconcile.Result{}, err
@@ -100,8 +99,7 @@ func (r *retryHelper) recomputeRetry(ctx context.Context, inst *lsv1alpha1.Insta
 }
 
 func (r *retryHelper) isFailed(inst *lsv1alpha1.Installation) bool {
-	return inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Failed ||
-		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.DeleteFailed
+	return inst.Status.InstallationPhase.IsFailed()
 }
 
 func (r *retryHelper) isRetryActivatedForFailed(inst *lsv1alpha1.Installation) bool {

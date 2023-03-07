@@ -202,9 +202,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if di.Status.DeployerPhase == lsv1alpha1.DeployerPhases.Succeeded ||
-		di.Status.DeployerPhase == lsv1alpha1.DeployerPhases.Failed ||
-		di.Status.DeployerPhase == "" {
+	if di.Status.DeployerPhase.IsFinal() || di.Status.DeployerPhase.IsEmpty() {
 
 		// The deployitem has a new jobID, but the phase is still finished from before
 
@@ -258,7 +256,7 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 func (c *controller) buildResult(deployerPhase lsv1alpha1.DeployerPhase, err error) (reconcile.Result, error) {
 	if deployerPhase == lsv1alpha1.DeployerPhases.Succeeded {
 		return reconcile.Result{}, nil
-	} else if deployerPhase == lsv1alpha1.DeployerPhases.Failed {
+	} else if deployerPhase.IsFailed() {
 		return reconcile.Result{}, nil
 	} else {
 		// Init, Progressing, or Deleting

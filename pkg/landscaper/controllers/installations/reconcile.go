@@ -32,10 +32,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	op := "handleReconcilePhase"
 
 	// set init phase if the phase is empty or final from previous job
-	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Succeeded ||
-		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Failed ||
-		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.DeleteFailed ||
-		inst.Status.InstallationPhase == "" {
+	if inst.Status.InstallationPhase.IsFinal() || inst.Status.InstallationPhase.IsEmpty() {
 
 		nextPhase := lsv1alpha1.InstallationPhases.Init
 		if !inst.DeletionTimestamp.IsZero() {

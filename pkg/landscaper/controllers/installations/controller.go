@@ -305,9 +305,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	}
 
 	inst.Status.InstallationPhase = phase
-	if phase == lsv1alpha1.InstallationPhases.Failed ||
-		phase == lsv1alpha1.InstallationPhases.Succeeded ||
-		phase == lsv1alpha1.InstallationPhases.DeleteFailed {
+	if phase.IsFinal() {
 		inst.Status.JobIDFinished = inst.Status.JobID
 	}
 
