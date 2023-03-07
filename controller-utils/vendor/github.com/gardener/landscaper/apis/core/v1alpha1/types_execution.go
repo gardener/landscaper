@@ -52,6 +52,14 @@ func (p ExecutionPhase) IsDeletion() bool {
 	return false
 }
 
+func (p ExecutionPhase) IsFailed() bool {
+	switch p {
+	case ExecutionPhases.Failed, ExecutionPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
 func (p ExecutionPhase) IsEmpty() bool {
 	return p.String() == ""
 }

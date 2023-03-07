@@ -40,6 +40,14 @@ func (p DeployItemPhase) IsDeletion() bool {
 	return false
 }
 
+func (p DeployItemPhase) IsFailed() bool {
+	switch p {
+	case DeployItemPhases.Failed, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
 func (p DeployItemPhase) IsEmpty() bool {
 	return p.String() == ""
 }
@@ -83,6 +91,14 @@ func (p DeployerPhase) IsFinal() bool {
 func (p DeployerPhase) IsDeletion() bool {
 	switch p {
 	case DeployerPhases.Deleting, DeployerPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployerPhase) IsFailed() bool {
+	switch p {
+	case DeployerPhases.Failed, DeployerPhases.DeleteFailed:
 		return true
 	}
 	return false

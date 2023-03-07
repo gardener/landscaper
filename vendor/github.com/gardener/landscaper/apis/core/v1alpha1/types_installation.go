@@ -72,6 +72,14 @@ func (p InstallationPhase) IsDeletion() bool {
 	return false
 }
 
+func (p InstallationPhase) IsFailed() bool {
+	switch p {
+	case InstallationPhases.Failed, InstallationPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
 func (p InstallationPhase) IsEmpty() bool {
 	return p.String() == ""
 }
