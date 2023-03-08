@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gardener/landscaper/test/utils/envtest"
+
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -86,7 +88,7 @@ func (d *Dumper) dumpNamespaces(ctx context.Context) error {
 	for ns := range d.namespaces {
 		d.logger.Logfln("Dump %s", ns)
 		// check if namespace exists
-		if err := d.kubeClient.Get(ctx, kutil.ObjectKey(ns, ""), &corev1.Namespace{}); err != nil {
+		if err := envtest.GetWithRetry(ctx, d.kubeClient, nil, kutil.ObjectKey(ns, ""), &corev1.Namespace{}); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}

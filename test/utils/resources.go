@@ -216,7 +216,7 @@ func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client
 			kubernetesSvcNamespace = "default"
 		)
 		svc := &corev1.Service{}
-		if err := kubeClient.Get(ctx, kutil.ObjectKey(kubernetesSvcName, kubernetesSvcNamespace), svc); err != nil {
+		if err := envtest.GetWithRetry(ctx, kubeClient, nil, kutil.ObjectKey(kubernetesSvcName, kubernetesSvcNamespace), svc); err != nil {
 			return nil, err
 		}
 		if len(svc.Spec.Ports) != 1 {

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/test/utils/envtest"
+
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +34,7 @@ func WaitForObjectDeletion(
 	obj client.Object,
 	timeout time.Duration) error {
 	err := wait.Poll(1*time.Second, timeout, func() (bool, error) {
-		if err := kubeClient.Get(ctx, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()), obj); err != nil {
+		if err := envtest.GetWithRetry(ctx, kubeClient, nil, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()), obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
@@ -56,7 +58,7 @@ func DeleteExecutionForNewReconcile(
 		return err
 	}
 
-	if err := kubeClient.Get(ctx, kutil.ObjectKeyFromObject(exec), exec); client.IgnoreNotFound(err) != nil {
+	if err := envtest.GetWithRetry(ctx, kubeClient, nil, kutil.ObjectKeyFromObject(exec), exec); client.IgnoreNotFound(err) != nil {
 		return err
 	}
 
@@ -77,7 +79,7 @@ func DeleteDeployItemForNewReconcile(
 		return err
 	}
 
-	if err := kubeClient.Get(ctx, kutil.ObjectKeyFromObject(di), di); client.IgnoreNotFound(err) != nil {
+	if err := envtest.GetWithRetry(ctx, kubeClient, nil, kutil.ObjectKeyFromObject(di), di); client.IgnoreNotFound(err) != nil {
 		return err
 	}
 
@@ -114,7 +116,7 @@ func DeleteObject(
 func WaitForDeploymentToBeReady(ctx context.Context, logger utils.Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
 	err := wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
 		deploy := &appsv1.Deployment{}
-		if err := kubeClient.Get(ctx, objKey, deploy); err != nil {
+		if err := envtest.GetWithRetry(ctx, kubeClient, nil, objKey, deploy); err != nil {
 			logger.Logfln("Waiting for deployment %q to be available (%s)...", objKey.String(), err.Error())
 			return false, nil
 		}
@@ -135,7 +137,7 @@ func WaitForDeploymentToBeReady(ctx context.Context, logger utils.Logger, kubeCl
 func WaitForContextToBeReady(ctx context.Context, logger utils.Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
 	err := wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
 		context := &v1alpha1.Context{}
-		if err := kubeClient.Get(ctx, objKey, context); err != nil {
+		if err := envtest.GetWithRetry(ctx, kubeClient, nil, objKey, context); err != nil {
 			logger.Logfln("failed to get context %q: %w - retried in 1 second", objKey.String(), err)
 			return false, nil
 		}
