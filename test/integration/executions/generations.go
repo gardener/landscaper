@@ -52,7 +52,7 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			exec.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, exec))
 
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
+			Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(utils.UpdateJobIdForExecutionC(ctx, f.Client, exec)).To(Succeed())
 
 			By("verify that deployitem has been created")
@@ -103,7 +103,7 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			}
 			utils.ExpectNoError(state.Update(ctx, exec))
 
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
+			Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(utils.UpdateJobIdForExecutionC(ctx, state.Client, exec)).To(Succeed())
 
 			By("verify that deployitem has been changed")

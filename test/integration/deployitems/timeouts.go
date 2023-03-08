@@ -127,7 +127,7 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 			}, waitingForDeployItems, resyncTime).Should(BeTrue(), "unable to fetch deploy items")
 			utils.ExpectNoError(state.Create(ctx, mock_di_prog))
 			// Set a new jobID to trigger a reconcile of the deploy item
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(mock_di_prog), mock_di_prog)).To(Succeed())
+			Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(mock_di_prog), mock_di_prog)).To(Succeed())
 			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, mock_di_prog, metav1.Now())).To(Succeed())
 
 			By("check pickup")

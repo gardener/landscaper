@@ -2,10 +2,12 @@ package envtest
 
 import (
 	"context"
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 )
 
 func GetWithRetry(ctx context.Context, c client.Client, log utils.Logger, key client.ObjectKey, obj client.Object,

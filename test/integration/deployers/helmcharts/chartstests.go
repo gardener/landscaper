@@ -125,7 +125,7 @@ func deployDeployItemAndWaitForSuccess(
 	di := forgeHelmDeployItem(chartDir, valuesFile, deployerName, target, f.LsVersion)
 	utils.ExpectNoError(state.Create(ctx, di))
 	// Set a new jobID to trigger a reconcile of the deploy item
-	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+	Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 	By("Waiting for the DeployItem to succeed")
 	utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployerPhases.Succeeded, 2*time.Minute))
@@ -146,7 +146,7 @@ func removeDeployItemAndWaitForSuccess(
 	By("Removing the DeployItem")
 	utils.ExpectNoError(f.Client.Delete(ctx, di))
 	// Set a new jobID to trigger a reconcile of the deploy item
-	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+	Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 	By("Waiting for the DeployItem to disappear")
 	utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, di, 2*time.Minute))

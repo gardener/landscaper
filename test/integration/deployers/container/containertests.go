@@ -98,7 +98,7 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(json.Unmarshal(doData.Data.RawMessage, &configmapData))
 
 		configmap := &v1.ConfigMap{}
-		utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: configmapName, Namespace: state.Namespace}, configmap))
+		utils.ExpectNoError(state.GetWithRetry(ctx, types.NamespacedName{Name: configmapName, Namespace: state.Namespace}, configmap))
 
 		Expect(configmap.Name).To(Equal(configmapName))
 		Expect(configmap.Namespace).To(Equal(state.Namespace))
@@ -124,13 +124,13 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(json.Unmarshal(doData.Data.RawMessage, &configmapDataExpected))
 
 		configmapDataExport := &lsv1alpha1.DataObject{}
-		utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: "configmapdata", Namespace: state.Namespace}, configmapDataExport))
+		utils.ExpectNoError(state.GetWithRetry(ctx, types.NamespacedName{Name: "configmapdata", Namespace: state.Namespace}, configmapDataExport))
 		utils.ExpectNoError(json.Unmarshal(configmapDataExport.Data.RawMessage, &configmapDataActual))
 		Expect(configmapDataExpected).To(Equal(configmapDataActual))
 
 		var componentData map[string]string
 		componentDataExport := &lsv1alpha1.DataObject{}
-		utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: "component", Namespace: state.Namespace}, componentDataExport))
+		utils.ExpectNoError(state.GetWithRetry(ctx, types.NamespacedName{Name: "component", Namespace: state.Namespace}, componentDataExport))
 		utils.ExpectNoError(json.Unmarshal(componentDataExport.Data.RawMessage, &componentData))
 		Expect(componentData).To(HaveKey("name"))
 		Expect(componentData["name"]).To(Equal(inst.Spec.ComponentDescriptor.Reference.ComponentName))
@@ -141,7 +141,7 @@ func ContainerTests(f *framework.Framework) {
 			contentData []map[string]interface{}
 		)
 		contentDataExport := &lsv1alpha1.DataObject{}
-		utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: "content", Namespace: state.Namespace}, contentDataExport))
+		utils.ExpectNoError(state.GetWithRetry(ctx, types.NamespacedName{Name: "content", Namespace: state.Namespace}, contentDataExport))
 		utils.ExpectNoError(json.Unmarshal(contentDataExport.Data.RawMessage, &contentData))
 		Expect(contentData).To(HaveLen(4))
 
@@ -189,12 +189,12 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(json.Unmarshal(doName.Data.RawMessage, &configmapName))
 
 		configmap := &v1.ConfigMap{}
-		utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: configmapName, Namespace: state.Namespace}, configmap))
+		utils.ExpectNoError(state.GetWithRetry(ctx, types.NamespacedName{Name: configmapName, Namespace: state.Namespace}, configmap))
 
 		utils.ExpectNoError(state.Client.Delete(ctx, inst))
 
 		err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
-			if err1 := state.Client.Get(ctx, client.ObjectKeyFromObject(inst), inst); err1 != nil {
+			if err1 := state.GetWithRetry(ctx, client.ObjectKeyFromObject(inst), inst); err1 != nil {
 				if k8serrors.IsNotFound(err1) {
 					return true, nil
 				} else {
@@ -221,13 +221,13 @@ func ContainerTests(f *framework.Framework) {
 		stateExport := &lsv1alpha1.DataObject{}
 		var stateData map[string]interface{}
 
-		utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: "state", Namespace: state.Namespace}, stateExport))
+		utils.ExpectNoError(state.GetWithRetry(ctx, types.NamespacedName{Name: "state", Namespace: state.Namespace}, stateExport))
 		utils.ExpectNoError(json.Unmarshal(stateExport.Data.RawMessage, &stateData))
 		Expect(stateData).To(HaveKey("count"))
 		Expect(stateData["count"]).To(BeEquivalentTo(1))
 
 		By("Reconciling the installation")
-		utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(inst), inst))
+		utils.ExpectNoError(state.GetWithRetry(ctx, client.ObjectKeyFromObject(inst), inst))
 		if inst.ObjectMeta.Annotations == nil {
 			inst.ObjectMeta.Annotations = make(map[string]string)
 		}
@@ -237,7 +237,7 @@ func ContainerTests(f *framework.Framework) {
 		By("Wait for installation to finish")
 		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 5*time.Minute))
 
-		utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: "state", Namespace: state.Namespace}, stateExport))
+		utils.ExpectNoError(state.GetWithRetry(ctx, types.NamespacedName{Name: "state", Namespace: state.Namespace}, stateExport))
 		utils.ExpectNoError(json.Unmarshal(stateExport.Data.RawMessage, &stateData))
 		Expect(stateData).To(HaveKey("count"))
 		Expect(stateData["count"]).To(BeEquivalentTo(2))
@@ -298,13 +298,13 @@ func ContainerTests(f *framework.Framework) {
 				},
 			}
 			utils.ExpectNoError(state.Create(ctx, target))
-			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
+			utils.ExpectNoError(state.GetWithRetry(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployerPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
-			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
+			utils.ExpectNoError(state.GetWithRetry(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
 			Expect(exportSecret.Data).To(HaveKey(lsv1alpha1.DataObjectSecretDataKey))
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
@@ -341,13 +341,13 @@ func ContainerTests(f *framework.Framework) {
 				},
 			}
 			utils.ExpectNoError(state.Create(ctx, target))
-			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
+			utils.ExpectNoError(state.GetWithRetry(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployerPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
-			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
+			utils.ExpectNoError(state.GetWithRetry(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
 			Expect(exportSecret.Data).To(HaveKey(lsv1alpha1.DataObjectSecretDataKey))
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
@@ -385,13 +385,13 @@ func ContainerTests(f *framework.Framework) {
 				},
 			}
 			utils.ExpectNoError(state.Create(ctx, target))
-			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
+			utils.ExpectNoError(state.GetWithRetry(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployerPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
-			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
+			utils.ExpectNoError(state.GetWithRetry(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
 			Expect(exportSecret.Data).To(HaveKey(lsv1alpha1.DataObjectSecretDataKey))
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}

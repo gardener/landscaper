@@ -24,7 +24,7 @@ func CreateDataObjectFromFile(ctx context.Context, state *envtest.State, do *lsv
 
 func UpdateDataObjectFromFile(ctx context.Context, state *envtest.State, do *lsv1alpha1.DataObject, path string) error {
 	doOld := &lsv1alpha1.DataObject{}
-	if err := state.Client.Get(ctx, client.ObjectKeyFromObject(do), doOld); err != nil {
+	if err := state.GetWithRetry(ctx, client.ObjectKeyFromObject(do), doOld); err != nil {
 		return err
 	}
 	if err := ReadResourceFromFile(do, path); err != nil {
@@ -71,7 +71,7 @@ func CreateInstallationFromFile(ctx context.Context, state *envtest.State, inst 
 
 func UpdateInstallationFromFile(ctx context.Context, state *envtest.State, inst *lsv1alpha1.Installation, path string) error {
 	instOld := &lsv1alpha1.Installation{}
-	if err := state.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld); err != nil {
+	if err := state.GetWithRetry(ctx, client.ObjectKeyFromObject(inst), instOld); err != nil {
 		return err
 	}
 	if err := ReadResourceFromFile(inst, path); err != nil {
@@ -85,7 +85,7 @@ func UpdateInstallationFromFile(ctx context.Context, state *envtest.State, inst 
 func CheckConfigMap(ctx context.Context, state *envtest.State, name string, expectedData map[string]string) error {
 	configMapKey := client.ObjectKey{Namespace: state.Namespace, Name: name}
 	configMap := &k8sv1.ConfigMap{}
-	if err := state.Client.Get(ctx, configMapKey, configMap); err != nil {
+	if err := state.GetWithRetry(ctx, configMapKey, configMap); err != nil {
 		return err
 	}
 	return compareMaps(configMap.Data, expectedData)
@@ -94,7 +94,7 @@ func CheckConfigMap(ctx context.Context, state *envtest.State, name string, expe
 func CheckDataObjectString(ctx context.Context, state *envtest.State, name string, expectedValue string) error {
 	exportDo := &lsv1alpha1.DataObject{}
 	exportDoKey := client.ObjectKey{Name: name, Namespace: state.Namespace}
-	if err := state.Client.Get(ctx, exportDoKey, exportDo); err != nil {
+	if err := state.GetWithRetry(ctx, exportDoKey, exportDo); err != nil {
 		return err
 	}
 	actualValue := ""
@@ -108,7 +108,7 @@ func CheckDataObjectString(ctx context.Context, state *envtest.State, name strin
 func CheckDataObjectMap(ctx context.Context, state *envtest.State, name string, expectedData map[string]string) error {
 	exportDo := &lsv1alpha1.DataObject{}
 	exportDoKey := client.ObjectKey{Name: name, Namespace: state.Namespace}
-	if err := state.Client.Get(ctx, exportDoKey, exportDo); err != nil {
+	if err := state.GetWithRetry(ctx, exportDoKey, exportDo); err != nil {
 		return err
 	}
 	actualData := map[string]string{}

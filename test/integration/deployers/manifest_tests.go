@@ -73,7 +73,7 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			By("Create Manifest (v1alpha2) deploy item")
 			utils.ExpectNoError(state.Create(ctx, di))
 			// Set a new jobID to trigger a reconcile of the deploy item
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployerPhases.Succeeded, timeout))
 
@@ -102,7 +102,7 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			By("Delete Manifest (v1alpha2) deploy item")
 			utils.ExpectNoError(state.Client.Delete(ctx, di))
 			// Set a new jobID to trigger a reconcile of the deploy item
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, state.Client, di, timeout))
 
@@ -139,7 +139,7 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			By("Create Manifest (v1alpha1) deploy item")
 			utils.ExpectNoError(state.Create(ctx, di))
 			// Set a new jobID to trigger a reconcile of the deploy item
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployerPhases.Succeeded, timeout))
 
@@ -164,7 +164,7 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			By("Delete Manifest (v1alpha1) deploy item")
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
 			// Set a new jobID to trigger a reconcile of the deploy item
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, di, timeout))
 		})

@@ -225,7 +225,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		g.Expect(di).ToNot(g.BeNil())
 		utils.ExpectNoError(state.Create(ctx, di))
 		// Set a new jobID to trigger a reconcile of the deploy item
-		utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+		utils.ExpectNoError(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(di), di))
 		utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now()))
 		ginkgo.By("Waiting for deploy item " + di.GetName() + " to succeed")
 		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployerPhases.Succeeded, 2*time.Minute))

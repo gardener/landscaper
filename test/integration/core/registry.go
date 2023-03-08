@@ -238,7 +238,7 @@ func RegistryTest(f *framework.Framework) {
 
 				By("patch context to reference ComponentVersionOverwrites")
 				lsCtx := &lsv1alpha1.Context{}
-				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKey(lsv1alpha1.DefaultContextName, state.Namespace), lsCtx))
+				utils.ExpectNoError(state.GetWithRetry(ctx, kutil.ObjectKey(lsv1alpha1.DefaultContextName, state.Namespace), lsCtx))
 				lsCtxOld := lsCtx.DeepCopy()
 				lsCtx.ComponentVersionOverwritesReference = cvoName
 				utils.ExpectNoError(state.Client.Patch(ctx, lsCtx, client.MergeFrom(lsCtxOld)))
@@ -262,7 +262,7 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 				By("fetch subinstallations of source installation")
-				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
+				utils.ExpectNoError(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
 				var sourceIntermediateSubinst *lsv1alpha1.Installation
 				var sourceReferencedSubinst *lsv1alpha1.Installation
 				Expect(inst.Status.InstallationReferences).To(HaveLen(2))
@@ -270,10 +270,10 @@ func RegistryTest(f *framework.Framework) {
 					switch subInstRef.Name {
 					case "intermediate":
 						sourceIntermediateSubinst = &lsv1alpha1.Installation{}
-						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceIntermediateSubinst))
+						utils.ExpectNoError(state.GetWithRetry(ctx, subInstRef.Reference.NamespacedName(), sourceIntermediateSubinst))
 					case "referenced":
 						sourceReferencedSubinst = &lsv1alpha1.Installation{}
-						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceReferencedSubinst))
+						utils.ExpectNoError(state.GetWithRetry(ctx, subInstRef.Reference.NamespacedName(), sourceReferencedSubinst))
 					default:
 						Fail(fmt.Sprintf("unexpected subinstallation: %s", subInstRef.Name))
 					}
@@ -285,7 +285,7 @@ func RegistryTest(f *framework.Framework) {
 				Expect(sourceIntermediateSubinst.Status.InstallationReferences).To(HaveLen(1))
 				Expect(sourceIntermediateSubinst.Status.InstallationReferences[0].Name).To(BeEquivalentTo("referenced"))
 				intermediateReferencedSubinst := &lsv1alpha1.Installation{}
-				utils.ExpectNoError(state.Client.Get(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
+				utils.ExpectNoError(state.GetWithRetry(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
 
 				By("fetch deployitems of referenced subinstallations")
 				deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, state.Client, sourceReferencedSubinst)
@@ -434,7 +434,7 @@ func RegistryTest(f *framework.Framework) {
 
 				By("patch context to reference ComponentVersionOverwrites")
 				lsCtx := &lsv1alpha1.Context{}
-				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKey(lsv1alpha1.DefaultContextName, state.Namespace), lsCtx))
+				utils.ExpectNoError(state.GetWithRetry(ctx, kutil.ObjectKey(lsv1alpha1.DefaultContextName, state.Namespace), lsCtx))
 				lsCtxOld := lsCtx.DeepCopy()
 				lsCtx.ComponentVersionOverwritesReference = cvoName
 				utils.ExpectNoError(state.Client.Patch(ctx, lsCtx, client.MergeFrom(lsCtxOld)))
@@ -457,7 +457,7 @@ func RegistryTest(f *framework.Framework) {
 				// wait for installation to finish
 				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
-				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
+				utils.ExpectNoError(state.GetWithRetry(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
 				var sourceIntermediateSubinst *lsv1alpha1.Installation
 				var sourceReferencedSubinst *lsv1alpha1.Installation
 				Expect(inst.Status.InstallationReferences).To(HaveLen(2))
@@ -465,10 +465,10 @@ func RegistryTest(f *framework.Framework) {
 					switch subInstRef.Name {
 					case "intermediate":
 						sourceIntermediateSubinst = &lsv1alpha1.Installation{}
-						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceIntermediateSubinst))
+						utils.ExpectNoError(state.GetWithRetry(ctx, subInstRef.Reference.NamespacedName(), sourceIntermediateSubinst))
 					case "referenced":
 						sourceReferencedSubinst = &lsv1alpha1.Installation{}
-						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceReferencedSubinst))
+						utils.ExpectNoError(state.GetWithRetry(ctx, subInstRef.Reference.NamespacedName(), sourceReferencedSubinst))
 					default:
 						Fail(fmt.Sprintf("unexpected subinstallation: %s", subInstRef.Name))
 					}
@@ -480,7 +480,7 @@ func RegistryTest(f *framework.Framework) {
 				Expect(sourceIntermediateSubinst.Status.InstallationReferences).To(HaveLen(1))
 				Expect(sourceIntermediateSubinst.Status.InstallationReferences[0].Name).To(BeEquivalentTo("referenced"))
 				intermediateReferencedSubinst := &lsv1alpha1.Installation{}
-				utils.ExpectNoError(state.Client.Get(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
+				utils.ExpectNoError(state.GetWithRetry(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
 
 				By("fetch deployitems of referenced subinstallations")
 				deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, state.Client, intermediateReferencedSubinst)
