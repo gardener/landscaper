@@ -182,19 +182,14 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
 	}
 
-	if lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation) {
-
+	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
+	if hasTestReconcileAnnotation {
 		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
 			return reconcile.Result{}, err
 		}
 
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
 		di.Status.JobID = uuid.New().String()
-		if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000148, di); err != nil {
-			return reconcile.Result{}, err
-		}
-
-		return reconcile.Result{}, nil
 	}
 
 	if di.Status.GetJobID() == di.Status.JobIDFinished {
@@ -209,7 +204,8 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		if di.DeletionTimestamp.IsZero() {
 			if di.Spec.UpdateOnChangeOnly &&
 				di.GetGeneration() == di.Status.ObservedGeneration &&
-				di.Status.DeployerPhase == lsv1alpha1.DeployerPhases.Succeeded {
+				di.Status.DeployerPhase == lsv1alpha1.DeployerPhases.Succeeded &&
+				!hasTestReconcileAnnotation {
 
 				// deployitem is unchanged and succeeded, and no reconcile desired in this case
 				di.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
