@@ -57,12 +57,12 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 	out.TypeMeta = in.TypeMeta
 	if in.Phase != nil {
 		in, out := &in.Phase, &out.Phase
-		*out = new(v1alpha1.ExecutionPhase)
+		*out = new(v1alpha1.DeployItemPhase)
 		**out = **in
 	}
 	if in.InitialPhase != nil {
 		in, out := &in.InitialPhase, &out.InitialPhase
-		*out = new(v1alpha1.ExecutionPhase)
+		*out = new(v1alpha1.DeployItemPhase)
 		**out = **in
 	}
 	if in.ProviderStatus != nil {

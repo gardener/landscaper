@@ -20,12 +20,112 @@ type DeployItemType string
 
 type DeployItemPhase string
 
-const (
-	DeployItemPhaseSucceeded   DeployItemPhase = "Succeeded"
-	DeployItemPhaseFailed      DeployItemPhase = "Failed"
-	DeployItemPhaseInit        DeployItemPhase = "Init"
-	DeployItemPhaseProgressing DeployItemPhase = "Progressing"
-	DeployItemPhaseDeleting    DeployItemPhase = "Deleting"
+func (p DeployItemPhase) String() string {
+	return string(p)
+}
+
+func (p DeployItemPhase) IsFinal() bool {
+	switch p {
+	case DeployItemPhases.Succeeded, DeployItemPhases.Failed, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployItemPhase) IsDeletion() bool {
+	switch p {
+	case DeployItemPhases.InitDelete, DeployItemPhases.Deleting, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployItemPhase) IsFailed() bool {
+	switch p {
+	case DeployItemPhases.Failed, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployItemPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
+var (
+	DeployItemPhases = struct {
+		Init,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		InitDelete,
+		Deleting,
+		DeleteFailed DeployItemPhase
+	}{
+		Init:         DeployItemPhase(PhaseStringInit),
+		Progressing:  DeployItemPhase(PhaseStringProgressing),
+		Completing:   DeployItemPhase(PhaseStringCompleting),
+		Succeeded:    DeployItemPhase(PhaseStringSucceeded),
+		Failed:       DeployItemPhase(PhaseStringFailed),
+		InitDelete:   DeployItemPhase(PhaseStringInitDelete),
+		Deleting:     DeployItemPhase(PhaseStringDeleting),
+		DeleteFailed: DeployItemPhase(PhaseStringDeleteFailed),
+	}
+)
+
+type DeployerPhase string
+
+func (p DeployerPhase) String() string {
+	return string(p)
+}
+
+func (p DeployerPhase) IsFinal() bool {
+	switch p {
+	case DeployerPhases.Succeeded, DeployerPhases.Failed, DeployerPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployerPhase) IsDeletion() bool {
+	switch p {
+	case DeployerPhases.Deleting, DeployerPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployerPhase) IsFailed() bool {
+	switch p {
+	case DeployerPhases.Failed, DeployerPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployerPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
+var (
+	DeployerPhases = struct {
+		Init,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		Deleting,
+		DeleteFailed DeployerPhase
+	}{
+		Init:         DeployerPhase(PhaseStringInit),
+		Progressing:  DeployerPhase(PhaseStringProgressing),
+		Completing:   DeployerPhase(PhaseStringCompleting),
+		Succeeded:    DeployerPhase(PhaseStringSucceeded),
+		Failed:       DeployerPhase(PhaseStringFailed),
+		Deleting:     DeployerPhase(PhaseStringDeleting),
+		DeleteFailed: DeployerPhase(PhaseStringDeleteFailed),
+	}
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -63,9 +163,9 @@ var DeployItemDefinition = lsschema.CustomResourceDefinition{
 			JSONPath: ".status.phase",
 		},
 		{
-			Name:     "DeployItemPhase",
+			Name:     "DeployerPhase",
 			Type:     "string",
-			JSONPath: ".status.deployItemPhase",
+			JSONPath: ".Status.DeployerPhase",
 		},
 		{
 			Name:     "ExportRef",
@@ -130,7 +230,7 @@ type DeployItemSpec struct {
 // todo: add operation
 type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
-	Phase ExecutionPhase `json:"phase,omitempty"`
+	Phase DeployItemPhase `json:"phase,omitempty"`
 
 	// ObservedGeneration is the most recent generation observed for this DeployItem.
 	// It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
@@ -174,8 +274,8 @@ type DeployItemStatus struct {
 	// JobIDGenerationTime is the timestamp when the JobID was set.
 	JobIDGenerationTime *metav1.Time `json:"jobIDGenerationTime,omitempty"`
 
-	// DeployItemPhase is the current phase of the deploy item.
-	DeployItemPhase DeployItemPhase `json:"deployItemPhase,omitempty"`
+	// DeployerPhase is the current phase of the deploy item.
+	DeployerPhase DeployerPhase `json:"deployItemPhase,omitempty"`
 }
 
 func (r *DeployItemStatus) GetLastError() *Error {

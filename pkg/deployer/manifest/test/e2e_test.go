@@ -86,7 +86,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-		Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(utils.IsDeployerPhase(di, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 		Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
@@ -144,7 +144,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-		Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(utils.IsDeployerPhase(di, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 		Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
 
 		// Expect that the secret has been created
@@ -159,7 +159,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
-		Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(utils.IsDeployerPhase(di, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 		Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
 
 		// Expect that the secret has been deleted and a configmap has been created.
@@ -201,7 +201,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-		Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseProgressing)).To(BeTrue())
+		Expect(utils.IsDeployerPhase(di, lsv1alpha1.DeployerPhases.Progressing)).To(BeTrue())
 		Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeFalse())
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
@@ -249,7 +249,7 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 
 	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-	Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+	Expect(utils.IsDeployerPhase(di, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 	Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
 
 	// Expect that the secret has been created
@@ -265,7 +265,7 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 
 	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
-	Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+	Expect(utils.IsDeployerPhase(di, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 	Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
 
 	// Expect that the secret has been updated

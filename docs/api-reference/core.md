@@ -2099,10 +2099,6 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentInstallationPhase">ComponentInstallationPhase
-(<code>string</code> alias)</p></h3>
-<p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrite">ComponentVersionOverwrite
 </h3>
 <p>
@@ -2684,8 +2680,8 @@ todo: add operation</p>
 <td>
 <code>phase</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionPhase">
-ExecutionPhase
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemPhase">
+DeployItemPhase
 </a>
 </em>
 </td>
@@ -2853,13 +2849,13 @@ Kubernetes meta/v1.Time
 <td>
 <code>deployItemPhase</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemPhase">
-DeployItemPhase
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployerPhase">
+DeployerPhase
 </a>
 </em>
 </td>
 <td>
-<p>DeployItemPhase is the current phase of the deploy item.</p>
+<p>DeployerPhase is the current phase of the deploy item.</p>
 </td>
 </tr>
 </tbody>
@@ -3105,6 +3101,14 @@ Example: namespace: (( installation.imports.namespace ))</p>
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DeployerPhase">DeployerPhase
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>)
+</p>
+<p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployerRegistrationSpec">DeployerRegistrationSpec
 </h3>
 <p>
@@ -3395,14 +3399,6 @@ string
 <p>
 <p>ErrorCode is a string alias.</p>
 </p>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ExecPhase">ExecPhase
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
-</p>
-<p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionGeneration">ExecutionGeneration
 </h3>
 <p>
@@ -3448,7 +3444,7 @@ int64
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
 </p>
 <p>
 </p>
@@ -3641,8 +3637,8 @@ string
 <td>
 <code>phase</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecPhase">
-ExecPhase
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionPhase">
+ExecutionPhase
 </a>
 </em>
 </td>

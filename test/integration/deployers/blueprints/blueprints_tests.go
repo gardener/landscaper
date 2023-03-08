@@ -41,7 +41,7 @@ import (
 func DeployerBlueprintTests(f *framework.Framework) {
 	ginkgo.Describe("Deployer Blueprint", func() {
 
-		phase := lsv1alpha1.ExecutionPhaseSucceeded
+		phase := lsv1alpha1.DeployItemPhases.Succeeded
 		TestDeployerBlueprint(f, testDefinition{
 			Name:                    "MockDeployer",
 			ComponentDescriptorName: "github.com/gardener/landscaper/mock-deployer",
@@ -207,7 +207,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		}
 
 		utils.ExpectNoError(state.Create(ctx, inst))
-		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 		ginkgo.By("Testing the deployer with a simple deployitem")
 
@@ -228,7 +228,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
 		utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now()))
 		ginkgo.By("Waiting for deploy item " + di.GetName() + " to succeed")
-		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployerPhases.Succeeded, 2*time.Minute))
 
 		utils.ExpectNoError(utils.DeleteDeployItemForNewReconcile(ctx, f.Client, di, 2*time.Minute))
 		utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))

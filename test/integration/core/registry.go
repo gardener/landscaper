@@ -108,12 +108,12 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Create(ctx, inst))
 
 				// wait for installation to finish
-				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 				deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 				utils.ExpectNoError(err)
 				Expect(deployItems).To(HaveLen(1))
-				Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+				Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 
 				// expect that the nginx deployment is successfully running
 				nginxIngressDeploymentName := "test-ingress-nginx-controller"
@@ -259,7 +259,7 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Create(ctx, inst))
 
 				// wait for installation to finish
-				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 				By("fetch subinstallations of source installation")
 				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
@@ -455,7 +455,7 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Create(ctx, inst))
 
 				// wait for installation to finish
-				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
 				var sourceIntermediateSubinst *lsv1alpha1.Installation

@@ -63,7 +63,7 @@ func ImportExportTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-1", "installation.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			expectedData := map[string]string{"foo": "bar", "key1": "value1", "key2": "value2"}
@@ -96,7 +96,7 @@ func ImportExportTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-2", "installation.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			expectedData = map[string]string{"foo": "bar", "key3": "value3", "key4": "value4"}
@@ -131,7 +131,7 @@ func ImportExportTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-3", "installation.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			expectedData = map[string]string{"foo": "bar", "key5": "value5", "key6": "value6"}
@@ -166,7 +166,7 @@ func ImportExportTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-1", "installation.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			expectedData := map[string]string{"foo": "bar", "key1": "value1", "key2": "value2"}
@@ -187,7 +187,7 @@ func ImportExportTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-8", "installation.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			expectedData = map[string]string{"fooUpdated": "barUpdated", "key7": "value7", "key8": "value8"}

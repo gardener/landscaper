@@ -71,7 +71,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(state.Create(ctx, tgt))
 
 		mockConfig := &mockv1alpha1.ProviderConfiguration{}
-		phase := lsv1alpha1.ExecutionPhaseSucceeded
+		phase := lsv1alpha1.DeployItemPhases.Succeeded
 		mockConfig.Phase = &phase
 		di, err := mock.NewDeployItemBuilder().
 			Key(state.Namespace, "test1").
@@ -106,8 +106,8 @@ var _ = Describe("E2E", func() {
 
 		resDi := &lsv1alpha1.DeployItem{}
 		testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), resDi))
-		Expect(resDi.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
-		Expect(utils.IsDeployItemPhase(resDi, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(resDi.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
+		Expect(utils.IsDeployerPhase(resDi, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 		Expect(utils.IsDeployItemJobIDsIdentical(resDi)).To(BeTrue())
 	})
 
@@ -128,7 +128,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(state.Create(ctx, tgt))
 
 		mockConfig := &mockv1alpha1.ProviderConfiguration{}
-		phase := lsv1alpha1.ExecutionPhaseSucceeded
+		phase := lsv1alpha1.DeployItemPhases.Succeeded
 		mockConfig.Phase = &phase
 		di, err := mock.NewDeployItemBuilder().
 			Key(state.Namespace, "test1").
@@ -157,6 +157,6 @@ var _ = Describe("E2E", func() {
 
 		resDi := &lsv1alpha1.DeployItem{}
 		testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), resDi))
-		Expect(resDi.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhase("")))
+		Expect(resDi.Status.Phase).To(BeEquivalentTo(""))
 	})
 })

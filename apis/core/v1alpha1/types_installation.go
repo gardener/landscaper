@@ -50,23 +50,66 @@ const ValidateExportCondition ConditionType = "ValidateExport"
 // ComponentReferenceOverwriteCondition is the Conditions type to indicate that the component reference was overwritten.
 const ComponentReferenceOverwriteCondition ConditionType = "ComponentReferenceOverwrite"
 
-type ComponentInstallationPhase string
-
 type InstallationPhase string
 
-const (
-	InstallationPhaseInit            InstallationPhase = "Init"
-	InstallationPhaseCleanupOrphaned InstallationPhase = "CleanupOrphaned"
-	InstallationPhaseObjectsCreated  InstallationPhase = "ObjectsCreated"
-	InstallationPhaseProgressing     InstallationPhase = "Progressing"
-	InstallationPhaseCompleting      InstallationPhase = "Completing"
-	InstallationPhaseSucceeded       InstallationPhase = "Succeeded"
-	InstallationPhaseFailed          InstallationPhase = "Failed"
+func (p InstallationPhase) String() string {
+	return string(p)
+}
 
-	InstallationPhaseInitDelete    InstallationPhase = "InitDelete"
-	InstallationPhaseTriggerDelete InstallationPhase = "TriggerDelete"
-	InstallationPhaseDeleting      InstallationPhase = "Deleting"
-	InstallationPhaseDeleteFailed  InstallationPhase = "DeleteFailed"
+func (p InstallationPhase) IsFinal() bool {
+	switch p {
+	case InstallationPhases.Succeeded, InstallationPhases.Failed, InstallationPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p InstallationPhase) IsDeletion() bool {
+	switch p {
+	case InstallationPhases.InitDelete, InstallationPhases.TriggerDelete, InstallationPhases.Deleting, InstallationPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p InstallationPhase) IsFailed() bool {
+	switch p {
+	case InstallationPhases.Failed, InstallationPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p InstallationPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
+var (
+	InstallationPhases = struct {
+		Init,
+		CleanupOrphaned,
+		ObjectsCreated,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		InitDelete,
+		TriggerDelete,
+		Deleting,
+		DeleteFailed InstallationPhase
+	}{
+		Init:            InstallationPhase(PhaseStringInit),
+		CleanupOrphaned: InstallationPhase(PhaseStringCleanupOrphaned),
+		ObjectsCreated:  InstallationPhase(PhaseStringObjectsCreated),
+		Progressing:     InstallationPhase(PhaseStringProgressing),
+		Completing:      InstallationPhase(PhaseStringCompleting),
+		Succeeded:       InstallationPhase(PhaseStringSucceeded),
+		Failed:          InstallationPhase(PhaseStringFailed),
+		InitDelete:      InstallationPhase(PhaseStringInitDelete),
+		TriggerDelete:   InstallationPhase(PhaseStringTriggerDelete),
+		Deleting:        InstallationPhase(PhaseStringDeleting),
+		DeleteFailed:    InstallationPhase(PhaseStringDeleteFailed),
+	}
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

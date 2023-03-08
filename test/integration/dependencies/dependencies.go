@@ -49,7 +49,7 @@ func DependencyTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-chain", "installation.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check processing order of subinstallations")
 			utils.ExpectNoError(utils.CheckDataObjectString(ctx, state.State, "export-do-track", "ABCD"))
@@ -60,7 +60,7 @@ func DependencyTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-join", "installation.yaml")))
 
 			By("Wait for installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check changed processing order of subinstallations")
 			utils.ExpectNoError(utils.CheckDataObjectString(ctx, state.State, "export-do-track", "(A|B|C)D"))
@@ -77,7 +77,7 @@ func DependencyTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-cycle", "installation.yaml")))
 
 			By("Wait for installation to fail")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseFailed, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Failed, 2*time.Minute))
 		})
 
 		It("should detect an export conflict", func() {
@@ -91,7 +91,7 @@ func DependencyTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-conflict", "installation.yaml")))
 
 			By("Wait for installation to fail")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseFailed, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Failed, 2*time.Minute))
 		})
 	})
 }

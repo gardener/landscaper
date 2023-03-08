@@ -31,6 +31,7 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
@@ -150,21 +151,21 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 
 	if deployItem.Status.GetLastError() != nil {
 		if lserrors.ContainsAnyErrorCode(deployItem.Status.GetLastError().Codes, lsv1alpha1.UnrecoverableErrorCodes) {
-			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+			lsv1alpha1helper.SetDeployItemToFailed(deployItem)
 		}
 
 		lastErr := deployItem.Status.GetLastError()
 		lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
 	}
 
-	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
-	} else if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
-		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseSucceeded
+	if deployItem.Status.Phase.IsFailed() {
+		deployItem.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
+	} else if deployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Succeeded {
+		deployItem.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Succeeded
 	}
 
-	if deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
-		deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
+	if deployItem.Status.DeployerPhase == lsv1alpha1.DeployerPhases.Succeeded ||
+		deployItem.Status.DeployerPhase.IsFailed() {
 		deployItem.Status.JobIDFinished = deployItem.Status.GetJobID()
 	}
 

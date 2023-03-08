@@ -63,7 +63,7 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, nginxInst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, nginxInst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, nginxInst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Create echo server Installation")
 			inst := &lsv1alpha1.Installation{}
@@ -73,12 +73,12 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, inst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
 			Expect(deployItems).To(HaveLen(1))
-			Expect(deployItems[0].Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
+			Expect(deployItems[0].Status.DeployerPhase).To(Equal(lsv1alpha1.DeployerPhases.Succeeded))
 			Expect(deployItems[0].Status.JobIDFinished).To(Equal(deployItems[0].Status.GetJobID()))
 
 			// expect that the echo server deployment is successfully running

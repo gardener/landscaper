@@ -24,8 +24,6 @@ const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
 
 type ExecutionPhase string
 
-type ExecPhase string
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ExecutionList contains a list of Executions‚
@@ -96,7 +94,7 @@ type ExecutionStatus struct {
 	JobIDFinished string `json:"jobIDFinished,omitempty"`
 
 	// ExecutionPhase is the current phase of the execution.
-	ExecutionPhase ExecPhase `json:"phase,omitempty"`
+	ExecutionPhase ExecutionPhase `json:"phase,omitempty"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.

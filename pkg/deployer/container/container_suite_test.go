@@ -112,8 +112,8 @@ var _ = Describe("Template", func() {
 		di := &lsv1alpha1.DeployItem{}
 		Eventually(func() error {
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), di)).To(Succeed())
-			if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
-				di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed &&
+			if di.Status.Phase.IsFailed() &&
+				di.Status.DeployerPhase.IsFailed() &&
 				di.Status.GetJobID() == di.Status.JobIDFinished {
 				return nil
 			}

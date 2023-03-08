@@ -32,27 +32,60 @@ const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
 
 type ExecutionPhase string
 
-const (
-	ExecutionPhaseInit        ExecutionPhase = "Init"
-	ExecutionPhaseProgressing ExecutionPhase = "Progressing"
-	ExecutionPhaseDeleting    ExecutionPhase = "Deleting"
-	ExecutionPhaseSucceeded   ExecutionPhase = "Succeeded"
-	ExecutionPhaseFailed      ExecutionPhase = "Failed"
-)
+func (p ExecutionPhase) String() string {
+	return string(p)
+}
 
-type ExecPhase string
+func (p ExecutionPhase) IsFinal() bool {
+	switch p {
+	case ExecutionPhases.Succeeded, ExecutionPhases.Failed, ExecutionPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
 
-const (
-	ExecPhaseInit        ExecPhase = "Init"
-	ExecPhaseProgressing ExecPhase = "Progressing"
-	ExecPhaseCompleting  ExecPhase = "Completing"
-	ExecPhaseSucceeded   ExecPhase = "Succeeded"
-	ExecPhaseFailed      ExecPhase = "Failed"
+func (p ExecutionPhase) IsDeletion() bool {
+	switch p {
+	case ExecutionPhases.InitDelete, ExecutionPhases.TriggerDelete, ExecutionPhases.Deleting, ExecutionPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
 
-	ExecPhaseInitDelete    ExecPhase = "InitDelete"
-	ExecPhaseTriggerDelete ExecPhase = "TriggerDelete"
-	ExecPhaseDeleting      ExecPhase = "Deleting"
-	ExecPhaseDeleteFailed  ExecPhase = "DeleteFailed"
+func (p ExecutionPhase) IsFailed() bool {
+	switch p {
+	case ExecutionPhases.Failed, ExecutionPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p ExecutionPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
+var (
+	ExecutionPhases = struct {
+		Init,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		InitDelete,
+		TriggerDelete,
+		Deleting,
+		DeleteFailed ExecutionPhase
+	}{
+		Init:          ExecutionPhase(PhaseStringInit),
+		Progressing:   ExecutionPhase(PhaseStringProgressing),
+		Completing:    ExecutionPhase(PhaseStringCompleting),
+		Succeeded:     ExecutionPhase(PhaseStringSucceeded),
+		Failed:        ExecutionPhase(PhaseStringFailed),
+		InitDelete:    ExecutionPhase(PhaseStringInitDelete),
+		TriggerDelete: ExecutionPhase(PhaseStringTriggerDelete),
+		Deleting:      ExecutionPhase(PhaseStringDeleting),
+		DeleteFailed:  ExecutionPhase(PhaseStringDeleteFailed),
+	}
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -169,7 +202,7 @@ type ExecutionStatus struct {
 	JobIDFinished string `json:"jobIDFinished,omitempty"`
 
 	// ExecutionPhase is the current phase of the execution.
-	ExecutionPhase ExecPhase `json:"phase,omitempty"`
+	ExecutionPhase ExecutionPhase `json:"phase,omitempty"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.

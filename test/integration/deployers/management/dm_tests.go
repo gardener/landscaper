@@ -175,7 +175,7 @@ func DeployerManagementTests(f *framework.Framework) {
 					// expect that all installations are healthy
 					var allErrs []error
 					for _, inst := range instList.Items {
-						finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhaseSucceeded)
+						finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhases.Succeeded)
 						if err != nil {
 							allErrs = append(allErrs, err)
 						} else if !finished {
@@ -266,7 +266,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				// expect that all installations are healthy
 				var allErrs []error
 				for _, inst := range newInstallations {
-					finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhaseSucceeded)
+					finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhases.Succeeded)
 					if err != nil {
 						allErrs = append(allErrs, err)
 					} else if !finished {

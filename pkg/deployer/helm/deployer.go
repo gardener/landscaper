@@ -68,7 +68,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 		err = lserrors.NewWrappedError(err, "Reconcile", "New", err.Error())
 		return err
 	}
-	di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+	di.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 
 	files, crds, values, ch, err := helm.Template(ctx, d.lsClient)
 	if err != nil {

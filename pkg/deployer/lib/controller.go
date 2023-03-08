@@ -202,34 +202,32 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
-		di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
-		di.Status.DeployItemPhase == "" {
+	if di.Status.DeployerPhase.IsFinal() || di.Status.DeployerPhase.IsEmpty() {
 
 		// The deployitem has a new jobID, but the phase is still finished from before
 
 		if di.DeletionTimestamp.IsZero() {
 			if di.Spec.UpdateOnChangeOnly &&
 				di.GetGeneration() == di.Status.ObservedGeneration &&
-				di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded {
+				di.Status.DeployerPhase == lsv1alpha1.DeployerPhases.Succeeded {
 
 				// deployitem is unchanged and succeeded, and no reconcile desired in this case
-				di.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+				di.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 				c.updateDiValuesForNewReconcile(ctx, di)
 				return reconcile.Result{}, c.handleReconcileResult(ctx, nil, old, di)
 			}
 
 			// initialize deployitem for reconcile
-			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-			di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseProgressing
+			di.Status.Phase = lsv1alpha1.DeployItemPhases.Init
+			di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Progressing
 			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
 				return reconcile.Result{}, err
 			}
 		} else {
 
 			// initialize deployitem for delete
-			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-			di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseDeleting
+			di.Status.Phase = lsv1alpha1.DeployItemPhases.InitDelete
+			di.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Deleting
 			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
 				return reconcile.Result{}, err
 			}
@@ -242,12 +240,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if di.DeletionTimestamp.IsZero() {
 		lsError = c.reconcile(ctx, lsCtx, di, rt)
 		err = c.handleReconcileResult(ctx, lsError, old, di)
-		return c.buildResult(di.Status.DeployItemPhase, err)
+		return c.buildResult(di.Status.DeployerPhase, err)
 
 	} else {
 		lsError = c.delete(ctx, lsCtx, di, rt)
 		err = c.handleReconcileResult(ctx, lsError, old, di)
-		return c.buildResult(di.Status.DeployItemPhase, err)
+		return c.buildResult(di.Status.DeployerPhase, err)
 	}
 }
 
@@ -255,10 +253,10 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsClient, c.lsEventRecorder)
 }
 
-func (c *controller) buildResult(deployItemPhase lsv1alpha1.DeployItemPhase, err error) (reconcile.Result, error) {
-	if deployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded {
+func (c *controller) buildResult(deployerPhase lsv1alpha1.DeployerPhase, err error) (reconcile.Result, error) {
+	if deployerPhase == lsv1alpha1.DeployerPhases.Succeeded {
 		return reconcile.Result{}, nil
-	} else if deployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
+	} else if deployerPhase.IsFailed() {
 		return reconcile.Result{}, nil
 	} else {
 		// Init, Progressing, or Deleting

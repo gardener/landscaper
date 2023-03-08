@@ -239,13 +239,6 @@ func RemoveVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObject
 	return objects
 }
 
-func IsDeletionInstallationPhase(phase v1alpha1.InstallationPhase) bool {
-	return phase == v1alpha1.InstallationPhaseInitDelete ||
-		phase == v1alpha1.InstallationPhaseTriggerDelete ||
-		phase == v1alpha1.InstallationPhaseDeleting ||
-		phase == v1alpha1.InstallationPhaseDeleteFailed
-}
-
 // HasIgnoreAnnotation returns true only if the given object
 // has the 'landscaper.gardener.cloud/ignore' annotation
 // and its value is 'true'.
@@ -260,4 +253,20 @@ func HasIgnoreAnnotation(obj metav1.ObjectMeta) bool {
 func HasDeleteWithoutUninstallAnnotation(obj metav1.ObjectMeta) bool {
 	v, ok := obj.GetAnnotations()[v1alpha1.DeleteWithoutUninstallAnnotation]
 	return ok && v == "true"
+}
+
+// SetDeployItemToFailed sets status.phase of the DeployItem to a failure phase
+// If the DeployItem has a DeletionTimestamp, 'DeleteFailed' is used, otherwise it will be set to 'Failed'.
+// Afterwards, the set phase is returned.
+// Will do nothing and return an empty string if given a nil pointer.
+func SetDeployItemToFailed(di *v1alpha1.DeployItem) v1alpha1.DeployItemPhase {
+	if di == nil {
+		return ""
+	}
+	if !di.ObjectMeta.DeletionTimestamp.IsZero() {
+		di.Status.Phase = v1alpha1.DeployItemPhases.DeleteFailed
+	} else {
+		di.Status.Phase = v1alpha1.DeployItemPhases.Failed
+	}
+	return di.Status.Phase
 }
