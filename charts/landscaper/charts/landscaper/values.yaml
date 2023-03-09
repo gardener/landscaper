@@ -62,13 +62,14 @@ landscaper:
 #  - mock
 #  - manifest
   deployersConfig: {}
-#    container:
-#      container-helm chart values
-#      ...
-#    my-custom-deployer:
-#      apiVersion: landscaper.gardener.cloud/v1alpha1
-#      kind: DeployerRegistration
-#      ...
+#    Deployers:
+#      container:
+#        container-helm chart values
+#        ...
+#      my-custom-deployer:
+#        apiVersion: landscaper.gardener.cloud/v1alpha1
+#        kind: DeployerRegistration
+#        ...
 
 #  deployItemTimeouts:
 #    # how long deployers may take to react on changes to deploy items
