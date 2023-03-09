@@ -198,6 +198,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 
 		// only remove the finalizer if we get the status of the pod
+		logger.Debug("Deleting pod, as it has finished", "podStatus", pod.Status.Phase)
 		if err := c.CleanupPod(ctx, pod); err != nil {
 			return err
 		}
