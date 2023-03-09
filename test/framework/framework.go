@@ -152,9 +152,10 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse kubeconfig: %w", err)
 	}
-	f.Client, err = client.New(f.RestConfig, client.Options{
+	innerClient, err := client.New(f.RestConfig, client.Options{
 		Scheme: lsscheme.LandscaperScheme,
 	})
+	f.Client = envtest.NewRetryingClient(innerClient, logger)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes client: %w", err)
 	}
