@@ -10,7 +10,7 @@ import (
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 )
 
-type RetryingClient struct {
+type retryingClient struct {
 	client.Client
 	log utils.Logger
 }
@@ -20,43 +20,61 @@ func NewRetryingClient(innerClient client.Client, log utils.Logger) client.Clien
 		log = utils.NewDiscardLogger()
 	}
 
-	return &RetryingClient{
+	return &retryingClient{
 		Client: innerClient,
 		log:    log,
 	}
 }
 
-func (r *RetryingClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	return r.retrySporadic(func() error {
+func (r *retryingClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	return retrySporadic(r.log, func() error {
 		return r.Client.Get(ctx, key, obj, opts...)
 	})
 }
 
-func (r *RetryingClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	return r.retrySporadic(func() error {
+func (r *retryingClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	return retrySporadic(r.log, func() error {
 		return r.Client.List(ctx, list, opts...)
 	})
 }
 
-func (r *RetryingClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	return r.retrySporadic(func() error {
+func (r *retryingClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	return retrySporadic(r.log, func() error {
 		return r.Client.Create(ctx, obj, opts...)
 	})
 }
 
-func (r *RetryingClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	return r.retrySporadic(func() error {
+func (r *retryingClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	return retrySporadic(r.log, func() error {
 		return r.Client.Update(ctx, obj, opts...)
 	})
 }
 
-func (r *RetryingClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	return r.retrySporadic(func() error {
+func (r *retryingClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	return retrySporadic(r.log, func() error {
 		return r.Client.Patch(ctx, obj, patch, opts...)
 	})
 }
 
-func (r *RetryingClient) retrySporadic(fn func() error) error {
+func (r *retryingClient) Status() client.SubResourceWriter {
+	return &retryingSubResourceWriter{
+		SubResourceWriter: r.Client.Status(),
+		log:               r.log,
+	}
+}
+
+type retryingSubResourceWriter struct {
+	client.SubResourceWriter
+	log utils.Logger
+}
+
+func (r *retryingSubResourceWriter) Update(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
+	return retrySporadic(r.log, func() error {
+		return r.SubResourceWriter.Update(ctx, obj, opts...)
+	})
+}
+
+func retrySporadic(log utils.Logger, fn func() error) error {
 	retries := 10
 
 	for i := 0; i < retries; i++ {
@@ -64,12 +82,12 @@ func (r *RetryingClient) retrySporadic(fn func() error) error {
 		if err == nil {
 			return nil
 		} else if i == retries-1 {
-			r.log.Logfln("retrying client: all attempts failed: %w", err)
+			log.Logfln("retrying client: all attempts failed: %w", err)
 			return err
 		} else if !isSporadicError(err) {
 			return err
 		} else {
-			r.log.Logfln("retrying client: continue retrying after sporadic error: %w", err)
+			log.Logfln("retrying client: continue retrying after sporadic error: %w", err)
 			time.Sleep(3 * time.Second)
 		}
 	}
