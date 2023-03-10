@@ -165,7 +165,6 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 		}
 
-		// we have to persist the observed changes so lets do a patch
 		if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000063, c.DeployItem); err != nil {
 			return lserrors.NewWrappedError(err, operationName, "UpdateDeployItemStatus", err.Error())
 		}
@@ -195,6 +194,11 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		if err := c.collectAndSetPodStatus(pod, podSucceeded); err != nil {
 			return lserrors.NewWrappedError(err,
 				"Reconcile", "UpdatePodStatus", err.Error())
+		}
+
+		// write status to ensure podStatus is saved before deleting the pod
+		if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000031, c.DeployItem); err != nil {
+			return lserrors.NewWrappedError(err, operationName, "UpdateDeployItemStatus", err.Error())
 		}
 
 		// only remove the finalizer if we get the status of the pod
