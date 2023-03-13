@@ -31,6 +31,17 @@ landscaper:
     - helm
     - manifest
     - mock
+    deployersConfig:
+      Deployers:
+        container:
+          deployer:
+            verbosityLevel: debug
+        helm:
+          deployer:
+            verbosityLevel: debug
+        manifest:
+          deployer:
+            verbosityLevel: debug
     deployItemTimeouts:
       pickup: 30s
       abort: 30s
