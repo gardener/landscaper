@@ -16,28 +16,24 @@ import (
 	"strings"
 	"time"
 
-	v1 "k8s.io/api/admissionregistration/v1"
-
-	utils2 "github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	v1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	utils2 "github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 	lsscheme "github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -152,9 +148,10 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse kubeconfig: %w", err)
 	}
-	f.Client, err = client.New(f.RestConfig, client.Options{
+	innerClient, err := client.New(f.RestConfig, client.Options{
 		Scheme: lsscheme.LandscaperScheme,
 	})
+	f.Client = envtest.NewRetryingClient(innerClient, logger)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes client: %w", err)
 	}
@@ -437,46 +434,5 @@ func (f *Framework) prepareNextTest(ctx context.Context, namespace string) error
 		}
 	}
 
-	return nil
-}
-
-// CleanupLandscaperResources force cleans up all landscaper resources.
-func CleanupLandscaperResources(ctx context.Context, kubeClient client.Client, ns string) error {
-	instList := &lsv1alpha1.InstallationList{}
-	if err := kubeClient.List(ctx, instList, client.InNamespace(ns)); err != nil {
-		return err
-	}
-	for _, obj := range instList.Items {
-		if err := envtest.CleanupForObject(ctx, kubeClient, &obj, time.Minute); err != nil {
-			return err
-		}
-	}
-	execList := &lsv1alpha1.ExecutionList{}
-	if err := kubeClient.List(ctx, execList, client.InNamespace(ns)); err != nil {
-		return err
-	}
-	for _, obj := range execList.Items {
-		if err := envtest.CleanupForObject(ctx, kubeClient, &obj, time.Minute); err != nil {
-			return err
-		}
-	}
-	diList := &lsv1alpha1.DeployItemList{}
-	if err := kubeClient.List(ctx, diList, client.InNamespace(ns)); err != nil {
-		return err
-	}
-	for _, obj := range diList.Items {
-		if err := envtest.CleanupForObject(ctx, kubeClient, &obj, time.Minute); err != nil {
-			return err
-		}
-	}
-	cmList := &corev1.ConfigMapList{}
-	if err := kubeClient.List(ctx, instList, client.InNamespace(ns)); err != nil {
-		return err
-	}
-	for _, obj := range cmList.Items {
-		if err := envtest.CleanupForObject(ctx, kubeClient, &obj, time.Second); err != nil {
-			return err
-		}
-	}
 	return nil
 }
