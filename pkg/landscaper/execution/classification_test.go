@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("DeployItem Classification", func() {
 
-	buildExecutionItem := func(name string, dependsOn []string, jobID, jobIDFinished string, phase lsv1alpha1.DeployerPhase) *executionItem {
+	buildExecutionItem := func(name string, dependsOn []string, jobID, jobIDFinished string, phase lsv1alpha1.DeployItemPhase) *executionItem {
 		return &executionItem{
 			Info: lsv1alpha1.DeployItemTemplate{
 				Name:      name,
@@ -25,7 +25,7 @@ var _ = Describe("DeployItem Classification", func() {
 				Status: lsv1alpha1.DeployItemStatus{
 					JobID:         jobID,
 					JobIDFinished: jobIDFinished,
-					DeployerPhase: phase,
+					Phase:         phase,
 				},
 			},
 		}
@@ -61,17 +61,17 @@ var _ = Describe("DeployItem Classification", func() {
 		currJobID := "02"
 		prevJobID := "01"
 		items := []*executionItem{
-			buildExecutionItem("a", []string{}, currJobID, currJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("b", []string{"a"}, currJobID, currJobID, lsv1alpha1.DeployerPhases.Failed),
-			buildExecutionItem("c", []string{"a"}, currJobID, currJobID, lsv1alpha1.DeployerPhases.Succeeded),
+			buildExecutionItem("a", []string{}, currJobID, currJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("b", []string{"a"}, currJobID, currJobID, lsv1alpha1.DeployItemPhases.Failed),
+			buildExecutionItem("c", []string{"a"}, currJobID, currJobID, lsv1alpha1.DeployItemPhases.Succeeded),
 
-			buildExecutionItem("d", []string{}, prevJobID, prevJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("e", []string{"a", "c"}, prevJobID, prevJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("f", []string{"a", "d"}, prevJobID, prevJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("g", []string{"f"}, prevJobID, prevJobID, lsv1alpha1.DeployerPhases.Failed),
+			buildExecutionItem("d", []string{}, prevJobID, prevJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("e", []string{"a", "c"}, prevJobID, prevJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("f", []string{"a", "d"}, prevJobID, prevJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("g", []string{"f"}, prevJobID, prevJobID, lsv1alpha1.DeployItemPhases.Failed),
 
-			buildExecutionItem("h", []string{}, currJobID, prevJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("i", []string{}, currJobID, prevJobID, lsv1alpha1.DeployerPhases.Progressing),
+			buildExecutionItem("h", []string{}, currJobID, prevJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("i", []string{}, currJobID, prevJobID, lsv1alpha1.DeployItemPhases.Progressing),
 		}
 
 		classification, err := newDeployItemClassification(currJobID, items)
@@ -89,18 +89,18 @@ var _ = Describe("DeployItem Classification", func() {
 		prevJobID := "01"
 		items := []*executionItem{
 			buildExecutionItemWithoutDeployItem("a", []string{"c", "f"}),
-			buildExecutionItem("b", []string{}, currJobID, currJobID, lsv1alpha1.DeployerPhases.Failed),
+			buildExecutionItem("b", []string{}, currJobID, currJobID, lsv1alpha1.DeployItemPhases.Failed),
 			buildExecutionItemWithoutDeployItem("c", []string{"e"}),
 
-			buildExecutionItem("d", []string{"f"}, prevJobID, prevJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("e", []string{}, prevJobID, prevJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("f", []string{"g"}, prevJobID, prevJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("g", []string{}, prevJobID, prevJobID, lsv1alpha1.DeployerPhases.Failed),
+			buildExecutionItem("d", []string{"f"}, prevJobID, prevJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("e", []string{}, prevJobID, prevJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("f", []string{"g"}, prevJobID, prevJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("g", []string{}, prevJobID, prevJobID, lsv1alpha1.DeployItemPhases.Failed),
 
-			buildExecutionItem("h", []string{}, currJobID, prevJobID, lsv1alpha1.DeployerPhases.Succeeded),
-			buildExecutionItem("i", []string{}, currJobID, prevJobID, lsv1alpha1.DeployerPhases.Deleting),
+			buildExecutionItem("h", []string{}, currJobID, prevJobID, lsv1alpha1.DeployItemPhases.Succeeded),
+			buildExecutionItem("i", []string{}, currJobID, prevJobID, lsv1alpha1.DeployItemPhases.Deleting),
 
-			buildExecutionItem("j", []string{}, currJobID, currJobID, lsv1alpha1.DeployerPhases.Succeeded),
+			buildExecutionItem("j", []string{}, currJobID, currJobID, lsv1alpha1.DeployItemPhases.Succeeded),
 		}
 
 		classification, err := newDeployItemClassificationForDelete(currJobID, items)

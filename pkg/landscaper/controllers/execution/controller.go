@@ -280,7 +280,6 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 		if item.Status.JobIDFinished != exec.Status.JobID {
 			item.Status.SetJobID(exec.Status.JobID)
 			item.Status.JobIDFinished = exec.Status.JobID
-			item.Status.DeployerPhase = lsv1alpha1.DeployerPhases.Failed
 			lsv1alpha1helper.SetDeployItemToFailed(item)
 			lsutil.SetLastError(&item.Status, lserrors.UpdatedError(item.Status.GetLastError(),
 				"InterruptOperation",

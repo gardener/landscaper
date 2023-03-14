@@ -8,8 +8,6 @@ import (
 	"context"
 	"time"
 
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -142,7 +140,6 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
-		Expect(lsutils.IsDeployerPhase(di, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 
 		deploymentList := &appsv1.DeploymentList{}
 		Expect(testenv.Client.List(ctx, deploymentList, client.InNamespace(state.Namespace))).To(Succeed())

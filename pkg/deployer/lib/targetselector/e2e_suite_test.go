@@ -107,7 +107,6 @@ var _ = Describe("E2E", func() {
 		resDi := &lsv1alpha1.DeployItem{}
 		testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), resDi))
 		Expect(resDi.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
-		Expect(utils.IsDeployerPhase(resDi, lsv1alpha1.DeployerPhases.Succeeded)).To(BeTrue())
 		Expect(utils.IsDeployItemJobIDsIdentical(resDi)).To(BeTrue())
 	})
 

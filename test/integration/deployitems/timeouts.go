@@ -150,7 +150,7 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 					}),
 				}),
 				"Status": MatchFields(IgnoreExtras, Fields{
-					"DeployerPhase": Equal(lsv1alpha1.DeployerPhases.Progressing),
+					"Phase": Equal(lsv1alpha1.DeployItemPhases.Progressing),
 				}),
 			}))
 
@@ -169,7 +169,7 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 				utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKeyFromObject(dummy_inst_di), dummy_inst_di))
 				return dummy_inst_di.Status
 			}, waitingForReconcile, resyncTime).Should(MatchFields(IgnoreExtras, Fields{
-				"DeployerPhase": Equal(lsv1alpha1.DeployerPhases.Failed),
+				"Phase": Equal(lsv1alpha1.DeployItemPhases.Failed),
 				"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
 					"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
 					"Reason": Equal(lsv1alpha1.PickupTimeoutReason),
@@ -181,7 +181,7 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 				return *mock_inst_di
 			}, maxDuration(0, waitingForReconcile-time.Since(startWaitingTime)), resyncTime).Should(MatchFields(IgnoreExtras, Fields{
 				"Status": MatchFields(IgnoreExtras, Fields{
-					"DeployerPhase": Equal(lsv1alpha1.DeployerPhases.Succeeded),
+					"Phase": Equal(lsv1alpha1.DeployItemPhases.Succeeded),
 				}),
 			}), "deploy item of the mock installation should not have had a pickup timeout")
 
@@ -195,7 +195,7 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 				utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKeyFromObject(mock_di_prog), mock_di_prog))
 				return mock_di_prog.Status
 			}, waitingForReconcile, resyncTime).Should(MatchFields(IgnoreExtras, Fields{
-				"DeployerPhase": Equal(lsv1alpha1.DeployerPhases.Failed),
+				"Phase": Equal(lsv1alpha1.DeployItemPhases.Failed),
 				"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
 					"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
 					"Reason": Equal(lsv1alpha1.AbortingTimeoutReason),
