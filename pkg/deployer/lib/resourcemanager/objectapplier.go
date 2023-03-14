@@ -243,8 +243,9 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 	}
 
 	mr := &managedresource.ManagedResourceStatus{
-		Policy:   manifest.Policy,
-		Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
+		AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
+		Policy:               manifest.Policy,
+		Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
 	}
 
 	// if fallback policy is set and the resource is already managed by another deployer
@@ -409,6 +410,7 @@ func (a *ManifestApplier) prepareManifests() error {
 			Policy:               obj.Policy,
 			Manifest:             obj.Manifest,
 			AnnotateBeforeCreate: obj.AnnotateBeforeCreate,
+			AnnotateBeforeDelete: obj.AnnotateBeforeDelete,
 		}
 		// add to specific execution group
 		if kind == "CustomResourceDefinition" {
