@@ -204,12 +204,12 @@ func (m *Manifest) Delete(ctx context.Context) error {
 			continue
 		}
 
-		if m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete != nil {
+		if mr.AnnotateBeforeDelete != nil {
 			objAnnotations := currObj.GetAnnotations()
 			if objAnnotations == nil {
-				objAnnotations = m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete
+				objAnnotations = mr.AnnotateBeforeDelete
 			} else {
-				if err := mergo.Merge(&objAnnotations, m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete, mergo.WithOverride); err != nil {
+				if err := mergo.Merge(&objAnnotations, mr.AnnotateBeforeDelete, mergo.WithOverride); err != nil {
 					logger.Error(err, "unable to merge resource annotations with before delete annotations", lc.KeyResource, key.String())
 				}
 			}
