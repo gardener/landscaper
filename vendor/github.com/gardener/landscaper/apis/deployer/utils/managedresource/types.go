@@ -75,6 +75,9 @@ func (mr ManagedResourceStatusList) TypedObjectReferenceList() []lsv1alpha1.Type
 
 // ManagedResourceStatus describes the managed resource and their metadata.
 type ManagedResourceStatus struct {
+	// AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.
+	// +optional
+	AnnotateBeforeDelete map[string]string `json:"annotateBeforeDelete,omitempty"`
 	// Policy defines the manage policy for that resource.
 	Policy ManifestPolicy `json:"policy,omitempty"`
 	// Resources describes the managed kubernetes resource.
