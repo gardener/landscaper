@@ -10,7 +10,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -434,5 +433,145 @@ var _ = Describe("", func() {
 			Expect(state.Client.Update(ctx, cm)).To(Succeed())
 		}()
 		Expect(m.Reconcile(ctx)).To(Succeed())
+	})
+
+	It("should deploy a configmap list", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		cmList := &corev1.ConfigMapList{
+			Items: []corev1.ConfigMap{
+				{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ConfigMap",
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cm-0",
+						Namespace: state.Namespace,
+						Finalizers: []string{
+							"kubernetes.io/test",
+						},
+					},
+					Data: map[string]string{
+						"key0": "val0",
+					},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ConfigMap",
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cm-1",
+						Namespace: state.Namespace,
+						Finalizers: []string{
+							"kubernetes.io/test",
+						},
+					},
+					Data: map[string]string{
+						"key1": "val1",
+					},
+				},
+			},
+		}
+		rawCMList, err := kutil.ConvertToRawExtension(cmList, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:   managedresource.ManagePolicy,
+				Manifest: rawCMList,
+				AnnotateBeforeDelete: map[string]string{
+					"to-be-deleted": "True",
+				},
+			},
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+
+		cm := &corev1.ConfigMap{}
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(&cmList.Items[0]), cm)).To(Succeed())
+		Expect(cm.Data).To(HaveKeyWithValue("key0", "val0"))
+
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(&cmList.Items[1]), cm)).To(Succeed())
+		Expect(cm.Data).To(HaveKeyWithValue("key1", "val1"))
+
+		Expect(m.Delete(ctx)).ToNot(Succeed())
+
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(&cmList.Items[0]), cm)).To(Succeed())
+		Expect(cm.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
+		Expect(cm.ObjectMeta.DeletionTimestamp).ToNot(BeNil())
+		cm.ObjectMeta.Finalizers = nil
+		Expect(state.Client.Update(ctx, cm)).To(Succeed())
+
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(&cmList.Items[1]), cm)).To(Succeed())
+		Expect(cm.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
+		Expect(cm.ObjectMeta.DeletionTimestamp).ToNot(BeNil())
+		cm.ObjectMeta.Finalizers = nil
+		Expect(state.Client.Update(ctx, cm)).To(Succeed())
+
+		Eventually(func() error {
+			return m.Delete(ctx)
+		}, 1*time.Second).WithTimeout(1 * time.Minute).Should(Succeed())
+	})
+
+	It("should deploy an empty configmap list", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		cmList := &corev1.ConfigMapList{
+			Items: []corev1.ConfigMap{},
+		}
+		rawCMList, err := kutil.ConvertToRawExtension(cmList, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		sr := secretresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:   managedresource.ManagePolicy,
+				Manifest: rawCMList,
+				AnnotateBeforeDelete: map[string]string{
+					"to-be-deleted": "True",
+				},
+			},
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+
+		Eventually(func() error {
+			return m.Delete(ctx)
+		}, 1*time.Second).WithTimeout(1 * time.Minute).Should(Succeed())
 	})
 })

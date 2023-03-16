@@ -98,6 +98,8 @@ type Manifest struct {
 	Manifest *runtime.RawExtension `json:"manifest,omitempty"`
 	// AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.
 	AnnotateBeforeCreate map[string]string `json:"annotateBeforeCreate,omitempty"`
+	// AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.
+	AnnotateBeforeDelete map[string]string `json:"annotateBeforeDelete,omitempty"`
 }
 
 // NewManifestApplier creates a new manifest deployer
@@ -234,14 +236,16 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 			return nil, fmt.Errorf("unable to create resource %s: %w", key.String(), err)
 		}
 		return &managedresource.ManagedResourceStatus{
-			Policy:   manifest.Policy,
-			Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
+			AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
+			Policy:               manifest.Policy,
+			Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
 		}, nil
 	}
 
 	mr := &managedresource.ManagedResourceStatus{
-		Policy:   manifest.Policy,
-		Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
+		AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
+		Policy:               manifest.Policy,
+		Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
 	}
 
 	// if fallback policy is set and the resource is already managed by another deployer
@@ -406,6 +410,7 @@ func (a *ManifestApplier) prepareManifests() error {
 			Policy:               obj.Policy,
 			Manifest:             obj.Manifest,
 			AnnotateBeforeCreate: obj.AnnotateBeforeCreate,
+			AnnotateBeforeDelete: obj.AnnotateBeforeDelete,
 		}
 		// add to specific execution group
 		if kind == "CustomResourceDefinition" {

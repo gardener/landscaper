@@ -360,7 +360,9 @@ func (in *ProviderStatus) DeepCopyInto(out *ProviderStatus) {
 	if in.ManagedResources != nil {
 		in, out := &in.ManagedResources, &out.ManagedResources
 		*out = make(managedresource.ManagedResourceStatusList, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	return
 }

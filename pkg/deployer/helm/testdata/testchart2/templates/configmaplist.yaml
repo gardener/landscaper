@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMapList
+items:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: test-cm-1
+      namespace: some-namespace
+    data:
+      key1: val1
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: test-cm-2
+      namespace: some-namespace
+    data:
+      key2: val2
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: test-cm-3
+      namespace: some-namespace
+    data:
+      key3: val3
+---
+apiVersion: v1
+kind: ConfigMapList
+items: []

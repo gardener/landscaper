@@ -9262,6 +9262,22 @@ func schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref common
 				Description: "ManagedResourceStatus describes the managed resource and their metadata.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"annotateBeforeDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 					"policy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Policy defines the manage policy for that resource.",

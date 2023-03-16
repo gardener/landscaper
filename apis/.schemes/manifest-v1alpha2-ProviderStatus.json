@@ -43,6 +43,14 @@
         "resource"
       ],
       "properties": {
+        "annotateBeforeDelete": {
+          "description": "AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "policy": {
           "description": "Policy defines the manage policy for that resource.",
           "type": "string"
