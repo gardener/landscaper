@@ -26,7 +26,7 @@ spec:
           type: n1-standard-2
           image:
             name: gardenlinux
-            version: 576.12.0
+            version: 934.6.0
           architecture: amd64
         zones:
           - europe-west1-b
@@ -42,7 +42,7 @@ spec:
   region: europe-west1
   secretBindingName: shoot-cluster-canary-sap-gcp-k8s-wm-canary
   kubernetes:
-    version: 1.24.7
+    version: 1.25.6
   purpose: evaluation
   addons:
     kubernetesDashboard:
