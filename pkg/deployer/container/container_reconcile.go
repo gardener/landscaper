@@ -12,7 +12,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/gardener/component-cli/ociclient/credentials"
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -434,7 +435,7 @@ const (
 func (c *Container) syncSecrets(ctx context.Context,
 	secretName,
 	imageReference string,
-	keyring *credentials.GeneralOciKeyring,
+	keyring *cd_facade.GeneralOciKeyring,
 	defaultLabels map[string]string) (string, error) {
 	authConfig := keyring.Get(imageReference)
 	if authConfig == nil {
@@ -490,7 +491,7 @@ func (c *Container) syncSecrets(ctx context.Context,
 func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[string]string) (imagePullSecret, blueprintSecret, componentDescriptorSecret string, erro error) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 	// find the secrets that match our image, our blueprint and our componentdescriptor
-	ociKeyring := credentials.New()
+	ociKeyring := cd_facade.New()
 
 	if c.Configuration.OCI != nil {
 		for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
