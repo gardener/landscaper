@@ -5,10 +5,11 @@
 package container
 
 import (
-	"github.com/gardener/component-cli/ociclient/cache"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
@@ -60,7 +61,7 @@ type Container struct {
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
 
-	sharedCache cache.Cache
+	sharedCache cd_facade.Cache
 }
 
 // New creates a new internal container item
@@ -70,7 +71,7 @@ func New(lsClient,
 	config containerv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
 	lsCtx *lsv1alpha1.Context,
-	sharedCache cache.Cache,
+	sharedCache cd_facade.Cache,
 	rt *lsv1alpha1.ResolvedTarget) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := api.NewDecoder(Scheme)
