@@ -30,6 +30,7 @@ import (
 
 func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	op := "handleReconcilePhase"
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
 	// set init phase if the phase is empty or final from previous job
 	if inst.Status.InstallationPhase.IsFinal() || inst.Status.InstallationPhase.IsEmpty() {
@@ -112,7 +113,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Completing {
-		fatalError, normalError := c.handlePhaseCompleting(ctx, inst)
+		fatalError, normalError, instOp := c.handlePhaseCompleting(ctx, inst)
 
 		if fatalError != nil && !lsutil.IsRecoverableError(fatalError) {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhases.Failed, fatalError, read_write_layer.W000120)
@@ -125,6 +126,14 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhases.Succeeded, nil, read_write_layer.W000122); err != nil {
 			return err
 		}
+
+		// now we are finished and dependents have to be triggered if an installation is finished
+		// this is only a performance optimization and in case of failure it might result only in longer during deployments
+		if err := instOp.NewTriggerDependents(ctx); err != nil {
+			logger.Error(err, "TriggerDependents")
+		}
+
+		return nil
 	}
 
 	// handle deletion phases
@@ -427,7 +436,7 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 	return allSucceeded, nil
 }
 
-func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
+func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError, *installations.Operation) {
 
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
@@ -436,45 +445,38 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 	instOp, imps, importsHash, _, fatalError, fatalError2 := c.init(ctx, inst)
 
 	if fatalError != nil {
-		return fatalError, nil
+		return fatalError, nil, nil
 	} else if fatalError2 != nil {
-		return fatalError2, nil
+		return fatalError2, nil, nil
 	}
 
 	if importsHash != inst.Status.ImportsHash {
 		logger.Info("changed hash", "oldHash", inst.Status.ImportsHash, "newHash", importsHash)
-		return lserrors.NewError(currentOperation, "CheckImportsHash", "imports have changed"), nil
+		return lserrors.NewError(currentOperation, "CheckImportsHash", "imports have changed"), nil, nil
 	}
 
 	if inst.Generation != inst.Status.ObservedGeneration {
-		return lserrors.NewError(currentOperation, "CheckObservedGeneration", "installation spec has been changed"), nil
+		return lserrors.NewError(currentOperation, "CheckObservedGeneration", "installation spec has been changed"), nil, nil
 	}
 
 	err := imports.NewConstructor(instOp).Construct(ctx, imps)
 	if err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "ConstructImportsForExports", err.Error()), nil
+		return lserrors.NewWrappedError(err, currentOperation, "ConstructImportsForExports", err.Error()), nil, nil
 	}
 
 	dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
 	if err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "ConstructExports", err.Error()), nil
+		return lserrors.NewWrappedError(err, currentOperation, "ConstructExports", err.Error()), nil, nil
 	}
 
 	if err := instOp.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
 		if apierrors.IsConflict(err) {
-			return nil, lserrors.NewWrappedError(err, currentOperation, "CreateOrUpdateExports", err.Error())
+			return nil, lserrors.NewWrappedError(err, currentOperation, "CreateOrUpdateExports", err.Error()), nil
 		}
-		return lserrors.NewWrappedError(err, currentOperation, "CreateOrUpdateExports", err.Error()), nil
+		return lserrors.NewWrappedError(err, currentOperation, "CreateOrUpdateExports", err.Error()), nil, nil
 	}
 
-	if err := instOp.NewTriggerDependents(ctx); err != nil {
-		if apierrors.IsConflict(err) {
-			return nil, lserrors.NewWrappedError(err, currentOperation, "TriggerDependents", err.Error())
-		}
-		return lserrors.NewWrappedError(err, currentOperation, "TriggerDependents", err.Error()), nil
-	}
-
-	return nil, nil
+	return nil, nil, instOp
 }
 
 func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *installations.Operation, imps *imports.Imports) lserrors.LsError {

@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	historyLogLevel          logging.LogLevel = logging.INFO
-	keySecondDeployItemPhase                  = "landscaperDeployItemPhase"
+	historyLogLevel logging.LogLevel = logging.INFO
 )
 
 // getLogger tries to fetch the most up-to-date logger from the context
