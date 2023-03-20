@@ -283,6 +283,10 @@ spec:
               phase:
                 description: ExecutionPhase is the current phase of the execution.
                 type: string
+              phaseTransitionTime:
+                description: PhaseTransitionTime is the time when the phase last changed.
+                format: date-time
+                type: string
             type: object
         required:
         - spec

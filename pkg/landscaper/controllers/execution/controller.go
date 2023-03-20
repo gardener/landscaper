@@ -95,6 +95,9 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 			exec.Status.ExecutionPhase = lsv1alpha1.ExecutionPhases.InitDelete
 		}
 
+		now := metav1.Now()
+		exec.Status.PhaseTransitionTime = &now
+
 		// do not use setExecutionPhaseAndUpdate because jobIDFinished should not be set here
 		if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000105, exec); err != nil {
 			return lserrors.NewWrappedError(err, op, "UpdateExecutionStatus", err.Error())
@@ -306,6 +309,10 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 		logger.Error(lsErr, "setExecutionPhaseAndUpdate")
 	}
 
+	if phase != exec.Status.ExecutionPhase {
+		now := metav1.Now()
+		exec.Status.PhaseTransitionTime = &now
+	}
 	exec.Status.ExecutionPhase = phase
 
 	if exec.Status.ExecutionPhase.IsFinal() {

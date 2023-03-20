@@ -156,6 +156,10 @@ type InstallationStatus struct {
 	// InstallationPhase is the current phase of the installation.
 	InstallationPhase InstallationPhase `json:"phase,omitempty"`
 
+	// PhaseTransitionTime is the time when the phase last changed.
+	// +optional
+	PhaseTransitionTime *metav1.Time `json:"phaseTransitionTime,omitempty"`
+
 	// ImportsHash is the hash of the import data.
 	ImportsHash string `json:"importsHash,omitempty"`
 

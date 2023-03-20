@@ -3652,6 +3652,20 @@ ExecutionPhase
 <p>ExecutionPhase is the current phase of the execution.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>phaseTransitionTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PhaseTransitionTime is the time when the phase last changed.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExportDefinition">ExportDefinition
@@ -4479,6 +4493,20 @@ InstallationPhase
 </td>
 <td>
 <p>InstallationPhase is the current phase of the installation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>phaseTransitionTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PhaseTransitionTime is the time when the phase last changed.</p>
 </td>
 </tr>
 <tr>

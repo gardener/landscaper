@@ -1296,6 +1296,10 @@ func (in *ExecutionStatus) DeepCopyInto(out *ExecutionStatus) {
 		*out = make([]ExecutionGeneration, len(*in))
 		copy(*out, *in)
 	}
+	if in.PhaseTransitionTime != nil {
+		in, out := &in.PhaseTransitionTime, &out.PhaseTransitionTime
+		*out = (*in).DeepCopy()
+	}
 	return
 }
 
@@ -1688,6 +1692,10 @@ func (in *InstallationStatus) DeepCopyInto(out *InstallationStatus) {
 		in, out := &in.ExecutionReference, &out.ExecutionReference
 		*out = new(ObjectReference)
 		**out = **in
+	}
+	if in.PhaseTransitionTime != nil {
+		in, out := &in.PhaseTransitionTime, &out.PhaseTransitionTime
+		*out = (*in).DeepCopy()
 	}
 	if in.AutomaticReconcileStatus != nil {
 		in, out := &in.AutomaticReconcileStatus, &out.AutomaticReconcileStatus

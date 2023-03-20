@@ -8,10 +8,8 @@ import (
 	"context"
 	"fmt"
 
-	lsutil "github.com/gardener/landscaper/pkg/utils"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -25,6 +23,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -41,6 +40,8 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		}
 
 		inst.Status.InstallationPhase = nextPhase
+		now := metav1.Now()
+		inst.Status.PhaseTransitionTime = &now
 		inst.Status.ObservedGeneration = inst.GetGeneration()
 
 		// do not use setInstallationPhaseAndUpdate because jobIDFinished should not be set here
@@ -129,7 +130,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 
 		// now we are finished and dependents have to be triggered if an installation is finished
 		// this is only a performance optimization and in case of failure it might result only in longer during deployments
-		if err := instOp.NewTriggerDependents(ctx); err != nil {
+		if err := instOp.TriggerDependents(ctx); err != nil {
 			logger.Error(err, "TriggerDependents")
 		}
 
