@@ -7,6 +7,7 @@ package landscaper
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/gardener/landscaper/pkg/utils/dependencies"
 
@@ -82,6 +83,11 @@ func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *Resolved
 		return nil, err
 	}
 
+	imports, err := r.RenderImportExecutions(input, imports)
+	if err != nil {
+		return nil, err
+	}
+
 	deployItems, deployItemsState, err := r.renderDeployItems(input, imports)
 	if err != nil {
 		return nil, err
@@ -99,6 +105,53 @@ func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *Resolved
 		InstallationTemplateState: subInstallationsState,
 	}
 	return renderOut, nil
+}
+
+// RenderImportExecutions renders the export executions of the given blueprint and returns the rendered exports.
+func (r *BlueprintRenderer) RenderImportExecutions(input *ResolvedInstallation, imports map[string]interface{}) (map[string]interface{}, error) {
+	var (
+		blobResolver ctf.BlobResolver
+		ctx          context.Context
+	)
+
+	if input == nil {
+		return nil, fmt.Errorf("render input may not be nil")
+	}
+
+	if input.Blueprint == nil {
+		return nil, fmt.Errorf("blueprint may not be nil")
+	}
+
+	if len(input.Blueprint.Info.ImportExecutions) == 0 {
+		// nothing to do if there aren't any ImportExecutions
+		return imports, nil
+	}
+
+	ctx = context.Background()
+	defer ctx.Done()
+
+	if input.ComponentDescriptor != nil && r.componentResolver != nil {
+		var err error
+		_, blobResolver, err = r.componentResolver.ResolveWithBlobResolver(ctx, r.getRepositoryContext(input), input.ComponentDescriptor.GetName(), input.ComponentDescriptor.GetVersion())
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob resolver: %w", err)
+		}
+	}
+
+	templateStateHandler := template.NewMemoryStateHandler()
+	formatter := template.NewTemplateInputFormatter(true)
+	errorList, bindings, err := template.New(gotemplate.New(blobResolver, templateStateHandler, nil).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
+		TemplateImportExecutions(template.NewBlueprintExecutionOptions(input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList, imports))
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to template export executions: %w", err)
+	}
+
+	if len(errorList) > 0 {
+		return nil, fmt.Errorf("the following error(s) occurred in the import executions:\n\t%s", strings.Join(errorList, "\n\t"))
+	}
+
+	return bindings, nil
 }
 
 // RenderExportExecutions renders the export executions of the given blueprint and returns the rendered exports.

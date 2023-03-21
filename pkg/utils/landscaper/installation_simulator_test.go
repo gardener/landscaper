@@ -193,17 +193,14 @@ targetExports: []
 		err = yaml.Unmarshal(marshaled, &clusterListMap)
 		Expect(err).ToNot(HaveOccurred())
 
-		dataImports := map[string]interface{}{
+		imports := map[string]interface{}{
 			"root-param-a": "valua-a",
 			"root-param-b": "value-b",
+			"cluster":      clusterMap,
+			"clusters":     clusterListMap,
 		}
 
-		targetImports := map[string]interface{}{
-			"cluster":  clusterMap,
-			"clusters": clusterListMap,
-		}
-
-		exports, err := simulator.Run(cd, blueprint, dataImports, targetImports)
+		exports, err := simulator.Run(cd, blueprint, imports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exports).ToNot(BeNil())
 
