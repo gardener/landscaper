@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -20,7 +22,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
@@ -61,7 +62,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		return err
 	}
 	ociClient, err := ociclient.NewClient(logger.Logr(),
-		utils.WithConfiguration(c.LsConfig.Registry.OCI),
+		cd_facade.WithConfiguration(c.LsConfig.Registry.OCI),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(c.SharedCache),
 	)

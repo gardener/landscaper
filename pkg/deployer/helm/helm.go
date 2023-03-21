@@ -277,7 +277,7 @@ func createOCIClient(ctx context.Context, client client.Client, registryPullSecr
 		return nil, err
 	}
 	ociClient, err := ociclient.NewClient(logger.Logr(),
-		utils.WithConfiguration(config.OCI),
+		cd_facade.WithConfiguration(config.OCI),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(sharedCache),
 	)

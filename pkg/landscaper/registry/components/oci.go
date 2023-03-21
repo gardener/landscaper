@@ -8,24 +8,23 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 
+	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/apis/config"
 
 	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // NewOCIRegistry creates a new oci registry from a oci config.
-func NewOCIRegistry(log logging.Logger, config *config.OCIConfiguration, cache cache.Cache, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
-	client, err := ociclient.NewClient(log.Logr(), utils.WithConfiguration(config), ociclient.WithCache(cache))
+func NewOCIRegistry(log logging.Logger, config *config.OCIConfiguration, cache cd_facade.Cache, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
+	client, err := ociclient.NewClient(log.Logr(), cd_facade.WithConfiguration(config), ociclient.WithCache(cache))
 	if err != nil {
 		return nil, err
 	}
