@@ -243,6 +243,8 @@ targetExports: []
 		Expect(callbacks.imports).To(HaveKey("root/subinst-b"))
 		Expect(callbacks.imports).To(HaveKey("root/subinst-c"))
 
+		Expect(callbacks.imports["root"]).To(HaveKeyWithValue("foo", "bar"))
+
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-a"))
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-b"))
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("cluster"))
