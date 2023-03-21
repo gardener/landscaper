@@ -11,7 +11,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/cd_facade"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -86,7 +85,7 @@ type Controller struct {
 	log         logging.Logger
 	clock       clock.PassiveClock
 	LsConfig    *config.LandscaperConfiguration
-	SharedCache cache.Cache
+	SharedCache cd_facade.Cache
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
