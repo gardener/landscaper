@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +34,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -55,7 +56,7 @@ func NewController(logger logging.Logger,
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
 		var err error
-		ctrl.SharedCache, err = cache.NewCache(logger.Logr(), utils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
+		ctrl.SharedCache, err = cd_facade.NewCache(logger.Logr(), lsConfig.Registry.OCI.Cache, cacheIdentifier)
 		if err != nil {
 			return nil, err
 		}

@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -19,7 +21,6 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 const (
@@ -35,7 +36,7 @@ func NewDeployer(log logging.Logger,
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log.Logr(), utils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
+		sharedCache, err = cd_facade.NewCache(log.Logr(), config.OCI.Cache, cacheIdentifier)
 		if err != nil {
 			return nil, err
 		}

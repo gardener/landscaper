@@ -8,12 +8,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/gardener/component-cli/ociclient/cache"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -36,10 +34,10 @@ func NewDeployer(log logging.Logger,
 	directHostClient client.Client,
 	config containerv1alpha1.Configuration) (*deployer, error) {
 
-	var sharedCache cache.Cache
+	var sharedCache cd_facade.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log.Logr(), utils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
+		sharedCache, err = cd_facade.NewCache(log.Logr(), config.OCI.Cache, cacheIdentifier)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +62,7 @@ type deployer struct {
 	hostClient       client.Client
 	directHostClient client.Client
 	config           containerv1alpha1.Configuration
-	sharedCache      cache.Cache
+	sharedCache      cd_facade.Cache
 	hooks            extension.ReconcileExtensionHooks
 }
 
