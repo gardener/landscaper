@@ -2947,6 +2947,24 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </tr>
 <tr>
 <td>
+<code>timeout</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Timeout specifies how long the deployer may take to apply the deploy item.
+When the time is exceeded, the landscaper will add the abort annotation to the deploy item
+and later put it in &lsquo;Failed&rsquo; if the deployer doesn&rsquo;t handle the abort properly.
+Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactivate the timeout).
+Defaults to ten minutes if not specified.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>updateOnChangeOnly</code></br>
 <em>
 bool
@@ -3181,6 +3199,7 @@ Error
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.FailedReconcile">FailedReconcile</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.SucceededReconcile">SucceededReconcile</a>)
 </p>

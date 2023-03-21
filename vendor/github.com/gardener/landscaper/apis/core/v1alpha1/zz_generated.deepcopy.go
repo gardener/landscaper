@@ -847,6 +847,11 @@ func (in *DeployItemTemplate) DeepCopyInto(out *DeployItemTemplate) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.Timeout != nil {
+		in, out := &in.Timeout, &out.Timeout
+		*out = new(Duration)
+		**out = **in
+	}
 	return
 }
 

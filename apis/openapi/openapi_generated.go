@@ -4206,6 +4206,12 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref common.Referenc
 							},
 						},
 					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout specifies how long the deployer may take to apply the deploy item. When the time is exceeded, the landscaper will add the abort annotation to the deploy item and later put it in 'Failed' if the deployer doesn't handle the abort properly. Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout). Defaults to ten minutes if not specified.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
 					"updateOnChangeOnly": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.",
@@ -4218,7 +4224,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -7561,6 +7567,13 @@ func schema_apis_deployer_container_v1alpha1_PodStatus(ref common.ReferenceCallb
 						SchemaProps: spec.SchemaProps{
 							Description: "LastRun is the time when the pod was executed the last time.",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"lastSuccessfulJobID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastSuccessfulJobID is set to the current JobID when the pod successfully finished. If the pod has not yet finished, this field will be nil.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"containerStatus": {
