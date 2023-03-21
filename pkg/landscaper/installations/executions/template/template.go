@@ -139,6 +139,14 @@ type DeployItemSpecification struct {
 	// DependsOn lists deploy items that need to be executed before this one
 	DependsOn []string `json:"dependsOn,omitempty"`
 
+	// Timeout specifies how long the deployer may take to apply the deploy item.
+	// When the time is exceeded, the landscaper will add the abort annotation to the deploy item
+	// and later put it in 'Failed' if the deployer doesn't handle the abort properly.
+	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
+	// Defaults to ten minutes if not specified.
+	// +optional
+	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
+
 	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
 	// +optional
 	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
