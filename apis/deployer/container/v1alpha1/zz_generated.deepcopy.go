@@ -171,6 +171,11 @@ func (in *PodStatus) DeepCopyInto(out *PodStatus) {
 		in, out := &in.LastRun, &out.LastRun
 		*out = (*in).DeepCopy()
 	}
+	if in.LastSuccessfulJobID != nil {
+		in, out := &in.LastSuccessfulJobID, &out.LastSuccessfulJobID
+		*out = new(string)
+		**out = **in
+	}
 	in.ContainerStatus.DeepCopyInto(&out.ContainerStatus)
 	in.InitContainerStatus.DeepCopyInto(&out.InitContainerStatus)
 	in.WaitContainerStatus.DeepCopyInto(&out.WaitContainerStatus)

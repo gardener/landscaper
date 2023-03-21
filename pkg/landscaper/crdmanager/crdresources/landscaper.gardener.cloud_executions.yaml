@@ -76,6 +76,15 @@ spec:
                       required:
                       - name
                       type: object
+                    timeout:
+                      description: Timeout specifies how long the deployer may take
+                        to apply the deploy item. When the time is exceeded, the landscaper
+                        will add the abort annotation to the deploy item and later
+                        put it in 'Failed' if the deployer doesn't handle the abort
+                        properly. Value has to be parsable by time.ParseDuration (or
+                        'none' to deactivate the timeout). Defaults to ten minutes
+                        if not specified.
+                      type: string
                     type:
                       description: DataType is the DeployItem type of the execution.
                       type: string

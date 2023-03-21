@@ -25,6 +25,7 @@ func ApplyDeployItemTemplate(di *lsv1alpha1.DeployItem, tmpl lsv1alpha1.DeployIt
 	di.Spec.Type = tmpl.Type
 	di.Spec.Target = tmpl.Target
 	di.Spec.Configuration = tmpl.Configuration
+	di.Spec.Timeout = tmpl.Timeout
 	di.Spec.UpdateOnChangeOnly = tmpl.UpdateOnChangeOnly
 	for k, v := range tmpl.Labels {
 		kutil.SetMetaDataLabel(&di.ObjectMeta, k, v)

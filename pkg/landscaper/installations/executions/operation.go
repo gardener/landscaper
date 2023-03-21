@@ -117,6 +117,12 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 			}
 		}
 
+		// convert timeout
+		var timeout *core.Duration
+		if elem.Timeout != nil {
+			timeout = &core.Duration{Duration: elem.Timeout.Duration}
+		}
+
 		execTemplates[i] = core.DeployItemTemplate{
 			Name:               elem.Name,
 			Type:               elem.Type,
@@ -124,6 +130,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 			Labels:             elem.Labels,
 			Configuration:      elem.Configuration,
 			DependsOn:          elem.DependsOn,
+			Timeout:            timeout,
 			UpdateOnChangeOnly: elem.UpdateOnChangeOnly,
 		}
 	}
