@@ -17,7 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -82,7 +83,7 @@ type Store struct {
 	disabled    bool
 	mux         sync.RWMutex
 	indexMethod config.IndexMethod
-	index       cache.Index
+	index       cd_facade.Index
 	fs          vfs.FileSystem
 
 	size        int64
@@ -119,7 +120,7 @@ func NewStore(log logging.Logger, baseFs vfs.FileSystem, config config.Blueprint
 		log:         log,
 		disabled:    config.DisableCache,
 		indexMethod: config.IndexMethod,
-		index:       cache.NewIndex(),
+		index:       cd_facade.NewIndex(),
 		fs:          fs,
 		gcConfig:    config.GarbageCollectionConfiguration,
 	}

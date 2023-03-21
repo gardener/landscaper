@@ -10,7 +10,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/cd_facade"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -33,7 +32,7 @@ func NewDeployer(log logging.Logger,
 	hostKubeClient client.Client,
 	config helmv1alpha1.Configuration) (deployerlib.Deployer, error) {
 
-	var sharedCache cache.Cache
+	var sharedCache cd_facade.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
 		var err error
 		sharedCache, err = cd_facade.NewCache(log.Logr(), config.OCI.Cache, cacheIdentifier)
@@ -59,7 +58,7 @@ type deployer struct {
 	lsClient    client.Client
 	hostClient  client.Client
 	config      helmv1alpha1.Configuration
-	sharedCache cache.Cache
+	sharedCache cd_facade.Cache
 	hooks       extension.ReconcileExtensionHooks
 }
 

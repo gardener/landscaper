@@ -10,6 +10,8 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
@@ -22,12 +24,10 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
-
-	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // BuildNewBlueprint creates a ocispec Manifest from a component definition.
-func BuildNewBlueprint(cache cache.Cache, fs vfs.FileSystem, path string) (*ocispecv1.Manifest, error) {
+func BuildNewBlueprint(cache cd_facade.Cache, fs vfs.FileSystem, path string) (*ocispecv1.Manifest, error) {
 	config, err := BuildNewBlueprintConfig(cache, fs, path)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func BuildNewBlueprint(cache cache.Cache, fs vfs.FileSystem, path string) (*ocis
 }
 
 // BuildNewBlueprintConfig creates a ocispec Manifest from a component definition.
-func BuildNewBlueprintConfig(cache cache.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
+func BuildNewBlueprintConfig(cache cd_facade.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
 	data, err := vfs.ReadFile(fs, filepath.Join(path, lsv1alpha1.BlueprintFileName))
 	if err != nil {
 		return ocispecv1.Descriptor{}, err
@@ -80,6 +80,6 @@ func BuildNewBlueprintConfig(cache cache.Cache, fs vfs.FileSystem, path string) 
 }
 
 // BuildNewContentBlob creates a ocispec Manifest from a component definition.
-func BuildNewContentBlob(cache cache.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
+func BuildNewContentBlob(cache cd_facade.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
 	return tar.BuildTarGzipLayer(cache, fs, path, nil)
 }

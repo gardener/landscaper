@@ -8,10 +8,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-
-	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // TypedRegistry describes a registry that can handle the given type.
@@ -22,14 +22,14 @@ type TypedRegistry interface {
 
 type Manager struct {
 	registries  map[string]ctf.ComponentResolver
-	sharedCache cache.Cache
+	sharedCache cd_facade.Cache
 }
 
 var _ ctf.ComponentResolver = &Manager{}
 
 // New creates a ociClient that can handle multiple clients.
 // The manager can handle a shared cache that is injected into the registries.
-func New(sharedCache cache.Cache, clients ...TypedRegistry) (*Manager, error) {
+func New(sharedCache cd_facade.Cache, clients ...TypedRegistry) (*Manager, error) {
 	m := &Manager{
 		sharedCache: sharedCache,
 	}
@@ -52,7 +52,7 @@ func (m *Manager) Set(registries ...TypedRegistry) error {
 
 // SharedCache returns the shared cache for all managed registries.
 // Returns nil if there is no shared cache.
-func (m *Manager) SharedCache() cache.Cache {
+func (m *Manager) SharedCache() cd_facade.Cache {
 	return m.sharedCache
 }
 

@@ -10,8 +10,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"helm.sh/helm/v3/pkg/chart"
@@ -67,7 +68,7 @@ type Helm struct {
 	Context               *lsv1alpha1.Context
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
-	SharedCache           cache.Cache
+	SharedCache           cd_facade.Cache
 
 	TargetKubeClient client.Client
 	TargetRestConfig *rest.Config
@@ -81,7 +82,7 @@ func New(helmconfig helmv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget,
 	lsCtx *lsv1alpha1.Context,
-	sharedCache cache.Cache) (*Helm, error) {
+	sharedCache cd_facade.Cache) (*Helm, error) {
 
 	currOp := "InitHelmOperation"
 	config := &helmv1alpha1.ProviderConfiguration{}
@@ -253,7 +254,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
 
-func createOCIClient(ctx context.Context, client client.Client, registryPullSecrets []lsv1alpha1.ObjectReference, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
+func createOCIClient(ctx context.Context, client client.Client, registryPullSecrets []lsv1alpha1.ObjectReference, config helmv1alpha1.Configuration, sharedCache cd_facade.Cache) (ociclient.Client, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "helmDeployerController.createOCIClient"})
 
 	// resolve all pull secrets

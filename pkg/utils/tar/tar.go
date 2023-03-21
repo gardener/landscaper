@@ -13,8 +13,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -180,7 +181,7 @@ func ExtractTarGzip(ctx context.Context, gzipStream io.Reader, fs vfs.FileSystem
 
 // BuildTarGzipLayer tar and gzips the given path and adds the layer to the cache.
 // It returns the newly creates ocispec Description for the tar.
-func BuildTarGzipLayer(cache cache.Cache, fs vfs.FileSystem, path string, annotations map[string]string) (ocispecv1.Descriptor, error) {
+func BuildTarGzipLayer(cache cd_facade.Cache, fs vfs.FileSystem, path string, annotations map[string]string) (ocispecv1.Descriptor, error) {
 
 	var blob bytes.Buffer
 	if err := BuildTarGzip(fs, path, &blob); err != nil {
