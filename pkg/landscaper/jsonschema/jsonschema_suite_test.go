@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/cd_facade"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -30,7 +32,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 
 	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-cli/ociclient/cache"
 	testcred "github.com/gardener/component-cli/ociclient/credentials"
 	testreg "github.com/gardener/component-cli/ociclient/test/envtest"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
@@ -449,7 +450,7 @@ var _ = Describe("jsonschema", func() {
 		var (
 			ctx       context.Context
 			testenv   *testreg.Environment
-			ociCache  cache.Cache
+			ociCache  cd_facade.Cache
 			ociClient ociclient.Client
 		)
 
@@ -472,7 +473,7 @@ var _ = Describe("jsonschema", func() {
 			}))
 
 			var err error
-			ociCache, err = cache.NewCache(logging.Discard().Logr())
+			ociCache, err = cd_facade.NewCacheBasic(logging.Discard().Logr())
 			testutils.ExpectNoError(err)
 			ociClient, err = ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
 			testutils.ExpectNoError(err)
@@ -830,7 +831,9 @@ type componentConfig struct {
 	ReferencedResourceName string
 }
 
-func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, name, version string, cdRefs []cdv2.ComponentReference, cdRes []cdv2.Resource, fs vfs.FileSystem, ociClient ociclient.Client, ociCache cache.Cache) *cdv2.ComponentDescriptor {
+func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, name, version string,
+	cdRefs []cdv2.ComponentReference, cdRes []cdv2.Resource, fs vfs.FileSystem, ociClient ociclient.Client,
+	ociCache cd_facade.Cache) *cdv2.ComponentDescriptor {
 	// define component descriptor
 	cd := &cdv2.ComponentDescriptor{}
 

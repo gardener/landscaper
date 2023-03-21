@@ -17,6 +17,10 @@ type Cache interface {
 	Add(desc ocispecv1.Descriptor, reader io.ReadCloser) error
 }
 
+func NewCacheBasic(log logr.Logger) (Cache, error) {
+	return cache.NewCache(log)
+}
+
 func NewCache(log logr.Logger, cfg *config.OCICacheConfiguration, uid string) (Cache, error) {
 	options := toOCICacheOptions(cfg, uid)
 	return cache.NewCache(log, options...)
