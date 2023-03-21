@@ -12,12 +12,11 @@ import (
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // Templater implements all available template executors.
