@@ -50,7 +50,7 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 	}
 
 	for _, item := range executionItems {
-		lsErr := o.deployOrTrigger(ctx, *item)
+		lsErr := o.updateDeployItem(ctx, *item)
 		if lsErr != nil {
 			return lsErr
 		}
