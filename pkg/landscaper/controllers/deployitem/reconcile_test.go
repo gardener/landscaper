@@ -269,13 +269,6 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 
 		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhases.Failed)).To(BeTrue())
 		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
-		Expect(di.Status).To(MatchFields(IgnoreExtras, Fields{
-			"Phase": Equal(lsv1alpha1.DeployItemPhases.Failed),
-			"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
-				"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
-				"Reason": Equal(lsv1alpha1.AbortingTimeoutReason),
-			})),
-		}))
 	})
 
 })

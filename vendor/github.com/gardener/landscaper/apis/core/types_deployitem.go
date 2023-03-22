@@ -62,8 +62,7 @@ type DeployItemSpec struct {
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
 	// Timeout specifies how long the deployer may take to apply the deploy item.
-	// When the time is exceeded, the landscaper will add the abort annotation to the deploy item
-	// and later put it in 'Failed' if the deployer doesn't handle the abort properly.
+	// When the time is exceeded, the deploy item fails.
 	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
 	// Defaults to ten minutes if not specified.
 	// +optional

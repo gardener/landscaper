@@ -149,11 +149,6 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 	}
 
-	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
-	if err := o.Writer().UpdateDeployItem(ctx, read_write_layer.W000109, di); err != nil {
-		return lserrors.NewWrappedError(err, op, "UpdateDeployItem", err.Error())
-	}
-
 	di.Status.SetJobID(o.exec.Status.JobID)
 	now := metav1.Now()
 	di.Status.JobIDGenerationTime = &now

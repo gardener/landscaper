@@ -187,21 +187,6 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 
 			By("wait for aborting timeout to happen")
 			time.Sleep(maxDuration(0, deployItemAbortingTimeout-time.Since(startWaitingTime)))
-
-			By("verify aborting timeout")
-			// expected state:
-			// - mock_di_prog should have had an aborting timeout ('Failed' phase)
-			Eventually(func() lsv1alpha1.DeployItemStatus {
-				utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKeyFromObject(mock_di_prog), mock_di_prog))
-				return mock_di_prog.Status
-			}, waitingForReconcile, resyncTime).Should(MatchFields(IgnoreExtras, Fields{
-				"Phase": Equal(lsv1alpha1.DeployItemPhases.Failed),
-				"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
-					"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
-					"Reason": Equal(lsv1alpha1.AbortingTimeoutReason),
-				})),
-			}))
-
 		})
 
 	})
