@@ -230,63 +230,66 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 	// includes resolving target import references to target object references
 	deployItemTemplates := make(core.DeployItemTemplateList, len(executions))
 	for i, elem := range executions {
-		target := &core.ObjectReference{
-			Name:      elem.Target.Name,
-			Namespace: input.Installation.Namespace,
-		}
-		if elem.Target.Index != nil {
-			// targetlist import reference
-			raw := imports[elem.Target.Import]
-			imp := input.Blueprint.GetImportByName(elem.Target.Import)
-			if imp == nil {
-				return nil, nil, deployItemSpecificationError(elem.Name, "targetlist import %q not found", elem.Target.Import)
+		var target *core.ObjectReference
+		if elem.Target != nil {
+			target = &core.ObjectReference{
+				Name:      elem.Target.Name,
+				Namespace: input.Installation.Namespace,
 			}
-			if imp.Type != lsv1alpha1.ImportTypeTargetList {
-				return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a targetlist", elem.Target.Import)
+			if elem.Target.Index != nil {
+				// targetlist import reference
+				raw := imports[elem.Target.Import]
+				imp := input.Blueprint.GetImportByName(elem.Target.Import)
+				if imp == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "targetlist import %q not found", elem.Target.Import)
+				}
+				if imp.Type != lsv1alpha1.ImportTypeTargetList {
+					return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a targetlist", elem.Target.Import)
+				}
+				if raw == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
+				}
+				val, ok := raw.([]map[string]interface{})
+				if !ok {
+					return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
+				}
+				if *elem.Target.Index < 0 || *elem.Target.Index >= len(val) {
+					return nil, nil, deployItemSpecificationError(elem.Name, "index %d out of bounds", *elem.Target.Index)
+				}
+				name, _, err := unstructured.NestedString(val[*elem.Target.Index], "metadata", "name")
+				if err != nil {
+					return nil, nil, err
+				}
+				namespace, _, _ := unstructured.NestedString(val[*elem.Target.Index], "metadata", "namespace")
+				target.Name = name
+				target.Namespace = namespace
+			} else if len(elem.Target.Import) > 0 {
+				// single target import reference
+				raw := imports[elem.Target.Import]
+				imp := input.Blueprint.GetImportByName(elem.Target.Import)
+				if imp == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "target import %q not found", elem.Target.Import)
+				}
+				if imp.Type != lsv1alpha1.ImportTypeTarget {
+					return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a target", elem.Target.Import)
+				}
+				if raw == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
+				}
+				val, ok := raw.(map[string]interface{})
+				if !ok {
+					return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
+				}
+				name, _, err := unstructured.NestedString(val, "metadata", "name")
+				if err != nil {
+					return nil, nil, err
+				}
+				namespace, _, _ := unstructured.NestedString(val, "metadata", "namespace")
+				target.Name = name
+				target.Namespace = namespace
+			} else if len(elem.Target.Name) == 0 {
+				return nil, nil, deployItemSpecificationError(elem.Name, "empty target reference")
 			}
-			if raw == nil {
-				return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
-			}
-			val, ok := raw.([]map[string]interface{})
-			if !ok {
-				return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
-			}
-			if *elem.Target.Index < 0 || *elem.Target.Index >= len(val) {
-				return nil, nil, deployItemSpecificationError(elem.Name, "index %d out of bounds", *elem.Target.Index)
-			}
-			name, _, err := unstructured.NestedString(val[*elem.Target.Index], "metadata", "name")
-			if err != nil {
-				return nil, nil, err
-			}
-			namespace, _, _ := unstructured.NestedString(val[*elem.Target.Index], "metadata", "namespace")
-			target.Name = name
-			target.Namespace = namespace
-		} else if len(elem.Target.Import) > 0 {
-			// single target import reference
-			raw := imports[elem.Target.Import]
-			imp := input.Blueprint.GetImportByName(elem.Target.Import)
-			if imp == nil {
-				return nil, nil, deployItemSpecificationError(elem.Name, "target import %q not found", elem.Target.Import)
-			}
-			if imp.Type != lsv1alpha1.ImportTypeTarget {
-				return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a target", elem.Target.Import)
-			}
-			if raw == nil {
-				return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
-			}
-			val, ok := raw.(map[string]interface{})
-			if !ok {
-				return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
-			}
-			name, _, err := unstructured.NestedString(val, "metadata", "name")
-			if err != nil {
-				return nil, nil, err
-			}
-			namespace, _, _ := unstructured.NestedString(val, "metadata", "namespace")
-			target.Name = name
-			target.Namespace = namespace
-		} else if len(elem.Target.Name) == 0 {
-			return nil, nil, deployItemSpecificationError(elem.Name, "empty target reference")
 		}
 
 		deployItemTemplates[i] = core.DeployItemTemplate{
