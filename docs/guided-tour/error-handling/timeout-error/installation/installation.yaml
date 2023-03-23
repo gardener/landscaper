@@ -45,6 +45,6 @@ spec:
                       namespace: example
                       createNamespace: true
                       chart:
-                        ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.9  # version does not exist
+                        ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5  # version does not exist
                       values:
                         testData: hello

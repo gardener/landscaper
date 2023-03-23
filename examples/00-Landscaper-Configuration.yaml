@@ -56,7 +56,6 @@ deployerManagement:
 
 #deployItemTimeouts:
 #  pickup: "5m"
-#  abort: "5m"
 #  progressingDefault: "5m"
 
 blueprintStore:
