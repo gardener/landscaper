@@ -162,7 +162,7 @@ func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, di *
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	logger = logger.WithValues(lc.KeyMethod, operation)
-	logger.Info("deploy item timed out, setting abort operation annotation")
+	logger.Info("deploy item progressing timed out, setting to failed")
 
 	di.Status.JobIDFinished = di.Status.GetJobID()
 	di.Status.ObservedGeneration = di.Generation
