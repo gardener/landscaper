@@ -30,7 +30,7 @@ func AddControllersToManager(ctx context.Context, logger logging.Logger, hostMgr
 		if apierrors.IsNotFound(err) {
 			lsHealthCheck = &lsv1alpha1.LsHealthCheck{
 				ObjectMeta:     metav1.ObjectMeta{Name: agentConfig.Name, Namespace: agentConfig.Namespace},
-				Status:         lsv1alpha1.LsHealthCheckStatusOk,
+				Status:         lsv1alpha1.LsHealthCheckStatusInit,
 				Description:    "ok",
 				LastUpdateTime: metav1.Unix(0, 0),
 			}
