@@ -1,4 +1,4 @@
-# Handling a Timeout Error
+# Timeouts
 
 For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
 
@@ -73,16 +73,19 @@ and DeployItems, together with status information:
         eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5: not found
 ```
 
-After a few minutes, the DeployItem and the Installation will fail due to a timeout:
+After a few minutes, the DeployItem and the Installation will fail due to a timeout. In this example, we have set the 
+length of the timeout interval to 2 minutes &mdash; see section 
+[Configuring a Timeout for a DeployItem](#configuring-a-timeout-for-a-deployitem) below.
 
 ```shell
 ▶ landscaper-cli inst inspect -n example hello-world
 [❌ Failed] Installation hello-world
     └── [❌ Failed] DeployItem hello-world-default-deploy-item-tslq8
-        Last error: deployer has not finished this deploy item within 300 seconds
+        Last error: deployer has not finished this deploy item within 120 seconds
 ```
 
 As a consequence of the failure of the DeployItem, the Installation also goes into a failure state.
+
 
 ## Resolving the Error
 
@@ -149,3 +152,33 @@ kubectl delete inst -n example hello-world
 Note: if the Installation is not yet in a final phase, the deletion process will not start directly. 
 Rather it will wait until the current deployment process has finished. However, if you do not want
 to wait for this, you can **interrupt** the ongoing deployment as described [above](#interrupting-a-deployment).
+
+
+## Configuring a Timeout for a DeployItem
+
+In this example we have specified a [progressing timeout](../../../usage/DeployItemTimeouts.md#progressing-timeout) 
+for a DeployItem. This is done in the DeployItem template of the Blueprint (here, inline in the 
+[Installation](./installation/installation.yaml).)
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+deployExecutions:
+  - name: default
+    type: GoTemplate
+    template: |
+      deployItems:
+        - name: default-deploy-item
+          type: landscaper.gardener.cloud/helm
+      
+          timeout: 2m
+```
+
+If you do not specify a timeout, the default of 10 minutes is used.
+
+For more details, see [DeployItem Timeouts](../../../usage/DeployItemTimeouts.md).
+
+There are further timeouts for readiness checks, for collecting export values, and for helm operations. These timeouts
+are deployer specific, see [Manifest Deployer](../../../deployer/manifest.md) and 
+[Helm Deployer](../../../deployer/helm.md).
