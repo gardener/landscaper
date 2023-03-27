@@ -33,10 +33,12 @@ type StatusType string
 // checkObjectFunc is a function to perform the actual readiness check
 type checkObjectFunc func(*unstructured.Unstructured) error
 
+type ObjectsToWatchFunc func() ([]*unstructured.Unstructured, error)
+
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
-	objects []*unstructured.Unstructured, fn checkObjectFunc, interruptionChecker *lib.InterruptionChecker) error {
+	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker *lib.InterruptionChecker) error {
 	var (
 		wg  sync.WaitGroup
 		try int32 = 1
@@ -54,6 +56,16 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 
 		if err := interruptionChecker.Check(ctx); err != nil {
 			return false, err
+		}
+
+		objects, err := getObjects()
+		if err != nil {
+			switch err.(type) {
+			case *ObjectNotReadyError:
+				return false, nil
+			default:
+				return false, err
+			}
 		}
 
 		allErrors := make([]error, len(objects))
