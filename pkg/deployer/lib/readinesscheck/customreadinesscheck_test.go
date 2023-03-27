@@ -94,6 +94,31 @@ var _ = Describe("Custom health checks", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("should fail on a ConfigMap with a non matching value", func() {
+		testFileName := "04-configmap.yaml"
+		failValue := "value_WRONG"
+
+		testObjects, objectRefs := loadSingleObjectFromFile(testFileName)
+		Expect(testObjects).To(HaveLen(1))
+		customHealthCheck.ManagedResources = objectRefs
+		ref := customHealthCheck.ManagedResources[0]
+
+		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
+			Name:     "check " + ref.Kind,
+			Resource: []lsv1alpha1.TypedObjectReference{ref},
+			Requirements: []health.RequirementSpec{
+				{
+					JsonPath: ".data.mykey",
+					Operator: selection.Equals,
+					Value:    getRawValues(failValue),
+				},
+			},
+		}
+
+		err := customHealthCheck.CheckObject(testObjects[0])
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("should successfully perform a health check on a resource with a nested compare value", func() {
 		testFileName := "03-deployment-with-nested-status.yaml"
 		successValue := map[string]interface{}{
@@ -140,7 +165,7 @@ var _ = Describe("Custom health checks", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("should succed on a test that checks for a missing field", func() {
+	It("should succeed on a test that checks for a missing field", func() {
 		testFileName := "01-simple-deployment.yaml"
 
 		testObjects, objectRefs := loadSingleObjectFromFile(testFileName)
