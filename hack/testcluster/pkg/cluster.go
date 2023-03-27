@@ -47,7 +47,7 @@ const (
 
 // DefaultK8sVersion defines the default k3s version.
 // The real version is appended with a "-k3s1"
-const DefaultK8sVersion = "v1.20.8"
+const DefaultK8sVersion = "v1.25.6"
 
 // K3sImageRepository is the repository name of the k3s images.
 const K3sImageRepository = "docker.io/rancher/k3s"
@@ -61,7 +61,7 @@ metadata:
   generateName: k3s-cluster-
 spec:
   containers:
-  - image: docker.io/rancher/k3s:v1.20.8-k3s1
+  - image: docker.io/rancher/k3s:v1.25.6-k3s1
     imagePullPolicy: IfNotPresent
     name: cluster
     stdin: true
