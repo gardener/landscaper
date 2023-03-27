@@ -50,7 +50,7 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 	}
 
 	for _, item := range executionItems {
-		lsErr := o.deployOrTrigger(ctx, *item)
+		lsErr := o.updateDeployItem(ctx, *item)
 		if lsErr != nil {
 			return lsErr
 		}
@@ -147,11 +147,6 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 	di = &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
-	}
-
-	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
-	if err := o.Writer().UpdateDeployItem(ctx, read_write_layer.W000109, di); err != nil {
-		return lserrors.NewWrappedError(err, op, "UpdateDeployItem", err.Error())
 	}
 
 	di.Status.SetJobID(o.exec.Status.JobID)

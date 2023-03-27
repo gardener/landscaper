@@ -158,7 +158,6 @@ func (o *Options) run(ctx context.Context) error {
 		lsMgr,
 		o.Config.Controllers.DeployItems,
 		o.Config.DeployItemTimeouts.Pickup,
-		o.Config.DeployItemTimeouts.Abort,
 		o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}

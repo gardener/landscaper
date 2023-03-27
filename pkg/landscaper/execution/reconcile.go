@@ -26,7 +26,7 @@ type executionItem struct {
 }
 
 // deployOrTrigger creates a new deployitem or triggers it if it already exists.
-func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) lserrors.LsError {
+func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) lserrors.LsError {
 	deployItemExists := item.DeployItem != nil
 
 	if !deployItemExists {

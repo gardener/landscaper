@@ -23,7 +23,6 @@ func AddControllerToManager(logger logging.Logger,
 	mgr manager.Manager,
 	config config.DeployItemsController,
 	deployItemPickupTimeout,
-	deployItemAbortingTimeout,
 	deployItemDefaultTimeout *lscore.Duration) error {
 	log := logger.Reconciles("", "DeployItem")
 	a, err := NewController(
@@ -31,7 +30,6 @@ func AddControllerToManager(logger logging.Logger,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		deployItemPickupTimeout,
-		deployItemAbortingTimeout,
 		deployItemDefaultTimeout,
 	)
 	if err != nil {

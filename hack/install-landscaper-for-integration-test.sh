@@ -74,7 +74,6 @@ landscaper:
             verbosityLevel: debug
     deployItemTimeouts:
       pickup: 30s
-      abort: 30s
 " > /tmp/values.yaml
 
 touch /tmp/registry-values.yaml
