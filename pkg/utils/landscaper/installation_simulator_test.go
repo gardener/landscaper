@@ -193,17 +193,14 @@ targetExports: []
 		err = yaml.Unmarshal(marshaled, &clusterListMap)
 		Expect(err).ToNot(HaveOccurred())
 
-		dataImports := map[string]interface{}{
+		imports := map[string]interface{}{
 			"root-param-a": "valua-a",
 			"root-param-b": "value-b",
+			"cluster":      clusterMap,
+			"clusters":     clusterListMap,
 		}
 
-		targetImports := map[string]interface{}{
-			"cluster":  clusterMap,
-			"clusters": clusterListMap,
-		}
-
-		exports, err := simulator.Run(cd, blueprint, dataImports, targetImports)
+		exports, err := simulator.Run(cd, blueprint, imports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exports).ToNot(BeNil())
 
@@ -245,6 +242,8 @@ targetExports: []
 		Expect(callbacks.imports).To(HaveKey("root/subinst-a"))
 		Expect(callbacks.imports).To(HaveKey("root/subinst-b"))
 		Expect(callbacks.imports).To(HaveKey("root/subinst-c"))
+
+		Expect(callbacks.imports["root"]).To(HaveKeyWithValue("foo", "bar"))
 
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-a"))
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-b"))

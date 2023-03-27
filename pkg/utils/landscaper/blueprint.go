@@ -7,6 +7,7 @@ package landscaper
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/gardener/landscaper/pkg/utils/dependencies"
 
@@ -82,6 +83,11 @@ func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *Resolved
 		return nil, err
 	}
 
+	imports, err := r.RenderImportExecutions(input, imports)
+	if err != nil {
+		return nil, err
+	}
+
 	deployItems, deployItemsState, err := r.renderDeployItems(input, imports)
 	if err != nil {
 		return nil, err
@@ -99,6 +105,53 @@ func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *Resolved
 		InstallationTemplateState: subInstallationsState,
 	}
 	return renderOut, nil
+}
+
+// RenderImportExecutions renders the export executions of the given blueprint and returns the rendered exports.
+func (r *BlueprintRenderer) RenderImportExecutions(input *ResolvedInstallation, imports map[string]interface{}) (map[string]interface{}, error) {
+	var (
+		blobResolver ctf.BlobResolver
+		ctx          context.Context
+	)
+
+	if input == nil {
+		return nil, fmt.Errorf("render input may not be nil")
+	}
+
+	if input.Blueprint == nil {
+		return nil, fmt.Errorf("blueprint may not be nil")
+	}
+
+	if len(input.Blueprint.Info.ImportExecutions) == 0 {
+		// nothing to do if there aren't any ImportExecutions
+		return imports, nil
+	}
+
+	ctx = context.Background()
+	defer ctx.Done()
+
+	if input.ComponentDescriptor != nil && r.componentResolver != nil {
+		var err error
+		_, blobResolver, err = r.componentResolver.ResolveWithBlobResolver(ctx, r.getRepositoryContext(input), input.ComponentDescriptor.GetName(), input.ComponentDescriptor.GetVersion())
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob resolver: %w", err)
+		}
+	}
+
+	templateStateHandler := template.NewMemoryStateHandler()
+	formatter := template.NewTemplateInputFormatter(true)
+	errorList, bindings, err := template.New(gotemplate.New(blobResolver, templateStateHandler, nil).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
+		TemplateImportExecutions(template.NewBlueprintExecutionOptions(input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList, imports))
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to template export executions: %w", err)
+	}
+
+	if len(errorList) > 0 {
+		return nil, fmt.Errorf("the following error(s) occurred in the import executions:\n\t%s", strings.Join(errorList, "\n\t"))
+	}
+
+	return bindings, nil
 }
 
 // RenderExportExecutions renders the export executions of the given blueprint and returns the rendered exports.
@@ -177,63 +230,66 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 	// includes resolving target import references to target object references
 	deployItemTemplates := make(core.DeployItemTemplateList, len(executions))
 	for i, elem := range executions {
-		target := &core.ObjectReference{
-			Name:      elem.Target.Name,
-			Namespace: input.Installation.Namespace,
-		}
-		if elem.Target.Index != nil {
-			// targetlist import reference
-			raw := imports[elem.Target.Import]
-			imp := input.Blueprint.GetImportByName(elem.Target.Import)
-			if imp == nil {
-				return nil, nil, deployItemSpecificationError(elem.Name, "targetlist import %q not found", elem.Target.Import)
+		var target *core.ObjectReference
+		if elem.Target != nil {
+			target = &core.ObjectReference{
+				Name:      elem.Target.Name,
+				Namespace: input.Installation.Namespace,
 			}
-			if imp.Type != lsv1alpha1.ImportTypeTargetList {
-				return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a targetlist", elem.Target.Import)
+			if elem.Target.Index != nil {
+				// targetlist import reference
+				raw := imports[elem.Target.Import]
+				imp := input.Blueprint.GetImportByName(elem.Target.Import)
+				if imp == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "targetlist import %q not found", elem.Target.Import)
+				}
+				if imp.Type != lsv1alpha1.ImportTypeTargetList {
+					return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a targetlist", elem.Target.Import)
+				}
+				if raw == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
+				}
+				val, ok := raw.([]map[string]interface{})
+				if !ok {
+					return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
+				}
+				if *elem.Target.Index < 0 || *elem.Target.Index >= len(val) {
+					return nil, nil, deployItemSpecificationError(elem.Name, "index %d out of bounds", *elem.Target.Index)
+				}
+				name, _, err := unstructured.NestedString(val[*elem.Target.Index], "metadata", "name")
+				if err != nil {
+					return nil, nil, err
+				}
+				namespace, _, _ := unstructured.NestedString(val[*elem.Target.Index], "metadata", "namespace")
+				target.Name = name
+				target.Namespace = namespace
+			} else if len(elem.Target.Import) > 0 {
+				// single target import reference
+				raw := imports[elem.Target.Import]
+				imp := input.Blueprint.GetImportByName(elem.Target.Import)
+				if imp == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "target import %q not found", elem.Target.Import)
+				}
+				if imp.Type != lsv1alpha1.ImportTypeTarget {
+					return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a target", elem.Target.Import)
+				}
+				if raw == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
+				}
+				val, ok := raw.(map[string]interface{})
+				if !ok {
+					return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
+				}
+				name, _, err := unstructured.NestedString(val, "metadata", "name")
+				if err != nil {
+					return nil, nil, err
+				}
+				namespace, _, _ := unstructured.NestedString(val, "metadata", "namespace")
+				target.Name = name
+				target.Namespace = namespace
+			} else if len(elem.Target.Name) == 0 {
+				return nil, nil, deployItemSpecificationError(elem.Name, "empty target reference")
 			}
-			if raw == nil {
-				return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
-			}
-			val, ok := raw.([]map[string]interface{})
-			if !ok {
-				return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
-			}
-			if *elem.Target.Index < 0 || *elem.Target.Index >= len(val) {
-				return nil, nil, deployItemSpecificationError(elem.Name, "index %d out of bounds", *elem.Target.Index)
-			}
-			name, _, err := unstructured.NestedString(val[*elem.Target.Index], "metadata", "name")
-			if err != nil {
-				return nil, nil, err
-			}
-			namespace, _, _ := unstructured.NestedString(val[*elem.Target.Index], "metadata", "namespace")
-			target.Name = name
-			target.Namespace = namespace
-		} else if len(elem.Target.Import) > 0 {
-			// single target import reference
-			raw := imports[elem.Target.Import]
-			imp := input.Blueprint.GetImportByName(elem.Target.Import)
-			if imp == nil {
-				return nil, nil, deployItemSpecificationError(elem.Name, "target import %q not found", elem.Target.Import)
-			}
-			if imp.Type != lsv1alpha1.ImportTypeTarget {
-				return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a target", elem.Target.Import)
-			}
-			if raw == nil {
-				return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
-			}
-			val, ok := raw.(map[string]interface{})
-			if !ok {
-				return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
-			}
-			name, _, err := unstructured.NestedString(val, "metadata", "name")
-			if err != nil {
-				return nil, nil, err
-			}
-			namespace, _, _ := unstructured.NestedString(val, "metadata", "namespace")
-			target.Name = name
-			target.Namespace = namespace
-		} else if len(elem.Target.Name) == 0 {
-			return nil, nil, deployItemSpecificationError(elem.Name, "empty target reference")
 		}
 
 		deployItemTemplates[i] = core.DeployItemTemplate{

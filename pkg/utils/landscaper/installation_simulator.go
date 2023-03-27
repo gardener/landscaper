@@ -205,7 +205,7 @@ func (s *InstallationSimulator) SetCallbacks(callbacks InstallationSimulatorCall
 }
 
 // Run starts the simulation for the given component descriptor, blueprint and imports and returns the calculated exports.
-func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blueprints.Blueprint, dataImports, targetImports map[string]interface{}) (*BlueprintExports, error) {
+func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blueprints.Blueprint, imports map[string]interface{}) (*BlueprintExports, error) {
 	ctx := &ResolvedInstallation{
 		ComponentDescriptor: cd,
 		Installation: &lsv1alpha1.Installation{
@@ -219,7 +219,7 @@ func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blu
 		Blueprint: blueprint,
 	}
 
-	_, exports, err := s.executeInstallation(ctx, nil, dataImports, targetImports)
+	_, exports, err := s.executeInstallation(ctx, nil, imports, imports)
 	return exports, err
 }
 
@@ -236,6 +236,11 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	imports := make(map[string]interface{})
 	mergeMaps(imports, dataImports)
 	mergeMaps(imports, targetImports)
+
+	imports, err := s.blueprintRenderer.RenderImportExecutions(ctx, imports)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error while executing import executions: %w", err)
+	}
 
 	s.callbacks.OnInstallation(pathString, ctx.Installation)
 	s.callbacks.OnImports(pathString, imports)

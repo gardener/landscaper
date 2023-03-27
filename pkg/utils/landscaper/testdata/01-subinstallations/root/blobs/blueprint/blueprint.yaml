@@ -22,6 +22,15 @@ imports:
     schema:
       type: string
 
+importExecutions:
+- name: test
+  type: Spiff
+  template:
+    errors: []
+    bindings:
+      <<<: (( imports ))
+      foo: bar
+
 exports:
   - name: export-root-a
     type: data
