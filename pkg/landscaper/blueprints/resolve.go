@@ -80,7 +80,7 @@ func ResolveBlueprint(ctx context.Context,
 	//	return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	//}
 	blueprintResourceName := bpDef.Reference.ResourceName
-	blueprintResource, err := componentVersion.GetResource(blueprintResourceName)
+	_, err = componentVersion.GetResource(blueprintResourceName, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint resource %s for ref %#v: %w", blueprintResourceName, cdRef, err)
 	}

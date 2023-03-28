@@ -17,10 +17,12 @@ type Registry interface {
 type ComponentVersion interface {
 	GetDescriptor() ([]byte, error)
 	GetDependency(name string) (ComponentVersion, error)
-	GetResource(name string) (Resource, error)
+	GetResource(name string, identity Identity) (Resource, error)
 }
 
 type Resource interface {
 	GetDescriptor() ([]byte, error)
 	GetData() ([]byte, error)
 }
+
+type Identity map[string]string
