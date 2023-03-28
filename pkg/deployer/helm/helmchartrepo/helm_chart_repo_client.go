@@ -65,9 +65,14 @@ func NewHelmChartRepoClient(context *lsv1alpha1.Context, lsClient client.Client)
 		}
 	}
 
+	contextNamespace := ""
+	if context != nil {
+		contextNamespace = context.Namespace
+	}
+
 	return &HelmChartRepoClient{
 		auths:            auths,
-		contextNamespace: context.Namespace,
+		contextNamespace: contextNamespace,
 		lsClient:         lsClient,
 	}, nil
 }

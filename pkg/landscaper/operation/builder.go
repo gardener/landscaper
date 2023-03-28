@@ -8,12 +8,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/model"
 )
 
 // Builder implements the builder-pattern to craft the operation
@@ -21,7 +21,7 @@ type Builder struct {
 	client            client.Client
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
-	componentRegistry ctf.ComponentResolver
+	componentRegistry model.RegistryAccess
 }
 
 // NewBuilder creates a new operation builder.
@@ -42,8 +42,8 @@ func (b *Builder) Scheme(s *runtime.Scheme) *Builder {
 }
 
 // ComponentRegistry sets the component registry.
-func (b *Builder) ComponentRegistry(resolver ctf.ComponentResolver) *Builder {
-	b.componentRegistry = resolver
+func (b *Builder) ComponentRegistry(registry model.RegistryAccess) *Builder {
+	b.componentRegistry = registry
 	return b
 }
 

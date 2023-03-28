@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/pkg/components/model"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
@@ -92,8 +93,8 @@ func (b *OperationBuilder) Scheme(s *runtime.Scheme) *OperationBuilder {
 }
 
 // ComponentRegistry sets the component registry.
-func (b *OperationBuilder) ComponentRegistry(resolver ctf.ComponentResolver) *OperationBuilder {
-	b.Builder.ComponentRegistry(resolver)
+func (b *OperationBuilder) ComponentRegistry(registry model.RegistryAccess) *OperationBuilder {
+	b.Builder.ComponentRegistry(registry)
 	return b
 }
 
@@ -148,13 +149,13 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 		}
 		var err error
 		if b.blobResolver == nil {
-			instOp.ComponentDescriptor, instOp.BlobResolver, err = instOp.ComponentsRegistry().
+			instOp.ComponentDescriptor, instOp.BlobResolver, err = instOp.ComponentsRegistry().GetComponentResolver().
 				ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			instOp.ComponentDescriptor, err = instOp.ComponentsRegistry().
+			instOp.ComponentDescriptor, err = instOp.ComponentsRegistry().GetComponentResolver().
 				Resolve(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 			if err != nil {
 				return nil, err
@@ -165,7 +166,7 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 		cdRef := instOp.Context().External.ComponentDescriptorRef()
 		if cdRef != nil {
 			var err error
-			_, instOp.BlobResolver, err = instOp.ComponentsRegistry().
+			_, instOp.BlobResolver, err = instOp.ComponentsRegistry().GetComponentResolver().
 				ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 			if err != nil {
 				return nil, err
@@ -174,7 +175,9 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 	if instOp.ResolvedComponentDescriptorList == nil {
 		var err error
-		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, instOp.ComponentsRegistry(), *instOp.ComponentDescriptor, instOp.Context().External.RepositoryContext, instOp.Context().External.Overwriter)
+		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx,
+			instOp.ComponentsRegistry().GetComponentResolver(), *instOp.ComponentDescriptor,
+			instOp.Context().External.RepositoryContext, instOp.Context().External.Overwriter)
 		if err != nil {
 			return nil, err
 		}

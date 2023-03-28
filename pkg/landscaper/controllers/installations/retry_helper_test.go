@@ -8,7 +8,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/tools/record"
@@ -20,9 +19,9 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -32,20 +31,18 @@ var _ = Describe("Retry handler", func() {
 	Context("with clock", func() {
 
 		var (
-			op   *lsoperation.Operation
-			ctrl reconcile.Reconciler
-			clok *testing.FakePassiveClock
-
-			state        *envtest.State
-			fakeCompRepo ctf.ComponentResolver
+			op    *lsoperation.Operation
+			ctrl  reconcile.Reconciler
+			clok  *testing.FakePassiveClock
+			state *envtest.State
 		)
 
 		BeforeEach(func() {
 			var err error
-			fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata")
+			registryAccess, err := cnudie.NewLocalRegistryAccess("./testdata")
 			Expect(err).ToNot(HaveOccurred())
 
-			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 
 			clok = &testing.FakePassiveClock{}
 

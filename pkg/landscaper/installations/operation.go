@@ -75,7 +75,7 @@ func (o *Operation) SetTargetListImports(data map[string]*dataobjects.TargetExte
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
 // DEPRECATED: only used for tests. use the builder methods instead.
 func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
-	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.GetInstallation(), o.Context().External.Overwriter)
+	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry().GetComponentResolver(), o.Inst.GetInstallation(), o.Context().External.Overwriter)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 		return nil
 	}
 
-	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd, o.Context().External.RepositoryContext, o.Context().External.Overwriter)
+	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry().GetComponentResolver(), *cd, o.Context().External.RepositoryContext, o.Context().External.Overwriter)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (o *Operation) JSONSchemaValidator(schema []byte) (*jsonschema.Validator, e
 		LocalTypes:          o.Inst.GetBlueprint().Info.LocalTypes,
 		BlueprintFs:         o.Inst.GetBlueprint().Fs,
 		ComponentDescriptor: o.ComponentDescriptor,
-		ComponentResolver:   o.ComponentsRegistry(),
+		ComponentResolver:   o.ComponentsRegistry().GetComponentResolver(),
 		RepositoryContext:   o.context.External.RepositoryContext,
 	})
 	err := v.CompileSchema(schema)

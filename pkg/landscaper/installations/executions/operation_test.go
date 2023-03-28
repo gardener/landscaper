@@ -7,16 +7,16 @@ package executions_test
 import (
 	"context"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	"k8s.io/apimachinery/pkg/util/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
@@ -27,6 +27,7 @@ import (
 var _ = Describe("Execution Operation", func() {
 	var (
 		componentResolver componentsregistry.TypedRegistry
+		registryAccess    model.RegistryAccess
 		state             *envtest.State
 		kClient           client.Client
 		testInstallations map[string]*lsv1alpha1.Installation
@@ -43,6 +44,9 @@ var _ = Describe("Execution Operation", func() {
 
 		kClient = testenv.Client
 		testInstallations = state.Installations
+
+		registryAccess, err = cnudie.NewLocalRegistryAccess("./testdata/registry")
+		Expect(err).ToNot(HaveOccurred())
 
 		componentResolver, err = componentsregistry.NewLocalClient("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
@@ -106,7 +110,7 @@ var _ = Describe("Execution Operation", func() {
 		installationOperation, err := installations.NewOperationBuilder(internalInst).
 			Client(kClient).
 			ComponentDescriptor(cd).
-			ComponentRegistry(componentResolver).
+			ComponentRegistry(registryAccess).
 			WithContext(lsCtx).
 			Build(ctx)
 		Expect(err).ToNot(HaveOccurred())
