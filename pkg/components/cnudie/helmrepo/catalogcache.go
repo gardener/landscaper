@@ -1,4 +1,4 @@
-package helmchartrepo
+package helmrepo
 
 import (
 	"crypto/sha256"

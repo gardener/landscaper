@@ -41,9 +41,9 @@ var _ = Describe("Landscaper", func() {
 		It("should render a blueprint that imports a target list", func() {
 			renderer := lsutils.NewBlueprintRenderer(nil, nil, nil)
 			_, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
-				ComponentDescriptor: nil,
-				Installation:        nil,
-				Blueprint:           GetBlueprint("./testdata/00-blueprint-with-targetlist/blueprint"),
+				ComponentVersion: nil,
+				Installation:     nil,
+				Blueprint:        GetBlueprint("./testdata/00-blueprint-with-targetlist/blueprint"),
 			}, GetImports("./testdata/00-blueprint-with-targetlist/values.yaml"))
 
 			Expect(err).ToNot(HaveOccurred())

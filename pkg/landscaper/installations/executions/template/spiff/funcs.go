@@ -16,10 +16,14 @@ import (
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 )
 
-func LandscaperSpiffFuncs(functions spiffing.Functions, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) {
+func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.ComponentVersion, componentVersions *model.ComponentVersionList) {
+	cd := model.GetComponentDescriptor(componentVersion)
+	cdList := model.ConvertComponentVersionList(componentVersions)
+
 	functions.RegisterFunction("getResource", spiffResolveResources(cd))
 	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList))
 	functions.RegisterFunction("generateImageOverwrite", spiffGenerateImageOverwrite(cd, cdList))

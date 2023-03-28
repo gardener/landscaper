@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gardener/component-cli/ociclient/cache"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+
+	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
@@ -28,18 +28,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	errorsutil "k8s.io/apimachinery/pkg/util/errors"
 
+	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/apis/config/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"github.com/gardener/landscaper/apis/config/v1alpha1"
-
-	"github.com/gardener/landscaper/pkg/utils/tar"
-
-	"github.com/gardener/landscaper/apis/config"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 
 var storeSingleton *Store
@@ -159,13 +156,9 @@ func (s *Store) Close() error {
 
 // Fetch fetches the blueprint from the store or the remote.
 // The blueprint is automatically cached once downloaded from the remote endpoint.
-func (s *Store) Fetch(ctx context.Context,
-	cd *cdv2.ComponentDescriptor,
-	blobResolver ctf.BlobResolver,
-	blueprintName string) (*Blueprint, error) {
+func (s *Store) Fetch(ctx context.Context, componentVersion model.ComponentVersion, blueprintName string) (*Blueprint, error) {
 
-	// get blueprint resource from component descriptor
-	resource, err := GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
+	resource, err := GetBlueprintResourceFromComponentVersion(componentVersion, blueprintName)
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +169,9 @@ func (s *Store) Fetch(ctx context.Context,
 	)
 	switch s.indexMethod {
 	case config.ComponentDescriptorIdentityMethod:
-		blueprintID = blueprintIDFromComponentDescriptor(cd, resource)
+		blueprintID = blueprintIDFromComponentVersion(componentVersion, resource)
 	case config.BlueprintDigestIndex:
-		blobInfo, err = blobResolver.Info(ctx, resource)
+		blobInfo, err = resource.GetBlobInfo(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get blob info: %w", err)
 		}
@@ -187,25 +180,17 @@ func (s *Store) Fetch(ctx context.Context,
 		return nil, fmt.Errorf("unknown blueprint index method %q", s.indexMethod)
 	}
 
-	if s.indexMethod == config.BlueprintDigestIndex {
-		// read the digest directly if the digest index is used
-		blobInfo, err = blobResolver.Info(ctx, resource)
-		if err != nil {
-			return nil, fmt.Errorf("unable to get blob info: %w", err)
-		}
-	}
-
 	if blueprint, err := s.Get(ctx, blueprintID); err == nil {
 		return blueprint, nil
 	}
 
-	return s.Store(ctx, blobResolver, resource, blueprintID, blobInfo)
+	return s.Store(ctx, resource, blueprintID, blobInfo)
 }
 
 // Store stores a blueprint on the given filesystem.
 // It is expected that the bpReader contains a tar archive.
 // The blobInfo is optional and will be fetched from the BlobResolver if not defined.
-func (s *Store) Store(ctx context.Context, blobResolver ctf.BlobResolver, resource cdv2.Resource, blueprintID string, blobInfo *ctf.BlobInfo) (*Blueprint, error) {
+func (s *Store) Store(ctx context.Context, resource model.Resource, blueprintID string, blobInfo *ctf.BlobInfo) (*Blueprint, error) {
 	if s.closed {
 		return nil, StoreClosedError
 	}
@@ -227,12 +212,12 @@ func (s *Store) Store(ctx context.Context, blobResolver ctf.BlobResolver, resour
 
 	if blobInfo == nil {
 		var err error
-		blobInfo, err = blobResolver.Info(ctx, resource)
+		blobInfo, err = resource.GetBlobInfo(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get blob info: %w", err)
 		}
 	}
-	if err := FetchAndExtractBlueprint(ctx, s.fs, bpPath, blobResolver, resource, blobInfo); err != nil {
+	if err := FetchAndExtractBlueprint(ctx, s.fs, bpPath, resource, blobInfo); err != nil {
 		return nil, err
 	}
 
@@ -255,8 +240,7 @@ func FetchAndExtractBlueprint(
 	ctx context.Context,
 	fs vfs.FileSystem,
 	bpPath string,
-	blobResolver ctf.BlobResolver,
-	resource cdv2.Resource,
+	resource model.Resource,
 	blobInfo *ctf.BlobInfo) error {
 
 	mediaType, err := mediatype.Parse(blobInfo.MediaType)
@@ -270,7 +254,8 @@ func FetchAndExtractBlueprint(
 	defer cancel()
 	eg, downloadCtx := errgroup.WithContext(downloadCtx)
 	eg.Go(func() error {
-		_, err := blobResolver.Resolve(downloadCtx, resource, utils.NewContextAwareWriter(downloadCtx, pw))
+		writer := utils.NewContextAwareWriter(downloadCtx, pw)
+		_, err := resource.GetBlob(downloadCtx, writer)
 		if err != nil {
 			if err2 := pw.Close(); err2 != nil {
 				return errorsutil.NewAggregate([]error{err, err2})
@@ -418,18 +403,21 @@ func (s *Store) RunGarbageCollection() {
 	}
 }
 
-// blueprintID generates a unique blueprint id that can be used a a file/directory name.
+// blueprintIDFromComponentVersion generates a unique blueprint id that can be used a file/directory name.
 // The ID is calculated by hashing (sha256) the component descriptor and the blueprint resource.
-func blueprintIDFromComponentDescriptor(cd *cdv2.ComponentDescriptor, resource cdv2.Resource) string {
+func blueprintIDFromComponentVersion(componentVersion model.ComponentVersion, resource model.Resource) string {
 	h := sha256.New()
-	if cd.GetEffectiveRepositoryContext() != nil {
-		_, _ = h.Write(cd.GetEffectiveRepositoryContext().Raw)
+
+	if componentVersion.GetRepositoryContext() != nil {
+		_, _ = h.Write(componentVersion.GetRepositoryContext().Raw)
 	}
+
 	_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s",
-		cd.Name,
-		cd.Version,
-		resource.Name,
-		resource.Version)))
+		componentVersion.GetName(),
+		componentVersion.GetVersion(),
+		resource.GetName(),
+		resource.GetVersion())))
+
 	return hex.EncodeToString(h.Sum(nil))
 }
 

@@ -7,20 +7,18 @@ package subinstallations_test
 import (
 	"context"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -33,7 +31,6 @@ var _ = Describe("SubInstallation", func() {
 
 	var (
 		op                *lsoperation.Operation
-		fakeCompRepo      ctf.ComponentResolver
 		state             *envtest.State
 		fakeClient        client.Client
 		fakeInstallations map[string]*lsv1alpha1.Installation
@@ -117,13 +114,13 @@ var _ = Describe("SubInstallation", func() {
 
 		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12")).To(Succeed())
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata/registry")
+		registryAccess, err := registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op, err = lsoperation.NewBuilder().
 			Client(fakeClient).Scheme(api.LandscaperScheme).
 			WithEventRecorder(record.NewFakeRecorder(1024)).
-			ComponentRegistry(fakeCompRepo).
+			ComponentRegistry(registryAccess).
 			Build(context.Background())
 		Expect(err).ToNot(HaveOccurred())
 	})

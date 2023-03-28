@@ -292,12 +292,14 @@ func (c *Constructor) RenderImportExecutions() error {
 		Inst:       c.Operation.Inst.GetInstallation(),
 	}
 	targetResolver := secretresolver.New(c.Operation.Client())
-	tmpl := template.New(gotemplate.New(c.Operation.BlobResolver, templateStateHandler, targetResolver), spiff.New(templateStateHandler))
+	tmpl := template.New(
+		gotemplate.New(templateStateHandler, targetResolver),
+		spiff.New(templateStateHandler))
 	errors, bindings, err := tmpl.TemplateImportExecutions(
 		template.NewBlueprintExecutionOptions(
 			c.Operation.Context().External.InjectComponentDescriptorRef(c.Operation.Inst.GetInstallation()),
 			c.Operation.Inst.GetBlueprint(),
-			c.Operation.ComponentDescriptor,
+			c.Operation.ComponentVersion,
 			c.Operation.ResolvedComponentDescriptorList,
 			c.Operation.Inst.GetImports()))
 

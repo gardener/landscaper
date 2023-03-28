@@ -19,13 +19,14 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/apis/core"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/testutils"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
-
-	"github.com/gardener/landscaper/apis/core"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
 func TestConfig(t *testing.T) {
@@ -75,7 +76,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.SubinstallationExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			res, err := op.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil, nil)))
@@ -95,7 +96,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.SubinstallationExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			res, err := op.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil,
@@ -118,7 +119,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil, nil)))
@@ -138,7 +139,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil,
@@ -159,7 +160,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
@@ -183,7 +184,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			imageAccess, err := cdv2.NewUnstructured(&cdv2.OCIRegistryAccess{
 				ObjectType: cdv2.ObjectType{
@@ -215,9 +216,16 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				},
 			}
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
 
-			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
-				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, cd, nil, nil)))
+			res, err := op.TemplateDeployExecutions(
+				template.NewDeployExecutionOptions(
+					template.NewBlueprintExecutionOptions(
+						nil,
+						&blueprints.Blueprint{Info: blue, Fs: nil},
+						componentVersion,
+						nil,
+						nil)))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			config := make(map[string]interface{})
@@ -233,7 +241,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			imageAccess, err := cdv2.NewUnstructured(&cdv2.OCIRegistryAccess{
 				ObjectType: cdv2.ObjectType{
@@ -261,6 +269,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				},
 			}
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
 
 			cd2 := cdv2.ComponentDescriptor{
 				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
@@ -285,13 +294,16 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				},
 			}
 			Expect(cdv2.DefaultComponent(&cd2)).To(Succeed())
-			list := &cdv2.ComponentDescriptorList{
-				Metadata:   cdv2.Metadata{},
-				Components: []cdv2.ComponentDescriptor{cd2},
+			componentVersion2 := testutils.NewTestComponentVersionFromReader(&cd2, nil, nil)
+
+			componentVersionList := &model.ComponentVersionList{
+				Components: []model.ComponentVersion{
+					componentVersion2,
+				},
 			}
 
 			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
-				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, cd, list, nil)))
+				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, componentVersion, componentVersionList, nil)))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			config := make(map[string]interface{})
@@ -307,7 +319,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			_, err = op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil,
@@ -323,7 +335,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			_, err = op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil,
@@ -350,7 +362,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			componentDef := lsv1alpha1.ComponentDescriptorDefinition{}
 			componentDef.Reference = &lsv1alpha1.ComponentDescriptorReference{}
@@ -398,16 +410,22 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
 
 			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
-				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, cd, &cdv2.ComponentDescriptorList{}, nil)))
+				template.NewBlueprintExecutionOptions(
+					nil,
+					&blueprints.Blueprint{Info: blue, Fs: nil},
+					componentVersion,
+					&model.ComponentVersionList{},
+					nil)))
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
@@ -438,7 +456,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil,
@@ -467,7 +485,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			res, err := op.TemplateExportExecutions(template.NewExportExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil, nil), nil))
@@ -483,7 +501,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			res, err := op.TemplateExportExecutions(template.NewExportExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil, nil),
@@ -500,7 +518,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
@@ -529,16 +547,23 @@ func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
 
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
 
-			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
-				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, cd, &cdv2.ComponentDescriptorList{}, imports)))
+			res, err := op.TemplateDeployExecutions(
+				template.NewDeployExecutionOptions(
+					template.NewBlueprintExecutionOptions(
+						nil,
+						&blueprints.Blueprint{Info: blue, Fs: nil},
+						componentVersion,
+						&model.ComponentVersionList{},
+						imports)))
 
 			return res, err
 		}
@@ -706,30 +731,36 @@ func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
 					Type: "object",
 				},
 			}
-			op := template.New(gotemplate.New(nil, stateHandler, nil), spiff.New(stateHandler))
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
 			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
 
-			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
-				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, cd, &cdv2.ComponentDescriptorList{},
-					map[string]interface{}{
-						"config": map[string]interface{}{
-							"verbosity": 10,
-							"memory": map[string]interface{}{
-								"min": 128,
-								"max": 1024,
+			res, err := op.TemplateDeployExecutions(
+				template.NewDeployExecutionOptions(
+					template.NewBlueprintExecutionOptions(
+						nil,
+						&blueprints.Blueprint{Info: blue, Fs: nil},
+						componentVersion,
+						&model.ComponentVersionList{},
+						map[string]interface{}{
+							"config": map[string]interface{}{
+								"verbosity": 10,
+								"memory": map[string]interface{}{
+									"min": 128,
+									"max": 1024,
+								},
+								"cert": "abcdef1234567",
+								"image": map[string]interface{}{
+									"name":    "test",
+									"version": "0.0.1",
+								},
 							},
-							"cert": "abcdef1234567",
-							"image": map[string]interface{}{
-								"name":    "test",
-								"version": "0.0.1",
-							},
-						},
-					})))
+						})))
 
 			Expect(err).To(HaveOccurred())
 			Expect(res).To(BeNil())

@@ -1,10 +1,13 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
-//
-// SPDX-License-Identifier: Apache-2.0
+package helmoci
 
-package chartresolver
+import (
+	"fmt"
 
-import "github.com/gardener/landscaper/pkg/deployer/helm/shared"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/deployer/helm/shared"
+)
 
 const (
 	// HelmChartConfigMediaType is the reserved media type for the Helm chart manifest config
@@ -27,3 +30,19 @@ const (
 	// HelmChartResourceType describes the helm resource type of a component descrptor defined resource.
 	HelmChartResourceType = shared.HelmChartResourceType
 )
+
+func NewResourceDataForHelmOCI(ociImageRef string) (*types.Resource, error) {
+	ociAccess := cdv2.NewOCIRegistryAccess(ociImageRef)
+	access, err := cdv2.NewUnstructured(ociAccess)
+	if err != nil {
+		return nil, fmt.Errorf("unable to construct helm oci access data for %s: %w", ociImageRef, err)
+	}
+
+	return &types.Resource{
+		IdentityObjectMeta: cdv2.IdentityObjectMeta{
+			Type: HelmChartResourceType,
+		},
+		Relation: cdv2.ExternalRelation,
+		Access:   &access,
+	}, nil
+}

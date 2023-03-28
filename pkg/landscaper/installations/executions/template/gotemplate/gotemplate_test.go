@@ -20,7 +20,7 @@ var _ = Describe("TemplateDeployExecutions", func() {
 		fs := memoryfs.New()
 		bp := blueprints.New(nil, fs)
 		tmpl := "{{ .values.test }}"
-		t := gotemplate.NewTemplateExecution(bp, nil, nil, nil, nil)
+		t := gotemplate.NewTemplateExecution(bp, nil, nil, nil)
 		values := map[string]interface{}{
 			"values": map[string]interface{}{
 				"test": "foo",
@@ -36,7 +36,7 @@ var _ = Describe("TemplateDeployExecutions", func() {
 		Expect(vfs.WriteFile(fs, "template.include", []byte("{{ .values.test }}"), 0600)).To(Succeed())
 		bp := blueprints.New(nil, fs)
 		tmpl := `{{ include "template.include" . }}`
-		t := gotemplate.NewTemplateExecution(bp, nil, nil, nil, nil)
+		t := gotemplate.NewTemplateExecution(bp, nil, nil, nil)
 		values := map[string]interface{}{
 			"values": map[string]interface{}{
 				"test": "foo",
@@ -53,7 +53,7 @@ var _ = Describe("TemplateDeployExecutions", func() {
 		bp := blueprints.New(nil, fs)
 		tmpl := `config:
 {{ include "template.include" . | indent 2 }}`
-		t := gotemplate.NewTemplateExecution(bp, nil, nil, nil, nil)
+		t := gotemplate.NewTemplateExecution(bp, nil, nil, nil)
 		values := map[string]interface{}{
 			"values": map[string]interface{}{
 				"test": "foo",

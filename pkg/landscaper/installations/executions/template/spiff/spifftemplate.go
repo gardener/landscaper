@@ -8,16 +8,15 @@ import (
 	"context"
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 )
 
 // Templater describes the spiff template implementation for execution templater.
@@ -46,8 +45,8 @@ func (t Templater) Type() lsv1alpha1.TemplateType {
 
 func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.TemplateExecutor,
 	blueprint *blueprints.Blueprint,
-	cd *cdv2.ComponentDescriptor,
-	cdList *cdv2.ComponentDescriptorList,
+	cd model.ComponentVersion,
+	cdList *model.ComponentVersionList,
 	values map[string]interface{}) (*template.SubinstallationExecutorOutput, error) {
 
 	rawTemplate, err := t.templateNode(tmplExec, blueprint)
@@ -91,7 +90,12 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 	return output, nil
 }
 
-func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*template.ImportExecutorOutput, error) {
+func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecutor,
+	blueprint *blueprints.Blueprint,
+	descriptor model.ComponentVersion,
+	cdList *model.ComponentVersionList,
+	values map[string]interface{}) (*template.ImportExecutorOutput, error) {
+
 	rawTemplate, err := t.templateNode(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
@@ -126,7 +130,12 @@ func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	return output, nil
 }
 
-func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*template.DeployExecutorOutput, error) {
+func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor,
+	blueprint *blueprints.Blueprint,
+	descriptor model.ComponentVersion,
+	cdList *model.ComponentVersionList,
+	values map[string]interface{}) (*template.DeployExecutorOutput, error) {
+
 	rawTemplate, err := t.templateNode(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
@@ -168,7 +177,12 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	return output, nil
 }
 
-func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*template.ExportExecutorOutput, error) {
+func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor,
+	blueprint *blueprints.Blueprint,
+	descriptor model.ComponentVersion,
+	cdList *model.ComponentVersionList,
+	values map[string]interface{}) (*template.ExportExecutorOutput, error) {
+
 	rawTemplate, err := t.templateNode(tmplExec, blueprint)
 	if err != nil {
 		return nil, err

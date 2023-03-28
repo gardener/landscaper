@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model"
 	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 	"github.com/gardener/landscaper/pkg/utils/targetresolver"
@@ -37,8 +38,13 @@ func LandscaperSprigFuncMap() gotmpl.FuncMap {
 
 // LandscaperTplFuncMap contains all additional landscaper functions that are
 // available in the executors templates.
-func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList,
-	blobResolver ctf.BlobResolver, targetResolver targetresolver.TargetResolver) map[string]interface{} {
+func LandscaperTplFuncMap(fs vfs.FileSystem,
+	componentVersion model.ComponentVersion,
+	componentVersions *model.ComponentVersionList,
+	targetResolver targetresolver.TargetResolver) map[string]interface{} {
+
+	cd := model.GetComponentDescriptor(componentVersion)
+	cdList := model.ConvertComponentVersionList(componentVersions)
 
 	funcs := map[string]interface{}{
 		"readFile": readFileFunc(fs),
@@ -49,7 +55,7 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"parseOCIRef":   lstmpl.ParseOCIReference,
 		"ociRefRepo":    getOCIReferenceRepository,
 		"ociRefVersion": getOCIReferenceVersion,
-		"resolve":       resolveArtifactFunc(blobResolver),
+		"resolve":       resolveArtifactFunc(componentVersion),
 
 		"getResource":          getResourceGoFunc(cd),
 		"getResources":         getResourcesGoFunc(cd),
@@ -113,10 +119,17 @@ func getOCIReferenceRepository(ref string) string {
 }
 
 // resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access
-func resolveArtifactFunc(blobResolver ctf.BlobResolver) func(access map[string]interface{}) []byte {
+func resolveArtifactFunc(componentVersion model.ComponentVersion) func(access map[string]interface{}) []byte {
 	return func(access map[string]interface{}) []byte {
 		ctx := context.Background()
 		defer ctx.Done()
+
+		if componentVersion == nil {
+			panic("Unable to resolve artifact, because no resolver is provided")
+		}
+
+		blobResolver := componentVersion.GetBlobResolver()
+
 		var data bytes.Buffer
 		if _, err := blobResolver.Resolve(ctx, cdv2.Resource{Access: cdv2.NewUnstructuredType(access["type"].(string), access)}, &data); err != nil {
 			panic(err)

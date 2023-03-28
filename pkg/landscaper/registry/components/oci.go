@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -15,23 +16,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/apis/config"
-
-	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-cli/ociclient/cache"
 )
-
-// NewOCIRegistry creates a new oci registry from a oci config.
-func NewOCIRegistry(log logging.Logger, config *config.OCIConfiguration, cache cache.Cache, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
-	client, err := ociclient.NewClient(log.Logr(), utils.WithConfiguration(config), ociclient.WithCache(cache))
-	if err != nil {
-		return nil, err
-	}
-
-	return NewOCIRegistryWithOCIClient(log, client, predefinedComponentDescriptors...)
-}
 
 // NewOCIRegistryWithOCIClient creates a new oci registry with a oci ociClient
 // If supplied, it parses and stores predefined component descriptors.
