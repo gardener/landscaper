@@ -7,7 +7,6 @@ package readinesscheck
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -33,12 +32,13 @@ type StatusType string
 // checkObjectFunc is a function to perform the actual readiness check
 type checkObjectFunc func(*unstructured.Unstructured) error
 
+type ObjectsToWatchFunc func() ([]*unstructured.Unstructured, error)
+
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
-	objects []*unstructured.Unstructured, fn checkObjectFunc, interruptionChecker *lib.InterruptionChecker) error {
+	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker *lib.InterruptionChecker) error {
 	var (
-		wg  sync.WaitGroup
 		try int32 = 1
 
 		// notReadyErrs contains all the errors related to the readiness of objects.
@@ -56,39 +56,23 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 			return false, err
 		}
 
-		allErrors := make([]error, len(objects))
-
-		for i, obj := range objects {
-			wg.Add(1)
-			go func(obj *unstructured.Unstructured, i int, allErrors []error) {
-				defer wg.Done()
-
-				if err := IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
-					allErrors[i] = err
-				}
-			}(obj, i, allErrors)
-		}
-		wg.Wait()
-
-		otherErrs = nil
-		notReadyErrs = nil
-
-		for _, err := range allErrors {
-			if err != nil {
-				switch err.(type) {
-				case *ObjectNotReadyError:
-					notReadyErrs = append(notReadyErrs, err)
-				default:
-					otherErrs = append(otherErrs, err)
-				}
+		objects, err := getObjects()
+		if err != nil {
+			if IsObjectNotReadyError(err) {
+				return false, nil
+			} else {
+				return false, err
 			}
 		}
 
-		if len(otherErrs) > 0 {
-			return false, apimacherrors.NewAggregate(otherErrs)
-		}
-		if len(notReadyErrs) > 0 {
-			return false, nil
+		for _, obj := range objects {
+			if err = IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
+				if IsObjectNotReadyError(err) {
+					return false, nil
+				} else {
+					return false, err
+				}
+			}
 		}
 
 		return true, nil
@@ -128,6 +112,19 @@ func NewObjectNotReadyError(u *unstructured.Unstructured, err error) *ObjectNotR
 		objectName:      u.GetName(),
 		objectNamespace: u.GetNamespace(),
 		err:             err,
+	}
+}
+
+func IsObjectNotReadyError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	switch err.(type) {
+	case *ObjectNotReadyError:
+		return true
+	default:
+		return false
 	}
 }
 
