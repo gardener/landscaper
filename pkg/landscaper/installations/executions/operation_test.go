@@ -7,16 +7,15 @@ package executions_test
 import (
 	"context"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	"k8s.io/apimachinery/pkg/util/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
+	"github.com/gardener/landscaper/pkg/components/oci"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
@@ -103,10 +102,11 @@ var _ = Describe("Execution Operation", func() {
 			},
 		})
 
+		registry, _ := oci.NewOCIRegistry(componentResolver)
 		installationOperation, err := installations.NewOperationBuilder(internalInst).
 			Client(kClient).
 			ComponentDescriptor(cd).
-			ComponentRegistry(componentResolver).
+			ComponentRegistry(registry).
 			WithContext(lsCtx).
 			Build(ctx)
 		Expect(err).ToNot(HaveOccurred())
