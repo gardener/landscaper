@@ -7,7 +7,6 @@ package readinesscheck
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -40,7 +39,6 @@ type ObjectsToWatchFunc func() ([]*unstructured.Unstructured, error)
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
 	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker *lib.InterruptionChecker) error {
 	var (
-		wg  sync.WaitGroup
 		try int32 = 1
 
 		// notReadyErrs contains all the errors related to the readiness of objects.
@@ -60,47 +58,21 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 
 		objects, err := getObjects()
 		if err != nil {
-			switch err.(type) {
-			case *ObjectNotReadyError:
+			if IsObjectNotReadyError(err) {
 				return false, nil
-			default:
+			} else {
 				return false, err
 			}
 		}
 
-		allErrors := make([]error, len(objects))
-
-		for i, obj := range objects {
-			wg.Add(1)
-			go func(obj *unstructured.Unstructured, i int, allErrors []error) {
-				defer wg.Done()
-
-				if err := IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
-					allErrors[i] = err
-				}
-			}(obj, i, allErrors)
-		}
-		wg.Wait()
-
-		otherErrs = nil
-		notReadyErrs = nil
-
-		for _, err := range allErrors {
-			if err != nil {
-				switch err.(type) {
-				case *ObjectNotReadyError:
-					notReadyErrs = append(notReadyErrs, err)
-				default:
-					otherErrs = append(otherErrs, err)
+		for _, obj := range objects {
+			if err = IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
+				if IsObjectNotReadyError(err) {
+					return false, nil
+				} else {
+					return false, err
 				}
 			}
-		}
-
-		if len(otherErrs) > 0 {
-			return false, apimacherrors.NewAggregate(otherErrs)
-		}
-		if len(notReadyErrs) > 0 {
-			return false, nil
 		}
 
 		return true, nil
@@ -140,6 +112,19 @@ func NewObjectNotReadyError(u *unstructured.Unstructured, err error) *ObjectNotR
 		objectName:      u.GetName(),
 		objectNamespace: u.GetNamespace(),
 		err:             err,
+	}
+}
+
+func IsObjectNotReadyError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	switch err.(type) {
+	case *ObjectNotReadyError:
+		return true
+	default:
+		return false
 	}
 }
 
