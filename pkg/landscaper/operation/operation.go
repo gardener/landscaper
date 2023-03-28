@@ -72,6 +72,11 @@ func (o *Operation) ComponentsRegistry() ctf.ComponentResolver {
 	return o.componentRegistry.GetComponentResolver()
 }
 
+// Registry returns a component blueprintsRegistry instance
+func (o *Operation) Registry() model.Registry {
+	return o.componentRegistry
+}
+
 // SetComponentsRegistry injects a component blueprintsRegistry into the operation
 func (o *Operation) SetComponentsRegistry(c ctf.ComponentResolver) *Operation {
 	registry, _ := oci.NewOCIRegistry(c)

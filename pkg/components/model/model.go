@@ -1,13 +1,14 @@
 package model
 
 import (
+	"context"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 type Registry interface {
-	GetComponentVersion(cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
+	GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
 
 	// temporary
 	GetComponentResolver() ctf.ComponentResolver
