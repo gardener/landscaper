@@ -6,14 +6,13 @@ package executions_test
 
 import (
 	"context"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	"k8s.io/apimachinery/pkg/util/json"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/util/json"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
@@ -106,7 +105,7 @@ var _ = Describe("Execution Operation", func() {
 		installationOperation, err := installations.NewOperationBuilder(internalInst).
 			Client(kClient).
 			ComponentDescriptor(cd).
-			ComponentRegistry(componentResolver).
+			ComponentRegistry(cnudie.NewRegistry(componentResolver)).
 			WithContext(lsCtx).
 			Build(ctx)
 		Expect(err).ToNot(HaveOccurred())

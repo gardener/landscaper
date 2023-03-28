@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/pkg/components/model"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
@@ -92,8 +93,8 @@ func (b *OperationBuilder) Scheme(s *runtime.Scheme) *OperationBuilder {
 }
 
 // ComponentRegistry sets the component registry.
-func (b *OperationBuilder) ComponentRegistry(resolver ctf.ComponentResolver) *OperationBuilder {
-	b.Builder.ComponentRegistry(resolver)
+func (b *OperationBuilder) ComponentRegistry(registry model.Registry) *OperationBuilder {
+	b.Builder.ComponentRegistry(registry)
 	return b
 }
 

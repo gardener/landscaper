@@ -6,18 +6,17 @@ package subinstallations_test
 
 import (
 	"context"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
@@ -123,7 +122,7 @@ var _ = Describe("SubInstallation", func() {
 		op, err = lsoperation.NewBuilder().
 			Client(fakeClient).Scheme(api.LandscaperScheme).
 			WithEventRecorder(record.NewFakeRecorder(1024)).
-			ComponentRegistry(fakeCompRepo).
+			ComponentRegistry(cnudie.NewRegistry(fakeCompRepo)).
 			Build(context.Background())
 		Expect(err).ToNot(HaveOccurred())
 	})

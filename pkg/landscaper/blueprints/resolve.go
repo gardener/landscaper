@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
@@ -24,6 +26,70 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils"
 )
+
+// ResolveBlueprint returns a blueprint from a given reference.
+// If no fs is given, a temporary filesystem will be created.
+func ResolveBlueprint(ctx context.Context,
+	registry model.Registry,
+	cdRef *lsv1alpha1.ComponentDescriptorReference,
+	bpDef lsv1alpha1.BlueprintDefinition) (*Blueprint, error) {
+
+	if bpDef.Reference == nil && bpDef.Inline == nil {
+		return nil, errors.New("no remote reference nor a inline blueprint is defined")
+	}
+
+	if bpDef.Inline != nil {
+		// todo: check if it is necessary to write it to disk.
+		// although it is already in memory though the installation.
+		fs := memoryfs.New()
+		inlineFs, err := yamlfs.New(bpDef.Inline.Filesystem.RawMessage)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create yamlfs for inline blueprint: %w", err)
+		}
+		if err := utils.CopyFS(inlineFs, fs, "/", "/"); err != nil {
+			return nil, fmt.Errorf("unable to copy yaml filesystem: %w", err)
+		}
+		// read blueprint yaml from file system
+		data, err := vfs.ReadFile(fs, lsv1alpha1.BlueprintFileName)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read blueprint file from inline defined blueprint: %w", err)
+		}
+		blue := &lsv1alpha1.Blueprint{}
+		if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, blue); err != nil {
+			return nil, fmt.Errorf("unable to decode blueprint definition from inline defined blueprint. %w", err)
+		}
+		return New(blue, readonlyfs.New(fs)), nil
+	}
+
+	if cdRef == nil {
+		return nil, fmt.Errorf("no component descriptor reference defined")
+	}
+	if cdRef.RepositoryContext == nil {
+		return nil, fmt.Errorf("no respository context defined")
+	}
+	if registry == nil {
+		return nil, fmt.Errorf("did not get a working component descriptor resolver")
+	}
+
+	componentVersion, err := registry.GetComponentVersion(ctx, cdRef)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
+	}
+
+	//cd, blobResolver, err := resolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
+	//if err != nil {
+	//	return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
+	//}
+	blueprintResourceName := bpDef.Reference.ResourceName
+	_, err = componentVersion.GetResource(blueprintResourceName, nil)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve blueprint resource %s for ref %#v: %w", blueprintResourceName, cdRef, err)
+	}
+
+	//return ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, bpDef.Reference.ResourceName)
+
+	return nil, nil
+}
 
 // Resolve returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
