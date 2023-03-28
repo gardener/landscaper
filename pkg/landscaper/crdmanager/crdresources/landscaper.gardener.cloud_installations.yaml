@@ -808,6 +808,10 @@ spec:
               phase:
                 description: InstallationPhase is the current phase of the installation.
                 type: string
+              phaseTransitionTime:
+                description: PhaseTransitionTime is the time when the phase last changed.
+                format: date-time
+                type: string
             required:
             - observedGeneration
             - configGeneration

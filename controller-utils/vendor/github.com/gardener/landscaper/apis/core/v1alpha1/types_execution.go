@@ -203,6 +203,10 @@ type ExecutionStatus struct {
 
 	// ExecutionPhase is the current phase of the execution.
 	ExecutionPhase ExecutionPhase `json:"phase,omitempty"`
+
+	// PhaseTransitionTime is the time when the phase last changed.
+	// +optional
+	PhaseTransitionTime *metav1.Time `json:"phaseTransitionTime,omitempty"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.

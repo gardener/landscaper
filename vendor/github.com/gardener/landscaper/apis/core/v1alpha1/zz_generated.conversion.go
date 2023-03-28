@@ -2141,6 +2141,7 @@ func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionS
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
 	out.ExecutionPhase = core.ExecutionPhase(in.ExecutionPhase)
+	out.PhaseTransitionTime = (*metav1.Time)(unsafe.Pointer(in.PhaseTransitionTime))
 	return nil
 }
 
@@ -2159,6 +2160,7 @@ func autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execu
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
 	out.ExecutionPhase = ExecutionPhase(in.ExecutionPhase)
+	out.PhaseTransitionTime = (*metav1.Time)(unsafe.Pointer(in.PhaseTransitionTime))
 	return nil
 }
 
@@ -2492,6 +2494,7 @@ func autoConvert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *Inst
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
 	out.InstallationPhase = core.InstallationPhase(in.InstallationPhase)
+	out.PhaseTransitionTime = (*metav1.Time)(unsafe.Pointer(in.PhaseTransitionTime))
 	out.ImportsHash = in.ImportsHash
 	out.AutomaticReconcileStatus = (*core.AutomaticReconcileStatus)(unsafe.Pointer(in.AutomaticReconcileStatus))
 	return nil
@@ -2513,6 +2516,7 @@ func autoConvert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in *core
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
 	out.InstallationPhase = InstallationPhase(in.InstallationPhase)
+	out.PhaseTransitionTime = (*metav1.Time)(unsafe.Pointer(in.PhaseTransitionTime))
 	out.ImportsHash = in.ImportsHash
 	out.AutomaticReconcileStatus = (*AutomaticReconcileStatus)(unsafe.Pointer(in.AutomaticReconcileStatus))
 	return nil

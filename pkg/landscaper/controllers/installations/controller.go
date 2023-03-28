@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/clock"
@@ -304,6 +305,10 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		c.EventRecorder().Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
 	}
 
+	if phase != inst.Status.InstallationPhase {
+		now := metav1.Now()
+		inst.Status.PhaseTransitionTime = &now
+	}
 	inst.Status.InstallationPhase = phase
 	if phase.IsFinal() {
 		inst.Status.JobIDFinished = inst.Status.JobID
