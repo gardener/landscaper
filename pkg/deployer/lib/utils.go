@@ -147,7 +147,9 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 	lsClient client.Client, lsEventRecorder record.EventRecorder) error {
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
-	lsutil.SetLastError(&deployItem.Status, lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))
+
+	updatedLastError := lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err)
+	lsutil.SetLastError(&deployItem.Status, updatedLastError)
 
 	if deployItem.Status.GetLastError() != nil {
 		if lserrors.ContainsAnyErrorCode(deployItem.Status.GetLastError().Codes, lsv1alpha1.UnrecoverableErrorCodes) {

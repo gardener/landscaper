@@ -171,7 +171,17 @@ func SetLastError(deployItemStatus *lsv1alpha1.DeployItemStatus, err *lsv1alpha1
 		if lastErrors == nil {
 			deployItemStatus.SetLastErrors([]*lsv1alpha1.Error{})
 		}
-		lastErrors = append(lastErrors, err)
+
+		errAlreadyContained := false
+		for _, j := range lastErrors {
+			if err.Operation == j.Operation && err.Reason == j.Reason {
+				errAlreadyContained = true
+			}
+		}
+
+		if !errAlreadyContained {
+			lastErrors = append(lastErrors, err)
+		}
 
 		if len(lastErrors) > 5 {
 			lastErrors = lastErrors[1:]
