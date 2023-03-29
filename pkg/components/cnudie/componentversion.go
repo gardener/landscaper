@@ -1,7 +1,9 @@
 package cnudie
 
 import (
+	"context"
 	"fmt"
+
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
@@ -24,12 +26,20 @@ func newComponentVersion(registry *Registry, cd *v2.ComponentDescriptor, blobRes
 	}
 }
 
-func (c *ComponentVersion) GetDescriptor() ([]byte, error) {
+func (c *ComponentVersion) GetName() string {
+	return c.componentDescriptor.GetName()
+}
+
+func (c *ComponentVersion) GetVersion() string {
+	return c.componentDescriptor.GetVersion()
+}
+
+func (c *ComponentVersion) GetDescriptor(_ context.Context) ([]byte, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (c *ComponentVersion) GetDependency(name string) (model.ComponentVersion, error) {
+func (c *ComponentVersion) GetDependency(_ context.Context, name string) (model.ComponentVersion, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -43,5 +53,5 @@ func (c *ComponentVersion) GetResource(name string, identity map[string]string) 
 		return nil, fmt.Errorf("no resource with name %s and identity %v", name, identity)
 	}
 
-	return newResource(&resources[0]), nil
+	return newResource(&resources[0], c.blobResolver), nil
 }

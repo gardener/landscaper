@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"io"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
@@ -16,15 +17,18 @@ type Registry interface {
 }
 
 type ComponentVersion interface {
-	GetDescriptor() ([]byte, error)
-	GetDependency(name string) (ComponentVersion, error)
+	GetName() string
+	GetVersion() string
+	GetDescriptor(ctx context.Context) ([]byte, error)
+	GetDependency(ctx context.Context, name string) (ComponentVersion, error)
 	GetResource(name string, identity map[string]string) (Resource, error)
 }
 
 type Resource interface {
-	GetDescriptor() ([]byte, error)
-	GetBlob() ([]byte, error)
-	GetBlobInfo() (BlobInfo, error)
+	GetName() string
+	GetDescriptor(ctx context.Context) ([]byte, error)
+	GetBlob(ctx context.Context, writer io.Writer) error
+	GetBlobInfo(ctx context.Context) (*BlobInfo, error)
 }
 
 type BlobInfo struct {

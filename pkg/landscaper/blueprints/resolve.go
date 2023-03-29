@@ -9,8 +9,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/components/model"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
@@ -20,10 +18,10 @@ import (
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	"github.com/gardener/landscaper/apis/mediatype"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -76,19 +74,7 @@ func ResolveBlueprint(ctx context.Context,
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
 
-	//cd, blobResolver, err := resolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
-	//if err != nil {
-	//	return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
-	//}
-	blueprintResourceName := bpDef.Reference.ResourceName
-	_, err = componentVersion.GetResource(blueprintResourceName, nil)
-	if err != nil {
-		return nil, fmt.Errorf("unable to resolve blueprint resource %s for ref %#v: %w", blueprintResourceName, cdRef, err)
-	}
-
-	//return ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, bpDef.Reference.ResourceName)
-
-	return nil, nil
+	return ResolveBlueprintFromComponentVersion(ctx, componentVersion, bpDef.Reference.ResourceName)
 }
 
 // Resolve returns a blueprint from a given reference.
@@ -149,6 +135,16 @@ func ResolveBlueprintFromBlobResolver(
 	return GetStore().Fetch(ctx, cd, blobResolver, blueprintName)
 }
 
+// ResolveBlueprintFromBlobResolverNew resolves a blueprint defined by a component descriptor with
+// a blob resolver.
+func ResolveBlueprintFromComponentVersion(
+	ctx context.Context,
+	componentVersion model.ComponentVersion,
+	blueprintName string) (*Blueprint, error) {
+
+	return GetStore().FetchNew(ctx, componentVersion, blueprintName)
+}
+
 // GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.
 func GetBlueprintResourceFromComponentDescriptor(cd *cdv2.ComponentDescriptor, blueprintName string) (cdv2.Resource, error) {
 	// get blueprint resource from component descriptor
@@ -165,4 +161,16 @@ func GetBlueprintResourceFromComponentDescriptor(cd *cdv2.ComponentDescriptor, b
 	}
 	// todo: consider to throw an error if multiple blueprints match
 	return resources[0], nil
+}
+
+// GetBlueprintResourceFromComponentDescriptorNew returns the blueprint resource from a component descriptor.
+func GetBlueprintResourceFromComponentDescriptorNew(componentVersion model.ComponentVersion, blueprintName string) (model.Resource, error) {
+	resource, err := componentVersion.GetResource(blueprintName, nil)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
+	}
+
+	// TODO check mediatype: mediatype.BlueprintType or mediatype.OldBlueprintType
+
+	return resource, nil
 }
