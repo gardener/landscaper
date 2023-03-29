@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -17,12 +18,16 @@ type Registry interface {
 type ComponentVersion interface {
 	GetDescriptor() ([]byte, error)
 	GetDependency(name string) (ComponentVersion, error)
-	GetResource(name string, identity Identity) (Resource, error)
+	GetResource(name string, identity map[string]string) (Resource, error)
 }
 
 type Resource interface {
 	GetDescriptor() ([]byte, error)
-	GetData() ([]byte, error)
+	GetBlob() ([]byte, error)
+	GetBlobInfo() (BlobInfo, error)
 }
 
-type Identity map[string]string
+type BlobInfo struct {
+	MediaType string
+	Digest    string
+}

@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"github.com/gardener/landscaper/pkg/components/model"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
