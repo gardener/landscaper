@@ -574,16 +574,16 @@ func blueprintIDFromComponentDescriptor(cd *cdv2.ComponentDescriptor, resource c
 func blueprintIDFromComponentDescriptorNew(componentVersion model.ComponentVersion, resource model.Resource) string {
 	h := sha256.New()
 
-	// TODO
-	//if componentVersion.GetEffectiveRepositoryContext() != nil {
-	//	_, _ = h.Write(componentVersion.GetEffectiveRepositoryContext().Raw)
-	//}
+	if len(componentVersion.GetRepositoryContext()) > 0 {
+		_, _ = h.Write(componentVersion.GetRepositoryContext())
+	}
 
-	// TODO: resource version, or better identity
-	_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s",
+	_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s",
 		componentVersion.GetName(),
 		componentVersion.GetVersion(),
-		resource.GetName())))
+		resource.GetName(),
+		resource.GetVersion())))
+	
 	return hex.EncodeToString(h.Sum(nil))
 }
 

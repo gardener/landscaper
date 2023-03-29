@@ -28,8 +28,12 @@ func (r Resource) GetName() string {
 	return r.resource.GetName()
 }
 
+func (r Resource) GetVersion() string {
+	return r.resource.GetVersion()
+}
+
 func (r Resource) GetDescriptor(ctx context.Context) ([]byte, error) {
-	//TODO implement me
+	// TODO component model: implement me
 	panic("implement me")
 }
 

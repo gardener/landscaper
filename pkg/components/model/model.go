@@ -19,6 +19,7 @@ type Registry interface {
 type ComponentVersion interface {
 	GetName() string
 	GetVersion() string
+	GetRepositoryContext() []byte
 	GetDescriptor(ctx context.Context) ([]byte, error)
 	GetDependency(ctx context.Context, name string) (ComponentVersion, error)
 	GetResource(name string, identity map[string]string) (Resource, error)
@@ -26,6 +27,7 @@ type ComponentVersion interface {
 
 type Resource interface {
 	GetName() string
+	GetVersion() string
 	GetDescriptor(ctx context.Context) ([]byte, error)
 	GetBlob(ctx context.Context, writer io.Writer) error
 	GetBlobInfo(ctx context.Context) (*BlobInfo, error)

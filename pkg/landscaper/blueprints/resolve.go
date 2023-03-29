@@ -167,7 +167,7 @@ func GetBlueprintResourceFromComponentDescriptor(cd *cdv2.ComponentDescriptor, b
 func GetBlueprintResourceFromComponentDescriptorNew(componentVersion model.ComponentVersion, blueprintName string) (model.Resource, error) {
 	resource, err := componentVersion.GetResource(blueprintName, nil)
 	if err != nil {
-		return nil, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
+		return nil, fmt.Errorf("unable to get blueprint %s from component descriptor: %w", blueprintName, err)
 	}
 
 	// TODO check mediatype: mediatype.BlueprintType or mediatype.OldBlueprintType
