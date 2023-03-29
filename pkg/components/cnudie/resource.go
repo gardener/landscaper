@@ -34,8 +34,8 @@ func (r Resource) GetDescriptor(ctx context.Context) ([]byte, error) {
 }
 
 func (r Resource) GetBlob(ctx context.Context, writer io.Writer) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := r.blobResolver.Resolve(ctx, *r.resource, writer)
+	return err
 }
 
 func (r Resource) GetBlobInfo(ctx context.Context) (*model.BlobInfo, error) {
