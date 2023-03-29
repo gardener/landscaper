@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"k8s.io/apimachinery/pkg/labels"
@@ -87,12 +89,12 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 
 // CreateInternalInstallation creates an internal installation for an Installation
 // DEPRECATED: use CreateInternalInstallationWithContext instead
-func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*InstallationImportsAndBlueprint, error) {
+func CreateInternalInstallation(ctx context.Context, registry model.Registry, inst *lsv1alpha1.Installation) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint)
+	blue, err := blueprints.ResolveBlueprint(ctx, registry, cdRef, inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
@@ -103,7 +105,7 @@ func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentR
 func CreateInternalInstallationWithContext(ctx context.Context,
 	inst *lsv1alpha1.Installation,
 	kubeClient client.Client,
-	compResolver ctf.ComponentResolver) (*InstallationImportsAndBlueprint, error) {
+	registry model.Registry) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}
@@ -111,7 +113,7 @@ func CreateInternalInstallationWithContext(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	blue, err := blueprints.Resolve(ctx, compResolver, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
+	blue, err := blueprints.ResolveBlueprint(ctx, registry, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

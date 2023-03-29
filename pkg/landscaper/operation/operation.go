@@ -66,13 +66,8 @@ func (o *Operation) EventRecorder() record.EventRecorder {
 	return o.eventRecorder
 }
 
-// ComponentsRegistry returns a component blueprintsRegistry instance
-func (o *Operation) ComponentsRegistry() ctf.ComponentResolver {
-	return o.componentRegistry.GetComponentResolver()
-}
-
-// Registry returns a component blueprintsRegistry instance
-func (o *Operation) Registry() model.Registry {
+// ComponentsRegistry returns a component registry
+func (o *Operation) ComponentsRegistry() model.Registry {
 	return o.componentRegistry
 }
 

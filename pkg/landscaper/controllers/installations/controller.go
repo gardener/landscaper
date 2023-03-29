@@ -214,7 +214,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
-	intBlueprint, err := blueprints.ResolveBlueprint(ctx, op.Registry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
+	intBlueprint, err := blueprints.ResolveBlueprint(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "ResolveBlueprint", err.Error())
 	}
