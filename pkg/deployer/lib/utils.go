@@ -178,6 +178,16 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 
 			if apierrors.IsConflict(err2) { // reduce logging
 				logger.Debug("Unable to update status", lc.KeyError, err2.Error())
+				if updatedLastError != nil {
+					// try to store at least the last error
+					diRecheck := &lsv1alpha1.DeployItem{}
+					errRecheck := read_write_layer.GetDeployItem(ctx, lsClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), diRecheck)
+					if errRecheck != nil {
+						lsutil.SetLastError(&diRecheck.Status, updatedLastError)
+						_ = read_write_layer.NewWriter(lsClient).UpdateDeployItemStatus(ctx, read_write_layer.W000033, diRecheck)
+					}
+				}
+
 			} else {
 				logger.Error(err2, "Unable to update status")
 			}
