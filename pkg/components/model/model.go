@@ -18,7 +18,7 @@ type Registry interface {
 type ComponentVersion interface {
 	GetDescriptor() ([]byte, error)
 	GetDependency(name string) (ComponentVersion, error)
-	GetResource(name string, identity Identity) (Resource, error)
+	GetResource(name string, identity map[string]string) (Resource, error)
 }
 
 type Resource interface {
@@ -26,8 +26,6 @@ type Resource interface {
 	GetBlob() ([]byte, error)
 	GetBlobInfo() (BlobInfo, error)
 }
-
-type Identity map[string]string
 
 type BlobInfo struct {
 	MediaType string

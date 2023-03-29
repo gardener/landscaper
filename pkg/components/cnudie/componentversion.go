@@ -1,6 +1,7 @@
 package cnudie
 
 import (
+	"fmt"
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
@@ -33,7 +34,14 @@ func (c *ComponentVersion) GetDependency(name string) (model.ComponentVersion, e
 	panic("implement me")
 }
 
-func (c *ComponentVersion) GetResource(name string, identity model.Identity) (model.Resource, error) {
-	//TODO implement me
-	panic("implement me")
+func (c *ComponentVersion) GetResource(name string, identity map[string]string) (model.Resource, error) {
+	resources, err := c.componentDescriptor.GetResourcesByName(name, v2.Identity(identity))
+	if err != nil {
+		return nil, err
+	}
+	if len(resources) < 1 {
+		return nil, fmt.Errorf("no resource with name %s and identity %v", name, identity)
+	}
+
+	return newResource(&resources[0]), nil
 }
