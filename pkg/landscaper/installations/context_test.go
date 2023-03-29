@@ -8,24 +8,22 @@ import (
 	"context"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/onsi/gomega/gstruct"
-	"k8s.io/client-go/tools/record"
-
-	testutils "github.com/gardener/landscaper/test/utils"
-
-	"github.com/gardener/landscaper/test/utils/envtest"
-
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	testutils "github.com/gardener/landscaper/test/utils"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = Describe("Context", func() {
@@ -51,7 +49,8 @@ var _ = Describe("Context", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+		registry := cnudie.NewRegistry(fakeCompRepo)
+		op = lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registry)
 	})
 
 	AfterEach(func() {

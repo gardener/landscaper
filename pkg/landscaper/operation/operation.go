@@ -10,8 +10,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/pkg/components/cnudie"
-
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
@@ -79,8 +77,7 @@ func (o *Operation) Registry() model.Registry {
 }
 
 // SetComponentsRegistry injects a component blueprintsRegistry into the operation
-func (o *Operation) SetComponentsRegistry(c ctf.ComponentResolver) *Operation {
-	registry := cnudie.NewRegistry(c)
+func (o *Operation) SetComponentsRegistry(registry model.Registry) *Operation {
 	o.componentRegistry = registry
 	return o
 }

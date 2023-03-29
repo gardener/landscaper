@@ -9,15 +9,14 @@ import (
 	"fmt"
 
 	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/credentials"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"github.com/gardener/component-cli/ociclient/credentials"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -60,6 +59,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	if err != nil {
 		return err
 	}
+
 	ociClient, err := ociclient.NewClient(logger.Logr(),
 		utils.WithConfiguration(c.LsConfig.Registry.OCI),
 		ociclient.WithKeyring(ociKeyring),
@@ -82,7 +82,8 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		return err
 	}
 
-	op.SetComponentsRegistry(compRegistry)
+	registry := cnudie.NewRegistry(compRegistry)
+	op.SetComponentsRegistry(registry)
 	return nil
 }
 

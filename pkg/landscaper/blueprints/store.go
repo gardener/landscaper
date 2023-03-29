@@ -583,7 +583,7 @@ func blueprintIDFromComponentDescriptorNew(componentVersion model.ComponentVersi
 		componentVersion.GetVersion(),
 		resource.GetName(),
 		resource.GetVersion())))
-	
+
 	return hex.EncodeToString(h.Sum(nil))
 }
 

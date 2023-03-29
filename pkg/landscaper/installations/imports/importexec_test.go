@@ -15,6 +15,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
@@ -63,9 +64,10 @@ var _ = Describe("ImportExecutions", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
+		registry := cnudie.NewRegistry(fakeCompRepo)
 		op = &installations.Operation{
 			Operation: lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).
-				SetComponentsRegistry(fakeCompRepo),
+				SetComponentsRegistry(registry),
 		}
 	})
 
