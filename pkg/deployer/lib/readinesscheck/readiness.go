@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,12 +38,9 @@ type ObjectsToWatchFunc func() ([]*unstructured.Unstructured, error)
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
 	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker *lib.InterruptionChecker) error {
 	var (
-		try int32 = 1
-
-		// notReadyErrs contains all the errors related to the readiness of objects.
-		notReadyErrs []error
-		// allErrs contains all the errors not related to the readiness of objects.
-		otherErrs []error
+		try     int32 = 1
+		err     error
+		objects []*unstructured.Unstructured
 	)
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
@@ -52,11 +48,11 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 		log.Debug("Wait until resources are ready", "try", try)
 		try++
 
-		if err := interruptionChecker.Check(ctx); err != nil {
+		if err = interruptionChecker.Check(ctx); err != nil {
 			return false, err
 		}
 
-		objects, err := getObjects()
+		objects, err = getObjects()
 		if err != nil {
 			if IsObjectNotReadyError(err) {
 				return false, nil
@@ -78,14 +74,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 		return true, nil
 	})
 
-	if len(otherErrs) > 0 {
-		return apimacherrors.NewAggregate(otherErrs)
-	}
-	if len(notReadyErrs) > 0 {
-		return apimacherrors.NewAggregate(notReadyErrs)
-	}
-
-	return nil
+	return err
 }
 
 // ObjectNotReadyError holds information about an unready object
