@@ -175,6 +175,6 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-	github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
+	//github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
 	k8s.io/kubectl => k8s.io/kubectl v0.26.1
 )

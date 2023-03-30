@@ -7,6 +7,9 @@ package installations
 import (
 	"context"
 	"fmt"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/pkg/errors"
 
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/credentials"
@@ -81,6 +84,40 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	if err := compRegistry.Set(componentsOCIRegistry); err != nil {
 		return err
 	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	octx := ocm.DefaultContext()
+
+	var spec *dockerconfig.RepositorySpec
+	for _, path := range ociConfigFiles {
+		spec = dockerconfig.NewRepositorySpec(path, true)
+		_, err = octx.CredentialsContext().RepositoryForSpec(spec)
+		if err != nil {
+			return errors.Wrapf(err, "cannot access %v", path)
+		}
+	}
+
+	for _, secret := range secrets {
+		if secret.Type != corev1.SecretTypeDockerConfigJson {
+			continue
+		}
+		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
+		if !ok {
+			continue
+		}
+
+		//dockerConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(dockerConfigBytes))
+		//if err != nil {
+		//	return nil, err
+		//}
+		//
+		//// currently only support the default credential store.
+		//credStore := dockerConfig.GetCredentialsStore("")
+		//if err := store.Add(credStore); err != nil {
+		//	return nil, err
+		//}
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	registry := cnudie.NewRegistry(compRegistry)
 	op.SetComponentsRegistry(registry)
