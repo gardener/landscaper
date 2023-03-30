@@ -28,7 +28,7 @@ import (
 // ResolveBlueprint returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
 func ResolveBlueprint(ctx context.Context,
-	registry model.Registry,
+	registry model.RegistryAccess,
 	cdRef *lsv1alpha1.ComponentDescriptorReference,
 	bpDef lsv1alpha1.BlueprintDefinition) (*Blueprint, error) {
 

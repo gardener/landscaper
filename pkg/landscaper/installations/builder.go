@@ -93,7 +93,7 @@ func (b *OperationBuilder) Scheme(s *runtime.Scheme) *OperationBuilder {
 }
 
 // ComponentRegistry sets the component registry.
-func (b *OperationBuilder) ComponentRegistry(registry model.Registry) *OperationBuilder {
+func (b *OperationBuilder) ComponentRegistry(registry model.RegistryAccess) *OperationBuilder {
 	b.Builder.ComponentRegistry(registry)
 	return b
 }

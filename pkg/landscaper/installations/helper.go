@@ -89,7 +89,7 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 
 // CreateInternalInstallation creates an internal installation for an Installation
 // DEPRECATED: use CreateInternalInstallationWithContext instead
-func CreateInternalInstallation(ctx context.Context, registry model.Registry, inst *lsv1alpha1.Installation) (*InstallationImportsAndBlueprint, error) {
+func CreateInternalInstallation(ctx context.Context, registry model.RegistryAccess, inst *lsv1alpha1.Installation) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}
@@ -105,7 +105,7 @@ func CreateInternalInstallation(ctx context.Context, registry model.Registry, in
 func CreateInternalInstallationWithContext(ctx context.Context,
 	inst *lsv1alpha1.Installation,
 	kubeClient client.Client,
-	registry model.Registry) (*InstallationImportsAndBlueprint, error) {
+	registry model.RegistryAccess) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}

@@ -9,7 +9,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-type Registry interface {
+type RegistryAccess interface {
 	GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
 
 	// temporary

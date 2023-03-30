@@ -11,14 +11,14 @@ import (
 )
 
 type ComponentVersion struct {
-	registry            *Registry
+	registry            *RegistryAccess
 	componentDescriptor *v2.ComponentDescriptor
 	blobResolver        ctf.BlobResolver
 }
 
 var _ model.ComponentVersion = &ComponentVersion{}
 
-func newComponentVersion(registry *Registry, cd *v2.ComponentDescriptor, blobResolver ctf.BlobResolver) model.ComponentVersion {
+func newComponentVersion(registry *RegistryAccess, cd *v2.ComponentDescriptor, blobResolver ctf.BlobResolver) model.ComponentVersion {
 	return &ComponentVersion{
 		registry:            registry,
 		componentDescriptor: cd,

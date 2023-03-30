@@ -10,19 +10,19 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 )
 
-type Registry struct {
+type RegistryAccess struct {
 	componentResolver ctf.ComponentResolver
 }
 
-var _ model.Registry = &Registry{}
+var _ model.RegistryAccess = &RegistryAccess{}
 
-func NewRegistry(componentResolver ctf.ComponentResolver) model.Registry {
-	return &Registry{
+func NewRegistry(componentResolver ctf.ComponentResolver) model.RegistryAccess {
+	return &RegistryAccess{
 		componentResolver: componentResolver,
 	}
 }
 
-func (r *Registry) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (model.ComponentVersion, error) {
+func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (model.ComponentVersion, error) {
 	cd, blobResolver, err := r.componentResolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
@@ -32,6 +32,6 @@ func (r *Registry) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.Co
 }
 
 // temporary
-func (r *Registry) GetComponentResolver() ctf.ComponentResolver {
+func (r *RegistryAccess) GetComponentResolver() ctf.ComponentResolver {
 	return r.componentResolver
 }

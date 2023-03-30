@@ -25,7 +25,7 @@ type Operation struct {
 	client            client.Client
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
-	componentRegistry model.Registry
+	componentRegistry model.RegistryAccess
 }
 
 // NewOperation creates a new internal installation Operation object.
@@ -67,12 +67,12 @@ func (o *Operation) EventRecorder() record.EventRecorder {
 }
 
 // ComponentsRegistry returns a component registry
-func (o *Operation) ComponentsRegistry() model.Registry {
+func (o *Operation) ComponentsRegistry() model.RegistryAccess {
 	return o.componentRegistry
 }
 
 // SetComponentsRegistry injects a component blueprintsRegistry into the operation
-func (o *Operation) SetComponentsRegistry(registry model.Registry) *Operation {
+func (o *Operation) SetComponentsRegistry(registry model.RegistryAccess) *Operation {
 	o.componentRegistry = registry
 	return o
 }
