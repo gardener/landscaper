@@ -21,7 +21,7 @@ type Builder struct {
 	client            client.Client
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
-	componentRegistry model.Registry
+	componentRegistry model.RegistryAccess
 }
 
 // NewBuilder creates a new operation builder.
@@ -42,7 +42,7 @@ func (b *Builder) Scheme(s *runtime.Scheme) *Builder {
 }
 
 // ComponentRegistry sets the component registry.
-func (b *Builder) ComponentRegistry(registry model.Registry) *Builder {
+func (b *Builder) ComponentRegistry(registry model.RegistryAccess) *Builder {
 	b.componentRegistry = registry
 	return b
 }

@@ -15,17 +15,17 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	testutils "github.com/gardener/landscaper/test/utils"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -53,9 +53,10 @@ var _ = Describe("Constructor", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
+		registry := cnudie.NewRegistry(fakeCompRepo)
 		op = &installations.Operation{
 			Operation: lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).
-				SetComponentsRegistry(fakeCompRepo),
+				SetComponentsRegistry(registry),
 		}
 	})
 

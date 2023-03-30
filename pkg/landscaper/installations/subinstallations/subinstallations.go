@@ -269,7 +269,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	subBlueprint, subCdDef, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
 		subInstTmpl,
 		o.ComponentDescriptor,
-		o.ComponentsRegistry(),
+		o.ComponentsRegistry().GetComponentResolver(),
 		o.Context().External.RepositoryContext,
 		o.Context().External.Overwriter)
 	if err != nil {

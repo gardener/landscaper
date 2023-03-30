@@ -20,6 +20,7 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
@@ -45,7 +46,8 @@ var _ = Describe("Retry handler", func() {
 			fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata")
 			Expect(err).ToNot(HaveOccurred())
 
-			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+			registry := cnudie.NewRegistry(fakeCompRepo)
+			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registry)
 
 			clok = &testing.FakePassiveClock{}
 

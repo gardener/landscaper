@@ -2,13 +2,14 @@ package model
 
 import (
 	"context"
+	"io"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-type Registry interface {
+type RegistryAccess interface {
 	GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
 
 	// temporary
@@ -16,15 +17,20 @@ type Registry interface {
 }
 
 type ComponentVersion interface {
-	GetDescriptor() ([]byte, error)
-	GetDependency(name string) (ComponentVersion, error)
+	GetName() string
+	GetVersion() string
+	GetRepositoryContext() []byte
+	GetDescriptor(ctx context.Context) ([]byte, error)
+	GetDependency(ctx context.Context, name string) (ComponentVersion, error)
 	GetResource(name string, identity map[string]string) (Resource, error)
 }
 
 type Resource interface {
-	GetDescriptor() ([]byte, error)
-	GetBlob() ([]byte, error)
-	GetBlobInfo() (BlobInfo, error)
+	GetName() string
+	GetVersion() string
+	GetDescriptor(ctx context.Context) ([]byte, error)
+	GetBlob(ctx context.Context, writer io.Writer) error
+	GetBlobInfo(ctx context.Context) (*BlobInfo, error)
 }
 
 type BlobInfo struct {

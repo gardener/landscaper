@@ -11,32 +11,29 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/utils/clock"
-
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
-
 	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	testutils "github.com/gardener/landscaper/test/utils"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -56,7 +53,8 @@ var _ = Describe("Delete", func() {
 			fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata")
 			Expect(err).ToNot(HaveOccurred())
 
-			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+			registry := cnudie.NewRegistry(fakeCompRepo)
+			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registry)
 
 			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
