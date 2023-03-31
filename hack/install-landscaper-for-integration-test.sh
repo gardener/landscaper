@@ -32,14 +32,14 @@ fi
 
 if ! which kubectl 1>/dev/null; then
   echo "Kubectl is not installed, trying to install it..."
-  curl -LO https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl
+  curl -LO https://dl.k8s.io/release/v1.25.3/bin/linux/amd64/kubectl
   mv ./kubectl /usr/local/bin/kubectl
   chmod +x /usr/local/bin/kubectl
 fi
 
 if ! which helm 1>/dev/null; then
   echo "Helm 3 is not installed, trying to install it..."
-  export DESIRED_VERSION=v3.7.0
+  export DESIRED_VERSION=v3.11.2
   curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 
@@ -77,7 +77,7 @@ landscaper:
 " > /tmp/values.yaml
 
 touch /tmp/registry-values.yaml
-if [[ -f "$TM_SHARED_PATH/docker.config" ]]; then
+if [[ -n ${REGISTRY_AUTH:-""} ]] && [[ -f "$REGISTRY_AUTH" ]]; then
   printf "
 landscaper:
   landscaper:
@@ -85,9 +85,8 @@ landscaper:
       allowPlainHttpRegistries: false
       insecureSkipVerify: true
       secrets:
-        default: $(cat "$TM_SHARED_PATH/docker.config")
+        default: $(cat "$REGISTRY_AUTH")
   " > /tmp/registry-values.yaml
 fi
 
-export KUBECONFIG="${TM_KUBECONFIG_PATH}/${CLUSTER_NAME}.config"
 helm upgrade --install --create-namespace -n ls-system landscaper ./charts/landscaper -f /tmp/values.yaml -f /tmp/registry-values.yaml --set "landscaper.image.tag=${VERSION}"

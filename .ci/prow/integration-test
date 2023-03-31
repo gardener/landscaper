@@ -1,0 +1,69 @@
+#!/bin/sh
+
+# SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -u
+set -e
+
+REPO_ROOT="$(dirname $0)/../.."
+cd "${REPO_ROOT}"
+REPO_ROOT="$(pwd)"
+export REPO_ROOT
+
+TMP_DIR="${REPO_ROOT}/tmp"
+EXPORT_DIR="$TMP_DIR/export"
+mkdir -p "$EXPORT_DIR"
+
+export EFFECTIVE_VERSION=$(cat "${REPO_ROOT}/VERSION")-$(git rev-parse HEAD)
+export REGISTRY_AUTH="$TMP_DIR/registry-auth.config"
+export REGISTRY_NS="registry"
+export KUBECONFIG="$TMP_DIR/kubeconfig"
+
+export K8S_VERSION="v1.25.3"
+export CLUSTER_NAME="int-test"
+
+# create kind cluster
+echo ">>> Creating kind cluster"
+kind create cluster --image="kindest/node:$K8S_VERSION" --name="$CLUSTER_NAME" --wait=300s
+echo ""
+
+# export logs and remove kind cluster after execution
+trap '{
+  echo ">>> Exporting logs"
+  kind export logs --name="$CLUSTER_NAME" "$EXPORT_DIR"
+  echo ""
+  echo ">>> Deleting kind cluster"
+  kind delete cluster --name="$CLUSTER_NAME"
+  echo ""
+}' EXIT
+
+# create registry namespace
+echo ">>> Creating registry namespace"
+kubectl --kubeconfig=$KUBECONFIG create namespace $REGISTRY_NS
+echo ""
+
+# install registry into kind cluster
+echo ">>> Installing registry"
+go run -mod=vendor ${REPO_ROOT}/hack/testcluster registry create \
+  --kubeconfig=$KUBECONFIG \
+  --namespace=$REGISTRY_NS \
+  --registry-auth=$REGISTRY_AUTH \
+  --dns-format=external \
+  --timeout=10m
+echo ""
+
+# install Landscaper
+echo ">>> Installing Landscaper"
+${REPO_ROOT}/hack/install-landscaper-for-integration-test.sh
+echo ""
+
+# run tests
+echo ">>> Running integration tests"
+ginkgo -timeout=60m -v -progress -no-color -seed=17 -fail-fast ${REPO_ROOT}/test/integration  -- \
+  --kubeconfig=$KUBECONFIG  \
+  --registry-config=$REGISTRY_AUTH \
+  --ls-namespace=ls-system  \
+  --ls-version=$EFFECTIVE_VERSION
+echo ""
