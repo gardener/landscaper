@@ -1,18 +1,24 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package cnudie
 
 import (
 	"context"
 	"fmt"
+
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
@@ -30,7 +36,7 @@ func NewRegistry(ctx context.Context, secrets []corev1.Secret, sharedCache cache
 	localRegistryConfig *config.LocalRegistryConfiguration, ociRegistryConfig *config.OCIConfiguration,
 	inlineCd *cdv2.ComponentDescriptor) (model.RegistryAccess, error) {
 
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 
 	compResolver, err := componentsregistry.New(sharedCache)
 	if err != nil {
@@ -79,6 +85,17 @@ func NewRegistry(ctx context.Context, secrets []corev1.Secret, sharedCache cache
 
 	return &RegistryAccess{
 		componentResolver: compResolver,
+	}, nil
+}
+
+func NewLocalRegistryAccess(rootPath string) (model.RegistryAccess, error) {
+	localComponentResolver, err := componentsregistry.NewLocalClient(rootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RegistryAccess{
+		componentResolver: localComponentResolver,
 	}, nil
 }
 

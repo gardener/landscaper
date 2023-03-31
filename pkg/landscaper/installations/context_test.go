@@ -8,7 +8,6 @@ import (
 	"context"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -33,7 +32,6 @@ var _ = Describe("Context", func() {
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
-		fakeCompRepo      ctf.ComponentResolver
 		state             *envtest.State
 	)
 
@@ -46,11 +44,9 @@ var _ = Describe("Context", func() {
 
 		fakeClient = testenv.Client
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata/registry")
+		registryAccess, err := cnudie.NewLocalRegistryAccess("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
-
-		registry := cnudie.NewRegistry(fakeCompRepo)
-		op = lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registry)
+		op = lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 	})
 
 	AfterEach(func() {
