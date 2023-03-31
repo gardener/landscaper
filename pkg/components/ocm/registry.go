@@ -36,7 +36,6 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	if err != nil {
 		return nil, err
 	}
-	defer repo.Close()
 
 	compvers, err := repo.LookupComponentVersion(cdRef.ComponentName, cdRef.Version)
 	if err != nil {

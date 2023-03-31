@@ -11,15 +11,18 @@ import (
 )
 
 type ComponentVersion struct {
-	registry *RegistryAccess
+	//registry *RegistryAccess
+	repo     ocm.Repository
 	compvers ocm.ComponentVersionAccess
 }
 
+// Finalizer Object
+// Resolve Method - need to specify repository (although it defaults to the component versions repository)
 var _ model.ComponentVersion = &ComponentVersion{}
 
 func newComponentVersion(registry *RegistryAccess, compvers ocm.ComponentVersionAccess) model.ComponentVersion {
 	return &ComponentVersion{
-		registry: registry,
+		//registry: registry,
 		compvers: compvers,
 	}
 }
@@ -53,9 +56,7 @@ func (c *ComponentVersion) GetDependency(_ context.Context, name string) (model.
 	if err != nil {
 		return nil, err
 	}
-	referencedCompName := referencedObject.GetComponentName()
-	referencedCompVersion := referencedObject.
-
+	utils.Resolve
 }
 
 func (c *ComponentVersion) GetResource(name string, selectors map[string]string) (model.Resource, error) {
@@ -71,4 +72,9 @@ func (c *ComponentVersion) GetResource(name string, selectors map[string]string)
 	}
 
 	return newResource(&resources[0], c.blobResolver), nil
+}
+
+func (c *ComponentVersion) Close() {
+	c.
+		c.compvers.Close()
 }
