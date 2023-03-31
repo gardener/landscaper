@@ -3,6 +3,16 @@ package cnudie
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-cli/ociclient/credentials"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
@@ -16,10 +26,60 @@ type RegistryAccess struct {
 
 var _ model.RegistryAccess = &RegistryAccess{}
 
-func NewRegistry(componentResolver ctf.ComponentResolver) model.RegistryAccess {
-	return &RegistryAccess{
-		componentResolver: componentResolver,
+func NewRegistry(ctx context.Context, secrets []corev1.Secret, sharedCache cache.Cache,
+	localRegistryConfig *config.LocalRegistryConfiguration, ociRegistryConfig *config.OCIConfiguration,
+	inlineCd *cdv2.ComponentDescriptor) (model.RegistryAccess, error) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	compResolver, err := componentsregistry.New(sharedCache)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create component registry manager: %w", err)
 	}
+	if localRegistryConfig != nil {
+		componentsOCIRegistry, err := componentsregistry.NewLocalClient(localRegistryConfig.RootPath)
+		if err != nil {
+			return nil, err
+		}
+		if err := compResolver.Set(componentsOCIRegistry); err != nil {
+			return nil, err
+		}
+	}
+
+	// always add an oci client to support unauthenticated requests
+	ociConfigFiles := make([]string, 0)
+	if ociRegistryConfig != nil {
+		ociConfigFiles = ociRegistryConfig.ConfigFiles
+	}
+	ociKeyring, err := credentials.NewBuilder(logger.Logr()).DisableDefaultConfig().
+		WithFS(osfs.New()).
+		FromConfigFiles(ociConfigFiles...).
+		FromPullSecrets(secrets...).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+
+	ociClient, err := ociclient.NewClient(logger.Logr(),
+		utils.WithConfiguration(ociRegistryConfig),
+		ociclient.WithKeyring(ociKeyring),
+		ociclient.WithCache(sharedCache),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(logger, ociClient, inlineCd)
+	if err != nil {
+		return nil, err
+	}
+	if err := compResolver.Set(componentsOCIRegistry); err != nil {
+		return nil, err
+	}
+
+	return &RegistryAccess{
+		componentResolver: compResolver,
+	}, nil
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (model.ComponentVersion, error) {
