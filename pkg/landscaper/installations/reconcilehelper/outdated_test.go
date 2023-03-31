@@ -41,7 +41,7 @@ var _ = Describe("OutdatedImports", func() {
 		createDefaultContextsForNamespaces(fakeClient)
 		fakeInstallations = state.Installations
 
-		registryAccess, err := cnudie.NewLocalRegistryAccess("./testdata/registry")
+		registryAccess, err := cnudie.NewLocalRegistryAccess("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
