@@ -104,7 +104,7 @@ func walk(p string, parent int, exist bool) (string, error) {
 	for !IsRoot(p) && p != "" {
 		n, b := Split2(p)
 		if b == "" {
-			fmt.Printf("debug: ignoring empty base -> %s \n", n)
+			debug("debug: ignoring empty base -> %s \n", n)
 			p = n
 			continue
 		}

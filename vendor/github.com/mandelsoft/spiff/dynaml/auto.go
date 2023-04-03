@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	refJobs = ReferenceExpr{[]string{"", "jobs"}}
+	refJobs = NewReferenceExpr("", "jobs")
 )
 
 type AutoExpr struct {
@@ -22,7 +22,7 @@ func (e AutoExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 			return nil, info, false
 		}
 
-		if !isResolvedValue(jobs) {
+		if !isResolvedValue(jobs, binding) {
 			return e, info, true
 		}
 		jobsList, ok := jobs.([]yaml.Node)
@@ -33,7 +33,7 @@ func (e AutoExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 		var size int64
 
 		for _, job := range jobsList {
-			poolName, ok := yaml.FindString(job, "resource_pool")
+			poolName, ok := yaml.FindString(job, binding.GetFeatures(), "resource_pool")
 			if !ok {
 				continue
 			}
@@ -42,7 +42,7 @@ func (e AutoExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 				continue
 			}
 
-			instances, ok := yaml.FindInt(job, "instances")
+			instances, ok := yaml.FindInt(job, binding.GetFeatures(), "instances")
 			if !ok {
 				return nil, info, false
 			}

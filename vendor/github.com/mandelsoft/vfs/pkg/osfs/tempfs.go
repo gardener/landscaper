@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Mandelsoft. All rights reserved.
+ * Copyright 2022 Mandelsoft. All rights reserved.
  *  This file is licensed under the Apache Software License, v. 2 except as noted
  *  otherwise in the LICENSE file
  *
@@ -31,6 +31,8 @@ type tempfs struct {
 	dir string
 }
 
+var _ vfs.FileSystemCleanup = (*tempfs)(nil)
+
 func NewTempFileSystem() (vfs.FileSystem, error) {
 	dir, err := ioutil.TempDir("", "VFS-")
 	if err != nil {
@@ -43,6 +45,6 @@ func NewTempFileSystem() (vfs.FileSystem, error) {
 	return &tempfs{fs, dir}, err
 }
 
-func (t *tempfs) Cleanup() {
-	os.RemoveAll(t.dir)
+func (t *tempfs) Cleanup() error {
+	return os.RemoveAll(t.dir)
 }

@@ -8,11 +8,10 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 )
 
 type ComponentVersion struct {
-	//registry *RegistryAccess
-	repo     ocm.Repository
 	compvers ocm.ComponentVersionAccess
 }
 
@@ -20,9 +19,8 @@ type ComponentVersion struct {
 // Resolve Method - need to specify repository (although it defaults to the component versions repository)
 var _ model.ComponentVersion = &ComponentVersion{}
 
-func newComponentVersion(registry *RegistryAccess, compvers ocm.ComponentVersionAccess) model.ComponentVersion {
+func newComponentVersion(compvers ocm.ComponentVersionAccess) model.ComponentVersion {
 	return &ComponentVersion{
-		//registry: registry,
 		compvers: compvers,
 	}
 }
@@ -51,15 +49,33 @@ func (c *ComponentVersion) GetDescriptor(_ context.Context) ([]byte, error) {
 	return compdesc.Encode(c.compvers.GetDescriptor())
 }
 
+// Zusätzlicher Parameter "Repository", da die Dependency nicht notwendigerweise im gleichen Repo liegen muss?
+// Uwes' Resolve Method
 func (c *ComponentVersion) GetDependency(_ context.Context, name string) (model.ComponentVersion, error) {
-	referencedObject, err := c.compvers.GetReference(metav1.NewIdentity(name))
+	referenceObject, err := c.compvers.GetReference(metav1.NewIdentity(name))
 	if err != nil {
 		return nil, err
 	}
-	utils.Resolve
+
+	componentName := referenceObject.GetComponentName()
+	componentVersion := referenceObject.Version
+
+	c.compvers.Repository().LookupComponentVersion(componentName, componentVersion)
+
+	referencedCompvers, err := utils.ResolveReferencePath(c.compvers,
+		[]metav1.Identity{referenceObject.GetIdentity(c.compvers.GetDescriptor().References)}, nil)
+	if err != nil {
+		return nil, err
+	}
+	return newComponentVersion(referencedCompvers), nil
 }
 
 func (c *ComponentVersion) GetResource(name string, selectors map[string]string) (model.Resource, error) {
+	compdesc := c.compvers.GetDescriptor().GetResourceByIdentity()
+	if err != nil {
+		return nil, err
+	}
+
 	resources, err := c.componentDescriptor.GetResourcesByName(name, v2.Identity(selectors))
 	if err != nil {
 		return nil, err
@@ -75,6 +91,5 @@ func (c *ComponentVersion) GetResource(name string, selectors map[string]string)
 }
 
 func (c *ComponentVersion) Close() {
-	c.
-		c.compvers.Close()
+	c.compvers.Close()
 }

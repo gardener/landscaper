@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Mandelsoft. All rights reserved.
+ * Copyright 2022 Mandelsoft. All rights reserved.
  *  This file is licensed under the Apache Software License, v. 2 except as noted
  *  otherwise in the LICENSE file
  *
@@ -127,4 +127,8 @@ func (fs *vfs) TempFile(dir, prefix string) (File, error) {
 
 func (fs *vfs) TempDir(dir, prefix string) (string, error) {
 	return TempDir(fs, dir, prefix)
+}
+
+func (fs *vfs) Cleanup() error {
+	return Cleanup(fs.FileSystem)
 }

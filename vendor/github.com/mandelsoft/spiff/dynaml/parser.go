@@ -1,3 +1,5 @@
+//go:generate go run -v  ../vendor/github.com/pointlander/peg dynaml.peg
+
 package dynaml
 
 import (
@@ -153,6 +155,7 @@ func buildExpression(grammar *DynamlGrammar, path []string, stubPath []string) (
 		case ruleDynaml:
 			return tokens.Pop(), nil
 
+		case ruleTagMarker:
 		case ruleMarker:
 			tokens.Push(newMarkerExpr(contents))
 		case ruleSubsequentMarker:
@@ -179,15 +182,17 @@ func buildExpression(grammar *DynamlGrammar, path []string, stubPath []string) (
 		case ruleSimpleMerge:
 			debug.Debug("*** rule simple merge\n")
 			redirect := !equals(path, stubPath)
-			tokens.Push(MergeExpr{stubPath, redirect, replace, replace || required || redirect, keyName})
+			tokens.Push(MergeExpr{stubPath, redirect, replace, replace || required || redirect, false, keyName})
 		case ruleRefMerge:
 			debug.Debug("*** rule ref merge\n")
 			rhs := tokens.Pop()
 			merge := rhs.(ReferenceExpr).Path
+			none := false
 			if len(merge) == 1 && merge[0] == "none" {
 				merge = []string{}
+				none = true
 			}
-			tokens.Push(MergeExpr{merge, true, replace, len(merge) > 0, keyName})
+			tokens.Push(MergeExpr{merge, true, replace, len(merge) > 0, none, keyName})
 		case ruleReplace:
 			replace = true
 		case ruleRequired:
@@ -196,13 +201,22 @@ func buildExpression(grammar *DynamlGrammar, path []string, stubPath []string) (
 			keyName = tokens.Pop().(nameHelper).name
 		case ruleFollowUpRef:
 		case ruleReference:
-			tokens.Push(ReferenceExpr{PathComponents(contents, true)})
+			tag := ""
+			if i := strings.LastIndex(contents, "::"); i > 0 {
+				tag = contents[:i]
+				contents = contents[i+2:]
+				if contents != "." && strings.HasPrefix(contents, ".") {
+					contents = contents[1:]
+				}
+			}
+			comps := PathComponents(contents, true)
+			tokens.Push(NewTaggedReferenceExpr(tag, comps...))
 
 		case ruleChained:
 		case ruleChainedQualifiedExpression:
 		case rulePathComponent:
 		case ruleChainedRef:
-			ref := ReferenceExpr{PathComponents(contents, false)}
+			ref := NewReferenceExpr(PathComponents(contents, false)...)
 			expr := tokens.Pop()
 			tokens.Push(QualifiedExpr{expr, ref})
 		case ruleChainedDynRef:
@@ -500,6 +514,7 @@ func buildExpression(grammar *DynamlGrammar, path []string, stubPath []string) (
 			tokens.Push(expressionListHelper{})
 
 		case ruleKey, ruleIndex:
+		case ruleTag, ruleTagComponent, ruleTagPrefix:
 		case ruleLevel0, ruleLevel1, ruleLevel2, ruleLevel3, ruleLevel4, ruleLevel5, ruleLevel6, ruleLevel7:
 		case ruleExpression:
 		case ruleExpressionList:

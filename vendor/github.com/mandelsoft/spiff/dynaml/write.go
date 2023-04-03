@@ -18,72 +18,91 @@ func func_write(arguments []interface{}, binding Binding) (interface{}, Evaluati
 	if !binding.GetState().FileAccessAllowed() {
 		return info.DenyOSOperation("write")
 	}
-	file, _, ok := getArg(0, arguments[0], false)
-	if !ok || file == "" {
+
+	wopt := WriteOpts{
+		Permissions: 0644,
+	}
+
+	file, _, err := getArg(0, arguments[0], wopt, false)
+	if err != nil || file == "" {
 		return info.Error("file argument must be a non-empty string")
 	}
 
-	permissions := int64(0644)
-	binary := false
 	if len(arguments) == 3 {
-		switch v := arguments[2].(type) {
-		case string:
-			permissions, binary, err = getWriteOptions(v, 0644)
-			if err != nil {
-				return info.Error("%s", err)
+		wopt, err = getWriteOptions(arguments[2], wopt, false)
+	}
+	if err == nil {
+		file, raw, data, _ := getData(file, wopt, 1, arguments[1], true)
+
+		err = binding.GetState().FileSystem().WriteFile(file, data, os.FileMode(wopt.Permissions))
+		if err == nil {
+			return raw, info, true
+		}
+	}
+	return info.Error("cannot write file: %s", err)
+}
+
+type WriteOpts struct {
+	Binary      bool
+	Multi       bool
+	Permissions int64
+}
+
+func getWriteOptions(arg interface{}, wopt WriteOpts, permonly bool) (WriteOpts, error) {
+	var err error
+	switch v := arg.(type) {
+	case string:
+		opts := strings.Split(v, ",")
+		for i := 0; i < len(opts); i++ {
+			o := strings.TrimSpace(opts[i])
+			switch o {
+			case "binary", "#":
+				wopt.Binary = true
+				opts = append(opts[:i], opts[i+1:]...)
+				i--
+			case "multiyaml":
+				wopt.Multi = true
+				opts = append(opts[:i], opts[i+1:]...)
+				i--
 			}
-		case int64:
-			permissions = v
-		default:
-			return info.Error("permissions must be given as int or int string")
+		}
+		if len(opts) > 1 {
+			return wopt, fmt.Errorf("invalid options %v, expecting file mode", opts)
+		}
+		if len(opts) == 1 {
+			v = opts[0]
+
+			base := 10
+			if strings.HasPrefix(v, "0") {
+				base = 8
+			}
+			wopt.Permissions, err = strconv.ParseInt(v, base, 64)
+			if err != nil {
+				err = fmt.Errorf("permissions must be given as int or int string: %s", err)
+			}
+		}
+	case int64:
+		wopt.Permissions = v
+	default:
+		err = fmt.Errorf("permissions must be given as int or int string, found %s", ExpressionType(arg))
+	}
+	if permonly {
+		if wopt.Binary {
+			return wopt, fmt.Errorf("binary option not support -> only permissions")
+		}
+		if wopt.Multi {
+			return wopt, fmt.Errorf("multi option not support -> only permissions")
 		}
 	}
-
-	file, raw, data, _ := getData(file, binary, 1, arguments[1], true)
-
-	err = binding.GetState().FileSystem().WriteFile(file, data, os.FileMode(permissions))
-	if err != nil {
-		return info.Error("cannot write file: %s", err)
-	}
-
-	return raw, info, true
+	return wopt, err
 }
 
-func getWriteOptions(v string, def int64) (permissions int64, binary bool, err error) {
-	permissions = def
-	opts := strings.Split(v, ",")
-	for i, o := range opts {
-		o = strings.TrimSpace(o)
-		if o == "binary" || o == "#" {
-			binary = true
-			opts = append(opts[:i], opts[i+1:]...)
-		}
-	}
-	if len(opts) > 1 {
-		err = fmt.Errorf("invalid options %v, expecting file mode", opts)
-		return
-	}
-	if len(opts) == 1 {
-		v = opts[0]
-
-		base := 10
-		if strings.HasPrefix(v, "0") {
-			base = 8
-		}
-		permissions, err = strconv.ParseInt(v, base, 64)
-		if err != nil {
-			err = fmt.Errorf("permissions must be given as int or int string: %s", err)
-		}
-	}
-	return
-}
-
-func getData(file string, binary bool, key interface{}, value interface{}, yaml bool) (string, string, []byte, bool) {
+func getData(file string, wopt WriteOpts, key interface{}, value interface{}, yaml bool) (string, string, []byte, bool) {
 	var data []byte
 	var err error
 
-	str, isstr, ok := getArg(key, value, true)
-	if binary || (isstr && hasTag(file, "#")) {
+	str, isstr, err := getArg(key, value, wopt, true)
+	if wopt.Binary || (isstr && hasTag(file, "#")) {
 		data, err = base64.StdEncoding.DecodeString(str)
 		if err != nil {
 			data = []byte(str)
@@ -91,5 +110,5 @@ func getData(file string, binary bool, key interface{}, value interface{}, yaml 
 	} else {
 		data = []byte(str)
 	}
-	return removeTags(file), str, data, ok
+	return removeTags(file), str, data, err == nil
 }

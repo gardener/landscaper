@@ -39,24 +39,11 @@ func (e MappingExpr) Evaluate(binding Binding, locally bool) (interface{}, Evalu
 
 	debug.Debug("map: using lambda %+v\n", lambda)
 	var result interface{}
-	switch value.(type) {
-	case []yaml.Node:
-		if e.Context.Supports(value) {
-			result, info, ok = mapList(inline, value.([]yaml.Node), lambda, binding, e.Context.CreateMappingAggregation())
-		} else {
-			return info.Error("list value not supported for %s mapping", e.Context.Keyword())
-		}
-
-	case map[string]yaml.Node:
-		if e.Context.Supports(value) {
-			result, info, ok = mapMap(inline, value.(map[string]yaml.Node), lambda, binding, e.Context.CreateMappingAggregation())
-		} else {
-			return info.Error("map value not supported for %s mapping", e.Context.Keyword())
-		}
-
-	default:
-		return info.Error("map or list required for %s mapping", e.Context.Keyword())
+	if !e.Context.Supports(value) {
+		return info.Error("%s%s does not support %s values", e.Context.Keyword(), e.Context.Brackets(), ExpressionType(value))
 	}
+	result, info, ok = e.Context.CreateMappingAggregation(value).DoMapping(inline, value, lambda, binding)
+
 	if !ok {
 		return nil, info, false
 	}
@@ -82,14 +69,15 @@ func (e MappingExpr) String() string {
 ///////////////////////////////////////////////////////////////////////////////
 
 type MappingContext interface {
-	CreateMappingAggregation() MappingAggregation
+	CreateMappingAggregation(source interface{}) MappingAggregation
 	Keyword() string
 	Brackets() string
 	Supports(source interface{}) bool
 }
 
 type MappingAggregation interface {
-	Map(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo)
+	DoMapping(inline bool, value interface{}, e LambdaValue, binding Binding) (interface{}, EvaluationInfo, bool)
+	Add(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) error
 	Result() interface{}
 }
 
@@ -126,22 +114,28 @@ type mapToListContext struct {
 
 var MapToListContext = &mapToListContext{defaultContext{brackets: "[]", keyword: "map", list: true}}
 
-func (c *mapToListContext) CreateMappingAggregation() MappingAggregation {
-	return &mapToList{[]yaml.Node{}}
+func (c *mapToListContext) CreateMappingAggregation(source interface{}) MappingAggregation {
+	return &mapToList{MapperForSource(source), []yaml.Node{}}
 }
 
 type mapToList struct {
+	mapper Mapper
 	result []yaml.Node
 }
 
-func (m *mapToList) Map(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) {
+func (m *mapToList) DoMapping(inline bool, value interface{}, e LambdaValue, binding Binding) (interface{}, EvaluationInfo, bool) {
+	return m.mapper(inline, value, e, binding, m)
+}
+
+func (m *mapToList) Add(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) error {
 	if info.Undefined {
-		return
+		return nil
 	}
 	if value == nil {
-		return
+		return nil
 	}
 	m.result = append(m.result, NewNode(value, info))
+	return nil
 }
 
 func (m *mapToList) Result() interface{} {
@@ -158,25 +152,80 @@ type mapToMapContext struct {
 
 var MapToMapContext = &mapToMapContext{defaultContext{brackets: "{}", keyword: "map", list: false}}
 
-func (c *mapToMapContext) CreateMappingAggregation() MappingAggregation {
-	return &mapToMap{map[string]yaml.Node{}}
+func (c *mapToMapContext) CreateMappingAggregation(source interface{}) MappingAggregation {
+	switch source.(type) {
+	case map[string]yaml.Node:
+		return &mapMapToMap{map[string]yaml.Node{}}
+	case []yaml.Node:
+		return &mapListToMap{map[string]yaml.Node{}}
+	default:
+		return nil
+	}
 }
 
-type mapToMap struct {
+func (c *mapToMapContext) Supports(source interface{}) bool {
+	switch source.(type) {
+	case map[string]yaml.Node:
+		return true
+	case []yaml.Node:
+		return true
+	default:
+		return false
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//  map map to map
+
+type mapMapToMap struct {
 	result map[string]yaml.Node
 }
 
-func (m *mapToMap) Map(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) {
-	if info.Undefined {
-		return
-	}
-	if value == nil {
-		return
-	}
-	m.result[key.(string)] = NewNode(value, info)
+func (m *mapMapToMap) DoMapping(inline bool, value interface{}, e LambdaValue, binding Binding) (interface{}, EvaluationInfo, bool) {
+	return mapMap(inline, value, e, binding, m)
 }
 
-func (m *mapToMap) Result() interface{} {
+func (m *mapMapToMap) Add(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) error {
+	if info.Undefined {
+		return nil
+	}
+	if value == nil {
+		return nil
+	}
+	m.result[key.(string)] = NewNode(value, info)
+	return nil
+}
+
+func (m *mapMapToMap) Result() interface{} {
+	return m.result
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//  map list to map
+
+type mapListToMap struct {
+	result map[string]yaml.Node
+}
+
+func (m *mapListToMap) DoMapping(inline bool, value interface{}, e LambdaValue, binding Binding) (interface{}, EvaluationInfo, bool) {
+	return mapList(inline, value, e, binding, m)
+}
+
+func (m *mapListToMap) Add(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) error {
+	if info.Undefined {
+		return nil
+	}
+	if value == nil {
+		return nil
+	}
+	if s, ok := n.Value().(string); ok {
+		m.result[s] = NewNode(value, info)
+		return nil
+	}
+	return fmt.Errorf("list element must be string, but found %s", ExpressionType(n.Value()))
+}
+
+func (m *mapListToMap) Result() interface{} {
 	return m.result
 }
 
@@ -184,7 +233,20 @@ func (m *mapToMap) Result() interface{} {
 // global handler functions
 ///////////////////////////////////////////////////////////////////////////////
 
-func mapList(inline bool, source []yaml.Node, e LambdaValue, binding Binding, aggr MappingAggregation) (interface{}, EvaluationInfo, bool) {
+type Mapper func(inline bool, value interface{}, e LambdaValue, binding Binding, aggr MappingAggregation) (interface{}, EvaluationInfo, bool)
+
+func MapperForSource(value interface{}) Mapper {
+	switch value.(type) {
+	case []yaml.Node:
+		return mapList
+	case map[string]yaml.Node:
+		return mapMap
+	}
+	return nil
+}
+
+func mapList(inline bool, value interface{}, e LambdaValue, binding Binding, aggr MappingAggregation) (interface{}, EvaluationInfo, bool) {
+	source := value.([]yaml.Node)
 	inp := make([]interface{}, len(e.lambda.Parameters))
 	info := DefaultInfo()
 
@@ -210,12 +272,16 @@ func mapList(inline bool, source []yaml.Node, e LambdaValue, binding Binding, ag
 			return nil, info, true
 		}
 		debug.Debug("map:  %d --> %+v\n", i, mapped)
-		aggr.Map(i, mapped, n, info)
+		err := aggr.Add(i, mapped, n, info)
+		if err != nil {
+			return info.Error("%s", err)
+		}
 	}
 	return aggr.Result(), info, true
 }
 
-func mapMap(inline bool, source map[string]yaml.Node, e LambdaValue, binding Binding, aggr MappingAggregation) (interface{}, EvaluationInfo, bool) {
+func mapMap(inline bool, value interface{}, e LambdaValue, binding Binding, aggr MappingAggregation) (interface{}, EvaluationInfo, bool) {
+	source := value.(map[string]yaml.Node)
 	inp := make([]interface{}, len(e.lambda.Parameters))
 	info := DefaultInfo()
 
@@ -239,7 +305,10 @@ func mapMap(inline bool, source map[string]yaml.Node, e LambdaValue, binding Bin
 			return nil, info, true
 		}
 		debug.Debug("map:  %s --> %+v\n", k, mapped)
-		aggr.Map(k, mapped, n, info)
+		err := aggr.Add(k, mapped, n, info)
+		if err != nil {
+			return info.Error("%s", err)
+		}
 	}
 	return aggr.Result(), info, true
 }

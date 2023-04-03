@@ -55,7 +55,7 @@ func func_archive(arguments []interface{}, binding Binding) (interface{}, Evalua
 						return info.Error("%s", err)
 					}
 				default:
-					file, _, content, ok := getData(file, false, file, val.Value(), true)
+					file, _, content, ok := getData(file, WriteOpts{}, file, val.Value(), true)
 					if !ok {
 						return info.Error("invalid file content type %s", ExpressionType(val))
 					}
@@ -106,9 +106,10 @@ func getFileEntry(file *string, info map[string]yaml.Node) (*FileEntry, error) {
 	var e FileEntry
 	var err error
 
-	binary := false
+	wopt := WriteOpts{
+		Permissions: 0644,
+	}
 
-	e.mode = 0644
 	field, ok := info["path"]
 	if ok {
 		if field == nil || field.Value() == nil {
@@ -131,18 +132,12 @@ func getFileEntry(file *string, info map[string]yaml.Node) (*FileEntry, error) {
 		if field == nil || field.Value() == nil {
 			return nil, fmt.Errorf("mode field must not be nil")
 		}
-		switch v := field.Value().(type) {
-		case int64:
-			e.mode = v
-		case string:
-			e.mode, binary, err = getWriteOptions(v, e.mode)
-			if err != nil {
-				return nil, fmt.Errorf("permissions must be given as int or int string: %s", err)
-			}
-		default:
-			return nil, fmt.Errorf("mode field must be an integer, found %s", ExpressionType(field))
+		wopt, err = getWriteOptions(field.Value(), wopt, false)
+		if err != nil {
+			return nil, err
 		}
 	}
+	e.mode = wopt.Permissions
 
 	field, ok = info["base64"]
 	if ok {
@@ -163,7 +158,7 @@ func getFileEntry(file *string, info map[string]yaml.Node) (*FileEntry, error) {
 			if field == nil || field.Value() == nil {
 				return nil, fmt.Errorf("data field must not be nil")
 			}
-			_, _, content, ok := getData("", binary, e.path, field.Value(), true)
+			_, _, content, ok := getData("", wopt, e.path, field.Value(), true)
 			if !ok {
 				return nil, fmt.Errorf("invalid data field")
 			}

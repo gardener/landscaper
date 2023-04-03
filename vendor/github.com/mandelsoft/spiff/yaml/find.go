@@ -6,15 +6,16 @@ import (
 	"strings"
 
 	"github.com/mandelsoft/spiff/debug"
+	"github.com/mandelsoft/spiff/features"
 )
 
 var listIndex = regexp.MustCompile(`^\[(-?\d+)\]$`)
 
-func Find(root Node, path ...string) (Node, bool) {
-	return FindR(false, root, path...)
+func Find(root Node, features features.FeatureFlags, path ...string) (Node, bool) {
+	return FindR(false, root, features, path...)
 }
 
-func FindR(raw bool, root Node, path ...string) (Node, bool) {
+func FindR(raw bool, root Node, features features.FeatureFlags, path ...string) (Node, bool) {
 	here := root
 
 	for _, step := range path {
@@ -24,7 +25,7 @@ func FindR(raw bool, root Node, path ...string) (Node, bool) {
 
 		var found bool
 
-		here, found = nextStep(raw, step, here)
+		here, found = nextStep(raw, step, here, features)
 		if !found {
 			return nil, false
 		}
@@ -33,12 +34,12 @@ func FindR(raw bool, root Node, path ...string) (Node, bool) {
 	return here, true
 }
 
-func FindString(root Node, path ...string) (string, bool) {
-	return FindStringR(false, root, path...)
+func FindString(root Node, features features.FeatureFlags, path ...string) (string, bool) {
+	return FindStringR(false, root, features, path...)
 }
 
-func FindStringR(raw bool, root Node, path ...string) (string, bool) {
-	node, ok := FindR(raw, root, path...)
+func FindStringR(raw bool, root Node, features features.FeatureFlags, path ...string) (string, bool) {
+	node, ok := FindR(raw, root, features, path...)
 	if !ok {
 		debug.Debug("%v not found", path)
 		return "", false
@@ -48,12 +49,12 @@ func FindStringR(raw bool, root Node, path ...string) (string, bool) {
 	return val, ok
 }
 
-func FindInt(root Node, path ...string) (int64, bool) {
-	return FindIntR(false, root, path...)
+func FindInt(root Node, features features.FeatureFlags, path ...string) (int64, bool) {
+	return FindIntR(false, root, features, path...)
 }
 
-func FindIntR(raw bool, root Node, path ...string) (int64, bool) {
-	node, ok := FindR(raw, root, path...)
+func FindIntR(raw bool, root Node, features features.FeatureFlags, path ...string) (int64, bool) {
+	node, ok := FindR(raw, root, features, path...)
 	if !ok {
 		return 0, false
 	}
@@ -62,27 +63,27 @@ func FindIntR(raw bool, root Node, path ...string) (int64, bool) {
 	return val, ok
 }
 
-func nextStep(raw bool, step string, here Node) (Node, bool) {
+func nextStep(raw bool, step string, here Node, features features.FeatureFlags) (Node, bool) {
 	found := false
 
 	switch v := here.Value().(type) {
 	case map[string]Node:
-		if !raw && !IsMapResolved(v) {
+		if !raw && !IsMapResolved(v, features) {
 			return nil, false
 		}
 		here, found = v[step]
 	case []Node:
-		if !raw && !IsListResolved(v) {
+		if !raw && !IsListResolved(v, features) {
 			return nil, false
 		}
-		here, found = stepThroughList(raw, v, step, here.KeyName())
+		here, found = stepThroughList(raw, v, step, here.KeyName(), features)
 	default:
 	}
 
 	return here, found
 }
 
-func stepThroughList(raw bool, here []Node, step string, key string) (Node, bool) {
+func stepThroughList(raw bool, here []Node, step string, key string, features features.FeatureFlags) (Node, bool) {
 	match := listIndex.FindStringSubmatch(step)
 	if match != nil {
 		index, err := strconv.Atoi(match[1])
@@ -115,7 +116,7 @@ func stepThroughList(raw bool, here []Node, step string, key string) (Node, bool
 			continue
 		}
 
-		name, ok := FindStringR(raw, sub, key)
+		name, ok := FindStringR(raw, sub, features, key)
 		if !ok {
 			continue
 		}
@@ -153,11 +154,18 @@ func UnresolvedListEntryMerge(node Node) (Node, string, bool) {
 	return nil, "", false
 }
 
-func IsMapResolved(m map[string]Node) bool {
+func IsMapResolved(m map[string]Node, features features.FeatureFlags) bool {
+	if features != nil && features.ControlEnabled() {
+		for k := range m {
+			if strings.HasPrefix(k, "<<") {
+				return false
+			}
+		}
+	}
 	return m["<<"] == nil && m[MERGEKEY] == nil
 }
 
-func IsListResolved(l []Node) bool {
+func IsListResolved(l []Node, features features.FeatureFlags) bool {
 	for _, val := range l {
 		if val != nil {
 			_, _, ok := UnresolvedListEntryMerge(val)

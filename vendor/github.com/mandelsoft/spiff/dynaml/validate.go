@@ -26,12 +26,12 @@ func func_validate(arguments []interface{}, binding Binding) (bool, interface{},
 	value := arguments[0]
 
 	for i, c := range arguments[1:] {
-		r, m, err, valid := validate(value, NewNode(c, binding), binding)
+		r, m, err, ok := EvalValidationExpression(value, NewNode(c, binding), binding)
 		if err != nil {
 			info.SetError("condition %d has problem: %s", i+1, err)
 			return true, nil, info, false
 		}
-		if !valid {
+		if !ok {
 			return false, nil, info, true
 		}
 		if !r {
@@ -42,7 +42,37 @@ func func_validate(arguments []interface{}, binding Binding) (bool, interface{},
 	return true, value, info, true
 }
 
-func validate(value interface{}, cond yaml.Node, binding Binding) (bool, string, error, bool) {
+func func_check(arguments []interface{}, binding Binding) (bool, interface{}, EvaluationInfo, bool) {
+	info := DefaultInfo()
+	if len(arguments) < 2 {
+		info.Error("at least two arguments required for check")
+		return true, nil, info, false
+	}
+
+	value := arguments[0]
+
+	for i, c := range arguments[1:] {
+		r, _, err, ok := EvalValidationExpression(value, NewNode(c, binding), binding)
+		if err != nil {
+			info.SetError("condition %d has problem: %s", i+1, err)
+			return true, nil, info, false
+		}
+		if !ok {
+			return false, nil, info, true
+		}
+		if !r {
+			return true, false, info, true
+		}
+	}
+	return true, true, info, true
+}
+
+// first result: validation successful
+// second:       message
+// third:        condition error
+// fourth:       expression already resolved
+
+func EvalValidationExpression(value interface{}, cond yaml.Node, binding Binding) (bool, string, error, bool) {
 	if cond == nil || cond.Value() == nil {
 		return ValidatorResult(true, "no condition")
 	}
@@ -147,7 +177,7 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 		}
 		for i, e := range l {
 			for j, c := range args {
-				r, m, err, valid := validate(e.Value(), c, binding)
+				r, m, err, valid := EvalValidationExpression(e.Value(), c, binding)
 				if err != nil {
 					return ValidatorErrorf("list entry %d condition %d: %s", i, j, err)
 				}
@@ -180,7 +210,7 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 
 		for k, e := range l {
 			if ck != nil {
-				r, m, err, valid := validate(k, ck, binding)
+				r, m, err, valid := EvalValidationExpression(k, ck, binding)
 				if err != nil {
 					return ValidatorErrorf("map key %q %s", k, err)
 				}
@@ -192,7 +222,7 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 				}
 			}
 
-			r, m, err, valid := validate(e.Value(), ce, binding)
+			r, m, err, valid := EvalValidationExpression(e.Value(), ce, binding)
 			if err != nil {
 				return ValidatorErrorf("map entry %q: %s", k, err)
 			}
@@ -228,7 +258,7 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 			return ValidatorResult(false, "has no field %q", field)
 		}
 		if len(args) == 2 {
-			r, m, err, valid := validate(val.Value(), args[1], binding)
+			r, m, err, valid := EvalValidationExpression(val.Value(), args[1], binding)
 			if err != nil {
 				return ValidatorErrorf("map entry %q %s", field, err)
 			}
@@ -244,7 +274,7 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 			return ValidatorErrorf("validator argument required")
 		}
 		for _, c := range args {
-			r, m, err, resolved := validate(value, c, binding)
+			r, m, err, resolved := EvalValidationExpression(value, c, binding)
 			if err != nil || !resolved {
 				return false, "", err, resolved
 			}
@@ -265,7 +295,7 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 			return ValidatorErrorf("validator argument required")
 		}
 		for _, c := range args {
-			r, m, err, resolved := validate(value, c, binding)
+			r, m, err, resolved := EvalValidationExpression(value, c, binding)
 			if err != nil || !resolved {
 				return false, "", err, resolved
 			}
@@ -303,7 +333,7 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 		}
 		for _, v := range l {
 			if ok, _, _ := compareEquals(value, v.Value()); ok {
-				return ValidatorResult(true, "matches valuset")
+				return ValidatorResult(true, "matches valueset")
 			}
 		}
 		s, ok := value.(string)
@@ -316,7 +346,198 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 		}
 		return ValidatorResult(false, "invalid value")
 
-	case "match":
+	case "value", "=":
+		if len(args) != 1 {
+			return ValidatorErrorf("value requires a value argument")
+		}
+		s := args[0].Value()
+
+		sv, isStr := value.(string)
+		if ok, _, _ := compareEquals(s, value); !ok {
+			if isStr {
+				return ValidatorResult(false, "invalid value %q", sv)
+			}
+			return ValidatorResult(false, "invalid value")
+		}
+		if isStr {
+			return ValidatorResult(true, "valid value %q", sv)
+		}
+		return ValidatorResult(true, "valid value")
+
+	case "gt", ">":
+		if len(args) != 1 {
+			return ValidatorErrorf("gt requires a value argument")
+		}
+		s := args[0].Value()
+
+		r := false
+		switch cv := s.(type) {
+		case string:
+			s, ok := value.(string)
+			if !ok {
+				return ValidatorErrorf("must be string to compare to string")
+			}
+			r = strings.Compare(s, cv) > 0
+		case int64:
+			s, ok := value.(int64)
+			if !ok {
+				s, ok := value.(float64)
+				if !ok {
+					return ValidatorErrorf("must be number to compare to number")
+				}
+				r = s > float64(cv)
+			} else {
+				r = s > cv
+			}
+		case float64:
+			s, ok := value.(int64)
+			if !ok {
+				s, ok := value.(float64)
+				if !ok {
+					return ValidatorErrorf("must be number to compare to number")
+				}
+				r = s > cv
+			} else {
+				r = float64(s) > cv
+			}
+		default:
+			return ValidatorErrorf("invalid type %T", s)
+		}
+		if !r {
+			return ValidatorResult(false, "less or equal to %v", s)
+		}
+		return ValidatorResult(true, "greater than %v", s)
+	case "lt", "<":
+		if len(args) != 1 {
+			return ValidatorErrorf("lt requires a value argument")
+		}
+		s := args[0].Value()
+
+		r := false
+		switch cv := s.(type) {
+		case string:
+			s, ok := value.(string)
+			if !ok {
+				return ValidatorErrorf("must be string to compare to string")
+			}
+			r = strings.Compare(s, cv) < 0
+		case int64:
+			s, ok := value.(int64)
+			if !ok {
+				s, ok := value.(float64)
+				if !ok {
+					return ValidatorErrorf("must be number to compare to number")
+				}
+				r = s < float64(cv)
+			} else {
+				r = s < cv
+			}
+		case float64:
+			s, ok := value.(int64)
+			if !ok {
+				s, ok := value.(float64)
+				if !ok {
+					return ValidatorErrorf("must be number to compare to number")
+				}
+				r = s < cv
+			} else {
+				r = float64(s) < cv
+			}
+		default:
+			return ValidatorErrorf("invalid type %T", s)
+		}
+		if !r {
+			return ValidatorResult(false, "greater than %v", s)
+		}
+		return ValidatorResult(true, "less or equal to %v", s)
+	case "ge", ">=":
+		if len(args) != 1 {
+			return ValidatorErrorf("ge requires a value argument")
+		}
+		s := args[0].Value()
+
+		r := false
+		switch cv := s.(type) {
+		case string:
+			s, ok := value.(string)
+			if !ok {
+				return ValidatorErrorf("must be string to compare to string")
+			}
+			r = strings.Compare(s, cv) >= 0
+		case int64:
+			s, ok := value.(int64)
+			if !ok {
+				s, ok := value.(float64)
+				if !ok {
+					return ValidatorErrorf("must be number to compare to number")
+				}
+				r = s >= float64(cv)
+			} else {
+				r = s >= cv
+			}
+		case float64:
+			s, ok := value.(int64)
+			if !ok {
+				s, ok := value.(float64)
+				if !ok {
+					return ValidatorErrorf("must be number to compare to number")
+				}
+				r = s >= cv
+			} else {
+				r = float64(s) >= cv
+			}
+		default:
+			return ValidatorErrorf("invalid type %T", s)
+		}
+		if !r {
+			return ValidatorResult(false, "less than %v", s)
+		}
+		return ValidatorResult(true, "greater or equal to %v", s)
+	case "le", "<=":
+		if len(args) != 1 {
+			return ValidatorErrorf("lt requires a value argument")
+		}
+		s := args[0].Value()
+
+		r := false
+		switch cv := s.(type) {
+		case string:
+			s, ok := value.(string)
+			if !ok {
+				return ValidatorErrorf("must be string to compare to string")
+			}
+			r = strings.Compare(s, cv) <= 0
+		case int64:
+			s, ok := value.(int64)
+			if !ok {
+				s, ok := value.(float64)
+				if !ok {
+					return ValidatorErrorf("must be number to compare to number")
+				}
+				r = s <= float64(cv)
+			} else {
+				r = s <= cv
+			}
+		case float64:
+			s, ok := value.(int64)
+			if !ok {
+				s, ok := value.(float64)
+				if !ok {
+					return ValidatorErrorf("must be number to compare to number")
+				}
+				r = s <= cv
+			} else {
+				r = float64(s) <= cv
+			}
+		default:
+			return ValidatorErrorf("invalid type %T", s)
+		}
+		if !r {
+			return ValidatorResult(false, "greater or equal to %v", s)
+		}
+		return ValidatorResult(true, "less than %v", s)
+
+	case "match", "~=":
 		if len(args) != 1 {
 			return ValidatorErrorf("match requires a regexp argument")
 		}
@@ -357,6 +578,7 @@ func handleStringType(value interface{}, op string, binding Binding, args ...yam
 			return ValidatorResult(false, reason[1:])
 		}
 		return ValidatorResult(false, reason+")")
+
 	case "dnsname":
 		s, err := StringValue(op, value)
 		if err != nil {

@@ -28,3 +28,14 @@ func NewNode(val interface{}, src SourceProvider) yaml.Node {
 
 	return yaml.NewNode(val, source)
 }
+
+func IssueNode(env Binding, preservePath bool, node yaml.Node, error bool, failed bool, issue yaml.Issue) yaml.Node {
+	if node.Issue().OrigPath != nil {
+		issue.OrigPath = node.Issue().OrigPath
+	} else {
+		if env != nil && preservePath {
+			issue.OrigPath = env.Path()
+		}
+	}
+	return yaml.IssueNode(node, error, failed, issue)
+}

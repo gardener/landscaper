@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"io"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -9,8 +10,12 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
+// Registry Access hat eine Sammlung von Registries, um die ComponentVersion (UND Ressourcen zu holen)
 type RegistryAccess interface {
 	GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
+
+	//GetResource
+	GetResource(ctx context.Context, meta ocm.ResourceMeta)
 
 	// temporary
 	GetComponentResolver() ctf.ComponentResolver
@@ -25,6 +30,7 @@ type ComponentVersion interface {
 	GetResource(name string, identity map[string]string) (Resource, error)
 }
 
+// Muss eine Reihe von Resolvern haben, um die Blobs von verschiedenen Typen abzuholen
 type Resource interface {
 	GetName() string
 	GetVersion() string

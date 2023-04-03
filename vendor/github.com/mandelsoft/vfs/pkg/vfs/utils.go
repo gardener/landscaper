@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Mandelsoft. All rights reserved.
+ * Copyright 2022 Mandelsoft. All rights reserved.
  *  This file is licensed under the Apache Software License, v. 2 except as noted
  *  otherwise in the LICENSE file
  *
@@ -190,7 +190,13 @@ func Trim(fs FileSystem, path string) string {
 // IsAbs return true if the given path is an absolute one
 // starting with a Separator or is quailified by a volume name.
 func IsAbs(fs FileSystem, path string) bool {
-	_, path = SplitVolume(fs, path)
+	if fs != nil {
+		_, path = SplitVolume(fs, path)
+	} else {
+		if strings.HasPrefix(path, string(os.PathSeparator)) {
+			return true
+		}
+	}
 	return strings.HasPrefix(path, PathSeparatorString)
 }
 
