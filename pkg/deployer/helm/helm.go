@@ -120,7 +120,7 @@ func New(helmconfig helmv1alpha1.Configuration,
 
 // Template loads the specified helm chart
 // and templates it with the given values.
-func (h *Helm) Template(ctx context.Context, lsClient client.Client) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
+func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
 	currOp := "TemplateChart"
 
 	restConfig, _, _, err := h.TargetClient(ctx)
@@ -140,7 +140,7 @@ func (h *Helm) Template(ctx context.Context, lsClient client.Client) (map[string
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "BuildOCIClient", err.Error())
 	}
 
-	helmChartRepoClient, lsError := helmchartrepo.NewHelmChartRepoClient(h.Context, lsClient)
+	helmChartRepoClient, lsError := helmchartrepo.NewHelmChartRepoClient(h.Context, h.lsKubeClient)
 	if lsError != nil {
 		return nil, nil, nil, nil, lsError
 	}
