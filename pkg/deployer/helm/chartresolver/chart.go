@@ -10,7 +10,18 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-cli/ociclient/credentials"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/gardener/landscaper/apis/config"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
@@ -31,8 +42,10 @@ import (
 var NoChartDefinedError = errors.New("no chart was provided")
 
 // GetChart resolves the chart based on a chart access configuration.
-func GetChart(ctx context.Context, ociClient ociclient.Client,
-	helmChartRepoClient *helmchartrepo.HelmChartRepoClient, chartConfig *helmv1alpha1.Chart) (*chart.Chart, error) {
+func GetChart(ctx context.Context,
+	ociClient ociclient.Client,
+	helmChartRepoClient *helmchartrepo.HelmChartRepoClient,
+	chartConfig *helmv1alpha1.Chart) (*chart.Chart, error) {
 
 	if chartConfig.Archive != nil {
 		return getChartFromArchive(chartConfig.Archive)
@@ -52,6 +65,76 @@ func GetChart(ctx context.Context, ociClient ociclient.Client,
 	}
 
 	return nil, NoChartDefinedError
+}
+
+// GetChartNEW resolves the chart based on a chart access configuration.
+func GetChartNEW(ctx context.Context,
+	chartConfig *helmv1alpha1.Chart,
+	lsClient client.Client,
+	contextObj *lsv1alpha1.Context,
+	registryPullSecrets []corev1.Secret,
+	ociConfig *config.OCIConfiguration,
+	sharedCache cache.Cache) (*chart.Chart, error) {
+
+	helmChartRepoClient, lsError := helmchartrepo.NewHelmChartRepoClient(contextObj, lsClient)
+	if lsError != nil {
+		return nil, lsError
+	}
+
+	ociClient, err := createOCIClient(ctx,
+		registryPullSecrets,
+		ociConfig,
+		sharedCache)
+	if err != nil {
+		return nil, lserrors.NewWrappedError(err, "GetChart", "createOCIClient", err.Error())
+	}
+
+	if chartConfig.Archive != nil {
+		return getChartFromArchive(chartConfig.Archive)
+	}
+
+	if len(chartConfig.Ref) != 0 {
+		return getChartFromOCIRef(ctx, ociClient, chartConfig.Ref)
+	}
+
+	// fetch the chart from a component descriptor defined resource
+	if chartConfig.FromResource != nil {
+		return getChartFromResource(ctx, ociClient, helmChartRepoClient, chartConfig.FromResource)
+	}
+
+	if chartConfig.HelmChartRepo != nil {
+		return getChartFromHelmChartRepo(ctx, helmChartRepoClient, chartConfig.HelmChartRepo)
+	}
+
+	return nil, NoChartDefinedError
+}
+
+func createOCIClient(ctx context.Context, registryPullSecrets []corev1.Secret, ociConfig *config.OCIConfiguration, sharedCache cache.Cache) (ociclient.Client, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "helmDeployerController.createOCIClient"})
+
+	// always add an oci client to support unauthenticated requests
+	ociConfigFiles := make([]string, 0)
+	if ociConfig != nil {
+		ociConfigFiles = ociConfig.ConfigFiles
+	}
+	ociKeyring, err := credentials.NewBuilder(logger.WithName("ociKeyring").Logr()).
+		WithFS(osfs.New()).
+		FromConfigFiles(ociConfigFiles...).
+		FromPullSecrets(registryPullSecrets...).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	ociClient, err := ociclient.NewClient(logger.Logr(),
+		utils.WithConfiguration(ociConfig),
+		ociclient.WithKeyring(ociKeyring),
+		ociclient.WithCache(sharedCache),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ociClient, nil
 }
 
 func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Chart, error) {
