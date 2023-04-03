@@ -1,0 +1,20 @@
+component:
+  name: github.tools.sap/saphxm/bizx-monolith
+  version: 2211.19.0
+  provider: internal
+  repositoryContexts:
+    - baseUrl: sf-docker-staging.common.repositories.cloud.sap
+      componentNameMapping: urlPath
+      subPath: ocm/saphxm
+      type: ociRegistry
+
+  componentReferences:
+    - componentName: github.tools.sap/saphxm/bizx/bizx-core
+      name: bizx
+      version: 2211.19.0
+    - componentName: github.tools.sap/saphxm/bizx/kafka
+      name: kafka
+      version: 2.13-3.2.0-11.0.16
+    - componentName: github.tools.sap/saphxm/bizx-sidecars/janitor
+      name: janitor
+      version: 0.1.3-alpine-3.17

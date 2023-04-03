@@ -1,0 +1,9 @@
+{{ $concatenated := "" }}
+{{ range $index, $item := .values.items }}
+    {{ if eq $index 0 }}
+        {{ $concatenated = $item }}
+    {{ else }}
+        {{ $concatenated = (printf "%s-%s" $concatenated $item) }}
+    {{ end }}
+{{ end }}
+{{ $concatenated }}

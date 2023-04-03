@@ -1,0 +1,32 @@
+component:
+  labels:
+    - name: cloud.gardener.cnudie/responsibles
+      value:
+        - type: githubUser
+          username: D032990
+    - name: github.tools.sap/saphxm/is_sidecar_component
+      value: true
+    - name: github.tools.sap/saphxm/bizx-controller/auxiliary_images/component
+      value: janitor
+  name: github.tools.sap/saphxm/bizx-sidecars/janitor
+  provider: internal
+  version: 0.1.3-alpine-3.17
+  repositoryContexts:
+    - baseUrl: sf-docker-staging.common.repositories.cloud.sap
+      componentNameMapping: urlPath
+      subPath: ocm/saphxm
+      type: ociRegistry
+
+  componentReferences: []
+
+  resources:
+    - access:
+        imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx-sidecars/janitor:0.1.3-alpine-3.17
+        type: ociRegistry
+      labels:
+        - name: github.tools.sap/saphxm/sidecar_container
+          value: janitor
+      name: janitor
+      relation: external
+      type: ociImage
+      version: 0.1.3-alpine-3.17

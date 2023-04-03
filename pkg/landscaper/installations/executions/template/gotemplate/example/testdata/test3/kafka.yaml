@@ -1,0 +1,45 @@
+component:
+  labels:
+    - name: cloud.gardener.cnudie/responsibles
+      value:
+        - type: githubUser
+          username: D032990
+    - name: github.tools.sap/saphxm/bizx-controller/component
+      value: kafka
+  name: github.tools.sap/saphxm/bizx/kafka
+  provider: internal
+  version: 2.13-3.2.0-11.0.16
+  repositoryContexts:
+    - baseUrl: sf-docker-staging.common.repositories.cloud.sap
+      componentNameMapping: urlPath
+      subPath: ocm/saphxm
+      type: ociRegistry
+
+  componentReferences: []
+
+  resources:
+    - access:
+        imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/kafka:2.13-3.2.0-11.0.16
+        type: ociRegistry
+      name: kafka
+      relation: external
+      type: ociImage
+      version: 2.13-3.2.0-11.0.16
+
+  sources:
+    - access:
+        commit: cb76c755b7816d5ca1d17fdb679376713d85f187
+        ref: refs/heads/master
+        repoUrl: github.wdf.sap.corp/saas-docker/kafka-bizx-build
+        type: github
+      name: github_wdf_sap_corp_saas-docker_kafka-bizx-build
+      type: git
+      version: 2.13-3.2.0-11.0.16
+    - access:
+        commit: cb76c755b7816d5ca1d17fdb679376713d85f187
+        ref: refs/heads/master
+        repoUrl: github.wdf.sap.corp/saas-docker/kafka-bizx-runtime
+        type: github
+      name: github_wdf_sap_corp_saas-docker_kafka-bizx-runtime
+      type: git
+      version: 2.13-3.2.0-11.0.16

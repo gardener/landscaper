@@ -1,0 +1,156 @@
+component:
+  labels:
+  - name: cloud.gardener.cnudie/responsibles
+    value:
+    - type: githubUser
+      username: D032990
+  - name: github.tools.sap/saphxm/legacy_build_version
+    value: b2211.20230306165345
+  - name: github.tools.sap/saphxm/bizx-controller/component
+    value: bizx
+  name: github.tools.sap/saphxm/bizx/bizx-core
+  version: 2211.19.0
+  provider: internal
+  repositoryContexts:
+  - baseUrl: sf-docker-staging.common.repositories.cloud.sap
+    componentNameMapping: urlPath
+    subPath: ocm/saphxm
+    type: ociRegistry
+
+  componentReferences: []
+
+  resources:
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/james:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - james
+    name: james
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/nginx_standard:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - webitr
+    name: nginx
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/standalone_client:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - sclient
+    name: standalone_client
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/tomcat_career:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - career
+    name: tomcat_career
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/tomcat_client:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - client
+    name: tomcat_client
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/tomcat_ebs:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - ebs
+    name: tomcat_ebs
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/tomcat_sched:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - s2job
+    name: tomcat_sched
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/tomcat_session:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - session
+    name: tomcat_session
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/tomcat_sfapi:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - sfapi
+    name: tomcat_sfapi
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+  - access:
+      imageReference: sf-docker-golden.common.cdn.repositories.cloud.sap/bizx/tomcat_standard:b2211.20230306165345
+      type: ociRegistry
+    labels:
+    - name: github.tools.sap/saphxm/bizx-controller/bizx-type
+      value:
+      - cfapp
+      - bptsk
+      - birt
+      - ebsext
+      - ebshp
+      - ebstime
+      - img
+    name: tomcat_standard
+    relation: external
+    type: ociImage
+    version: 2211.19.0
+
+  sources:
+  - access:
+      commit: 99bdf31d3c6b4f57763b41069a95308bbc9aa227
+      ref: refs/heads/master
+      repoUrl: github.wdf.sap.corp/saas-docker/bizx-build
+      type: github
+    name: github_wdf_sap_corp_saas-docker_bizx-build
+    type: git
+    version: 2211.19.0
+  - access:
+      commit: b40f0e9ab16724afa0a3e8c383263aec47a27cbe
+      ref: refs/heads/master
+      repoUrl: github.wdf.sap.corp/saas-docker/bizx-runtime
+      type: github
+    name: github_wdf_sap_corp_saas-docker_bizx-runtime
+    type: git
+    version: 2211.19.0

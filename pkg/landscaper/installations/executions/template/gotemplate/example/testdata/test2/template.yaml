@@ -1,0 +1,65 @@
+{{- $typedResources := dict }}
+{{- $auxResources := dict }}
+{{- $standardResources := dict }}
+
+
+{{- range $index, $resource := .spec.resources }}
+    {{- $isStandard := "true" }}
+    {{- range .labels }}
+        {{- if eq .name "github.tools.sap/saphxm/bizx-controller/bizx-type" }}
+            {{- range .value }}
+                {{- $_ := set $typedResources . $resource }}
+            {{- end }}
+            {{- $isStandard = "" }}
+        {{- else if eq .name "github.tools.sap/saphxm/sidecar_container" }}
+            {{- $_ := set $auxResources .value $resource }}
+            {{- $isStandard = "" }}
+         {{- end }}
+    {{- end }}
+    {{- if $isStandard }}
+        {{- $_ := set $standardResources .name $resource }}
+    {{- end }}
+{{- end }}
+
+
+{{- define "formatResource"}}
+  {{- $indent := get . "indent" }}
+  {{- $resource := get . "resource" }}
+  {{- $a := splitn "/" 2 $resource }}
+  {{- $b := splitn ":" 2 $a._1 }}
+  {{ printf "registry: %s" $a._0 | indent $indent }}
+  {{ printf "repository: %s" $b._0 | indent $indent }}
+  {{ printf "tag: %s" $b._1 | indent $indent }}
+{{- end }}
+
+
+apiVersion: sapsf.com/v1alpha1
+kind: BizxEnvironment
+metadata:
+  name: my-env
+  namespace: my-namespace
+spec:
+  servicePresets:
+    storageClass: default
+    imagePullSecret: regcred
+    imagePullPolicy: IfNotPresent
+    registry: sf-docker-staging.common.cdn.repositories.cloud.sap
+    images:
+      bizx:
+        types:
+          {{- range $type, $resource := $typedResources }}
+          {{- $args := dict "resource" $resource.access.imageReference "indent" 10 }}
+          {{ $type }}:
+            {{- template "formatResource" $args }}
+          {{- end }}
+
+      {{- range $name, $resource := $standardResources }}
+      {{ $name }}:
+      {{- $args := dict "resource" $resource.access.imageReference "indent" 6 }}
+        {{- template "formatResource" $args }}
+      {{- end }}
+
+    auxiliaryImages:
+    {{- range $type, $resource := $auxResources }}
+      {{ printf "%s: %s" $type $resource.access.imageReference }}
+    {{- end }}
