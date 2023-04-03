@@ -64,7 +64,7 @@ spec:
             mountPath: /app/ls/landscaper-cluster-kubeconfig
           {{- end }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.webhooksServer.resources | nindent 12 }}
       {{- if .Values.webhooksServer.landscaperKubeconfig }}
       volumes:
       - name: landscaper-cluster-kubeconfig
