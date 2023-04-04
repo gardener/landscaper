@@ -21,7 +21,7 @@ type Resource struct {
 
 var _ model.Resource = &Resource{}
 
-func newResource(res *cdv2.Resource, blobResolver ctf.BlobResolver) *Resource {
+func NewResource(res *cdv2.Resource, blobResolver ctf.BlobResolver) *Resource {
 	return &Resource{
 		resource:     res,
 		blobResolver: blobResolver,

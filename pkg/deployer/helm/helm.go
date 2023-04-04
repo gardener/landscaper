@@ -132,7 +132,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "ResolveSecrets", err.Error())
 	}
 
-	ch, err := chartresolver.GetChartNEW(ctx,
+	ch, err := chartresolver.GetChart(ctx,
 		&h.ProviderConfiguration.Chart,
 		h.lsKubeClient,
 		h.Context,

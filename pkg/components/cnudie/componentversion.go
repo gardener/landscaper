@@ -68,5 +68,5 @@ func (c *ComponentVersion) GetResource(name string, selectors map[string]string)
 		return nil, fmt.Errorf("there is more than one resource with name %s and extra identities %v", name, selectors)
 	}
 
-	return newResource(&resources[0], c.blobResolver), nil
+	return NewResource(&resources[0], c.blobResolver), nil
 }
