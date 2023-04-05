@@ -24,7 +24,11 @@ func NewRegistry(octx ocm.Context) model.RegistryAccess {
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (model.ComponentVersion, error) {
+	// Muss noch ersetzt werden, macht langfristig keinen Sinn, auf Datentypen aus dem Legacy Code aufzubauen
 	var cnudieRepoSpec v2.OCIRegistryRepository
+	if err := cdRef.RepositoryContext.DecodeInto(&cnudieRepoSpec); err != nil {
+		return nil, err
+	}
 	if err := cdRef.RepositoryContext.DecodeInto(&cnudieRepoSpec); err != nil {
 		return nil, err
 	}
@@ -42,17 +46,12 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 		return nil, err
 	}
 
-	//defer compvers.Close()
-
-	//cd, blobResolver, err := r.componentResolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
-	//if err != nil {
-	//	return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
-	//}
-	//
-	//return newComponentVersion(r, cd, blobResolver), nil
+	return newComponentVersion(compvers), nil
 }
+
+func (r *RegistryAccess) GetResource(ctx context.Context)
 
 // temporary
 func (r *RegistryAccess) GetComponentResolver() ctf.ComponentResolver {
-	return r.componentResolver
+	panic("to be removed")
 }

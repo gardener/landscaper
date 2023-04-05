@@ -3,12 +3,10 @@ package ocm
 import (
 	"context"
 	"fmt"
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 )
 
 type ComponentVersion struct {
@@ -51,6 +49,7 @@ func (c *ComponentVersion) GetDescriptor(_ context.Context) ([]byte, error) {
 
 // Zusätzlicher Parameter "Repository", da die Dependency nicht notwendigerweise im gleichen Repo liegen muss?
 // Uwes' Resolve Method
+// Simple and glancable implementation of GetDependency WITHOUT the capability to traverse dependency chains
 func (c *ComponentVersion) GetDependency(_ context.Context, name string) (model.ComponentVersion, error) {
 	referenceObject, err := c.compvers.GetReference(metav1.NewIdentity(name))
 	if err != nil {
@@ -60,34 +59,42 @@ func (c *ComponentVersion) GetDependency(_ context.Context, name string) (model.
 	componentName := referenceObject.GetComponentName()
 	componentVersion := referenceObject.Version
 
-	c.compvers.Repository().LookupComponentVersion(componentName, componentVersion)
-
-	referencedCompvers, err := utils.ResolveReferencePath(c.compvers,
-		[]metav1.Identity{referenceObject.GetIdentity(c.compvers.GetDescriptor().References)}, nil)
+	referencedCompvers, err := c.compvers.Repository().LookupComponentVersion(componentName, componentVersion)
 	if err != nil {
 		return nil, err
 	}
+
+	//referencedCompvers, err := utils.ResolveReferencePath(c.compvers,
+	//	[]metav1.Identity{referenceObject.GetIdentity(c.compvers.GetDescriptor().References)}, nil)
+	//if err != nil {
+	//	return nil, err
+	//}
 	return newComponentVersion(referencedCompvers), nil
 }
 
 func (c *ComponentVersion) GetResource(name string, selectors map[string]string) (model.Resource, error) {
-	compdesc := c.compvers.GetDescriptor().GetResourceByIdentity()
-	if err != nil {
-		return nil, err
-	}
-
-	resources, err := c.componentDescriptor.GetResourcesByName(name, v2.Identity(selectors))
+	resources, err := c.compvers.GetDescriptor().GetResourcesByName(name, metav1.Identity(selectors))
 	if err != nil {
 		return nil, err
 	}
 	if len(resources) < 1 {
-		return nil, fmt.Errorf("no resource with name %s and extra identities %v found", name, selectors)
+		return nil, fmt.Errorf("no resourceAccess with name %s and extra identities %v found", name, selectors)
 	}
 	if len(resources) > 1 {
-		return nil, fmt.Errorf("there is more than one resource with name %s and extra identities %v", name, selectors)
+		return nil, fmt.Errorf("there is more than one resourceAccess with name %s and extra identities %v", name, selectors)
+	}
+	resourceAccess := &ResourceAccess{
+		BaseAccess: &BaseAccess{
+			vers:   a,
+			access: r.Access,
+		},
+		meta: r.ResourceMeta,
 	}
 
-	return newResource(&resources[0], c.blobResolver), nil
+	resources[0].ResourceMeta
+	resourceAccess := c.compvers.GetResource()
+
+	return newResource(resources[0]), nil
 }
 
 func (c *ComponentVersion) Close() {

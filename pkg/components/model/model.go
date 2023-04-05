@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"io"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -15,7 +14,7 @@ type RegistryAccess interface {
 	GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
 
 	//GetResource
-	GetResource(ctx context.Context, meta ocm.ResourceMeta)
+	//GetResource(ctx context.Context, )
 
 	// temporary
 	GetComponentResolver() ctf.ComponentResolver
