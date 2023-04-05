@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -256,7 +257,7 @@ func getChartFromHelmChartRepo(ctx context.Context,
 	contextObj *lsv1alpha1.Context,
 	repo *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
 
-	resource, err := helmchartrepo.NewHelmChartRepoResource(ctx, repo, lsClient, contextObj)
+	resource, err := newHelmChartRepoResource(ctx, repo, lsClient, contextObj)
 	if err != nil {
 		return nil, fmt.Errorf("unable to construct resource for chart %q with version %q from helm chart repo %q: %w",
 			repo.HelmChartName, repo.HelmChartVersion, repo.HelmChartRepoUrl, err)
@@ -297,5 +298,44 @@ func newOCIResource(ctx context.Context, ociImageRef string, registryPullSecrets
 	}
 
 	blobResolver := NewHelmResolver(ociClient)
+	return cnudie.NewResource(&res, blobResolver), nil
+}
+
+func newHelmChartRepoResource(_ context.Context,
+	helmChartRepo *helmv1alpha1.HelmChartRepo,
+	lsClient client.Client,
+	contextObj *lsv1alpha1.Context) (*cnudie.Resource, error) {
+
+	access := helmchartrepo.HelmChartRepoAccess{
+		ObjectType: cdv2.ObjectType{
+			Type: helmchartrepo.HelmChartRepoType,
+		},
+		HelmChartRepo: *helmChartRepo,
+	}
+
+	raw, err := json.Marshal(access)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal helm chart repo data")
+	}
+
+	res := cdv2.Resource{
+		IdentityObjectMeta: cdv2.IdentityObjectMeta{
+			Type: HelmChartResourceType,
+		},
+		Relation: cdv2.ExternalRelation,
+		Access: &cdv2.UnstructuredTypedObject{
+			ObjectType: cdv2.ObjectType{
+				Type: helmchartrepo.HelmChartRepoType,
+			},
+			Raw: raw,
+		},
+	}
+
+	helmChartRepoClient, lsError := helmchartrepo.NewHelmChartRepoClient(contextObj, lsClient)
+	if lsError != nil {
+		return nil, lsError
+	}
+	blobResolver := helmchartrepo.NewHelmChartRepoResolverAsHelmChartRepoResolver(helmChartRepoClient)
+
 	return cnudie.NewResource(&res, blobResolver), nil
 }
