@@ -28,22 +28,34 @@ func (r Resource) GetVersion() string {
 }
 
 func (r Resource) GetDescriptor(ctx context.Context) ([]byte, error) {
-	return r.resourceAccess.
+	panic("not possible to implement without pulling an arm out")
 }
 
 func (r Resource) GetBlob(ctx context.Context, writer io.Writer) error {
-	_, err := r.blobResolver.Resolve(ctx, *r.resourceAccess, writer)
+	meth, err := r.resourceAccess.AccessMethod()
+	if err != nil {
+		return err
+	}
+	defer meth.Close()
+
+	data, err := meth.Get()
+	if err != nil {
+		return err
+	}
+	writer.Write(data)
 	return err
 }
 
 func (r Resource) GetBlobInfo(ctx context.Context) (*model.BlobInfo, error) {
-	info, err := r.blobResolver.Info(ctx, *r.resourceAccess)
+	digest := r.resourceAccess.Meta().Digest.String()
+	meth, err := r.resourceAccess.AccessMethod()
 	if err != nil {
 		return nil, err
 	}
+	mediatype := meth.MimeType()
 
 	return &model.BlobInfo{
-		MediaType: info.MediaType,
-		Digest:    info.Digest,
+		MediaType: mediatype,
+		Digest:    digest,
 	}, nil
 }

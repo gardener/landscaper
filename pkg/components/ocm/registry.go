@@ -29,9 +29,6 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	if err := cdRef.RepositoryContext.DecodeInto(&cnudieRepoSpec); err != nil {
 		return nil, err
 	}
-	if err := cdRef.RepositoryContext.DecodeInto(&cnudieRepoSpec); err != nil {
-		return nil, err
-	}
 
 	var ocmRepoSpec ocm.RepositorySpec
 	ocmRepoSpec = ocireg.NewRepositorySpec(cnudieRepoSpec.BaseURL,
@@ -48,8 +45,6 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 
 	return newComponentVersion(compvers), nil
 }
-
-func (r *RegistryAccess) GetResource(ctx context.Context)
 
 // temporary
 func (r *RegistryAccess) GetComponentResolver() ctf.ComponentResolver {
