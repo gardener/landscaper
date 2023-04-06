@@ -57,13 +57,13 @@ deployItems:
                 images:
                   types:
                     {{- range $type, $resource := $typedResources }}
-                    {{- $args := dict "resource" $resource.access.imageReference "indent" 22 }}
+                    {{- $args := dict "resource" $resource.access.imageReference "indent" 20 }}
                     {{ $type }}:
                       {{- template "formatResource" $args }}
                     {{- end }}
                 auxiliaryImages:
                   {{- range $type, $resource := $auxiliaryResources }}
-                  {{- $args := dict "resource" $resource.access.imageReference "indent" 20 }}
+                  {{- $args := dict "resource" $resource.access.imageReference "indent" 18 }}
                   {{ $type }}:
                     {{- template "formatResource" $args }}
                   {{- end }}
