@@ -19,7 +19,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
+	ocmadapter "github.com/gardener/landscaper/pkg/components/ocm"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -105,23 +105,21 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		if !ok {
 			continue
 		}
-
-		//dockerConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(dockerConfigBytes))
-		//if err != nil {
-		//	return nil, err
-		//}
-		//
-		//// currently only support the default credential store.
-		//credStore := dockerConfig.GetCredentialsStore("")
-		//if err := store.Add(credStore); err != nil {
-		//	return nil, err
-		//}
+		spec = dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes)
+		_, err = octx.CredentialsContext().RepositoryForSpec(spec)
+		if err != nil {
+			return errors.Wrapf(err, "cannot create credentials from secret")
+		}
 	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	registry := cnudie.NewRegistry(compRegistry)
+	registry := ocmadapter.NewRegistry(octx)
 	op.SetComponentsRegistry(registry)
 	return nil
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//registry := cnudie.NewRegistry(compRegistry)
+	//op.SetComponentsRegistry(registry)
+	//return nil
 }
 
 func (c *Controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {
