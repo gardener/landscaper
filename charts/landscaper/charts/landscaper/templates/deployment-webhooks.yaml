@@ -8,23 +8,9 @@ kind: Deployment
 metadata:
   name: {{ include "landscaper.webhooks.fullname" . }}
   labels:
-    landscaper.gardener.cloud/component: webhook-server-topology
     {{- include "landscaper.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.webhooksServer.replicaCount }}
-  topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: topology.kubernetes.io/zone
-    whenUnsatisfiable: ScheduleAnyway
-    labelSelector:
-      matchLabels:
-        landscaper.gardener.cloud/topology: webhook-server
-  - maxSkew: 1
-    topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: ScheduleAnyway
-    labelSelector:
-      matchLabels:
-        landscaper.gardener.cloud/topology: webhook-server
   selector:
     matchLabels:
       {{- include "landscaper.webhooks.selectorLabels" . | nindent 6 }}
@@ -35,6 +21,7 @@ spec:
         {{ $key }}: {{ $value}}
         {{- end }}
       labels:
+        landscaper.gardener.cloud/topology: webhook-server
         {{- include "landscaper.webhooks.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -101,4 +88,17 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            landscaper.gardener.cloud/topology: webhook-server
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            landscaper.gardener.cloud/topology: webhook-server
 {{- end }}
