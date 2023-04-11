@@ -7,7 +7,6 @@ package reconcilehelper_test
 import (
 	"context"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/tools/record"
@@ -19,7 +18,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -30,7 +28,6 @@ var _ = Describe("OutdatedImports", func() {
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
-		fakeCompRepo      ctf.ComponentResolver
 	)
 
 	BeforeEach(func() {
@@ -44,13 +41,12 @@ var _ = Describe("OutdatedImports", func() {
 		createDefaultContextsForNamespaces(fakeClient)
 		fakeInstallations = state.Installations
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient("../testdata/registry")
+		registryAccess, err := cnudie.NewLocalRegistryAccess("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		registry := cnudie.NewRegistry(fakeCompRepo)
 		op = &installations.Operation{
 			Operation: lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).
-				SetComponentsRegistry(registry),
+				SetComponentsRegistry(registryAccess),
 		}
 	})
 

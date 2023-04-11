@@ -8,50 +8,120 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
-
 	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-cli/ociclient/credentials"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	"helm.sh/helm/v3/pkg/chart"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // NoChartDefinedError is the error that is returned if no Helm chart was provided
 var NoChartDefinedError = errors.New("no chart was provided")
 
 // GetChart resolves the chart based on a chart access configuration.
-func GetChart(ctx context.Context, ociClient ociclient.Client,
-	helmChartRepoClient *helmchartrepo.HelmChartRepoClient, chartConfig *helmv1alpha1.Chart) (*chart.Chart, error) {
+//func GetChart(ctx context.Context,
+//	ociClient ociclient.Client,
+//	helmChartRepoClient *helmchartrepo.HelmChartRepoClient,
+//	chartConfig *helmv1alpha1.Chart) (*chart.Chart, error) {
+//
+//	if chartConfig.Archive != nil {
+//		return getChartFromArchive(chartConfig.Archive)
+//	}
+//
+//	if len(chartConfig.Ref) != 0 {
+//		return getChartFromOCIRef(ctx, ociClient, chartConfig.Ref)
+//	}
+//
+//	// fetch the chart from a component descriptor defined resource
+//	if chartConfig.FromResource != nil {
+//		return getChartFromResource(ctx, ociClient, helmChartRepoClient, chartConfig.FromResource)
+//	}
+//
+//	if chartConfig.HelmChartRepo != nil {
+//		return getChartFromHelmChartRepo(ctx, helmChartRepoClient, chartConfig.HelmChartRepo)
+//	}
+//
+//	return nil, NoChartDefinedError
+//}
+
+// GetChart resolves the chart based on a chart access configuration.
+func GetChart(ctx context.Context,
+	chartConfig *helmv1alpha1.Chart,
+	lsClient client.Client,
+	contextObj *lsv1alpha1.Context,
+	registryPullSecrets []corev1.Secret,
+	ociConfig *config.OCIConfiguration,
+	sharedCache cache.Cache) (*chart.Chart, error) {
 
 	if chartConfig.Archive != nil {
 		return getChartFromArchive(chartConfig.Archive)
 	}
 
 	if len(chartConfig.Ref) != 0 {
-		return getChartFromOCIRef(ctx, ociClient, chartConfig.Ref)
+		return getChartFromOCIRef(ctx, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
 	}
 
 	// fetch the chart from a component descriptor defined resource
 	if chartConfig.FromResource != nil {
-		return getChartFromResource(ctx, ociClient, helmChartRepoClient, chartConfig.FromResource)
+		return getChartFromResource(ctx, lsClient, contextObj, registryPullSecrets, ociConfig, sharedCache, chartConfig.FromResource)
 	}
 
 	if chartConfig.HelmChartRepo != nil {
-		return getChartFromHelmChartRepo(ctx, helmChartRepoClient, chartConfig.HelmChartRepo)
+		return getChartFromHelmChartRepo(ctx, lsClient, contextObj, chartConfig.HelmChartRepo)
 	}
 
 	return nil, NoChartDefinedError
+}
+
+func createOCIClient(ctx context.Context, registryPullSecrets []corev1.Secret, ociConfig *config.OCIConfiguration, sharedCache cache.Cache) (ociclient.Client, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "helmDeployerController.createOCIClient"})
+
+	// always add an oci client to support unauthenticated requests
+	ociConfigFiles := make([]string, 0)
+	if ociConfig != nil {
+		ociConfigFiles = ociConfig.ConfigFiles
+	}
+	ociKeyring, err := credentials.NewBuilder(logger.WithName("ociKeyring").Logr()).
+		WithFS(osfs.New()).
+		FromConfigFiles(ociConfigFiles...).
+		FromPullSecrets(registryPullSecrets...).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	ociClient, err := ociclient.NewClient(logger.Logr(),
+		utils.WithConfiguration(ociConfig),
+		ociclient.WithKeyring(ociKeyring),
+		ociclient.WithCache(sharedCache),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ociClient, nil
 }
 
 func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Chart, error) {
@@ -86,23 +156,19 @@ func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Char
 	return nil, NoChartDefinedError
 }
 
-func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref string) (*chart.Chart, error) {
-	ociAccess := cdv2.NewOCIRegistryAccess(ref)
-	access, err := cdv2.NewUnstructured(ociAccess)
+func getChartFromOCIRef(ctx context.Context,
+	ref string,
+	registryPullSecrets []corev1.Secret,
+	ociConfig *config.OCIConfiguration,
+	sharedCache cache.Cache) (*chart.Chart, error) {
+
+	resource, err := newOCIResource(ctx, ref, registryPullSecrets, ociConfig, sharedCache)
 	if err != nil {
-		return nil, fmt.Errorf("unable to construct ociClient registry access for %q: %w", ref, err)
+		return nil, err
 	}
 
-	res := cdv2.Resource{
-		// only the type is needed other attributes can be ommitted.
-		IdentityObjectMeta: cdv2.IdentityObjectMeta{
-			Type: HelmChartResourceType,
-		},
-		Relation: cdv2.ExternalRelation,
-		Access:   &access,
-	}
 	var buf bytes.Buffer
-	if _, err := NewHelmResolver(ociClient).Resolve(ctx, res, &buf); err != nil {
+	if err := resource.GetBlob(ctx, &buf); err != nil {
 		return nil, fmt.Errorf("unable to resolve chart from %q: %w", ref, err)
 	}
 
@@ -113,10 +179,28 @@ func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref str
 	return ch, err
 }
 
-func getChartFromResource(ctx context.Context, ociClient ociclient.Client,
-	helmChartRepoClient *helmchartrepo.HelmChartRepoClient, ref *helmv1alpha1.RemoteChartReference) (*chart.Chart, error) {
+func getChartFromResource(ctx context.Context,
+	lsClient client.Client,
+	contextObj *lsv1alpha1.Context,
+	registryPullSecrets []corev1.Secret,
+	ociConfig *config.OCIConfiguration,
+	sharedCache cache.Cache,
+	ref *helmv1alpha1.RemoteChartReference) (*chart.Chart, error) {
 
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "getChartFromResource"})
+
+	helmChartRepoClient, lsError := helmchartrepo.NewHelmChartRepoClient(contextObj, lsClient)
+	if lsError != nil {
+		return nil, lsError
+	}
+
+	ociClient, err := createOCIClient(ctx,
+		registryPullSecrets,
+		ociConfig,
+		sharedCache)
+	if err != nil {
+		return nil, lserrors.NewWrappedError(err, "GetChart", "createOCIClient", err.Error())
+	}
 
 	// we also have to add a custom resolver for the "ociImage" resolver as we have to implement the
 	// helm specific ociClient manifest structure
@@ -168,14 +252,21 @@ func getChartFromResource(ctx context.Context, ociClient ociclient.Client,
 	return ch, err
 }
 
-func getChartFromHelmChartRepo(ctx context.Context, helmChartRepoClient *helmchartrepo.HelmChartRepoClient,
-	ref *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
-	resolver := helmchartrepo.NewHelmChartRepoResolverAsHelmChartRepoResolver(helmChartRepoClient)
-	var buf bytes.Buffer
+func getChartFromHelmChartRepo(ctx context.Context,
+	lsClient client.Client,
+	contextObj *lsv1alpha1.Context,
+	repo *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
 
-	if _, err := resolver.ResolveHelmChart(ctx, ref, &buf); err != nil {
+	resource, err := newHelmChartRepoResource(ctx, repo, lsClient, contextObj)
+	if err != nil {
+		return nil, fmt.Errorf("unable to construct resource for chart %q with version %q from helm chart repo %q: %w",
+			repo.HelmChartName, repo.HelmChartVersion, repo.HelmChartRepoUrl, err)
+	}
+
+	var buf bytes.Buffer
+	if err := resource.GetBlob(ctx, &buf); err != nil {
 		return nil, fmt.Errorf("unable to resolve chart %q with version %q from helm chart repo %q: %w",
-			ref.HelmChartName, ref.HelmChartVersion, ref.HelmChartRepoUrl, err)
+			repo.HelmChartName, repo.HelmChartVersion, repo.HelmChartRepoUrl, err)
 	}
 
 	ch, err := chartloader.LoadArchive(&buf)
@@ -183,4 +274,68 @@ func getChartFromHelmChartRepo(ctx context.Context, helmChartRepoClient *helmcha
 		return nil, fmt.Errorf("unable to load chart from archive: %w", err)
 	}
 	return ch, err
+}
+
+func newOCIResource(ctx context.Context, ociImageRef string, registryPullSecrets []corev1.Secret, ociConfig *config.OCIConfiguration, sharedCache cache.Cache) (model.Resource, error) {
+	ociClient, err := createOCIClient(ctx, registryPullSecrets, ociConfig, sharedCache)
+	if err != nil {
+		return nil, lserrors.NewWrappedError(err, "GetChart", "createOCIClient", err.Error())
+	}
+
+	ociAccess := cdv2.NewOCIRegistryAccess(ociImageRef)
+	access, err := cdv2.NewUnstructured(ociAccess)
+	if err != nil {
+		return nil, fmt.Errorf("unable to construct ociClient registry access for %q: %w", ociImageRef, err)
+	}
+
+	res := cdv2.Resource{
+		// only the type is needed other attributes can be ommitted.
+		IdentityObjectMeta: cdv2.IdentityObjectMeta{
+			Type: HelmChartResourceType,
+		},
+		Relation: cdv2.ExternalRelation,
+		Access:   &access,
+	}
+
+	blobResolver := NewHelmResolver(ociClient)
+	return cnudie.NewResource(&res, blobResolver), nil
+}
+
+func newHelmChartRepoResource(_ context.Context,
+	helmChartRepo *helmv1alpha1.HelmChartRepo,
+	lsClient client.Client,
+	contextObj *lsv1alpha1.Context) (*cnudie.Resource, error) {
+
+	access := helmchartrepo.HelmChartRepoAccess{
+		ObjectType: cdv2.ObjectType{
+			Type: helmchartrepo.HelmChartRepoType,
+		},
+		HelmChartRepo: *helmChartRepo,
+	}
+
+	raw, err := json.Marshal(access)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal helm chart repo data")
+	}
+
+	res := cdv2.Resource{
+		IdentityObjectMeta: cdv2.IdentityObjectMeta{
+			Type: HelmChartResourceType,
+		},
+		Relation: cdv2.ExternalRelation,
+		Access: &cdv2.UnstructuredTypedObject{
+			ObjectType: cdv2.ObjectType{
+				Type: helmchartrepo.HelmChartRepoType,
+			},
+			Raw: raw,
+		},
+	}
+
+	helmChartRepoClient, lsError := helmchartrepo.NewHelmChartRepoClient(contextObj, lsClient)
+	if lsError != nil {
+		return nil, lsError
+	}
+	blobResolver := helmchartrepo.NewHelmChartRepoResolverAsHelmChartRepoResolver(helmChartRepoClient)
+
+	return cnudie.NewResource(&res, blobResolver), nil
 }

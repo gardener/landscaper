@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package cnudie
 
 import (
@@ -64,5 +68,5 @@ func (c *ComponentVersion) GetResource(name string, selectors map[string]string)
 		return nil, fmt.Errorf("there is more than one resource with name %s and extra identities %v", name, selectors)
 	}
 
-	return newResource(&resources[0], c.blobResolver), nil
+	return NewResource(&resources[0], c.blobResolver), nil
 }

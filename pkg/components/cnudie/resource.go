@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package cnudie
 
 import (
@@ -17,7 +21,7 @@ type Resource struct {
 
 var _ model.Resource = &Resource{}
 
-func newResource(res *cdv2.Resource, blobResolver ctf.BlobResolver) *Resource {
+func NewResource(res *cdv2.Resource, blobResolver ctf.BlobResolver) *Resource {
 	return &Resource{
 		resource:     res,
 		blobResolver: blobResolver,

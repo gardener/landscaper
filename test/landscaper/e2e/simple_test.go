@@ -8,7 +8,6 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -27,7 +26,6 @@ import (
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -35,19 +33,18 @@ import (
 var _ = Describe("Simple", func() {
 
 	var (
-		state                 *envtest.State
-		fakeComponentRegistry ctf.ComponentResolver
+		state *envtest.State
 
 		execActuator, instActuator, mockActuator reconcile.Reconciler
 	)
 
 	BeforeEach(func() {
 		var err error
-		fakeComponentRegistry, err = componentsregistry.NewLocalClient(filepath.Join(projectRoot, "examples", "01-simple"))
+
+		registryAccess, err := cnudie.NewLocalRegistryAccess(filepath.Join(projectRoot, "examples", "01-simple"))
 		Expect(err).ToNot(HaveOccurred())
 
-		registry := cnudie.NewRegistry(fakeComponentRegistry)
-		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registry)
+		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 
 		instActuator = instctlr.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
