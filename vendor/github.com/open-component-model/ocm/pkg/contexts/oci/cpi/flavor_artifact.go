@@ -77,7 +77,7 @@ func NewArtifact(access ArtifactSetContainer, defs ...*artdesc.Artifact) (Artifa
 	}
 	state, err := accessobj.NewBlobStateForObject(mode, def, NewArtifactStateHandler())
 	if err != nil {
-		panic("oops: " + err.Error())
+		return nil, err
 	}
 
 	p, err := access.NewArtifactProvider(state)

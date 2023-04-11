@@ -14,6 +14,8 @@ import (
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
+const InternalSchemaVersion = "internal"
+
 var NotFound = errors.ErrNotFound()
 
 const KIND_REFERENCE = "component reference"
@@ -569,6 +571,14 @@ func (o *ResourceMeta) Copy() *ResourceMeta {
 		Digest:      o.Digest.Copy(),
 	}
 	return r
+}
+
+func NewResourceMeta(name string, typ string, relation metav1.ResourceRelation) *ResourceMeta {
+	return &ResourceMeta{
+		ElementMeta: ElementMeta{Name: name},
+		Type:        typ,
+		Relation:    relation,
+	}
 }
 
 type References []ComponentReference

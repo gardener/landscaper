@@ -45,6 +45,9 @@ const (
 	TraceLevel
 )
 
+// ParseLevel maps a string representation of a log level to
+// it internal value. It also accepts the representation as
+// number.
 func ParseLevel(s string) (int, error) {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "error":
@@ -66,6 +69,8 @@ func ParseLevel(s string) (int, error) {
 	}
 }
 
+// LevelName returns the logical name of a log level.
+// It can be parsed again with ParseLevel.
 func LevelName(l int) string {
 	switch l {
 	case ErrorLevel:
@@ -83,19 +88,62 @@ func LevelName(l int) string {
 	}
 }
 
+// Logger is the main logging interface.
+// It is used to issue log messages.
+// Additionally, it provides methods
+// to create loggers with extend names
+// and key/value pairs.
 type Logger interface {
+	// LogError logs a given error with additional context.
 	LogError(err error, msg string, keypairs ...interface{})
+	// Error logs an error message.
 	Error(msg string, keypairs ...interface{})
+	// Warn logs a warning message.
 	Warn(msg string, keypairs ...interface{})
+	// Error logs an info message
 	Info(msg string, keypairs ...interface{})
+	// Debug logs a debug message.
 	Debug(msg string, keypairs ...interface{})
+	// Trace logs an trace message.
 	Trace(msg string, keypairs ...interface{})
 
+	// WithName return a new logger with an extended name,
+	// but the same logging activation.
 	WithName(name string) Logger
+	// WithValues return a new logger with more statndard key/value pairs,
+	// but the same logging activation.
 	WithValues(keypairs ...interface{}) Logger
+
+	// Enabled check whether the logger is active for a dedicated level.
 	Enabled(level int) bool
 
+	// V returns a logr logger with the same activation state
+	// like the actual logger at call time.
 	V(delta int) logr.Logger
+}
+
+// UnboundLogger is a logger, which is never bound to
+// the settings of a matching rule at the time of
+// its creation. It therefore always reflects the
+// state of the rule settings valid at the time
+// of issuing log messages. They are more expensive than regular
+// loggers, but they can be created and configured once
+// and stored in long living variables.
+//
+// When passing loggers down a dynamic call tree, to control
+// the logging here, only temporary (bound) loggers should be used
+// (as provided by a logging context) to improve performance.
+//
+// Such a logger can be reused for multiple independent call trees
+// without losing track to the config.
+// Regular loggers provided by a context keep their setting from the
+// matching rule valid during its creation.
+//
+// An unbound logger can be created with function DynamicLogger
+// for a logging context.
+type UnboundLogger interface {
+	Logger
+	BoundLogger() Logger
 }
 
 // MessageContext is an object providing context information for
@@ -113,6 +161,17 @@ type Condition interface {
 // an appropriate logger
 type Rule interface {
 	Match(SinkFunc, ...MessageContext) Logger
+}
+
+// UpdatableRule is the optional interface for a rule
+// which might replace an old one.
+// If a rule decides to supersede an old one when
+// adding to a ruleset is may return true.
+// Typically, a rule should only supersede rules
+// of its own type.
+type UpdatableRule interface {
+	Rule
+	MatchRule(Rule) bool
 }
 
 // ContextProvider is able to provide access to a logging context.
@@ -154,8 +213,14 @@ type Context interface {
 	// original sink, error level output, if enabled, is passed as Error to the sink.
 	SetBaseLogger(logger logr.Logger, plain ...bool)
 
+	// AddRule adds a rule to the actual context.
+	// It may decide to supersede already existing rules. In
+	// such case all matching rules (interface UpdatableRule)
+	// will be deleted from the active rule set.
 	AddRule(...Rule)
+	// ResetRules deletes the actual rule set.
 	ResetRules()
+	// AddRulesTo add the actual rules to another logging context.
 	AddRulesTo(ctx Context)
 
 	// WithContext provides a new logging Context enriched by the given standard
@@ -176,6 +241,19 @@ type Context interface {
 	Tree() ContextSupport
 }
 
+// LoggingContext returns a default logging context for an
+// arbitrary object. If the object supports the LoggingProvider
+// interface, it is used to determine the context. If not,
+// the default logging context is returned.
+func LoggingContext(p interface{}) Context {
+	if p != nil {
+		if cp, ok := p.(ContextProvider); ok {
+			return cp.LoggingContext()
+		}
+	}
+	return DefaultContext()
+}
+
 // Attacher is an optional interface, which can be implemented by a dedicated
 // type of message context. If available it is used to enrich the attributes
 // of a determined logger to describe the given context.
@@ -183,6 +261,10 @@ type Attacher interface {
 	Attach(l Logger) Logger
 }
 
+// Realm is some kind of tag, which can be used as
+// message context or logging condition.
+// If used as message context it will be attached to
+// the logging message as additional logger name.
 type Realm interface {
 	Condition
 	Attacher
@@ -190,6 +272,9 @@ type Realm interface {
 	Name() string
 }
 
+// RealmPrefix is used as logging condition to
+// match a realm of the message context by
+// checking its value to be a path prefix.
 type RealmPrefix interface {
 	Condition
 	Attacher
@@ -198,6 +283,10 @@ type RealmPrefix interface {
 	IsPrefix() bool
 }
 
+// Attribute is a key/value pair usable
+// as logging condition or message context.
+// If used as message context it will be attached to
+// the logging message as additional value.
 type Attribute interface {
 	Condition
 	Attacher
@@ -206,6 +295,10 @@ type Attribute interface {
 	Value() interface{}
 }
 
+// Tag is a simple string value, which can be used as
+// message context or logging condition.
+// If used as message context it will not be attached to
+// the logging message at all.
 type Tag interface {
 	Condition
 

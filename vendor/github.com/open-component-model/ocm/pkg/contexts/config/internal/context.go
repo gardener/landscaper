@@ -8,8 +8,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/mandelsoft/logging"
-
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/errors"
@@ -122,7 +120,7 @@ type _context struct {
 
 var _ Context = &_context{}
 
-func newContext(shared datacontext.AttributesContext, reposcheme ConfigTypeScheme, logger logging.Context) Context {
+func newContext(shared datacontext.AttributesContext, reposcheme ConfigTypeScheme, delegates datacontext.Delegates) Context {
 	c := &_context{
 		coreContext: &coreContext{
 			sharedAttributes: shared,
@@ -130,7 +128,7 @@ func newContext(shared datacontext.AttributesContext, reposcheme ConfigTypeSchem
 			configs:          NewConfigStore(),
 		},
 	}
-	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, shared.GetAttributes(), logger)
+	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, shared.GetAttributes(), delegates)
 	c.updater = NewUpdater(c, c)
 	datacontext.AssureUpdater(shared, NewUpdater(c, shared))
 	return c

@@ -5,6 +5,7 @@
 package dockerconfig
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
@@ -24,8 +25,9 @@ func init() {
 // RepositorySpec describes a docker config based credential repository interface.
 type RepositorySpec struct {
 	runtime.ObjectVersionedType `json:",inline"`
-	DockerConfigFile            string `json:"dockerConfigFile"`
-	PropgateConsumerIdentity    bool   `json:"propagateConsumerIdentity,omitempty"`
+	DockerConfigFile            string          `json:"dockerConfigFile,omitempty"`
+	DockerConfig                json.RawMessage `json:"dockerConfig,omitempty"`
+	PropgateConsumerIdentity    bool            `json:"propagateConsumerIdentity,omitempty"`
 }
 
 func (s RepositorySpec) WithConsumerPropagation(propagate bool) *RepositorySpec {
@@ -46,6 +48,18 @@ func NewRepositorySpec(path string, prop ...bool) *RepositorySpec {
 	}
 }
 
+func NewRepositorySpecForConfig(data []byte, prop ...bool) *RepositorySpec {
+	p := false
+	for _, e := range prop {
+		p = p || e
+	}
+	return &RepositorySpec{
+		ObjectVersionedType:      runtime.NewVersionedObjectType(Type),
+		DockerConfig:             data,
+		PropgateConsumerIdentity: p,
+	}
+}
+
 func (a *RepositorySpec) GetType() string {
 	return Type
 }
@@ -56,5 +70,5 @@ func (a *RepositorySpec) Repository(ctx cpi.Context, creds cpi.Credentials) (cpi
 	if !ok {
 		return nil, fmt.Errorf("failed to assert type %T to Repositories", r)
 	}
-	return repos.GetRepository(ctx, a.DockerConfigFile, a.PropgateConsumerIdentity)
+	return repos.GetRepository(ctx, a.DockerConfigFile, a.DockerConfig, a.PropgateConsumerIdentity)
 }

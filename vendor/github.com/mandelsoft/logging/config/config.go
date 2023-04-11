@@ -19,19 +19,26 @@
 package config
 
 import (
-	"encoding/json"
+	"sigs.k8s.io/yaml"
 
 	"github.com/mandelsoft/logging"
-	"sigs.k8s.io/yaml"
 )
 
 type Config struct {
 	DefaultLevel string `json:"defaultLevel,omitempty"`
-	Rules        []json.RawMessage
+	Rules        []Rule `json:"rules,omitempty"`
 }
 
 func (c *Config) UnmarshalFrom(data []byte) error {
 	return yaml.Unmarshal(data, c)
+}
+
+func EvaluateFromData(data []byte) (*Config, error) {
+	return _registry.EvaluateFromData(data)
+}
+
+func Evaluate(cfg *Config) error {
+	return _registry.Evaluate(cfg)
 }
 
 func ConfigureWithData(ctx logging.Context, data []byte) error {

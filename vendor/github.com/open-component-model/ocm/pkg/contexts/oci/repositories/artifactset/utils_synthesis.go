@@ -7,6 +7,8 @@ package artifactset
 import (
 	"fmt"
 
+	. "github.com/open-component-model/ocm/pkg/finalizer"
+
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
@@ -17,7 +19,6 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/transfer"
 	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const SynthesizedBlobFormat = "+tar+gzip"
@@ -105,9 +106,9 @@ type ArtifactIterator func() (ArtifactFactory, bool, error)
 type ArtifactFeedback func(blob accessio.BlobAccess, art cpi.ArtifactAccess) error
 
 // ArtifactTransferCreator provides an ArtifactFactory transferring the given artifact.
-func ArtifactTransferCreator(art cpi.ArtifactAccess, finalizer *utils.Finalizer, feedback ...ArtifactFeedback) ArtifactFactory {
+func ArtifactTransferCreator(art cpi.ArtifactAccess, finalizer *Finalizer, feedback ...ArtifactFeedback) ArtifactFactory {
 	return func(set *ArtifactSet) (digest.Digest, string, error) {
-		var f utils.Finalizer
+		var f Finalizer
 		defer f.Finalize()
 
 		f.Include(finalizer)

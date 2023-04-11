@@ -83,7 +83,7 @@ message context.
 
 *Remark*: Returned `logr.Logger`s are always using a sink with the base level 0,
 which is potentially shifted to the level of the base `logr.Logger`
-used to setup the context, when forwarding to the original sink. This means
+used to set up the context, when forwarding to the original sink. This means
 they are always directly using the log levels 0..*n*.
 
 If no rules are configured, the default logger of the context is used
@@ -175,7 +175,7 @@ with `config.RegisterRuleType(name, typ)`. The factory type must implement the
 interface `scheme.RuleType` and provide a value object
 deserializable by yaml.
 
-In a similar way it is possible to register deserializations for
+In a similar way it is possible to register a deserialization for
 `Condition`s. The standard condition rule supports a condition deserialization
 based on those registrations.
 
@@ -257,4 +257,36 @@ and message contexts:
   value
 
   Used as message context, the key/value pair is added to the log message.
+
+## Bound and Unbound Loggers
+
+By default, logging contexts provide *bound* loggers. The activation of
+such a logger is bound to the settings of the rule matching at the time
+of its creation. If it does not match any rule, always context's default
+level is used.
+
+This behaviour is fine, als long such a logger is used temporarily, for example
+it is created at the beginning of a dedicated call hierarchy, and passed down
+the call tree. But it does not show the expected behaviour when stored in and
+reused from a long-living variable. If the rule settings are changed
+during its lifetime, the activation state is NOT adapted.
+
+Nevertheless, it might be useful store and reuse a configured logger.
+Configured means, that is instantiated for a dedicated long living message
+context, or with a dedicated name. Such a behaviour can be achieved
+by not using a logger but a logging context. Because the context does
+not provide logging methods a temporary logger has to be created
+on-the-fly for issuing log entries.
+
+Another possibility is to use *unbound* loggers created with a message context
+for a logging context using the `DynamicLogger` function. It provides
+a logger, which keeps track of the actual settings of the context it has been
+created for. Whenever the configuration changes, the next logging call will
+adapt the effectively used logger on-the-fly. Such loggers keep track of the
+context settings as well as the configured message context and logger values
+or names (provided by the methods `WithValues` and `WithName`).
+
+They can be used, for example for permanent worker Go routines, to
+statically define the log name or standard values used for all subsequent log
+requests according to the identity of the worker.
 

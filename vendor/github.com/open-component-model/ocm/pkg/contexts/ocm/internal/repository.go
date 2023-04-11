@@ -82,6 +82,7 @@ type ComponentVersionAccess interface {
 	GetResources() []ResourceAccess
 	GetResource(meta metav1.Identity) (ResourceAccess, error)
 	GetResourceByIndex(i int) (ResourceAccess, error)
+	GetResourcesByName(name string, selectors ...compdesc.IdentitySelector) ([]ResourceAccess, error)
 
 	GetSources() []SourceAccess
 	GetSource(meta metav1.Identity) (SourceAccess, error)

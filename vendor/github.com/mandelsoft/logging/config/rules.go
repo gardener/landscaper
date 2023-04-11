@@ -19,21 +19,28 @@
 package config
 
 import (
-	"encoding/json"
-
 	"github.com/mandelsoft/logging"
+	"github.com/mandelsoft/logging/scheme"
 )
 
 func init() {
-	RegisterRule("rule", &ConditionalRule{})
+	RegisterRule("rule", &ConditionalRuleType{})
 }
 
-type ConditionalRule struct {
-	Level      string            `json:"level"`
-	Conditions []json.RawMessage `json:"conditions"`
+func newRule(typ string, v RuleType) Rule {
+	return scheme.NewElement(typ, v)
 }
 
-func (r *ConditionalRule) Create(reg Registry) (logging.Rule, error) {
+type ConditionalRuleType struct {
+	Level      string      `json:"level"`
+	Conditions []Condition `json:"conditions"`
+}
+
+func ConditionalRule(level string, conds ...Condition) Rule {
+	return newRule("rule", &ConditionalRuleType{level, conds})
+}
+
+func (r *ConditionalRuleType) Create(reg Registry) (logging.Rule, error) {
 	l, err := logging.ParseLevel(r.Level)
 	if err != nil {
 		return nil, err

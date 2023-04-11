@@ -97,7 +97,7 @@ type TypedObjectConverter interface {
 	ConvertTo(in interface{}) (TypedObject, error)
 }
 
-// ConvertingDecoder uses a serialization from different from the
+// ConvertingDecoder uses a serialization form different from the
 // intended object type, that is converted to achieve the decode result.
 type ConvertingDecoder struct {
 	proto reflect.Type
@@ -206,6 +206,8 @@ func MustNewDefaultScheme(protoIfce interface{}, protoUnstr Unstructured, accept
 }
 
 func NewDefaultScheme(protoIfce interface{}, protoUnstr Unstructured, acceptUnknown bool, defaultdecoder TypedObjectDecoder, base ...Scheme) (SchemeBase, error) {
+	var err error
+
 	if protoIfce == nil {
 		return nil, fmt.Errorf("object interface must be given by pointer to interacted (is nil)")
 	}
@@ -221,11 +223,12 @@ func NewDefaultScheme(protoIfce interface{}, protoUnstr Unstructured, acceptUnkn
 		return nil, fmt.Errorf("object interface %T: must implement TypedObject", protoIfce)
 	}
 
-	ut, err := ProtoType(protoUnstr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unstructured prototype %T", protoUnstr)
-	}
+	var ut reflect.Type
 	if acceptUnknown {
+		ut, err = ProtoType(protoUnstr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unstructured prototype %T", protoUnstr)
+		}
 		if !reflect.PtrTo(ut).Implements(typeTypedObject) {
 			return nil, fmt.Errorf("unstructured type %T must implement TypedObject to be acceptale as unknown result", protoUnstr)
 		}
@@ -319,6 +322,9 @@ func (d *defaultScheme) GetDecoder(typ string) TypedObjectDecoder {
 }
 
 func (d *defaultScheme) CreateUnstructured() Unstructured {
+	if d.unstructured == nil {
+		return &UnstructuredTypedObject{}
+	}
 	return reflect.New(d.unstructured).Interface().(Unstructured)
 }
 

@@ -27,14 +27,19 @@ type Repository struct {
 	ctx       cpi.Context
 	propagate bool
 	path      string
+	data      []byte
 	config    *configfile.ConfigFile
 }
 
-func NewRepository(ctx cpi.Context, path string, propagate bool) (*Repository, error) {
+func NewRepository(ctx cpi.Context, path string, data []byte, propagate bool) (*Repository, error) {
 	r := &Repository{
 		ctx:       ctx,
 		propagate: propagate,
 		path:      path,
+		data:      data,
+	}
+	if path != "" && len(data) > 0 {
+		return nil, fmt.Errorf("only config file or config data possible")
 	}
 	err := r.Read(true)
 	return r, err
@@ -79,22 +84,30 @@ func (r *Repository) Read(force bool) error {
 	if !force && r.config != nil {
 		return nil
 	}
-	path := r.path
-	if strings.HasPrefix(path, "~/") {
-		home := os.Getenv("HOME")
-		path = home + path[1:]
-	}
+	var (
+		data []byte
+		err  error
+	)
+	if r.path != "" {
+		path := r.path
+		if strings.HasPrefix(path, "~/") {
+			home := os.Getenv("HOME")
+			path = home + path[1:]
+		}
 
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("failed to read file '%s': %w", path, err)
+		data, err = os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read file '%s': %w", path, err)
+		}
+	} else if len(r.data) > 0 {
+		data = r.data
 	}
 
 	cfg, err := config.LoadFromReader(bytes.NewBuffer(data))
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
-	log := r.ctx.Logger()
+	log := r.ctx.Logger(REALM)
 	defaultStore := dockercred.DetectDefaultStore(cfg.CredentialsStore)
 	store := dockercred.NewNativeStore(cfg, defaultStore)
 	// get default native credential store

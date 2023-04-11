@@ -48,16 +48,22 @@ func NewBlobContainers(ctx cpi.Context, fetcher remotes.Fetcher, pusher resolve.
 	}
 }
 
-func (c *BlobContainers) Get(mime string) BlobContainer {
+func (c *BlobContainers) Get(mime string) (BlobContainer, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	found := c.mimes[mime]
 	if found == nil {
-		found = NewBlobContainer(c.cache, mime, c.fetcher, c.pusher)
-		c.mimes[mime] = found
+		container, err := NewBlobContainer(c.cache, mime, c.fetcher, c.pusher)
+		if err != nil {
+			return nil, err
+		}
+		c.mimes[mime] = container
+
+		return container, nil
 	}
-	return found
+
+	return found, nil
 }
 
 func (c *BlobContainers) Release() error {
@@ -78,17 +84,17 @@ func newBlobContainer(mime string, fetcher resolve.Fetcher, pusher resolve.Pushe
 	}
 }
 
-func NewBlobContainer(cache accessio.BlobCache, mime string, fetcher resolve.Fetcher, pusher resolve.Pusher) BlobContainer {
+func NewBlobContainer(cache accessio.BlobCache, mime string, fetcher resolve.Fetcher, pusher resolve.Pusher) (BlobContainer, error) {
 	c := newBlobContainer(mime, fetcher, pusher)
 
 	if cache == nil {
-		return c
+		return c, nil
 	}
 	r, err := accessio.CachedAccess(c, c, cache)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return r
+	return r, nil
 }
 
 func (n *blobContainer) GetBlobData(digest digest.Digest) (int64, cpi.DataAccess, error) {

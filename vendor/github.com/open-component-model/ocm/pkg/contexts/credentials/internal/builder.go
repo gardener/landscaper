@@ -79,5 +79,5 @@ func (b Builder) New(m ...datacontext.BuilderMode) Context {
 	if b.matchers == nil {
 		b.matchers = StandardIdentityMatchers
 	}
-	return newContext(b.config, b.reposcheme, b.matchers, b.config.LoggingContext())
+	return newContext(b.config, b.reposcheme, b.matchers, b.config)
 }

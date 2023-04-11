@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	. "github.com/open-component-model/ocm/pkg/finalizer"
+
 	"github.com/opencontainers/go-digest"
 
 	"github.com/open-component-model/ocm/pkg/common/accessio"
@@ -21,7 +23,6 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/logging"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 // Type is the access type of a oci registry.
@@ -76,6 +77,10 @@ func (_ *AccessSpec) IsLocal(cpi.Context) bool {
 	return false
 }
 
+func (a *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
+	return a
+}
+
 func (a *AccessSpec) GetReferenceHint(cv cpi.ComponentVersionAccess) string {
 	ref, err := oci.ParseRef(a.ImageReference)
 	if err != nil {
@@ -111,7 +116,7 @@ type accessMethod struct {
 	comp cpi.ComponentVersionAccess
 	spec *AccessSpec
 
-	finalizer utils.Finalizer
+	finalizer Finalizer
 	err       error
 	art       oci.ArtifactAccess
 	ref       *oci.RefSpec
@@ -160,7 +165,7 @@ func (m *accessMethod) eval() (oci.Repository, *oci.RefSpec, error) {
 	return repo, &ref, err
 }
 
-func (m *accessMethod) GetArtifact(finalizer *utils.Finalizer) (oci.ArtifactAccess, *oci.RefSpec, error) {
+func (m *accessMethod) GetArtifact(finalizer *Finalizer) (oci.ArtifactAccess, *oci.RefSpec, error) {
 	repo, ref, err := m.eval()
 	if err != nil {
 		return nil, nil, err
@@ -240,9 +245,10 @@ func (m *accessMethod) getBlob() (artifactset.ArtifactBlob, error) {
 	if err != nil {
 		return nil, err
 	}
-	m.comp.GetContext().Logger().Info("synthesize artifact blob", "ref", m.spec.ImageReference)
+	logger := Logger(m.comp)
+	logger.Info("synthesize artifact blob", "ref", m.spec.ImageReference)
 	m.blob, err = artifactset.SynthesizeArtifactBlobForArtifact(art, ref.Version())
-	m.comp.GetContext().Logger().Info("synthesize artifact blob done", "ref", m.spec.ImageReference, "error", logging.ErrorMessage(err))
+	logger.Info("synthesize artifact blob done", "ref", m.spec.ImageReference, "error", logging.ErrorMessage(err))
 	if err != nil {
 		return nil, err
 	}

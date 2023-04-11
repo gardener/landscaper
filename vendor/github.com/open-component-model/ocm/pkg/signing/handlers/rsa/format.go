@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
@@ -55,18 +56,24 @@ func GetPrivateKey(key interface{}) (*rsa.PrivateKey, error) {
 }
 
 func WriteKeyData(key interface{}, w io.Writer) error {
-	block := PemBlockForKey(key)
+	block, err := PemBlockForKey(key)
+	if err != nil {
+		return err
+	}
 	return pem.Encode(w, block)
 }
 
 func KeyData(key interface{}) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
-	block := PemBlockForKey(key)
-	err := pem.Encode(buf, block)
+	block, err := PemBlockForKey(key)
+	if err != nil {
+		return nil, err
+	}
+	err = pem.Encode(buf, block)
 	return buf.Bytes(), err
 }
 
-func PemBlockForKey(priv interface{}, gen ...bool) *pem.Block {
+func PemBlockForKey(priv interface{}, gen ...bool) (*pem.Block, error) {
 	switch k := priv.(type) {
 	case *rsa.PublicKey:
 		if utils.Optional(gen...) {
@@ -74,13 +81,13 @@ func PemBlockForKey(priv interface{}, gen ...bool) *pem.Block {
 			if err != nil {
 				panic(err)
 			}
-			return &pem.Block{Type: "PUBLIC KEY", Bytes: bytes}
+			return &pem.Block{Type: "PUBLIC KEY", Bytes: bytes}, nil
 		}
-		return &pem.Block{Type: "RSA PUBLIC KEY", Bytes: x509.MarshalPKCS1PublicKey(k)}
+		return &pem.Block{Type: "RSA PUBLIC KEY", Bytes: x509.MarshalPKCS1PublicKey(k)}, nil
 	case *rsa.PrivateKey:
-		return &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)}
+		return &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)}, nil
 	default:
-		panic("invalid key")
+		return nil, errors.ErrInvalid("key")
 	}
 }
 

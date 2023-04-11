@@ -24,6 +24,14 @@ type tag struct {
 
 var _ Tag = (*tag)(nil)
 
+// DefineTag creates a tag and registers it together with a description.
+func DefineTag(name string, desc string) Tag {
+	defs.DefineTag(name, desc)
+	return NewTag(name)
+}
+
+// NewTag provides a new Tag object to be used as rule condition
+// or message context.
 func NewTag(name string) Tag {
 	return &tag{name}
 }

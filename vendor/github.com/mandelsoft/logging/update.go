@@ -19,33 +19,33 @@
 package logging
 
 import (
+	"sync"
 	"sync/atomic"
 )
 
 // UpdateState remembers the config level of a root logging context.
 type UpdateState struct {
-	level atomic.Value
+	generation atomic.Value
 }
 
-// Modify triggers the notification of an update of an element of
-// a context tree.
-func (s *UpdateState) Modify() {
+// Next provides the next generation number of a context tree.
+func (s *UpdateState) Next() int64 {
 	for {
-		old := s.level.Load()
+		old := s.generation.Load()
 
 		new := int64(1)
 		if old != nil {
 			new = old.(int64) + 1
 		}
-		if s.level.CompareAndSwap(old, new) {
-			return
+		if s.generation.CompareAndSwap(old, new) {
+			return new
 		}
 	}
 }
 
-// Level returns the actual update level of context tree.
-func (s *UpdateState) Level() int64 {
-	cur := s.level.Load()
+// Generation returns the actual generation number of a context tree.
+func (s *UpdateState) Generation() int64 {
+	cur := s.generation.Load()
 	if cur == nil {
 		return 0
 	}
@@ -55,23 +55,63 @@ func (s *UpdateState) Level() int64 {
 // Updater is used by a logging context to check for new updates
 // in a context tree.
 type Updater struct {
+	lock      sync.Mutex
 	state     *UpdateState
+	base      *Updater
 	watermark int64
+	seen      int64
 }
 
-func NewUpdater(s *UpdateState) *Updater {
-	return &Updater{state: s}
+func NewUpdater(base *Updater) *Updater {
+	u := &Updater{base: base}
+	if base == nil {
+		u.state = &UpdateState{}
+	} else {
+		u.state = base.state
+		u.seen = base.SeenWatermark()
+		u.watermark = base.Watermark()
+	}
+	return u
+}
+
+func (u *Updater) Modify() {
+	u.lock.Lock()
+	defer u.lock.Unlock()
+
+	u.watermark = u.state.Next()
+	if u.base == nil {
+		u.seen = u.watermark
+	}
 }
 
 func (u *Updater) Watermark() int64 {
+	u.lock.Lock()
+	defer u.lock.Unlock()
+	if u.base != nil {
+		w := u.base.Watermark()
+		if w > u.watermark {
+			u.watermark = w
+		}
+	}
 	return u.watermark
 }
 
-// Require returns whether a config update is potentially required.
+func (u *Updater) SeenWatermark() int64 {
+	u.lock.Lock()
+	defer u.lock.Unlock()
+	return u.seen
+}
+
+// Require returns whether a local config update is required.
 func (u *Updater) Require() bool {
-	level := u.state.Level()
-	if level > u.watermark {
-		u.watermark = level
+	u.lock.Lock()
+	defer u.lock.Unlock()
+	if u.base == nil {
+		return false
+	}
+	w := u.base.Watermark()
+	if w > u.seen {
+		u.seen = w
 		return true
 	}
 	return false

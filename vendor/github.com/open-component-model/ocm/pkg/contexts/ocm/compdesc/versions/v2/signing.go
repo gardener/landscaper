@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package compdesc
+package v2
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ var CDExcludes = signing.MapExcludes{
 			},
 		},
 		"sources": nil,
-		"references": signing.ArrayExcludes{
+		"componentReferences": signing.ArrayExcludes{
 			signing.MapExcludes{
 				"labels": signing.ExcludeEmpty{signing.DynamicArrayExcludes{
 					ValueChecker: signing.IgnoreLabelsWithoutSignature,

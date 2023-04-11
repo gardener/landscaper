@@ -51,6 +51,10 @@ func (d *DummyComponentVersionAccess) GetResourceByIndex(i int) (ResourceAccess,
 	return nil, errors.ErrInvalid("resource index", strconv.Itoa(i))
 }
 
+func (d *DummyComponentVersionAccess) GetResourcesByName(name string, selectors ...compdesc.IdentitySelector) ([]ResourceAccess, error) {
+	return nil, errors.ErrInvalid("resource", name)
+}
+
 func (d *DummyComponentVersionAccess) GetSources() []SourceAccess {
 	panic("implement me")
 }

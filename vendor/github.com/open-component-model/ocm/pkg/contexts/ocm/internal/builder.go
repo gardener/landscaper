@@ -171,7 +171,7 @@ func (b Builder) New(m ...datacontext.BuilderMode) Context {
 
 	b.reposcheme = NewRepositoryTypeScheme(&delegatingDecoder{oci: b.oci}, b.reposcheme)
 	return newContext(b.credentials, b.oci, b.reposcheme, b.accessscheme, b.spechandlers,
-		b.blobhandlers, b.blobdigesters, b.credentials.ConfigContext().LoggingContext())
+		b.blobhandlers, b.blobdigesters, b.credentials.ConfigContext())
 }
 
 type delegatingDecoder struct {
@@ -189,7 +189,7 @@ func (d *delegatingDecoder) Decode(data []byte, unmarshaler runtime.Unmarshaler)
 	if d.delegate == nil && ociimpl != nil {
 		def, err := ociimpl(d.oci)
 		if err != nil {
-			panic(fmt.Sprintf("cannot create oci default decoder: %s", err))
+			return nil, fmt.Errorf("cannot create oci default decoder: %w", err)
 		}
 		d.delegate = def
 	}

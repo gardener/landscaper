@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/registrations"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
@@ -108,7 +108,7 @@ func NewBlobHandlerOptions(olist ...BlobHandlerOption) *BlobHandlerOptions {
 	return &opts
 }
 
-func (o BlobHandlerOptions) ApplyBlobHandlerOptionTo(opts *BlobHandlerOptions) {
+func (o *BlobHandlerOptions) ApplyBlobHandlerOptionTo(opts *BlobHandlerOptions) {
 	if o.Priority > 0 {
 		opts.Priority = o.Priority
 	}
@@ -182,146 +182,28 @@ func ForArtifactType(artifacttype string) BlobHandlerOption {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type BlobHandlerConfig interface{}
+type (
+	BlobHandlerConfig               = registrations.HandlerConfig
+	BlobHandlerRegistrationHandler  = registrations.HandlerRegistrationHandler[Context, BlobHandlerOption]
+	BlobHandlerRegistrationRegistry = registrations.HandlerRegistrationRegistry[Context, BlobHandlerOption]
 
-type BlobHandlerRegistrationHandler interface {
-	RegisterByName(handler string, ctx Context, config BlobHandlerConfig, opts ...BlobHandlerOption) (bool, error)
-}
+	RegistrationHandlerInfo = registrations.RegistrationHandlerInfo[Context, BlobHandlerOption]
+)
 
-type BlobHandlerRegistrationRegistry interface {
-	BlobHandlerRegistrationHandler
-	RegisterRegistrationHandler(path string, handler BlobHandlerRegistrationHandler)
-	GetRegistrationHandlers(name string) []*RegistrationHandlerInfo
-}
-
-type NamePath []string
-
-func NewNamePath(path string) NamePath {
-	return strings.Split(path, "/")
-}
-
-func (p NamePath) Compare(o NamePath) int {
-	if d := len(p) - len(o); d != 0 {
-		return d
-	}
-	for i, e := range p {
-		if d := strings.Compare(e, o[i]); d != 0 {
-			return d
-		}
-	}
-	return 0
-}
-
-func (p NamePath) IsPrefixOf(o NamePath) bool {
-	if len(p) > len(o) {
-		return false
-	}
-	for i, e := range p {
-		if e != o[i] {
-			return false
-		}
-	}
-	return true
-}
-
-type RegistrationHandlerInfo struct {
-	prefix  NamePath
-	handler BlobHandlerRegistrationHandler
+func NewBlobHandlerRegistrationRegistry(base ...BlobHandlerRegistrationRegistry) BlobHandlerRegistrationRegistry {
+	return registrations.NewHandlerRegistrationRegistry[Context, BlobHandlerOption](base...)
 }
 
 func NewRegistrationHandlerInfo(path string, handler BlobHandlerRegistrationHandler) *RegistrationHandlerInfo {
-	return &RegistrationHandlerInfo{
-		prefix:  NewNamePath(path),
-		handler: handler,
-	}
-}
-
-func (i *RegistrationHandlerInfo) RegisterByName(handler string, ctx Context, config BlobHandlerConfig, opts ...BlobHandlerOption) (bool, error) {
-	path := NewNamePath(handler)
-
-	if !i.prefix.IsPrefixOf(path) {
-		return false, nil
-	}
-	return i.handler.RegisterByName(strings.Join(path[len(i.prefix):], "/"), ctx, config, opts...)
-}
-
-type handlerRegistrationRegistry struct {
-	lock     sync.RWMutex
-	base     BlobHandlerRegistrationRegistry
-	handlers []*RegistrationHandlerInfo
-}
-
-func NewBlobHandlerRegistrationRegistry(base ...BlobHandlerRegistrationRegistry) BlobHandlerRegistrationRegistry {
-	return &handlerRegistrationRegistry{base: utils.Optional(base...)}
-}
-
-func (c *handlerRegistrationRegistry) RegisterRegistrationHandler(path string, handler BlobHandlerRegistrationHandler) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	comps := strings.Split(path, "/")
-	n := &RegistrationHandlerInfo{
-		prefix:  comps,
-		handler: handler,
-	}
-
-	var i int
-	var h *RegistrationHandlerInfo
-	for i, h = range c.handlers {
-		if h.prefix.Compare(comps) < 0 {
-			break
-		}
-	}
-	c.handlers = append(c.handlers[:i], append([]*RegistrationHandlerInfo{n}, c.handlers[i:]...)...)
-}
-
-func (c *handlerRegistrationRegistry) GetRegistrationHandlers(name string) []*RegistrationHandlerInfo {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-
-	var result []*RegistrationHandlerInfo
-	path := NewNamePath(name)
-	for _, h := range c.handlers {
-		if h.prefix.IsPrefixOf(path) {
-			result = append(result, h)
-		}
-	}
-
-	if c.base != nil {
-		base := c.base.GetRegistrationHandlers(name)
-		i := 0
-		for _, h := range base {
-			for i != len(result) && result[i].prefix.Compare(h.prefix) >= 0 {
-				i++
-			}
-			result = append(result[:i], append([]*RegistrationHandlerInfo{h}, result[i:]...)...)
-			i++
-		}
-	}
-	return result
-}
-
-func (c *handlerRegistrationRegistry) RegisterByName(handler string, ctx Context, config BlobHandlerConfig, opts ...BlobHandlerOption) (bool, error) {
-	list := c.GetRegistrationHandlers(handler)
-	errlist := errors.ErrListf("blob handler registration")
-	for _, h := range list {
-		ok, err := h.RegisterByName(handler, ctx, config, opts...)
-		if ok {
-			return ok, err
-		}
-		errlist.Add(err)
-	}
-	if errlist.Len() > 0 {
-		return false, errlist.Result()
-	}
-	return false, fmt.Errorf("no registration handler found for %s", handler)
+	return registrations.NewRegistrationHandlerInfo[Context, BlobHandlerOption](path, handler)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // BlobHandlerRegistry registers blob handlers to use in a dedicated ocm context.
 type BlobHandlerRegistry interface {
-	BlobHandlerRegistrationRegistry
+	// BlobHandlerRegistrationRegistry
+	registrations.HandlerRegistrationRegistry[Context, BlobHandlerOption]
 
 	IsInitial() bool
 
@@ -375,15 +257,14 @@ func (c *handlerCache) set(key BlobHandlerKey, h BlobHandler) {
 	c.cache[key] = h
 }
 
-type registrationHandlers = BlobHandlerRegistrationRegistry
-
 type blobHandlerRegistry struct {
 	lock       sync.RWMutex
 	base       BlobHandlerRegistry
 	handlers   map[BlobHandlerKey]BlobHandler
 	defhandler MultiBlobHandler
 
-	registrationHandlers
+	// (should be) BlobHandlerRegistrationRegistry   , but does not work with GoLand up to at least 2022.2.6
+	registrations.HandlerRegistrationRegistry[Context, BlobHandlerOption]
 
 	cache *handlerCache
 }
@@ -392,12 +273,13 @@ var DefaultBlobHandlerRegistry = NewBlobHandlerRegistry()
 
 func NewBlobHandlerRegistry(base ...BlobHandlerRegistry) BlobHandlerRegistry {
 	b := utils.Optional(base...)
-	return &blobHandlerRegistry{
-		base:                 b,
-		handlers:             map[BlobHandlerKey]BlobHandler{},
-		registrationHandlers: NewBlobHandlerRegistrationRegistry(b),
-		cache:                newHandlerCache(),
+	r := &blobHandlerRegistry{
+		base:                        b,
+		handlers:                    map[BlobHandlerKey]BlobHandler{},
+		HandlerRegistrationRegistry: NewBlobHandlerRegistrationRegistry(b),
+		cache:                       newHandlerCache(),
 	}
+	return r
 }
 
 func (r *blobHandlerRegistry) Copy() BlobHandlerRegistry {

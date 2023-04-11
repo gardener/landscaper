@@ -5,6 +5,8 @@
 package cpi
 
 import (
+	"fmt"
+
 	"github.com/opencontainers/go-digest"
 
 	"github.com/open-component-model/ocm/pkg/common/accessio"
@@ -31,7 +33,7 @@ func NewIndex(access ArtifactSetContainer, defs ...*artdesc.Index) (internal.Ind
 	}
 	state, err := accessobj.NewBlobStateForObject(mode, def, NewIndexStateHandler())
 	if err != nil {
-		panic("oops")
+		return nil, fmt.Errorf("failed to get blob state for object: %w", err)
 	}
 
 	p, err := access.NewArtifactProvider(state)

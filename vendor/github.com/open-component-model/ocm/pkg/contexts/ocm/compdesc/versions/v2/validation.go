@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package compdesc
+package v2
 
 import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -177,14 +177,6 @@ func ValidateResources(fldPath *field.Path, resources Resources, componentVersio
 	for i, res := range resources {
 		localPath := fldPath.Index(i)
 		allErrs = append(allErrs, ValidateResource(localPath, res, true)...)
-
-		// only Validate the component version if it is defined
-		if res.Relation == v1.LocalRelation && len(componentVersion) != 0 {
-			if res.GetVersion() != componentVersion {
-				allErrs = append(allErrs, field.Invalid(localPath.Child("version"), "invalid version",
-					"version of local resources must match the component version"))
-			}
-		}
 
 		if err := ValidateSourceRefs(localPath.Child("sourceRef"), res.SourceRef); err != nil {
 			allErrs = append(allErrs, err...)

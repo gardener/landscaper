@@ -20,6 +20,8 @@ type Label struct {
 	// Name is the unique name of the label.
 	Name string `json:"name"`
 	// Value is the json/yaml data of the label
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	Value json.RawMessage `json:"value"`
 
 	// Version is the optional specification version of the attribute value

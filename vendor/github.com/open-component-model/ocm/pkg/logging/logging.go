@@ -18,7 +18,7 @@ import (
 // REALM is used to tag all logging done by this library with the ocm tag.
 // This is also used as message context to configure settings for all
 // log output provided by this library.
-var REALM = logging.NewRealm("ocm")
+var REALM = logging.DefineRealm("ocm", "general realm used for the ocm go library.")
 
 type StaticContext struct {
 	logging.Context
@@ -61,9 +61,14 @@ func (s *StaticContext) Configure(config *logcfg.Config, extra ...string) error 
 	return logcfg.Configure(logContext, config)
 }
 
-var logContext = NewContext(nil)
+// global is a wrapper for the default global log content.
+var global = NewContext(nil)
 
-// SetContext sets a new precondigure context.
+// logContext is the global ocm log context.
+// It can be replaced by SetContext.
+var logContext = global
+
+// SetContext sets a new preconfigured context.
 // This function should be called prior to any configuration
 // to avoid loosing them.
 func SetContext(ctx logging.Context) {
@@ -85,4 +90,15 @@ func Logger(messageContext ...logging.MessageContext) logging.Logger {
 // provided by this package.
 func Configure(config *logcfg.Config, extra ...string) error {
 	return logContext.Configure(config, extra...)
+}
+
+// ConfigureGlobal applies configuration for the default global log context
+// provided by this package.
+func ConfigureGlobal(config *logcfg.Config, extra ...string) error {
+	return global.Configure(config, extra...)
+}
+
+// DynamicLogger gets an unbound logger based on the default library logging context.
+func DynamicLogger(messageContext ...logging.MessageContext) logging.UnboundLogger {
+	return logging.DynamicLogger(Context(), messageContext...)
 }

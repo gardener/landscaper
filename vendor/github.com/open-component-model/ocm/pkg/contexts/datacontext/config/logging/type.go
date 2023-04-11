@@ -5,14 +5,11 @@
 package logging
 
 import (
-	"encoding/json"
-
 	"github.com/mandelsoft/logging"
 	logcfg "github.com/mandelsoft/logging/config"
 
 	"github.com/open-component-model/ocm/pkg/contexts/config/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/errors"
 	local "github.com/open-component-model/ocm/pkg/logging"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -37,39 +34,35 @@ type Config struct {
 	ContextType string        `json:"contextType,omitempty"`
 	Settings    logcfg.Config `json:"settings"`
 
-	// ExtraId is used to the context type "default" to be able
+	// ExtraId is used to the context type "default" or "global" to be able
 	// to reapply the same config again using a different
 	// identity given by the settings hash + the id.
 	ExtraId string `json:"extraId,omitempty"`
 }
 
-// NewConfigSpec creates a new memory ConfigSpec.
+// New creates a logging config specification.
 func New(ctxtype string, deflvl int) *Config {
 	return &Config{
 		ObjectVersionedType: runtime.NewVersionedObjectType(ConfigType),
 		ContextType:         ctxtype,
 		Settings: logcfg.Config{
 			DefaultLevel: logging.LevelName(deflvl),
-			Rules:        []json.RawMessage{},
 		},
 	}
 }
 
-func (c *Config) AddRuleSpec(spec interface{}) error {
-	var err error
+// NewWithConfig creates a logging config specification from a
+// logging config object.
+func NewWithConfig(ctxtype string, cfg *logcfg.Config) *Config {
+	return &Config{
+		ObjectVersionedType: runtime.NewVersionedObjectType(ConfigType),
+		ContextType:         ctxtype,
+		Settings:            *cfg,
+	}
+}
 
-	data, ok := spec.([]byte)
-	if !ok {
-		data, err = json.Marshal(spec)
-		if err != nil {
-			errors.Wrapf(err, "invalid logging rule specification")
-		}
-	}
-	_, err = logcfg.DefaultRegistry().CreateRule(data)
-	if err != nil {
-		return errors.Wrapf(err, "invalid logging rule specification")
-	}
-	c.Settings.Rules = append(c.Settings.Rules, data)
+func (c *Config) AddRuleSpec(r logcfg.Rule) error {
+	c.Settings.Rules = append(c.Settings.Rules, r)
 	return nil
 }
 
@@ -90,7 +83,10 @@ func (c *Config) ApplyTo(ctx cpi.Context, target interface{}) error {
 	case "default":
 		return local.Configure(&c.Settings, c.ExtraId)
 
-	// configure loogging context providers.
+	case "global":
+		return local.ConfigureGlobal(&c.Settings, c.ExtraId)
+
+	// configure logging context providers.
 	case "":
 		if _, ok := target.(datacontext.AttributesContext); !ok {
 			return cpi.ErrNoContext("attribute context")

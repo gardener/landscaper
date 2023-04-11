@@ -80,6 +80,10 @@ func (a *AccessSpec) IsLocal(cpi.Context) bool {
 	return true
 }
 
+func (a *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
+	return a.GlobalAccess
+}
+
 func (a *AccessSpec) GetMimeType() string {
 	return a.MediaType
 }

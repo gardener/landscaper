@@ -33,6 +33,14 @@ func (s Set[K]) Contains(keys ...K) bool {
 	return true
 }
 
+func (s Set[K]) AsArray() []K {
+	keys := []K{}
+	for k := range s {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func KeySet[K comparable, V any](m map[K]V) Set[K] {
 	s := Set[K]{}
 	for k := range m {

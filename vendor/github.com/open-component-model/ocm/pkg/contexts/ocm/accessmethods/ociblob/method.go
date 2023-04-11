@@ -64,8 +64,12 @@ func (a *AccessSpec) Describe(ctx cpi.Context) string {
 	return fmt.Sprintf("OCI blob %s in repository %s", a.Digest, a.Reference)
 }
 
-func (s AccessSpec) IsLocal(context cpi.Context) bool {
+func (s *AccessSpec) IsLocal(context cpi.Context) bool {
 	return false
+}
+
+func (s *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
+	return s
 }
 
 func (s *AccessSpec) GetMimeType() string {

@@ -28,26 +28,36 @@ import (
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type GenericValue json.RawMessage
+func newValue(typ string, v ValueType) Value {
+	return scheme.NewElement(typ, v)
+}
+
+type GenericValueType struct {
+	Value interface{}
+}
 
 // MarshalJSON returns m as the JSON encoding of m.
-func (m GenericValue) MarshalJSON() ([]byte, error) {
-	return json.RawMessage(m).MarshalJSON()
+func (m GenericValueType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.Value)
 }
 
 // UnmarshalJSON sets *m to a copy of data.
-func (m *GenericValue) UnmarshalJSON(data []byte) error {
-	return (*json.RawMessage)(m).UnmarshalJSON(data)
+func (m *GenericValueType) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &m.Value)
 }
 
-func (m GenericValue) Create(r Registry) (interface{}, error) {
-	var v interface{}
-	err := json.Unmarshal([]byte(m), &v)
-	if err != nil {
-		return nil, err
-	}
-	return v, nil
+func (m GenericValueType) Create(r Registry) (interface{}, error) {
+	return m.Value, nil
 }
+
+func GenericValue(v interface{}) Value {
+	s := GenericValueType{v}
+	return newValue("value", &s)
+}
+
+type Rule = scheme.Element[RuleType]
+type Condition = scheme.Element[ConditionType]
+type Value = scheme.Element[ValueType]
 
 type RuleType = scheme.Factory[logging.Rule, Registry]
 type ConditionType = scheme.Factory[logging.Condition, Registry]
@@ -58,9 +68,15 @@ type Registry interface {
 	RegisterConditionType(name string, ty ConditionType)
 	RegisterValueType(name string, ty ValueType)
 
+	CreateConditionFromElement(e *Condition) (logging.Condition, error)
+	CreateRuleFromElement(e *Rule) (logging.Rule, error)
+	CreateValueFromElement(e *Value) (any, error)
 	CreateCondition(data []byte) (logging.Condition, error)
 	CreateRule(data []byte) (logging.Rule, error)
-	CreateValue(data []byte) (interface{}, error)
+	CreateValue(data []byte) (any, error)
+
+	Evaluate(cfg *Config) error
+	EvaluateFromData(data []byte) (*Config, error)
 
 	Configure(ctx logging.Context, cfg *Config) error
 	ConfigureWithData(ctx logging.Context, data []byte) error
@@ -79,7 +95,7 @@ func NewRegistry() Registry {
 	r.rules = scheme.NewScheme[logging.Rule, Registry](r)
 	r.conditions = scheme.NewScheme[logging.Condition, Registry](r)
 	r.values = scheme.NewScheme[interface{}, Registry](r)
-	r.RegisterValueType("value", GenericValue{})
+	r.RegisterValueType("value", GenericValueType{})
 	return r
 }
 
@@ -91,16 +107,28 @@ func (r *registry) Copy() Registry {
 	return c
 }
 
-func (r *registry) RegisterRuleType(name string, ty scheme.Factory[logging.Rule, Registry]) {
+func (r *registry) RegisterRuleType(name string, ty RuleType) {
 	r.rules.Register(name, ty)
 }
 
-func (r *registry) RegisterConditionType(name string, ty scheme.Factory[logging.Condition, Registry]) {
+func (r *registry) RegisterConditionType(name string, ty ConditionType) {
 	r.conditions.Register(name, ty)
 }
 
-func (r *registry) RegisterValueType(name string, ty scheme.Factory[any, Registry]) {
+func (r *registry) RegisterValueType(name string, ty ValueType) {
 	r.values.Register(name, ty)
+}
+
+func (r *registry) CreateRuleFromElement(e *Rule) (logging.Rule, error) {
+	return r.rules.GetFromElement(e)
+}
+
+func (r *registry) CreateConditionFromElement(e *Condition) (logging.Condition, error) {
+	return r.conditions.GetFromElement(e)
+}
+
+func (r *registry) CreateValueFromElement(e *Value) (interface{}, error) {
+	return r.values.GetFromElement(e)
 }
 
 func (r *registry) CreateRule(data []byte) (logging.Rule, error) {
@@ -115,6 +143,38 @@ func (r *registry) CreateValue(data []byte) (interface{}, error) {
 	return r.values.Get(data)
 }
 
+func (r *registry) EvaluateFromData(data []byte) (*Config, error) {
+	var cfg Config
+
+	err := cfg.UnmarshalFrom(data)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.Evaluate(&cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func (r *registry) Evaluate(cfg *Config) error {
+	if cfg.DefaultLevel != "" {
+		_, err := logging.ParseLevel(cfg.DefaultLevel)
+		if err != nil {
+			return fmt.Errorf("default level: %w", err)
+		}
+	}
+
+	for i := range cfg.Rules {
+		_, err := r.CreateRuleFromElement(&cfg.Rules[i])
+		if err != nil {
+			return fmt.Errorf("cannot parse rule %d: %w", i, err)
+		}
+	}
+	return nil
+}
+
 func (r *registry) Configure(ctx logging.Context, cfg *Config) error {
 	if cfg.DefaultLevel != "" {
 		l, err := logging.ParseLevel(cfg.DefaultLevel)
@@ -124,8 +184,8 @@ func (r *registry) Configure(ctx logging.Context, cfg *Config) error {
 		ctx.SetDefaultLevel(l)
 	}
 
-	for i, d := range cfg.Rules {
-		rule, err := r.CreateRule(d)
+	for i := range cfg.Rules {
+		rule, err := r.CreateRuleFromElement(&cfg.Rules[i])
 		if err != nil {
 			return fmt.Errorf("cannot parse rule %d: %w", i, err)
 		}
@@ -145,10 +205,10 @@ func (r *registry) ConfigureWithData(ctx logging.Context, data []byte) error {
 	return r.Configure(ctx, &cfg)
 }
 
-func ParseConditions(r Registry, list []json.RawMessage) ([]logging.Condition, error) {
+func ParseConditions(r Registry, list []Condition) ([]logging.Condition, error) {
 	conditions := []logging.Condition{}
-	for i, d := range list {
-		c, err := r.CreateCondition(d)
+	for i := range list {
+		c, err := r.CreateConditionFromElement(&list[i])
 		if err != nil {
 			return nil, fmt.Errorf("cannot parse condition %d: %w", i, err)
 		}

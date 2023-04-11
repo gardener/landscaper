@@ -39,6 +39,7 @@ type AccessSpec interface {
 	compdesc.AccessSpec
 	Describe(Context) string
 	IsLocal(Context) bool
+	GlobalAccessSpec(Context) AccessSpec
 	AccessMethod(access ComponentVersionAccess) (AccessMethod, error)
 }
 
@@ -197,6 +198,10 @@ func (_ *UnknownAccessSpec) IsLocal(Context) bool {
 	return false
 }
 
+func (_ *UnknownAccessSpec) GlobalAccessSpec(Context) AccessSpec {
+	return nil
+}
+
 var _ AccessSpec = &UnknownAccessSpec{}
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -255,6 +260,17 @@ func (s *GenericAccessSpec) IsLocal(ctx Context) bool {
 		return false
 	}
 	return spec.IsLocal(ctx)
+}
+
+func (s *GenericAccessSpec) GlobalAccessSpec(ctx Context) AccessSpec {
+	spec, err := s.Evaluate(ctx)
+	if err != nil {
+		return nil
+	}
+	if _, ok := spec.(*GenericAccessSpec); ok {
+		return nil
+	}
+	return spec.GlobalAccessSpec(ctx)
 }
 
 var _ AccessSpec = &GenericAccessSpec{}

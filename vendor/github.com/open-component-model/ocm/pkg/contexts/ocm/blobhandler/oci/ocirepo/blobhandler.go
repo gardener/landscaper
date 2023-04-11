@@ -9,6 +9,8 @@ import (
 	"path"
 	"strings"
 
+	. "github.com/open-component-model/ocm/pkg/finalizer"
+
 	"github.com/opencontainers/go-digest"
 
 	"github.com/open-component-model/ocm/pkg/common/accessio"
@@ -27,7 +29,6 @@ import (
 	storagecontext "github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 func init() {
@@ -138,7 +139,7 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 
 	var art oci.ArtifactAccess
 	var err error
-	var finalizer utils.Finalizer
+	var finalizer Finalizer
 	defer finalizer.Finalize()
 
 	keep := keepblobattr.Get(ctx.GetContext())

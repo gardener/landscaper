@@ -19,27 +19,38 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/mandelsoft/logging"
+	"github.com/mandelsoft/logging/scheme"
 )
 
 func init() {
-	RegisterCondition("and", And{})
-	RegisterCondition("or", Or{})
-	RegisterCondition("not", Not{})
-	RegisterCondition("tag", Tag(""))
-	RegisterCondition("realm", Realm(""))
-	RegisterCondition("realmprefix", RealmPrefix(""))
-	RegisterCondition("attribute", &Attribute{})
+	RegisterCondition("and", AndType{})
+	RegisterCondition("or", OrType{})
+	RegisterCondition("not", &NotType{})
+	RegisterCondition("tag", TagType(""))
+	RegisterCondition("realm", RealmType(""))
+	RegisterCondition("realmprefix", RealmPrefixType(""))
+	RegisterCondition("attribute", &AttributeType{})
+}
+
+func newCondition(typ string, v ConditionType) Condition {
+	return scheme.NewElement(typ, v)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type And []json.RawMessage
+// AndType should be []Condition, but this does not work with Go Generics
+// so, just explode the type, and it magically works.
+type AndType []scheme.Element[scheme.Factory[logging.Condition, Registry]]
 
-func (e And) Create(r Registry) (logging.Condition, error) {
+func And(conds ...Condition) Condition {
+	s := AndType(conds)
+	return newCondition("and", &s)
+}
+
+func (e AndType) Create(r Registry) (logging.Condition, error) {
 	conditions, err := ParseConditions(r, e)
 	if err != nil {
 		return nil, err
@@ -49,9 +60,14 @@ func (e And) Create(r Registry) (logging.Condition, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type Or And
+type OrType AndType
 
-func (e Or) Create(r Registry) (logging.Condition, error) {
+func Or(conds ...Condition) Condition {
+	s := OrType(conds)
+	return newCondition("or", &s)
+}
+
+func (e OrType) Create(r Registry) (logging.Condition, error) {
 	conditions, err := ParseConditions(r, e)
 	if err != nil {
 		return nil, err
@@ -61,12 +77,17 @@ func (e Or) Create(r Registry) (logging.Condition, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type Not struct {
-	json.RawMessage `json:",inline"`
+type NotType struct {
+	Condition `json:",inline"`
 }
 
-func (e Not) Create(r Registry) (logging.Condition, error) {
-	c, err := r.CreateCondition(e.RawMessage)
+func Not(c Condition) Condition {
+	s := NotType{c}
+	return newCondition("not", &s)
+}
+
+func (e *NotType) Create(r Registry) (logging.Condition, error) {
+	c, err := r.CreateConditionFromElement(&e.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse condition: %w", err)
 	}
@@ -75,9 +96,14 @@ func (e Not) Create(r Registry) (logging.Condition, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type Tag string
+type TagType string
 
-func (e Tag) Create(_ Registry) (logging.Condition, error) {
+func Tag(tag string) Condition {
+	s := TagType(tag)
+	return newCondition("tag", &s)
+}
+
+func (e TagType) Create(_ Registry) (logging.Condition, error) {
 	if e == "" {
 		return nil, fmt.Errorf("tag name missing")
 	}
@@ -86,9 +112,14 @@ func (e Tag) Create(_ Registry) (logging.Condition, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type Realm string
+type RealmType string
 
-func (e Realm) Create(_ Registry) (logging.Condition, error) {
+func Realm(tag string) Condition {
+	s := RealmType(tag)
+	return newCondition("realm", &s)
+}
+
+func (e RealmType) Create(_ Registry) (logging.Condition, error) {
 	if e == "" {
 		return nil, fmt.Errorf("realm name missing")
 	}
@@ -97,9 +128,14 @@ func (e Realm) Create(_ Registry) (logging.Condition, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type RealmPrefix string
+type RealmPrefixType string
 
-func (e RealmPrefix) Create(_ Registry) (logging.Condition, error) {
+func RealmPrefix(tag string) Condition {
+	s := RealmPrefixType(tag)
+	return newCondition("realmprefix", &s)
+}
+
+func (e RealmPrefixType) Create(_ Registry) (logging.Condition, error) {
 	if e == "" {
 		return nil, fmt.Errorf("realm name missing")
 	}
@@ -108,16 +144,29 @@ func (e RealmPrefix) Create(_ Registry) (logging.Condition, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type Attribute struct {
-	Name  string          `json:"name"`
-	Value json.RawMessage `json:"value,omitempty"`
+type AttributeType struct {
+	Name  string `json:"name"`
+	Value Value  `json:"value,omitempty"`
 }
 
-func (e *Attribute) Create(r Registry) (logging.Condition, error) {
+func Attribute(name string, value interface{}) Condition {
+	var s Value
+	if v, ok := value.(Value); ok {
+		s = v
+	} else {
+		s = GenericValue(value)
+	}
+	return newCondition("attribute", &AttributeType{
+		Name:  name,
+		Value: s,
+	})
+}
+
+func (e *AttributeType) Create(r Registry) (logging.Condition, error) {
 	if e.Name == "" {
 		return nil, fmt.Errorf("attribute name missing")
 	}
-	v, err := r.CreateValue(e.Value)
+	v, err := r.CreateValueFromElement(&e.Value)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse value: %s", err)
 	}

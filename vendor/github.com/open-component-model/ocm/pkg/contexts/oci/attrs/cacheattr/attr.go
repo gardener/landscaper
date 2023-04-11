@@ -51,7 +51,7 @@ func (a AttributeType) Decode(data []byte, unmarshaller runtime.Unmarshaler) (in
 		if strings.HasPrefix(value, "~"+string(os.PathSeparator)) {
 			home := os.Getenv("HOME")
 			if home == "" {
-				panic("HOME not set")
+				return nil, fmt.Errorf("HOME not set")
 			}
 			value = home + value[1:]
 		}

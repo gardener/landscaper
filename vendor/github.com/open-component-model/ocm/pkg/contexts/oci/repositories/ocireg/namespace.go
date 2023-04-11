@@ -11,8 +11,10 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
+	oci_repository_prepare "github.com/open-component-model/ocm/pkg/contexts/datacontext/action/types/oci-repository-prepare"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/docker/resolve"
@@ -32,6 +34,7 @@ type NamespaceContainer struct {
 	fetcher   resolve.Fetcher
 	pusher    resolve.Pusher
 	blobs     *BlobContainers
+	checked   bool
 }
 
 var (
@@ -76,6 +79,11 @@ func (n *NamespaceContainer) Close() error {
 }
 
 func (n *NamespaceContainer) getPusher(vers string) (resolve.Pusher, error) {
+	err := n.assureCreated()
+	if err != nil {
+		return nil, err
+	}
+
 	ref := n.repo.getRef(n.namespace, vers)
 	resolver := n.resolver
 
@@ -83,7 +91,7 @@ func (n *NamespaceContainer) getPusher(vers string) (resolve.Pusher, error) {
 	if ok, _ := artdesc.IsDigest(vers); !ok {
 		var err error
 
-		resolver, err = n.repo.getResolver(ref)
+		resolver, err = n.repo.getResolver(n.namespace)
 
 		if err != nil {
 			return nil, fmt.Errorf("unable get resolver: %w", err)
@@ -120,7 +128,11 @@ func (n *NamespaceContainer) GetBlobDescriptor(digest digest.Digest) *cpi.Descri
 
 func (n *NamespaceContainer) GetBlobData(digest digest.Digest) (int64, cpi.DataAccess, error) {
 	n.repo.ctx.Logger().Debug("getting blob", "digest", digest)
-	size, acc, err := n.blobs.Get("").GetBlobData(digest)
+	blob, err := n.blobs.Get("")
+	if err != nil {
+		return -1, nil, fmt.Errorf("failed to retrieve blob data: %w", err)
+	}
+	size, acc, err := blob.GetBlobData(digest)
 	n.repo.ctx.Logger().Debug("getting blob done", "digest", digest, "size", size, "error", logging.ErrorMessage(err))
 	return size, acc, err
 }
@@ -128,7 +140,15 @@ func (n *NamespaceContainer) GetBlobData(digest digest.Digest) (int64, cpi.DataA
 func (n *NamespaceContainer) AddBlob(blob cpi.BlobAccess) error {
 	log := n.repo.ctx.Logger()
 	log.Debug("adding blob", "digest", blob.Digest())
-	if _, _, err := n.blobs.Get("").AddBlob(blob); err != nil {
+	blobData, err := n.blobs.Get("")
+	if err != nil {
+		return fmt.Errorf("failed to retrieve blob data: %w", err)
+	}
+	err = n.assureCreated()
+	if err != nil {
+		return err
+	}
+	if _, _, err := blobData.AddBlob(blob); err != nil {
 		log.Debug("adding blob failed", "digest", blob.Digest(), "error", err.Error())
 		return fmt.Errorf("unable to add blob: %w", err)
 	}
@@ -151,11 +171,34 @@ func (n *NamespaceContainer) GetArtifact(vers string) (cpi.ArtifactAccess, error
 		}
 		return nil, err
 	}
-	_, acc, err := n.blobs.Get(desc.MediaType).GetBlobData(desc.Digest)
+	blobData, err := n.blobs.Get(desc.MediaType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve blob data, blob data was empty: %w", err)
+	}
+	_, acc, err := blobData.GetBlobData(desc.Digest)
 	if err != nil {
 		return nil, err
 	}
 	return cpi.NewArtifactForBlob(n, accessio.BlobAccessForDataAccess(desc.Digest, desc.Size, desc.MediaType, acc))
+}
+
+func (n *NamespaceContainer) assureCreated() error {
+	if n.checked {
+		return nil
+	}
+	var props common.Properties
+	if creds, err := n.repo.getCreds(n.namespace); err == nil && creds != nil {
+		props = creds.Properties()
+	}
+	r, err := oci_repository_prepare.Execute(n.repo.ctx.GetActions(), n.repo.info.HostPort(), n.namespace, props)
+	n.checked = true
+	if err != nil {
+		return err
+	}
+	if r != nil {
+		n.repo.ctx.Logger().Debug("prepare action executed", "message", r.Message)
+	}
+	return nil
 }
 
 func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
@@ -163,18 +206,25 @@ func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) 
 	if err != nil {
 		return nil, err
 	}
+
 	if n.repo.info.Legacy {
 		blob = artdesc.MapArtifactBlobMimeType(blob, true)
 	}
+
 	n.repo.ctx.Logger().Debug("adding artifact", "digest", blob.Digest(), "mimetype", blob.MimeType())
-	_, _, err = n.blobs.Get(blob.MimeType()).AddBlob(blob)
+	blobData, err := n.blobs.Get(blob.MimeType())
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve blob data: %w", err)
+	}
+
+	_, _, err = blobData.AddBlob(blob)
 	if err != nil {
 		return nil, err
 	}
+
 	if len(tags) > 0 {
 		for _, tag := range tags {
-			err := n.push(tag, blob)
-			if err != nil {
+			if err := n.push(tag, blob); err != nil {
 				return nil, err
 			}
 		}

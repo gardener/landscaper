@@ -19,7 +19,6 @@
 package scheme
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sync"
@@ -68,40 +67,39 @@ func (s *Scheme[T, F]) Register(name string, proto Factory[T, F]) {
 }
 
 func (s *Scheme[T, F]) Get(data []byte) (T, error) {
+	var zero T
+	var e Element[Factory[T, F]]
+	err := yaml.Unmarshal(data, &e)
+	if err != nil {
+		return zero, err
+	}
+	return s.GetFromElement(&e)
+}
+
+func (s *Scheme[T, F]) GetFromElement(d *Element[Factory[T, F]]) (T, error) {
+	var zero T
+
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	var m map[string]interface{}
-
-	err := yaml.Unmarshal(data, &m)
-	if err != nil {
-		return s.none, fmt.Errorf("cannot unmarshal yaml: %w", err)
-	}
-	if len(m) == 0 {
-		return s.none, fmt.Errorf("element missing")
-	}
-	if len(m) > 1 {
-		return s.none, fmt.Errorf("only one key allowed for element")
-	}
-
-	var ty string
-	var value []byte
-	for k, v := range m {
-		ty = k
-		value, err = json.Marshal(v)
-		if err != nil {
-			return s.none, err
-		}
-	}
-
-	t := s.prototypes[ty]
+	t := s.prototypes[d.typ]
 	if t == nil {
-		return s.none, fmt.Errorf("unknown element type %q", ty)
+		return s.none, fmt.Errorf("unknown element type %q", d.typ)
 	}
-	e := reflect.New(t).Interface().(Factory[T, F])
-	err = yaml.Unmarshal(value, e)
+	f := reflect.New(t).Interface().(Factory[T, F])
+	if d.raw != nil {
+		err := yaml.Unmarshal(d.raw, f)
+		if err != nil {
+			return s.none, fmt.Errorf("cannot unmarshal type %q: %w", d.typ, err)
+		}
+	} else {
+		f = d.spec
+	}
+	e, err := f.Create(s.factoryContext)
 	if err != nil {
-		return s.none, fmt.Errorf("cannot unmarshal type %q: %w", ty, err)
+		return zero, err
 	}
-	return e.Create(s.factoryContext)
+	d.spec = f
+	d.raw = nil
+	return e, nil
 }

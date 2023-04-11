@@ -16,11 +16,21 @@ const (
 	// BLOB describes any anonymous untyped blob data.
 	BLOB = "blob"
 	// FILESYSTEM describes a directory structure stored as archive (tar, tgz).
-	FILESYSTEM = "filesystem"
+	FILESYSTEM        = "directoryTree"
+	FILESYSTEM_LEGACY = "filesystem"
 	// EXECUTABLE describes an OS executable.
 	EXECUTABLE = "executable"
 	// PLAIN_TEXT describes plain text.
 	PLAIN_TEXT = "plainText"
 	// OCM_PLUGIN describes an OS executable OCM plugin.
 	OCM_PLUGIN = "ocmPlugin"
+
+	// OCM_FILE describes a generic file or unspecified byte stream.
+	OCM_FILE = "file"
+	// OCM_YAML describes a YAML file.
+	OCM_YAML = "yaml"
+	// OCM_JSON describes a JSON file.
+	OCM_JSON = "json"
+	// OCM_XML describes a XML file.
+	OCM_XML = "xml"
 )

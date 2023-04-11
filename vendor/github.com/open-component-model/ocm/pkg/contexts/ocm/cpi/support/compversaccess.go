@@ -149,13 +149,7 @@ func (a *componentVersionAccessImpl) GetResource(id metav1.Identity) (cpi.Resour
 	if err != nil {
 		return nil, err
 	}
-	return &ResourceAccess{
-		BaseAccess: &BaseAccess{
-			vers:   a,
-			access: r.Access,
-		},
-		meta: r.ResourceMeta,
-	}, nil
+	return newResourceAccess(a, r.Access, r.ResourceMeta), nil
 }
 
 func (a *componentVersionAccessImpl) GetResourceByIndex(i int) (cpi.ResourceAccess, error) {
@@ -163,25 +157,26 @@ func (a *componentVersionAccessImpl) GetResourceByIndex(i int) (cpi.ResourceAcce
 		return nil, errors.ErrInvalid("resource index", strconv.Itoa(i))
 	}
 	r := a.base.GetDescriptor().Resources[i]
-	return &ResourceAccess{
-		BaseAccess: &BaseAccess{
-			vers:   a,
-			access: r.Access,
-		},
-		meta: r.ResourceMeta,
-	}, nil
+	return newResourceAccess(a, r.Access, r.ResourceMeta), nil
+}
+
+func (a *componentVersionAccessImpl) GetResourcesByName(name string, selectors ...compdesc.IdentitySelector) ([]cpi.ResourceAccess, error) {
+	resources, err := a.base.GetDescriptor().GetResourcesByName(name, selectors...)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []cpi.ResourceAccess{}
+	for _, resource := range resources {
+		result = append(result, newResourceAccess(a, resource.Access, resource.ResourceMeta))
+	}
+	return result, nil
 }
 
 func (a *componentVersionAccessImpl) GetResources() []cpi.ResourceAccess {
 	result := []cpi.ResourceAccess{}
 	for _, r := range a.GetDescriptor().Resources {
-		result = append(result, &ResourceAccess{
-			BaseAccess: &BaseAccess{
-				vers:   a,
-				access: r.Access,
-			},
-			meta: r.ResourceMeta,
-		})
+		result = append(result, newResourceAccess(a, r.Access, r.ResourceMeta))
 	}
 	return result
 }
@@ -191,13 +186,7 @@ func (a *componentVersionAccessImpl) GetSource(id metav1.Identity) (cpi.SourceAc
 	if err != nil {
 		return nil, err
 	}
-	return &SourceAccess{
-		BaseAccess: &BaseAccess{
-			vers:   a,
-			access: r.Access,
-		},
-		meta: r.SourceMeta,
-	}, nil
+	return newSourceAccess(a, r.Access, r.SourceMeta), nil
 }
 
 func (a *componentVersionAccessImpl) GetSourceByIndex(i int) (cpi.SourceAccess, error) {
@@ -205,25 +194,13 @@ func (a *componentVersionAccessImpl) GetSourceByIndex(i int) (cpi.SourceAccess, 
 		return nil, errors.ErrInvalid("source index", strconv.Itoa(i))
 	}
 	r := a.base.GetDescriptor().Sources[i]
-	return &SourceAccess{
-		BaseAccess: &BaseAccess{
-			vers:   a,
-			access: r.Access,
-		},
-		meta: r.SourceMeta,
-	}, nil
+	return newSourceAccess(a, r.Access, r.SourceMeta), nil
 }
 
 func (a *componentVersionAccessImpl) GetSources() []cpi.SourceAccess {
 	result := []cpi.SourceAccess{}
 	for _, r := range a.GetDescriptor().Sources {
-		result = append(result, &SourceAccess{
-			BaseAccess: &BaseAccess{
-				vers:   a,
-				access: r.Access,
-			},
-			meta: r.SourceMeta,
-		})
+		result = append(result, newSourceAccess(a, r.Access, r.SourceMeta))
 	}
 	return result
 }
@@ -299,12 +276,8 @@ func (c *componentVersionAccessImpl) SetResource(meta *cpi.ResourceMeta, acc com
 	}
 
 	if res.Relation == metav1.LocalRelation {
-		switch res.Version {
-		case "":
+		if res.Version == "" {
 			res.Version = c.GetVersion()
-		case c.GetVersion():
-		default:
-			return errors.ErrInvalid("resource version", res.Version)
 		}
 	}
 
@@ -352,7 +325,7 @@ func (c *componentVersionAccessImpl) SetSource(meta *cpi.SourceMeta, acc compdes
 
 // AddResource adds a blob resource to the current archive.
 func (c *componentVersionAccessImpl) SetResourceBlob(meta *cpi.ResourceMeta, blob cpi.BlobAccess, refName string, global cpi.AccessSpec) error {
-	c.GetContext().Logger().Info("adding resource blob", "resource", meta.Name)
+	Logger(c).Info("adding resource blob", "resource", meta.Name)
 	acc, err := c.AddBlob(blob, meta.Type, refName, global)
 	if err != nil {
 		return fmt.Errorf("unable to add blob: %w", err)
@@ -366,7 +339,7 @@ func (c *componentVersionAccessImpl) SetResourceBlob(meta *cpi.ResourceMeta, blo
 }
 
 func (c *componentVersionAccessImpl) SetSourceBlob(meta *cpi.SourceMeta, blob cpi.BlobAccess, refName string, global cpi.AccessSpec) error {
-	c.GetContext().Logger().Info("adding source blob", "source", meta.Name)
+	Logger(c).Info("adding source blob", "source", meta.Name)
 	acc, err := c.AddBlob(blob, meta.Type, refName, global)
 	if err != nil {
 		return fmt.Errorf("unable to add blob: %w", err)
@@ -425,6 +398,16 @@ type ResourceAccess struct {
 
 var _ cpi.ResourceAccess = (*ResourceAccess)(nil)
 
+func newResourceAccess(componentVersion *componentVersionAccessImpl, accessSpec compdesc.AccessSpec, meta cpi.ResourceMeta) *ResourceAccess {
+	return &ResourceAccess{
+		BaseAccess: &BaseAccess{
+			vers:   componentVersion,
+			access: accessSpec,
+		},
+		meta: meta,
+	}
+}
+
 func (r ResourceAccess) Meta() *cpi.ResourceMeta {
 	return &r.meta
 }
@@ -437,6 +420,16 @@ type SourceAccess struct {
 }
 
 var _ cpi.SourceAccess = (*SourceAccess)(nil)
+
+func newSourceAccess(componentVersion *componentVersionAccessImpl, accessSpec compdesc.AccessSpec, meta cpi.SourceMeta) *SourceAccess {
+	return &SourceAccess{
+		BaseAccess: &BaseAccess{
+			vers:   componentVersion,
+			access: accessSpec,
+		},
+		meta: meta,
+	}
+}
 
 func (r SourceAccess) Meta() *cpi.SourceMeta {
 	return &r.meta

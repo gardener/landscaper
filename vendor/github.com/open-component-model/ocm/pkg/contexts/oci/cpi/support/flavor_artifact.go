@@ -49,7 +49,7 @@ func NewArtifact(container ArtifactSetContainerImpl, defs ...*artdesc.Artifact) 
 	}
 	state, err := accessobj.NewBlobStateForObject(mode, def, cpi.NewArtifactStateHandler())
 	if err != nil {
-		panic("oops: " + err.Error())
+		return nil, fmt.Errorf("failed to fetch new blob state: %w", err)
 	}
 	return newArtifactImpl(container, state)
 }

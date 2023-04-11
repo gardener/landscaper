@@ -45,8 +45,12 @@ func (a *AccessSpec) Describe(ctx cpi.Context) string {
 	return "none"
 }
 
-func (s AccessSpec) IsLocal(context cpi.Context) bool {
+func (s *AccessSpec) IsLocal(context cpi.Context) bool {
 	return false
+}
+
+func (s *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
+	return nil
 }
 
 func (s *AccessSpec) GetMimeType() string {

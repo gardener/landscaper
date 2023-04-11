@@ -95,6 +95,14 @@ func (a *AccessSpecRef) IsLocal(ctx Context) bool {
 	return false
 }
 
+func (a *AccessSpecRef) GlobalAccessSpec(ctx Context) AccessSpec {
+	a.assure(ctx)
+	if a.evaluated != nil {
+		return a.evaluated.GlobalAccessSpec(ctx)
+	}
+	return nil
+}
+
 func (a *AccessSpecRef) AccessMethod(access ComponentVersionAccess) (AccessMethod, error) {
 	if err := a.assure(access.GetContext()); err != nil {
 		return nil, err

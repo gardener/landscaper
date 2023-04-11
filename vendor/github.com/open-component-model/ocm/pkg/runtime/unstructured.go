@@ -193,7 +193,7 @@ func (u *UnstructuredTypedObject) Evaluate(types Scheme) (TypedObject, error) {
 		decoder = types.GetDecoder(u.GetType())
 	}
 	if decoder == nil {
-		return nil, errors.ErrUnknown(errors.KIND_OBJECTTYPE)
+		return nil, errors.ErrUnknown(errors.KIND_OBJECTTYPE, u.GetType())
 	}
 
 	if obj, err := decoder.Decode(data, DefaultJSONEncoding); err != nil {

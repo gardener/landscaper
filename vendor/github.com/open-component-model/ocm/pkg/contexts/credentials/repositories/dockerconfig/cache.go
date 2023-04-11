@@ -24,14 +24,21 @@ func newRepositories(datacontext.Context) interface{} {
 	}
 }
 
-func (r *Repositories) GetRepository(ctx cpi.Context, name string, propagate bool) (*Repository, error) {
+func (r *Repositories) GetRepository(ctx cpi.Context, name string, data []byte, propagate bool) (*Repository, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	var err error = nil
-	repo := r.repos[name]
+	var (
+		err  error = nil
+		repo *Repository
+	)
+	if name != "" {
+		repo = r.repos[name]
+	}
 	if repo == nil {
-		repo, err = NewRepository(ctx, name, propagate)
-		r.repos[name] = repo
+		repo, err = NewRepository(ctx, name, data, propagate)
+		if err == nil {
+			r.repos[name] = repo
+		}
 	}
 	return repo, err
 }

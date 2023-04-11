@@ -22,16 +22,16 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
-	"github.com/mandelsoft/logging/logrusr"
 	"github.com/sirupsen/logrus"
+
+	"github.com/mandelsoft/logging/logrusr"
 )
 
 type context struct {
-	id          ContextId
-	lock        sync.RWMutex
-	base        Context
-	updateState *UpdateState
-	updater     *Updater
+	id      ContextId
+	lock    sync.RWMutex
+	base    Context
+	updater *Updater
 
 	level int
 	sink  logr.LogSink
@@ -67,14 +67,13 @@ func newWithBase(base Context, baselogger ...logr.Logger) *context {
 	}
 
 	if base == nil {
-		ctx.updateState = &UpdateState{}
 		ctx.level = InfoLevel
+		ctx.updater = NewUpdater(nil)
 	} else {
 		internal := base.Tree()
-		ctx.updateState = internal.UpdateState()
+		ctx.updater = NewUpdater(internal.Updater())
 		ctx.messageContext = internal.GetMessageContext()
 	}
-	ctx.updater = NewUpdater(ctx.updateState)
 
 	if len(baselogger) > 0 {
 		ctx.setBaseLogger(baselogger[0])
@@ -97,12 +96,8 @@ func (c *context) GetMessageContext() []MessageContext {
 	return append(c.messageContext[:0:0], c.messageContext...)
 }
 
-func (c *context) UpdateState() *UpdateState {
-	return c.updateState
-}
-
-func (c *context) GetWatermark() int64 {
-	return c.updater.Watermark()
+func (c *context) Updater() *Updater {
+	return c.updater
 }
 
 func (c *context) update() {
@@ -161,11 +156,12 @@ func (c *context) SetDefaultLevel(level int) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.setDefaultLevel(level)
+	c.updater.Modify()
+	c._update()
 }
 
 func (c *context) setDefaultLevel(level int) {
 	c.level = level
-	c.updateState.Modify()
 }
 
 func (c *context) SetBaseLogger(logger logr.Logger, plain ...bool) {
@@ -173,7 +169,8 @@ func (c *context) SetBaseLogger(logger logr.Logger, plain ...bool) {
 	defer c.lock.Unlock()
 
 	c.setBaseLogger(logger, plain...)
-	c.updateState.Modify()
+	c.updater.Modify()
+	c._update()
 }
 
 func (c *context) setBaseLogger(logger logr.Logger, plain ...bool) {
@@ -190,9 +187,21 @@ func (c *context) AddRule(rules ...Rule) {
 
 	for _, rule := range rules {
 		if rule != nil {
+			if upd, ok := rule.(UpdatableRule); ok {
+				i := 0
+				for i < len(c.rules) {
+					f := c.rules[i]
+					if upd.MatchRule(f) {
+						c.rules = append(c.rules[:i], c.rules[i+1:]...)
+					} else {
+						i++
+					}
+				}
+			}
 			c.rules = append(append(c.rules[:0:0], rule), c.rules...)
 		}
 	}
+	c.updater.Modify()
 }
 
 func (c *context) AddRulesTo(ctx Context) {
@@ -211,6 +220,7 @@ func (c *context) ResetRules() {
 	defer c.lock.Unlock()
 
 	c.rules = nil
+	c.updater.Modify()
 }
 
 func (c *context) WithContext(messageContext ...MessageContext) Context {

@@ -73,7 +73,7 @@ func (c *ComponentVersion) GetDependency(_ context.Context, name string) (model.
 }
 
 func (c *ComponentVersion) GetResource(name string, selectors map[string]string) (model.Resource, error) {
-	resources, err := c.compvers.GetResourceByName(name, metav1.Identity(selectors))
+	resources, err := c.compvers.GetResourcesByName(name, metav1.Identity(selectors))
 	if err != nil {
 		return nil, err
 	}

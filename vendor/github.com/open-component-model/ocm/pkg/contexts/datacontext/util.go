@@ -26,7 +26,7 @@ type ElementCopyable[T any] interface {
 
 type ElementCreator[T any] func(base ...T) T
 
-func SetupElement[T ElementCopyable[T]](mode BuilderMode, target *T, create ElementCreator[T], def T) {
+func SetupElement[T ElementCopyable[T]](mode BuilderMode, target *T, create ElementCreator[T], def T) error {
 	var zero T
 	if *target == zero {
 		switch mode {
@@ -41,7 +41,9 @@ func SetupElement[T ElementCopyable[T]](mode BuilderMode, target *T, create Elem
 		case MODE_SHARED:
 			*target = def
 		default:
-			panic(fmt.Sprintf("invalid context creation mode %s", mode))
+			return fmt.Errorf("invalid context creation mode %s", mode)
 		}
 	}
+
+	return nil
 }

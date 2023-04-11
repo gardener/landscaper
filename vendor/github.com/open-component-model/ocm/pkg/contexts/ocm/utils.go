@@ -35,7 +35,7 @@ func AssureTargetRepository(session Session, ctx Context, targetref string, opts
 		case string:
 			archive = v
 		default:
-			panic(fmt.Sprintf("invalid option type %T", o))
+			return nil, fmt.Errorf("invalid option type %T", o)
 		}
 	}
 
@@ -43,10 +43,13 @@ func AssureTargetRepository(session Session, ctx Context, targetref string, opts
 	if err != nil {
 		return nil, err
 	}
-	if archive != "" && ref.Type != "" {
+	if ref.Type != "" {
+		format = accessio.FileFormat(ref.Type)
+	}
+	if archive != "" && format != "" {
 		for _, f := range ctf.SupportedFormats() {
-			if f.String() == ref.Type {
-				ref.Type = archive + "+" + ref.Type
+			if f == format {
+				ref.Type = archive + "+" + format.String()
 			}
 		}
 	}

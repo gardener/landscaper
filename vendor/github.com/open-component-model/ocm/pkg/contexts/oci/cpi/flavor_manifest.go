@@ -6,6 +6,7 @@ package cpi
 
 import (
 	"compress/gzip"
+	"fmt"
 
 	"github.com/opencontainers/go-digest"
 
@@ -32,7 +33,7 @@ func NewManifest(access ArtifactSetContainer, defs ...*artdesc.Manifest) (*Manif
 	}
 	state, err := accessobj.NewBlobStateForObject(mode, def, NewManifestStateHandler())
 	if err != nil {
-		panic("oops")
+		return nil, fmt.Errorf("failed to get blob state for object: %w", err)
 	}
 
 	p, err := access.NewArtifactProvider(state)

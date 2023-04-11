@@ -19,8 +19,14 @@ var DigestOption = RegisterOption(NewStringOptionType("digest", "blob digest"))
 // ReferenceOption.
 var ReferenceOption = RegisterOption(NewStringOptionType("reference", "reference name"))
 
+// PackageOption.
+var PackageOption = RegisterOption(NewStringOptionType("accessPackage", "package name"))
+
 // RepositoryOption.
 var RepositoryOption = RegisterOption(NewStringOptionType("accessRepository", "repository URL"))
+
+// RegistryOption.
+var RegistryOption = RegisterOption(NewStringOptionType("accessRegistry", "registry base URL"))
 
 // HostnameOption.
 var HostnameOption = RegisterOption(NewStringOptionType("accessHostname", "hostname used for access"))

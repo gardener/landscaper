@@ -11,6 +11,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
@@ -24,6 +25,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/support"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/generics"
 )
 
 type ComponentVersion struct {
@@ -50,7 +52,7 @@ func newComponentVersionAccess(mode accessobj.AccessMode, comp *componentAccessI
 	}, nil
 }
 
-////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
 
 type ComponentVersionContainer struct {
 	comp     *ComponentAccess
@@ -152,38 +154,58 @@ func (c *ComponentVersionContainer) AccessMethod(a cpi.AccessSpec) (cpi.AccessMe
 }
 
 func (c *ComponentVersionContainer) Update() error {
+	logger := Logger(c.GetContext()).WithValues("cv", common.NewNameVersion(c.comp.name, c.version))
 	err := c.Check()
 	if err != nil {
 		return fmt.Errorf("check failed: %w", err)
 	}
 
 	if c.state.HasChanged() {
+		logger.Debug("update component version")
 		desc := c.GetDescriptor()
+		layers := generics.Set[int]{}
+		for i := range c.manifest.GetDescriptor().Layers {
+			layers.Add(i)
+		}
 		for i, r := range desc.Resources {
-			s, err := c.evalLayer(r.Access)
+			s, l, err := c.evalLayer(r.Access)
 			if err != nil {
 				return fmt.Errorf("failed resource layer evaluation: %w", err)
 			}
-
+			if l > 0 {
+				layers.Delete(l)
+			}
 			if s != r.Access {
 				desc.Resources[i].Access = s
 			}
 		}
 		for i, r := range desc.Sources {
-			s, err := c.evalLayer(r.Access)
+			s, l, err := c.evalLayer(r.Access)
 			if err != nil {
 				return fmt.Errorf("failed source layer evaluation: %w", err)
 			}
-
+			if l > 0 {
+				layers.Delete(l)
+			}
 			if s != r.Access {
 				desc.Sources[i].Access = s
 			}
 		}
+		m := c.manifest.GetDescriptor()
+		i := len(m.Layers) - 1
 
+		for i > 0 {
+			if layers.Contains(i) {
+				logger.Debug("removing unused layer", "layer", i)
+				m.Layers = append(m.Layers[:i], m.Layers[i+1:]...)
+			}
+			i--
+		}
 		if _, err := c.state.Update(); err != nil {
 			return fmt.Errorf("failed to update state: %w", err)
 		}
 
+		logger.Debug("add oci artifact")
 		if _, err := c.comp.namespace.AddArtifact(c.manifest, c.version); err != nil {
 			return fmt.Errorf("unable to add artifact: %w", err)
 		}
@@ -192,17 +214,38 @@ func (c *ComponentVersionContainer) Update() error {
 	return nil
 }
 
-func (c *ComponentVersionContainer) evalLayer(s compdesc.AccessSpec) (compdesc.AccessSpec, error) {
+func (c *ComponentVersionContainer) evalLayer(s compdesc.AccessSpec) (compdesc.AccessSpec, int, error) {
+	var d *artdesc.Descriptor
+
 	spec, err := c.GetContext().AccessSpecForSpec(s)
 	if err != nil {
-		return s, err
+		return s, 0, err
 	}
 	if a, ok := spec.(*localblob.AccessSpec); ok {
 		if ok, _ := artdesc.IsDigest(a.LocalReference); !ok {
-			return s, errors.ErrInvalid("digest", a.LocalReference)
+			return s, 0, errors.ErrInvalid("digest", a.LocalReference)
 		}
+		d = &artdesc.Descriptor{Digest: digest.Digest(a.LocalReference), MediaType: a.GetMimeType()}
 	}
-	return s, nil
+	if a, ok := spec.(*localociblob.AccessSpec); ok {
+		if ok, _ := artdesc.IsDigest(a.Digest.String()); !ok {
+			return s, 0, errors.ErrInvalid("digest", a.Digest.String())
+		}
+		d = &artdesc.Descriptor{Digest: a.Digest, MediaType: a.GetMimeType()}
+	}
+	if d != nil {
+		// find layer
+		layers := c.manifest.GetDescriptor().Layers
+		max := len(layers) - 1
+		for i := range layers {
+			l := layers[len(layers)-1-i]
+			if i < max && l.Digest == d.Digest && (d.Digest == "" || d.Digest == l.Digest) {
+				return s, len(layers) - 1 - i, nil
+			}
+		}
+		return s, 0, fmt.Errorf("resource access %s: no layer found for local blob %s[%s]", spec.Describe(c.GetContext()), d.Digest, d.MediaType)
+	}
+	return s, 0, nil
 }
 
 func (c *ComponentVersionContainer) GetDescriptor() *compdesc.ComponentDescriptor {

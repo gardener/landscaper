@@ -23,13 +23,10 @@ package logging
 // It is not intended for the consumer of a logging context.
 type ContextSupport interface {
 	// UpdateState provides information of the update watermark in a context tree
-	UpdateState() *UpdateState
+	Updater() *Updater
 
 	// GetBaseContext returns the base context for nested logging contexts.
 	GetBaseContext() Context
-
-	// GetWatermark returns the actual config level.
-	GetWatermark() int64
 
 	// GetMessageContext returns the configured standard message context
 	// shared for all created Loggers.

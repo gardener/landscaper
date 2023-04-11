@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/mandelsoft/logging"
+	. "github.com/open-component-model/ocm/pkg/finalizer"
 
 	"github.com/open-component-model/ocm/pkg/contexts/config"
 	cfgcpi "github.com/open-component-model/ocm/pkg/contexts/config/cpi"
@@ -19,7 +19,6 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/oci/repositories/ctf"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const CONTEXT_TYPE = "ocm" + datacontext.OCM_CONTEXT_SUFFIX
@@ -63,10 +62,10 @@ type Context interface {
 	// elements should be added to the finalzer, which can be reopened/created
 	// on-the fly whenever required.
 	Finalize() error
-	Finalizer() *utils.Finalizer
+	Finalizer() *Finalizer
 }
 
-////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
 
 var key = reflect.TypeOf(_context{})
 
@@ -88,7 +87,7 @@ func DefinedForContext(ctx context.Context) (Context, bool) {
 	return nil, ok
 }
 
-////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
 
 type _context struct {
 	datacontext.Context
@@ -105,12 +104,12 @@ type _context struct {
 	blobHandlers  BlobHandlerRegistry
 	blobDigesters BlobDigesterRegistry
 	aliases       map[string]RepositorySpec
-	finalizer     utils.Finalizer
+	finalizer     Finalizer
 }
 
 var _ Context = &_context{}
 
-func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme RepositoryTypeScheme, accessscheme AccessTypeScheme, specHandlers RepositorySpecHandlers, blobHandlers BlobHandlerRegistry, blobDigesters BlobDigesterRegistry, logger logging.Context) Context {
+func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme RepositoryTypeScheme, accessscheme AccessTypeScheme, specHandlers RepositorySpecHandlers, blobHandlers BlobHandlerRegistry, blobDigesters BlobDigesterRegistry, delegates datacontext.Delegates) Context {
 	c := &_context{
 		sharedattributes:     credctx.AttributesContext(),
 		credctx:              credctx,
@@ -122,7 +121,7 @@ func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme Repo
 		knownRepositoryTypes: reposcheme,
 		aliases:              map[string]RepositorySpec{},
 	}
-	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.GetAttributes(), logger)
+	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.GetAttributes(), delegates)
 	c.updater = cfgcpi.NewUpdater(credctx.ConfigContext(), c)
 	return c
 }
@@ -139,7 +138,7 @@ func (c *_context) Finalize() error {
 	return c.finalizer.Finalize()
 }
 
-func (c *_context) Finalizer() *utils.Finalizer {
+func (c *_context) Finalizer() *Finalizer {
 	return &c.finalizer
 }
 

@@ -20,6 +20,7 @@ func init() {
 
 // IdentityMatcher checks whether id matches against pattern and if this match
 // is better than the one for cur.
+// Hereby pattern is a given credential request and id a configured identity.
 type IdentityMatcher func(pattern, cur, id ConsumerIdentity) bool
 
 func CompleteMatch(pattern, cur, id ConsumerIdentity) bool {
@@ -31,12 +32,12 @@ func NoMatch(pattern, cur, id ConsumerIdentity) bool {
 }
 
 func PartialMatch(pattern, cur, id ConsumerIdentity) bool {
-	for k, v := range pattern {
-		if c, ok := id[k]; !ok || c != v {
+	for k, v := range id {
+		if c, ok := pattern[k]; !ok || c != v {
 			return false
 		}
 	}
-	return len(cur) == 0 || len(id) < len(cur)
+	return len(cur) == 0 || len(id) > len(cur)
 }
 
 func mergeMatcher(no IdentityMatcher, merge func([]IdentityMatcher) IdentityMatcher, matchers []IdentityMatcher) IdentityMatcher {

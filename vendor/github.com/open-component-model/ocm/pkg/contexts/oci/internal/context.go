@@ -9,8 +9,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/mandelsoft/logging"
-
 	"github.com/open-component-model/ocm/pkg/contexts/config"
 	cfgcpi "github.com/open-component-model/ocm/pkg/contexts/config/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
@@ -79,7 +77,7 @@ type _context struct {
 
 var _ Context = &_context{}
 
-func newContext(credctx credentials.Context, reposcheme RepositoryTypeScheme, specHandlers RepositorySpecHandlers, logger logging.Context) Context {
+func newContext(credctx credentials.Context, reposcheme RepositoryTypeScheme, specHandlers RepositorySpecHandlers, delegates datacontext.Delegates) Context {
 	c := &_context{
 		sharedattributes:     credctx.AttributesContext(),
 		credentials:          credctx,
@@ -87,7 +85,7 @@ func newContext(credctx credentials.Context, reposcheme RepositoryTypeScheme, sp
 		specHandlers:         specHandlers,
 		aliases:              map[string]RepositorySpec{},
 	}
-	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.ConfigContext().GetAttributes(), logger)
+	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.ConfigContext().GetAttributes(), delegates)
 	c.updater = cfgcpi.NewUpdater(credctx.ConfigContext(), c)
 	return c
 }

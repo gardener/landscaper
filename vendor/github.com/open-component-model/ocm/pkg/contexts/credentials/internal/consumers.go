@@ -34,6 +34,8 @@ func (c *_consumers) Set(id ConsumerIdentity, creds CredentialsSource) {
 	}
 }
 
+// Match matches a given request (pattern) against configured
+// identities.
 func (c *_consumers) Match(pattern ConsumerIdentity, m IdentityMatcher) *_consumer {
 	c.RLock()
 	defer c.RUnlock()

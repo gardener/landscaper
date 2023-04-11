@@ -1,3 +1,28 @@
+# v1.0.14 (2022-09-20)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.0.13 (2022-09-14)
+
+* **Bug Fix**: Fixes an issues where an error from an underlying SigV4 credential provider would not be surfaced from the SigV4a credential provider. Contribution by [sakthipriyan-aqfer](https://github.com/sakthipriyan-aqfer).
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.0.12 (2022-09-02)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.0.11 (2022-08-31)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.0.10 (2022-08-29)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.0.9 (2022-08-11)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
 # v1.0.8 (2022-08-09)
 
 * **Dependency Update**: Updated to the latest SDK module versions

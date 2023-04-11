@@ -18,18 +18,30 @@
 
 package logging
 
+import (
+	"reflect"
+)
+
 type ConditionRule struct {
 	conditions []Condition
 	level      int
 }
 
 var _ Rule = (*ConditionRule)(nil)
+var _ UpdatableRule = (*ConditionRule)(nil)
 
 func NewConditionRule(level int, cond ...Condition) Rule {
 	return &ConditionRule{
 		level:      level,
 		conditions: cond,
 	}
+}
+
+func (r *ConditionRule) MatchRule(o Rule) bool {
+	if or, ok := o.(*ConditionRule); ok {
+		return reflect.DeepEqual(r.conditions, or.conditions)
+	}
+	return false
 }
 
 func (r *ConditionRule) Match(sink SinkFunc, messageContext ...MessageContext) Logger {

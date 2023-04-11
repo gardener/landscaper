@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package compdesc
+package v2
 
 import (
 	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
