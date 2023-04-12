@@ -92,10 +92,16 @@ func componentIdentifierFromCD(cd cdv2.ComponentDescriptor) componentIdentifier 
 // resolveToComponentDescriptorListHelper is a helper function which fetches all referenced component descriptor, including the referencing one
 // the fetched CDs are stored in the given 'cds' map to avoid duplicates
 func resolveToComponentDescriptorListHelper(ctx context.Context, client ctf.ComponentResolver, cd cdv2.ComponentDescriptor, repositoryContext *cdv2.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter, cds map[componentIdentifier]cdv2.ComponentDescriptor) error {
+	cid := componentIdentifierFromCD(cd)
+	if _, ok := cds[cid]; ok {
+		// we have already handled this component before, no need to do it again
+		return nil
+	}
+	cds[cid] = cd
+
 	if len(cd.RepositoryContexts) == 0 {
 		return errors.New("component descriptor must at least contain one repository context with a base url")
 	}
-	cds[componentIdentifierFromCD(cd)] = cd
 
 	for _, compRef := range cd.ComponentReferences {
 		resolvedComponent, err := ResolveWithOverwriter(ctx, client, repositoryContext, compRef.ComponentName, compRef.Version, overwriter)
