@@ -68,9 +68,38 @@ Let's discuss the  [deploy execution](./blueprint/deploy-execution.yaml) of our 
 are added to a dictionary `$typedResources`, and resources with label `landscaper.gardener.cloud/guided-tour/auxiliary` are added to
 a dictionary `$auxiliaryResources`.  
 - Finally, these "typed" and "auxiliary" resources are inserted at different places in a ConfigMap manifest, which will
-be deployed by the manifest deployer.  
+be deployed by the manifest deployer. 
 
-Note that you can use certain [sprig template functions][3] like `list`, `append`, `dict`, etc.
+The resources that we have collected from the component descriptors look for example like this:
+```yaml
+- access:
+    imageReference: eu.gcr.io/gardener-project/landscaper/examples/images/image-a:1.0.0
+    type: ociRegistry
+  labels:
+    - name: landscaper.gardener.cloud/guided-tour/type
+      value: type-a
+  name: image-a
+  relation: external
+  type: ociImage
+  version: 1.0.0
+```
+This is not yet the desired result format. Therefore, we use a template `formateResource` to transform the resources. 
+The template extracts the field `.access.imageReference` from a resource, splits the string value in 
+three parts, and produces the following result: 
+```yaml
+registry: eu.gcr.io
+repository: gardener-project/landscaper/examples/images/image-a
+tag: 1.0.0
+```
+
+We can pass only one argument to a template. However, our template `formateResource` needs two inputs, a `resource` and
+an `indent`. To solve this, we put both values in a dictionary `$args` and pass this dictionary to template:
+```yaml
+{{- $args := dict "resource" $resource.access.imageReference "indent" 20 }}
+{{- template "formatResource" $args }}
+```
+
+Note that you can use certain [sprig template functions][3] like `list`, `append`, `dict` etc.
 
 For more details, see [Templating][1].
 
