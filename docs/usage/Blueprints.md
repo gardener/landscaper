@@ -346,6 +346,11 @@ All template [executions](./Templating.md) get a common standardized binding:
   the component descriptor of the owning component
 
 
+- **`components`**
+
+  the component descriptors of all referenced components, either directly or transitively (includes the component descriptor of the owning component too)
+
+
 - **`blueprintDef`**
 
   the blueprint definition, as given in the installation (not the blueprint.yaml itself)
