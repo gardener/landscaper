@@ -43,7 +43,7 @@ The template can be filled with values from a certain data structure. The follow
 provide access to the involved component descriptors:
 
 - **cd** : the component descriptor of the Installation. In our case, this is the root component descriptor.  
-  Let's consider an example, how to this field can be used. The expression below evaluates to the component name. 
+  Let's consider an example, how this field can be used. The expression below evaluates to the component name. 
   That is because field `cd` contains the complete 
   component descriptor, and inside it, the component name is located at the path `component.name`.
   ```yaml
