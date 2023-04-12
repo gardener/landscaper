@@ -43,7 +43,8 @@ func WaitForInstallationToFinish(
 }
 
 func IsInstallationFinished(inst *lsv1alpha1.Installation, phase lsv1alpha1.InstallationPhase) (bool, error) {
-	if inst.Status.JobIDFinished != inst.Status.JobID || helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+	if inst.Status.JobIDFinished != inst.Status.JobID || helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) ||
+		inst.Status.InstallationPhase.IsEmpty() {
 		return false, nil
 	} else if inst.Status.InstallationPhase != phase {
 		return false, fmt.Errorf("installation has finish with unexpected phase: %s, expected: %s", inst.Status.InstallationPhase, phase)
