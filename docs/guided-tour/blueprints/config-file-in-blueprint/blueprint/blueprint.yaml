@@ -1,0 +1,36 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+imports:
+  - name: cluster  # import parameter name
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+deployExecutions:
+  - name: default
+    type: GoTemplate
+    template: |
+      deployItems:
+        - name: default-deploy-item
+          type: landscaper.gardener.cloud/kubernetes-manifest
+      
+          target:
+            import: cluster   # import parameter name
+      
+          config:
+            apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+            kind: ProviderConfiguration
+            updateStrategy: update
+            manifests:
+              - policy: manage
+                manifest:
+                  apiVersion: v1
+                  kind: ConfigMap
+                  metadata:
+                    name: test-secret
+                    namespace: example
+                  data:
+                    config: |
+      {{- $config := ( fromJson (toString (readFile "./config.json"))) }}
+      {{ toYaml $config | indent 16 }}
