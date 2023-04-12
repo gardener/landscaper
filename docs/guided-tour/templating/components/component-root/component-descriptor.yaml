@@ -1,0 +1,30 @@
+meta:
+  schemaVersion: 'v2'
+component:
+  name: 'github.com/gardener/landscaper-examples/guided-tour/templating-components-root'
+  version: '1.0.0'
+
+  repositoryContexts:
+    - type: 'ociRegistry'
+      baseUrl: 'eu.gcr.io/gardener-project/landscaper/examples'
+
+  provider: 'internal'
+
+  componentReferences:
+    - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-core
+      name: core
+      version: 1.0.0
+    - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-extension
+      name: extension
+      version: 1.0.0
+
+  sources: []
+
+  resources:
+    - name: blueprint
+      type: blueprint
+      version: 1.0.0
+      relation: external
+      access:
+        type: ociRegistry
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/templating-components:1.0.0
