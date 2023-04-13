@@ -15,6 +15,7 @@ export REPO_ROOT
 TMP_DIR="${REPO_ROOT}/tmp"
 EXPORT_DIR="$TMP_DIR/export"
 BIN_DIR="$TMP_DIR/bin"
+GOBIN="$BIN_DIR"
 mkdir -p "$EXPORT_DIR"
 mkdir -p "$BIN_DIR"
 export PATH="$BIN_DIR:$PATH"
@@ -37,6 +38,16 @@ if ! kv=$(kind version 2>/dev/null); then
 	chmod +x "$BIN_DIR/kind"
 else
   echo "kind found: $kv"
+fi
+
+# install ginkgo if not there
+echo ">>> Checking for ginkgo"
+gv=""
+if ! gv=$(ginkgo version 2>/dev/null); then
+  echo "ginkgo not found, installing it"
+  go install "github.com/onsi/ginkgo/v2/ginkgo"
+else
+  echo "ginkgo found: $gv"
 fi
 
 # create kind cluster
