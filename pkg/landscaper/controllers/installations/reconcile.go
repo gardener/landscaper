@@ -460,9 +460,14 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 		return lserrors.NewError(currentOperation, "CheckObservedGeneration", "installation spec has been changed"), nil, nil
 	}
 
-	err := imports.NewConstructor(instOp).Construct(ctx, imps)
+	con := imports.NewConstructor(instOp)
+	err := con.Construct(ctx, imps)
 	if err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "ConstructImportsForExports", err.Error()), nil, nil
+	}
+	err = con.RenderImportExecutions()
+	if err != nil {
+		return lserrors.NewWrappedError(err, currentOperation, "RenderImportExecutionsForExports", err.Error()), nil, nil
 	}
 
 	dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
@@ -488,9 +493,7 @@ func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *install
 	if err := constructor.Construct(ctx, imps); err != nil {
 		return lserrors.NewWrappedError(err, currOp, "ConstructImports", err.Error())
 	}
-
-	impOp := imports.New(op)
-	if err := impOp.Ensure(ctx); err != nil {
+	if err := constructor.RenderImportExecutions(); err != nil {
 		return lserrors.NewWrappedError(err, currOp, "RenderImportExecutions", err.Error())
 	}
 

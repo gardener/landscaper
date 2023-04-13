@@ -27,13 +27,14 @@ var _ = Describe("ImportExecutions", func() {
 
 	var (
 		op *installations.Operation
+		c  *imports.Constructor
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
 		fakeCompRepo      ctf.ComponentResolver
 	)
 
-	Load := func(inst string) (context.Context, *installations.InstallationImportsAndBlueprint) {
+	Load := func(inst string) *imports.Constructor {
 		ctx := context.Background()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations[inst])
 		Expect(err).ToNot(HaveOccurred())
@@ -46,7 +47,7 @@ var _ = Describe("ImportExecutions", func() {
 		Expect(err).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, imps)).To(Succeed())
-		return ctx, inInstRoot
+		return c
 	}
 
 	BeforeEach(func() {
@@ -70,42 +71,34 @@ var _ = Describe("ImportExecutions", func() {
 	})
 
 	It("should extend imports by import executions", func() {
-		ctx, inst := Load("test11/root")
-		op.Inst = inst
-		exec := imports.New(op)
-		err := exec.Ensure(ctx)
+		c = Load("test11/root")
+		err := c.RenderImportExecutions()
 		Expect(err).To(Succeed())
-		Expect(inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
+		Expect(c.Inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
 	})
 
 	It("should extend imports incrementally by import executions", func() {
-		ctx, inst := Load("test11/multi")
-		op.Inst = inst
-		exec := imports.New(op)
-		err := exec.Ensure(ctx)
+		c = Load("test11/multi")
+		err := c.RenderImportExecutions()
 		Expect(err).To(Succeed())
-		Expect(inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
-		Expect(inst.GetImports()["further"]).To(Equal("mytestvalue(extended)(further)"))
+		Expect(c.Inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
+		Expect(c.Inst.GetImports()["further"]).To(Equal("mytestvalue(extended)(further)"))
 	})
 
 	It("should validate imports by import executions", func() {
-		ctx, inst := Load("test11/ok")
-		op.Inst = inst
-		exec := imports.New(op)
-		err := exec.Ensure(ctx)
+		c = Load("test11/ok")
+		err := c.RenderImportExecutions()
 		Expect(err).To(Succeed())
 	})
 
 	It("should reject wrong imports by import executions", func() {
-		ctx, inst := Load("test11/error")
-		op.Inst = inst
-		exec := imports.New(op)
-		err := exec.Ensure(ctx)
+		c = Load("test11/error")
+		err := c.RenderImportExecutions()
 		Expect(err).NotTo(Succeed())
 		Expect(err.Error()).To(Equal("import validation failed: invalid test data:other"))
-		Expect(inst.GetInstallation().Status.Conditions[0].Type).To(Equal(lsv1alpha1.ConditionType("ValidateImports")))
-		Expect(inst.GetInstallation().Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionStatus("False")))
-		Expect(inst.GetInstallation().Status.Conditions[0].Reason).To(Equal("ImportValidationFailed"))
-		Expect(inst.GetInstallation().Status.Conditions[0].Message).To(Equal("invalid test data:other"))
+		Expect(c.Inst.GetInstallation().Status.Conditions[0].Type).To(Equal(lsv1alpha1.ConditionType("ValidateImports")))
+		Expect(c.Inst.GetInstallation().Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionStatus("False")))
+		Expect(c.Inst.GetInstallation().Status.Conditions[0].Reason).To(Equal("ImportValidationFailed"))
+		Expect(c.Inst.GetInstallation().Status.Conditions[0].Message).To(Equal("invalid test data:other"))
 	})
 })
