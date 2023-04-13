@@ -14,7 +14,10 @@ export REPO_ROOT
 
 TMP_DIR="${REPO_ROOT}/tmp"
 EXPORT_DIR="$TMP_DIR/export"
+BIN_DIR="$TMP_DIR/bin"
 mkdir -p "$EXPORT_DIR"
+mkdir -p "$BIN_DIR"
+export PATH="$BIN_DIR:$PATH"
 
 export EFFECTIVE_VERSION=$(cat "${REPO_ROOT}/VERSION")-$(git rev-parse HEAD)
 export REGISTRY_AUTH="$TMP_DIR/registry-auth.config"
@@ -22,7 +25,19 @@ export REGISTRY_NS="registry"
 export KUBECONFIG="$TMP_DIR/kubeconfig"
 
 export K8S_VERSION="v1.25.3"
+export KIND_VERSION="v0.18.0"
 export CLUSTER_NAME="int-test"
+
+# download kind if not there
+echo ">>> Checking for kind"
+kv=""
+if ! kv=$(kind version 2>/dev/null); then
+  echo "kind not found, downloading version $KIND_VERSION"
+  curl -L -o "$BIN_DIR/kind" "https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+	chmod +x "$BIN_DIR/kind"
+else
+  echo "kind found: $kv"
+fi
 
 # create kind cluster
 echo ">>> Creating kind cluster"
