@@ -489,6 +489,11 @@ func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *install
 		return lserrors.NewWrappedError(err, currOp, "ConstructImports", err.Error())
 	}
 
+	impOp := imports.New(op)
+	if err := impOp.Ensure(ctx); err != nil {
+		return lserrors.NewWrappedError(err, currOp, "RenderImportExecutions", err.Error())
+	}
+
 	if err := op.CreateOrUpdateImports(ctx); err != nil {
 		return lserrors.NewWrappedError(err, currOp, "CreateOrUpdateImports", err.Error())
 	}

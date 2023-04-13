@@ -36,38 +36,38 @@ func New(op *installations.Operation) *ImportOperation {
 	}
 }
 
-func (o *ImportOperation) Ensure(ctx context.Context, inst *installations.InstallationImportsAndBlueprint) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.GetInstallation().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
+func (o *ImportOperation) Ensure(ctx context.Context) error {
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
 		KubeClient: o.Client(),
-		Inst:       inst.GetInstallation(),
+		Inst:       o.Inst.GetInstallation(),
 	}
 	targetResolver := secretresolver.New(o.Client())
 	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler, targetResolver), spiff.New(templateStateHandler))
 	errors, bindings, err := tmpl.TemplateImportExecutions(
 		template.NewBlueprintExecutionOptions(
-			o.Context().External.InjectComponentDescriptorRef(inst.GetInstallation()),
-			inst.GetBlueprint(),
+			o.Context().External.InjectComponentDescriptorRef(o.Inst.GetInstallation()),
+			o.Inst.GetBlueprint(),
 			o.ComponentDescriptor,
 			o.ResolvedComponentDescriptorList,
-			inst.GetImports()))
+			o.Inst.GetImports()))
 
 	if err != nil {
-		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+		o.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
 		return fmt.Errorf("unable to template executions: %w", err)
 	}
 
 	for k, v := range bindings {
-		inst.GetImports()[k] = v
+		o.Inst.GetImports()[k] = v
 	}
 	if len(errors) == 0 {
 		return nil
 	}
 
 	msg := strings.Join(errors, ", ")
-	inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+	o.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 		TemplatingFailedReason, msg))
 	return fmt.Errorf("import validation failed: %w", fmt.Errorf("%s", msg))
 }
