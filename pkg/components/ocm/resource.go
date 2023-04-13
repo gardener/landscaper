@@ -52,6 +52,8 @@ func (r Resource) GetBlobInfo(ctx context.Context) (*model.BlobInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer meth.Close()
+
 	mediatype := meth.MimeType()
 
 	return &model.BlobInfo{

@@ -11,6 +11,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	ocmadapter "github.com/gardener/landscaper/pkg/components/ocm"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"net/http"
 
 	"github.com/gardener/component-cli/ociclient"
@@ -162,9 +165,52 @@ func getChartFromOCIRef(ctx context.Context,
 	ociConfig *config.OCIConfiguration,
 	sharedCache cache.Cache) (*chart.Chart, error) {
 
-	resource, err := newOCIResource(ctx, ref, registryPullSecrets, ociConfig, sharedCache)
-	if err != nil {
-		return nil, err
+	var (
+		resource model.Resource
+		err      error
+	)
+	if COMPONENT_MODEL_VERSION == ocmadapter.ComponentModelVersion {
+		octx := ocm.DefaultContext()
+
+		ociConfigFiles := make([]string, 0)
+		if ociConfig != nil {
+			ociConfigFiles = ociConfig.ConfigFiles
+		}
+
+		var spec *dockerconfig.RepositorySpec
+		for _, path := range ociConfigFiles {
+			spec = dockerconfig.NewRepositorySpec(path, true)
+			_, err := octx.CredentialsContext().RepositoryForSpec(spec)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		for _, secret := range registryPullSecrets {
+			if secret.Type != corev1.SecretTypeDockerConfigJson {
+				continue
+			}
+			dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
+			if !ok {
+				continue
+			}
+			spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes)
+			_, err := octx.CredentialsContext().RepositoryForSpec(spec)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		registry := ocmadapter.NewRegistry(octx)
+		resource, err = registry.GetStandaloneResource(ctx, ref)
+		if err != nil {
+			return nil, err
+		}
+	} else if COMPONENT_MODEL_VERSION == cnudie.ComponentModelVersion {
+		resource, err = newOCIResource(ctx, ref, registryPullSecrets, ociConfig, sharedCache)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var buf bytes.Buffer

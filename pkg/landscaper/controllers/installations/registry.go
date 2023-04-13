@@ -6,7 +6,6 @@ package installations
 
 import (
 	"context"
-	"fmt"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/pkg/errors"
@@ -16,7 +15,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/cnudie"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	ocmadapter "github.com/gardener/landscaper/pkg/components/ocm"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 )
@@ -44,14 +42,19 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	octx := ocm.DefaultContext()
 
-	//var spec *dockerconfig.RepositorySpec
-	//for _, path := range ociConfigFiles {
-	//	spec = dockerconfig.NewRepositorySpec(path, true)
-	//	_, err = octx.CredentialsContext().RepositoryForSpec(spec)
-	//	if err != nil {
-	//		return errors.Wrapf(err, "cannot access %v", path)
-	//	}
-	//}
+	ociConfigFiles := make([]string, 0)
+	if c.LsConfig.Registry.OCI != nil {
+		ociConfigFiles = c.LsConfig.Registry.OCI.ConfigFiles
+	}
+
+	var spec *dockerconfig.RepositorySpec
+	for _, path := range ociConfigFiles {
+		spec = dockerconfig.NewRepositorySpec(path, true)
+		_, err = octx.CredentialsContext().RepositoryForSpec(spec)
+		if err != nil {
+			return errors.Wrapf(err, "cannot access %v", path)
+		}
+	}
 
 	for _, secret := range secrets {
 		if secret.Type != corev1.SecretTypeDockerConfigJson {

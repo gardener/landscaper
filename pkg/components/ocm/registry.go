@@ -7,6 +7,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/ociartifact"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ocireg"
 )
@@ -44,6 +45,20 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	}
 
 	return newComponentVersion(compvers), nil
+}
+
+func (r *RegistryAccess) GetStandaloneResource(ctx context.Context, ref string) (model.Resource, error) {
+	spec := ociartifact.New(ref)
+	
+	fakeComponentVersionAccess := &FakeComponentVersionAccess{
+		context: r.octx,
+	}
+
+	return &StandaloneResource{
+		accessSpec: spec,
+		compvers:   fakeComponentVersionAccess,
+	}, nil
+
 }
 
 // temporary
