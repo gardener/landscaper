@@ -64,26 +64,57 @@ var _ ctf.TypedBlobResolver = &BlobResolverFunc{}
 // ResolveToComponentDescriptorList transitively resolves all referenced components of a component descriptor and
 // return a list containing all resolved component descriptors.
 func ResolveToComponentDescriptorList(ctx context.Context, client ctf.ComponentResolver, cd cdv2.ComponentDescriptor, repositoryContext *cdv2.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (cdv2.ComponentDescriptorList, error) {
+	cds := map[componentIdentifier]cdv2.ComponentDescriptor{} // the resolved component descriptor list will be stored in this
 	cdList := cdv2.ComponentDescriptorList{}
 	cdList.Metadata = cd.Metadata
-	if len(cd.RepositoryContexts) == 0 {
-		return cdList, errors.New("component descriptor must at least contain one repository context with a base url")
+	if err := resolveToComponentDescriptorListHelper(ctx, client, cd, repositoryContext, overwriter, cds); err != nil {
+		return cdList, err
 	}
-	cdList.Components = []cdv2.ComponentDescriptor{cd}
+	cdList.Components = make([]cdv2.ComponentDescriptor, len(cds))
+	i := 0
+	for _, cd := range cds {
+		cdList.Components[i] = cd
+		i++
+	}
+
+	return cdList, nil
+}
+
+type componentIdentifier struct {
+	Name    string
+	Version string
+}
+
+func componentIdentifierFromCD(cd cdv2.ComponentDescriptor) componentIdentifier {
+	return componentIdentifier{Name: cd.Name, Version: cd.Version}
+}
+
+// resolveToComponentDescriptorListHelper is a helper function which fetches all referenced component descriptor, including the referencing one
+// the fetched CDs are stored in the given 'cds' map to avoid duplicates
+func resolveToComponentDescriptorListHelper(ctx context.Context, client ctf.ComponentResolver, cd cdv2.ComponentDescriptor, repositoryContext *cdv2.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter, cds map[componentIdentifier]cdv2.ComponentDescriptor) error {
+	cid := componentIdentifierFromCD(cd)
+	if _, ok := cds[cid]; ok {
+		// we have already handled this component before, no need to do it again
+		return nil
+	}
+	cds[cid] = cd
+
+	if len(cd.RepositoryContexts) == 0 {
+		return errors.New("component descriptor must at least contain one repository context with a base url")
+	}
 
 	for _, compRef := range cd.ComponentReferences {
 		resolvedComponent, err := ResolveWithOverwriter(ctx, client, repositoryContext, compRef.ComponentName, compRef.Version, overwriter)
 		if err != nil {
-			return cdList, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", compRef.Name, compRef.Version, err)
+			return fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", compRef.Name, compRef.Version, err)
 		}
-		cdList.Components = append(cdList.Components, *resolvedComponent)
-		resolvedComponentReferences, err := ResolveToComponentDescriptorList(ctx, client, *resolvedComponent, repositoryContext, overwriter)
+		err = resolveToComponentDescriptorListHelper(ctx, client, *resolvedComponent, repositoryContext, overwriter, cds)
 		if err != nil {
-			return cdList, fmt.Errorf("unable to resolve component references for component descriptor %s with version %s: %w", compRef.Name, compRef.Version, err)
+			return fmt.Errorf("unable to resolve component references for component descriptor %s with version %s: %w", compRef.Name, compRef.Version, err)
 		}
-		cdList.Components = append(cdList.Components, resolvedComponentReferences.Components...)
 	}
-	return cdList, nil
+
+	return nil
 }
 
 // ResolveWithOverwriter is like resolver.Resolve, but applies the given overwrites first.
