@@ -43,7 +43,7 @@ func newCnudieRegistryAccess(ctx context.Context,
 		return nil, err
 	}
 
-	registryAccess, err := cnudie.NewRegistry(ctx, registryPullSecrets, sharedCache, nil, ociConfig, ref.Inline,
+	registryAccess, err := cnudie.NewCnudieRegistry(ctx, registryPullSecrets, sharedCache, nil, ociConfig, ref.Inline,
 		helmChartOCIResolver, helmChartRepoResolver)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build registry access for helm charts: %w", err)
