@@ -1,0 +1,8 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: LsHealthCheck
+metadata:
+  name: landscaper
+  namespace: {{ .Namespace }}
+status: Init
+description: ""
+lastUpdateTime: "1970-01-01T00:00:00Z"
