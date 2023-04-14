@@ -29,6 +29,13 @@ export K8S_VERSION="v1.25.3"
 export KIND_VERSION="v0.18.0"
 export CLUSTER_NAME="int-test"
 
+function export_resources() {
+  for res in "$@"; do
+    echo "exporting $res"
+    kubectl get "$res" -A -o yaml > "$EXPORT_DIR/$res.yaml"
+  done
+}
+
 # download kind if not there
 echo ">>> Checking for kind"
 kv=""
@@ -57,8 +64,9 @@ echo ""
 
 # export logs and remove kind cluster after execution
 trap '{
-  echo ">>> Exporting logs"
+  echo ">>> Exporting logs and resources"
   kind export logs --name="$CLUSTER_NAME" "$EXPORT_DIR"
+  export_resources deployments installations executions deployitems
   echo ""
   echo ">>> Deleting kind cluster"
   kind delete cluster --name="$CLUSTER_NAME"
