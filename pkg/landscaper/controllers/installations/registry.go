@@ -8,10 +8,10 @@ import (
 	"context"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/landscaper/pkg/components"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	ocmadapter "github.com/gardener/landscaper/pkg/components/ocm"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 )
 
@@ -30,7 +30,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}
 
-	const COMPONENT_MODEL_VERSION string = ocmadapter.ComponentModelVersion
+	const COMPONENT_MODEL_VERSION string = cnudie.ComponentModelVersion
 	registry, err := components.NewRegistryAccess(ctx, COMPONENT_MODEL_VERSION, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
 	if err != nil {
 		return err
