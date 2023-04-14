@@ -12,8 +12,8 @@ cd "${REPO_ROOT}"
 REPO_ROOT="$(pwd)"
 export REPO_ROOT
 
-TMP_DIR="${REPO_ROOT}/tmp"
-EXPORT_DIR="$TMP_DIR/export"
+TMP_DIR="/tmp"
+EXPORT_DIR="/logs/artifacts"
 BIN_DIR="$TMP_DIR/bin"
 GOBIN="$BIN_DIR"
 mkdir -p "$EXPORT_DIR"
