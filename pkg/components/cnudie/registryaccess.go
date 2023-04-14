@@ -32,7 +32,7 @@ type RegistryAccess struct {
 
 var _ model.RegistryAccess = &RegistryAccess{}
 
-func NewRegistry(ctx context.Context, secrets []corev1.Secret, sharedCache cache.Cache,
+func NewCnudieRegistry(ctx context.Context, secrets []corev1.Secret, sharedCache cache.Cache,
 	localRegistryConfig *config.LocalRegistryConfiguration, ociRegistryConfig *config.OCIConfiguration,
 	inlineCd *cdv2.ComponentDescriptor) (model.RegistryAccess, error) {
 

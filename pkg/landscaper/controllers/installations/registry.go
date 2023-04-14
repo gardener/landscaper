@@ -6,15 +6,11 @@ package installations
 
 import (
 	"context"
-	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/pkg/errors"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/pkg/components"
 	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	ocmadapter "github.com/gardener/landscaper/pkg/components/ocm"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 )
@@ -34,51 +30,13 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}
 
-	registry, err := cnudie.NewRegistry(ctx, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
+	const COMPONENT_MODEL_VERSION string = ocmadapter.ComponentModelVersion
+	registry, err := components.NewRegistryAccess(ctx, COMPONENT_MODEL_VERSION, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
 	if err != nil {
 		return err
 	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	octx := ocm.DefaultContext()
-
-	ociConfigFiles := make([]string, 0)
-	if c.LsConfig.Registry.OCI != nil {
-		ociConfigFiles = c.LsConfig.Registry.OCI.ConfigFiles
-	}
-
-	var spec *dockerconfig.RepositorySpec
-	for _, path := range ociConfigFiles {
-		spec = dockerconfig.NewRepositorySpec(path, true)
-		_, err = octx.CredentialsContext().RepositoryForSpec(spec)
-		if err != nil {
-			return errors.Wrapf(err, "cannot access %v", path)
-		}
-	}
-
-	for _, secret := range secrets {
-		if secret.Type != corev1.SecretTypeDockerConfigJson {
-			continue
-		}
-		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
-		if !ok {
-			continue
-		}
-		spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes)
-		_, err = octx.CredentialsContext().RepositoryForSpec(spec)
-		if err != nil {
-			return errors.Wrapf(err, "cannot create credentials from secret")
-		}
-	}
-
-	registry = ocmadapter.NewRegistry(octx)
 	op.SetComponentsRegistry(registry)
 	return nil
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//registry := cnudie.NewRegistry(compRegistry)
-	//op.SetComponentsRegistry(registry)
-	//return nil
 }
 
 func (c *Controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {

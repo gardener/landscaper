@@ -2,14 +2,18 @@ package ocm
 
 import (
 	"context"
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/ociartifact"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ocireg"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type RegistryAccess struct {
@@ -18,15 +22,49 @@ type RegistryAccess struct {
 
 var _ model.RegistryAccess = &RegistryAccess{}
 
-func NewRegistry(octx ocm.Context) model.RegistryAccess {
+func NewOCMRegistry(ctx context.Context, secrets []corev1.Secret,
+	localRegistryConfig *config.LocalRegistryConfiguration, ociRegistryConfig *config.OCIConfiguration,
+	inlineCd *cdv2.ComponentDescriptor) (model.RegistryAccess, error) {
+
+	octx := ocm.DefaultContext()
+
+	ociConfigFiles := make([]string, 0)
+	if ociRegistryConfig != nil {
+		ociConfigFiles = ociRegistryConfig.ConfigFiles
+	}
+
+	var spec *dockerconfig.RepositorySpec
+	for _, path := range ociConfigFiles {
+		spec = dockerconfig.NewRepositorySpec(path, true)
+		_, err := octx.CredentialsContext().RepositoryForSpec(spec)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot access %v", path)
+		}
+	}
+
+	for _, secret := range secrets {
+		if secret.Type != corev1.SecretTypeDockerConfigJson {
+			continue
+		}
+		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
+		if !ok {
+			continue
+		}
+		spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes)
+		_, err := octx.CredentialsContext().RepositoryForSpec(spec)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot create credentials from secret")
+		}
+	}
+
 	return &RegistryAccess{
 		octx: octx,
-	}
+	}, nil
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (model.ComponentVersion, error) {
 	// Muss noch ersetzt werden, macht langfristig keinen Sinn, auf Datentypen aus dem Legacy Code aufzubauen
-	var cnudieRepoSpec v2.OCIRegistryRepository
+	var cnudieRepoSpec cdv2.OCIRegistryRepository
 	if err := cdRef.RepositoryContext.DecodeInto(&cnudieRepoSpec); err != nil {
 		return nil, err
 	}
@@ -49,7 +87,7 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 
 func (r *RegistryAccess) GetStandaloneResource(ctx context.Context, ref string) (model.Resource, error) {
 	spec := ociartifact.New(ref)
-	
+
 	fakeComponentVersionAccess := &FakeComponentVersionAccess{
 		context: r.octx,
 	}

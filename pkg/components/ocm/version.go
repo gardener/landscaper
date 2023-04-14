@@ -1,3 +1,3 @@
 package ocm
 
-const ComponentModelVersion string = "v2"
+const ComponentModelVersion string = "v3"

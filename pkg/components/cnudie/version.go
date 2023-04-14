@@ -1,3 +1,3 @@
 package cnudie
 
-const ComponentModelVersion string = "v1"
+const ComponentModelVersion string = "v2"
