@@ -21,6 +21,8 @@ spec:
         {{ $key }}: {{ $value}}
         {{- end }}
       labels:
+        landscaper.gardener.cloud/topology: webhook-server
+        landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
         {{- include "landscaper.webhooks.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -64,7 +66,7 @@ spec:
             mountPath: /app/ls/landscaper-cluster-kubeconfig
           {{- end }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.webhooksServer.resources | nindent 12 }}
       {{- if .Values.webhooksServer.landscaperKubeconfig }}
       volumes:
       - name: landscaper-cluster-kubeconfig
@@ -87,4 +89,19 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            landscaper.gardener.cloud/topology: webhook-server
+            landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            landscaper.gardener.cloud/topology: webhook-server
+            landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
 {{- end }}

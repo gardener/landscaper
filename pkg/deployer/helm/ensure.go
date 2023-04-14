@@ -222,11 +222,15 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 
 	if h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
+			timeout := customReadinessCheckConfig.Timeout
+			if timeout == nil {
+				timeout = h.ProviderConfiguration.ReadinessChecks.Timeout
+			}
 			customReadinessCheck := health.CustomReadinessCheck{
 				Context:             ctx,
 				Client:              client,
 				CurrentOp:           "CustomCheckResourcesReadinessHelm",
-				Timeout:             h.ProviderConfiguration.ReadinessChecks.Timeout,
+				Timeout:             timeout,
 				ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:       customReadinessCheckConfig,
 				InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),

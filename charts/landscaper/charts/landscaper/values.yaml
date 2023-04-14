@@ -113,7 +113,7 @@ webhooksServer:
   #   kubeconfig: |
   #     <cluster-kubeconfig>
 
-  replicaCount: 1
+  replicaCount: 2
   image:
     repository: eu.gcr.io/gardener-project/landscaper/landscaper-webhooks-server
     pullPolicy: IfNotPresent
@@ -134,6 +134,14 @@ webhooksServer:
   #   # enable the gardener dns extension to create a DNS entry for this ingress.
   #   dns:
   #     class: garden
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 40Mi
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
 
 imagePullSecrets: []
 nameOverride: ""
@@ -171,15 +179,11 @@ service:
   type: ClusterIP
   port: 80
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+resources:
+  requests:
+    cpu: 10m
+    memory: 100Mi
   # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
   #   cpu: 100m
   #   memory: 128Mi
 

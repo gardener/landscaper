@@ -144,7 +144,14 @@ func registerWebhooks(ctx context.Context,
 	} else {
 		dnsNames = webhookcert.GeDNSNamesFromNamespacedName(wo.ServiceNamespace, wo.ServiceName)
 	}
-	wo.CABundle, err = webhookcert.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, o.webhook.certificatesNamespace, "landscaper-webhook", certSecretName, dnsNames)
+
+	secretNamespace := o.webhook.certificatesNamespace
+	if len(secretNamespace) == 0 {
+		secretNamespace = o.webhook.webhookServiceNamespace
+	}
+
+	wo.CABundle, err = webhookcert.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir,
+		secretNamespace, "landscaper-webhook", certSecretName, dnsNames)
 	if err != nil {
 		return fmt.Errorf("unable to generate webhook certificates: %w", err)
 	}

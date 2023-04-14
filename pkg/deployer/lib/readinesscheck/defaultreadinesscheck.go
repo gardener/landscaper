@@ -40,19 +40,25 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 		return nil
 	}
 
-	objects := make([]*unstructured.Unstructured, len(d.ManagedResources))
-	for i, ref := range d.ManagedResources {
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
-		objects[i] = obj
+	var objects []*unstructured.Unstructured
+	getObjectsFunc := func() ([]*unstructured.Unstructured, error) {
+		if objects == nil {
+			objects = make([]*unstructured.Unstructured, len(d.ManagedResources))
+			for i, ref := range d.ManagedResources {
+				obj := kutil.ObjectFromTypedObjectReference(&ref)
+				objects[i] = obj
+			}
+
+			// In case if the manifest and fake helm deployer we check for all objects at least the existence.
+			// In case of a real helm deployment we check only Pods, Deployments, etc, because the other objects could
+			// be temporary due to helm hooks.
+			objects = d.filterObjects(objects)
+		}
+		return objects, nil
 	}
 
-	// In case if the manifest and fake helm deployer we check for all objects at least the existence.
-	// In case of a real helm deployment we check only Pods, Deployments, etc, because the other objects could
-	// be temporary due to helm hooks.
-	objects = d.filterObjects(objects)
-
 	timeout := d.Timeout.Duration
-	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject, d.InterruptionChecker); err != nil {
+	if err := WaitForObjectsReady(d.Context, timeout, d.Client, getObjectsFunc, d.CheckObject, d.InterruptionChecker); err != nil {
 		return lserror.NewWrappedError(err,
 			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}

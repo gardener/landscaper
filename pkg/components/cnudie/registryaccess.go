@@ -27,14 +27,19 @@ import (
 )
 
 type RegistryAccess struct {
-	componentResolver ctf.ComponentResolver
+	componentResolver       ctf.ComponentResolver
+	additionalBlobResolvers []ctf.TypedBlobResolver
 }
 
 var _ model.RegistryAccess = &RegistryAccess{}
 
-func NewCnudieRegistry(ctx context.Context, secrets []corev1.Secret, sharedCache cache.Cache,
-	localRegistryConfig *config.LocalRegistryConfiguration, ociRegistryConfig *config.OCIConfiguration,
-	inlineCd *cdv2.ComponentDescriptor) (model.RegistryAccess, error) {
+func NewRegistry(ctx context.Context,
+	secrets []corev1.Secret,
+	sharedCache cache.Cache,
+	localRegistryConfig *config.LocalRegistryConfiguration,
+	ociRegistryConfig *config.OCIConfiguration,
+	inlineCd *cdv2.ComponentDescriptor,
+	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 
 	logger, _ := logging.FromContextOrNew(ctx, nil)
 
@@ -84,7 +89,8 @@ func NewCnudieRegistry(ctx context.Context, secrets []corev1.Secret, sharedCache
 	}
 
 	return &RegistryAccess{
-		componentResolver: compResolver,
+		componentResolver:       compResolver,
+		additionalBlobResolvers: additionalBlobResolvers,
 	}, nil
 }
 
@@ -103,6 +109,14 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	cd, blobResolver, err := r.componentResolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
+	}
+
+	for i := range r.additionalBlobResolvers {
+		additionalBlobResolver := r.additionalBlobResolvers[i]
+		blobResolver, err = ctf.AggregateBlobResolvers(blobResolver, additionalBlobResolver)
+		if err != nil {
+			return nil, fmt.Errorf("unable to aggregate blob resolvers: %w", err)
+		}
 	}
 
 	return newComponentVersion(r, cd, blobResolver), nil

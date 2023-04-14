@@ -14,9 +14,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -25,6 +28,7 @@ import (
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
@@ -298,6 +302,187 @@ var _ = Describe("Template", func() {
 				}
 				return fmt.Errorf("deploy item not yet deleted")
 			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should be deleted")
+		})
+
+		It("should respect the custom readiness check timeout when set", func() {
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./chartresolver/testdata/testchart")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			requirementValue := map[string]string{
+				"value": "true",
+			}
+			requirementValueMarshaled, err := json.Marshal(requirementValue)
+			Expect(err).ToNot(HaveOccurred())
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Name:            "test",
+				Namespace:       "some-namespace",
+				Chart:           chartAccess,
+				CreateNamespace: true,
+				ReadinessChecks: readinesschecks.ReadinessCheckConfiguration{
+					Timeout: &lsv1alpha1.Duration{
+						Duration: 1 * time.Second,
+					},
+					CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
+						{
+							Timeout: &lsv1alpha1.Duration{
+								Duration: 1 * time.Minute,
+							},
+							Name: "my-check",
+							Resource: []lsv1alpha1.TypedObjectReference{
+								{
+									APIVersion: "v1",
+									Kind:       "ConfigMap",
+									ObjectReference: lsv1alpha1.ObjectReference{
+										Name:      "my-cm",
+										Namespace: state.Namespace,
+									},
+								},
+							},
+							Requirements: []readinesschecks.RequirementSpec{
+								{
+									JsonPath: ".data.ready",
+									Operator: selection.Equals,
+									Value: []runtime.RawExtension{
+										{
+											Raw: requirementValueMarshaled,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "myitem").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			go func() {
+				defer GinkgoRecover()
+				time.Sleep(10 * time.Second)
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cm",
+						Namespace: state.Namespace,
+					},
+					Data: map[string]string{
+						"ready": "true",
+					},
+				}
+				Expect(state.Client.Create(ctx, cm)).To(Succeed())
+			}()
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item); err != nil {
+					return err
+				}
+
+				if item.Status.Phase != lsv1alpha1.DeployItemPhases.Succeeded {
+					return fmt.Errorf("deploy item phase is not succeeded")
+				}
+
+				return nil
+			}, 30*time.Second, 1*time.Second).Should(Succeed(), "custom readiness checks fulfilled")
+		})
+
+		It("should fail a readinessCheck for a wrong value on a deployed helm chart with a single config map", func() {
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart3")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			requirementValue := map[string]string{
+				"value": "value_WRONG",
+			}
+			requirementValueMarshaled, err := json.Marshal(requirementValue)
+			Expect(err).ToNot(HaveOccurred())
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Name:            "test",
+				Namespace:       "some-namespace",
+				Chart:           chartAccess,
+				CreateNamespace: true,
+				ReadinessChecks: readinesschecks.ReadinessCheckConfiguration{
+					Timeout: &lsv1alpha1.Duration{
+						Duration: 1 * time.Second,
+					},
+					CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
+						{
+							Timeout: &lsv1alpha1.Duration{
+								Duration: 1 * time.Second,
+							},
+							Name: "my-check",
+							Resource: []lsv1alpha1.TypedObjectReference{
+								{
+									APIVersion: "v1",
+									Kind:       "ConfigMap",
+									ObjectReference: lsv1alpha1.ObjectReference{
+										Name:      "mychart-configmap",
+										Namespace: "some-namespace",
+									},
+								},
+							},
+							Requirements: []readinesschecks.RequirementSpec{
+								{
+									JsonPath: ".data.key",
+									Operator: selection.Equals,
+									Value: []runtime.RawExtension{
+										{
+											Raw: requirementValueMarshaled,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "myitem").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item); err != nil {
+					return err
+				}
+
+				if item.Status.Phase != lsv1alpha1.DeployItemPhases.Failed {
+					return fmt.Errorf("deploy item phase is not failed")
+				}
+
+				return nil
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "custom readiness checks fulfilled")
 		})
 
 	})

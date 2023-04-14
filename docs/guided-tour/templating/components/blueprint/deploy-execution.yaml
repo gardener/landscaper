@@ -1,0 +1,69 @@
+{{- $resources := list }}
+{{- $typedResources := dict }}
+{{- $auxiliaryResources := dict }}
+
+
+{{/* collect all resources of the component and its referenced components in the list $resources */}}
+{{- range $_, $component := .components.components }}
+  {{- range $_, $resource := $component.component.resources }}
+    {{- $resources = append $resources $resource }}
+  {{- end }}
+{{- end }}
+
+
+{{/* classify the resources according to their labels */}}
+{{- range $index, $resource := $resources }}
+  {{- range .labels }}
+    {{- if eq .name "landscaper.gardener.cloud/guided-tour/type" }}
+      {{- $_ := set $typedResources .value $resource }}
+    {{- else if eq .name "landscaper.gardener.cloud/guided-tour/auxiliary" }}
+      {{- $_ := set $auxiliaryResources .value $resource }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+
+{{- define "formatResource"}}
+  {{- $indent := get . "indent" }}
+  {{- $resource := get . "resource" }}
+  {{- $a := splitn "/" 2 $resource }}
+  {{- $b := splitn ":" 2 $a._1 }}
+  {{ printf "registry: %s" $a._0 | indent $indent }}
+  {{ printf "repository: %s" $b._0 | indent $indent }}
+  {{ printf "tag: %s" $b._1 | indent $indent }}
+{{- end }}
+
+
+deployItems:
+  - name: default-deploy-item
+    type: landscaper.gardener.cloud/kubernetes-manifest
+    target:
+      import: cluster
+
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: templating-components
+              namespace: example
+            data:
+              content: |
+                images:
+                  types:
+                    {{- range $type, $resource := $typedResources }}
+                    {{- $args := dict "resource" $resource.access.imageReference "indent" 20 }}
+                    {{ $type }}:
+                      {{- template "formatResource" $args }}
+                    {{- end }}
+                auxiliaryImages:
+                  {{- range $type, $resource := $auxiliaryResources }}
+                  {{- $args := dict "resource" $resource.access.imageReference "indent" 18 }}
+                  {{ $type }}:
+                    {{- template "formatResource" $args }}
+                  {{- end }}

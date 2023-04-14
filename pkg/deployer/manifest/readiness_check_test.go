@@ -6,6 +6,7 @@ package manifest_test
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -194,6 +195,76 @@ var _ = Describe("ReadinessCheck", func() {
 			cmRes := &corev1.ConfigMap{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(managedConfigMap), cmRes)).To(Succeed())
 			Expect(cmRes.Data).To(HaveKeyWithValue("key", "val"))
+		})
+
+		It("should mark the deploy item as not ready for a managed configmap with an invalid value", func() {
+			managedConfigMap := &corev1.ConfigMap{}
+			managedConfigMap.Name = "my-managed-cm"
+			managedConfigMap.Namespace = state.Namespace
+			managedConfigMap.Data = map[string]string{
+				"status": "notReady",
+				"key":    "val",
+			}
+
+			rawCM, err := kutil.ConvertToRawExtension(managedConfigMap, scheme.Scheme)
+			Expect(err).ToNot(HaveOccurred())
+
+			manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+			manifestConfig.Manifests = []managedresource.Manifest{
+				{
+					Policy:   managedresource.ManagePolicy,
+					Manifest: rawCM,
+				},
+			}
+
+			requirementValue := map[string]string{
+				"value": "ready",
+			}
+			requirementValueMarshaled, err := json.Marshal(requirementValue)
+			Expect(err).ToNot(HaveOccurred())
+
+			manifestConfig.ReadinessChecks = readinesschecks.ReadinessCheckConfiguration{
+				CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
+					{
+						Timeout: &lsv1alpha1.Duration{
+							Duration: 1 * time.Second,
+						},
+						Name: "secret-selector",
+						Resource: []lsv1alpha1.TypedObjectReference{
+							{
+								APIVersion: "v1",
+								Kind:       "ConfigMap",
+								ObjectReference: lsv1alpha1.ObjectReference{
+									Name:      "my-managed-cm",
+									Namespace: state.Namespace,
+								},
+							},
+						},
+						Requirements: []readinesschecks.RequirementSpec{
+							{
+								JsonPath: ".data.status",
+								Operator: selection.Equals,
+								Value: []runtime.RawExtension{
+									{
+										Raw: requirementValueMarshaled,
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			deployItem, err := manifest.NewDeployItemBuilder().
+				Key(state.Namespace, "my-cm").
+				ProviderConfig(manifestConfig).
+				Target(target.Namespace, target.Name).
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, deployItem)).To(Succeed())
+
+			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(m.Reconcile(ctx)).ToNot(Succeed())
 		})
 	})
 
