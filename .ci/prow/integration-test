@@ -20,7 +20,7 @@ mkdir -p "$EXPORT_DIR"
 mkdir -p "$BIN_DIR"
 export PATH="$BIN_DIR:$PATH"
 
-export EFFECTIVE_VERSION=$(cat "${REPO_ROOT}/VERSION")-$(git rev-parse HEAD)
+export EFFECTIVE_VERSION=$($REPO_ROOT/hack/get-version.sh)
 export REGISTRY_AUTH="$TMP_DIR/registry-auth.config"
 export REGISTRY_NS="registry"
 export KUBECONFIG="$TMP_DIR/kubeconfig"
@@ -35,6 +35,13 @@ function export_resources() {
     kubectl get "$res" -A -o yaml > "$EXPORT_DIR/$res.yaml"
   done
 }
+
+# prow merges the PR with the master branch, which adds a commit and messes up the version logic
+last_commit_message=$(git log -1 --pretty=%B)
+if [[ "$last_commit_message" == "Merge commit '"*"'" ]] && [[ $PULL_PULL_SHA ]]; then
+  EFFECTIVE_VERSION="$(cat $REPO_ROOT/VERSION)-$PULL_PULL_SHA"
+  echo "Setting EFFECTIVE_VERSION to $EFFECTIVE_VERSION."
+fi
 
 # download kind if not there
 echo ">>> Checking for kind"
