@@ -63,6 +63,18 @@ spec:
                     name:
                       description: Name is the unique name of the execution.
                       type: string
+                    onDelete:
+                      description: OnDelete specifies particular setting when deleting
+                        a deploy item
+                      properties:
+                        skipUninstallIfClusterRemoved:
+                          description: SkipUninstallIfClusterRemoved specifies that
+                            uninstall is skipped if the target cluster is already
+                            deleted. Works only in the context of an existing target
+                            sync object which is used to check the Garden project
+                            with the shoot cluster resources
+                          type: boolean
+                      type: object
                     target:
                       description: Target is the object reference to the target that
                         the deploy item should deploy to.

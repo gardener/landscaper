@@ -23,8 +23,8 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
 	"github.com/gardener/landscaper/pkg/utils/targetresolver"
-	"github.com/gardener/landscaper/pkg/utils/token"
 )
 
 // LandscaperSprigFuncMap returns the sanitized spring function map.
@@ -326,7 +326,7 @@ func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver)
 		}
 
 		ctx := context.Background()
-		shootClient, err := token.NewShootClientFromTarget(ctx, target, targetResolver)
+		shootClient, err := clusters.NewShootClientFromTarget(ctx, target, targetResolver)
 		if err != nil {
 			return "", err
 		}
@@ -369,7 +369,7 @@ func getServiceAccountKubeconfigGoFunc(targetResolver targetresolver.TargetResol
 		}
 
 		ctx := context.Background()
-		tokenClient, err := token.NewTokenClientFromTarget(ctx, target, targetResolver)
+		tokenClient, err := clusters.NewTokenClientFromTarget(ctx, target, targetResolver)
 		if err != nil {
 			return "", err
 		}
@@ -407,7 +407,7 @@ func getOidcKubeconfigGoFunc(targetResolver targetresolver.TargetResolver) func(
 		}
 
 		ctx := context.Background()
-		return token.BuildOIDCKubeconfig(ctx, issuerURL, clientID, target, targetResolver)
+		return clusters.BuildOIDCKubeconfig(ctx, issuerURL, clientID, target, targetResolver)
 	}
 }
 

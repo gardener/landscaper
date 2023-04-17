@@ -38,13 +38,13 @@ import (
 	kutils "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/utils/token"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 
 // AddControllerToManagerForTargetSyncs adds the controller to the manager
 func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Manager) error {
 	log := logger.Reconciles("targetSync", "TargetSync")
-	ctrl := NewTargetSyncController(log, mgr.GetClient(), NewDefaultSourceClientProvider())
+	ctrl := NewTargetSyncController(log, mgr.GetClient(), clusters.NewDefaultSourceClientProvider())
 
 	predicates := builder.WithPredicates(predicate.Or(predicate.LabelChangedPredicate{},
 		predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))
@@ -59,11 +59,11 @@ func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Man
 type TargetSyncController struct {
 	log                  logging.Logger
 	targetClient         client.Client
-	sourceClientProvider SourceClientProvider
+	sourceClientProvider clusters.SourceClientProvider
 }
 
 // NewTargetSyncController returns a new TargetSync controller
-func NewTargetSyncController(logger logging.Logger, targetClient client.Client, p SourceClientProvider) reconcile.Reconciler {
+func NewTargetSyncController(logger logging.Logger, targetClient client.Client, p clusters.SourceClientProvider) reconcile.Reconciler {
 	return &TargetSyncController{
 		log:                  logger,
 		targetClient:         targetClient,
@@ -359,7 +359,7 @@ func (c *TargetSyncController) handleSecret(ctx context.Context, targetSync *lsv
 }
 
 func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1alpha1.TargetSync,
-	shootClient *token.ShootClient, shoot *unstructured.Unstructured) error {
+	shootClient *clusters.ShootClient, shoot *unstructured.Unstructured) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targetName := c.deriveTargetNameFromShootName(shoot.GetName())

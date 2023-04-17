@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: 2022 "SAP SE or an SAP affiliate company and Gardener contributors"
+// SPDX-FileCopyrightText: 2023 "SAP SE or an SAP affiliate company and Gardener contributors"
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package targetsync
+package clusters
 
 import (
 	"context"
@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/utils/token"
 )
 
 type SourceClientProvider interface {
@@ -28,7 +27,7 @@ type SourceClientProvider interface {
 	GetSourceShootClient(
 		ctx context.Context,
 		targetSync *lsv1alpha1.TargetSync,
-		targetClient client.Client) (*token.ShootClient, error)
+		targetClient client.Client) (*ShootClient, error)
 }
 
 type DefaultSourceClientProvider struct{}
@@ -63,14 +62,14 @@ func (p *DefaultSourceClientProvider) GetSourceClient(
 func (p *DefaultSourceClientProvider) GetSourceShootClient(
 	ctx context.Context,
 	targetSync *lsv1alpha1.TargetSync,
-	targetClient client.Client) (*token.ShootClient, error) {
+	targetClient client.Client) (*ShootClient, error) {
 
 	gardenKubeconfigBytes, err := p.resolveSecretRef(ctx, targetClient, targetSync.Spec.SecretRef, targetSync.Namespace)
 	if err != nil {
 		return nil, err
 	}
 
-	return token.NewShootClient(gardenKubeconfigBytes)
+	return NewShootClient(gardenKubeconfigBytes)
 }
 
 func (p *DefaultSourceClientProvider) getSourceRestConfig(ctx context.Context, targetSync *lsv1alpha1.TargetSync, targetClient client.Client) (*rest.Config, error) {
@@ -115,12 +114,12 @@ func (p *DefaultSourceClientProvider) resolveSecretRef(ctx context.Context, targ
 
 type TrivialSourceClientProvider struct {
 	sourceClient client.Client
-	shootClient  *token.ShootClient
+	shootClient  *ShootClient
 }
 
 var _ SourceClientProvider = &TrivialSourceClientProvider{}
 
-func NewTrivialSourceClientProvider(sourceClient client.Client, shootClient *token.ShootClient) SourceClientProvider {
+func NewTrivialSourceClientProvider(sourceClient client.Client, shootClient *ShootClient) SourceClientProvider {
 	return &TrivialSourceClientProvider{
 		sourceClient: sourceClient,
 		shootClient:  shootClient,
@@ -139,7 +138,7 @@ func (p *TrivialSourceClientProvider) GetSourceClient(
 func (p *TrivialSourceClientProvider) GetSourceShootClient(
 	_ context.Context,
 	_ *lsv1alpha1.TargetSync,
-	_ client.Client) (*token.ShootClient, error) {
+	_ client.Client) (*ShootClient, error) {
 
 	return p.shootClient, nil
 }

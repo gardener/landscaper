@@ -6,6 +6,10 @@ package secret
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -46,4 +50,23 @@ func (srr SecretRefResolver) Resolve(ctx context.Context, target *lsv1alpha1.Tar
 	}
 
 	return rt, nil
+}
+
+func (srr SecretRefResolver) GetKubeconfigFromTarget(ctx context.Context, target *lsv1alpha1.Target) ([]byte, error) {
+	resolvedTarget, err := srr.Resolve(ctx, target)
+	if err != nil {
+		return nil, fmt.Errorf("target resolver: failed to resolve target")
+	}
+
+	targetConfig := &targettypes.KubernetesClusterTargetConfig{}
+	err = json.Unmarshal([]byte(resolvedTarget.Content), targetConfig)
+	if err != nil {
+		return nil, fmt.Errorf("target resolver: failed to unmarshal target config: %w", err)
+	}
+	if targetConfig.Kubeconfig.StrVal == nil {
+		return nil, fmt.Errorf("target resolver: target config contains no kubeconfig: %w", err)
+	}
+
+	kubeconfigBytes := []byte(*targetConfig.Kubeconfig.StrVal)
+	return kubeconfigBytes, nil
 }

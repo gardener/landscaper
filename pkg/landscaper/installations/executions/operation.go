@@ -132,6 +132,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 			DependsOn:          elem.DependsOn,
 			Timeout:            timeout,
 			UpdateOnChangeOnly: elem.UpdateOnChangeOnly,
+			OnDelete:           elem.OnDelete,
 		}
 	}
 

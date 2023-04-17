@@ -8,6 +8,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
+
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
@@ -19,6 +27,8 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
+const clusterNameAnnotation = "landscaper.gardener.cloud/clustername"
+
 // executionItem is the internal representation of a execution item with its deployitem and status
 type executionItem struct {
 	Info       lsv1alpha1.DeployItemTemplate
@@ -27,6 +37,13 @@ type executionItem struct {
 
 // deployOrTrigger creates a new deployitem or triggers it if it already exists.
 func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) lserrors.LsError {
+	op := "updateDeployItem"
+
+	clusterName, err := o.getShootClusterName(ctx, item.Info)
+	if err != nil {
+		return err
+	}
+
 	deployItemExists := item.DeployItem != nil
 
 	if !deployItemExists {
@@ -40,6 +57,9 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
 		item.DeployItem.Spec.Context = o.exec.Spec.Context
+		if len(clusterName) > 0 {
+			metav1.SetMetaDataAnnotation(&item.DeployItem.ObjectMeta, clusterNameAnnotation, clusterName)
+		}
 		o.Scheme().Default(item.DeployItem)
 		return controllerutil.SetControllerReference(o.exec, item.DeployItem, o.Scheme())
 	}); err != nil {
@@ -47,7 +67,7 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 		if deployItemExists {
 			msg = fmt.Sprintf("error while triggering deployitem %s", item.DeployItem.Name)
 		}
-		return lserrors.NewWrappedError(err, "TriggerDeployItem", msg, err.Error())
+		return lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
 
 	ref := lsv1alpha1.VersionedNamedObjectReference{}
@@ -60,9 +80,46 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
 	if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000034, o.exec); err != nil {
 		msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
-		return lserrors.NewWrappedError(err, "TriggerDeployItem", msg, err.Error())
+		return lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
 	return nil
+}
+
+// getShootClusterName determines the name of the cluster to which the kubeconfig in the target points.
+// Applies only if the target is of type kubernetes cluster and points to a Gardener shoot cluster.
+// Moreover, the feature "skipUninstallIfClusterRemoved" must be enabled for the deployitem.
+func (o *Operation) getShootClusterName(ctx context.Context, info lsv1alpha1.DeployItemTemplate) (string, lserrors.LsError) {
+	op := "getShootClusterName"
+
+	if info.OnDelete == nil || !info.OnDelete.SkipUninstallIfClusterRemoved || info.Target == nil {
+		return "", nil
+	}
+
+	target := &lsv1alpha1.Target{}
+	targetKey := client.ObjectKey{Namespace: o.exec.Namespace, Name: info.Target.Name}
+	if err := o.Client().Get(ctx, targetKey, target); err != nil {
+		msg := fmt.Sprintf("unable to fetch target %s/%s", o.exec.Namespace, info.Target.Name)
+		return "", lserrors.NewWrappedError(err, op, msg, err.Error())
+	}
+
+	if target.Spec.Type != targettypes.KubernetesClusterTargetType {
+		return "", nil
+	}
+
+	targetResolver := secret.New(o.Client())
+	kubeconfigBytes, err := targetResolver.GetKubeconfigFromTarget(ctx, target)
+	if err != nil {
+		msg := fmt.Sprintf("unable to retrieve kubeconfig from target %s/%s", o.exec.Namespace, info.Target.Name)
+		return "", lserrors.NewWrappedError(err, op, msg, err.Error())
+	}
+
+	clusterName, err := clusters.GetShootClusterNameFromKubeconfig(ctx, kubeconfigBytes)
+	if err != nil {
+		msg := fmt.Sprintf("unable to retrieve shoot cluster name from target %s/%s", o.exec.Namespace, info.Target.Name)
+		return "", lserrors.NewWrappedError(err, op, msg, err.Error())
+	}
+
+	return clusterName, nil
 }
 
 // CollectAndUpdateExportsNew loads all exports of all deployitems and persists them in a data object in the cluster.

@@ -593,6 +593,19 @@ bool
 <p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>onDelete</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.OnDeleteConfig">
+OnDeleteConfig
+</a>
+</em>
+</td>
+<td>
+<p>OnDelete specifies particular setting when deleting a deploy item</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -2654,6 +2667,19 @@ bool
 <p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>onDelete</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.OnDeleteConfig">
+OnDeleteConfig
+</a>
+</em>
+</td>
+<td>
+<p>OnDelete specifies particular setting when deleting a deploy item</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus
@@ -2970,6 +2996,19 @@ bool
 <td>
 <em>(Optional)</em>
 <p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>onDelete</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.OnDeleteConfig">
+OnDeleteConfig
+</a>
+</em>
+</td>
+<td>
+<p>OnDelete specifies particular setting when deleting a deploy item</p>
 </td>
 </tr>
 </tbody>
@@ -4808,6 +4847,39 @@ string
 <td>
 <em>(Optional)</em>
 <p>Namespace is the namespace of kubernetes object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.OnDeleteConfig">OnDeleteConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>)
+</p>
+<p>
+<p>OnDeleteConfig specifies particular setting when deleting a deploy item</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>skipUninstallIfClusterRemoved</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted.
+Works only in the context of an existing target sync object which is used to check the Garden project with
+the shoot cluster resources</p>
 </td>
 </tr>
 </tbody>
