@@ -1,0 +1,92 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: landscaper-controller
+  namespace: {{ .Namespace }}
+  generation: 1
+  labels:
+    app: landscaper-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: landscaper-controller
+  template:
+    metadata:
+      labels:
+        app: landscaper-controller
+    spec:
+      containers:
+        - name: dummy
+          image: dummy:0.1.0
+
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+  readyReplicas: 1
+...
+---
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: landscaper-webhooks
+  namespace: {{ .Namespace }}
+  generation: 1
+  labels:
+    app: landscaper-webhooks
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: landscaper-webhooks
+  template:
+    metadata:
+      labels:
+        app: landscaper-webhooks
+    spec:
+      containers:
+        - name: dummy
+          image: dummy:0.1.0
+
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+  readyReplicas: 1
+...
+---
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: helm-landscaper-helm-deployer
+  namespace: {{ .Namespace }}
+  generation: 1
+  labels:
+    app: landscaper-webhooks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: landscaper-webhooks
+  template:
+    metadata:
+      labels:
+        app: landscaper-webhooks
+    spec:
+      containers:
+        - name: dummy
+          image: dummy:0.1.0
+
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+  readyReplicas: 1
+...

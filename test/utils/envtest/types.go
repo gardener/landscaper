@@ -5,6 +5,7 @@
 package envtest
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -15,15 +16,17 @@ import (
 )
 
 var (
-	InstallationGVK schema.GroupVersionKind
-	ExecutionGVK    schema.GroupVersionKind
-	DeployItemGVK   schema.GroupVersionKind
-	DataObjectGVK   schema.GroupVersionKind
-	TargetGVK       schema.GroupVersionKind
-	TargetSyncGVK   schema.GroupVersionKind
-	ContextGVK      schema.GroupVersionKind
-	SecretGVK       schema.GroupVersionKind
-	ConfigMapGVK    schema.GroupVersionKind
+	InstallationGVK  schema.GroupVersionKind
+	ExecutionGVK     schema.GroupVersionKind
+	DeployItemGVK    schema.GroupVersionKind
+	DataObjectGVK    schema.GroupVersionKind
+	TargetGVK        schema.GroupVersionKind
+	TargetSyncGVK    schema.GroupVersionKind
+	ContextGVK       schema.GroupVersionKind
+	SecretGVK        schema.GroupVersionKind
+	ConfigMapGVK     schema.GroupVersionKind
+	DeploymentGVK    schema.GroupVersionKind
+	LSHealthCheckGVK schema.GroupVersionKind
 )
 
 func init() {
@@ -45,5 +48,9 @@ func init() {
 	SecretGVK, err = apiutil.GVKForObject(&corev1.Secret{}, api.LandscaperScheme)
 	utilruntime.Must(err)
 	ConfigMapGVK, err = apiutil.GVKForObject(&corev1.ConfigMap{}, api.LandscaperScheme)
+	utilruntime.Must(err)
+	DeploymentGVK, err = apiutil.GVKForObject(&appsv1.Deployment{}, api.LandscaperScheme)
+	utilruntime.Must(err)
+	LSHealthCheckGVK, err = apiutil.GVKForObject(&lsv1alpha1.LsHealthCheck{}, api.LandscaperScheme)
 	utilruntime.Must(err)
 }
