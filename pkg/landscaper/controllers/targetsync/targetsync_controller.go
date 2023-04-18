@@ -96,10 +96,21 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	}
 
 	if targetSync.DeletionTimestamp.IsZero() {
-		if err := c.handleReconcile(ctx, targetSync); err != nil {
+		err := c.handleReconcile(ctx, targetSync)
+
+		if err != nil {
 			logger.Error(err, "reconciling targetsync object failed")
-			return reconcile.Result{}, err
 		}
+
+		if helper.HasOperation(targetSync.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+			logger.Info("Removing reconcile annotation from target sync object.")
+			if err2 := c.removeReconcileAnnotation(ctx, targetSync); err2 != nil && err == nil {
+				err = err2
+			}
+		}
+
+		return reconcile.Result{}, err
+
 	} else {
 		if err := c.handleDelete(ctx, targetSync); err != nil {
 			logger.Error(err, "deleting targetsync object failed")
@@ -111,6 +122,20 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 		Requeue:      true,
 		RequeueAfter: requeueInterval,
 	}, nil
+}
+
+func (c *TargetSyncController) removeReconcileAnnotation(ctx context.Context, targetSync *lsv1alpha1.TargetSync) lserrors.LsError {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(targetSync).String()})
+
+	if helper.HasOperation(targetSync.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		logger.Debug("remove reconcile annotation from target sync")
+		delete(targetSync.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := c.targetClient.Update(ctx, targetSync); err != nil {
+			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateTargetSync", err.Error())
+		}
+	}
+
+	return nil
 }
 
 func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *lsv1alpha1.TargetSync) error {
