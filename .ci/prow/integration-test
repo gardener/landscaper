@@ -39,6 +39,8 @@ function export_resources() {
 # prow merges the PR with the master branch, which adds a commit and messes up the version logic
 last_commit_message=$(git log -1 --pretty=%B)
 if [[ "$last_commit_message" == "Merge commit '"*"'" ]] && [[ $PULL_PULL_SHA ]]; then
+  echo "Reverting merge with master branch ..."
+  git checkout "$PULL_PULL_SHA"
   EFFECTIVE_VERSION="$(cat $REPO_ROOT/VERSION)-$PULL_PULL_SHA"
   echo "Setting EFFECTIVE_VERSION to $EFFECTIVE_VERSION."
 fi
