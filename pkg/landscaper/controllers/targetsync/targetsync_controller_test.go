@@ -6,6 +6,7 @@ package targetsync
 
 import (
 	"context"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -125,11 +126,17 @@ var _ = Describe("TargetSync Controller", func() {
 			tgs.Spec.CreateTargetToSource = true
 			tgs.Spec.TargetToSourceName = sourceTargetName
 
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			Expect(helper.HasOperation(tgs.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeTrue())
+
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
 
 			checkTargetAndSecret(ctx, secretName1)
 			checkTargetAndSecret(ctx, secretName2)
 			checkTarget(ctx, sourceTargetName, tgs.Spec.SecretRef.Name, tgs.Spec.SecretRef.Key)
+
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			Expect(helper.HasOperation(tgs.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeFalse())
 
 			// Update secret
 
@@ -172,11 +179,14 @@ var _ = Describe("TargetSync Controller", func() {
 			tgs.Name = targetSyncName
 			tgs.Namespace = state.Namespace
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			Expect(helper.HasOperation(tgs.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeTrue())
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
 
 			checkTargetAndSecret(ctx, secretName1)
 			checkTargetAndSecret(ctx, secretName2)
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			Expect(helper.HasOperation(tgs.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeFalse())
 
 			// Update TargetSync object
 
@@ -219,6 +229,7 @@ var _ = Describe("TargetSync Controller", func() {
 			tgs1.Name = targetSyncName1
 			tgs1.Namespace = state.Namespace
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs1), tgs1))
+			Expect(helper.HasOperation(tgs1.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeTrue())
 
 			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(tgs1))
 
@@ -226,6 +237,8 @@ var _ = Describe("TargetSync Controller", func() {
 			Expect(tgs1.Status.LastErrors).NotTo(BeEmpty())
 
 			checkTargetAndSecretDoNotExist(ctx, secretName)
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs1), tgs1))
+			Expect(helper.HasOperation(tgs1.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeFalse())
 		})
 	})
 
