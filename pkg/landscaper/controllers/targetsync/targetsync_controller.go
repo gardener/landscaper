@@ -98,19 +98,21 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	if targetSync.DeletionTimestamp.IsZero() {
 		err := c.handleReconcile(ctx, targetSync)
 
-		if err != nil {
-			logger.Error(err, "reconciling targetsync object failed")
-		}
-
 		if helper.HasOperation(targetSync.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 			logger.Info("Removing reconcile annotation from target sync object.")
-			if err2 := c.removeReconcileAnnotation(ctx, targetSync); err2 != nil && err == nil {
-				err = err2
+			if err2 := c.removeReconcileAnnotation(ctx, targetSync); err2 != nil {
+				if err == nil {
+					err = err2
+				} else {
+					logger.Error(err, "removing reconcile operation for targetsync object failed")
+				}
 			}
 		}
 
-		return reconcile.Result{}, err
-
+		if err != nil {
+			logger.Error(err, "reconciling targetsync object failed")
+			return reconcile.Result{}, err
+		}
 	} else {
 		if err := c.handleDelete(ctx, targetSync); err != nil {
 			logger.Error(err, "deleting targetsync object failed")
