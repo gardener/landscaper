@@ -104,7 +104,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 				if err == nil {
 					err = err2
 				} else {
-					logger.Error(err, "removing reconcile operation for targetsync object failed")
+					logger.Error(err, "removing reconcile operation for target sync object failed")
 				}
 			}
 		}
@@ -115,7 +115,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 		}
 	} else {
 		if err := c.handleDelete(ctx, targetSync); err != nil {
-			logger.Error(err, "deleting targetsync object failed")
+			logger.Error(err, "deleting target sync object failed")
 			return reconcile.Result{}, err
 		}
 	}
