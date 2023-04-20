@@ -8,15 +8,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-	"github.com/gardener/landscaper/pkg/utils/clusters"
-
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
-
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -24,7 +18,9 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	"github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 const clusterNameAnnotation = "landscaper.gardener.cloud/clustername"
@@ -85,9 +81,11 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 	return nil
 }
 
-// getShootClusterName determines the name of the cluster to which the kubeconfig in the target points.
-// Applies only if the target is of type kubernetes cluster and points to a Gardener shoot cluster.
-// Moreover, the feature "skipUninstallIfClusterRemoved" must be enabled for the deployitem.
+// getShootClusterName determines for a deployitem whether the "skipUninstallIfClusterRemoved" feature is enabled,
+// and whether its target is managed by the "targetsync" mechanism. In this case, the name of the Gardener shoot cluster
+// is returned, otherwise an empty string. (For the "skipUninstallIfClusterRemoved" feature, a deployitem is
+// annotated with the shoot cluster name at creation/update time, so that later at deletion time the existence of the
+// shoot cluster can be checked. The existence check of the shoot resource uses the same client as the targetsync.)
 func (o *Operation) getShootClusterName(ctx context.Context, info lsv1alpha1.DeployItemTemplate) (string, lserrors.LsError) {
 	op := "getShootClusterName"
 
@@ -102,7 +100,7 @@ func (o *Operation) getShootClusterName(ctx context.Context, info lsv1alpha1.Dep
 		return "", lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
 
-	if target.Spec.Type != targettypes.KubernetesClusterTargetType {
+	if !clusters.HasTargetSyncLabel(target) {
 		return "", nil
 	}
 
