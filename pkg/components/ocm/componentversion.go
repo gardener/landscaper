@@ -1,12 +1,18 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package ocm
 
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/model"
+
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+
+	"github.com/gardener/landscaper/pkg/components/model"
 )
 
 type ComponentVersion struct {

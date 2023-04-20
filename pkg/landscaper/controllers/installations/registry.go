@@ -6,10 +6,12 @@ package installations
 
 import (
 	"context"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/gardener/landscaper/pkg/components"
 	"github.com/gardener/landscaper/pkg/components/cnudie"
-	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"

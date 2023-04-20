@@ -1,10 +1,16 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package ocm
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"io"
+
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/pkg/components/model"
 )
 
 type Resource struct {
@@ -42,8 +48,10 @@ func (r Resource) GetBlob(ctx context.Context, writer io.Writer) error {
 	if err != nil {
 		return err
 	}
-	writer.Write(data)
-	return err
+	if _, err := writer.Write(data); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r Resource) GetBlobInfo(ctx context.Context) (*model.BlobInfo, error) {
