@@ -6,14 +6,13 @@ package secret
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 	. "github.com/gardener/landscaper/pkg/utils/targetresolver"
 )
@@ -59,7 +58,7 @@ func (srr SecretRefResolver) GetKubeconfigFromTarget(ctx context.Context, target
 	}
 
 	targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-	err = json.Unmarshal([]byte(resolvedTarget.Content), targetConfig)
+	err = yaml.Unmarshal([]byte(resolvedTarget.Content), targetConfig)
 	if err != nil {
 		return nil, fmt.Errorf("target resolver: failed to unmarshal target config: %w", err)
 	}
