@@ -3,6 +3,8 @@ kind: TargetSync
 metadata:
   name: test-target-sync
   namespace: {{ .Namespace }}
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
 spec:
   secretNameExpression: \.kubeconfig$
   secretRef:
