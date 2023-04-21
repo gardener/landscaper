@@ -151,6 +151,10 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 		return reconcile.Result{}, nil
 	}
 
+	if err := installations.NewInstallationTrigger(c.Client(), inst).TriggerDependents(ctx); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.InterruptOperation) {
 		if err := c.handleInterruptOperation(ctx, inst); err != nil {
 			return reconcile.Result{}, err
@@ -166,7 +170,6 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
-
 	}
 
 	// generate new jobID
@@ -291,11 +294,14 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 
 func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
 	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
+	op := "setInstallationPhaseAndUpdate"
 
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
+	logger, ctx := logging.FromContextOrNew(ctx,
+		[]interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()},
+		lc.KeyMethod, op)
 
 	if lsError != nil && !lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorUnfinished) {
-		logger.Error(lsError, "setInstallationPhaseAndUpdate:"+lsError.Error())
+		logger.Error(lsError, op+lsError.Error())
 	}
 
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, lsError)
@@ -314,7 +320,21 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		inst.Status.JobIDFinished = inst.Status.JobID
 	}
 
-	if err := c.Writer().UpdateInstallationStatus(ctx, writeID, inst); err != nil {
+	if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {
+		dependents, err := installations.NewInstallationTrigger(c.Client(), inst).DetermineDependents(ctx)
+		if err != nil {
+			logger.Error(err, "unable to determine successor installations")
+			if lsError == nil {
+				return lserrors.NewWrappedError(err, op, "DetermineDependents", err.Error())
+			}
+			return lsError
+		}
+
+		inst.Status.DependentsToTrigger = dependents
+	}
+
+	err := c.Writer().UpdateInstallationStatus(ctx, writeID, inst)
+	if err != nil {
 		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Deleting {
 			// recheck if already deleted
 			instRecheck := &lsv1alpha1.Installation{}
@@ -326,9 +346,18 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 
 		logger.Error(err, "unable to update installation status")
 		if lsError == nil {
-			return lserrors.NewWrappedError(err, "setInstallationPhaseAndUpdate", "UpdateInstallationStatus", err.Error())
+			return lserrors.NewWrappedError(err, op, "UpdateInstallationStatus", err.Error())
 		}
+
+		return lsError
 	}
+
+	//if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {
+	//	// after a job has been finished (reconcile, not delete) and the status has been updated, inform the successors
+	//	if err := installations.TriggerSuccessorInstallations(ctx, c.Client(), inst); err != nil {
+	//		logger.Error(err, "unable to trigger successor installations after finished reconciliation")
+	//	}
+	//}
 
 	return lsError
 }
