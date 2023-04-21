@@ -6,7 +6,6 @@ package targetsync
 
 import (
 	"context"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,9 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -33,7 +34,7 @@ var _ = Describe("TargetSync Controller", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl = NewTargetSyncController(logging.Discard(), testenv.Client, NewTrivialSourceClientProvider(testenv.Client, nil))
+			ctrl = NewTargetSyncController(logging.Discard(), testenv.Client, clusters.NewTrivialSourceClientProvider(testenv.Client, nil))
 		})
 
 		AfterEach(func() {

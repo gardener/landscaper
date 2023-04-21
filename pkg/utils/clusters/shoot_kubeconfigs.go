@@ -1,10 +1,15 @@
-package token
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+package clusters
 
 import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -13,6 +18,38 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 )
+
+// GetShootClusterNameFromKubeconfig determines the name of a Gardener shoot cluster from a given kubeconfig.
+func GetShootClusterNameFromKubeconfig(_ context.Context, kubeconfigBytes []byte) (string, error) {
+	config, err := clientcmd.Load(kubeconfigBytes)
+	if err != nil {
+		return "", fmt.Errorf("clusters util: failed to load kubeconfig: %w", err)
+	}
+
+	context, ok := config.Contexts[config.CurrentContext]
+	if !ok || context == nil {
+		return "", fmt.Errorf("clusters util: current context not found: %w", err)
+	}
+
+	cluster, ok := config.Clusters[context.Cluster]
+	if !ok || context == nil {
+		return "", fmt.Errorf("clusters util: current cluster not found: %w", err)
+	}
+
+	url := cluster.Server
+	prefix := "https://api."
+	if !strings.HasPrefix(url, prefix) {
+		return "", fmt.Errorf("clusters util: server url has unexpected format: %w", err)
+	}
+
+	url = url[len(prefix):]
+	parts := strings.SplitN(url, ".", 2)
+	if len(parts) < 1 {
+		return "", fmt.Errorf("clusters util: failed to get cluster name from server url: %w", err)
+	}
+
+	return parts[0], nil
+}
 
 func BuildOIDCKubeconfig(ctx context.Context, issuerURL, clientID string, target *v1alpha1.Target,
 	targetResolver targetresolver.TargetResolver) (string, error) {

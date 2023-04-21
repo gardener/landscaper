@@ -145,4 +145,15 @@ type DeployItemTemplate struct {
 	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
 	// +optional
 	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
+
+	// OnDelete specifies particular setting when deleting a deploy item
+	OnDelete *OnDeleteConfig `json:"onDelete,omitempty"`
+}
+
+// OnDeleteConfig specifies particular setting when deleting a deploy item
+type OnDeleteConfig struct {
+	// SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted.
+	// Works only in the context of an existing target sync object which is used to check the Garden project with
+	// the shoot cluster resources
+	SkipUninstallIfClusterRemoved bool `json:"skipUninstallIfClusterRemoved,omitempty"`
 }

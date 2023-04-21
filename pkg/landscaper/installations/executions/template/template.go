@@ -148,6 +148,8 @@ type DeployItemSpecification struct {
 	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
 	// +optional
 	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
+
+	OnDelete *core.OnDeleteConfig
 }
 
 // DeployExecutorOutput describes the output of deploy executor.

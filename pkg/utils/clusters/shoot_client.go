@@ -1,10 +1,15 @@
-package token
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+package clusters
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -66,6 +71,23 @@ func NewShootClientFromTarget(ctx context.Context, gardenTarget *v1alpha1.Target
 // ListShoots returns the list of shoot in the specified namespace
 func (c *ShootClient) ListShoots(ctx context.Context, shootNamespace string) (*unstructured.UnstructuredList, error) {
 	return c.unstructuredClient.Namespace(shootNamespace).List(ctx, metav1.ListOptions{})
+}
+
+func (c *ShootClient) GetShoot(ctx context.Context, shootNamespace, shootName string) (*unstructured.Unstructured, error) {
+	return c.unstructuredClient.Namespace(shootNamespace).Get(ctx, shootName, metav1.GetOptions{})
+}
+
+func (c *ShootClient) ExistsShoot(ctx context.Context, shootNamespace, shootName string) (bool, error) {
+	shoot, err := c.GetShoot(ctx, shootNamespace, shootName)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	exists := shoot.GetDeletionTimestamp() == nil
+	return exists, nil
 }
 
 // GetShootAdminKubeconfig returns a short-lived admin kubeconfig for the specified shoot as base64 encoded string.

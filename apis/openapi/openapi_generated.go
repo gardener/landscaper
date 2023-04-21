@@ -142,6 +142,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheckList":                                  schema_landscaper_apis_core_v1alpha1_LsHealthCheckList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference":                               schema_landscaper_apis_core_v1alpha1_NamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference":                                    schema_landscaper_apis_core_v1alpha1_ObjectReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig":                                     schema_landscaper_apis_core_v1alpha1_OnDeleteConfig(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.RemoteBlueprintReference":                           schema_landscaper_apis_core_v1alpha1_RemoteBlueprintReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Requirement":                                        schema_landscaper_apis_core_v1alpha1_Requirement(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResolvedTarget":                                     schema_landscaper_apis_core_v1alpha1_ResolvedTarget(ref),
@@ -4009,12 +4010,18 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"onDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnDelete specifies particular setting when deleting a deploy item",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig"),
+						},
+					},
 				},
 				Required: []string{"type"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -4219,12 +4226,18 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"onDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnDelete specifies particular setting when deleting a deploy item",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig"),
+						},
+					},
 				},
 				Required: []string{"name", "type", "config"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -6031,6 +6044,26 @@ func schema_landscaper_apis_core_v1alpha1_ObjectReference(ref common.ReferenceCa
 					},
 				},
 				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_OnDeleteConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OnDeleteConfig specifies particular setting when deleting a deploy item",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"skipUninstallIfClusterRemoved": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted. Works only in the context of an existing target sync object which is used to check the Garden project with the shoot cluster resources",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
 			},
 		},
 	}

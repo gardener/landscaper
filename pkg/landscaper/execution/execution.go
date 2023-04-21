@@ -6,8 +6,10 @@ package execution
 
 import (
 	"context"
+	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -18,6 +20,7 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -76,8 +79,19 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 		if !classificationOfOrphans.HasFailedItems() {
 			deletableItems := classificationOfOrphans.GetRunnableItems()
 			for _, item := range deletableItems {
-				if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+				skip, err := o.skipUninstall(ctx, item.DeployItem)
+				if err != nil {
 					return nil, err
+				}
+
+				if skip {
+					if err := o.removeFinalizerFromDeployItem(ctx, item.DeployItem); err != nil {
+						return nil, err
+					}
+				} else {
+					if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
@@ -131,8 +145,19 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 	if !classification.HasFailedItems() {
 		deletableItems := classification.GetRunnableItems()
 		for _, item := range deletableItems {
-			if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+			skip, err := o.skipUninstall(ctx, item.DeployItem)
+			if err != nil {
 				return nil, err
+			}
+
+			if skip {
+				if err := o.removeFinalizerFromDeployItem(ctx, item.DeployItem); err != nil {
+					return nil, err
+				}
+			} else {
+				if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -154,6 +179,61 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 	di.Status.JobIDGenerationTime = &now
 	if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
 		return lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
+	}
+
+	return nil
+}
+func (o *Operation) skipUninstall(ctx context.Context, di *lsv1alpha1.DeployItem) (bool, lserrors.LsError) {
+	op := "skipUninstall"
+
+	if di.Spec.OnDelete == nil || !di.Spec.OnDelete.SkipUninstallIfClusterRemoved || di.Spec.Target == nil {
+		return false, nil
+	}
+
+	shootName, ok := di.GetAnnotations()[clusterNameAnnotation]
+	if !ok {
+		return false, nil
+	}
+
+	targetSyncs := &lsv1alpha1.TargetSyncList{}
+	if err := o.Client().List(ctx, targetSyncs, client.InNamespace(di.GetNamespace())); err != nil {
+		msg := fmt.Sprintf("unable to retrieve targetsync object for namespace%s", di.GetNamespace())
+		return false, lserrors.NewWrappedError(err, op, msg, err.Error())
+	}
+	if len(targetSyncs.Items) != 1 {
+		return false, lserrors.NewError(op, "fetchTargetSync", "targetsync not found or not unique")
+	}
+
+	tgs := targetSyncs.Items[0]
+
+	sourceClientProvider := clusters.NewDefaultSourceClientProvider()
+	shootClient, err := sourceClientProvider.GetSourceShootClient(ctx, &tgs, o.Client())
+	if err != nil {
+		return false, lserrors.NewError(op, "GetSourceShootClient", "failed to get shoot client for skipUninstall")
+	}
+
+	exists, err := shootClient.ExistsShoot(ctx, tgs.Spec.SourceNamespace, shootName)
+	if err != nil {
+		return false, lserrors.NewError(op, "ExistsShoot", "unable to check whether shoot exists")
+	}
+
+	return !exists, nil
+}
+
+func (o *Operation) removeFinalizerFromDeployItem(ctx context.Context, di *lsv1alpha1.DeployItem) lserrors.LsError {
+	op := "removeFinalizerFromDeployItem"
+
+	key := kutil.ObjectKeyFromObject(di)
+	di = &lsv1alpha1.DeployItem{}
+	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
+		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
+	}
+
+	updated := controllerutil.RemoveFinalizer(di, lsv1alpha1.LandscaperFinalizer)
+	if updated {
+		if err := o.Writer().UpdateDeployItem(ctx, read_write_layer.W000033, di); err != nil {
+			return lserrors.NewWrappedError(err, op, "UpdateDeployItem", err.Error())
+		}
 	}
 
 	return nil
