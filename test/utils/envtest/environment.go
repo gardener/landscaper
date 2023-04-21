@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -287,6 +289,18 @@ func decodeAndAppendLSObject(data []byte, objects []client.Object, state *State)
 		}
 		state.ConfigMaps[types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}.String()] = cm
 		return append(objects, cm), nil
+	case DeploymentGVK.Kind:
+		deployment := &appsv1.Deployment{}
+		if _, _, err := decoder.Decode(data, nil, deployment); err != nil {
+			return nil, fmt.Errorf("unable to decode file as deployment: %w", err)
+		}
+		return append(objects, deployment), nil
+	case LSHealthCheckGVK.Kind:
+		lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
+		if _, _, err := decoder.Decode(data, nil, lsHealthCheck); err != nil {
+			return nil, fmt.Errorf("unable to decode file as lshealthcheck: %w", err)
+		}
+		return append(objects, lsHealthCheck), nil
 	default:
 		return objects, nil
 	}
