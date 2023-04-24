@@ -17,4 +17,4 @@ spec:
     --dns-format=external
     --timeout=10m
 
-  image: golang:1.19.5
+  image: golang:1.19.8
