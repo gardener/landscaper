@@ -490,8 +490,27 @@ func flowList(root yaml.Node, env dynaml.Binding, template bool) yaml.Node {
 		if redirectPath != nil {
 			env = env.RedirectOverwrite(redirectPath)
 		}
+		effkey := keyName
+		if effkey == "" {
+			effkey = "name"
+		}
+		keys := map[string]bool{}
+		unique := keyName != NO_LIST_KEY
+		if unique {
+			resolved := true
+			for idx, val := range merged.([]yaml.Node) {
+				var step string
+				step, resolved, unique = stepName(idx, val, keyName, env, true)
+				if !resolved || !unique || keys[step] {
+					unique = false
+					break
+				}
+				keys[step] = true
+			}
+		}
+
 		for idx, val := range merged.([]yaml.Node) {
-			step, resolved := stepName(idx, val, keyName, env)
+			step, resolved, _ := stepName(idx, val, keyName, env, unique)
 			debug.Debug("  step %s\n", step)
 			if resolved {
 				val = flow(val, env.WithPath(step), false, false)
@@ -560,13 +579,15 @@ func FlowString(root yaml.Node, env dynaml.Binding) (yaml.Node, error) {
 	return yaml.SubstituteNode(expr, root), nil
 }
 
-func stepName(index int, value yaml.Node, keyName string, env dynaml.Binding) (string, bool) {
+func stepName(index int, value yaml.Node, keyName string, env dynaml.Binding, unique bool) (string, bool, bool) {
 	if keyName == "" {
 		keyName = "name"
 	}
-	name, ok := yaml.FindString(value, env.GetFeatures(), keyName)
-	if ok {
-		return keyName + ":" + name, true
+	if unique {
+		name, ok := yaml.FindString(value, env.GetFeatures(), keyName)
+		if ok {
+			return keyName + ":" + name, true, true
+		}
 	}
 
 	step := fmt.Sprintf("[%d]", index)
@@ -578,17 +599,17 @@ func stepName(index int, value yaml.Node, keyName string, env dynaml.Binding) (s
 			v = flow(v, env.WithPath(step), false, false)
 			_, ok := v.Value().(dynaml.Expression)
 			if ok {
-				return step, false
+				return step, false, false
 			}
 		}
-		name, ok = v.Value().(string)
-		if ok {
-			return keyName + ":" + name, true
+		name, ok := v.Value().(string)
+		if ok && unique {
+			return keyName + ":" + name, true, true
 		}
 	} else {
 		debug.Debug("raw %s not found", keyName)
 	}
-	return step, true
+	return step, true, false
 }
 
 func processMerges(orig yaml.Node, root []yaml.Node, env dynaml.Binding, template bool) (interface{}, bool, bool, []string, string, bool, yaml.NodeFlags, string, yaml.Node) {
@@ -706,18 +727,31 @@ func processMerges(orig yaml.Node, root []yaml.Node, env dynaml.Binding, templat
 	return result, process, replaced, redirectPath, keyName, merged, flags, tag, stub
 }
 
+const NO_LIST_KEY = "<<<NO LIST KEY>>"
+
 func ProcessKeyTag(val yaml.Node) (yaml.Node, string) {
 	keyName := ""
 
 	m, ok := val.Value().(map[string]yaml.Node)
 	if ok {
 		found := false
+		no := false
 		for key, _ := range m {
 			split := strings.Index(key, ":")
 			if split > 0 {
 				if key[:split] == "key" {
-					keyName = key[split+1:]
-					found = true
+					if found {
+						if key[split+1:] != keyName {
+							keyName = NO_LIST_KEY
+						}
+					} else {
+						keyName = key[split+1:]
+						if strings.HasPrefix(keyName, "!") {
+							no = true
+							keyName = keyName[1:]
+						}
+						found = true
+					}
 				}
 			}
 		}
@@ -728,9 +762,15 @@ func ProcessKeyTag(val yaml.Node) (yaml.Node, string) {
 				if split > 0 {
 					if key[:split] == "key" {
 						key = key[split+1:]
+						if strings.HasPrefix(key, "!") {
+							key = key[1:]
+						}
 					}
 				}
 				newMap[key] = v
+			}
+			if no {
+				keyName = NO_LIST_KEY
 			}
 			return yaml.SubstituteNode(newMap, val), keyName
 		}

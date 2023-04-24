@@ -108,8 +108,14 @@ func func_bool(arguments []interface{}, binding Binding) (interface{}, Evaluatio
 	if len(arguments) != 1 {
 		return info.Error("bool requires one argument")
 	}
+	if arguments[0] == nil {
+		return false, info, true
+	}
 	switch v := arguments[0].(type) {
 	case string:
+		if v == "" {
+			return false, info, true
+		}
 		i, err := strconv.ParseBool(v)
 		if err != nil {
 			return info.Error("%q is no bool value: %s", err)

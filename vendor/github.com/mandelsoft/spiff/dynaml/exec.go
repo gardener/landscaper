@@ -135,6 +135,7 @@ func cachedExecute(cache ExecCache, content *string, args []string) ([]byte, err
 	if content != nil {
 		h.Write([]byte(*content))
 	}
+	args[0] = FilePath(args[0])
 	for _, arg := range args {
 		h.Write([]byte(arg))
 	}

@@ -92,6 +92,7 @@ func New() Spiff {
 		key:      features.EncryptionKey(),
 		mode:     MODE_DEFAULT,
 		features: features.Features(),
+		registry: dynaml.DefaultRegistry(),
 	}
 }
 
@@ -102,6 +103,7 @@ func Plain() Spiff {
 		key:      "",
 		mode:     MODE_DEFAULT,
 		features: features.FeatureFlags{},
+		registry: dynaml.DefaultRegistry(),
 	}
 }
 

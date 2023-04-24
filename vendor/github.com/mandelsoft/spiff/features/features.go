@@ -38,6 +38,10 @@ func (this FeatureFlags) Set(name string, active bool) error {
 	return nil
 }
 
+func (this FeatureFlags) Size() int {
+	return len(this)
+}
+
 func (this FeatureFlags) InterpolationEnabled() bool {
 	return this.Enabled(INTERPOLATION)
 }

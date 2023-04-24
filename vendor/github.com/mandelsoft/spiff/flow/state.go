@@ -297,6 +297,7 @@ func (s *State) Cleanup() {
 func (s *State) GetFileContent(file string, cached bool) ([]byte, error) {
 	var err error
 
+	file = dynaml.FilePath(file)
 	data := s.fileCache[file]
 	if !cached || data == nil {
 		debug.Debug("reading file %s\n", file)

@@ -52,6 +52,7 @@ type Binding interface {
 	FindInStubs([]string) (yaml.Node, bool)
 
 	WithScope(step map[string]yaml.Node) Binding
+	WithListScope(step []yaml.Node) Binding // only for root element
 	WithLocalScope(step map[string]yaml.Node) Binding
 	WithPath(step string) Binding
 	WithSource(source string) Binding

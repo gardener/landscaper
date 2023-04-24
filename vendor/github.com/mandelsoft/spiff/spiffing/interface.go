@@ -30,6 +30,9 @@ type Options = flow.Options
 // the standard function set
 type Functions = dynaml.Functions
 
+// Function is the signature of a dynaml function
+type Function = dynaml.Function
+
 // Controls provides access to a set of spiff controls used to extend
 // the standard control set
 type Controls = dynaml.Controls

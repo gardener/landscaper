@@ -223,6 +223,9 @@ func buildExpression(grammar *DynamlGrammar, path []string, stubPath []string) (
 			ref := tokens.Pop()
 			expr := tokens.Pop()
 			tokens.Push(DynamicExpr{expr, ref.(Expression)})
+		case ruleTopIndex:
+			expr := tokens.Pop()
+			tokens.Push(DynamicExpr{NewTaggedReferenceExpr("", ""), expr})
 		case ruleSlice:
 			slice := tokens.Pop()
 			expr := tokens.Pop()
@@ -490,6 +493,8 @@ func buildExpression(grammar *DynamlGrammar, path []string, stubPath []string) (
 			tokens.Push(RangeExpr{lhs, rhs})
 
 		case ruleList:
+			fallthrough
+		case ruleIndices:
 			seq := tokens.PopExpressionList()
 			tokens.Push(ListExpr{seq})
 

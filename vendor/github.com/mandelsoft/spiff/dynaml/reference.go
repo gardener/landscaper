@@ -93,6 +93,9 @@ func (e ReferenceExpr) String() string {
 	if e.Tag != "" {
 		tag = e.Tag + "::"
 	}
+	if len(e.Path) == 1 && e.Path[0] == "" {
+		return tag + "."
+	}
 	return tag + strings.Join(e.Path, ".")
 }
 
@@ -124,7 +127,7 @@ func (e ReferenceExpr) find(f func(int, []string) (node yaml.Node, x bool), bind
 
 	if !locally && !isResolvedValue(step.Value(), binding) {
 		debug.Debug("  unresolved\n")
-		info.Issue = yaml.NewIssue("'%s' unresolved", strings.Join(e.Path, "."))
+		info.Issue = yaml.NewIssue("'%s' unresolved", e.String())
 		info.Failed = step.Failed() || step.HasError()
 		return e, info, true
 	}

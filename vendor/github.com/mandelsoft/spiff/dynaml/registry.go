@@ -58,5 +58,5 @@ func (r *registry) IsTemplateControlOption(name string) bool {
 
 func DefaultRegistry() Registry {
 	var r *registry
-	return r // standard beaviour support on nil pointer inter
+	return r // standard behaviour support on nil pointer inter
 }

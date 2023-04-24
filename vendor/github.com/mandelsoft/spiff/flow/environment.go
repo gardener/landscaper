@@ -13,6 +13,7 @@ import (
 )
 
 type Scope struct {
+	list   []yaml.Node
 	local  map[string]yaml.Node
 	static map[string]yaml.Node
 	path   []string
@@ -25,11 +26,22 @@ func newFakeScope(outer *Scope, path []string, local map[string]yaml.Node) *Scop
 }
 
 func newScope(outer *Scope, path []string, local, static map[string]yaml.Node) *Scope {
-	scope := &Scope{local, static, path, outer, nil}
+	scope := &Scope{nil, local, static, path, outer, nil}
 	if outer == nil || outer.root == nil {
 		scope.root = scope
 	} else {
 		scope.root = outer.root
+	}
+	return scope
+}
+
+func newListScope(outer *Scope, path []string, local []yaml.Node, static map[string]yaml.Node) *Scope {
+	scope := &Scope{local, nil, static, path, outer, nil}
+	if outer == nil || outer.root == nil {
+		scope.root = scope
+	} else {
+		scope.root = outer.root
+		scope.local = outer.local
 	}
 	return scope
 }
@@ -153,7 +165,30 @@ func (e *DefaultEnvironment) FindFromRoot(path []string) (yaml.Node, bool) {
 		return nil, false
 	}
 
-	return yaml.FindR(true, yaml.NewNode(e.scope.root.local, "scope"), e.GetFeatures(), path...)
+	var root interface{}
+
+	if e.scope.root.list != nil {
+		if len(path) == 0 {
+			// for root return root list
+			return yaml.NewNode(e.scope.root.list, "root"), true
+		}
+		// special case: for list documents, we enable root path expressions based on the top level map found.
+		if path[0] == "__map" {
+			lroot := e.scope
+			for lroot != nil {
+				if lroot.local != nil {
+					root = lroot.local
+				}
+				lroot = lroot.next
+			}
+			path = path[1:]
+		} else {
+			root = e.scope.root.list
+		}
+	} else {
+		root = e.scope.root.local
+	}
+	return yaml.FindR(true, yaml.NewNode(root, "scope"), e.GetFeatures(), path...)
 }
 
 func (e *DefaultEnvironment) FindInScopes(nodescope *Scope, path []string) (yaml.Node, bool) {
@@ -229,6 +264,12 @@ func (e *DefaultEnvironment) WithScope(step map[string]yaml.Node) dynaml.Binding
 	return &n
 }
 
+func (e *DefaultEnvironment) WithListScope(step []yaml.Node) dynaml.Binding {
+	n := *e
+	n.scope = newListScope(e.scope, e.path, step, e.static)
+	return &n
+}
+
 func (e *DefaultEnvironment) WithNewRoot() dynaml.Binding {
 	n := *e
 	static := map[string]yaml.Node{}
@@ -279,14 +320,18 @@ func (e *DefaultEnvironment) Flow(source yaml.Node, shouldOverride bool) (yaml.N
 
 	for {
 		debug.Debug("@@{ loop:  %+v\n", result)
-		next := flow(result, e, shouldOverride, false)
+		var env dynaml.Binding = e
+		if list, ok := source.Value().([]yaml.Node); ok {
+			env = e.WithListScope(list)
+		}
+		next := flow(result, env, shouldOverride, false)
 		if next.Undefined() {
 			result = yaml.UndefinedNode(node(nil))
 			break
 		}
 		debug.Debug("@@} --->   %+v\n", next)
 
-		next = Cleanup(next, updateBinding(next, e))
+		next = Cleanup(next, updateBinding(next, env))
 		b := reflect.DeepEqual(result, next)
 		//b,r:=yaml.Equals(result, next,[]string{})
 		if b {

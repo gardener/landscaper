@@ -97,6 +97,16 @@ func getWriteOptions(arg interface{}, wopt WriteOpts, permonly bool) (WriteOpts,
 	return wopt, err
 }
 
+func FilePath(file string) string {
+	if strings.HasPrefix(file, "~/") {
+		home := os.Getenv("HOME")
+		if home != "" {
+			file = home + file[1:]
+		}
+	}
+	return file
+}
+
 func getData(file string, wopt WriteOpts, key interface{}, value interface{}, yaml bool) (string, string, []byte, bool) {
 	var data []byte
 	var err error
@@ -110,5 +120,5 @@ func getData(file string, wopt WriteOpts, key interface{}, value interface{}, ya
 	} else {
 		data = []byte(str)
 	}
-	return removeTags(file), str, data, err == nil
+	return FilePath(removeTags(file)), str, data, err == nil
 }
