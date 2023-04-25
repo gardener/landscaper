@@ -15,7 +15,7 @@ controllers:
   componentOverwrites:
     workers: 5
     # cacheSyncTimeout: 2m
-  context:
+  contexts:
     workers: 5
     # cacheSyncTimeout: 2m
     config:
