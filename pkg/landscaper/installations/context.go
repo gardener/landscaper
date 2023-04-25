@@ -206,13 +206,17 @@ func (o *Operation) IsRoot() bool {
 var MissingRepositoryContextError = errors.New("RepositoryContextMissing")
 
 // GetExternalContext resolves the context for an installation and applies defaults or overwrites if applicable.
-// The Context of an installation can be specified in multiple locations:
+// The Context of an installation can be specified:
 //  1. in the installation directly (by specifying the name of a context custom resource in .spec.context)
 //  2. in the default context (if there is no context specified (1), this specification is implicitly supplemented as
 //     "default", which is a context created in every namespace)
-//  3. in the component descriptor (by specifying a repository context in
-//     .spec.componentDescriptor.ref.repositoryContext)
-// All these cases are covered by this function.
+//
+// The repositoryContext (thus, the location to look for the referenced ComponentVersions) is commonly part of this
+// Context.
+// If spec.componentDescriptor.ref specifies a repositoryContext, this repositoryContext overwrites the
+// repositoryContext specified by the context custom resource.
+// If the context custom resource specified in the installation contains ComponentVersionOverwrites, their
+// repositoryContext again overwrites either of the previous described repositoryContexts.
 func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (ExternalContext, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	lsCtx := &lsv1alpha1.Context{}
