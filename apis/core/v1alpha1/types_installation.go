@@ -173,6 +173,10 @@ type Installation struct {
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
 	// Context defines the current context of the installation.
+	// Name of a configuration resource, serving as reference to the respective configuration resource.
+	// The configuration resource contains data such as the location of the component descriptors referenced in the
+	// installation as well as corresponding access data like credentials for the component descriptors and other
+	// artifacts like images or blueprints.
 	// +optional
 	Context string `json:"context,omitempty"`
 
