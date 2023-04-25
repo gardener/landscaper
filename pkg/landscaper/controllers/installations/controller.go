@@ -321,6 +321,8 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	}
 
 	if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {
+		// The installation is about to finish. Store the names of dependent installations in the status.
+		// The dependents will then be triggered in the beginning of the next reconcile event.
 		dependents, err := installations.NewInstallationTrigger(c.Client(), inst).DetermineDependents(ctx)
 		if err != nil {
 			logger.Error(err, "unable to determine successor installations")
@@ -351,13 +353,6 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 
 		return lsError
 	}
-
-	//if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {
-	//	// after a job has been finished (reconcile, not delete) and the status has been updated, inform the successors
-	//	if err := installations.TriggerSuccessorInstallations(ctx, c.Client(), inst); err != nil {
-	//		logger.Error(err, "unable to trigger successor installations after finished reconciliation")
-	//	}
-	//}
 
 	return lsError
 }

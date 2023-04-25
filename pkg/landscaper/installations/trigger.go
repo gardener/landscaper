@@ -70,7 +70,13 @@ func (t *InstallationTrigger) importsAnyExport(exporter, importer *lsv1alpha1.In
 	return false
 }
 
+// TriggerDependents triggers the dependent installations, that had been added to the status when the current
+// installation finished. Afterwards, the dependents are removed from the status.
 func (t *InstallationTrigger) TriggerDependents(ctx context.Context) error {
+	if len(t.inst.Status.DependentsToTrigger) == 0 {
+		return nil
+	}
+
 	for _, dependent := range t.inst.Status.DependentsToTrigger {
 		if err := t.triggerDependent(ctx, dependent); err != nil {
 			return err
