@@ -124,7 +124,7 @@ apiVersion: config.landscaper.gardener.cloud/v1alpha1
 kind: LandscaperConfiguration
 
 controllers:
-  context:
+  contexts:
     config:
       default:
         disable: false
