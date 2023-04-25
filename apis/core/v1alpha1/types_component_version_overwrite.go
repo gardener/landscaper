@@ -11,6 +11,20 @@ import (
 	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
+// Component Version Overwrites is a convenience feature for development and testing.
+// Assuming one is working on a Component Version (or rather a resource accessed through a Component Version). This
+// Component Version might itself be referenced transitively in the installation (in other words, the Component Version
+// might not be specified in the spec.ComponentDescriptor.ref but referenced by a Component Reference within that
+// Component Descriptor).
+// Instead of having to adjust all Component Versions in this reference chain, Component Version
+// Overwrites allows to substitute the specific Component Versions accessed by the landscaper at runtime. Thus, it e.g.
+// allows to specify that the ComponentVersion within a specific repositoryContext (e.g.
+// repositoryContext.type: ociRegistry and repositoryContext.baseUrl: example.com) and with componentName: example and
+// version: 1.0.0 shall be substituted by the ComponentVersion with componentName: substitute and version: 1.0.0.
+// This substitution can be arbitrarily specific. So, if one only specifies repositoryContexts, all Component Versions
+// will be taken from the respective substitute repositoryContext instead (thus, the ComponentVersions are substituted
+// by their representations in the substitute repository).
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ComponentVersionOverwritesList contains a list of ComponentVersionOverwrites
