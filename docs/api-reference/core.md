@@ -2542,6 +2542,35 @@ AnyJSON
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DependentToTrigger">DependentToTrigger
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the dependent installation</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemPhase">DeployItemPhase
 (<code>string</code> alias)</p></h3>
 <p>
@@ -4571,6 +4600,20 @@ AutomaticReconcileStatus
 <td>
 <em>(Optional)</em>
 <p>AutomaticReconcileStatus describes the status of automatically triggered reconciles.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dependentsToTrigger</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DependentToTrigger">
+[]DependentToTrigger
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DependentsToTrigger lists dependent installations to be triggered</p>
 </td>
 </tr>
 </tbody>

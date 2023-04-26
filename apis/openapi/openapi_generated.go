@@ -100,6 +100,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataObject":                                         schema_landscaper_apis_core_v1alpha1_DataObject(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataObjectList":                                     schema_landscaper_apis_core_v1alpha1_DataObjectList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Default":                                            schema_landscaper_apis_core_v1alpha1_Default(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger":                                 schema_landscaper_apis_core_v1alpha1_DependentToTrigger(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItem":                                         schema_landscaper_apis_core_v1alpha1_DeployItem(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemList":                                     schema_landscaper_apis_core_v1alpha1_DeployItemList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemSpec":                                     schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref),
@@ -3852,6 +3853,25 @@ func schema_landscaper_apis_core_v1alpha1_Default(ref common.ReferenceCallback) 
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_DependentToTrigger(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the dependent installation",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_DeployItem(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5684,12 +5704,26 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus"),
 						},
 					},
+					"dependentsToTrigger": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DependentsToTrigger lists dependent installations to be triggered",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"observedGeneration", "configGeneration"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 

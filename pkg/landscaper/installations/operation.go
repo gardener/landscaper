@@ -12,7 +12,6 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/utils/pointer"
@@ -373,26 +372,6 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	return installations, nil
 }
 
-// NewTriggerDependents triggers all installations that depend on the current installation.
-func (o *Operation) TriggerDependents(ctx context.Context) error {
-	for _, sibling := range o.Context().Siblings {
-		if !importsAnyExport(o.Inst, sibling) {
-			continue
-		}
-
-		if IsRootInstallation(o.Inst.GetInstallation()) {
-			metav1.SetMetaDataAnnotation(&sibling.GetInstallation().ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
-		} else {
-			lsv1alpha1helper.Touch(&sibling.GetInstallation().ObjectMeta)
-		}
-
-		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000085, sibling.GetInstallation()); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // SetExportConfigGeneration returns the new export generation of the installation
 // based on its own generation and its context
 func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
@@ -650,22 +629,4 @@ func (o *Operation) GetExportForKey(ctx context.Context, key string) (*dataobjec
 		return nil, err
 	}
 	return dataobjects.NewFromDataObject(rawDO)
-}
-
-func importsAnyExport(exporter *InstallationImportsAndBlueprint, importer *InstallationAndImports) bool {
-	for _, export := range exporter.GetInstallation().Spec.Exports.Data {
-		for _, def := range importer.GetInstallation().Spec.Imports.Data {
-			if def.DataRef == export.DataRef {
-				return true
-			}
-		}
-	}
-	for _, export := range exporter.GetInstallation().Spec.Exports.Targets {
-		for _, def := range importer.GetInstallation().Spec.Imports.Targets {
-			if def.Target == export.Target {
-				return true
-			}
-		}
-	}
-	return false
 }

@@ -200,29 +200,12 @@ func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Install
 // checkIfSiblingImports checks if a sibling imports any of the installations exports.
 func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installations.InstallationAndImports) (fatalError lserrors.LsError, normalError lserrors.LsError) {
 	for _, sibling := range siblings {
-		if isSuccessor(inst, sibling) {
+		if inst.IsSuccessor(sibling.GetInstallation()) {
 			return checkSuccessorSibling(inst, sibling)
 		}
 	}
 
 	return nil, nil
-}
-
-// isSuccessor determines whether the given sibling imports any DataObject or Target that the given inst exports.
-func isSuccessor(inst *lsv1alpha1.Installation, sibling *installations.InstallationAndImports) bool {
-	for _, dataImport := range inst.Spec.Exports.Data {
-		if sibling.IsImportingData(dataImport.DataRef) {
-			return true
-		}
-	}
-
-	for _, targetImport := range inst.Spec.Exports.Targets {
-		if sibling.IsImportingData(targetImport.Target) {
-			return true
-		}
-	}
-
-	return false
 }
 
 // checkSuccessorSibling is called during the deletion of an installation (parameter "inst")

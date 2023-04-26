@@ -637,6 +637,16 @@ spec:
               configGeneration:
                 description: ConfigGeneration is the generation of the exported values.
                 type: string
+              dependentsToTrigger:
+                description: DependentsToTrigger lists dependent installations to
+                  be triggered
+                items:
+                  properties:
+                    name:
+                      description: Name is the name of the dependent installation
+                      type: string
+                  type: object
+                type: array
               executionRef:
                 description: ExecutionReference is the reference to the execution
                   that schedules the templated execution items.
