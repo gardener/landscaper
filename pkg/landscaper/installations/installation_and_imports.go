@@ -47,26 +47,6 @@ func (i *InstallationAndImports) GetInstallation() *lsv1alpha1.Installation {
 	return i.installation
 }
 
-// IsImportingData checks if the current component imports a data object with the given name.
-func (i *InstallationAndImports) IsImportingData(name string) bool {
-	for _, def := range i.installation.Spec.Imports.Data {
-		if def.DataRef == name {
-			return true
-		}
-	}
-	return false
-}
-
-// IsImportingTarget checks if the current component imports a target with the given name.
-func (i *InstallationAndImports) IsImportingTarget(name string) bool {
-	for _, def := range i.installation.Spec.Imports.Targets {
-		if def.Target == name {
-			return true
-		}
-	}
-	return false
-}
-
 // MergeConditions updates or adds the given condition to the installation's condition.
 func (i *InstallationAndImports) MergeConditions(conditions ...lsv1alpha1.Condition) {
 	i.installation.Status.Conditions = lsv1alpha1helper.MergeConditions(i.installation.Status.Conditions, conditions...)
