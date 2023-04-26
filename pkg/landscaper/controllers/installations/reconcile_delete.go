@@ -217,7 +217,7 @@ func isSuccessor(inst *lsv1alpha1.Installation, sibling *installations.Installat
 	}
 
 	for _, targetImport := range inst.Spec.Exports.Targets {
-		if sibling.IsImportingData(targetImport.Target) {
+		if sibling.IsImportingTarget(targetImport.Target) {
 			return true
 		}
 	}
