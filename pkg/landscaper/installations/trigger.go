@@ -38,7 +38,7 @@ func (t *InstallationTrigger) DetermineDependents(ctx context.Context) ([]lsv1al
 	}
 
 	for _, sibling := range siblings {
-		if !t.importsAnyExport(t.inst, sibling) {
+		if !t.inst.IsSuccessor(sibling) {
 			continue
 		}
 
@@ -48,26 +48,6 @@ func (t *InstallationTrigger) DetermineDependents(ctx context.Context) ([]lsv1al
 	}
 
 	return dependents, nil
-}
-
-func (t *InstallationTrigger) importsAnyExport(exporter, importer *lsv1alpha1.Installation) bool {
-	for _, export := range exporter.Spec.Exports.Data {
-		for _, def := range importer.Spec.Imports.Data {
-			if def.DataRef == export.DataRef {
-				return true
-			}
-		}
-	}
-
-	for _, export := range exporter.Spec.Exports.Targets {
-		for _, def := range importer.Spec.Imports.Targets {
-			if def.Target == export.Target {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 // TriggerDependents triggers the dependent installations, that had been added to the status when the current

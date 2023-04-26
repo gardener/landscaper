@@ -576,3 +576,40 @@ func (ti TargetImport) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(TargetImportWithTargets(ti))
 }
+
+// isSuccessor determines whether the given sibling imports any DataObject or Target that the given inst exports.
+func (inst *Installation) IsSuccessor(sibling *Installation) bool {
+	for _, dataExport := range inst.Spec.Exports.Data {
+		if sibling.IsImportingData(dataExport.DataRef) {
+			return true
+		}
+	}
+
+	for _, targetExport := range inst.Spec.Exports.Targets {
+		if sibling.IsImportingTarget(targetExport.Target) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsImportingData checks if the current component imports a data object with the given name.
+func (inst *Installation) IsImportingData(name string) bool {
+	for _, def := range inst.Spec.Imports.Data {
+		if def.DataRef == name {
+			return true
+		}
+	}
+	return false
+}
+
+// IsImportingTarget checks if the current component imports a target with the given name.
+func (inst *Installation) IsImportingTarget(name string) bool {
+	for _, def := range inst.Spec.Imports.Targets {
+		if def.Target == name {
+			return true
+		}
+	}
+	return false
+}

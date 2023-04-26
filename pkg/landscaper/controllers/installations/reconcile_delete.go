@@ -200,49 +200,12 @@ func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Install
 // checkIfSiblingImports checks if a sibling imports any of the installations exports.
 func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installations.InstallationAndImports) (fatalError lserrors.LsError, normalError lserrors.LsError) {
 	for _, sibling := range siblings {
-		if isSuccessor(inst, sibling.GetInstallation()) {
+		if inst.IsSuccessor(sibling.GetInstallation()) {
 			return checkSuccessorSibling(inst, sibling)
 		}
 	}
 
 	return nil, nil
-}
-
-// isSuccessor determines whether the given sibling imports any DataObject or Target that the given inst exports.
-func isSuccessor(inst *lsv1alpha1.Installation, sibling *lsv1alpha1.Installation) bool {
-	for _, dataExport := range inst.Spec.Exports.Data {
-		if isImportingData(sibling, dataExport.DataRef) {
-			return true
-		}
-	}
-
-	for _, targetExport := range inst.Spec.Exports.Targets {
-		if isImportingTarget(sibling, targetExport.Target) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// IsImportingData checks if the current component imports a data object with the given name.
-func isImportingData(inst *lsv1alpha1.Installation, name string) bool {
-	for _, def := range inst.Spec.Imports.Data {
-		if def.DataRef == name {
-			return true
-		}
-	}
-	return false
-}
-
-// IsImportingTarget checks if the current component imports a target with the given name.
-func isImportingTarget(inst *lsv1alpha1.Installation, name string) bool {
-	for _, def := range inst.Spec.Imports.Targets {
-		if def.Target == name {
-			return true
-		}
-	}
-	return false
 }
 
 // checkSuccessorSibling is called during the deletion of an installation (parameter "inst")
