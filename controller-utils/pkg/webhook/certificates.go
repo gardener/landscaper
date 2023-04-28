@@ -96,10 +96,11 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 		if retry {
 			secret = &corev1.Secret{}
 			if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
-				caCert, serverCert, _, err = loadAndUpdateSecret(ctx, kubeClient, secret, name, dnsNames, caConfig)
-				if err != nil {
-					return nil, err
-				}
+				return nil, err
+			}
+			caCert, serverCert, _, err = loadAndUpdateSecret(ctx, kubeClient, secret, name, dnsNames, caConfig)
+			if err != nil {
+				return nil, err
 			}
 		} else {
 			return nil, err
