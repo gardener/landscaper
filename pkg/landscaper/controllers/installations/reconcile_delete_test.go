@@ -94,7 +94,7 @@ var _ = Describe("Delete", func() {
 			testutils.ExpectNoError(testenv.Client.Delete(ctx, inst))
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.Deleting)).To(BeTrue())
@@ -120,14 +120,14 @@ var _ = Describe("Delete", func() {
 			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inst := state.Installations[state.Namespace+"/a"]
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.DeleteFailed)).To(BeTrue())
 			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeTrue())
 
 			inst = state.Installations[state.Namespace+"/root"]
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.DeleteFailed)).To(BeTrue())

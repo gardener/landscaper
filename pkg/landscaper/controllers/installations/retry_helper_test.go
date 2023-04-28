@@ -198,7 +198,7 @@ var _ = Describe("Retry handler", func() {
 			Expect(inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time.UnixMilli()).To(Equal(t4.UnixMilli()))
 
 			// reconcile fails; max number of retries reached
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(inst))
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)).To(Succeed())
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(v1alpha1.OperationAnnotation, string(v1alpha1.ReconcileOperation)))
 			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKey(v1alpha1.ReconcileReasonAnnotation))

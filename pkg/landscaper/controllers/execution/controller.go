@@ -75,7 +75,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		// Execution is unfinished
 
 		err := c.handleReconcilePhase(ctx, exec)
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	} else {
 		// Execution is finished; nothing to do
 		return reconcile.Result{}, nil
