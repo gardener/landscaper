@@ -131,7 +131,7 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000135)
 		} else if !deployItemClassification.AllSucceeded() {
 			// remain in progressing in all other cases
-			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items", lsv1alpha1.ErrorUnfinished)
+			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items", lsv1alpha1.ErrorUnfinished, lsv1alpha1.ErrorForInfoOnly)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000136)
 		} else {
 			// all succeeded; go to next phase
@@ -304,10 +304,6 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	exec.Status.LastError = lserrors.TryUpdateLsError(exec.Status.LastError, lsErr)
-
-	if lsErr != nil && !lserrors.ContainsErrorCode(lsErr, lsv1alpha1.ErrorUnfinished) {
-		logger.Error(lsErr, "setExecutionPhaseAndUpdate")
-	}
 
 	if phase != exec.Status.ExecutionPhase {
 		now := metav1.Now()

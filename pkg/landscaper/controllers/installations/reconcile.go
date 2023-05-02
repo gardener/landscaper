@@ -422,7 +422,8 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 
 		if exec.Status.JobIDFinished != exec.Status.JobID {
 			message := fmt.Sprintf("execution %s / %s is not finished yet", exec.Namespace, exec.Name)
-			return false, lserrors.NewError(currentOperation, "JobIDFinished", message, lsv1alpha1.ErrorUnfinished)
+			return false, lserrors.NewError(currentOperation, "JobIDFinished", message,
+				lsv1alpha1.ErrorUnfinished, lsv1alpha1.ErrorForInfoOnly)
 		}
 
 		allSucceeded = allSucceeded && (exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded)
