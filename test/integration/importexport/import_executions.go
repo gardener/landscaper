@@ -78,5 +78,19 @@ func ImportExecutionsTests(f *framework.Framework) {
 			)))
 		})
 
+		It("should fail if import executions return errors", func() {
+			By("Create installation")
+			inst := &lsv1alpha1.Installation{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-1", "installation.yaml")))
+			inst.SetNamespace(state.Namespace)
+			inst.Spec.ImportDataMappings = map[string]lsv1alpha1.AnyJSON{
+				"errors":          lsv1alpha1.NewAnyJSON([]byte(`["a foo error occurred"]`)),
+				"arbitraryImport": lsv1alpha1.NewAnyJSON([]byte(`"foo"`)),
+			}
+			utils.ExpectNoError(state.Create(ctx, inst))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Failed, 2*time.Minute))
+			Expect(inst.Status.LastError.Message).To(ContainSubstring("a foo error occurred"))
+		})
+
 	})
 }
