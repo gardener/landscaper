@@ -17,4 +17,4 @@
 COMPONENT_DIR="$(dirname $0)/.."
 TRANSPORT_FILE=${COMPONENT_DIR}/commands/transport.tar
 
-../../../hack/create-and-push-component.sh "${COMPONENT_DIR}" "${TRANSPORT_FILE}"
+${COMPONENT_DIR}/../../hack/create-and-push-component.sh "${COMPONENT_DIR}" "${TRANSPORT_FILE}"

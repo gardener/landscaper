@@ -150,8 +150,11 @@ func (r *BlueprintRenderer) RenderImportExecutions(input *ResolvedInstallation, 
 	if len(errorList) > 0 {
 		return nil, fmt.Errorf("the following error(s) occurred in the import executions:\n\t%s", strings.Join(errorList, "\n\t"))
 	}
+	for k, v := range bindings {
+		imports[k] = v
+	}
 
-	return bindings, nil
+	return imports, nil
 }
 
 // RenderExportExecutions renders the export executions of the given blueprint and returns the rendered exports.

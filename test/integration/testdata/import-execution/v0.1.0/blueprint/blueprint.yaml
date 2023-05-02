@@ -12,13 +12,6 @@ imports:
     required: false
     schema: {}
 
-  - name: passthrough
-    required: false
-    default:
-      value: false
-    schema:
-      type: boolean
-  
   - name: errors
     required: false
     schema:

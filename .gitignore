@@ -19,3 +19,5 @@ tmp-int-test-core
 **/gomock_reflect_*
 
 coverage.*
+
+**/transport.tar
