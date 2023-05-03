@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/gardener/landscaper/apis/errors"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -215,6 +217,10 @@ func errorWithWriteID(err error, writeID WriteID) errors.LsError {
 	errorCodes := []lsv1alpha1.ErrorCode{}
 	if isRecoverableError(err) {
 		errorCodes = append(errorCodes, lsv1alpha1.ErrorWebhook)
+	}
+
+	if apierrors.IsConflict(err) {
+		errorCodes = append(errorCodes, lsv1alpha1.ErrorForInfoOnly)
 	}
 
 	lsError := errors.NewWrappedError(err, "errorWithWriteID", "write",
