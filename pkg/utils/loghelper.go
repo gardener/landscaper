@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -28,5 +30,17 @@ func (r LogHelper) LogErrorAndGetReconcileResult(ctx context.Context, lsError ls
 	} else {
 		logger.Error(lsError, lsError.Error())
 		return reconcile.Result{Requeue: true}, nil
+	}
+}
+
+func (r LogHelper) LogErrorButNotFoundAsInfo(ctx context.Context, err error, message string) {
+	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "LogErrorButNotFoundAsInfo")
+
+	if err == nil {
+		return
+	} else if apierrors.IsNotFound(err) {
+		logger.Info(message + ": " + err.Error())
+	} else {
+		logger.Error(err, message)
 	}
 }

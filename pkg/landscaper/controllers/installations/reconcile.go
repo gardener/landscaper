@@ -259,8 +259,8 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*
 		return nil, nil, "", nil, nil, normalError
 	}
 
-	if lsErr := rh.AllPredecessorsFinished(inst, predecessorMap); err != nil {
-		normalError := lsErr
+	if err = rh.AllPredecessorsFinished(inst, predecessorMap); err != nil {
+		normalError := lserrors.NewWrappedError(err, currentOperation, "AllPredecessorsFinished", err.Error())
 		return nil, nil, "", nil, nil, normalError
 	}
 

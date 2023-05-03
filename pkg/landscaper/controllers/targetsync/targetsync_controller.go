@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -82,7 +84,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 			return reconcile.Result{}, nil
 		}
 		logger.Error(err, "fetching targetsync object failed")
-		return reconcile.Result{}, err
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// set finalizer
@@ -90,7 +92,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 		controllerutil.AddFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
 		if err := c.targetClient.Update(ctx, targetSync); err != nil {
 			logger.Error(err, "adding finalizer to targetsync object failed")
-			return reconcile.Result{}, err
+			return reconcile.Result{Requeue: true}, nil
 		}
 		// do not return here because the controller only watches for particular events and setting a finalizer is not part of this
 	}
@@ -111,12 +113,12 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 
 		if err != nil {
 			logger.Error(err, "reconciling targetsync object failed")
-			return reconcile.Result{}, err
+			return reconcile.Result{Requeue: true}, nil
 		}
 	} else {
 		if err := c.handleDelete(ctx, targetSync); err != nil {
 			logger.Error(err, "deleting target sync object failed")
-			return reconcile.Result{}, err
+			return reconcile.Result{Requeue: true}, nil
 		}
 	}
 
@@ -155,7 +157,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 	} else {
 		sourceClient, restConfig, err := c.sourceClientProvider.GetSourceClient(ctx, targetSync, c.targetClient, nil)
 		if err != nil {
-			logger.Error(err, "fetching source client for targetsync object failed")
+			utils.LogHelper{}.LogErrorButNotFoundAsInfo(ctx, err, "fetching source client for targetsync object failed")
 			errors = append(errors, err)
 		} else {
 			err = c.refreshToken(ctx, targetSync, restConfig)
