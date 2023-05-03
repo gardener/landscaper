@@ -86,9 +86,9 @@ var _ = Describe("Inline Component Descriptor", func() {
 		inst := &lsv1alpha1.Installation{}
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
 		Expect(testutils.AddReconcileAnnotation(ctx, testenv, inst)).To(Succeed())
-		testutils.ShouldReconcile(ctx, instActuator, instReq)        // add finalizer
-		testutils.ShouldReconcile(ctx, instActuator, instReq)        // remove reconcile annotation and generate jobID
-		_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
+		testutils.ShouldReconcile(ctx, instActuator, instReq)         // add finalizer
+		testutils.ShouldReconcile(ctx, instActuator, instReq)         // remove reconcile annotation and generate jobID
+		testutils.ShouldReconcileButRetry(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
 		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Progressing))
@@ -111,7 +111,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		Expect(exec.Status.JobIDFinished).To(BeEmpty())
 
 		// reconcile execution
-		_ = testutils.ShouldNotReconcile(ctx, execActuator, execReq) // not finished
+		testutils.ShouldReconcileButRetry(ctx, execActuator, execReq) // not finished
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
 		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Progressing))
@@ -161,8 +161,8 @@ var _ = Describe("Inline Component Descriptor", func() {
 		Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
 
 		// the installation controller should propagate the deletion to the execution
-		testutils.ShouldReconcile(ctx, instActuator, instReq)        // generate jobID for deletion
-		_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // delete execution
+		testutils.ShouldReconcile(ctx, instActuator, instReq)         // generate jobID for deletion
+		testutils.ShouldReconcileButRetry(ctx, instActuator, instReq) // delete execution
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
 		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Deleting))

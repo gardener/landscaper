@@ -170,11 +170,11 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		} else if allDeleted {
 			return nil
 		} else if allFinished {
-			err = lserrors.NewError(op, "UndeletedSubobjects", "not all sub objects were deleted")
+			err = lserrors.NewError(op, "UndeletedSubobjects", "not all sub objects were deleted", lsv1alpha1.ErrorForInfoOnly)
 			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhases.DeleteFailed, err, read_write_layer.W000129)
 		} else {
 			// retry
-			err = lserrors.NewError(op, "PendingSubobjects", "deletion of some sub objects pending")
+			err = lserrors.NewError(op, "PendingSubobjects", "deletion of some sub objects pending", lsv1alpha1.ErrorForInfoOnly)
 			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err, read_write_layer.W000130)
 		}
 	}
@@ -406,7 +406,8 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 		if next.Status.JobIDFinished != next.Status.JobID {
 			// Hack: being unfinished should not be treated as an error
 			message := fmt.Sprintf("installation %s / %s is not finished yet", next.Namespace, next.Name)
-			return false, lserrors.NewError(currentOperation, "JobIDFinished", message, lsv1alpha1.ErrorUnfinished)
+			return false, lserrors.NewError(currentOperation, "JobIDFinished", message,
+				lsv1alpha1.ErrorUnfinished, lsv1alpha1.ErrorForInfoOnly)
 		}
 
 		allSucceeded = allSucceeded && (next.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Succeeded)
@@ -421,7 +422,8 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 
 		if exec.Status.JobIDFinished != exec.Status.JobID {
 			message := fmt.Sprintf("execution %s / %s is not finished yet", exec.Namespace, exec.Name)
-			return false, lserrors.NewError(currentOperation, "JobIDFinished", message, lsv1alpha1.ErrorUnfinished)
+			return false, lserrors.NewError(currentOperation, "JobIDFinished", message,
+				lsv1alpha1.ErrorUnfinished, lsv1alpha1.ErrorForInfoOnly)
 		}
 
 		allSucceeded = allSucceeded && (exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded)

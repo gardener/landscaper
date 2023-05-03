@@ -39,6 +39,12 @@ func ShouldNotReconcile(ctx context.Context, reconciler reconcile.Reconciler, re
 	return err
 }
 
+func ShouldReconcileButRetry(ctx context.Context, reconciler reconcile.Reconciler, req reconcile.Request, optionalDescription ...interface{}) {
+	result, err := reconciler.Reconcile(ctx, req)
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred(), optionalDescription...)
+	gomega.ExpectWithOffset(1, result.Requeue).To(gomega.BeTrue())
+}
+
 // Request creates a new reconcile.Request
 func Request(name, namespace string) reconcile.Request {
 	req := reconcile.Request{}

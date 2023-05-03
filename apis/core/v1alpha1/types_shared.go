@@ -167,6 +167,8 @@ const (
 	ErrorWebhook ErrorCode = "ERR_WEBHOOK"
 	// ErrorUnfinished indicates that there are unfinished sub-objects.
 	ErrorUnfinished ErrorCode = "ERR_UNFINISHED"
+	// ErrorForInfoOnly indicates that the error is no real error but an info and should be logged only on infor level.
+	ErrorForInfoOnly ErrorCode = "ERR_FOR_INFO_ONLY"
 )
 
 // UnrecoverableErrorCodes defines unrecoverable error codes

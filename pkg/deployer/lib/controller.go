@@ -152,8 +152,6 @@ func NewController(lsClient client.Client,
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
 
-	var err error
-
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -165,9 +163,9 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	c.lsScheme.Default(di)
 
-	rt, shouldReconcile, err := c.checkTargetResponsibilityAndResolve(ctx, logger, di)
-	if err != nil {
-		return reconcile.Result{}, err
+	rt, shouldReconcile, lsErr := c.checkTargetResponsibilityAndResolve(ctx, logger, di)
+	if lsErr != nil {
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, lsErr)
 	}
 
 	if !shouldReconcile {
@@ -227,15 +225,14 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	// Deployitem has been initialized, proceed with reconcile/delete
 
-	var lsError lserrors.LsError
 	if di.DeletionTimestamp.IsZero() {
-		lsError = c.reconcile(ctx, lsCtx, di, rt)
-		err = c.handleReconcileResult(ctx, lsError, old, di)
+		lsError := c.reconcile(ctx, lsCtx, di, rt)
+		err := c.handleReconcileResult(ctx, lsError, old, di)
 		return c.buildResult(di.Status.Phase, err)
 
 	} else {
-		lsError = c.delete(ctx, lsCtx, di, rt)
-		err = c.handleReconcileResult(ctx, lsError, old, di)
+		lsError := c.delete(ctx, lsCtx, di, rt)
+		err := c.handleReconcileResult(ctx, lsError, old, di)
 		return c.buildResult(di.Status.Phase, err)
 	}
 }
@@ -254,11 +251,11 @@ func (c *controller) buildResult(phase lsv1alpha1.DeployItemPhase, err error) (r
 }
 
 func (c *controller) checkTargetResponsibilityAndResolve(ctx context.Context, log logging.Logger,
-	deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.ResolvedTarget, bool, error) {
+	deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.ResolvedTarget, bool, lserrors.LsError) {
 
-	target, responsible, err := c.checkTargetResponsibility(ctx, log, deployItem)
-	if err != nil {
-		return nil, false, err
+	target, responsible, lsError := c.checkTargetResponsibility(ctx, log, deployItem)
+	if lsError != nil {
+		return nil, false, lsError
 	}
 
 	if !responsible {
@@ -267,13 +264,16 @@ func (c *controller) checkTargetResponsibilityAndResolve(ctx context.Context, lo
 
 	// resolve Target reference, if any
 	var rt *lsv1alpha1.ResolvedTarget
+	var err error
 	if target != nil {
 		if target.Spec.SecretRef != nil {
 			sr := secretresolver.New(c.lsClient)
 			rt, err = sr.Resolve(ctx, target)
 			if err != nil {
-				return nil, false, fmt.Errorf("error resolving secret reference (%s/%s#%s) in target '%s/%s': %w",
-					target.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name, err)
+				msg := fmt.Sprintf("error resolving secret reference (%s/%s#%s) in target '%s/%s'",
+					target.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name)
+				lsError = lserrors.NewWrappedError(err, "checkTargetResponsibilityAndResolve", "resolveSecret", msg)
+				return nil, false, lsError
 			}
 		} else {
 			rt = targetresolver.NewResolvedTarget(target)
@@ -283,7 +283,11 @@ func (c *controller) checkTargetResponsibilityAndResolve(ctx context.Context, lo
 	return rt, true, nil
 }
 
-func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.Logger, deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, error) {
+func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.Logger,
+	deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, lserrors.LsError) {
+
+	op := "checkTargetResponsibility"
+
 	if deployItem.Spec.Target == nil {
 		log.Debug("No target defined")
 		return nil, true, nil
@@ -292,7 +296,12 @@ func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.
 	target := &lsv1alpha1.Target{}
 	deployItem.Spec.Target.Namespace = deployItem.Namespace
 	if err := c.lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
-		return nil, false, fmt.Errorf("unable to get target for deployitem: %w", err)
+		lsError := lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item")
+		if apierrors.IsNotFound(err) {
+			lsError = lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item",
+				lsv1alpha1.ErrorForInfoOnly)
+		}
+		return nil, false, lsError
 	}
 	if len(c.targetSelectors) == 0 {
 		log.Debug("No target selectors defined")
@@ -300,7 +309,8 @@ func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.
 	}
 	matched, err := targetselector.MatchOne(target, c.targetSelectors)
 	if err != nil {
-		return nil, false, fmt.Errorf("unable to match target selector: %w", err)
+		lsError := lserrors.NewWrappedError(err, op, "MatchOne", "unable to match target selector")
+		return nil, false, lsError
 	}
 	if !matched {
 		log.Debug("The deployitem's target has not matched the given target selector",

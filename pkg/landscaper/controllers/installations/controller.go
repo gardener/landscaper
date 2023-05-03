@@ -192,10 +192,8 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 
 	// handle reconcile
 	if inst.Status.JobID != inst.Status.JobIDFinished {
-
 		err := c.handleReconcilePhase(ctx, inst)
-		return reconcile.Result{}, err
-
+		return utils.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	} else {
 		// job finished; nothing to do
 		return reconcile.Result{}, nil

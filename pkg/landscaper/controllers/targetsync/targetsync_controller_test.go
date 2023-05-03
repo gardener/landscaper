@@ -232,7 +232,7 @@ var _ = Describe("TargetSync Controller", func() {
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs1), tgs1))
 			Expect(helper.HasOperation(tgs1.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeTrue())
 
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(tgs1))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(tgs1))
 
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs1), tgs1))
 			Expect(tgs1.Status.LastErrors).NotTo(BeEmpty())
