@@ -124,10 +124,10 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 		}
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
-			err = lserrors.NewError(op, "handlePhaseProgressing", "has failed or missing deploy items")
+			err = lserrors.NewError(op, "handlePhaseProgressing", "has failed or missing deploy items", lsv1alpha1.ErrorForInfoOnly)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000134)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
-			err = lserrors.NewError(op, "handlePhaseProgressing", "items could not be started")
+			err = lserrors.NewError(op, "handlePhaseProgressing", "items could not be started", lsv1alpha1.ErrorForInfoOnly)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000135)
 		} else if !deployItemClassification.AllSucceeded() {
 			// remain in progressing in all other cases
