@@ -10,8 +10,8 @@ require (
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.66
 	github.com/gardener/image-vector v0.10.0
-	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
-	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/apis v0.59.0
+	github.com/gardener/landscaper/controller-utils v0.59.0
 	github.com/go-logr/logr v1.2.3
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
@@ -35,6 +35,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20220524215830-622c5d57e401
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.6.0
+	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.11.1
 	k8s.io/api v0.26.1
 	k8s.io/apiextensions-apiserver v0.26.1
@@ -156,7 +157,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiserver v0.26.1 // indirect
 	k8s.io/cli-runtime v0.26.1 // indirect
 	k8s.io/component-base v0.26.1 // indirect
