@@ -462,7 +462,7 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 	}
 	err = con.RenderImportExecutions()
 	if err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "RenderImportExecutionsForExports", err.Error()), nil, nil
+		return lserrors.NewWrappedError(err, currentOperation, "RenderImportExecutionsForExports", err.Error()), nil
 	}
 
 	dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
