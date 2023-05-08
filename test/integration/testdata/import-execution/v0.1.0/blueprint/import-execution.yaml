@@ -1,0 +1,4 @@
+errors:
+  - <<<: (( imports.errors || ~~ ))
+bindings:
+  mapToList: (( valid( imports.mapToList ) ? sum[imports.mapToList|[]|s,k,v|-> s [{"key" = k, "value" = v}]] :~~ ))

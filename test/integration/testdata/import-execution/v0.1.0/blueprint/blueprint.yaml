@@ -1,0 +1,28 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
+
+imports:
+  - name: mapToList
+    required: false
+    schema:
+      type: object
+  
+  - name: arbitraryImport
+    required: false
+    schema: {}
+
+  - name: errors
+    required: false
+    schema:
+      type: array
+
+importExecutions:
+- name: default-import-execution
+  file: /import-execution.yaml
+  type: Spiff
+
+deployExecutions:
+- name: default-deploy-execution
+  file: /deploy-execution.yaml
+  type: Spiff
