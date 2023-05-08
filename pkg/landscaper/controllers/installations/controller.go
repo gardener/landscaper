@@ -298,10 +298,6 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		[]interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()},
 		lc.KeyMethod, op)
 
-	if lsError != nil && !lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorUnfinished) {
-		logger.Error(lsError, op+lsError.Error())
-	}
-
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, lsError)
 
 	if inst.Status.LastError != nil {

@@ -214,15 +214,22 @@ func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installati
 //     This is achieved by a fatal error.
 //   - Otherwise, the existence of "sibling" means that "inst" cannot yet be deleted, but must be checked again later.
 //     This is achieved by a normal error.
-func checkSuccessorSibling(inst *lsv1alpha1.Installation, sibling *installations.InstallationAndImports) (fatalError lserrors.LsError, normalError lserrors.LsError) {
+func checkSuccessorSibling(inst *lsv1alpha1.Installation,
+	sibling *installations.InstallationAndImports) (fatalError lserrors.LsError, normalError lserrors.LsError) {
+
 	op := "CheckSuccessorSibling"
 
 	if inst.Status.JobID == sibling.GetInstallation().Status.JobIDFinished &&
 		sibling.GetInstallation().Status.InstallationPhase == lsv1alpha1.InstallationPhases.DeleteFailed {
-		return lserrors.NewWrappedError(SiblingDeleteError,
-			op, "SiblingDeleteError", SiblingDeleteError.Error()), nil
+
+		err := lserrors.NewWrappedError(SiblingDeleteError, op, "SiblingDeleteError",
+			SiblingDeleteError.Error(), lsv1alpha1.ErrorForInfoOnly)
+
+		return err, nil
 	}
 
-	return nil, lserrors.NewWrappedError(SiblingImportError,
-		op, "SiblingImport", SiblingImportError.Error())
+	err := lserrors.NewWrappedError(SiblingImportError, op, "SiblingImport", SiblingImportError.Error(),
+		lsv1alpha1.ErrorForInfoOnly)
+
+	return nil, err
 }
