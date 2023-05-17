@@ -35,7 +35,14 @@ with utils.TempFileAuto(prefix="landscape_kubeconfig_") as kubeconfig_temp_file:
     command = [source_path + "/.ci/local-integration-test-with-cluster-creation", landscape_kubeconfig_path, "garden-laas", version, pr_id]
 
     print("Executing command")
-    run = run(command)
+    run = run(command, capture_output=True, text=True)
+
+    print("run.stdout: ")
+    print(run.stdout)
+    print("run.stderr: ")
+    print(run.stderr)
+    print("run.returncode: ")
+    print(run.returncode)
 
     if run.returncode != 0:
         raise EnvironmentError("Integration test exited with errors")
