@@ -22,7 +22,7 @@ SOURCE_PATH="$(pwd)"
 echo "Run integration tests in source path ${SOURCE_PATH}"
 
 echo "Run integration tests in source path ${SOURCE_PATH}"
-ginkgo -timeout=60m -vv -no-color -seed=17 -fail-fast ./test/integration  -- \
+ginkgo -timeout=60m -v -progress -no-color -seed=17 -fail-fast ./test/integration  -- \
   --kubeconfig $KUBECONFIG_PATH  \
   ${REGISTRY_CONFIG:+"--registry-config="}${REGISTRY_CONFIG:-"--skip-waiting-for-system-components"} \
   --ls-namespace=ls-system  \
