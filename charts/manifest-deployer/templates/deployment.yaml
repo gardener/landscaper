@@ -37,8 +37,6 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ include "deployer-image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
           args:
           - "--config=/app/ls/config/config.yaml"
           {{- if .Values.deployer.landscaperClusterKubeconfig }}
@@ -54,6 +52,17 @@ spec:
           - name: landscaper-cluster-kubeconfig
             mountPath: /app/ls/landscaper-cluster-kubeconfig
           {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
       volumes:
       - name: config
         secret:

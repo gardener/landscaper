@@ -1,6 +1,18 @@
 package utils
 
-import lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+import (
+	"os"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+)
+
+func GetCurrentPodName() string {
+	return os.Getenv("MY_POD_NAME")
+}
+
+func GetCurrentPodNamespace() string {
+	return os.Getenv("MY_POD_NAMESPACE")
+}
 
 func IsDeployItemPhase(di *lsv1alpha1.DeployItem, phase lsv1alpha1.DeployItemPhase) bool {
 	return di.Status.Phase == phase

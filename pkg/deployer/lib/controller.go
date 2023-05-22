@@ -34,6 +34,7 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	lsutil "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
@@ -181,6 +182,27 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
+
+	if !hasTestReconcileAnnotation && di.Status.GetJobID() == di.Status.JobIDFinished {
+		logger.Info("deploy item not reconciled because no new job ID or test reconcile annotation")
+		return reconcile.Result{}, nil
+	}
+
+	locker := lock.NewLocker(c.lsClient, c.hostClient)
+
+	locked, err := locker.Lock(ctx, di)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !locked {
+		return locker.NotLockedResult()
+	}
+
+	defer func() {
+		_ = locker.Unlock(ctx, di)
+	}()
+
 	if hasTestReconcileAnnotation {
 		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
 			return reconcile.Result{}, err
@@ -188,11 +210,6 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
 		di.Status.JobID = uuid.New().String()
-	}
-
-	if di.Status.GetJobID() == di.Status.JobIDFinished {
-		logger.Info("deploy item not reconciled because no new job ID")
-		return reconcile.Result{}, nil
 	}
 
 	if di.Status.Phase.IsFinal() || di.Status.Phase.IsEmpty() {
