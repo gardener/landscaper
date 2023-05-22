@@ -56,6 +56,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&EnvironmentList{},
 		&DeployerRegistration{},
 		&DeployerRegistrationList{},
+		&SyncObject{},
+		&SyncObjectList{},
 		&TargetSync{},
 		&TargetSyncList{},
 	)

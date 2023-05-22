@@ -34,6 +34,7 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	lsutil "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
@@ -89,7 +90,7 @@ func (args DeployerArgs) Validate() error {
 }
 
 // Add adds a deployer to the given managers using the given args.
-func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) error {
+func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int) error {
 	args.Default()
 	if err := args.Validate(); err != nil {
 		return err
@@ -99,7 +100,8 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) 
 		lsMgr.GetEventRecorderFor(args.Name),
 		hostMgr.GetClient(),
 		hostMgr.GetScheme(),
-		args)
+		args,
+		maxNumberOfWorkers)
 
 	log = log.Reconciles("", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
 
@@ -123,6 +125,8 @@ type controller struct {
 	lsEventRecorder record.EventRecorder
 	hostClient      client.Client
 	hostScheme      *runtime.Scheme
+
+	workerCounter *lsutil.WorkerCounter
 }
 
 // NewController creates a new generic deployitem controller.
@@ -131,7 +135,11 @@ func NewController(lsClient client.Client,
 	lsEventRecorder record.EventRecorder,
 	hostClient client.Client,
 	hostScheme *runtime.Scheme,
-	args DeployerArgs) *controller {
+	args DeployerArgs,
+	maxNumberOfWorkers int) *controller {
+
+	wc := lsutil.NewWorkerCounter(maxNumberOfWorkers)
+
 	return &controller{
 		deployerType: args.Type,
 		deployer:     args.Deployer,
@@ -146,11 +154,15 @@ func NewController(lsClient client.Client,
 		lsEventRecorder: lsEventRecorder,
 		hostClient:      hostClient,
 		hostScheme:      hostScheme,
+		workerCounter:   wc,
 	}
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
+
+	c.workerCounter.EnterWithLog(logger, 70)
+	defer c.workerCounter.Exit()
 
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, req.NamespacedName, di); err != nil {
@@ -181,6 +193,27 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
+
+	if !hasTestReconcileAnnotation && di.Status.GetJobID() == di.Status.JobIDFinished {
+		logger.Info("deploy item not reconciled because no new job ID or test reconcile annotation")
+		return reconcile.Result{}, nil
+	}
+
+	locker := lock.NewLocker(c.lsClient, c.hostClient)
+
+	syncObject, err := locker.LockDI(ctx, di)
+	if err != nil {
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
+	}
+
+	if syncObject == nil {
+		return locker.NotLockedResult()
+	}
+
+	defer func() {
+		locker.Unlock(ctx, syncObject)
+	}()
+
 	if hasTestReconcileAnnotation {
 		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
 			return reconcile.Result{}, err
@@ -188,11 +221,6 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
 		di.Status.JobID = uuid.New().String()
-	}
-
-	if di.Status.GetJobID() == di.Status.JobIDFinished {
-		logger.Info("deploy item not reconciled because no new job ID")
-		return reconcile.Result{}, nil
 	}
 
 	if di.Status.Phase.IsFinal() || di.Status.Phase.IsEmpty() {

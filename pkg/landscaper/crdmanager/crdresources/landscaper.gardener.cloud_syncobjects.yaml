@@ -1,0 +1,71 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: syncobjects.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: SyncObject
+    plural: syncobjects
+    shortNames:
+    - so
+    singular: syncobject
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.podName
+      name: PodName
+      type: string
+    - jsonPath: .spec.kind
+      name: Kind
+      type: string
+    - jsonPath: .spec.name
+      name: Name
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: The SyncObject helps to sync access to deploy items.
+        properties:
+          spec:
+            description: Spec contains the specification
+            properties:
+              kind:
+                description: Kind describes the kind of object that is being locked
+                  by this SyncObject
+                type: string
+              lastUpdateTime:
+                description: LastUpdateTime contains last time the object was updated.
+                format: date-time
+                type: string
+              name:
+                description: Name is the name of the object that is being locked by
+                  this SyncObject
+                type: string
+              podName:
+                description: PodName describes the name of the pod of the responsible
+                  deployer
+                type: string
+            required:
+            - podName
+            - kind
+            - name
+            - lastUpdateTime
+            type: object
+          status:
+            description: Status contains the status
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

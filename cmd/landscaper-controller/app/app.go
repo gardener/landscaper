@@ -9,42 +9,34 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-
-	"golang.org/x/sync/errgroup"
-	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/yaml"
-
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/pkg/metrics"
-
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-
+	"github.com/gardener/landscaper/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
-	"github.com/gardener/landscaper/pkg/landscaper/controllers/healthcheck"
-
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/agent"
-
 	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
-
-	install "github.com/gardener/landscaper/apis/core/install"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	deployitemctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	executionactrl "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
-	"github.com/gardener/landscaper/pkg/version"
-
-	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/healthcheck"
 	installationsctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
+	"github.com/gardener/landscaper/pkg/metrics"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
+	"github.com/gardener/landscaper/pkg/version"
 
 	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
 )
@@ -201,9 +193,15 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to register target sync controller: %w", err)
 	}
 
-	setupLogger.Info("starting the controllers")
 	eg, ctx := errgroup.WithContext(ctx)
 
+	eg.Go(func() error {
+		locker := lock.NewLocker(lsMgr.GetClient(), hostMgr.GetClient())
+		locker.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
+		return nil
+	})
+
+	setupLogger.Info("starting the controllers")
 	if lsMgr != hostMgr {
 		eg.Go(func() error {
 			if err := hostMgr.Start(ctx); err != nil {
