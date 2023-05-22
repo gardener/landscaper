@@ -78,5 +78,5 @@ if ! command -v ginkgo &> /dev/null
 then
     echo "ginkgo could not be found"
     echo "Try installing it..."
-    go install github.com/onsi/ginkgo/v2/ginkgo@v2.9.5
+    go install github.com/onsi/ginkgo/v2/ginkgo@v2.9.2
 fi
