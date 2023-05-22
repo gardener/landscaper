@@ -28,5 +28,5 @@ spec:
       - name: release        # name of an import parameter of the blueprint
         dataRef: my-release  # name of a DataObject containing the parameter value
 
-      - name: text           # name of an import parameter of the blueprint
-        dataRef: my-text     # name of a DataObject containing the parameter value
+      - name: port           # name of an import parameter of the blueprint
+        dataRef: my-port     # name of a DataObject containing the parameter value

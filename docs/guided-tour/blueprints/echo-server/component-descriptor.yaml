@@ -2,7 +2,7 @@ meta:
   schemaVersion: 'v2'
 component:
   name: 'github.com/gardener/landscaper-examples/guided-tour/echo-server'
-  version: '1.0.0'
+  version: '1.2.0'
 
   repositoryContexts:
     - type: 'ociRegistry'
@@ -17,22 +17,22 @@ component:
   resources:
     - name: blueprint
       type: blueprint
-      version: 1.0.0
+      version: 1.2.0
       relation: external
       access:
         type: ociRegistry
-        imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/echo-server:1.0.0
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/echo-server:1.2.0
     - name: echo-server-chart
       type: helm.io/chart
-      version: 1.0.0
+      version: 1.2.0
       relation: external
       access:
         type: ociRegistry
-        imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.2.0
     - name: echo-server-image
       type: ociImage
-      version: v0.2.3
+      version: v0.7.0
       relation: external
       access:
         type: ociRegistry
-        imageReference: hashicorp/http-echo:0.2.3
+        imageReference: ealen/echo-server:0.7.0

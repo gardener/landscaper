@@ -17,10 +17,10 @@ imports:
         namespace:
           type: string
 
-  - name: text  # "text" is  the name of the import parameter
+  - name: port  # "port" is  the name of the import parameter
     type: data
     schema:
-      type: string
+      type: number
 
 deployExecutions:
   - name: default
@@ -47,4 +47,4 @@ deployExecutions:
             values:
               {{ $imageResource := getResource .cd "name" "echo-server-image" }}
               image: {{ $imageResource.access.imageReference }}
-              text: {{ .imports.text }}
+              port: {{ .imports.port }}

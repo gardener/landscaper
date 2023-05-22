@@ -17,7 +17,8 @@ spec:
         - image: {{ .Values.image }}
           imagePullPolicy: IfNotPresent
           name: echo
-          args:
-            - -text="{{ .Values.text }}"
           ports:
-            - containerPort: 5678
+            - containerPort: 80
+          env:
+          - name: PORT
+            value: "80"

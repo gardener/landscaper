@@ -31,11 +31,11 @@ component descriptor. In detail, the connection is the following:
   ```yaml
   name: echo-server-image
   type: ociImage
-  version: v0.2.3
+  version: v0.7.0
   relation: external
   access:
     type: ociRegistry
-    imageReference: hashicorp/http-echo:0.2.3
+    imageReference: ealen/echo-server:0.7.0
   ```
 
 - The [blueprint](./blueprint/blueprint.yaml) contains a template for a `DeployItem`. Part of this is a 
@@ -52,7 +52,7 @@ component descriptor. In detail, the connection is the following:
 
   ```yaml
   values:
-    image: hashicorp/http-echo:0.2.3
+    image: ealen/echo-server:0.7.0
   ```
 
 - Finally, the [deployment.yaml](./chart/echo-server/templates/deployment.yaml) of the chart takes the image from the 
@@ -87,7 +87,6 @@ The procedure to install the helm chart with Landscaper is as follows:
    kubectl port-forward -n example service/echo-server 8080:80
    ```
 
-   Then open `localhost:8080` in a browser.  
+   Then open [`localhost:8080/?echo_body=Hello%20Landscaper!`](localhost:8080/?echo_body=Hello%20Landscaper!) in a browser.
    
-   The response should be "hello world", which is the text defined
-   in the [values.yaml](./chart/echo-server/values.yaml) of the chart.
+   The response should be "Hello Landscaper!".
