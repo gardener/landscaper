@@ -63,7 +63,7 @@ var _ = Describe("Manifest Deployer", func() {
 				Type:     manifestctlr.Type,
 				Deployer: deployer,
 			},
-		)
+			5, "mantest-"+testutil.GetNextCounter())
 	})
 
 	AfterEach(func() {

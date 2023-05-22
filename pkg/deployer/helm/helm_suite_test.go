@@ -129,7 +129,8 @@ var _ = Describe("Template", func() {
 				NewClient:          lsutils.NewUncachedClient,
 			})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{})).To(Succeed())
+			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{},
+				"helmintegration"+utils.GetNextCounter())).To(Succeed())
 
 			go func() {
 				Expect(mgr.Start(ctx)).To(Succeed())

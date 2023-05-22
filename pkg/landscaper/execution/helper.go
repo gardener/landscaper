@@ -32,6 +32,12 @@ func ApplyDeployItemTemplate(di *lsv1alpha1.DeployItem, tmpl lsv1alpha1.DeployIt
 	}
 	kutil.SetMetaDataLabel(&di.ObjectMeta, lsv1alpha1.ExecutionManagedNameLabel, tmpl.Name)
 	metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.ExecutionDependsOnAnnotation, strings.Join(tmpl.DependsOn, ","))
+	metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.DeployerTypeAnnotation, string(tmpl.Type))
+	targetName := lsv1alpha1.NoTargetNameValue
+	if di.Spec.Target != nil && di.Spec.Target.Name != "" {
+		targetName = di.Spec.Target.Name
+	}
+	metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.DeployerTargetNameAnnotation, targetName)
 }
 
 func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string) (int, bool) {

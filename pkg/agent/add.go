@@ -26,7 +26,9 @@ import (
 )
 
 // AddToManager adds the agent to the provided manager.
-func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Manager, hostMgr manager.Manager, config config.AgentConfiguration) error {
+func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Manager, hostMgr manager.Manager,
+	config config.AgentConfiguration, callerName string) error {
+
 	log := logger.WithName("agent").WithValues("targetEnvironment", config.Name)
 	ctx = logging.NewContext(ctx, log)
 	// create direct client for the agent to ensure the landscaper resources
@@ -85,7 +87,7 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 			},
 		},
 	}
-	if err := helmctlr.AddDeployerToManager(log, lsMgr, hostMgr, helmConfig); err != nil {
+	if err := helmctlr.AddDeployerToManager(log, lsMgr, hostMgr, helmConfig, callerName); err != nil {
 		return err
 	}
 
