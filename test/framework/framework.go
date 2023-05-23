@@ -128,6 +128,9 @@ type Framework struct {
 	OCICache cache.Cache
 
 	TestsFailed bool
+
+	// InternalApiServerHost is the cluster-internal IP of the kube-apiserver service.
+	InternalApiServerHost string
 }
 
 func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
@@ -162,6 +165,18 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 	f.ClientSet, err = utils3.NewForConfig(utils3.LsResourceClientBurstDefault, utils3.LsResourceClientQpsDefault, f.RestConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes clientset: %w", err)
+	}
+
+	apiserverSvc := &corev1.Service{}
+	apiserverSvc.SetName("kubernetes")
+	apiserverSvc.SetNamespace("default")
+	err = innerClient.Get(context.Background(), client.ObjectKeyFromObject(apiserverSvc), apiserverSvc)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch kubernetes service from cluster")
+	}
+	f.InternalApiServerHost = apiserverSvc.Spec.ClusterIP
+	if len(apiserverSvc.Spec.Ports) > 0 {
+		f.InternalApiServerHost = fmt.Sprintf("%s:%d", f.InternalApiServerHost, apiserverSvc.Spec.Ports[0].Port)
 	}
 
 	if len(cfg.DockerConfigPath) != 0 {
@@ -349,6 +364,13 @@ func (f *Framework) CleanupBeforeTestNamespaces(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// InternalRestConfig returns f.RestConfig, but the host is replaced with the cluster-internal apiserver host.
+func (f *Framework) InternalRestConfig() *rest.Config {
+	cfg := rest.CopyConfig(f.RestConfig)
+	cfg.Host = f.InternalApiServerHost
+	return cfg
 }
 
 func (f *Framework) cleanupBeforeObjectsInTestNamespace(ctx context.Context, namespace corev1.Namespace) error {
