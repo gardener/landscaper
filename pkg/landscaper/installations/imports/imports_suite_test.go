@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gardener/landscaper/pkg/components/cnudie/oci"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
 	testutils "github.com/gardener/landscaper/test/utils"
 )
@@ -26,7 +26,7 @@ func TestConfig(t *testing.T) {
 
 func createDefaultContextsForNamespace(kubeClient client.Client) {
 	// create default repo for all namespaces
-	repoCtx := componentsregistry.NewLocalRepository("../testdata/registry")
+	repoCtx := oci.NewLocalRepository("../testdata/registry")
 	list, err := os.ReadDir("./testdata/state")
 	Expect(err).To(Succeed())
 	for _, d := range list {

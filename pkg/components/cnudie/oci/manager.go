@@ -1,17 +1,12 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
-//
-// SPDX-License-Identifier: Apache-2.0
-
-package componentsregistry
+package oci
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/component-cli/ociclient/cache"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-
-	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // TypedRegistry describes a registry that can handle the given type.

@@ -9,6 +9,8 @@ import (
 	"io"
 	"math/rand"
 
+	"github.com/gardener/landscaper/pkg/components/cnudie/oci"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -23,7 +25,6 @@ import (
 	componentstestutils "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
 
@@ -86,7 +87,7 @@ var _ = Describe("Resolve", func() {
 			}).BuildResourceToFs(memFs, "blobs/bp.tar", false)
 			Expect(err).ToNot(HaveOccurred())
 
-			blobResolver := componentsregistry.NewLocalFilesystemBlobResolver(memFs)
+			blobResolver := oci.NewLocalFilesystemBlobResolver(memFs)
 			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediatype.BlueprintArtifactsLayerMediaTypeV1))
 			Expect(err).ToNot(HaveOccurred())
 
@@ -135,7 +136,7 @@ var _ = Describe("Resolve", func() {
 				},
 			}).BuildResourceToFs(memFs, "blobs/bp.tar", true)
 			Expect(err).ToNot(HaveOccurred())
-			blobResolver := componentsregistry.NewLocalFilesystemBlobResolver(memFs)
+			blobResolver := oci.NewLocalFilesystemBlobResolver(memFs)
 			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
 				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()))
 			Expect(err).ToNot(HaveOccurred())
@@ -185,7 +186,7 @@ var _ = Describe("Resolve", func() {
 				},
 			}).BuildResourceToFs(memFs, "blobs/bp.tar", false)
 			Expect(err).ToNot(HaveOccurred())
-			blobResolver := componentsregistry.NewLocalFilesystemBlobResolver(memFs)
+			blobResolver := oci.NewLocalFilesystemBlobResolver(memFs)
 			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
 				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()))
 			Expect(err).ToNot(HaveOccurred())

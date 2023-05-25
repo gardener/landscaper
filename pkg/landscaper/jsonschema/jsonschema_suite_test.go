@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/components/cnudie/oci"
+
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	testcred "github.com/gardener/component-cli/ociclient/credentials"
@@ -34,7 +36,6 @@ import (
 	"github.com/gardener/landscaper/pkg/components/registries"
 	componentstestutils "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
@@ -385,7 +386,7 @@ var _ = Describe("jsonschema", func() {
 				},
 			}
 
-			blobResolver := componentsregistry.NewLocalFilesystemBlobResolver(blobFs)
+			blobResolver := oci.NewLocalFilesystemBlobResolver(blobFs)
 
 			registryAccess := componentstestutils.NewTestRegistryAccess(*cd).WithBlobResolver(blobResolver)
 
@@ -795,7 +796,7 @@ var _ = Describe("jsonschema", func() {
 
 		var (
 			registryAccess    model.RegistryAccess
-			repository        *componentsregistry.LocalRepository
+			repository        *oci.LocalRepository
 			componentVersion  model.ComponentVersion
 			repositoryContext cdv2.UnstructuredTypedObject
 		)
@@ -807,7 +808,7 @@ var _ = Describe("jsonschema", func() {
 			registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 
-			repository = componentsregistry.NewLocalRepository("./testdata/registry")
+			repository = oci.NewLocalRepository("./testdata/registry")
 			repositoryContext, err = cdv2.NewUnstructured(repository)
 			Expect(err).ToNot(HaveOccurred())
 

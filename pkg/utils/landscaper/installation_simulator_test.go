@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"path"
 
+	cnudieoci "github.com/gardener/landscaper/pkg/components/cnudie/oci"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -23,7 +25,6 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 )
 
@@ -64,7 +65,7 @@ var _ = Describe("Installation Simulator", func() {
 	var (
 		testDataDir          = "./testdata/01-subinstallations"
 		registryAccess       model.RegistryAccess
-		repository           *componentsregistry.LocalRepository
+		repository           *cnudieoci.LocalRepository
 		rootComponentVersion model.ComponentVersion
 		componentVersionList *model.ComponentVersionList
 		blueprint            *blueprints.Blueprint
@@ -87,7 +88,7 @@ var _ = Describe("Installation Simulator", func() {
 
 		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
-		repository = componentsregistry.NewLocalRepository(testDataDir)
+		repository = cnudieoci.NewLocalRepository(testDataDir)
 		repositoryContext, err = cdv2.NewUnstructured(repository)
 		Expect(err).ToNot(HaveOccurred())
 

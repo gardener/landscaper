@@ -7,6 +7,8 @@ package subinstallations_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/cnudie/oci"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -22,7 +24,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -41,7 +42,7 @@ var _ = Describe("SubInstallation", func() {
 
 			repoCtx := &cdv2.OCIRegistryRepository{
 				ObjectType: cdv2.ObjectType{
-					Type: componentsregistry.LocalRepositoryType,
+					Type: oci.LocalRepositoryType,
 				},
 				BaseURL: "./testdata/registry",
 			}

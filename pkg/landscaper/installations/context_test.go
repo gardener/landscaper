@@ -7,6 +7,8 @@ package installations_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/cnudie/oci"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,7 +22,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -100,7 +101,7 @@ var _ = Describe("Context", func() {
 	It("initialize root installations with default context", func() {
 		ctx := context.Background()
 
-		defaultRepoContext, err := cdv2.NewUnstructured(componentsregistry.NewLocalRepository("../testdata/registry"))
+		defaultRepoContext, err := cdv2.NewUnstructured(oci.NewLocalRepository("../testdata/registry"))
 		Expect(err).ToNot(HaveOccurred())
 
 		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root-test40"])

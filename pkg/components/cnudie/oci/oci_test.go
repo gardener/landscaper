@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package componentsregistry_test
+package oci
 
 import (
 	"bytes"
@@ -11,12 +11,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gardener/component-spec/bindings-go/codec"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils/tar"
-
+	mock_oci "github.com/gardener/component-cli/ociclient/mock"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/codec"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -24,9 +21,8 @@ import (
 	. "github.com/onsi/gomega"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	mock_oci "github.com/gardener/component-cli/ociclient/mock"
-
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 
 func TestConfig(t *testing.T) {
@@ -51,7 +47,7 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should fetch and return a component descriptor when a valid tar is returned", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logging.Discard(), ociClient)
+		cdClient, err := NewOCIRegistryWithOCIClient(logging.Discard(), ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 
@@ -91,7 +87,7 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should fetch and return a component descriptor when it is defined as json", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logging.Discard(), ociClient)
+		cdClient, err := NewOCIRegistryWithOCIClient(logging.Discard(), ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -132,7 +128,7 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should throw an error if the manifest has more layers", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logging.Discard(), ociClient)
+		cdClient, err := NewOCIRegistryWithOCIClient(logging.Discard(), ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -161,7 +157,7 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should throw an error if the manifest has a unknown type", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logging.Discard(), ociClient)
+		cdClient, err := NewOCIRegistryWithOCIClient(logging.Discard(), ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -218,7 +214,7 @@ var _ = Describe("Registry", func() {
 			},
 		}
 
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logging.Discard(), ociClient, &cd)
+		cdClient, err := NewOCIRegistryWithOCIClient(logging.Discard(), ociClient, &cd)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctx := context.Background()
@@ -310,7 +306,7 @@ var _ = Describe("Registry", func() {
 				},
 			},
 		}
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logging.Discard(), ociClient, &cd)
+		cdClient, err := NewOCIRegistryWithOCIClient(logging.Discard(), ociClient, &cd)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctx := context.Background()
@@ -463,7 +459,7 @@ var _ = Describe("Registry", func() {
 		}
 
 		// parse component descriptor
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logging.Discard(), ociClient, &cd)
+		cdClient, err := NewOCIRegistryWithOCIClient(logging.Discard(), ociClient, &cd)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctx := context.Background()

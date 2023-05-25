@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package componentsregistry
+package oci
 
 import (
 	"bytes"
@@ -14,9 +14,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -25,6 +22,8 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 

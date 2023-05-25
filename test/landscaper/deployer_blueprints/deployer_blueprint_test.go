@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gardener/landscaper/pkg/components/cnudie/oci"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -22,7 +24,6 @@ import (
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
@@ -56,7 +57,7 @@ func RenderBlueprint(deployer, componentName, version string) *lsutils.RenderedD
 	registryPath := filepath.Join(projectRoot, ".landscaper", deployer, "example")
 	registryAccess, err := registries.NewFactory().NewLocalRegistryAccess(registryPath)
 	Expect(err).ToNot(HaveOccurred())
-	repository := componentsregistry.NewLocalRepository(registryPath)
+	repository := oci.NewLocalRepository(registryPath)
 	repositoryContext, err := cdv2.NewUnstructured(repository)
 	Expect(err).ToNot(HaveOccurred())
 

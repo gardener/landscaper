@@ -2,19 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package componentsregistry
+package oci
 
 import (
 	"context"
 	"fmt"
 	"io"
 
+	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	"github.com/gardener/landscaper/apis/mediatype"
-
-	"github.com/gardener/component-cli/ociclient"
 )
 
 // BlueprintResolver is a blob resolver that can resolve
