@@ -80,10 +80,18 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		Inst:       c.Inst.GetInstallation(),
 	}
 	targetResolver := secretresolver.New(c.Client())
-	exports, err := template.New(gotemplate.New(c.BlobResolver, stateHdlr, targetResolver), spiff.New(stateHdlr)).
-		TemplateExportExecutions(template.NewExportExecutionOptions(template.NewBlueprintExecutionOptions(
-			c.Inst.GetInstallation(), c.Inst.GetBlueprint(), c.ComponentDescriptor, c.ResolvedComponentDescriptorList, c.Inst.GetImports()),
-			internalExports))
+
+	tmpl := template.New(
+		gotemplate.New(stateHdlr, targetResolver),
+		spiff.New(stateHdlr))
+	exports, err := tmpl.TemplateExportExecutions(
+		template.NewExportExecutionOptions(
+			template.NewBlueprintExecutionOptions(
+				c.Inst.GetInstallation(),
+				c.Inst.GetBlueprint(),
+				c.ComponentVersion,
+				c.ResolvedComponentDescriptorList,
+				c.Inst.GetImports()), internalExports))
 	if err != nil {
 		return nil, nil, err
 	}

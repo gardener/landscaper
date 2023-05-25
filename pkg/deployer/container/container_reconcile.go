@@ -12,37 +12,32 @@ import (
 	"os"
 	"strconv"
 
+	dockerreference "github.com/containerd/containerd/reference/docker"
+	dockerconfig "github.com/docker/cli/cli/config"
+	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
+	"github.com/docker/cli/cli/config/types"
 	"github.com/gardener/component-cli/ociclient/credentials"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/gardener/landscaper/pkg/deployer/lib"
-
-	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	dockerconfig "github.com/docker/cli/cli/config"
-	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
-	"github.com/docker/cli/cli/config/types"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/registries"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	installationhelper "github.com/gardener/landscaper/pkg/landscaper/installations"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
-
-	dockerreference "github.com/containerd/containerd/reference/docker"
-
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -583,7 +578,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 	// sync pull secrets for BluePrint
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		compReg, err := componentsregistry.NewOCIRegistry(log, c.Configuration.OCI, c.sharedCache, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		registryAccess, err := registries.NewFactory().NewOCIRegistryAccess(ctx, c.Configuration.OCI, c.sharedCache, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
@@ -592,13 +587,13 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 		compRef := installationhelper.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
 		blueprintName := c.ProviderConfiguration.Blueprint.Reference.ResourceName
 
-		cd, err := compReg.Resolve(ctx, compRef.RepositoryContext, compRef.ComponentName, compRef.Version)
+		componentVersion, err := registryAccess.GetComponentVersion(ctx, compRef)
 		if err != nil {
 			erro = fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
 		}
 
-		resource, err := blueprints.GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
+		resource, err := blueprints.GetBlueprintResourceFromComponentVersion(componentVersion, blueprintName)
 		if err != nil {
 			erro = fmt.Errorf("unable to find blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
@@ -606,13 +601,14 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 		// currently only 2 access methods are supported: localOCIBlob and oci artifact
 		// if the resource is a local oci blob then the same credentials as for the component descriptor is used
-		if resource.Access.GetType() == cdv2.LocalOCIBlobType {
+		if resource.GetAccessType() == cdv2.LocalOCIBlobType {
 			return
 		}
 
 		// if the resource is a oci artifact then we need to parse the actual oci image reference
 		ociRegistryAccess := &cdv2.OCIRegistryAccess{}
-		if err := cdv2.NewCodec(nil, nil, nil).Decode(resource.Access.Raw, ociRegistryAccess); err != nil {
+		accessRaw := resource.GetResource().Access.Raw
+		if err := cdv2.NewCodec(nil, nil, nil).Decode(accessRaw, ociRegistryAccess); err != nil {
 			erro = fmt.Errorf("unable to parse oci registry access of blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
 		}

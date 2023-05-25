@@ -7,40 +7,40 @@ package template
 import (
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // BlueprintExecutionOptions describes the base options for templating of all blueprint executions.
 type BlueprintExecutionOptions struct {
-	Installation         *lsv1alpha1.Installation
-	Blueprint            *blueprints.Blueprint
-	ComponentDescriptor  *cdv2.ComponentDescriptor
-	ComponentDescriptors *cdv2.ComponentDescriptorList
-	Imports              map[string]interface{}
+	Installation      *lsv1alpha1.Installation
+	Blueprint         *blueprints.Blueprint
+	ComponentVersion  model.ComponentVersion
+	ComponentVersions *model.ComponentVersionList
+	Imports           map[string]interface{}
 }
 
 // NewBlueprintExecutionOptions create new basic blueprint execution options
-func NewBlueprintExecutionOptions(installation *lsv1alpha1.Installation, blueprint *blueprints.Blueprint, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, imports map[string]interface{}) BlueprintExecutionOptions {
+func NewBlueprintExecutionOptions(installation *lsv1alpha1.Installation, blueprint *blueprints.Blueprint,
+	cd model.ComponentVersion, cdList *model.ComponentVersionList, imports map[string]interface{}) BlueprintExecutionOptions {
 	return BlueprintExecutionOptions{
-		Installation:         installation,
-		Blueprint:            blueprint,
-		ComponentDescriptor:  cd,
-		ComponentDescriptors: cdList,
-		Imports:              imports,
+		Installation:      installation,
+		Blueprint:         blueprint,
+		ComponentVersion:  cd,
+		ComponentVersions: cdList,
+		Imports:           imports,
 	}
 }
 
 func (o *BlueprintExecutionOptions) Values() (map[string]interface{}, error) {
 	// marshal and unmarshal resolved component descriptor
-	component, err := serializeComponentDescriptor(o.ComponentDescriptor)
+	component, err := serializeComponentDescriptor(o.ComponentVersion)
 	if err != nil {
 		return nil, fmt.Errorf("error during serializing of the resolved components: %w", err)
 	}
-	components, err := serializeComponentDescriptorList(o.ComponentDescriptors)
+	components, err := serializeComponentDescriptorList(o.ComponentVersions)
 	if err != nil {
 		return nil, fmt.Errorf("error during serializing of the component descriptor: %w", err)
 	}

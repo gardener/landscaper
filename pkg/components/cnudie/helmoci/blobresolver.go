@@ -1,8 +1,4 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
-//
-// SPDX-License-Identifier: Apache-2.0
-
-package chartresolver
+package helmoci
 
 import (
 	"context"
@@ -10,40 +6,86 @@ import (
 	"io"
 
 	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-cli/ociclient/credentials"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	corev1 "k8s.io/api/core/v1"
 
+	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
-type HelmChartResolver struct {
+type BlobResolverForHelmOCI struct {
 	ociClient ociclient.Client
 }
 
-// NewHelmResolver returns a new helm chart resolver.
-// It implements the blob resolver interface, so it can resolve component descriptor defined resources.
-func NewHelmResolver(client ociclient.Client) ctf.TypedBlobResolver {
-	return HelmChartResolver{
-		ociClient: client,
+var _ ctf.TypedBlobResolver = &BlobResolverForHelmOCI{}
+
+// NewBlobResolverForHelmOCI returns a BlobResolver for helm charts that are stored in an OCI registry.
+func NewBlobResolverForHelmOCI(ctx context.Context,
+	registryPullSecrets []corev1.Secret,
+	ociConfig *config.OCIConfiguration,
+	sharedCache cache.Cache) (ctf.TypedBlobResolver, error) {
+
+	ociClient, err := createOCIClient(ctx, registryPullSecrets, ociConfig, sharedCache)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build blob resolver for charts from oci registry: %w", err)
 	}
+
+	return &BlobResolverForHelmOCI{
+		ociClient: ociClient,
+	}, nil
 }
 
-func (h HelmChartResolver) CanResolve(res cdv2.Resource) bool {
+func createOCIClient(ctx context.Context, registryPullSecrets []corev1.Secret, ociConfig *config.OCIConfiguration, sharedCache cache.Cache) (ociclient.Client, error) {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "helmDeployerController.createOCIClient"})
+
+	// always add an oci client to support unauthenticated requests
+	ociConfigFiles := make([]string, 0)
+	if ociConfig != nil {
+		ociConfigFiles = ociConfig.ConfigFiles
+	}
+	ociKeyring, err := credentials.NewBuilder(logger.WithName("ociKeyring").Logr()).
+		WithFS(osfs.New()).
+		FromConfigFiles(ociConfigFiles...).
+		FromPullSecrets(registryPullSecrets...).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	ociClient, err := ociclient.NewClient(logger.Logr(),
+		utils.WithConfiguration(ociConfig),
+		ociclient.WithKeyring(ociKeyring),
+		ociclient.WithCache(sharedCache),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ociClient, nil
+}
+
+func (h BlobResolverForHelmOCI) CanResolve(res types.Resource) bool {
 	if res.GetType() != HelmChartResourceType && res.GetType() != OldHelmResourceType {
 		return false
 	}
 	return res.Access != nil && res.Access.GetType() == cdv2.OCIRegistryType
 }
 
-func (h HelmChartResolver) Info(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error) {
+func (h BlobResolverForHelmOCI) Info(ctx context.Context, res types.Resource) (*types.BlobInfo, error) {
 	return h.resolve(ctx, res, nil)
 }
 
-func (h HelmChartResolver) Resolve(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+func (h BlobResolverForHelmOCI) Resolve(ctx context.Context, res types.Resource, writer io.Writer) (*types.BlobInfo, error) {
 	return h.resolve(ctx, res, writer)
 }
 
-func (h HelmChartResolver) resolve(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+func (h BlobResolverForHelmOCI) resolve(ctx context.Context, res types.Resource, writer io.Writer) (*types.BlobInfo, error) {
 	ociArtifactAccess := &cdv2.OCIRegistryAccess{}
 	if err := cdv2.NewCodec(nil, nil, nil).Decode(res.Access.Raw, ociArtifactAccess); err != nil {
 		return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
@@ -71,7 +113,7 @@ func (h HelmChartResolver) resolve(ctx context.Context, res cdv2.Resource, write
 				return nil, err
 			}
 		}
-		return &ctf.BlobInfo{
+		return &types.BlobInfo{
 			MediaType: ChartLayerMediaType,
 			Digest:    chartLayer.Digest.String(),
 			Size:      chartLayer.Size,
@@ -85,7 +127,7 @@ func (h HelmChartResolver) resolve(ctx context.Context, res cdv2.Resource, write
 				return nil, err
 			}
 		}
-		return &ctf.BlobInfo{
+		return &types.BlobInfo{
 			MediaType: LegacyChartLayerMediaType,
 			Digest:    chartLayer.Digest.String(),
 			Size:      chartLayer.Size,
