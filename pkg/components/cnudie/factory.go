@@ -9,8 +9,10 @@ import (
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	testcred "github.com/gardener/component-cli/ociclient/credentials"
+	ociopts "github.com/gardener/component-cli/ociclient/options"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
+	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/pkg/errors"
@@ -92,6 +94,33 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	return &RegistryAccess{
 		componentResolver:       compResolver,
 		additionalBlobResolvers: additionalBlobResolvers,
+	}, nil
+}
+
+func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
+	log logr.Logger,
+	fs vfs.FileSystem,
+	allowPlainHttp bool,
+	skipTLSVerify bool,
+	registryConfigPath string,
+	concourseConfigPath string) (model.RegistryAccess, error) {
+
+	ociOptions := ociopts.Options{
+		AllowPlainHttp:      allowPlainHttp,
+		SkipTLSVerify:       skipTLSVerify,
+		RegistryConfigPath:  registryConfigPath,
+		ConcourseConfigPath: concourseConfigPath,
+	}
+
+	ociClient, _, err := ociOptions.Build(log, fs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build oci client: %w", err)
+	}
+
+	compResolver := cdoci.NewResolver(ociClient)
+
+	return &RegistryAccess{
+		componentResolver: compResolver,
 	}, nil
 }
 

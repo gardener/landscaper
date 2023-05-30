@@ -148,9 +148,11 @@ github.com/fsnotify/fsnotify
 github.com/gardener/component-cli/ociclient
 github.com/gardener/component-cli/ociclient/cache
 github.com/gardener/component-cli/ociclient/credentials
+github.com/gardener/component-cli/ociclient/credentials/secretserver
 github.com/gardener/component-cli/ociclient/metrics
 github.com/gardener/component-cli/ociclient/mock
 github.com/gardener/component-cli/ociclient/oci
+github.com/gardener/component-cli/ociclient/options
 github.com/gardener/component-cli/ociclient/test/envtest
 github.com/gardener/component-cli/pkg/commands/componentarchive/input
 github.com/gardener/component-cli/pkg/commands/constants
