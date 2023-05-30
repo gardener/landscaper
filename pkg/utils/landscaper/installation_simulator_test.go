@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"path"
 
-	cnudieoci "github.com/gardener/landscaper/pkg/components/cnudie/oci"
+	cnudieoci "github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"

@@ -7,13 +7,12 @@ package registries
 import (
 	"context"
 
-	"github.com/gardener/landscaper/pkg/components/cnudie/oci"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
@@ -29,7 +28,7 @@ var _ = BeforeSuite(func() {
 	registryAccess, err = NewFactory().NewLocalRegistryAccess("./testdata/registry")
 	Expect(err).ToNot(HaveOccurred())
 
-	repository := oci.NewLocalRepository("./testdata/registry")
+	repository := componentresolvers.NewLocalRepository("./testdata/registry")
 	repositoryContext, err = cdv2.NewUnstructured(repository)
 	Expect(err).ToNot(HaveOccurred())
 })

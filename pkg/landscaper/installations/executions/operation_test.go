@@ -7,8 +7,6 @@ package executions_test
 import (
 	"context"
 
-	"github.com/gardener/landscaper/pkg/components/cnudie/oci"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,6 +15,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -49,7 +48,7 @@ var _ = Describe("Execution Operation", func() {
 		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		repository := oci.NewLocalRepository("./testdata/registry")
+		repository := componentresolvers.NewLocalRepository("./testdata/registry")
 		repositoryContext, err = cdv2.NewUnstructured(repository)
 		Expect(err).ToNot(HaveOccurred())
 
