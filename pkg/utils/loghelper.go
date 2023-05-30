@@ -4,22 +4,18 @@ import (
 	"context"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserrors "github.com/gardener/landscaper/apis/errors"
-
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 type LogHelper struct {
 }
 
-func (r LogHelper) LogErrorAndGetReconcileResult(ctx context.Context, lsError lserrors.LsError) (reconcile.Result, error) {
-
+func (LogHelper) LogErrorAndGetReconcileResult(ctx context.Context, lsError lserrors.LsError) (reconcile.Result, error) {
 	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "LogErrorAndGetReconcileResult")
 
 	if lsError == nil {
@@ -33,7 +29,7 @@ func (r LogHelper) LogErrorAndGetReconcileResult(ctx context.Context, lsError ls
 	}
 }
 
-func (r LogHelper) LogErrorButNotFoundAsInfo(ctx context.Context, err error, message string) {
+func (LogHelper) LogErrorButNotFoundAsInfo(ctx context.Context, err error, message string) {
 	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "LogErrorButNotFoundAsInfo")
 
 	if err == nil {

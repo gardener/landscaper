@@ -452,7 +452,7 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 	}
 
 	if inst.Generation != inst.Status.ObservedGeneration {
-		return lserrors.NewError(currentOperation, "CheckObservedGeneration", "installation spec has been changed"), nil
+		return lserrors.NewError(currentOperation, "CheckObservedGeneration", "installation spec has been changed", lsv1alpha1.ErrorForInfoOnly), nil
 	}
 
 	con := imports.NewConstructor(instOp)
