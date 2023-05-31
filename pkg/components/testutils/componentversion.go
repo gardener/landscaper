@@ -58,32 +58,36 @@ func (c *TestComponentVersion) GetVersion() string {
 	return c.componentDescriptor.GetVersion()
 }
 
-func (t *TestComponentVersion) GetComponentDescriptor() *types.ComponentDescriptor {
-	return t.componentDescriptor
+func (t *TestComponentVersion) GetComponentDescriptor() (*types.ComponentDescriptor, error) {
+	return t.componentDescriptor, nil
 }
 
-func (t *TestComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
+func (t *TestComponentVersion) GetRepositoryContext() (*types.UnstructuredTypedObject, error) {
 	context := t.componentDescriptor.GetEffectiveRepositoryContext()
 	if context == nil {
-		return nil
+		return nil, nil
 	}
-	return context
+	return context, nil
 }
 
-func (t *TestComponentVersion) GetComponentReferences() []types.ComponentReference {
-	return t.componentDescriptor.ComponentReferences
+func (t *TestComponentVersion) GetComponentReferences() ([]types.ComponentReference, error) {
+	return t.componentDescriptor.ComponentReferences, nil
 }
 
-func (t *TestComponentVersion) GetComponentReference(name string) *types.ComponentReference {
-	refs := t.GetComponentReferences()
+func (t *TestComponentVersion) GetComponentReference(name string) (*types.ComponentReference, error) {
+	refs, err := t.GetComponentReferences()
+	if err != nil {
+		return nil, err
+	}
+
 	for i := range refs {
 		ref := &refs[i]
 		if ref.GetName() == name {
-			return ref
+			return ref, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (t *TestComponentVersion) GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (model.ComponentVersion, error) {
@@ -115,6 +119,6 @@ func (t *TestComponentVersion) GetResource(name string, identity map[string]stri
 	return newTestResource(&resources[0], t.blobResolver), nil
 }
 
-func (t *TestComponentVersion) GetBlobResolver() model.BlobResolver {
-	return t.blobResolver
+func (t *TestComponentVersion) GetBlobResolver() (model.BlobResolver, error) {
+	return t.blobResolver, nil
 }

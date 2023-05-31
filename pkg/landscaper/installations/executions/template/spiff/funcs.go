@@ -7,6 +7,7 @@ package spiff
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -20,9 +21,16 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 )
 
-func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.ComponentVersion, componentVersions *model.ComponentVersionList) {
-	cd := model.GetComponentDescriptor(componentVersion)
-	cdList := model.ConvertComponentVersionList(componentVersions)
+func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.ComponentVersion, componentVersions *model.ComponentVersionList) error {
+	cd, err := model.GetComponentDescriptor(componentVersion)
+	if err != nil {
+		return fmt.Errorf("unable to get component descriptor to register spiff functions: %w", err)
+	}
+
+	cdList, err := model.ConvertComponentVersionList(componentVersions)
+	if err != nil {
+		return fmt.Errorf("unable to convert component descriptor list to register spiff functions: %w", err)
+	}
 
 	functions.RegisterFunction("getResource", spiffResolveResources(cd))
 	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList))
@@ -30,6 +38,8 @@ func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.C
 	functions.RegisterFunction("parseOCIRef", parseOCIReference)
 	functions.RegisterFunction("ociRefRepo", getOCIReferenceRepository)
 	functions.RegisterFunction("ociRefVersion", getOCIReferenceVersion)
+
+	return nil
 }
 
 func spiffResolveResources(cd *cdv2.ComponentDescriptor) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {

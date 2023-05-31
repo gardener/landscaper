@@ -551,14 +551,21 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 				}
 				templateInput["deployItem"] = deployItemEncoded
 
-				cd := model.GetComponentDescriptor(componentVersion)
+				cd, err := model.GetComponentDescriptor(componentVersion)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get component descriptor for deploy item %s: %w", deployItem.Name, err)
+				}
 				cdEncoded, err := encodeTemplateInput(cd)
 				if err != nil {
 					return nil, fmt.Errorf("failed to encode component descriptor for deploy item %s: %w", deployItem.Name, err)
 				}
 				templateInput["cd"] = cdEncoded
 
-				componentDescriptorList := model.ConvertComponentVersionList(s.blueprintRenderer.cdList)
+				componentDescriptorList, err := model.ConvertComponentVersionList(s.blueprintRenderer.cdList)
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert component descriptor list for deploy item %s: %w", deployItem.Name, err)
+				}
+
 				componentsEncoded, err := encodeTemplateInput(componentDescriptorList)
 				if err != nil {
 					return nil, fmt.Errorf("failed to encode component descriptor list for deploy item %s: %w", deployItem.Name, err)

@@ -29,8 +29,13 @@ func GetTransitiveComponentReferences(ctx context.Context,
 		i++
 	}
 
+	componentDescriptor, err := componentVersion.GetComponentDescriptor()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get component descriptor during the computation of transitive component versions")
+	}
+
 	return &ComponentVersionList{
-		Metadata:   componentVersion.GetComponentDescriptor().Metadata,
+		Metadata:   componentDescriptor.Metadata,
 		Components: cdList,
 	}, nil
 }
@@ -58,11 +63,20 @@ func getTransitiveComponentReferencesRecursively(ctx context.Context,
 	}
 	cds[cid] = cd
 
-	if cd.GetRepositoryContext() == nil {
+	cdRepositoryContext, err := cd.GetRepositoryContext()
+	if err != nil {
+		return fmt.Errorf("unable to get repository context in getTransitiveComponentReferencesRecursively: %w", err)
+	}
+	if cdRepositoryContext == nil {
 		return errors.New("component descriptor must at least contain one repository context with a base url")
 	}
 
-	for _, compRef := range cd.GetComponentReferences() {
+	cdComponentReferences, err := cd.GetComponentReferences()
+	if err != nil {
+		return fmt.Errorf("unable to get component references in getTransitiveComponentReferencesRecursively: %w", err)
+	}
+
+	for _, compRef := range cdComponentReferences {
 		referencedComponentVersion, err := cd.GetReferencedComponentVersion(ctx, &compRef, repositoryContext, overwriter)
 		if err != nil {
 			return fmt.Errorf("unable to resolve component reference %s with component name %s and version %s: %w",

@@ -312,6 +312,11 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 	ctx := context.Background()
 	defer ctx.Done()
 
+	inputRepositoryContext, err := r.getRepositoryContext(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get repository context for input installation: %w", err)
+	}
+
 	installationTemplates, err := input.Blueprint.GetSubinstallations()
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get subinstallation of blueprint: %w", err)
@@ -356,7 +361,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 			input.Installation,
 			subInstTmpl,
 			input.ComponentVersion,
-			r.getRepositoryContext(input),
+			inputRepositoryContext,
 			nil)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to get blueprint definition for subinstallation %q: %w", subInstTmpl.Name, err)
@@ -364,10 +369,13 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 		subInst.Spec.Blueprint = *subBlueprintDef
 		subInst.Spec.ComponentDescriptor = subCd
 
-		subInstRepositoryContext := r.getRepositoryContext(&ResolvedInstallation{
+		subInstRepositoryContext, err := r.getRepositoryContext(&ResolvedInstallation{
 			ComponentVersion: input.ComponentVersion,
 			Installation:     subInst,
 		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to get repository context for subinstallation %q: %w", subInstTmpl.Name, err)
+		}
 
 		subCd.Reference.RepositoryContext = subInstRepositoryContext
 		subBlueprint, err := blueprints.Resolve(ctx, r.registryAccess, subCd.Reference, *subBlueprintDef)
@@ -407,12 +415,17 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 // validateImports validates the imports with the JSON schemas defined in the blueprint
 func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports map[string]interface{}) error {
 
+	inputRepositoryContext, err := r.getRepositoryContext(input)
+	if err != nil {
+		return fmt.Errorf("unable to get repository context during validation of imports: %w", err)
+	}
+
 	validatorConfig := &jsonschema.ReferenceContext{
 		LocalTypes:        input.Blueprint.Info.LocalTypes,
 		BlueprintFs:       input.Blueprint.Fs,
 		ComponentVersion:  input.ComponentVersion,
 		RegistryAccess:    r.registryAccess,
-		RepositoryContext: r.getRepositoryContext(input),
+		RepositoryContext: inputRepositoryContext,
 	}
 
 	var allErr field.ErrorList
@@ -452,25 +465,30 @@ func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports
 // 1. explicitly user defined repository context
 // 2. repository context defined in the installation
 // 3. effective repository context defined in the component descriptor.
-func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) *cdv2.UnstructuredTypedObject {
+func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) (*cdv2.UnstructuredTypedObject, error) {
 	if r.repositoryContext != nil {
-		return r.repositoryContext
+		return r.repositoryContext, nil
 	}
 
 	if input.Installation != nil && input.Installation.Spec.ComponentDescriptor != nil {
 		if input.Installation.Spec.ComponentDescriptor.Reference != nil && input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext != nil {
-			return input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext
+			return input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext, nil
 		}
 		if input.Installation.Spec.ComponentDescriptor.Inline != nil {
-			return input.Installation.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext()
+			return input.Installation.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext(), nil
 		}
 	}
 
 	if input.ComponentVersion != nil {
-		return input.ComponentVersion.GetRepositoryContext()
+		repositoryContext, err := input.ComponentVersion.GetRepositoryContext()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get repository context from component version: %w", err)
+		}
+
+		return repositoryContext, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 func validateTargetImport(value interface{}, expectedTargetType string, fldPath *field.Path) field.ErrorList {

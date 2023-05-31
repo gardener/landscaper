@@ -287,11 +287,17 @@ func serializeComponentDescriptor(componentVersion model.ComponentVersion) (inte
 	if componentVersion == nil {
 		return nil, nil
 	}
-	cd := componentVersion.GetComponentDescriptor()
+
+	cd, err := componentVersion.GetComponentDescriptor()
+	if err != nil {
+		return nil, err
+	}
+
 	data, err := codec.Encode(cd)
 	if err != nil {
 		return nil, err
 	}
+
 	var val interface{}
 	if err := json.Unmarshal(data, &val); err != nil {
 		return nil, err
@@ -303,11 +309,16 @@ func serializeComponentDescriptorList(componentVersionList *model.ComponentVersi
 	if componentVersionList == nil {
 		return nil, nil
 	}
-	cd := model.ConvertComponentVersionList(componentVersionList)
+	cd, err := model.ConvertComponentVersionList(componentVersionList)
+	if err != nil {
+		return nil, err
+	}
+
 	data, err := codec.Encode(cd)
 	if err != nil {
 		return nil, err
 	}
+
 	var val interface{}
 	if err := json.Unmarshal(data, &val); err != nil {
 		return nil, err

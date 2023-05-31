@@ -204,7 +204,10 @@ func fetchComponentDescriptor(
 		return errors.Wrapf(err, "unable to resolve transitive component references for component version %s:%s", componentVersion.GetName(), componentVersion.GetVersion())
 	}
 
-	resolvedComponents := model.ConvertComponentVersionList(resolvedComponentVersions)
+	resolvedComponents, err := model.ConvertComponentVersionList(resolvedComponentVersions)
+	if err != nil {
+		return errors.Wrapf(err, "unable to convert list of component references of component version %s:%s", componentVersion.GetName(), componentVersion.GetVersion())
+	}
 
 	cdListJSONBytes, err := json.Marshal(resolvedComponents)
 	if err != nil {

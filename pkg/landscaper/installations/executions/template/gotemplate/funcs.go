@@ -41,10 +41,17 @@ func LandscaperSprigFuncMap() gotmpl.FuncMap {
 func LandscaperTplFuncMap(fs vfs.FileSystem,
 	componentVersion model.ComponentVersion,
 	componentVersions *model.ComponentVersionList,
-	targetResolver targetresolver.TargetResolver) map[string]interface{} {
+	targetResolver targetresolver.TargetResolver) (map[string]interface{}, error) {
 
-	cd := model.GetComponentDescriptor(componentVersion)
-	cdList := model.ConvertComponentVersionList(componentVersions)
+	cd, err := model.GetComponentDescriptor(componentVersion)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get component descriptor to register go template functions: %w", err)
+	}
+
+	cdList, err := model.ConvertComponentVersionList(componentVersions)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert component descriptor list to register go template functions: %w", err)
+	}
 
 	funcs := map[string]interface{}{
 		"readFile": readFileFunc(fs),
@@ -68,7 +75,8 @@ func LandscaperTplFuncMap(fs vfs.FileSystem,
 
 		"generateImageOverwrite": generateImageVectorGoFunc(cd, cdList),
 	}
-	return funcs
+
+	return funcs, nil
 }
 
 // readFileFunc returns a function that reads a file from a location in a filesystem
@@ -119,22 +127,25 @@ func getOCIReferenceRepository(ref string) string {
 }
 
 // resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access
-func resolveArtifactFunc(componentVersion model.ComponentVersion) func(access map[string]interface{}) []byte {
-	return func(access map[string]interface{}) []byte {
+func resolveArtifactFunc(componentVersion model.ComponentVersion) func(access map[string]interface{}) ([]byte, error) {
+	return func(access map[string]interface{}) ([]byte, error) {
 		ctx := context.Background()
 		defer ctx.Done()
 
 		if componentVersion == nil {
-			panic("Unable to resolve artifact, because no resolver is provided")
+			return nil, fmt.Errorf("unable to resolve artifact, because no component version is provided")
 		}
 
-		blobResolver := componentVersion.GetBlobResolver()
+		blobResolver, err := componentVersion.GetBlobResolver()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob resolver to resolve artifact: %w", err)
+		}
 
 		var data bytes.Buffer
 		if _, err := blobResolver.Resolve(ctx, cdv2.Resource{Access: cdv2.NewUnstructuredType(access["type"].(string), access)}, &data); err != nil {
 			panic(err)
 		}
-		return data.Bytes()
+		return data.Bytes(), nil
 	}
 }
 
