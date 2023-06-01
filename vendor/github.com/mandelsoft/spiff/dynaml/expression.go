@@ -3,6 +3,7 @@ package dynaml
 import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
+	"github.com/mandelsoft/spiff/features"
 	"github.com/mandelsoft/spiff/yaml"
 )
 
@@ -16,6 +17,14 @@ type SourceProvider interface {
 	SourceName() string
 }
 
+type ExecCache interface {
+	Lock()
+	Unlock()
+	Get(key string) []byte
+	Set(key string, content []byte)
+	Clear()
+}
+
 type State interface {
 	GetTempName(data []byte) (string, error)
 	GetFileContent(file string, cached bool) ([]byte, error)
@@ -23,7 +32,14 @@ type State interface {
 	OSAccessAllowed() bool
 	FileAccessAllowed() bool
 	FileSystem() vfs.VFS
-	GetFunctions() Registry
+	GetRegistry() Registry
+	GetFeatures() features.FeatureFlags
+	GetExecCache() ExecCache
+	InterpolationEnabled() bool
+	ControlEnabled() bool
+	SetTag(name string, node yaml.Node, path []string, scope TagScope) error
+	GetTag(name string) *Tag
+	GetTags(name string) []*TagInfo
 }
 
 type Binding interface {
@@ -36,6 +52,7 @@ type Binding interface {
 	FindInStubs([]string) (yaml.Node, bool)
 
 	WithScope(step map[string]yaml.Node) Binding
+	WithListScope(step []yaml.Node) Binding // only for root element
 	WithLocalScope(step map[string]yaml.Node) Binding
 	WithPath(step string) Binding
 	WithSource(source string) Binding
@@ -48,6 +65,7 @@ type Binding interface {
 	NoMerge() bool
 
 	GetState() State
+	GetFeatures() features.FeatureFlags
 	GetTempName(data []byte) (string, error)
 	GetFileContent(file string, cached bool) ([]byte, error)
 
@@ -180,6 +198,18 @@ func (i *EvaluationInfo) PropagateError(value interface{}, state Status, msgfmt 
 		value = nil
 	}
 	return value, *i, false //!i.LocalError
+}
+
+func (i EvaluationInfo) CleanError() EvaluationInfo {
+	i.Issue = yaml.Issue{}
+	i.LocalError = false
+	i.Failed = false
+	i.Undefined = false
+	return i
+}
+
+func (i EvaluationInfo) GetError() string {
+	return i.Issue.Issue
 }
 
 func (i EvaluationInfo) Join(o EvaluationInfo) EvaluationInfo {

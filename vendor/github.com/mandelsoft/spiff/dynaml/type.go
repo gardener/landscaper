@@ -22,6 +22,9 @@ func func_type(arguments []interface{}, binding Binding) (interface{}, Evaluatio
 func ExpressionType(elem interface{}) string {
 	node, ok := elem.(yaml.Node)
 	if ok {
+		if node.Undefined() {
+			return "undef"
+		}
 		elem = node.Value()
 	}
 	switch elem.(type) {
@@ -29,6 +32,8 @@ func ExpressionType(elem interface{}) string {
 		return "string"
 	case int64:
 		return "int"
+	case float64:
+		return "float"
 	case bool:
 		return "bool"
 	case []yaml.Node:

@@ -20,6 +20,7 @@ func (e CondExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 
 	a, info, ok := ResolveExpressionOrPushEvaluation(&e.C, &resolved, &info, binding, false)
 	if !ok {
+		// fmt.Printf("*** COND failed: %s\n", info.Issue)
 		return nil, info, false
 	}
 	if !resolved {

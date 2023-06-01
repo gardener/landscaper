@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Mandelsoft. All rights reserved.
+ * Copyright 2022 Mandelsoft. All rights reserved.
  *  This file is licensed under the Apache Software License, v. 2 except as noted
  *  otherwise in the LICENSE file
  *
@@ -40,6 +40,13 @@ type MappedFileSystem struct {
 
 func NewMappedFileSystem(root vfs.FileSystem, mapper PathMapper) *MappedFileSystem {
 	return &MappedFileSystem{mapper: mapper, base: root}
+}
+
+func (m *MappedFileSystem) Cleanup() error {
+	if m != nil {
+		return vfs.Cleanup(m.base)
+	}
+	return nil
 }
 
 func (m *MappedFileSystem) Base() vfs.FileSystem {
@@ -95,7 +102,7 @@ func (m *MappedFileSystem) mapPath(path string, link ...bool) (vfs.FileSystem, s
 		case ".", "":
 			continue
 		case "..":
-			r, b = vfs.Split(m.base, r)
+			r, _ = vfs.Split(m.base, r)
 			if r == "" {
 				r = "/"
 			}
@@ -109,7 +116,7 @@ func (m *MappedFileSystem) mapPath(path string, link ...bool) (vfs.FileSystem, s
 			if err != nil && !os.IsPermission(err) {
 				return nil, "", "", err
 			}
-			if fi.Mode()&os.ModeSymlink != 0 && (getlink || strings.Contains(path, vfs.PathSeparatorString)) {
+			if (fi != nil && fi.Mode()&os.ModeSymlink != 0) && (getlink || strings.Contains(path, vfs.PathSeparatorString)) {
 				links++
 				if links > 255 {
 					return nil, "", "", errors.New("AbsPath: too many links")
@@ -237,7 +244,7 @@ func (m *MappedFileSystem) MkdirAll(name string, mode os.FileMode) (err error) {
 
 	r := ""
 	for _, dir := range elems {
-		r = vfs.PathSeparatorString + dir
+		r += vfs.PathSeparatorString + dir
 		fs, l, r, err := m.mapPath(r)
 		if err != nil {
 			return &os.PathError{Op: "mkdir", Path: name, Err: err}

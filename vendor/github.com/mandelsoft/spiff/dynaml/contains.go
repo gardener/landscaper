@@ -1,9 +1,10 @@
 package dynaml
 
 import (
-	"github.com/mandelsoft/spiff/yaml"
 	"strconv"
 	"strings"
+
+	"github.com/mandelsoft/spiff/yaml"
 )
 
 func func_contains(arguments []interface{}, binding Binding) (interface{}, EvaluationInfo, bool) {
@@ -14,6 +15,18 @@ func func_contains(arguments []interface{}, binding Binding) (interface{}, Evalu
 	}
 
 	switch val := arguments[0].(type) {
+	case map[string]yaml.Node:
+		elem := arguments[1]
+		if elem == nil {
+			return false, info, true
+		}
+		key, ok := elem.(string)
+		if !ok {
+			return false, info, true
+		}
+		_, ok = val[key]
+		return ok, info, true
+
 	case []yaml.Node:
 		if arguments[1] == nil {
 			return false, info, true

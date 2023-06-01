@@ -30,15 +30,28 @@ func (e AdditionExpr) Evaluate(binding Binding, locally bool) (interface{}, Eval
 
 	str, ok := a.(string)
 	if ok {
+		var cidr *net.IPNet
+		var err error
 		ip := net.ParseIP(str)
 		if ip == nil {
-			return info.Error("first argument for addition must be IP address or number")
+			ip, cidr, err = net.ParseCIDR(str)
+			if err != nil {
+				return info.Error("first argument for addition must be IP address, CIDR or number")
+			}
 		}
 		bint, ok := b.(int64)
 		if !ok {
 			return info.Error("addition argument for an IP address requires an integer argument")
 		}
-		return IPAdd(ip, bint).String(), info, true
+		ip = IPAdd(ip, bint)
+		if cidr != nil {
+			if !cidr.Contains(ip) {
+				return info.Error("resulting ip address not in CIDR range")
+			}
+			cidr.IP = ip
+			return cidr.String(), info, true
+		}
+		return ip.String(), info, true
 	}
 	a, b, err := NumberOperands(a, b)
 	if err != nil {
@@ -87,4 +100,44 @@ func NumberOperands(a, b interface{}) (interface{}, interface{}, error) {
 		return fa, float64(ib), nil
 	}
 	return float64(ia), fb, nil
+}
+
+const TYPE_INT = 1
+const TYPE_FLOAT = 2
+const TYPE_NUMBER = TYPE_FLOAT | TYPE_INT
+
+func NumberOperandsN(convert int, ops ...interface{}) ([]interface{}, bool, error) {
+	isInt := true
+	var r []interface{}
+
+	for n, o := range ops {
+		v, ok := o.(int64)
+		if ok {
+			if isInt && (convert&TYPE_INT != 0) {
+				r = append(r, v)
+			} else {
+				r = append(r, float64(v))
+			}
+		} else {
+			v, ok := o.(float64)
+			if ok {
+				if isInt {
+					isInt = false
+					if convert == TYPE_NUMBER {
+						for i, v := range r {
+							r[i] = float64(v.(int64))
+						}
+					}
+				}
+				if convert&TYPE_FLOAT != 0 {
+					r = append(r, v)
+				} else {
+					r = append(r, int64(v))
+				}
+			} else {
+				return nil, false, fmt.Errorf("operand %d must be integer or float (%s)", n, reflect.TypeOf(o))
+			}
+		}
+	}
+	return r, isInt, nil
 }
