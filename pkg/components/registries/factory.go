@@ -47,8 +47,9 @@ func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
 	allowPlainHttp bool,
 	skipTLSVerify bool,
 	registryConfigPath string,
-	concourseConfigPath string) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewRegistryAccessFromOciOptions(ctx, log, fs, allowPlainHttp, skipTLSVerify, registryConfigPath, concourseConfigPath)
+	concourseConfigPath string,
+	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
+	return f.cnudieFactory.NewRegistryAccessFromOciOptions(ctx, log, fs, allowPlainHttp, skipTLSVerify, registryConfigPath, concourseConfigPath, predefinedComponentDescriptors...)
 }
 
 func (f *Factory) NewRegistryAccessForHelm(ctx context.Context,

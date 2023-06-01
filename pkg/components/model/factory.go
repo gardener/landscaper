@@ -31,7 +31,8 @@ type Factory interface {
 		allowPlainHttp bool,
 		skipTLSVerify bool,
 		registryConfigPath string,
-		concourseConfigPath string) (RegistryAccess, error)
+		concourseConfigPath string,
+		predefinedComponentDescriptors ...*types.ComponentDescriptor) (RegistryAccess, error)
 
 	NewRegistryAccessForHelm(ctx context.Context,
 		lsClient client.Client,

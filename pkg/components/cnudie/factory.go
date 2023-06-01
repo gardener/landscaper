@@ -103,7 +103,8 @@ func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
 	allowPlainHttp bool,
 	skipTLSVerify bool,
 	registryConfigPath string,
-	concourseConfigPath string) (model.RegistryAccess, error) {
+	concourseConfigPath string,
+	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
 
 	ociOptions := ociopts.Options{
 		AllowPlainHttp:      allowPlainHttp,
@@ -117,7 +118,11 @@ func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
 		return nil, fmt.Errorf("unable to build oci client: %w", err)
 	}
 
-	compResolver := cdoci.NewResolver(ociClient)
+	//compResolver := cdoci.NewResolver(ociClient)
+	compResolver, err := componentresolvers.NewOCIRegistryWithOCIClient(logging.Wrap(log), ociClient, predefinedComponentDescriptors...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build component resolver with oci client: %w", err)
+	}
 
 	return &RegistryAccess{
 		componentResolver: compResolver,
