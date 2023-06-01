@@ -27,6 +27,6 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	}
 
 	return &ComponentVersion{
-		_ComponentVersionAccess: compvers,
+		componentVersionAccess: compvers,
 	}, err
 }

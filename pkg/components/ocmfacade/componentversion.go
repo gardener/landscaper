@@ -16,20 +16,20 @@ import (
 )
 
 type ComponentVersion struct {
-	_ComponentVersionAccess ocm.ComponentVersionAccess
+	componentVersionAccess ocm.ComponentVersionAccess
 }
 
 func (c *ComponentVersion) GetName() string {
-	return c._ComponentVersionAccess.GetName()
+	return c.componentVersionAccess.GetName()
 }
 
 func (c *ComponentVersion) GetVersion() string {
-	return c._ComponentVersionAccess.GetVersion()
+	return c.componentVersionAccess.GetVersion()
 }
 
 func (c *ComponentVersion) GetComponentDescriptor() (*types.ComponentDescriptor, error) {
 	// Get ocm-lib Component Descriptor
-	cd := c._ComponentVersionAccess.GetDescriptor()
+	cd := c.componentVersionAccess.GetDescriptor()
 	data, err := compdesc.Encode(cd)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (c *ComponentVersion) GetComponentDescriptor() (*types.ComponentDescriptor,
 
 func (c *ComponentVersion) GetRepositoryContext() (*types.UnstructuredTypedObject, error) {
 	// Get ocm-lib (effective) Repository Context
-	spec := c._ComponentVersionAccess.GetDescriptor().GetEffectiveRepositoryContext()
+	spec := c.componentVersionAccess.GetDescriptor().GetEffectiveRepositoryContext()
 	data, err := runtime.DefaultYAMLEncoding.Marshal(&spec)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (c *ComponentVersion) GetRepositoryContext() (*types.UnstructuredTypedObjec
 
 func (c *ComponentVersion) GetComponentReferences() ([]types.ComponentReference, error) {
 	// Get ocm-lib Component References
-	refs := c._ComponentVersionAccess.GetDescriptor().References
+	refs := c.componentVersionAccess.GetDescriptor().References
 	data, err := runtime.DefaultYAMLEncoding.Marshal(&refs)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (c *ComponentVersion) GetComponentReferences() ([]types.ComponentReference,
 
 func (c *ComponentVersion) GetComponentReference(name string) (*types.ComponentReference, error) {
 	// Get ocm-lib Component Reference by name
-	refs, err := c._ComponentVersionAccess.GetDescriptor().GetReferencesByName(name)
+	refs, err := c.componentVersionAccess.GetDescriptor().GetReferencesByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -111,23 +111,23 @@ func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, re
 	// Prepare input arguments for Resolve Reference function
 	id := v1.Identity(ref.GetIdentity())
 	path := []v1.Identity{id}
-	repo := c._ComponentVersionAccess.Repository()
+	repo := c.componentVersionAccess.Repository()
 	defer errors.PropagateError(&rerr, repo.Close)
 
 	// Resolve the given reference path (here, this is not really a path, but only a direct reference)
-	compvers, err := utils.ResolveReferencePath(c._ComponentVersionAccess, path, c._ComponentVersionAccess.Repository())
+	compvers, err := utils.ResolveReferencePath(c.componentVersionAccess, path, c.componentVersionAccess.Repository())
 	if err != nil {
 		return nil, err
 	}
 
 	return &ComponentVersion{
-		_ComponentVersionAccess: compvers,
+		componentVersionAccess: compvers,
 	}, nil
 
 }
 
 func (c *ComponentVersion) GetResource(name string, identity map[string]string) (model.Resource, error) {
-	resources, err := c._ComponentVersionAccess.GetResourcesByName(name, cdv2.Identity(identity))
+	resources, err := c.componentVersionAccess.GetResourcesByName(name, cdv2.Identity(identity))
 	if err != nil {
 		return nil, err
 	}
@@ -139,11 +139,11 @@ func (c *ComponentVersion) GetResource(name string, identity map[string]string) 
 	}
 
 	return &Resource{
-		_ResourceAccess: resources[0],
+		resourceAccess: resources[0],
 	}, nil
 }
 
-func (c *ComponentVersion) GetBlobResolver() model.BlobResolver {
+func (c *ComponentVersion) GetBlobResolver() (model.BlobResolver, error) {
 	//TODO implement me
 	panic("implement me")
 }

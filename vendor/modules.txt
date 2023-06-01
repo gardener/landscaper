@@ -317,6 +317,11 @@ github.com/docker/go-metrics
 # github.com/docker/go-units v0.5.0
 ## explicit
 github.com/docker/go-units
+# github.com/drone/envsubst v1.0.3
+## explicit; go 1.13
+github.com/drone/envsubst
+github.com/drone/envsubst/parse
+github.com/drone/envsubst/path
 # github.com/emicklei/go-restful/v3 v3.10.0
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
@@ -899,6 +904,7 @@ github.com/open-component-model/ocm/pkg/signing/hasher/sha256
 github.com/open-component-model/ocm/pkg/signing/hasher/sha512
 github.com/open-component-model/ocm/pkg/signing/norm/entry
 github.com/open-component-model/ocm/pkg/signing/norm/jcs
+github.com/open-component-model/ocm/pkg/testutils
 github.com/open-component-model/ocm/pkg/utils
 github.com/open-component-model/ocm/pkg/utils/selector
 github.com/open-component-model/ocm/pkg/utils/tarutils
