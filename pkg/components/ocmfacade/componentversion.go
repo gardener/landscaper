@@ -4,18 +4,18 @@ import (
 	"context"
 	"fmt"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
 type ComponentVersion struct {
+	registryAccess         *RegistryAccess
 	componentVersionAccess ocm.ComponentVersionAccess
 }
 
@@ -108,21 +108,13 @@ func (c *ComponentVersion) GetComponentReference(name string) (*types.ComponentR
 }
 
 func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (rcompvers model.ComponentVersion, rerr error) {
-	// Prepare input arguments for Resolve Reference function
-	id := v1.Identity(ref.GetIdentity())
-	path := []v1.Identity{id}
-	repo := c.componentVersionAccess.Repository()
-	defer errors.PropagateError(&rerr, repo.Close)
-
-	// Resolve the given reference path (here, this is not really a path, but only a direct reference)
-	compvers, err := utils.ResolveReferencePath(c.componentVersionAccess, path, c.componentVersionAccess.Repository())
-	if err != nil {
-		return nil, err
+	cdRef := &lsv1alpha1.ComponentDescriptorReference{
+		RepositoryContext: repositoryContext,
+		ComponentName:     ref.ComponentName,
+		Version:           ref.Version,
 	}
 
-	return &ComponentVersion{
-		componentVersionAccess: compvers,
-	}, nil
+	return model.GetComponentVersionWithOverwriter(ctx, c.registryAccess, cdRef, overwriter)
 
 }
 

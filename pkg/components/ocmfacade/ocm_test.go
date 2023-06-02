@@ -4,6 +4,7 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/runtime"
 
 	. "github.com/open-component-model/ocm/pkg/testutils"
@@ -16,14 +17,21 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(data), &cdref))
 
-		r := &RegistryAccess{}
+		r := &RegistryAccess{ocm.DefaultContext()}
 		cv := Must(r.GetComponentVersion(nil, cdref))
 		Expect(cv).NotTo(BeNil())
 		Expect(cv.GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
 		Expect(cv.GetVersion()).To(Equal("1.0.0"))
 	})
 	It("test component version methods", func() {
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(data), &cdref))
 
+		r := &RegistryAccess{ocm.DefaultContext()}
+		cv := Must(r.GetComponentVersion(nil, cdref))
+
+		Expect(cv.GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
+		Expect(cv.GetVersion()).To(Equal("1.0.0"))
 	})
 
 })

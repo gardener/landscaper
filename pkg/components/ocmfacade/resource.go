@@ -3,8 +3,8 @@ package ocmfacade
 import (
 	"context"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"io"
 )
@@ -54,7 +54,7 @@ func (r *Resource) GetBlob(ctx context.Context, writer io.Writer) (rblobinfo *ty
 	if err != nil {
 		return nil, err
 	}
-	defer errors.PropagateError(&rerr, accessMethod.Close)
+	//defer errors.PropagateError(&rerr, accessMethod.Close) wait for new ocm pr
 
 	blob, err := accessMethod.Get()
 	if err != nil {
@@ -65,14 +65,12 @@ func (r *Resource) GetBlob(ctx context.Context, writer io.Writer) (rblobinfo *ty
 		return nil, err
 	}
 
-	mediaType := accessMethod.MimeType()
-	digest := r.resourceAccess.Meta().Digest.Value
-	size := int64(len(blob))
+	blobAccess := accessio.BlobAccessForDataAccess(accessio.BLOB_UNKNOWN_DIGEST, accessio.BLOB_UNKNOWN_SIZE, accessMethod.MimeType(), accessMethod)
 
 	return &types.BlobInfo{
-		MediaType: mediaType,
-		Digest:    digest,
-		Size:      size,
+		MediaType: accessMethod.MimeType(),
+		Digest:    blobAccess.Digest().String(),
+		Size:      blobAccess.Size(),
 	}, nil
 }
 
@@ -81,20 +79,13 @@ func (r *Resource) GetBlobInfo(ctx context.Context) (rblobinfo *types.BlobInfo, 
 	if err != nil {
 		return nil, err
 	}
-	defer errors.PropagateError(&rerr, accessMethod.Close)
+	//defer errors.PropagateError(&rerr, accessMethod.Close) wait for new ocm pr
 
-	blob, err := accessMethod.Get()
-	if err != nil {
-		return nil, err
-	}
-
-	mediaType := accessMethod.MimeType()
-	digest := r.resourceAccess.Meta().Digest.Value
-	size := int64(len(blob))
+	blobAccess := accessio.BlobAccessForDataAccess(accessio.BLOB_UNKNOWN_DIGEST, accessio.BLOB_UNKNOWN_SIZE, accessMethod.MimeType(), accessMethod)
 
 	return &types.BlobInfo{
-		MediaType: mediaType,
-		Digest:    digest,
-		Size:      size,
+		MediaType: accessMethod.MimeType(),
+		Digest:    blobAccess.Digest().String(),
+		Size:      blobAccess.Size(),
 	}, nil
 }
