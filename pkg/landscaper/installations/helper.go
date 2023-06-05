@@ -22,10 +22,10 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	lscheme "github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	lstypes "github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 )
 

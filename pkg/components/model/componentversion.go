@@ -7,8 +7,8 @@ package model
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 )
 
 type ComponentVersion interface {
