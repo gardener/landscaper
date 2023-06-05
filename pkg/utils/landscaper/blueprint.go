@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"strings"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -18,6 +17,7 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -35,7 +35,7 @@ type BlueprintRenderer struct {
 	// registryAccess is used to resolve component descriptors.
 	registryAccess model.RegistryAccess
 	// repositoryContext is an optional repository context used to overwrite the effective repository context of component descriptors.
-	repositoryContext *cdv2.UnstructuredTypedObject
+	repositoryContext *types.UnstructuredTypedObject
 }
 
 // ResolvedInstallation contains a tuple of component descriptor, installation and blueprint.
@@ -58,7 +58,7 @@ type RenderedDeployItemsSubInstallations struct {
 }
 
 // NewBlueprintRenderer creates a new blueprint renderer. The arguments are optional and may be nil.
-func NewBlueprintRenderer(cdList *model.ComponentVersionList, registryAccess model.RegistryAccess, repositoryContext *cdv2.UnstructuredTypedObject) *BlueprintRenderer {
+func NewBlueprintRenderer(cdList *model.ComponentVersionList, registryAccess model.RegistryAccess, repositoryContext *types.UnstructuredTypedObject) *BlueprintRenderer {
 	renderer := &BlueprintRenderer{
 		cdList:            cdList,
 		registryAccess:    registryAccess,
@@ -465,7 +465,7 @@ func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports
 // 1. explicitly user defined repository context
 // 2. repository context defined in the installation
 // 3. effective repository context defined in the component descriptor.
-func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) (*cdv2.UnstructuredTypedObject, error) {
+func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) (*types.UnstructuredTypedObject, error) {
 	if r.repositoryContext != nil {
 		return r.repositoryContext, nil
 	}

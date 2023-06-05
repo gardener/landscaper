@@ -16,14 +16,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 var _ = Describe("Reconcile", func() {
@@ -31,7 +30,7 @@ var _ = Describe("Reconcile", func() {
 	var (
 		ctrl    reconcile.Reconciler
 		state   *envtest.State
-		repoCtx *cdv2.UnstructuredTypedObject
+		repoCtx *types.UnstructuredTypedObject
 	)
 	BeforeEach(func() {
 		uObj, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com", ""))

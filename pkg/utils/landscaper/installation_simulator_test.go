@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/gardener/landscaper/pkg/components/model/types"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -68,7 +70,7 @@ var _ = Describe("Installation Simulator", func() {
 		rootComponentVersion model.ComponentVersion
 		componentVersionList *model.ComponentVersionList
 		blueprint            *blueprints.Blueprint
-		repositoryContext    cdv2.UnstructuredTypedObject
+		repositoryContext    types.UnstructuredTypedObject
 		exportTemplates      lsutils.ExportTemplates
 		callbacks            = &TestSimulatorCallbacks{
 			installations:     make(map[string]*lsv1alpha1.Installation),

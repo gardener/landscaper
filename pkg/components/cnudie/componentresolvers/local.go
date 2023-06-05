@@ -24,6 +24,7 @@ import (
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 
@@ -194,11 +195,11 @@ type FilesystemBlobResolver struct {
 	BaseFilesystemBlobResolver
 }
 
-func (ca *FilesystemBlobResolver) CanResolve(resource cdv2.Resource) bool {
+func (ca *FilesystemBlobResolver) CanResolve(resource types.Resource) bool {
 	return resource.Access != nil && resource.Access.GetType() == FilesystemBlobType
 }
 
-func (ca *FilesystemBlobResolver) Info(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error) {
+func (ca *FilesystemBlobResolver) Info(ctx context.Context, res types.Resource) (*ctf.BlobInfo, error) {
 	info, file, err := ca.resolve(ctx, res)
 	if err != nil {
 		return nil, err
@@ -212,7 +213,7 @@ func (ca *FilesystemBlobResolver) Info(ctx context.Context, res cdv2.Resource) (
 }
 
 // Resolve fetches the blob for a given resource and writes it to the given tar.
-func (ca *FilesystemBlobResolver) Resolve(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+func (ca *FilesystemBlobResolver) Resolve(ctx context.Context, res types.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
 	info, file, err := ca.resolve(ctx, res)
 	if err != nil {
 		return nil, err
@@ -226,7 +227,7 @@ func (ca *FilesystemBlobResolver) Resolve(ctx context.Context, res cdv2.Resource
 	return info, nil
 }
 
-func (ca *FilesystemBlobResolver) resolve(_ context.Context, res cdv2.Resource) (*ctf.BlobInfo, io.ReadCloser, error) {
+func (ca *FilesystemBlobResolver) resolve(_ context.Context, res types.Resource) (*ctf.BlobInfo, io.ReadCloser, error) {
 	if res.Access == nil || res.Access.GetType() != FilesystemBlobType {
 		return nil, nil, ctf.UnsupportedResolveType
 	}
@@ -256,11 +257,11 @@ func NewLocalFilesystemBlobResolver(fs vfs.FileSystem) *LocalFilesystemBlobResol
 	}
 }
 
-func (ca *LocalFilesystemBlobResolver) CanResolve(resource cdv2.Resource) bool {
+func (ca *LocalFilesystemBlobResolver) CanResolve(resource types.Resource) bool {
 	return resource.Access != nil && resource.Access.GetType() == cdv2.LocalFilesystemBlobType
 }
 
-func (ca *LocalFilesystemBlobResolver) Info(_ context.Context, res cdv2.Resource) (*ctf.BlobInfo, error) {
+func (ca *LocalFilesystemBlobResolver) Info(_ context.Context, res types.Resource) (*ctf.BlobInfo, error) {
 	info, file, err := ca.resolve(res)
 	if err != nil {
 		return nil, err
@@ -274,7 +275,7 @@ func (ca *LocalFilesystemBlobResolver) Info(_ context.Context, res cdv2.Resource
 }
 
 // Resolve fetches the blob for a given resource and writes it to the given tar.
-func (ca *LocalFilesystemBlobResolver) Resolve(_ context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+func (ca *LocalFilesystemBlobResolver) Resolve(_ context.Context, res types.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
 	info, file, err := ca.resolve(res)
 	if err != nil {
 		return nil, err
@@ -288,7 +289,7 @@ func (ca *LocalFilesystemBlobResolver) Resolve(_ context.Context, res cdv2.Resou
 	return info, nil
 }
 
-func (ca *LocalFilesystemBlobResolver) resolve(res cdv2.Resource) (*ctf.BlobInfo, io.ReadCloser, error) {
+func (ca *LocalFilesystemBlobResolver) resolve(res types.Resource) (*ctf.BlobInfo, io.ReadCloser, error) {
 	if res.Access == nil || res.Access.GetType() != cdv2.LocalFilesystemBlobType {
 		return nil, nil, ctf.UnsupportedResolveType
 	}

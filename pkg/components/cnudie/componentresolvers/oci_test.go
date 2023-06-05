@@ -22,6 +22,7 @@ import (
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 
@@ -190,17 +191,17 @@ var _ = Describe("Registry", func() {
 		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
 		Expect(err).ToNot(HaveOccurred())
 
-		cd := cdv2.ComponentDescriptor{
-			Metadata: cdv2.Metadata{
+		cd := types.ComponentDescriptor{
+			Metadata: types.Metadata{
 				Version: cdv2.SchemaVersion,
 			},
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:          ref,
 				Provider:            "internal",
-				RepositoryContexts:  []*cdv2.UnstructuredTypedObject{&repoCtx},
-				ComponentReferences: []cdv2.ComponentReference{},
+				RepositoryContexts:  []*types.UnstructuredTypedObject{&repoCtx},
+				ComponentReferences: []types.ComponentReference{},
 				Sources:             []cdv2.Source{},
-				Resources: []cdv2.Resource{
+				Resources: []types.Resource{
 					{
 						IdentityObjectMeta: cdv2.IdentityObjectMeta{
 							Type:    "blueprint",
@@ -235,17 +236,17 @@ var _ = Describe("Registry", func() {
 		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
 		Expect(err).ToNot(HaveOccurred())
 
-		labelCd := cdv2.ComponentDescriptor{
-			Metadata: cdv2.Metadata{
+		labelCd := types.ComponentDescriptor{
+			Metadata: types.Metadata{
 				Version: cdv2.SchemaVersion,
 			},
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:          ref,
 				Provider:            "internal",
-				RepositoryContexts:  []*cdv2.UnstructuredTypedObject{&repoCtx},
-				ComponentReferences: []cdv2.ComponentReference{},
+				RepositoryContexts:  []*types.UnstructuredTypedObject{&repoCtx},
+				ComponentReferences: []types.ComponentReference{},
 				Sources:             []cdv2.Source{},
-				Resources: []cdv2.Resource{
+				Resources: []types.Resource{
 					{
 						IdentityObjectMeta: cdv2.IdentityObjectMeta{
 							Type:    "blueprint",
@@ -264,8 +265,8 @@ var _ = Describe("Registry", func() {
 
 		nestedRepoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
 		Expect(err).ToNot(HaveOccurred())
-		cd := cdv2.ComponentDescriptor{
-			Metadata: cdv2.Metadata{
+		cd := types.ComponentDescriptor{
+			Metadata: types.Metadata{
 				Version: cdv2.SchemaVersion,
 			},
 			ComponentSpec: cdv2.ComponentSpec{
@@ -274,9 +275,9 @@ var _ = Describe("Registry", func() {
 					Version: "0.1.2",
 				},
 				Provider:           "internal",
-				RepositoryContexts: []*cdv2.UnstructuredTypedObject{&nestedRepoCtx},
+				RepositoryContexts: []*types.UnstructuredTypedObject{&nestedRepoCtx},
 				Sources:            []cdv2.Source{},
-				Resources: []cdv2.Resource{
+				Resources: []types.Resource{
 					{
 						IdentityObjectMeta: cdv2.IdentityObjectMeta{
 							Type:    "blueprint",
@@ -287,7 +288,7 @@ var _ = Describe("Registry", func() {
 						Access:   cdv2.NewUnstructuredType(cdv2.OCIRegistryType, map[string]interface{}{"imageReference": "example.com/image-reference:0.1.2"}),
 					},
 				},
-				ComponentReferences: []cdv2.ComponentReference{
+				ComponentReferences: []types.ComponentReference{
 					{
 						Name:          "label-cd-test",
 						ComponentName: "example.com/label-cd-test",
@@ -329,17 +330,17 @@ var _ = Describe("Registry", func() {
 		repoCtxLvl2, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
 		Expect(err).ToNot(HaveOccurred())
 
-		labelCdLvl2 := cdv2.ComponentDescriptor{
-			Metadata: cdv2.Metadata{
+		labelCdLvl2 := types.ComponentDescriptor{
+			Metadata: types.Metadata{
 				Version: cdv2.SchemaVersion,
 			},
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:          refLvl2,
 				Provider:            "internal",
-				RepositoryContexts:  []*cdv2.UnstructuredTypedObject{&repoCtxLvl2},
-				ComponentReferences: []cdv2.ComponentReference{},
+				RepositoryContexts:  []*types.UnstructuredTypedObject{&repoCtxLvl2},
+				ComponentReferences: []types.ComponentReference{},
 				Sources:             []cdv2.Source{},
-				Resources: []cdv2.Resource{
+				Resources: []types.Resource{
 					{
 						IdentityObjectMeta: cdv2.IdentityObjectMeta{
 							Type:    "blueprint",
@@ -365,16 +366,16 @@ var _ = Describe("Registry", func() {
 		repoCtxLvl1, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
 		Expect(err).ToNot(HaveOccurred())
 
-		labelCdLvl1 := cdv2.ComponentDescriptor{
-			Metadata: cdv2.Metadata{
+		labelCdLvl1 := types.ComponentDescriptor{
+			Metadata: types.Metadata{
 				Version: cdv2.SchemaVersion,
 			},
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:         refLvl1,
 				Provider:           "internal",
-				RepositoryContexts: []*cdv2.UnstructuredTypedObject{&repoCtxLvl1},
+				RepositoryContexts: []*types.UnstructuredTypedObject{&repoCtxLvl1},
 				Sources:            []cdv2.Source{},
-				Resources: []cdv2.Resource{
+				Resources: []types.Resource{
 					{
 						IdentityObjectMeta: cdv2.IdentityObjectMeta{
 							Type:    "blueprint",
@@ -385,7 +386,7 @@ var _ = Describe("Registry", func() {
 						Access:   cdv2.NewUnstructuredType(cdv2.OCIRegistryType, map[string]interface{}{"type": cdv2.OCIRegistryType, "imageReference": "example.com/image-reference:0.1.2"}),
 					},
 				},
-				ComponentReferences: []cdv2.ComponentReference{
+				ComponentReferences: []types.ComponentReference{
 					{
 						Name:          "label-cd-lvl2",
 						ComponentName: "example.com/label-cd-lvl2",
@@ -418,16 +419,16 @@ var _ = Describe("Registry", func() {
 		repoCtxRootCd, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
 		Expect(err).ToNot(HaveOccurred())
 
-		cd := cdv2.ComponentDescriptor{
-			Metadata: cdv2.Metadata{
+		cd := types.ComponentDescriptor{
+			Metadata: types.Metadata{
 				Version: cdv2.SchemaVersion,
 			},
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:         refRootCd,
 				Provider:           "internal",
-				RepositoryContexts: []*cdv2.UnstructuredTypedObject{&repoCtxRootCd},
+				RepositoryContexts: []*types.UnstructuredTypedObject{&repoCtxRootCd},
 				Sources:            []cdv2.Source{},
-				Resources: []cdv2.Resource{
+				Resources: []types.Resource{
 					{
 						IdentityObjectMeta: cdv2.IdentityObjectMeta{
 							Type:    "blueprint",
@@ -438,7 +439,7 @@ var _ = Describe("Registry", func() {
 						Access:   cdv2.NewUnstructuredType(cdv2.OCIRegistryType, map[string]interface{}{"imageReference": "example.com/image-reference:0.1.2"}),
 					},
 				},
-				ComponentReferences: []cdv2.ComponentReference{
+				ComponentReferences: []types.ComponentReference{
 					{
 						Name:          "label-cd-lvl1",
 						ComponentName: "example.com/label-cd-lvl1",

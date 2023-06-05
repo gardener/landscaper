@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -25,6 +24,7 @@ import (
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -50,7 +50,7 @@ type Operation struct {
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation.
 // DEPRECATED: use the builder instead.
-func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *InstallationImportsAndBlueprint, _ *cdv2.UnstructuredTypedObject) (*Operation, error) {
+func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *InstallationImportsAndBlueprint, _ *types.UnstructuredTypedObject) (*Operation, error) {
 	return NewOperationBuilder(inst).
 		WithOperation(op).
 		Build(ctx)

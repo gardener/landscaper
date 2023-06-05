@@ -22,8 +22,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
-
 	utils "github.com/gardener/landscaper/test/utils"
 )
 
@@ -90,7 +90,7 @@ var _ = Describe("GetChart", func() {
 		file, err := os.ReadFile("./testdata/01-component-descriptor.yaml")
 		Expect(err).ToNot(HaveOccurred())
 
-		inline := &cdv2.ComponentDescriptor{}
+		inline := &types.ComponentDescriptor{}
 		err = yaml.Unmarshal(file, &inline)
 		Expect(err).ToNot(HaveOccurred())
 

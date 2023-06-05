@@ -13,6 +13,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	componentstestutils "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -23,9 +24,9 @@ var _ = Describe("URI", func() {
 		registryAccess     model.RegistryAccess
 		componentVersion   model.ComponentVersion
 		repositoryContext  = testutils.ExampleRepositoryContext()
-		repositoryContexts = []*cdv2.UnstructuredTypedObject{repositoryContext}
+		repositoryContexts = []*types.UnstructuredTypedObject{repositoryContext}
 
-		resource1 = cdv2.Resource{
+		resource1 = types.Resource{
 			IdentityObjectMeta: cdv2.IdentityObjectMeta{
 				Name:    "r1",
 				Version: "1.5.5",
@@ -33,7 +34,7 @@ var _ = Describe("URI", func() {
 			Relation: cdv2.LocalRelation,
 		}
 
-		resource2 = cdv2.Resource{
+		resource2 = types.Resource{
 			IdentityObjectMeta: cdv2.IdentityObjectMeta{
 				Name:    "r2",
 				Version: "1.5.0",
@@ -41,7 +42,7 @@ var _ = Describe("URI", func() {
 			Relation: cdv2.ExternalRelation,
 		}
 
-		cd = cdv2.ComponentDescriptor{
+		cd = types.ComponentDescriptor{
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta: cdv2.ObjectMeta{
 					Name:    "comp",
@@ -49,25 +50,25 @@ var _ = Describe("URI", func() {
 				},
 				RepositoryContexts: repositoryContexts,
 				Provider:           cdv2.ExternalProvider,
-				ComponentReferences: []cdv2.ComponentReference{
+				ComponentReferences: []types.ComponentReference{
 					{
 						Name:          "comp1",
 						ComponentName: "my-comp1",
 						Version:       "v0.0.0",
 					},
 				},
-				Resources: []cdv2.Resource{resource1},
+				Resources: []types.Resource{resource1},
 			},
 		}
 
-		cd2 = cdv2.ComponentDescriptor{
+		cd2 = types.ComponentDescriptor{
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta: cdv2.ObjectMeta{
 					Name:    "my-comp1",
 					Version: "v0.0.0",
 				},
 				RepositoryContexts: repositoryContexts,
-				Resources:          []cdv2.Resource{resource2},
+				Resources:          []types.Resource{resource2},
 			},
 		}
 	)

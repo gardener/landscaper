@@ -26,9 +26,9 @@ import (
 	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/cnudie/helmoci"
 	"github.com/gardener/landscaper/pkg/components/cnudie/helmrepo"
+	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 type Factory struct{}
@@ -75,7 +75,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	}
 
 	ociClient, err := ociclient.NewClient(logger.Logr(),
-		utils.WithConfiguration(ociRegistryConfig),
+		cnudieutils.WithConfiguration(ociRegistryConfig),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(sharedCache),
 	)
@@ -163,7 +163,7 @@ func (*Factory) NewOCIRegistryAccess(ctx context.Context,
 
 	log, _ := logging.FromContextOrNew(ctx, nil)
 
-	ociClient, err := ociclient.NewClient(log.Logr(), utils.WithConfiguration(config), ociclient.WithCache(cache))
+	ociClient, err := ociclient.NewClient(log.Logr(), cnudieutils.WithConfiguration(config), ociclient.WithCache(cache))
 	if err != nil {
 		return nil, err
 	}

@@ -19,6 +19,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	lstypes "github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
@@ -51,7 +52,7 @@ var _ = Describe("SubInstallation", func() {
 
 			lsCtx, err := installations.GetInstallationContext(ctx, fakeClient, installation)
 			Expect(err).ToNot(HaveOccurred())
-			lsCtx.External.Context.RepositoryContext = &cdv2.UnstructuredTypedObject{
+			lsCtx.External.Context.RepositoryContext = &lstypes.UnstructuredTypedObject{
 				ObjectType: repoCtx.ObjectType,
 				Raw:        repoCtxRaw,
 			}

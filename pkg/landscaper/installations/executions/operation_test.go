@@ -7,6 +7,8 @@ package executions_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/model/types"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,7 +29,7 @@ import (
 var _ = Describe("Execution Operation", func() {
 	var (
 		registryAccess    model.RegistryAccess
-		repositoryContext cdv2.UnstructuredTypedObject
+		repositoryContext types.UnstructuredTypedObject
 		componentVersion  model.ComponentVersion
 		state             *envtest.State
 		kClient           client.Client

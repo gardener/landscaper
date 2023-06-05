@@ -21,6 +21,7 @@ import (
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	componentstestutils "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
@@ -37,13 +38,13 @@ func newDummyBlobResolver(mediaType string) ctf.BlobResolver {
 	}
 }
 
-func (r dummyBlobResolver) Info(_ context.Context, _ cdv2.Resource) (*ctf.BlobInfo, error) {
+func (r dummyBlobResolver) Info(_ context.Context, _ types.Resource) (*ctf.BlobInfo, error) {
 	return &ctf.BlobInfo{
 		MediaType: r.mediaType,
 	}, nil
 }
 
-func (r dummyBlobResolver) Resolve(_ context.Context, _ cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+func (r dummyBlobResolver) Resolve(_ context.Context, _ types.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
 	data := make([]byte, 256)
 	rand.Read(data)
 
@@ -55,7 +56,7 @@ func (r dummyBlobResolver) Resolve(_ context.Context, _ cdv2.Resource, writer io
 	return nil, nil
 }
 
-func (r dummyBlobResolver) CanResolve(resource cdv2.Resource) bool {
+func (r dummyBlobResolver) CanResolve(resource types.Resource) bool {
 	return true
 }
 
@@ -91,13 +92,13 @@ var _ = Describe("Resolve", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",
@@ -141,13 +142,13 @@ var _ = Describe("Resolve", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",
@@ -191,13 +192,13 @@ var _ = Describe("Resolve", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",
@@ -233,13 +234,13 @@ var _ = Describe("Resolve", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",
@@ -275,13 +276,13 @@ var _ = Describe("Resolve", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",

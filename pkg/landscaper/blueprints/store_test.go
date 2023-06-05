@@ -8,7 +8,6 @@ import (
 	"context"
 	"os"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
@@ -19,6 +18,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
@@ -41,10 +41,10 @@ var _ = Describe("Store", func() {
 		store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 		Expect(err).ToNot(HaveOccurred())
 
-		cd := &cdv2.ComponentDescriptor{}
+		cd := &types.ComponentDescriptor{}
 		cd.Name = "example.com/a"
 		cd.Version = "0.0.1"
-		res := cdv2.Resource{}
+		res := types.Resource{}
 		res.Name = "blueprint"
 		res.Version = "0.0.2"
 		_, err = store.Get(ctx, "a")
@@ -65,10 +65,10 @@ var _ = Describe("Store", func() {
 		Expect(err).ToNot(HaveOccurred())
 		defer data.Close()
 
-		cd := &cdv2.ComponentDescriptor{}
+		cd := &types.ComponentDescriptor{}
 		cd.Name = "example.com/a"
 		cd.Version = "0.0.1"
-		res := cdv2.Resource{}
+		res := types.Resource{}
 		res.Name = "blueprint"
 		res.Version = "0.0.2"
 		resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
@@ -96,10 +96,10 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			res.Type = mediatype.BlueprintType
@@ -128,10 +128,10 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			res.Type = mediatype.BlueprintType
@@ -169,10 +169,10 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			res.Type = mediatype.BlueprintType
@@ -213,10 +213,10 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
@@ -242,10 +242,10 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
@@ -284,10 +284,10 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
@@ -329,10 +329,10 @@ var _ = Describe("Store", func() {
 			}).BuildResource(false)
 			Expect(err).ToNot(HaveOccurred())
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
@@ -349,7 +349,7 @@ var _ = Describe("Store", func() {
 				},
 			}).BuildResource(false)
 			Expect(err).ToNot(HaveOccurred())
-			res2 := cdv2.Resource{}
+			res2 := types.Resource{}
 			res2.Name = "blueprint2"
 			res2.Version = "0.0.2"
 			resource2 := testutils.NewTestResourceFromReader(&res, data2, blobInfo2)

@@ -32,6 +32,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	componentstestutils "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
@@ -316,7 +317,7 @@ var _ = Describe("jsonschema", func() {
 		var (
 			config *jsonschema.ReferenceContext
 			blobFs vfs.FileSystem
-			cd     *cdv2.ComponentDescriptor
+			cd     *types.ComponentDescriptor
 		)
 
 		BeforeEach(func() {
@@ -332,7 +333,7 @@ var _ = Describe("jsonschema", func() {
 			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default1.json"), schemaBytes, os.ModePerm)).To(Succeed())
 			access1, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default1.json", mediatype.JSONSchemaArtifactsMediaTypeV1))
 			Expect(err).ToNot(HaveOccurred())
-			resource1 := cdv2.Resource{
+			resource1 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "default",
 					Version: version,
@@ -351,7 +352,7 @@ var _ = Describe("jsonschema", func() {
 			access2, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default2.json",
 				mediatype.NewBuilder(mediatype.JSONSchemaArtifactsMediaTypeV1).Compression(mediatype.GZipCompression).Build().String()))
 			Expect(err).ToNot(HaveOccurred())
-			resource2 := cdv2.Resource{
+			resource2 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "comp",
 					Version: version,
@@ -364,7 +365,7 @@ var _ = Describe("jsonschema", func() {
 			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default3.json"), schemaBytes, os.ModePerm)).To(Succeed())
 			access3, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default3.json", "application/unknown"))
 			Expect(err).ToNot(HaveOccurred())
-			resource3 := cdv2.Resource{
+			resource3 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "unknown",
 					Version: version,
@@ -377,11 +378,11 @@ var _ = Describe("jsonschema", func() {
 			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/reg", ""))
 			Expect(err).ToNot(HaveOccurred())
 
-			cd = &cdv2.ComponentDescriptor{
+			cd = &types.ComponentDescriptor{
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta:         cdv2.ObjectMeta{Name: "example.com/test", Version: version},
-					RepositoryContexts: []*cdv2.UnstructuredTypedObject{&repoCtx},
-					Resources:          []cdv2.Resource{resource1, resource2, resource3},
+					RepositoryContexts: []*types.UnstructuredTypedObject{&repoCtx},
+					Resources:          []types.Resource{resource1, resource2, resource3},
 				},
 			}
 
@@ -546,7 +547,7 @@ var _ = Describe("jsonschema", func() {
 			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 			baseResourceName := "jsonschema"
 
-			cdRes := []cdv2.Resource{
+			cdRes := []types.Resource{
 				createBlobResource(blobfs, baseResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema.json", `
 					{
 						"type": "string"
@@ -567,7 +568,7 @@ var _ = Describe("jsonschema", func() {
 			refString := fmt.Sprintf("cd://componentReferences/%s/resources/%s", baseConfig.ComponentNameInReference, baseConfig.ReferencedResourceName)
 			complexSchemaResourceName := "firstjsonschemarefcomplex"
 
-			cdRes = []cdv2.Resource{
+			cdRes = []types.Resource{
 				createBlobResource(blobfs, firstRefConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "plain.json", fmt.Sprintf(`
 					{
 						"$ref": "%s"
@@ -594,7 +595,7 @@ var _ = Describe("jsonschema", func() {
 				`, refString, fmt.Sprintf("cd://componentReferences/%s/resources/%s", baseConfig.ComponentNameInReference, baseResourceName))),
 			}
 
-			cdRef := []cdv2.ComponentReference{
+			cdRef := []types.ComponentReference{
 				{
 					Name:          baseConfig.ComponentNameInReference,
 					ComponentName: baseConfig.ComponentNameInRegistry,
@@ -608,7 +609,7 @@ var _ = Describe("jsonschema", func() {
 			blobfs = memoryfs.New()
 			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 
-			cdRes = []cdv2.Resource{
+			cdRes = []types.Resource{
 				createBlobResource(blobfs, secondRefConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema2.json", fmt.Sprintf(`
 					{
 						"$ref": "cd://componentReferences/%s/resources/%s"
@@ -616,7 +617,7 @@ var _ = Describe("jsonschema", func() {
 				`, firstRefConfig.ComponentNameInReference, firstRefConfig.ReferencedResourceName)),
 			}
 
-			cdRef = []cdv2.ComponentReference{
+			cdRef = []types.ComponentReference{
 				{
 					Name:          firstRefConfig.ComponentNameInReference,
 					ComponentName: firstRefConfig.ComponentNameInRegistry,
@@ -698,7 +699,7 @@ var _ = Describe("jsonschema", func() {
 			falsePositiveResourceName := "identical"
 
 			// create referenced component
-			cdRes := []cdv2.Resource{
+			cdRes := []types.Resource{
 				createBlobResource(blobfs, cycleConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema.json", fmt.Sprintf(`
 					{
 						"$ref": "cd://resources/%s"
@@ -722,7 +723,7 @@ var _ = Describe("jsonschema", func() {
 			blobfs = memoryfs.New()
 			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 
-			cdRef := []cdv2.ComponentReference{
+			cdRef := []types.ComponentReference{
 				{
 					Name:          cycleConfig.ComponentNameInReference,
 					ComponentName: cycleConfig.ComponentNameInRegistry,
@@ -730,7 +731,7 @@ var _ = Describe("jsonschema", func() {
 				},
 			}
 
-			cdResSource := []cdv2.Resource{
+			cdResSource := []types.Resource{
 				createBlobResource(blobfs, falsePositiveResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema3.json", fmt.Sprintf(`
 					{
 						"$ref": "cd://componentReferences/%s/resources/%s"
@@ -797,7 +798,7 @@ var _ = Describe("jsonschema", func() {
 			registryAccess    model.RegistryAccess
 			repository        *componentresolvers.LocalRepository
 			componentVersion  model.ComponentVersion
-			repositoryContext cdv2.UnstructuredTypedObject
+			repositoryContext types.UnstructuredTypedObject
 		)
 
 		BeforeEach(func() {
@@ -863,9 +864,9 @@ type componentConfig struct {
 	ReferencedResourceName string
 }
 
-func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, name, version string, cdRefs []cdv2.ComponentReference, cdRes []cdv2.Resource, fs vfs.FileSystem, ociClient ociclient.Client, ociCache cache.Cache) *cdv2.ComponentDescriptor {
+func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, name, version string, cdRefs []types.ComponentReference, cdRes []types.Resource, fs vfs.FileSystem, ociClient ociclient.Client, ociCache cache.Cache) *types.ComponentDescriptor {
 	// define component descriptor
-	cd := &cdv2.ComponentDescriptor{}
+	cd := &types.ComponentDescriptor{}
 
 	cd.Name = name
 	cd.Version = version
@@ -894,8 +895,8 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, n
 	return cd
 }
 
-func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Resource {
-	res := cdv2.Resource{}
+func buildLocalFilesystemResource(name, ttype, mediaType, path string) types.Resource {
+	res := types.Resource{}
 	res.Name = name
 	res.Type = ttype
 	res.Relation = cdv2.LocalRelation
@@ -907,7 +908,7 @@ func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Reso
 	return res
 }
 
-func createBlobResource(fs vfs.FileSystem, resourceName, resourceType, mediaType, blobPath, fileName, content string) cdv2.Resource {
+func createBlobResource(fs vfs.FileSystem, resourceName, resourceType, mediaType, blobPath, fileName, content string) types.Resource {
 	file, err := fs.Create(filepath.Join(blobPath, fileName))
 	testutils.ExpectNoError(err)
 	_, err = file.WriteString(content)
