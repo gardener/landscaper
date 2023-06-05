@@ -35,6 +35,7 @@ chmod +x ${COMP_CLI}
 SOURCE_PATH="$(dirname $0)/.."
 VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
 COMMIT_SHA="$(git --git-dir ${SOURCE_PATH}/.git rev-parse HEAD)"
+CTF_PATH="ctf-path"
 
 printf "> Building components with version ${VERSION} - ${COMMIT_SHA}\n"
 
