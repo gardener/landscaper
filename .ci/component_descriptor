@@ -95,3 +95,5 @@ ${COMP_CLI} ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
 # todo: remove as soon as the default component repository is public
 ${COMP_CLI} ctf push --repo-ctx="eu.gcr.io/gardener-project/development" "${CTF_PATH}"
 
+# workaround as somehow changed the name of the cd
+cp base_component_descriptor_v2 component_descriptor_v2
