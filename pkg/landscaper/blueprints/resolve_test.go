@@ -88,7 +88,7 @@ var _ = Describe("Resolve", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(memFs)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediatype.BlueprintArtifactsLayerMediaTypeV1))
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar", mediatype.BlueprintArtifactsLayerMediaTypeV1)
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
@@ -137,8 +137,8 @@ var _ = Describe("Resolve", func() {
 			}).BuildResourceToFs(memFs, "blobs/bp.tar", true)
 			Expect(err).ToNot(HaveOccurred())
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(memFs)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
-				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()))
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar",
+				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String())
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
@@ -187,8 +187,8 @@ var _ = Describe("Resolve", func() {
 			}).BuildResourceToFs(memFs, "blobs/bp.tar", false)
 			Expect(err).ToNot(HaveOccurred())
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(memFs)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
-				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()))
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar",
+				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String())
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
@@ -230,7 +230,7 @@ var _ = Describe("Resolve", func() {
 
 			mediaType := mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).String()
 			blobResolver := newDummyBlobResolver(mediaType)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediaType))
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar", mediaType)
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
@@ -272,7 +272,7 @@ var _ = Describe("Resolve", func() {
 
 			mediaType := mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()
 			blobResolver := newDummyBlobResolver(mediaType)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediaType))
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar", mediaType)
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()

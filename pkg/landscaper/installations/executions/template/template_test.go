@@ -21,6 +21,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/testutils"
@@ -187,12 +188,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
-			imageAccess, err := cdv2.NewUnstructured(&cdv2.OCIRegistryAccess{
-				ObjectType: cdv2.ObjectType{
-					Type: cdv2.OCIRegistryType,
-				},
-				ImageReference: "quay.io/example/myimage:1.0.0",
-			})
+			imageAccess, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &types.ComponentDescriptor{
 				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
@@ -244,12 +240,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
-			imageAccess, err := cdv2.NewUnstructured(&cdv2.OCIRegistryAccess{
-				ObjectType: cdv2.ObjectType{
-					Type: cdv2.OCIRegistryType,
-				},
-				ImageReference: "quay.io/example/myimage:1.0.0",
-			})
+			imageAccess, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &types.ComponentDescriptor{
 				Metadata: types.Metadata{Version: cdv2.SchemaVersion},

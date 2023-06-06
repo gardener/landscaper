@@ -331,7 +331,7 @@ var _ = Describe("jsonschema", func() {
 
 			// first resource: a json schema
 			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default1.json"), schemaBytes, os.ModePerm)).To(Succeed())
-			access1, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default1.json", mediatype.JSONSchemaArtifactsMediaTypeV1))
+			access1, err := componentresolvers.NewLocalFilesystemBlobAccess("default1.json", mediatype.JSONSchemaArtifactsMediaTypeV1)
 			Expect(err).ToNot(HaveOccurred())
 			resource1 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -349,8 +349,8 @@ var _ = Describe("jsonschema", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(w.Close()).To(Succeed())
 			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default2.json"), compressedSchema.Bytes(), os.ModePerm)).To(Succeed())
-			access2, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default2.json",
-				mediatype.NewBuilder(mediatype.JSONSchemaArtifactsMediaTypeV1).Compression(mediatype.GZipCompression).Build().String()))
+			access2, err := componentresolvers.NewLocalFilesystemBlobAccess("default2.json",
+				mediatype.NewBuilder(mediatype.JSONSchemaArtifactsMediaTypeV1).Compression(mediatype.GZipCompression).Build().String())
 			Expect(err).ToNot(HaveOccurred())
 			resource2 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -363,7 +363,7 @@ var _ = Describe("jsonschema", func() {
 
 			// third resource: like the first resource, but with an unknown mediatype
 			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default3.json"), schemaBytes, os.ModePerm)).To(Succeed())
-			access3, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default3.json", "application/unknown"))
+			access3, err := componentresolvers.NewLocalFilesystemBlobAccess("default3.json", "application/unknown")
 			Expect(err).ToNot(HaveOccurred())
 			resource3 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -899,10 +899,9 @@ func buildLocalFilesystemResource(name, ttype, mediaType, path string) types.Res
 	res.Type = ttype
 	res.Relation = cdv2.LocalRelation
 
-	localFsAccess := cdv2.NewLocalFilesystemBlobAccess(path, mediaType)
-	uAcc, err := cdv2.NewUnstructured(localFsAccess)
+	localFsAccess, err := componentresolvers.NewLocalFilesystemBlobAccess(path, mediaType)
 	testutils.ExpectNoError(err)
-	res.Access = &uAcc
+	res.Access = &localFsAccess
 	return res
 }
 

@@ -54,6 +54,10 @@ func NewLocalRepositoryContext(baseURL string) (cdv2.UnstructuredTypedObject, er
 	return cdv2.NewUnstructured(NewLocalRepository(baseURL))
 }
 
+func NewLocalFilesystemBlobAccess(path, mediaType string) (cdv2.UnstructuredTypedObject, error) {
+	return cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess(path, mediaType))
+}
+
 // NewFilesystemBlobAccess creates a new localFilesystemBlob accessor.
 func NewFilesystemBlobAccess(path string) *FilesystemBlobAccess {
 	return &FilesystemBlobAccess{
