@@ -87,7 +87,7 @@ var _ = Describe("Installation Simulator", func() {
 
 		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
-		repositoryContext, err := componentresolvers.NewLocalRepositoryContext(testDataDir)
+		repositoryContext, err = componentresolvers.NewLocalRepositoryContext(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
 
 		rootComponentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
