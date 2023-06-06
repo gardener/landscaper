@@ -8,25 +8,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path"
-
-	"github.com/gardener/landscaper/pkg/components/model/types"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/registries"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"path"
 	"sigs.k8s.io/yaml"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-	cnudieoci "github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/registries"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 )
 
 type TestSimulatorCallbacks struct {
@@ -66,7 +63,6 @@ var _ = Describe("Installation Simulator", func() {
 	var (
 		testDataDir          = "./testdata/01-subinstallations"
 		registryAccess       model.RegistryAccess
-		repository           *cnudieoci.LocalRepository
 		rootComponentVersion model.ComponentVersion
 		componentVersionList *model.ComponentVersionList
 		blueprint            *blueprints.Blueprint
@@ -89,8 +85,7 @@ var _ = Describe("Installation Simulator", func() {
 
 		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
-		repository = cnudieoci.NewLocalRepository(testDataDir)
-		repositoryContext, err = cdv2.NewUnstructured(repository)
+		repositoryContext, err := componentresolvers.NewLocalRepositoryContext(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
 
 		rootComponentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{

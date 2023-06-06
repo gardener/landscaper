@@ -8,23 +8,21 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
+	utils "github.com/gardener/landscaper/test/utils"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"testing"
-
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"sigs.k8s.io/yaml"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
-	utils "github.com/gardener/landscaper/test/utils"
+	"testing"
 )
 
 func TestConfig(t *testing.T) {
@@ -68,7 +66,7 @@ var _ = Describe("GetChart", func() {
 
 		ref := &helmv1alpha1.RemoteChartReference{}
 		ref.Reference = &lsv1alpha1.ComponentDescriptorReference{}
-		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/landscaper/tutorials/components", ""))
+		repoCtx, err := componentresolvers.NewOCIRepositoryContext("eu.gcr.io/gardener-project/landscaper/tutorials/components")
 		Expect(err).ToNot(HaveOccurred())
 		ref.Reference.RepositoryContext = &repoCtx
 		ref.Reference.ComponentName = "github.com/gardener/landscaper/ingress-nginx"

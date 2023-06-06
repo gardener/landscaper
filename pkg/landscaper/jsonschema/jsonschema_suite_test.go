@@ -375,7 +375,7 @@ var _ = Describe("jsonschema", func() {
 			}
 
 			// prepare component descriptor and registry
-			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/reg", ""))
+			repoCtx, err := componentresolvers.NewOCIRepositoryContext("example.com/reg")
 			Expect(err).ToNot(HaveOccurred())
 
 			cd = &types.ComponentDescriptor{
@@ -796,7 +796,6 @@ var _ = Describe("jsonschema", func() {
 
 		var (
 			registryAccess    model.RegistryAccess
-			repository        *componentresolvers.LocalRepository
 			componentVersion  model.ComponentVersion
 			repositoryContext types.UnstructuredTypedObject
 		)
@@ -808,8 +807,7 @@ var _ = Describe("jsonschema", func() {
 			registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 
-			repository = componentresolvers.NewLocalRepository("./testdata/registry")
-			repositoryContext, err = cdv2.NewUnstructured(repository)
+			repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{

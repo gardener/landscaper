@@ -188,7 +188,7 @@ var _ = Describe("Registry", func() {
 			Version: "0.1.2",
 		}
 
-		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
+		repoCtx, err := NewOCIRepositoryContext("example.com/component-descriptors")
 		Expect(err).ToNot(HaveOccurred())
 
 		cd := types.ComponentDescriptor{
@@ -233,7 +233,7 @@ var _ = Describe("Registry", func() {
 			Version: "0.2.3",
 		}
 
-		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
+		repoCtx, err := NewOCIRepositoryContext("example.com/nested-component-descriptor")
 		Expect(err).ToNot(HaveOccurred())
 
 		labelCd := types.ComponentDescriptor{
@@ -263,7 +263,7 @@ var _ = Describe("Registry", func() {
 		labelCdJson, err := codec.Encode(&labelCd)
 		Expect(err).ToNot(HaveOccurred())
 
-		nestedRepoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
+		nestedRepoCtx, err := NewOCIRepositoryContext("example.com/component-descriptors")
 		Expect(err).ToNot(HaveOccurred())
 		cd := types.ComponentDescriptor{
 			Metadata: types.Metadata{
@@ -327,7 +327,7 @@ var _ = Describe("Registry", func() {
 			Version: "0.2.3",
 		}
 
-		repoCtxLvl2, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
+		repoCtxLvl2, err := NewOCIRepositoryContext("example.com/nested-component-descriptor")
 		Expect(err).ToNot(HaveOccurred())
 
 		labelCdLvl2 := types.ComponentDescriptor{
@@ -363,7 +363,7 @@ var _ = Describe("Registry", func() {
 			Version: "0.1.2",
 		}
 
-		repoCtxLvl1, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
+		repoCtxLvl1, err := NewOCIRepositoryContext("example.com/nested-component-descriptor")
 		Expect(err).ToNot(HaveOccurred())
 
 		labelCdLvl1 := types.ComponentDescriptor{
@@ -416,7 +416,7 @@ var _ = Describe("Registry", func() {
 			Version: "0.1.2",
 		}
 
-		repoCtxRootCd, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
+		repoCtxRootCd, err := NewOCIRepositoryContext("example.com/component-descriptors")
 		Expect(err).ToNot(HaveOccurred())
 
 		cd := types.ComponentDescriptor{

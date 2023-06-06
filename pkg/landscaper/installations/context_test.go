@@ -100,7 +100,7 @@ var _ = Describe("Context", func() {
 	It("initialize root installations with default context", func() {
 		ctx := context.Background()
 
-		defaultRepoContext, err := cdv2.NewUnstructured(componentresolvers.NewLocalRepository("../testdata/registry"))
+		defaultRepoContext, err := componentresolvers.NewLocalRepositoryContext("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root-test40"])
