@@ -66,65 +66,48 @@ var _ = Describe("Default readiness checks", func() {
 				Expect(err).To(matcher)
 			},
 			Entry("ready", &appsv1.Deployment{
-				Status: appsv1.DeploymentStatus{Conditions: []appsv1.DeploymentCondition{
-					{
-						Type:   appsv1.DeploymentAvailable,
-						Status: corev1.ConditionTrue,
-					},
-				}},
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 10,
+					UpdatedReplicas:    3,
+					AvailableReplicas:  3},
 			}, BeNil()),
-			Entry("ready with progressing", &appsv1.Deployment{
-				Status: appsv1.DeploymentStatus{Conditions: []appsv1.DeploymentCondition{
-					{
-						Type:   appsv1.DeploymentAvailable,
-						Status: corev1.ConditionTrue,
-					},
-					{
-						Type:   appsv1.DeploymentProgressing,
-						Status: corev1.ConditionTrue,
-					},
-				}},
+			Entry("ready with number of replicas unspecified", &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.DeploymentSpec{},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 10,
+					UpdatedReplicas:    1,
+					AvailableReplicas:  1},
 			}, BeNil()),
 			Entry("not observed at latest version", &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{Generation: 1},
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 9,
+					UpdatedReplicas:    3,
+					AvailableReplicas:  3},
 			}, HaveOccurred()),
-			Entry("not available", &appsv1.Deployment{
-				Status: appsv1.DeploymentStatus{Conditions: []appsv1.DeploymentCondition{
-					{
-						Type:   appsv1.DeploymentAvailable,
-						Status: corev1.ConditionFalse,
-					},
-					{
-						Type:   appsv1.DeploymentProgressing,
-						Status: corev1.ConditionTrue,
-					},
-				}},
+			Entry("empty status", &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{},
 			}, HaveOccurred()),
-			Entry("not progressing", &appsv1.Deployment{
-				Status: appsv1.DeploymentStatus{Conditions: []appsv1.DeploymentCondition{
-					{
-						Type:   appsv1.DeploymentAvailable,
-						Status: corev1.ConditionTrue,
-					},
-					{
-						Type:   appsv1.DeploymentProgressing,
-						Status: corev1.ConditionFalse,
-					},
-				}},
+			Entry("not enough updated replicas", &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 10,
+					UpdatedReplicas:    2,
+					AvailableReplicas:  3},
 			}, HaveOccurred()),
-			Entry("replica failure", &appsv1.Deployment{
-				Status: appsv1.DeploymentStatus{Conditions: []appsv1.DeploymentCondition{
-					{
-						Type:   appsv1.DeploymentAvailable,
-						Status: corev1.ConditionTrue,
-					},
-					{
-						Type:   appsv1.DeploymentReplicaFailure,
-						Status: corev1.ConditionTrue,
-					},
-				}},
+			Entry("not enough available replicas", &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 10,
+					UpdatedReplicas:    3,
+					AvailableReplicas:  2},
 			}, HaveOccurred()),
-			Entry("available | progressing missing", &appsv1.Deployment{}, HaveOccurred()),
 		)
 	})
 
@@ -135,21 +118,47 @@ var _ = Describe("Default readiness checks", func() {
 				Expect(err).To(matcher)
 			},
 			Entry("ready", &appsv1.StatefulSet{
-				Spec:   appsv1.StatefulSetSpec{Replicas: replicas(1)},
-				Status: appsv1.StatefulSetStatus{CurrentReplicas: 1, ReadyReplicas: 1},
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.StatefulSetSpec{Replicas: replicas(3)},
+				Status: appsv1.StatefulSetStatus{
+					ObservedGeneration: 10,
+					UpdatedReplicas:    3,
+					AvailableReplicas:  3},
 			}, BeNil()),
-			Entry("ready with nil replicas", &appsv1.StatefulSet{
-				Status: appsv1.StatefulSetStatus{ReadyReplicas: 1},
+			Entry("ready with number of replicas unspecified", &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.StatefulSetSpec{},
+				Status: appsv1.StatefulSetStatus{
+					ObservedGeneration: 10,
+					UpdatedReplicas:    1,
+					AvailableReplicas:  1},
 			}, BeNil()),
 			Entry("not observed at latest version", &appsv1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{Generation: 1},
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.StatefulSetSpec{Replicas: replicas(3)},
+				Status: appsv1.StatefulSetStatus{
+					ObservedGeneration: 9,
+					UpdatedReplicas:    3,
+					AvailableReplicas:  3},
 			}, HaveOccurred()),
 			Entry("empty status", &appsv1.StatefulSet{
 				Status: appsv1.StatefulSetStatus{},
 			}, HaveOccurred()),
-			Entry("not enough ready replicas", &appsv1.StatefulSet{
-				Spec:   appsv1.StatefulSetSpec{Replicas: replicas(2)},
-				Status: appsv1.StatefulSetStatus{ReadyReplicas: 1},
+			Entry("not enough updated replicas", &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.StatefulSetSpec{Replicas: replicas(3)},
+				Status: appsv1.StatefulSetStatus{
+					ObservedGeneration: 10,
+					UpdatedReplicas:    2,
+					AvailableReplicas:  3},
+			}, HaveOccurred()),
+			Entry("not enough available replicas", &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.StatefulSetSpec{Replicas: replicas(3)},
+				Status: appsv1.StatefulSetStatus{
+					ObservedGeneration: 10,
+					UpdatedReplicas:    3,
+					AvailableReplicas:  2},
 			}, HaveOccurred()),
 		)
 	})
