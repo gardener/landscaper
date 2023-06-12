@@ -88,6 +88,7 @@ func SetDeploymentReady(ctx context.Context, client client.Client, dp *appsv1.De
 		Replicas:           *dp.Spec.Replicas,
 		ReadyReplicas:      *dp.Spec.Replicas,
 		AvailableReplicas:  *dp.Spec.Replicas,
+		UpdatedReplicas:    *dp.Spec.Replicas,
 		Conditions: []appsv1.DeploymentCondition{
 			{
 				Type:   appsv1.DeploymentAvailable,
@@ -130,6 +131,8 @@ func SetStatefulSetReady(ctx context.Context, client client.Client, sts *appsv1.
 		Replicas:           *sts.Spec.Replicas,
 		ReadyReplicas:      *sts.Spec.Replicas,
 		CurrentReplicas:    *sts.Spec.Replicas,
+		AvailableReplicas:  *sts.Spec.Replicas,
+		UpdatedReplicas:    *sts.Spec.Replicas,
 	}
 
 	if _, err := controllerutil.CreateOrPatch(ctx, client, sts, func() error {
