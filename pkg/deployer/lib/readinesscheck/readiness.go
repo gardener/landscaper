@@ -16,7 +16,6 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/deployer/lib"
 )
 
 const (
@@ -33,10 +32,15 @@ type checkObjectFunc func(*unstructured.Unstructured) error
 
 type ObjectsToWatchFunc func() ([]*unstructured.Unstructured, error)
 
+// InterruptionChecker is the interface to check for interrupts during the readiness check.
+type InterruptionChecker interface {
+	Check(context.Context) error
+}
+
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
-	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker *lib.InterruptionChecker) error {
+	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker InterruptionChecker) error {
 	var (
 		try     int32 = 1
 		err     error
@@ -54,7 +58,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 
 		objects, err = getObjects()
 		if err != nil {
-			if IsObjectNotReadyError(err) {
+			if IsRecoverableError(err) {
 				return false, nil
 			} else {
 				return false, err
@@ -63,7 +67,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 
 		for _, obj := range objects {
 			if err = IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
-				if IsObjectNotReadyError(err) {
+				if IsRecoverableError(err) {
 					return false, nil
 				} else {
 					return false, err
@@ -77,8 +81,27 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 	return err
 }
 
+// RecoverableError defines an error that occurs during the readiness check,
+// but is recoverable. Means, the error could be sporadic and therefore
+// the readiness check is not interrupted.
+type RecoverableError struct {
+	err error
+}
+
+// Error implements the go error interface.
+func (e *RecoverableError) Error() string {
+	return fmt.Sprintf("recoverable error: %s", e.err.Error())
+}
+
+func NewRecoverableError(err error) *RecoverableError {
+	return &RecoverableError{
+		err: err,
+	}
+}
+
 // ObjectNotReadyError holds information about an unready object
 // and implements the go error interface.
+// This is a subtype of RecoverableError.
 type ObjectNotReadyError struct {
 	objectGVK       string
 	objectName      string
@@ -104,12 +127,14 @@ func NewObjectNotReadyError(u *unstructured.Unstructured, err error) *ObjectNotR
 	}
 }
 
-func IsObjectNotReadyError(err error) bool {
+func IsRecoverableError(err error) bool {
 	if err == nil {
 		return false
 	}
 
 	switch err.(type) {
+	case *RecoverableError:
+		return true
 	case *ObjectNotReadyError:
 		return true
 	default:
@@ -127,10 +152,10 @@ func IsObjectReady(ctx context.Context, kubeClient client.Client, obj *unstructu
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := kubeClient.Get(ctx, key, obj); err != nil {
 		objLog.Debug("Resource status", lc.KeyStatus, StatusUnknown)
-		return fmt.Errorf("unable to get %s %s/%s: %w",
+		return NewRecoverableError(fmt.Errorf("unable to get %s %s/%s: %w",
 			obj.GroupVersionKind().String(),
 			obj.GetName(), obj.GetNamespace(),
-			err)
+			err))
 	}
 
 	objLog.Debug("Getting resource status")
