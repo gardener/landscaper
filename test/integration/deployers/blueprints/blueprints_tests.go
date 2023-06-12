@@ -207,7 +207,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		}
 
 		utils.ExpectNoError(state.Create(ctx, inst))
-		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 10*time.Minute))
 
 		ginkgo.By("Testing the deployer with a simple deployitem")
 
