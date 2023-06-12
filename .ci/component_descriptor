@@ -35,7 +35,6 @@ chmod +x ${COMP_CLI}
 SOURCE_PATH="$(dirname $0)/.."
 VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
 COMMIT_SHA="$(git --git-dir ${SOURCE_PATH}/.git rev-parse HEAD)"
-CTF_PATH="ctf-path"
 
 printf "> Building components with version ${VERSION} - ${COMMIT_SHA}\n"
 
@@ -95,5 +94,4 @@ ${COMP_CLI} ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
 # todo: remove as soon as the default component repository is public
 ${COMP_CLI} ctf push --repo-ctx="eu.gcr.io/gardener-project/development" "${CTF_PATH}"
 
-# workaround as somehow changed the name of the cd
-cp ${CTF_PATH} component_descriptor_v2
+printf "END of script."
