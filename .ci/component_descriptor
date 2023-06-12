@@ -94,4 +94,4 @@ ${COMP_CLI} ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
 # todo: remove as soon as the default component repository is public
 ${COMP_CLI} ctf push --repo-ctx="eu.gcr.io/gardener-project/development" "${CTF_PATH}"
 
-printf "END of script."
+printf "END of script.\n"
