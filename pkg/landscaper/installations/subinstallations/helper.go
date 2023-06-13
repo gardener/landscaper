@@ -7,7 +7,6 @@ package subinstallations
 import (
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -16,7 +15,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/validation"
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -25,7 +25,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 	inst *lsv1alpha1.Installation,
 	subInstTmpl *lsv1alpha1.InstallationTemplate,
 	componentVersion model.ComponentVersion,
-	repositoryContext *cdv2.UnstructuredTypedObject,
+	repositoryContext *types.UnstructuredTypedObject,
 	overwriter componentoverwrites.Overwriter) (*lsv1alpha1.BlueprintDefinition, *lsv1alpha1.ComponentDescriptorDefinition, error) {
 	subBlueprint := &lsv1alpha1.BlueprintDefinition{}
 
@@ -73,7 +73,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 				if ref.ComponentName == subInstCompVers.GetName() && ref.Version == subInstCompVers.GetVersion() {
 					if label, exists := ref.Labels.Get(lsv1alpha1.InlineComponentDescriptorLabel); exists {
 						// unmarshal again form parent installation to retain all levels of nested component descriptors
-						var cdFromLabel cdv2.ComponentDescriptor
+						var cdFromLabel types.ComponentDescriptor
 						if err := codec.Decode(label, &cdFromLabel); err != nil {
 							return nil, nil, err
 						}

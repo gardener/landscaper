@@ -16,7 +16,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/deployer/helm/shared"
 )
 
 type BlobResolverForHelmRepo struct {
@@ -41,7 +40,7 @@ func NewBlobResolverForHelmRepo(ctx context.Context,
 }
 
 func (h *BlobResolverForHelmRepo) CanResolve(res types.Resource) bool {
-	if res.GetType() != shared.HelmChartResourceType && res.GetType() != shared.OldHelmResourceType {
+	if res.GetType() != types.HelmChartResourceType && res.GetType() != types.OldHelmResourceType {
 		return false
 	}
 	return res.Access != nil && res.Access.GetType() == HelmChartRepoType

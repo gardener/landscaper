@@ -17,9 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
-
 	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
@@ -35,8 +34,8 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/tar"
 	"github.com/gardener/landscaper/pkg/utils"
-	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 
 var storeSingleton *Store
@@ -169,7 +168,10 @@ func (s *Store) Fetch(ctx context.Context, componentVersion model.ComponentVersi
 	)
 	switch s.indexMethod {
 	case config.ComponentDescriptorIdentityMethod:
-		blueprintID = blueprintIDFromComponentVersion(componentVersion, resource)
+		blueprintID, err = blueprintIDFromComponentVersion(componentVersion, resource)
+		if err != nil {
+			return nil, err
+		}
 	case config.BlueprintDigestIndex:
 		blobInfo, err = resource.GetBlobInfo(ctx)
 		if err != nil {
@@ -405,11 +407,15 @@ func (s *Store) RunGarbageCollection() {
 
 // blueprintIDFromComponentVersion generates a unique blueprint id that can be used a file/directory name.
 // The ID is calculated by hashing (sha256) the component descriptor and the blueprint resource.
-func blueprintIDFromComponentVersion(componentVersion model.ComponentVersion, resource model.Resource) string {
+func blueprintIDFromComponentVersion(componentVersion model.ComponentVersion, resource model.Resource) (string, error) {
 	h := sha256.New()
 
-	if componentVersion.GetRepositoryContext() != nil {
-		_, _ = h.Write(componentVersion.GetRepositoryContext().Raw)
+	repositoryContext, err := componentVersion.GetRepositoryContext()
+	if err != nil {
+		return "", fmt.Errorf("unable to get repository context in blueprintIDFromComponentVersion: %w", err)
+	}
+	if repositoryContext != nil {
+		_, _ = h.Write(repositoryContext.Raw)
 	}
 
 	_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s",
@@ -418,7 +424,7 @@ func blueprintIDFromComponentVersion(componentVersion model.ComponentVersion, re
 		resource.GetName(),
 		resource.GetVersion())))
 
-	return hex.EncodeToString(h.Sum(nil))
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func blueprintPath(bpID string) string {

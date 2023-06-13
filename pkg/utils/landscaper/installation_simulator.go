@@ -12,7 +12,6 @@ import (
 	gotmpl "text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +19,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
@@ -172,7 +172,7 @@ type InstallationSimulator struct {
 // The repositoryContext parameter is optional and can be set to nil.
 func NewInstallationSimulator(cdList *model.ComponentVersionList,
 	registryAccess model.RegistryAccess,
-	repositoryContext *cdv2.UnstructuredTypedObject,
+	repositoryContext *types.UnstructuredTypedObject,
 	exportTemplates ExportTemplates) (*InstallationSimulator, error) {
 
 	for _, template := range exportTemplates.DeployItemExports {
@@ -551,14 +551,21 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 				}
 				templateInput["deployItem"] = deployItemEncoded
 
-				cd := model.GetComponentDescriptor(componentVersion)
+				cd, err := model.GetComponentDescriptor(componentVersion)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get component descriptor for deploy item %s: %w", deployItem.Name, err)
+				}
 				cdEncoded, err := encodeTemplateInput(cd)
 				if err != nil {
 					return nil, fmt.Errorf("failed to encode component descriptor for deploy item %s: %w", deployItem.Name, err)
 				}
 				templateInput["cd"] = cdEncoded
 
-				componentDescriptorList := model.ConvertComponentVersionList(s.blueprintRenderer.cdList)
+				componentDescriptorList, err := model.ConvertComponentVersionList(s.blueprintRenderer.cdList)
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert component descriptor list for deploy item %s: %w", deployItem.Name, err)
+				}
+
 				componentsEncoded, err := encodeTemplateInput(componentDescriptorList)
 				if err != nil {
 					return nil, fmt.Errorf("failed to encode component descriptor list for deploy item %s: %w", deployItem.Name, err)

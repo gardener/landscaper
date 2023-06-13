@@ -8,12 +8,11 @@ import (
 
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/deployer/helm/shared"
 )
 
 const (
 	// HelmChartResourceType describes the helm resource type of a component descriptor defined resource.
-	HelmChartResourceType = shared.HelmChartResourceType
+	HelmChartResourceType = types.HelmChartResourceType
 
 	// HelmChartRepoType is the access type of a helm chart repository.
 	HelmChartRepoType = "helmChartRepository"

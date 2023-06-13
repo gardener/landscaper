@@ -18,11 +18,11 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
@@ -56,7 +56,7 @@ func RenderBlueprint(deployer, componentName, version string) *lsutils.RenderedD
 	registryPath := filepath.Join(projectRoot, ".landscaper", deployer, "example")
 	registryAccess, err := registries.NewFactory().NewLocalRegistryAccess(registryPath)
 	Expect(err).ToNot(HaveOccurred())
-	repository := componentsregistry.NewLocalRepository(registryPath)
+	repository := componentresolvers.NewLocalRepository(registryPath)
 	repositoryContext, err := cdv2.NewUnstructured(repository)
 	Expect(err).ToNot(HaveOccurred())
 

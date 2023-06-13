@@ -44,8 +44,8 @@ func (r Resource) GetAccessType() string {
 	return r.resource.Access.GetType()
 }
 
-func (r Resource) GetResource() *types.Resource {
-	return r.resource
+func (r Resource) GetResource() (*types.Resource, error) {
+	return r.resource, nil
 }
 
 func (r Resource) GetBlob(ctx context.Context, writer io.Writer) (*types.BlobInfo, error) {

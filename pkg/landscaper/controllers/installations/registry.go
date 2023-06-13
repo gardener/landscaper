@@ -7,10 +7,10 @@ package installations
 import (
 	"context"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 )
@@ -25,7 +25,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		return err
 	}
 
-	var inlineCd *cdv2.ComponentDescriptor = nil
+	var inlineCd *types.ComponentDescriptor = nil
 	if installation.Spec.ComponentDescriptor != nil {
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}

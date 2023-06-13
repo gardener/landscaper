@@ -5,6 +5,7 @@ import (
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,6 +39,17 @@ func (f *Factory) NewRegistryAccess(ctx context.Context,
 	inlineCd *types.ComponentDescriptor,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 	return f.cnudieFactory.NewRegistryAccess(ctx, secrets, sharedCache, localRegistryConfig, ociRegistryConfig, inlineCd, additionalBlobResolvers...)
+}
+
+func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
+	log logr.Logger,
+	fs vfs.FileSystem,
+	allowPlainHttp bool,
+	skipTLSVerify bool,
+	registryConfigPath string,
+	concourseConfigPath string,
+	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
+	return f.cnudieFactory.NewRegistryAccessFromOciOptions(ctx, log, fs, allowPlainHttp, skipTLSVerify, registryConfigPath, concourseConfigPath, predefinedComponentDescriptors...)
 }
 
 func (f *Factory) NewRegistryAccessForHelm(ctx context.Context,

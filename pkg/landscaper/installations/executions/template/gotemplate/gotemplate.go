@@ -57,15 +57,20 @@ type TemplateExecution struct {
 func NewTemplateExecution(blueprint *blueprints.Blueprint,
 	cd model.ComponentVersion,
 	cdList *model.ComponentVersionList,
-	targetResolver targetresolver.TargetResolver) *TemplateExecution {
+	targetResolver targetresolver.TargetResolver) (*TemplateExecution, error) {
+
+	funcs, err := LandscaperTplFuncMap(blueprint.Fs, cd, cdList, targetResolver)
+	if err != nil {
+		return nil, err
+	}
 
 	t := &TemplateExecution{
-		funcMap:       LandscaperTplFuncMap(blueprint.Fs, cd, cdList, targetResolver),
+		funcMap:       funcs,
 		blueprint:     blueprint,
 		includedNames: map[string]int{},
 	}
 	t.funcMap["include"] = t.include
-	return t
+	return t, nil
 }
 
 func (te *TemplateExecution) include(name string, binding interface{}) (string, error) {
@@ -118,7 +123,11 @@ func (t *Templater) TemplateExecution(rawTemplate string,
 	cdList *model.ComponentVersionList,
 	values map[string]interface{}) ([]byte, error) {
 
-	te := NewTemplateExecution(blueprint, cd, cdList, t.targetResolver)
+	te, err := NewTemplateExecution(blueprint, cd, cdList, t.targetResolver)
+	if err != nil {
+		return nil, err
+	}
+
 	return te.Execute(rawTemplate, values)
 }
 

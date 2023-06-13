@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
@@ -33,20 +34,24 @@ func (c *ComponentVersionList) GetComponentVersionByName(name string) []Componen
 	return comps
 }
 
-func ConvertComponentVersionList(componentVersionList *ComponentVersionList) *types.ComponentDescriptorList {
+func ConvertComponentVersionList(componentVersionList *ComponentVersionList) (*types.ComponentDescriptorList, error) {
 	if componentVersionList == nil {
-		return nil
+		return nil, nil
 	}
 
 	components := []types.ComponentDescriptor{}
 
 	for i := range componentVersionList.Components {
 		cv := componentVersionList.Components[i]
-		components = append(components, *cv.GetComponentDescriptor())
+		cd, err := cv.GetComponentDescriptor()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get component descriptor during the conversion of a component version list")
+		}
+		components = append(components, *cd)
 	}
 
 	return &types.ComponentDescriptorList{
 		Metadata:   componentVersionList.Metadata,
 		Components: components,
-	}
+	}, nil
 }

@@ -21,7 +21,9 @@ import (
 
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -186,23 +188,18 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
-			imageAccess, err := cdv2.NewUnstructured(&cdv2.OCIRegistryAccess{
-				ObjectType: cdv2.ObjectType{
-					Type: cdv2.OCIRegistryType,
-				},
-				ImageReference: "quay.io/example/myimage:1.0.0",
-			})
+			imageAccess, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
-			cd := &cdv2.ComponentDescriptor{
-				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
+			cd := &types.ComponentDescriptor{
+				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
 						Name:    "example.com/mycomp",
 						Version: "1.0.0",
 					},
-					RepositoryContexts: []*cdv2.UnstructuredTypedObject{},
+					RepositoryContexts: []*types.UnstructuredTypedObject{},
 					Provider:           cdv2.InternalProvider,
-					Resources: []cdv2.Resource{
+					Resources: []types.Resource{
 						{
 							IdentityObjectMeta: cdv2.IdentityObjectMeta{
 								Name:    "mycustomimage",
@@ -243,23 +240,18 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler))
 
-			imageAccess, err := cdv2.NewUnstructured(&cdv2.OCIRegistryAccess{
-				ObjectType: cdv2.ObjectType{
-					Type: cdv2.OCIRegistryType,
-				},
-				ImageReference: "quay.io/example/myimage:1.0.0",
-			})
+			imageAccess, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
-			cd := &cdv2.ComponentDescriptor{
-				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
+			cd := &types.ComponentDescriptor{
+				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
 						Name:    "example.com/mycomp",
 						Version: "1.0.0",
 					},
-					RepositoryContexts: []*cdv2.UnstructuredTypedObject{},
+					RepositoryContexts: []*types.UnstructuredTypedObject{},
 					Provider:           cdv2.InternalProvider,
-					ComponentReferences: []cdv2.ComponentReference{
+					ComponentReferences: []types.ComponentReference{
 						{
 							Name:          "my-referenced-component",
 							ComponentName: "example.com/myrefcomp",
@@ -271,16 +263,16 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
 			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
 
-			cd2 := cdv2.ComponentDescriptor{
-				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
+			cd2 := types.ComponentDescriptor{
+				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
 						Name:    "example.com/myrefcomp",
 						Version: "1.0.0",
 					},
-					RepositoryContexts: []*cdv2.UnstructuredTypedObject{},
+					RepositoryContexts: []*types.UnstructuredTypedObject{},
 					Provider:           cdv2.InternalProvider,
-					Resources: []cdv2.Resource{
+					Resources: []types.Resource{
 						{
 							IdentityObjectMeta: cdv2.IdentityObjectMeta{
 								Name:    "ubuntu",
@@ -414,7 +406,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
 			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
@@ -551,7 +543,7 @@ func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
 
 			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
 			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
@@ -735,7 +727,7 @@ func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
 
 			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
 			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)

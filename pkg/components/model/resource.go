@@ -27,7 +27,7 @@ type Resource interface {
 	GetAccessType() string
 
 	// GetResource returns the entry in the component descriptor that corresponds to the present resource.
-	GetResource() *types.Resource
+	GetResource() (*types.Resource, error)
 
 	// GetBlob returns the content of the resource, written to the given Writer.
 	GetBlob(ctx context.Context, writer io.Writer) (*types.BlobInfo, error)

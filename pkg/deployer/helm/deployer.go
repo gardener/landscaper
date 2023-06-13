@@ -16,10 +16,10 @@ import (
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 const (
@@ -35,7 +35,7 @@ func NewDeployer(log logging.Logger,
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log.Logr(), utils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
+		sharedCache, err = cache.NewCache(log.Logr(), cnudieutils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
 		if err != nil {
 			return nil, err
 		}

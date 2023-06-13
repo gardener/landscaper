@@ -13,8 +13,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 )
 
 type ComponentVersion struct {
@@ -41,32 +41,36 @@ func (c *ComponentVersion) GetVersion() string {
 	return c.componentDescriptor.GetVersion()
 }
 
-func (c *ComponentVersion) GetComponentDescriptor() *types.ComponentDescriptor {
-	return c.componentDescriptor
+func (c *ComponentVersion) GetComponentDescriptor() (*types.ComponentDescriptor, error) {
+	return c.componentDescriptor, nil
 }
 
-func (c *ComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
+func (c *ComponentVersion) GetRepositoryContext() (*types.UnstructuredTypedObject, error) {
 	context := c.componentDescriptor.GetEffectiveRepositoryContext()
 	if context == nil {
-		return nil
+		return nil, nil
 	}
-	return context
+	return context, nil
 }
 
-func (c *ComponentVersion) GetComponentReferences() []types.ComponentReference {
-	return c.componentDescriptor.ComponentReferences
+func (c *ComponentVersion) GetComponentReferences() ([]types.ComponentReference, error) {
+	return c.componentDescriptor.ComponentReferences, nil
 }
 
-func (c *ComponentVersion) GetComponentReference(name string) *types.ComponentReference {
-	refs := c.GetComponentReferences()
+func (c *ComponentVersion) GetComponentReference(name string) (*types.ComponentReference, error) {
+	refs, err := c.GetComponentReferences()
+	if err != nil {
+		return nil, err
+	}
+
 	for i := range refs {
 		ref := &refs[i]
 		if ref.GetName() == name {
-			return ref
+			return ref, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, componentRef *types.ComponentReference,
@@ -96,6 +100,6 @@ func (c *ComponentVersion) GetResource(name string, selectors map[string]string)
 	return NewResource(&resources[0], c.blobResolver), nil
 }
 
-func (c *ComponentVersion) GetBlobResolver() model.BlobResolver {
-	return c.blobResolver
+func (c *ComponentVersion) GetBlobResolver() (model.BlobResolver, error) {
+	return c.blobResolver, nil
 }

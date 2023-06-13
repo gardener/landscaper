@@ -16,11 +16,11 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -100,7 +100,7 @@ var _ = Describe("Context", func() {
 	It("initialize root installations with default context", func() {
 		ctx := context.Background()
 
-		defaultRepoContext, err := cdv2.NewUnstructured(componentsregistry.NewLocalRepository("../testdata/registry"))
+		defaultRepoContext, err := componentresolvers.NewLocalRepositoryContext("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root-test40"])

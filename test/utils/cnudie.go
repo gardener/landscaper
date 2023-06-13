@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 )
 
 // MakeRepositoryContext creates a new oci registry repository context.
@@ -33,7 +33,7 @@ func ExampleRepositoryContext() *cdv2.UnstructuredTypedObject {
 
 // LocalRepositoryContext returns a new 'local' repository context.
 func LocalRepositoryContext(baseurl string) *cdv2.UnstructuredTypedObject {
-	rctx, _ := cdv2.NewUnstructured(&componentsregistry.NewLocalRepository(baseurl).ObjectType)
+	rctx, _ := cdv2.NewUnstructured(&componentresolvers.NewLocalRepository(baseurl).ObjectType)
 	return &rctx
 }
 

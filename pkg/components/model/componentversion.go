@@ -7,8 +7,8 @@ package model
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 )
 
 type ComponentVersion interface {
@@ -20,15 +20,15 @@ type ComponentVersion interface {
 	GetVersion() string
 
 	// GetComponentDescriptor returns the component descriptor structure as *types.ComponentDescriptor.
-	GetComponentDescriptor() *types.ComponentDescriptor
+	GetComponentDescriptor() (*types.ComponentDescriptor, error)
 
 	// GetRepositoryContext return the current repository context,
 	// i.e. the last entry in the list of repository contexts.
-	GetRepositoryContext() *types.UnstructuredTypedObject
+	GetRepositoryContext() (*types.UnstructuredTypedObject, error)
 
 	// GetComponentReferences returns the list of component references of the present component version.
 	// (not transitively; only the references of the present component version)
-	GetComponentReferences() []types.ComponentReference
+	GetComponentReferences() ([]types.ComponentReference, error)
 
 	// GetComponentReference returns the component reference with the given name.
 	// Note:
@@ -36,7 +36,7 @@ type ComponentVersion interface {
 	// - the returned component reference is an entry of the present component descriptor, not the referenced
 	//   component version.
 	// Returns nil if there is no component reference with the given name.
-	GetComponentReference(name string) *types.ComponentReference
+	GetComponentReference(name string) (*types.ComponentReference, error)
 
 	// GetReferencedComponentVersion returns
 	GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (ComponentVersion, error)
@@ -46,15 +46,15 @@ type ComponentVersion interface {
 	// Currently, the Landscaper does not use the identity argument.
 	GetResource(name string, identity map[string]string) (Resource, error)
 
-	GetBlobResolver() BlobResolver
+	GetBlobResolver() (BlobResolver, error)
 }
 
 // GetComponentDescriptor returns the component descriptor structure.
 // Same as method GetComponentDescriptor of the ComponentVersion, except that the present function can handle
 // the case that the provided componentVersion is nil.
-func GetComponentDescriptor(componentVersion ComponentVersion) *types.ComponentDescriptor {
+func GetComponentDescriptor(componentVersion ComponentVersion) (*types.ComponentDescriptor, error) {
 	if componentVersion == nil {
-		return nil
+		return nil, nil
 	}
 	return componentVersion.GetComponentDescriptor()
 }

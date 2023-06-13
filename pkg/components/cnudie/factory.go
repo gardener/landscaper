@@ -9,8 +9,10 @@ import (
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	testcred "github.com/gardener/component-cli/ociclient/credentials"
+	ociopts "github.com/gardener/component-cli/ociclient/options"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
+	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/pkg/errors"
@@ -21,12 +23,12 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/cnudie/helmoci"
 	"github.com/gardener/landscaper/pkg/components/cnudie/helmrepo"
+	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 type Factory struct{}
@@ -43,13 +45,13 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 
 	logger, _ := logging.FromContextOrNew(ctx, nil)
 
-	compResolver, err := componentsregistry.New(sharedCache)
+	compResolver, err := componentresolvers.New(sharedCache)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create component registry manager: %w", err)
 	}
 
 	if localRegistryConfig != nil {
-		localRegistry, err := componentsregistry.NewLocalClient(localRegistryConfig.RootPath)
+		localRegistry, err := componentresolvers.NewLocalClient(localRegistryConfig.RootPath)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +75,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	}
 
 	ociClient, err := ociclient.NewClient(logger.Logr(),
-		utils.WithConfiguration(ociRegistryConfig),
+		cnudieutils.WithConfiguration(ociRegistryConfig),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(sharedCache),
 	)
@@ -81,7 +83,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		return nil, err
 	}
 
-	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(logger, ociClient, inlineCd)
+	componentsOCIRegistry, err := componentresolvers.NewOCIRegistryWithOCIClient(logger, ociClient, inlineCd)
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +94,38 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	return &RegistryAccess{
 		componentResolver:       compResolver,
 		additionalBlobResolvers: additionalBlobResolvers,
+	}, nil
+}
+
+func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
+	log logr.Logger,
+	fs vfs.FileSystem,
+	allowPlainHttp bool,
+	skipTLSVerify bool,
+	registryConfigPath string,
+	concourseConfigPath string,
+	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
+
+	ociOptions := ociopts.Options{
+		AllowPlainHttp:      allowPlainHttp,
+		SkipTLSVerify:       skipTLSVerify,
+		RegistryConfigPath:  registryConfigPath,
+		ConcourseConfigPath: concourseConfigPath,
+	}
+
+	ociClient, _, err := ociOptions.Build(log, fs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build oci client: %w", err)
+	}
+
+	//compResolver := cdoci.NewResolver(ociClient)
+	compResolver, err := componentresolvers.NewOCIRegistryWithOCIClient(logging.Wrap(log), ociClient, predefinedComponentDescriptors...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build component resolver with oci client: %w", err)
+	}
+
+	return &RegistryAccess{
+		componentResolver: compResolver,
 	}, nil
 }
 
@@ -129,12 +163,12 @@ func (*Factory) NewOCIRegistryAccess(ctx context.Context,
 
 	log, _ := logging.FromContextOrNew(ctx, nil)
 
-	ociClient, err := ociclient.NewClient(log.Logr(), utils.WithConfiguration(config), ociclient.WithCache(cache))
+	ociClient, err := ociclient.NewClient(log.Logr(), cnudieutils.WithConfiguration(config), ociclient.WithCache(cache))
 	if err != nil {
 		return nil, err
 	}
 
-	componentResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient, predefinedComponentDescriptors...)
+	componentResolver, err := componentresolvers.NewOCIRegistryWithOCIClient(log, ociClient, predefinedComponentDescriptors...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +191,7 @@ func (*Factory) NewOCIRegistryAccessFromDockerAuthConfig(ctx context.Context,
 		return nil, err
 	}
 
-	componentResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient, predefinedComponentDescriptors...)
+	componentResolver, err := componentresolvers.NewOCIRegistryWithOCIClient(log, ociClient, predefinedComponentDescriptors...)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to setup components registry")
 	}
@@ -223,7 +257,7 @@ func (*Factory) NewOCITestRegistryAccess(address, username, password string) (mo
 }
 
 func (*Factory) NewLocalRegistryAccess(rootPath string) (model.RegistryAccess, error) {
-	localComponentResolver, err := componentsregistry.NewLocalClient(rootPath)
+	localComponentResolver, err := componentresolvers.NewLocalClient(rootPath)
 	if err != nil {
 		return nil, err
 	}

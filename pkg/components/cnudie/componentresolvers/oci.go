@@ -1,8 +1,4 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
-//
-// SPDX-License-Identifier: Apache-2.0
-
-package componentsregistry
+package componentresolvers
 
 import (
 	"context"
@@ -17,6 +13,14 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
+
+func NewOCIRepositoryContext(baseURL string) (cdv2.UnstructuredTypedObject, error) {
+	return cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository(baseURL, ""))
+}
+
+func NewOCIRegistryAccess(ociImageRef string) (cdv2.UnstructuredTypedObject, error) {
+	return cdv2.NewUnstructured(cdv2.NewOCIRegistryAccess(ociImageRef))
+}
 
 // NewOCIRegistryWithOCIClient creates a new oci registry with a oci ociClient
 // If supplied, it parses and stores predefined component descriptors.

@@ -605,9 +605,15 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 			return
 		}
 
-		// if the resource is a oci artifact then we need to parse the actual oci image reference
+		// if the resource is an oci artifact then we need to parse the actual oci image reference
 		ociRegistryAccess := &cdv2.OCIRegistryAccess{}
-		accessRaw := resource.GetResource().Access.Raw
+		resourceEntry, err := resource.GetResource()
+		if err != nil {
+			erro = fmt.Errorf("unable to get entry of the blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+			return
+		}
+
+		accessRaw := resourceEntry.Access.Raw
 		if err := cdv2.NewCodec(nil, nil, nil).Decode(accessRaw, ociRegistryAccess); err != nil {
 			erro = fmt.Errorf("unable to parse oci registry access of blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
@@ -618,8 +624,8 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 			erro = fmt.Errorf("unable to obtain and sync blueprint pull secret to host cluster: %w", err)
 			return
 		}
-
 	}
+
 	return
 }
 
