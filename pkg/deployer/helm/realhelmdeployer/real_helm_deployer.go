@@ -1,9 +1,14 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package realhelmdeployer
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"strings"
 
@@ -50,6 +55,7 @@ type RealHelmDeployer struct {
 	createNamespace    bool
 	targetRestConfig   *rest.Config
 	apiResourceHandler *resourcemanager.ApiResourceHandler
+	helmSecretManager  *HelmSecretManager
 }
 
 func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration, targetRestConfig *rest.Config,
@@ -65,6 +71,7 @@ func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderC
 		createNamespace:    providerConfig.CreateNamespace,
 		targetRestConfig:   targetRestConfig,
 		apiResourceHandler: resourcemanager.CreateApiResourceHandler(clientset),
+		helmSecretManager:  nil,
 	}
 }
 
@@ -144,6 +151,8 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 
 	rel, err := install.Run(c.chart, values)
 	if err != nil {
+		c.unblockPendingHelmRelease(ctx, logger)
+
 		message := fmt.Sprintf("unable to install helm chart release: %s", err.Error())
 		logger.Info(message)
 		return nil, lserror.NewWrappedError(err, currOp, "Install", message)
@@ -181,6 +190,8 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 
 	rel, err := upgrade.Run(c.releaseName, c.chart, values)
 	if err != nil {
+		c.unblockPendingHelmRelease(ctx, logger)
+
 		message := fmt.Sprintf("unable to upgrade helm chart release: %s", err.Error())
 		logger.Info(message)
 		return nil, lserror.NewWrappedError(err, currOp, "Install", message)
@@ -344,4 +355,30 @@ func (c *RealHelmDeployer) getResourceStatus(_ context.Context,
 
 func (c *RealHelmDeployer) isReleaseNotFoundErr(err error) bool {
 	return strings.Contains(strings.ToLower(err.Error()), "release: not found")
+}
+
+func (c *RealHelmDeployer) getHelmSecretManager(ctx context.Context) (*HelmSecretManager, error) {
+	var err error
+
+	if c.helmSecretManager == nil {
+		c.helmSecretManager, err = NewHelmSecretManager(c.targetRestConfig, c.defaultNamespace, c.createLogFunc(ctx))
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to create helm secret manager: %w", err)
+		}
+	}
+
+	return c.helmSecretManager, nil
+}
+
+func (c *RealHelmDeployer) unblockPendingHelmRelease(ctx context.Context, logger logging.Logger) {
+	helmSecretManager, err1 := c.getHelmSecretManager(ctx)
+	if err1 != nil {
+		logger.Error(err1, "get helm secret manager", lc.KeyResource, types.NamespacedName{Name: c.releaseName, Namespace: c.defaultNamespace}.String())
+	} else {
+		err1 = helmSecretManager.DeletePendingReleaseSecrets(ctx, c.releaseName)
+		if err1 != nil {
+			logger.Error(err1, "delete helm secret", lc.KeyResource, types.NamespacedName{Name: c.releaseName, Namespace: c.defaultNamespace}.String())
+		}
+	}
 }
