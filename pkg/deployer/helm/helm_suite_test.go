@@ -5,9 +5,14 @@
 package helm_test
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"fmt"
+
+	"k8s.io/utils/pointer"
+
 	"path/filepath"
 	"testing"
 	"time"
@@ -37,6 +42,10 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
+
+	helmc "helm.sh/helm/v3/pkg/chart"
+	helmr "helm.sh/helm/v3/pkg/release"
+	helmt "helm.sh/helm/v3/pkg/time"
 )
 
 func TestConfig(t *testing.T) {
@@ -483,6 +492,108 @@ var _ = Describe("Template", func() {
 
 				return nil
 			}, 10*time.Second, 1*time.Second).Should(Succeed(), "custom readiness checks fulfilled")
+		})
+
+		It("should unblock a pending helm release and finally install the helm chart", func() {
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			helmRelease := helmr.Release{
+				Name: "test",
+				Info: &helmr.Info{
+					FirstDeployed: helmt.Now(),
+					LastDeployed:  helmt.Now(),
+					Description:   "Pending Installation",
+					Status:        helmr.StatusPendingInstall,
+				},
+				Chart: &helmc.Chart{
+					Metadata: &helmc.Metadata{
+						Name:        "testchart",
+						Version:     "0.1.0",
+						Description: "A Helm chart for Kubernetes",
+						APIVersion:  "v2",
+						AppVersion:  "1.16.0",
+						Type:        "application",
+					},
+					Values: map[string]interface{}{
+						"replicaCount": 1,
+					},
+				},
+				Version:   1,
+				Namespace: "some-namespace",
+			}
+
+			helmReleaseMarshaled, err := json.Marshal(helmRelease)
+			Expect(err).ToNot(HaveOccurred())
+
+			var buf bytes.Buffer
+			w, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = w.Write(helmReleaseMarshaled)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(w.Close()).To(Succeed())
+
+			helmReleaseEncoded := base64.StdEncoding.EncodeToString(buf.Bytes())
+
+			helmReleaseSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sh.helm.release.v1.test.v1",
+					Namespace: "some-namespace",
+					Labels: map[string]string{
+						"name":    "test",
+						"owner":   "helm",
+						"status":  "pending-install",
+						"version": "1",
+					},
+				},
+				StringData: map[string]string{
+					"release": helmReleaseEncoded,
+				},
+				Type: "helm.sh/release.v1",
+			}
+
+			testNamespace := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "some-namespace",
+				},
+			}
+
+			Expect(testenv.Client.Create(ctx, testNamespace))
+			Expect(testenv.Client.Create(ctx, helmReleaseSecret)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart4")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Name:            "test",
+				Namespace:       "some-namespace",
+				Chart:           chartAccess,
+				CreateNamespace: false,
+				HelmDeployment:  pointer.Bool(true),
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "myitem").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, kutil.ObjectKey("mysecret", "some-namespace"), &corev1.Secret{}); err != nil {
+					return err
+				}
+				return nil
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "additional namespace should be created")
 		})
 
 	})

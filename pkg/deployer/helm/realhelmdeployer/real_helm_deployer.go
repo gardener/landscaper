@@ -8,9 +8,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
@@ -372,13 +373,13 @@ func (c *RealHelmDeployer) getHelmSecretManager(ctx context.Context) (*HelmSecre
 }
 
 func (c *RealHelmDeployer) unblockPendingHelmRelease(ctx context.Context, logger logging.Logger) {
-	helmSecretManager, err1 := c.getHelmSecretManager(ctx)
-	if err1 != nil {
-		logger.Error(err1, "get helm secret manager", lc.KeyResource, types.NamespacedName{Name: c.releaseName, Namespace: c.defaultNamespace}.String())
+	helmSecretManager, err := c.getHelmSecretManager(ctx)
+	if err != nil {
+		logger.Error(err, "get helm secret manager", lc.KeyResource, types.NamespacedName{Name: c.releaseName, Namespace: c.defaultNamespace}.String())
 	} else {
-		err1 = helmSecretManager.DeletePendingReleaseSecrets(ctx, c.releaseName)
-		if err1 != nil {
-			logger.Error(err1, "delete helm secret", lc.KeyResource, types.NamespacedName{Name: c.releaseName, Namespace: c.defaultNamespace}.String())
+		err = helmSecretManager.DeletePendingReleaseSecrets(ctx, c.releaseName)
+		if err != nil {
+			logger.Error(err, "delete helm secret", lc.KeyResource, types.NamespacedName{Name: c.releaseName, Namespace: c.defaultNamespace}.String())
 		}
 	}
 }
