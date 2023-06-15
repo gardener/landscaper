@@ -50,7 +50,7 @@ func (m *HelmSecretManager) DeletePendingReleaseSecrets(ctx context.Context, rel
 	logger, _ := logging.FromContextOrNew(ctx, nil)
 
 	logger.Debug("try delete pending helm releases",
-		lc.KeyResource, types.NamespacedName{Name: releaseName, Namespace: m.defaultNamespace})
+		lc.KeyResource, types.NamespacedName{Name: releaseName, Namespace: m.defaultNamespace}.String())
 
 	secrets, err := m.clientset.CoreV1().Secrets(m.defaultNamespace).List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("name=%s, status in (pending-install, pending-upgrade)", releaseName),
@@ -89,7 +89,7 @@ func (m *HelmSecretManager) DeletePendingReleaseSecrets(ctx context.Context, rel
 
 	if latestReleaseVersionSecret != nil {
 		logger.Info("deleting pending helm release",
-			lc.KeyResource, types.NamespacedName{Name: latestReleaseVersionSecret.Name, Namespace: latestReleaseVersionSecret.Namespace})
+			lc.KeyResource, types.NamespacedName{Name: latestReleaseVersionSecret.Name, Namespace: latestReleaseVersionSecret.Namespace}.String())
 		err = m.clientset.CoreV1().Secrets(latestReleaseVersionSecret.Namespace).Delete(ctx, latestReleaseVersionSecret.Name, metav1.DeleteOptions{})
 
 		if err != nil {
