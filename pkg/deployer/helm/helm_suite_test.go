@@ -560,7 +560,7 @@ var _ = Describe("Template", func() {
 				},
 			}
 
-			Expect(testenv.Client.Create(ctx, testNamespace))
+			Expect(testenv.Client.Create(ctx, testNamespace)).To(Succeed())
 			Expect(testenv.Client.Create(ctx, helmReleaseSecret)).To(Succeed())
 
 			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart4")
