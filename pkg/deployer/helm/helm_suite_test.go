@@ -500,6 +500,8 @@ var _ = Describe("Template", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, target)).To(Succeed())
 
+			testNamespaceName := "test4"
+
 			helmRelease := helmr.Release{
 				Name: "test",
 				Info: &helmr.Info{
@@ -522,7 +524,7 @@ var _ = Describe("Template", func() {
 					},
 				},
 				Version:   1,
-				Namespace: "some-namespace",
+				Namespace: testNamespaceName,
 			}
 
 			helmReleaseMarshaled, err := json.Marshal(helmRelease)
@@ -540,7 +542,7 @@ var _ = Describe("Template", func() {
 			helmReleaseSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sh.helm.release.v1.test.v1",
-					Namespace: "some-namespace",
+					Namespace: testNamespaceName,
 					Labels: map[string]string{
 						"name":    "test",
 						"owner":   "helm",
@@ -556,7 +558,7 @@ var _ = Describe("Template", func() {
 
 			testNamespace := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-namespace",
+					Name: testNamespaceName,
 				},
 			}
 
@@ -574,7 +576,7 @@ var _ = Describe("Template", func() {
 
 			helmConfig := &helmv1alpha1.ProviderConfiguration{
 				Name:            "test",
-				Namespace:       "some-namespace",
+				Namespace:       testNamespaceName,
 				Chart:           chartAccess,
 				CreateNamespace: false,
 				HelmDeployment:  pointer.Bool(true),
@@ -589,7 +591,7 @@ var _ = Describe("Template", func() {
 			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
 
 			Eventually(func() error {
-				if err := testenv.Client.Get(ctx, kutil.ObjectKey("mysecret", "some-namespace"), &corev1.Secret{}); err != nil {
+				if err := testenv.Client.Get(ctx, kutil.ObjectKey("mysecret", testNamespaceName), &corev1.Secret{}); err != nil {
 					return err
 				}
 				return nil
