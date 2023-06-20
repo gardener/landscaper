@@ -40,7 +40,7 @@ spec:
     type: calico
   cloudProfileName: gcp
   region: europe-west1
-  secretBindingName: shoot-cluster-canary-sap-gcp-k8s-wm-canary
+  secretBindingName: laas-canary
   kubernetes:
     version: "1.25"
   purpose: evaluation
