@@ -17,12 +17,12 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.13
-	github.com/mandelsoft/spiff v1.3.0-beta-7.0.20230414131619-0bc30bac11fc
+	github.com/mandelsoft/spiff v1.7.0-beta-5
 	github.com/mandelsoft/vfs v0.0.0-20230506183150-975954b82357
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.4
-	github.com/open-component-model/ocm v0.3.0-rc.1.0.20230523092841-902e7427c9aa
+	github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1

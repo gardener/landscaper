@@ -485,6 +485,7 @@ github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.m
 github.com/envoyproxy/go-control-plane v0.9.9-0.20210217033140-668b12f5399d/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/go-control-plane v0.9.9-0.20210512163311-63b5d3c536b0/go.mod h1:hliV/p42l8fGbc6Y9bQ70uLwIvmJyVE5k4iMKlh8wCQ=
 github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021/go.mod h1:AFq3mo9L8Lqqiid3OhADV3RfLJnjiw63cSpi+fDTRC0=
+github.com/envoyproxy/go-control-plane v0.10.2-0.20220325020618-49ff273808a1/go.mod h1:KJwIaB5Mv44NWtYuAOFCVOjcI94vtpEz2JU/D2v6IjE=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5/go.mod h1:a2zkGnVExMxdzMo3M0Hi/3sEU+cWnZpSni0O6/Yb/P0=
 github.com/evanphx/json-patch v0.5.2/go.mod h1:ZWS5hhDbVDyob71nXKNL0+PWn6ToqBHMikGIFbs31qQ=
@@ -889,6 +890,7 @@ github.com/mandelsoft/logging v0.0.0-20230331123830-36542ef18f6f h1:ZoqAURpfhE54
 github.com/mandelsoft/logging v0.0.0-20230331123830-36542ef18f6f/go.mod h1:HjtBPH5tsJygvyYEu2r/ZwOOBGcu+oR2sKH73VEnHtg=
 github.com/mandelsoft/spiff v1.3.0-beta-7.0.20230414131619-0bc30bac11fc h1:ZAPrgV5lQ6LziSVrf8HPTH9TwjNh7l6haECmDrjES+o=
 github.com/mandelsoft/spiff v1.3.0-beta-7.0.20230414131619-0bc30bac11fc/go.mod h1:TwEeOPuRZxlzQBCLEyVTlHmBSruSGGNdiQ2fovVJ8ao=
+github.com/mandelsoft/spiff v1.7.0-beta-5/go.mod h1:TwEeOPuRZxlzQBCLEyVTlHmBSruSGGNdiQ2fovVJ8ao=
 github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91/go.mod h1:74aV7kulg9C434HiI3zNALN79QHc9IZMN+SI4UdLn14=
 github.com/mandelsoft/vfs v0.0.0-20230506183150-975954b82357 h1:BJKXJKeVAn9Z1Ke6N1p3G20SjMwOuJNBeSxT9two2FA=
 github.com/mandelsoft/vfs v0.0.0-20230506183150-975954b82357/go.mod h1:Z6caUgivS+P837kxRUaYPuzLKxNpOly4WlInNhrcWyc=
@@ -1034,6 +1036,8 @@ github.com/onsi/gomega v1.27.4 h1:Z2AnStgsdSayCMDiCU42qIz+HLqEPcgiOCXjAU/w+8E=
 github.com/onsi/gomega v1.27.4/go.mod h1:riYq/GJKh8hhoM01HN6Vmuy93AarCXCBGpvFDK3q3fQ=
 github.com/open-component-model/ocm v0.3.0-rc.1.0.20230523092841-902e7427c9aa h1:w8Xa/Wii8jcxY6D1qMK3lDr+YxQiiTNWdyU4IefbjUg=
 github.com/open-component-model/ocm v0.3.0-rc.1.0.20230523092841-902e7427c9aa/go.mod h1:EUDPb8Viu5xThhcgfnn1hIW93cL7dU2c0BM90zYwhYM=
+github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b h1:sdi5i+XHERqrC53RuULF75qa/opyPgcqNX/W0q6T+ro=
+github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b/go.mod h1:I62RZpENXDA1yXEbSPGHeDBih+cf7136EPHfh6sOK6g=
 github.com/opencontainers/distribution-spec v1.0.1 h1:hT6tF6uKZAQh+HH3BrJqn7/xHhMoDHzahIg4KxD2DqM=
 github.com/opencontainers/distribution-spec v1.0.1/go.mod h1:copR2flp+jTEvQIFMb6MIx45OkrxzqyjszPDT3hx/5Q=
 github.com/opencontainers/go-digest v0.0.0-20170106003457-a6d0ee40d420/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
