@@ -7,9 +7,8 @@ package model
 import (
 	"context"
 
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 )
 
 type RegistryAccess interface {

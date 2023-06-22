@@ -16,4 +16,4 @@ spec:
     --id=$TM_TESTRUN_ID$CLUSTER_NAME
     --timeout=10m
 
-  image: golang:1.19.9
+  image: golang:1.19.10

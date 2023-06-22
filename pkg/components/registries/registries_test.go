@@ -7,7 +7,6 @@ package registries
 import (
 	"context"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -28,8 +27,7 @@ var _ = BeforeSuite(func() {
 	registryAccess, err = NewFactory().NewLocalRegistryAccess("./testdata/registry")
 	Expect(err).ToNot(HaveOccurred())
 
-	repository := componentresolvers.NewLocalRepository("./testdata/registry")
-	repositoryContext, err = cdv2.NewUnstructured(repository)
+	repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
 	Expect(err).ToNot(HaveOccurred())
 })
 

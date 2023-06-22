@@ -14,6 +14,14 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
+func NewOCIRepositoryContext(baseURL string) (cdv2.UnstructuredTypedObject, error) {
+	return cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository(baseURL, ""))
+}
+
+func NewOCIRegistryAccess(ociImageRef string) (cdv2.UnstructuredTypedObject, error) {
+	return cdv2.NewUnstructured(cdv2.NewOCIRegistryAccess(ociImageRef))
+}
+
 // NewOCIRegistryWithOCIClient creates a new oci registry with a oci ociClient
 // If supplied, it parses and stores predefined component descriptors.
 func NewOCIRegistryWithOCIClient(log logging.Logger, client ociclient.Client, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {

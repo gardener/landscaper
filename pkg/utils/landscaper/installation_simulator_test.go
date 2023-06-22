@@ -20,8 +20,9 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-	cnudieoci "github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
@@ -64,11 +65,10 @@ var _ = Describe("Installation Simulator", func() {
 	var (
 		testDataDir          = "./testdata/01-subinstallations"
 		registryAccess       model.RegistryAccess
-		repository           *cnudieoci.LocalRepository
 		rootComponentVersion model.ComponentVersion
 		componentVersionList *model.ComponentVersionList
 		blueprint            *blueprints.Blueprint
-		repositoryContext    cdv2.UnstructuredTypedObject
+		repositoryContext    types.UnstructuredTypedObject
 		exportTemplates      lsutils.ExportTemplates
 		callbacks            = &TestSimulatorCallbacks{
 			installations:     make(map[string]*lsv1alpha1.Installation),
@@ -87,8 +87,7 @@ var _ = Describe("Installation Simulator", func() {
 
 		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
-		repository = cnudieoci.NewLocalRepository(testDataDir)
-		repositoryContext, err = cdv2.NewUnstructured(repository)
+		repositoryContext, err = componentresolvers.NewLocalRepositoryContext(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
 
 		rootComponentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{

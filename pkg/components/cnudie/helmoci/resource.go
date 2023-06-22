@@ -6,7 +6,6 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/deployer/helm/shared"
 )
 
 const (
@@ -24,11 +23,6 @@ const (
 
 	// LegacyChartLayerMediaType is the legacy reserved media type for Helm chart package content.
 	LegacyChartLayerMediaType = "application/tar+gzip"
-
-	// OldHelmResourceType describes the old helm resource type of a component descrptor defined resource.
-	OldHelmResourceType = shared.OldHelmResourceType
-	// HelmChartResourceType describes the helm resource type of a component descrptor defined resource.
-	HelmChartResourceType = shared.HelmChartResourceType
 )
 
 func NewResourceDataForHelmOCI(ociImageRef string) (*types.Resource, error) {
@@ -40,7 +34,7 @@ func NewResourceDataForHelmOCI(ociImageRef string) (*types.Resource, error) {
 
 	return &types.Resource{
 		IdentityObjectMeta: cdv2.IdentityObjectMeta{
-			Type: HelmChartResourceType,
+			Type: types.HelmChartResourceType,
 		},
 		Relation: cdv2.ExternalRelation,
 		Access:   &access,

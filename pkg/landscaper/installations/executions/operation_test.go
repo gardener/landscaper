@@ -7,7 +7,6 @@ package executions_test
 import (
 	"context"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -17,6 +16,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/container"
 	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -27,7 +27,7 @@ import (
 var _ = Describe("Execution Operation", func() {
 	var (
 		registryAccess    model.RegistryAccess
-		repositoryContext cdv2.UnstructuredTypedObject
+		repositoryContext types.UnstructuredTypedObject
 		componentVersion  model.ComponentVersion
 		state             *envtest.State
 		kClient           client.Client
@@ -48,8 +48,8 @@ var _ = Describe("Execution Operation", func() {
 		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		repository := componentresolvers.NewLocalRepository("./testdata/registry")
-		repositoryContext, err = cdv2.NewUnstructured(repository)
+		repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
+
 		Expect(err).ToNot(HaveOccurred())
 
 		componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{

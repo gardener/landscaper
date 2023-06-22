@@ -29,6 +29,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
+	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
@@ -56,7 +57,7 @@ func NewController(logger logging.Logger,
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
 		var err error
-		ctrl.SharedCache, err = cache.NewCache(logger.Logr(), utils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
+		ctrl.SharedCache, err = cache.NewCache(logger.Logr(), cnudieutils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
 		if err != nil {
 			return nil, err
 		}

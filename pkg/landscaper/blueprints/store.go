@@ -17,9 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
-
 	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
@@ -35,8 +34,8 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/tar"
 	"github.com/gardener/landscaper/pkg/utils"
-	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 
 var storeSingleton *Store

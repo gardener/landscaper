@@ -165,7 +165,7 @@ func getObjectsByTypedReference(ctx context.Context, cl client.Client, key []lsv
 			if apierrors.IsNotFound(err) {
 				return nil, NewObjectNotReadyError(obj, err)
 			} else {
-				return nil, lserror.NewWrappedError(err, "GetObjectsByTypedReference", "failed to get object", err.Error())
+				return nil, NewRecoverableError(err)
 			}
 		}
 		results = append(results, obj)
@@ -185,7 +185,7 @@ func getObjectsByLabels(ctx context.Context, cl client.Client, selector *health.
 	if err := cl.List(ctx, objList, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(selector.Labels),
 	}); err != nil {
-		return nil, lserror.NewWrappedError(err, "GetObjectsByLabels", "failed to list objects", err.Error())
+		return nil, NewRecoverableError(err)
 	}
 
 	if len(objList.Items) == 0 {

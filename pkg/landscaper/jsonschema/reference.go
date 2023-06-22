@@ -16,7 +16,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/xeipuuv/gojsonschema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -40,7 +41,7 @@ type ReferenceContext struct {
 	RegistryAccess model.RegistryAccess
 	// RepositoryContext can be used to overwrite the effective repository context of the component descriptor.
 	// If not set, the effective repository context of the ComponentDescriptor will be used.
-	RepositoryContext *cdv2.UnstructuredTypedObject
+	RepositoryContext *types.UnstructuredTypedObject
 }
 
 type ReferenceResolver struct {

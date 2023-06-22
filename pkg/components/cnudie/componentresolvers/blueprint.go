@@ -14,6 +14,7 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 // BlueprintResolver is a blob resolver that can resolve
@@ -24,22 +25,22 @@ type BlueprintResolver struct {
 
 var _ ctf.TypedBlobResolver = &BlueprintResolver{}
 
-func (b BlueprintResolver) CanResolve(res cdv2.Resource) bool {
+func (b BlueprintResolver) CanResolve(res types.Resource) bool {
 	if res.GetType() != mediatype.BlueprintType && res.GetType() != mediatype.OldBlueprintType {
 		return false
 	}
 	return res.Access != nil && res.Access.GetType() == cdv2.OCIRegistryType
 }
 
-func (b *BlueprintResolver) Info(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error) {
+func (b *BlueprintResolver) Info(ctx context.Context, res types.Resource) (*ctf.BlobInfo, error) {
 	return b.resolve(ctx, res, nil)
 }
 
-func (b *BlueprintResolver) Resolve(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+func (b *BlueprintResolver) Resolve(ctx context.Context, res types.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
 	return b.resolve(ctx, res, writer)
 }
 
-func (b *BlueprintResolver) resolve(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+func (b *BlueprintResolver) resolve(ctx context.Context, res types.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
 	ociArtifactAccess := &cdv2.OCIRegistryAccess{}
 	if err := cdv2.NewCodec(nil, nil, nil).Decode(res.Access.Raw, ociArtifactAccess); err != nil {
 		return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)

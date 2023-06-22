@@ -10,6 +10,7 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 type cdRefAspect string
@@ -25,7 +26,7 @@ const (
 // It implements the Stringer interface and will produce a human-readable description of the changes between the two references.
 type ComponentDescriptorReferenceDiff struct {
 	overwritten                              map[cdRefAspect]bool
-	oldRepoCtx, newRepoCtx                   *cdv2.UnstructuredTypedObject
+	oldRepoCtx, newRepoCtx                   *types.UnstructuredTypedObject
 	oldName, newName, oldVersion, newVersion string
 }
 
@@ -52,14 +53,14 @@ func (d *ComponentDescriptorReferenceDiff) IsAnyOverwritten() bool {
 }
 
 // overwriteRepoCtx marks the repository context as overwritten.
-func (d *ComponentDescriptorReferenceDiff) overwriteRepoCtx(old, new *cdv2.UnstructuredTypedObject) {
+func (d *ComponentDescriptorReferenceDiff) overwriteRepoCtx(old, new *types.UnstructuredTypedObject) {
 	d.oldRepoCtx = old
 	d.newRepoCtx = new
 	d.overwritten[RepoCtx] = true
 }
 
 // GetRepoCtxOverwrite returns the old and the new repository contexts. If not overwritten, both will be nil.
-func (d *ComponentDescriptorReferenceDiff) GetRepoCtxOverwrite() (*cdv2.UnstructuredTypedObject, *cdv2.UnstructuredTypedObject) {
+func (d *ComponentDescriptorReferenceDiff) GetRepoCtxOverwrite() (*types.UnstructuredTypedObject, *types.UnstructuredTypedObject) {
 	return d.oldRepoCtx, d.newRepoCtx
 }
 
@@ -137,7 +138,7 @@ func ReferenceDiff(oldRef, newRef *lsv1alpha1.ComponentDescriptorReference) *Com
 	return res
 }
 
-func repositoryContextDiff(oldCtx, newCtx *cdv2.UnstructuredTypedObject) string {
+func repositoryContextDiff(oldCtx, newCtx *types.UnstructuredTypedObject) string {
 	if oldCtx == nil {
 		return "-> " + string(newCtx.Raw)
 	}

@@ -188,7 +188,7 @@ func DeployerManagementTests(f *framework.Framework) {
 						return err
 					}
 					return nil
-				}, 3*time.Minute, 10*time.Second).Should(g.Succeed())
+				}, 10*time.Minute, 10*time.Second).Should(g.Succeed())
 
 				ginkgo.By("should delete the deployer when the Environment is removed")
 				testutil.ExpectNoError(f.Client.Delete(ctx, env))

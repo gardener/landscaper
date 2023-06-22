@@ -21,6 +21,7 @@ import (
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	componentstestutils "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
@@ -37,13 +38,13 @@ func newDummyBlobResolver(mediaType string) ctf.BlobResolver {
 	}
 }
 
-func (r dummyBlobResolver) Info(_ context.Context, _ cdv2.Resource) (*ctf.BlobInfo, error) {
+func (r dummyBlobResolver) Info(_ context.Context, _ types.Resource) (*ctf.BlobInfo, error) {
 	return &ctf.BlobInfo{
 		MediaType: r.mediaType,
 	}, nil
 }
 
-func (r dummyBlobResolver) Resolve(_ context.Context, _ cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+func (r dummyBlobResolver) Resolve(_ context.Context, _ types.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
 	data := make([]byte, 256)
 	rand.Read(data)
 
@@ -55,7 +56,7 @@ func (r dummyBlobResolver) Resolve(_ context.Context, _ cdv2.Resource, writer io
 	return nil, nil
 }
 
-func (r dummyBlobResolver) CanResolve(resource cdv2.Resource) bool {
+func (r dummyBlobResolver) CanResolve(resource types.Resource) bool {
 	return true
 }
 
@@ -87,17 +88,19 @@ var _ = Describe("Resolve", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(memFs)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediatype.BlueprintArtifactsLayerMediaTypeV1))
+
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar", mediatype.BlueprintArtifactsLayerMediaTypeV1)
+
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",
@@ -136,18 +139,20 @@ var _ = Describe("Resolve", func() {
 			}).BuildResourceToFs(memFs, "blobs/bp.tar", true)
 			Expect(err).ToNot(HaveOccurred())
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(memFs)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
-				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()))
+
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar",
+				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String())
+
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",
@@ -186,18 +191,20 @@ var _ = Describe("Resolve", func() {
 			}).BuildResourceToFs(memFs, "blobs/bp.tar", false)
 			Expect(err).ToNot(HaveOccurred())
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(memFs)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
-				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()))
+
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar",
+				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String())
+
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",
@@ -229,17 +236,17 @@ var _ = Describe("Resolve", func() {
 
 			mediaType := mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).String()
 			blobResolver := newDummyBlobResolver(mediaType)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediaType))
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar", mediaType)
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",
@@ -271,17 +278,17 @@ var _ = Describe("Resolve", func() {
 
 			mediaType := mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()
 			blobResolver := newDummyBlobResolver(mediaType)
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediaType))
+			localFSAccess, err := componentresolvers.NewLocalFilesystemBlobAccess("bp.tar", mediaType)
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext := testutils.ExampleRepositoryContext()
-			repositoryContexts := []*cdv2.UnstructuredTypedObject{repositoryContext}
+			repositoryContexts := []*types.UnstructuredTypedObject{repositoryContext}
 
-			cd := cdv2.ComponentDescriptor{}
+			cd := types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
 			cd.RepositoryContexts = repositoryContexts
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			cd.Resources = append(cd.Resources, types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-bp",
 					Version: "1.2.3",

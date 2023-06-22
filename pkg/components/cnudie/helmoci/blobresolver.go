@@ -16,8 +16,8 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 type BlobResolverForHelmOCI struct {
@@ -59,7 +59,7 @@ func createOCIClient(ctx context.Context, registryPullSecrets []corev1.Secret, o
 		return nil, err
 	}
 	ociClient, err := ociclient.NewClient(logger.Logr(),
-		utils.WithConfiguration(ociConfig),
+		cnudieutils.WithConfiguration(ociConfig),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(sharedCache),
 	)
@@ -71,7 +71,7 @@ func createOCIClient(ctx context.Context, registryPullSecrets []corev1.Secret, o
 }
 
 func (h BlobResolverForHelmOCI) CanResolve(res types.Resource) bool {
-	if res.GetType() != HelmChartResourceType && res.GetType() != OldHelmResourceType {
+	if res.GetType() != types.HelmChartResourceType && res.GetType() != types.OldHelmResourceType {
 		return false
 	}
 	return res.Access != nil && res.Access.GetType() == cdv2.OCIRegistryType
