@@ -49,7 +49,7 @@ func (r *Resource) GetResource() (*types.Resource, error) {
 	return &lsspec, err
 }
 
-func (r *Resource) GetBlob(ctx context.Context, writer io.Writer) (rblobinfo *types.BlobInfo, rerr error) {
+func (r *Resource) GetBlob(ctx context.Context, writer io.Writer) (_ *types.BlobInfo, rerr error) {
 	accessMethod, err := r.resourceAccess.AccessMethod()
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (r *Resource) GetBlob(ctx context.Context, writer io.Writer) (rblobinfo *ty
 	}, nil
 }
 
-func (r *Resource) GetBlobInfo(ctx context.Context) (rblobinfo *types.BlobInfo, rerr error) {
+func (r *Resource) GetBlobInfo(ctx context.Context) (_ *types.BlobInfo, rerr error) {
 	accessMethod, err := r.resourceAccess.AccessMethod()
 	if err != nil {
 		return nil, err

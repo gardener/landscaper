@@ -4,6 +4,7 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/runtime"
 
@@ -17,7 +18,11 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(data), &cdref))
 
-		r := &RegistryAccess{ocm.DefaultContext()}
+		r := &RegistryAccess{
+			octx:    ocm.DefaultContext(),
+			session: ocm.NewSession(datacontext.NewSession()),
+		}
+
 		cv := Must(r.GetComponentVersion(nil, cdref))
 		Expect(cv).NotTo(BeNil())
 		Expect(cv.GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
@@ -27,11 +32,16 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(data), &cdref))
 
-		r := &RegistryAccess{ocm.DefaultContext()}
+		r := &RegistryAccess{
+			octx:    ocm.DefaultContext(),
+			session: ocm.NewSession(datacontext.NewSession()),
+		}
 		cv := Must(r.GetComponentVersion(nil, cdref))
 
 		Expect(cv.GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
 		Expect(cv.GetVersion()).To(Equal("1.0.0"))
+		Expect(Must(cv.GetComponentDescriptor()).GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
+		Expect(Must(cv.GetComponentDescriptor()).GetVersion()).To(Equal("1.0.0"))
 	})
 
 })

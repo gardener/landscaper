@@ -2,6 +2,7 @@ package registries
 
 import (
 	"context"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -22,7 +23,7 @@ import (
 // Its purpose is to select either the cnudie or ocm implementation of the same interface.
 type Factory struct {
 	cnudieFactory *cnudie.Factory
-	// ocmFactory *cnudie.RegistryAccessBuilder
+	ocmFactory    *ocmfacade.Factory
 }
 
 var _ model.Factory = &Factory{}
@@ -39,6 +40,7 @@ func (f *Factory) NewRegistryAccess(ctx context.Context,
 	inlineCd *types.ComponentDescriptor,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 	return f.cnudieFactory.NewRegistryAccess(ctx, secrets, sharedCache, localRegistryConfig, ociRegistryConfig, inlineCd, additionalBlobResolvers...)
+	//return f.ocmFactory.NewRegistryAccess(ctx, secrets, sharedCache, localRegistryConfig, ociRegistryConfig, inlineCd, additionalBlobResolvers...)
 }
 
 func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,

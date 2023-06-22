@@ -13,7 +13,7 @@ type RegistryAccess struct {
 	session ocm.Session
 }
 
-func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (rcompvers model.ComponentVersion, rerr error) {
+func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
 	spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
 	if err != nil {
 		return nil, err
