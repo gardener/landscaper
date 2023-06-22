@@ -6,6 +6,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -277,18 +278,18 @@ func (r *ExecutionSpec) UnmarshalJSON(data []byte) error {
 	a := (*Alias)(r)
 
 	if err := json.Unmarshal(data, &a); err != nil {
-		return err
+		return fmt.Errorf("unable to unmarshal execution spec: %w", err)
 	}
 
 	if len(a.DeployItemsCompressed) > 0 {
 		diBytes, err := utils.Gunzip(a.DeployItemsCompressed)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to gunzip deployitems of execution spec: %w", err)
 		}
 
 		deployItems := DeployItemTemplateList{}
 		if err := json.Unmarshal(diBytes, &deployItems); err != nil {
-			return err
+			return fmt.Errorf("unable to unmarshal deployitems of execution spec: %w", err)
 		}
 
 		a.DeployItemsCompressed = nil
@@ -307,12 +308,12 @@ func (r ExecutionSpec) MarshalJSON() ([]byte, error) {
 	if len(r.DeployItems) > 0 {
 		diBytes, err := json.Marshal(r.DeployItems)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to marshal deployitems of execution spec: %w", err)
 		}
 
 		diZippedBytes, err := utils.Gzip(diBytes)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to gzip deployitems of execution spec: %w", err)
 		}
 
 		a.DeployItems = nil
