@@ -209,6 +209,7 @@ github.com/gardener/landscaper/apis/deployer/utils/readinesschecks/validation
 github.com/gardener/landscaper/apis/errors
 github.com/gardener/landscaper/apis/mediatype
 github.com/gardener/landscaper/apis/schema
+github.com/gardener/landscaper/apis/utils
 # github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000 => ./controller-utils
 ## explicit; go 1.19
 github.com/gardener/landscaper/controller-utils/pkg/crdmanager

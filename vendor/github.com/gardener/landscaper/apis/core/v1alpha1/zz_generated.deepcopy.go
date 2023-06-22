@@ -1274,6 +1274,11 @@ func (in *ExecutionSpec) DeepCopyInto(out *ExecutionSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.DeployItemsCompressed != nil {
+		in, out := &in.DeployItemsCompressed, &out.DeployItemsCompressed
+		*out = make([]byte, len(*in))
+		copy(*out, *in)
+	}
 	if in.RegistryPullSecrets != nil {
 		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
 		*out = make([]ObjectReference, len(*in))

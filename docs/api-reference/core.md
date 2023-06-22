@@ -928,6 +928,17 @@ DeployItemTemplateList
 </tr>
 <tr>
 <td>
+<code>deployItemsCompressed</code></br>
+<em>
+[]byte
+</em>
+</td>
+<td>
+<p>DeployItemsCompressed as zipped byte array</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>registryPullSecrets</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
@@ -3562,6 +3573,17 @@ DeployItemTemplateList
 </td>
 <td>
 <p>DeployItems defines all execution items that need to be scheduled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deployItemsCompressed</code></br>
+<em>
+[]byte
+</em>
+</td>
+<td>
+<p>DeployItemsCompressed as zipped byte array</p>
 </td>
 </tr>
 <tr>
