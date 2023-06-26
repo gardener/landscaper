@@ -35,7 +35,158 @@ The algorithm does not wait until particular objects are gone before it continue
 a Chart is successful if all objects were gone. Objects not deployed by the Chart, e.g. custom resources (CRs) deployed
 by some operator/job are not removed.
 
-### New Solution 
+---
+
+### Proposal for an Enhanced Deletion Logic
+
+We propose to enhance the deletion logic with the following features:
+
+- **Subdivision into groups:** the set of all resources to be deleted can be divided into groups.
+An order can be defined in which these groups are handled.
+Landscaper waits until all objects of a group have gone before it deletes the objects of the next group.  
+- **Force-delete:** a force-delete mode can be enabled on group level. If force-delete is enabled for a group, 
+its objects are not only deleted, but also their finalizers are directly removed.  
+- **Deleting objects outside the chart:** it is possible to delete resources that were not deployed by the Helm chart.
+For example, a Helm chart might deploy an "operator" which then in turn creates certain custom resources. When the 
+operator is deleted one might also delete these custom resource, even if they are not part of the Helm chart.
+
+By default, there are three groups, handled in the following order:
+
+1. The group of namespaced resources of the chart  
+2. The group of cluster-scoped resources of the chart (without CRDs)  
+3. The CRDs of the chart  
+
+The groups can (optionally) be defined in a section `deletionGroups` of DeployItems.
+We describe the syntax of the `deletionGroups` in a sequence of examples, before we give the general scheme.
+
+##### Example: default behaviour
+
+If you are happy with the above default behaviour, you need not specify the groups at all. However, the section
+`deletionGroups` in the DeployItem below would have the same effect:
+
+```yaml
+deployItems:
+  - name: my-deploy-item
+    type: landscaper.gardener.cloud/helm
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      ...
+      deletionGroups:
+        - predefinedResourceGroup: namespaced-resources
+        - predefinedResourceGroup: cluster-scoped-resources     # does not include the crds
+        - predefinedResourceGroup: crds
+```
+
+Note that you can omit the section `deletionGroups` only if you accept the exact default behaviour. 
+As soon as you want to deviate from the default behaviour, you have to specify the `deletionGroups` list with all
+items you want to be processed.
+
+
+##### Example: skip deletion of CRDs
+
+In this example, the deletion of CRDs is skipped:
+
+```yaml
+deletionGroups:
+  - predefinedResourceGroup: namespaced-resources
+  - predefinedResourceGroup: cluster-scoped-resources
+```
+
+##### Example: force-delete
+
+In this example, the `force-delete` mode is enabled for all namespaced and cluster-scoped resources:
+
+```yaml
+deletionGroups:
+  - predefinedResourceGroup: namespaced-resources
+    force-delete:
+      enabled: true
+  - predefinedResourceGroup: cluster-scoped-resources
+    force-delete:
+      enabled: true
+  - predefinedResourceGroup: crds
+```
+
+##### Example: delete certain resources first
+
+In this example, the ConfigMaps and Secrets of the chart are deleted first. Only when all of these have gone, the
+other resources will be deleted as usual.
+
+Every item of the list `deletionGroups` must contain exactly one of `resources` or `predefinedResourceGroup` to
+define a set of resources.
+
+```yaml
+deletionGroups:
+  - resources:
+      - group:   ""
+        version: "v1"
+        kind:    "configmaps"
+      - group:   ""
+        version: "v1"
+        kind:    "secrets"
+  - predefinedResourceGroup: namespaced-resources
+  - predefinedResourceGroup: cluster-scoped-resources
+  - predefinedResourceGroup: crds
+```
+
+##### Example: delete resources outside the chart
+
+In this example, all custom resources of a certain group-version-kind are deleted in the beginning. Because of the 
+selector `all: true`, all resources of that group-version-kind are deleted, regardless whether they were deployed by 
+the chart or not.
+
+```yaml
+deletionGroups:
+  - resources:
+      - group:   "my.group"
+        version: "v1"
+        kind:    "mycustomresources"
+        selector:
+          all: true
+  - predefinedResourceGroup: namespaced-resources
+  - predefinedResourceGroup: cluster-scoped-resources
+  - predefinedResourceGroup: crds
+```
+
+##### General Structure of deletion groups
+
+```yaml
+deletionGroups:
+  - predefinedResourceGroup: ( "namespaced-resources" | "cluster-scoped-resources" | "crds" )
+    resources:
+      - group:   ...
+        version: ...
+        kind:    ...
+        selector:
+          all: true
+    force-delete:
+      enabled: true
+```
+
+The field `deletionGroups` is a list. Its items have the following fields:
+
+- **predefinedResourceGroup:** this field is optional, but exactly one of `resources` or `predefinedResourceGroup` must 
+be set. The field has type string. The allowed values are:  
+  - `namespaced-resources`  
+  - `cluster-scoped-resources`  
+  - `crds`  
+
+- **resources:** this field is optional, but exactly one of `resources` or `predefinedResourceGroup` must be set.
+The field is a list. Each item must have fields `group`, `version`, `kind` to specify a type of resources. 
+Optionally, a `selector` can be specified; currently, only the selector `all: true` is supported to indicate that
+resources should be deleted even if they were not deployed by the chart.  
+
+- **force-delete:** this field is optional. It is an object with field `enabled: (true | false )`.  
+
+
+
+> Maybe we need a field `excludedResources` to express something like: all namespaced resources except configmaps.
+
+
+---
+
+### New Solution
 
 We propose the following solution to have more control over the deletion process.
 
