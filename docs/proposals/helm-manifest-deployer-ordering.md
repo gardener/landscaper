@@ -23,20 +23,30 @@ Open questions:
 
 ## Uninstall Chart
 
-Currently, there is no predefined order in which the manifests are removed. The removal of a Chart is successful if 
-all objects were gone.
+### Current Status
 
-We propose the following solution to have more control over the deletion process:
+Currently, when removing a Chart, the objects deployed by the chart are deleted in the following order:
 
-- The basic order of the manifest removal is:
-  - Custom resources (CRs) of CRDs deployed by the Chart (namespaced and not namespaced CRs) (deletionRank=100)
-  - CRs of CRDs not deployed by the Chart (namespaced and not namespaced CRs) (deletionRank=200)
-  - Namespaced objects (deletionRank=300)
-  - Not namespaced objects (except CRDs) (deletionRank=400)
-  - CRDs (deletionRank=500)
-  - Namespaces (deletionRank=600)
+- Namespaced objects deployed by the Chart
+- Not namespaced objects deployed by the Chart
+- CRDs deployed by the Chart
 
-The deletion continues only with the next object group if all objects from the groups before are gone.
+The algorithm does not wait until particular objects are gone before it continues deleting the next ones.The removal of 
+a Chart is successful if all objects were gone. Objects not deployed by the Chart, e.g. custom resources (CRs) deployed
+by some operator/job are not removed.
+
+### New Solution 
+
+We propose the following solution to have more control over the deletion process.
+
+The basic order of deleting the deployed manifests remains the same as before (deletionRank is specified below):
+
+- Namespaced objects deployed by the Chart (deletionRank=100)
+- Not namespaced objects deployed by the Chart (except CRDs) (deletionRank=200)
+- CRDs deployed by the Chart (deletionRank=300)
+
+The deletion continues only with the next object group if all objects from the groups before are gone. This is different
+to the current approach.
 
 Each of these standard groups of objects have a particular deletionRank which determines the deletion order. To change 
 the deletion order of particular resources you could overwrite their default deletionRank in the specification of a 
@@ -48,17 +58,19 @@ deployItem:
   - deletionOrderRules:
     - deletionRank: <some integer number>
       types:
-        - <group/version/kind of CR X>
+        - group: ...
+          version: ...
+          kind: ... 
 ```
 
 By such a deletion order rule, the objects specified get the new deletionRank of the rule, and are deleted after all 
-other objects with a lower deletionRank but before those with a higher deletionRank. Thereby the deletion of objects 
+other objects with a lower deletionRank but before those with a higher deletionRank. Thereby, the deletion of objects 
 with higher rankings is only continued if all objects with a deletionRank lower or equal to the deletionRank, specified 
 in the rule, are gone.
 
-
-Another important point is the possibility to add some wait periods or forced cleanup after the deletion of a particular 
-deletionRank, e.g. to give an operator some time to clean up time. Such rules will have the following format:
+In the current deletion process only objects deployed by the chart are removed. If you specify `seletor.all=true`
+all objects of that type are removed. We could later extend the selector by rules for namespaces, labels, object names 
+etc. 
 
 ```
 deployItem:
@@ -66,34 +78,116 @@ deployItem:
   - deletionOrderRules:
     - deletionRank: <some integer number>
       types:
-        - <group/version/kind of CR X>
-      waitTimeout: <optional, defaults to 1 minute>
-      forceDeleteAfterWaitTimeout: # optional
+        - group: ...
+          version: ...
+          kind: ...
+          selector: # optional
+            all: true 
+```
+
+Another important point is the possibility to force the deletion of particular objects by specifying
+the entry `forceDelete`.
+
+```
+deployItem:
+...
+  - deletionOrderRules:
+    - deletionRank: <some integer number>
+      types:
+        - group: ...
+      forceDelete: # optional
         enabled: <true/false>
 ```
 
-The meaning of the additional fields is the following:
+The meaning of the additional fields is that after a successful deletion call to all objects of the deletionRank, 
+the finalizer of these objects are also removed.
 
-- waitTimeout: Duration the deployer waits before it continues, either with the deletion of objects with a higher 
-  deletionRank or if specified with the forceDeleteAfterWaitTimeout step of the rule. 
-
-- forceRemoveAfterWaitPeriod: If enabled, the finalizers of all remaining objects with a deletionRank lower or equal  
-  the one of the rule, are removed.
-
-Of course, it is also possible to specify wait periods or forced cleanup for the standard groups, e.g. the following
-example introduces such a rule for the CRs of CRDs specified in the Chart, which have the default deletionRank of 100. 
-You see that the types section is skipped in this case.
+Of course, it is also possible to specify forced cleanup for the standard groups, e.g. the following
+example introduces such a rule for the CRs of CRDs specified in the Chart, which have the default deletionRank of 100
+200 or 300. You see that the types section is not allowed and therefore skipped in this case. 
 
 ```
 deployItem:
 ...
   - deletionOrderRules:
     - deletionRank: 100
-      waitTimeout: <optional, defaults to 1 minute>
-      forceDeleteAfterWaitTimeout: # optional
-        forceTimeout: <some duration>
+      forceDelete: # optional
+        enabled: <true/false>
 ```
 
+If you do not specify a deletion rule for the default deletionRank of 100, 200 or 300, default deletion rules are 
+automatically added for the missing ones, which have the following form with the meaning that all objects of the 
+included type deployed by the chart has to be deleted:
+
+```
+deployItem:
+...
+  - deletionOrderRules:
+    - deletionRank: <100, 200, or 300>
+```
+
+It is required that all rules must have a different deletionRank!
+
+#### How is a set of deletionOrderRules processed?
+
+Assume you have the rules R1 to Rn. This set also includes all default deletion rules. The rules are sorted increasingly
+according to their deletionRank. Then one rule after the other is processed and the respective objects are deleted.
+
+#### Example
+
+The following example specifies the following rules:
+
+- First delete all config maps, including those not deployed by the chart
+- Next delete all secrets including their finalizer deployed by the chart
+- Next delete all CRs of group/version/kind=g1/v1/k1
+- Next delete all CRs deployed by the chart of group/version/kind=g2/v2/k2
+- Next delete all namespaced objects deployed 
+- Next delete all namespaces deployed by the chart
+- Next delete all not namespaced objects deployed by the chart
+- Next delete CRDs deployed by the chart
+
+```
+deployItem:
+...
+  - deletionOrderRules:
+  
+    - deletionRank: 50 
+      types:
+      - group: ""
+        version: v1
+        kind: configmap
+        selector: 
+          all: true 
+          
+    - deletionRank: 51
+      types:
+      - group: ""
+        version: v1
+        kind: secret
+      forceDelete: 
+        enabled: true
+        
+    - deletionRank: 52
+      types:
+      - group: g1
+        version: v1
+        kind: k1
+        selector: 
+          all: true 
+          
+    - deletionRank: 53
+      types:
+      - group: g2
+        version: v2
+        kind: k3
+        
+    - deletionRank: 150 # rank higher than the namespaced objects
+      types:
+      - group: 
+        version: v1
+        kind: namespace
+
+```
 
 Open questions: 
 - How to handle different CRs versions of one CRD?
