@@ -92,12 +92,9 @@ deployItems:
       kind: ProviderConfiguration
       ...
       deletionGroups:
-        - predefinedResourceGroup: 
-            type: namespaced-resources
-        - predefinedResourceGroup:
-            type: cluster-scoped-resources     # does not include the crds
-        - predefinedResourceGroup: 
-            type: crds
+        - predefinedResourceGroup: namespaced-resources
+        - predefinedResourceGroup: cluster-scoped-resources     # does not include the crds
+        - predefinedResourceGroup: crds
 ```
 
 Note that you can omit the section `deletionGroups` only if you accept the exact default behaviour.
@@ -110,10 +107,8 @@ In this example, the deletion of CRDs is skipped:
 
 ```yaml
 deletionGroups:
-  - predefinedResourceGroup: 
-      type: namespaced-resources
-  - predefinedResourceGroup: 
-      type: cluster-scoped-resources
+  - predefinedResourceGroup: namespaced-resources
+  - predefinedResourceGroup: cluster-scoped-resources
 ```
 
 ### Specific Resources
@@ -124,35 +119,37 @@ following syntax where you specify the types of the objects which should be dele
 ```yaml
 deletionGroups:
   - resources:
-      - group:   ...
-        version: ...
-        kind:    ...
-      - group:   ...
-        version: ...
-        kind:    ...
+    - group:   ...
+      version: ...
+      kind:    ...
+    - group:   ...
+      version: ...
+      kind:    ...
     ...
 ```
 
 ##### Example: delete certain resources first
 
-In this example, the ConfigMaps and Secrets of the chart are deleted first. Only when all of these have gone, the
-other resources will be deleted as usual.
+In this example, the ConfigMaps and Secrets of the chart are deleted first. Only when all of these are gone, the
+other namespaced resources will be deleted as usual. In the next step, the namespaces are removed before the 
+cluster scoped resources and the CDRs are deleted.
 
 ```yaml
 deletionGroups:
   - resources:
-      - group:   ""
-        version: "v1"
-        kind:    "configmaps"
-      - group:   ""
-        version: "v1"
-        kind:    "secrets"
-  - predefinedResourceGroup: 
-      type: namespaced-resources
-  - predefinedResourceGroup: 
-      type: cluster-scoped-resources
-  - predefinedResourceGroup: 
-      type: crds
+    - group:   ""
+      version: "v1"
+      kind:    "configmaps"
+    - group:   ""
+      version: "v1"
+      kind:    "secrets"
+  - predefinedResourceGroup: namespaced-resources
+  - resources:
+    - group:   ""
+      version: "v1"
+      kind:    "namespaces"
+  - predefinedResourceGroup: cluster-scoped-resources
+  - predefinedResourceGroup: crds
 ```
 
 Every item of the list `deletionGroups` must contain exactly one of `resources` or `predefinedResourceGroup` to
@@ -198,32 +195,31 @@ the chart or not.
 ```yaml
 deletionGroups:
   - resources:
-      - group:   "my.group"
-        version: "v1"
-        kind:    "mycustomresources"
-        selector:
-          all: true
+    - group:   "my.group"
+      version: "v1"
+      kind:    "mycustomresources"
+      selector:
+        all: true
   - predefinedResourceGroup: namespaced-resources
   - predefinedResourceGroup: cluster-scoped-resources
   - predefinedResourceGroup: crds
 ```
 
-##### General Structure of deletion groups
+### General Structure of deletion groups
 
 The general syntax of deletion groups is:
 
 ```yaml
 deletionGroups:
-  - predefinedResourceGroup: 
-      type: ( "namespaced-resources" | "cluster-scoped-resources" | "crds" )
-    resources:
-      - group:   ...
-        version: ...
-        kind:    ...
-        selector:
-          all: true
+  - predefinedResourceGroup: ( "namespaced-resources" | "cluster-scoped-resources" | "crds" )
+  - resources:
+    - group:   ...
+      version: ...
+      kind:    ...
+      selector:
+        all: <true/false>
     force-delete:
-      enabled: true
+      enabled: <true/false>
 ```
 
 The field `deletionGroups` is a list. Its items have the following fields:
@@ -241,10 +237,7 @@ The field `deletionGroups` is a list. Its items have the following fields:
 
 - **force-delete:** this field is optional. It is an object with field `enabled: (true | false )`.
 
-
-
 > Maybe later we need a field `excludedResources` to express something like: all namespaced resources except configmaps.
-
 
 ## Open questions: 
 
