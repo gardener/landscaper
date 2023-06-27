@@ -47,8 +47,9 @@ The basic order of deleting the deployed manifests remains the same as before an
 - Not namespaced objects deployed by the Chart (except CRDs)
 - CRDs deployed by the Chart
 
-The deletion continues only with the next object group if all objects from the groups before are gone. This is different
-to the current approach. The deletion is tried as long until the specified timeout (default 5 min.) comes into the game.
+The deletion continues only with the next object/deletion group if all objects from the groups before are gone. This is 
+different to the current approach. The deletion is tried as long until all objects of all 3 deletion groups are gone
+or the specified configurable timeout (default 5 min.) comes into the game and the deletion failed.
 
 ## Custom Deletion Behaviour
 
@@ -56,8 +57,8 @@ to the current approach. The deletion is tried as long until the specified timeo
 
 To change the deletion behaviour of a DeployItem, you could specify your own custom deletion groups. A deletion group describes
 a set of k8s objects which should be deleted. The deletion groups are defined as a list and one deletion group after 
-the other is processed. Thereby again, all objects of a deletion group must be gone before the deletion of the next 
-deletion group starts and this is tried until all objects of all deletion groups are gone (SUCCESS) or the timeout comes 
+the other is processed. Thereby again, all objects of a deletion group must be gone before the deletion of objects of the next 
+deletion group starts. This is tried until all objects of all deletion groups are gone (SUCCESS) or the timeout comes 
 into place (FAILED). If you have specified your own deletion groups, the default deletion behaviour is completely disabled.
 
 Custom deletion groups are defined in the section `deletionGroups` as shown below:
