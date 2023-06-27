@@ -212,6 +212,8 @@ The general syntax of deletion groups is:
 ```yaml
 deletionGroups:
   - predefinedResourceGroup: ( "namespaced-resources" | "cluster-scoped-resources" | "crds" )
+    force-delete:
+      enabled: <true/false>
   - resources:
     - group:   ...
       version: ...
