@@ -183,11 +183,11 @@ Of course `forceDelete` could also be applied for cluster group definitions for 
 
 ### Deleting all Resources
 
-In the current deletion process only objects deployed by the chart are removed. This is also the default behavaviour
+In the current deletion process only objects deployed by the chart are removed. This is also the default behaviour
 for the new approach. 
 
 You can change this behaviour by specifying `seletor.all=true` and all objects of that type are removed. We could later 
-extend the selector by rules for namespaces, labels, object names etc.
+extend the selector by rules for namespaces, labels, object names etc. to allow more elaborated deletion rules.
 
 ##### Example: delete resources outside the chart
 
@@ -209,6 +209,8 @@ deletionGroups:
 ```
 
 ##### General Structure of deletion groups
+
+The general syntax of deletion groups is:
 
 ```yaml
 deletionGroups:
