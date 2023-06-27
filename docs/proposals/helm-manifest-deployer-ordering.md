@@ -35,34 +35,32 @@ The algorithm does not wait until particular objects are gone before it continue
 a Chart is successful if all objects were gone. Objects not deployed by the Chart, e.g. custom resources (CRs) deployed
 by some operator/job are not removed.
 
----
+### New Solution
 
-### Proposal for an Enhanced Deletion Logic
+## Default Deletion Behaviour
 
-We propose to enhance the deletion logic with the following features:
+We propose the following solution to have more control over the deletion process.
 
-- **Subdivision into groups:** the set of all resources to be deleted can be divided into groups.
-An order can be defined in which these groups are handled.
-Landscaper waits until all objects of a group have gone before it deletes the objects of the next group.  
-- **Force-delete:** a force-delete mode can be enabled on group level. If force-delete is enabled for a group, 
-its objects are not only deleted, but also their finalizers are directly removed.  
-- **Deleting objects outside the chart:** it is possible to delete resources that were not deployed by the Helm chart.
-For example, a Helm chart might deploy an "operator" which then in turn creates certain custom resources. When the 
-operator is deleted one might also delete these custom resource, even if they are not part of the Helm chart.
+The basic order of deleting the deployed manifests remains the same as before and is divided into three deletion groups:
 
-By default, there are three groups, handled in the following order:
+- Namespaced objects deployed by the Chart
+- Not namespaced objects deployed by the Chart (except CRDs)
+- CRDs deployed by the Chart
 
-1. The group of namespaced resources of the chart  
-2. The group of cluster-scoped resources of the chart (without CRDs)  
-3. The CRDs of the chart  
+The deletion continues only with the next object group if all objects from the groups before are gone. This is different
+to the current approach. The deletion is tried as long until the specified timeout (default 5 min.) comes into the game.
 
-The groups can (optionally) be defined in a section `deletionGroups` of DeployItems.
-We describe the syntax of the `deletionGroups` in a sequence of examples, before we give the general scheme.
+## Custom Deletion Behaviour
 
-##### Example: default behaviour
+### Basics
 
-If you are happy with the above default behaviour, you need not specify the groups at all. However, the section
-`deletionGroups` in the DeployItem below would have the same effect:
+To change the deletion behaviour of a DeployItem, you could specify your own custom deletion groups. A deletion group describes
+a set of k8s objects which should be deleted. The deletion groups are defined as a list and one deletion group after 
+the other is processed. Thereby again, all objects of a deletion group must be gone before the deletion of the next 
+deletion group starts and this is tried until all objects of all deletion groups are gone (SUCCESS) or the timeout comes 
+into place (FAILED). If you have specified your own deletion groups, the default deletion behaviour is completely disabled.
+
+Custom deletion groups are defined in the section `deletionGroups` as shown below:
 
 ```yaml
 deployItems:
@@ -73,15 +71,37 @@ deployItems:
       kind: ProviderConfiguration
       ...
       deletionGroups:
-        - predefinedResourceGroup: namespaced-resources
-        - predefinedResourceGroup: cluster-scoped-resources     # does not include the crds
-        - predefinedResourceGroup: crds
+      - <deletionGroup-1>
+      - <deletionGroup-2>
+      ...
 ```
 
-Note that you can omit the section `deletionGroups` only if you accept the exact default behaviour. 
+### Predefined Resources
+
+The most simple specification for a deletion group is using predefined resource groups. The following example
+shows how to specify the default deletion behaviour with 3 such deletion groups:
+
+
+```yaml
+deployItems:
+  - name: my-deploy-item
+    type: landscaper.gardener.cloud/helm
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      ...
+      deletionGroups:
+        - predefinedResourceGroup: 
+            type: namespaced-resources
+        - predefinedResourceGroup:
+            type: cluster-scoped-resources     # does not include the crds
+        - predefinedResourceGroup: 
+            type: crds
+```
+
+Note that you can omit the section `deletionGroups` only if you accept the exact default behaviour.
 As soon as you want to deviate from the default behaviour, you have to specify the `deletionGroups` list with all
 items you want to be processed.
-
 
 ##### Example: skip deletion of CRDs
 
@@ -89,9 +109,59 @@ In this example, the deletion of CRDs is skipped:
 
 ```yaml
 deletionGroups:
-  - predefinedResourceGroup: namespaced-resources
-  - predefinedResourceGroup: cluster-scoped-resources
+  - predefinedResourceGroup: 
+      type: namespaced-resources
+  - predefinedResourceGroup: 
+      type: cluster-scoped-resources
 ```
+
+### Specific Resources
+
+If you want to specify a deletion group specifying the deletion of particular resource types you could use the
+following syntax where you specify the types of the objects which should be deleted in that deletion group:
+
+```yaml
+deletionGroups:
+  - resources:
+      - group:   ...
+        version: ...
+        kind:    ...
+      - group:   ...
+        version: ...
+        kind:    ...
+    ...
+```
+
+##### Example: delete certain resources first
+
+In this example, the ConfigMaps and Secrets of the chart are deleted first. Only when all of these have gone, the
+other resources will be deleted as usual.
+
+```yaml
+deletionGroups:
+  - resources:
+      - group:   ""
+        version: "v1"
+        kind:    "configmaps"
+      - group:   ""
+        version: "v1"
+        kind:    "secrets"
+  - predefinedResourceGroup: 
+      type: namespaced-resources
+  - predefinedResourceGroup: 
+      type: cluster-scoped-resources
+  - predefinedResourceGroup: 
+      type: crds
+```
+
+Every item of the list `deletionGroups` must contain exactly one of `resources` or `predefinedResourceGroup` to
+define a set of resources.
+
+### Force Delete
+
+Another important point is the possibility to force the deletion of particular objects by specifying
+the entry `forceDelete`. The meaning of the additional fields is that after a successful deletion call to all objects 
+of the deletion group, the finalizer of these objects are also removed.
 
 ##### Example: force-delete
 
@@ -108,32 +178,20 @@ deletionGroups:
   - predefinedResourceGroup: crds
 ```
 
-##### Example: delete certain resources first
+Of course `forceDelete` could also be applied for cluster group definitions for particular object types.
 
-In this example, the ConfigMaps and Secrets of the chart are deleted first. Only when all of these have gone, the
-other resources will be deleted as usual.
+### Deleting all Resources
 
-Every item of the list `deletionGroups` must contain exactly one of `resources` or `predefinedResourceGroup` to
-define a set of resources.
+In the current deletion process only objects deployed by the chart are removed. This is also the default behavaviour
+for the new approach. 
 
-```yaml
-deletionGroups:
-  - resources:
-      - group:   ""
-        version: "v1"
-        kind:    "configmaps"
-      - group:   ""
-        version: "v1"
-        kind:    "secrets"
-  - predefinedResourceGroup: namespaced-resources
-  - predefinedResourceGroup: cluster-scoped-resources
-  - predefinedResourceGroup: crds
-```
+You can change this behaviour by specifying `seletor.all=true` and all objects of that type are removed. We could later 
+extend the selector by rules for namespaces, labels, object names etc.
 
 ##### Example: delete resources outside the chart
 
-In this example, all custom resources of a certain group-version-kind are deleted in the beginning. Because of the 
-selector `all: true`, all resources of that group-version-kind are deleted, regardless whether they were deployed by 
+In this example, all custom resources of a certain group-version-kind are deleted in the beginning. Because of the
+selector `all: true`, all resources of that group-version-kind are deleted, regardless whether they were deployed by
 the chart or not.
 
 ```yaml
@@ -153,7 +211,8 @@ deletionGroups:
 
 ```yaml
 deletionGroups:
-  - predefinedResourceGroup: ( "namespaced-resources" | "cluster-scoped-resources" | "crds" )
+  - predefinedResourceGroup: 
+      type: ( "namespaced-resources" | "cluster-scoped-resources" | "crds" )
     resources:
       - group:   ...
         version: ...
@@ -166,180 +225,24 @@ deletionGroups:
 
 The field `deletionGroups` is a list. Its items have the following fields:
 
-- **predefinedResourceGroup:** this field is optional, but exactly one of `resources` or `predefinedResourceGroup` must 
-be set. The field has type string. The allowed values are:  
-  - `namespaced-resources`  
-  - `cluster-scoped-resources`  
-  - `crds`  
+- **predefinedResourceGroup:** this field is optional, but exactly one of `resources` or `predefinedResourceGroup` must
+  be set. The field has type field with the allowed values:
+    - `namespaced-resources`
+    - `cluster-scoped-resources`
+    - `crds`
 
 - **resources:** this field is optional, but exactly one of `resources` or `predefinedResourceGroup` must be set.
-The field is a list. Each item must have fields `group`, `version`, `kind` to specify a type of resources. 
-Optionally, a `selector` can be specified; currently, only the selector `all: true` is supported to indicate that
-resources should be deleted even if they were not deployed by the chart.  
+  The field is a list. Each item must have fields `group`, `version`, `kind` to specify a type of resources.
+  Optionally, a `selector` can be specified; currently, only the selector `all: true` is supported to indicate that
+  resources should be deleted even if they were not deployed by the chart.
 
-- **force-delete:** this field is optional. It is an object with field `enabled: (true | false )`.  
-
-
-
-> Maybe we need a field `excludedResources` to express something like: all namespaced resources except configmaps.
+- **force-delete:** this field is optional. It is an object with field `enabled: (true | false )`.
 
 
----
 
-### New Solution
+> Maybe later we need a field `excludedResources` to express something like: all namespaced resources except configmaps.
 
-We propose the following solution to have more control over the deletion process.
 
-The basic order of deleting the deployed manifests remains the same as before (deletionRank is specified below):
+## Open questions: 
 
-- Namespaced objects deployed by the Chart (deletionRank=100)
-- Not namespaced objects deployed by the Chart (except CRDs) (deletionRank=200)
-- CRDs deployed by the Chart (deletionRank=300)
-
-The deletion continues only with the next object group if all objects from the groups before are gone. This is different
-to the current approach.
-
-Each of these standard groups of objects have a particular deletionRank which determines the deletion order. To change 
-the deletion order of particular resources you could overwrite their default deletionRank in the specification of a 
-DeployItem as shown next:
-
-```
-deployItem:
-...
-  - deletionOrderRules:
-    - deletionRank: <some integer number>
-      types:
-        - group: ...
-          version: ...
-          kind: ... 
-```
-
-By such a deletion order rule, the objects specified get the new deletionRank of the rule, and are deleted after all 
-other objects with a lower deletionRank but before those with a higher deletionRank. Thereby, the deletion of objects 
-with higher rankings is only continued if all objects with a deletionRank lower or equal to the deletionRank, specified 
-in the rule, are gone.
-
-In the current deletion process only objects deployed by the chart are removed. If you specify `seletor.all=true`
-all objects of that type are removed. We could later extend the selector by rules for namespaces, labels, object names 
-etc. 
-
-```
-deployItem:
-...
-  - deletionOrderRules:
-    - deletionRank: <some integer number>
-      types:
-        - group: ...
-          version: ...
-          kind: ...
-          selector: # optional
-            all: true 
-```
-
-Another important point is the possibility to force the deletion of particular objects by specifying
-the entry `forceDelete`.
-
-```
-deployItem:
-...
-  - deletionOrderRules:
-    - deletionRank: <some integer number>
-      types:
-        - group: ...
-      forceDelete: # optional
-        enabled: <true/false>
-```
-
-The meaning of the additional fields is that after a successful deletion call to all objects of the deletionRank, 
-the finalizer of these objects are also removed.
-
-Of course, it is also possible to specify forced cleanup for the standard groups, e.g. the following
-example introduces such a rule for the CRs of CRDs specified in the Chart, which have the default deletionRank of 100
-200 or 300. You see that the types section is not allowed and therefore skipped in this case. 
-
-```
-deployItem:
-...
-  - deletionOrderRules:
-    - deletionRank: 100
-      forceDelete: # optional
-        enabled: <true/false>
-```
-
-If you do not specify a deletion rule for the default deletionRank of 100, 200 or 300, default deletion rules are 
-automatically added for the missing ones, which have the following form with the meaning that all objects of the 
-included type deployed by the chart has to be deleted:
-
-```
-deployItem:
-...
-  - deletionOrderRules:
-    - deletionRank: <100, 200, or 300>
-```
-
-It is required that all rules must have a different deletionRank!
-
-#### How is a set of deletionOrderRules processed?
-
-Assume you have the rules R1 to Rn. This set also includes all default deletion rules. The rules are sorted increasingly
-according to their deletionRank. Then one rule after the other is processed and the respective objects are deleted.
-
-#### Example
-
-The following example specifies the following rules:
-
-- First delete all config maps, including those not deployed by the chart
-- Next delete all secrets including their finalizer deployed by the chart
-- Next delete all CRs of group/version/kind=g1/v1/k1
-- Next delete all CRs deployed by the chart of group/version/kind=g2/v2/k2
-- Next delete all namespaced objects deployed 
-- Next delete all namespaces deployed by the chart
-- Next delete all not namespaced objects deployed by the chart
-- Next delete CRDs deployed by the chart
-
-```
-deployItem:
-...
-  - deletionOrderRules:
-  
-    - deletionRank: 50 
-      types:
-      - group: ""
-        version: v1
-        kind: configmap
-        selector: 
-          all: true 
-          
-    - deletionRank: 51
-      types:
-      - group: ""
-        version: v1
-        kind: secret
-      forceDelete: 
-        enabled: true
-        
-    - deletionRank: 52
-      types:
-      - group: g1
-        version: v1
-        kind: k1
-        selector: 
-          all: true 
-          
-    - deletionRank: 53
-      types:
-      - group: g2
-        version: v2
-        kind: k3
-        
-    - deletionRank: 150 # rank higher than the namespaced objects
-      types:
-      - group: 
-        version: v1
-        kind: namespace
-
-```
-
-Open questions: 
-- How to handle different CRs versions of one CRD?
 - How to handle deletions in Chart upgrades?
