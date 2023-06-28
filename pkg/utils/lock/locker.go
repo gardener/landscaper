@@ -8,20 +8,26 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
 const isEnabled = true
 
 const (
-	KeyMyPodName    = "myPodName"
-	KeyOtherPodName = "otherPodName"
+	KeyMyPodName = "myPodName"
+	keyNamespace = "lockNamespace"
+
+	KindDeployItem = "DeployItem"
+
+	cleanupInterval = time.Minute
 )
 
 type Locker struct {
@@ -47,7 +53,7 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object, kind string) (*lsv
 
 	syncObject, err := l.getSyncObject(ctx, obj)
 	if err != nil {
-		lsError := lserrors.NewWrappedError(err, op, "resolveSecret", "error getting sync object")
+		lsError := lserrors.NewWrappedError(err, op, "resolveSecret", "error getting syncobject")
 		return nil, lsError
 	}
 
@@ -184,6 +190,86 @@ func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
 
 		log.Error(err, "locker: unable to get pod")
 		return false, fmt.Errorf("locker: unable to get pod %s: %w", podName, err)
+	}
+
+	return true, nil
+}
+
+func (l *Locker) StartPeriodicalSyncObjectCleanup(ctx context.Context) {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+	log.Info("starting periodical syncobject cleanup")
+
+	wait.UntilWithContext(ctx, l.cleanupSyncObjects, cleanupInterval)
+}
+
+func (l *Locker) cleanupSyncObjects(ctx context.Context) {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+	log.Info("starting syncobject cleanup")
+
+	namespaces := &v1.NamespaceList{}
+	if err := l.lsClient.List(ctx, namespaces); err != nil {
+		log.Error(err, "locker: failed to list namespaces")
+		return
+	}
+
+	for _, namespace := range namespaces.Items {
+		syncObjects := &lsv1alpha1.SyncObjectList{}
+		if err := l.lsClient.List(ctx, syncObjects, client.InNamespace(namespace.Name)); err != nil {
+			log.Error(err, "locker: failed to list syncobjects in namespace", keyNamespace, namespace.Name)
+			continue
+		}
+
+		for _, syncObject := range syncObjects.Items {
+			l.cleanupSyncObject(ctx, &syncObject)
+		}
+	}
+}
+
+func (l *Locker) cleanupSyncObject(ctx context.Context, syncObject *lsv1alpha1.SyncObject) {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+
+	exists, err := l.existsResource(ctx, syncObject)
+	if err != nil {
+		return
+	}
+
+	if exists {
+		return
+	}
+
+	if err := l.lsClient.Delete(ctx, syncObject); err != nil {
+		log.Error(err, "locker: cleanup of syncobject failed")
+		return
+	}
+
+	log.Info("locker: cleanup of syncobject done")
+}
+
+func (l *Locker) existsResource(ctx context.Context, syncObject *lsv1alpha1.SyncObject) (bool, error) {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+
+	var resource client.Object
+
+	switch syncObject.Spec.Kind {
+	case KindDeployItem:
+		resource = &lsv1alpha1.DeployItem{}
+	default:
+		log.Error(nil, "locker: unsupported kind", lc.KeyResourceKind, syncObject.Spec.Kind)
+		return false, fmt.Errorf("locker: unsupported kind %s", syncObject.Spec.Kind)
+	}
+
+	resourceKey := client.ObjectKey{
+		Namespace: syncObject.Namespace,
+		Name:      syncObject.Spec.Name,
+	}
+
+	if err := l.hostClient.Get(ctx, resourceKey, resource); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		log.Error(err, "locker: unable to check existence of locked resource")
+		return false, err
 	}
 
 	return true, nil
