@@ -36,11 +36,11 @@ func NewLocker(lsClient, hostClient client.Client) *Locker {
 	}
 }
 
-func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, lserrors.LsError) {
+func (l *Locker) Lock(ctx context.Context, obj client.Object) (*lsv1alpha1.SyncObject, lserrors.LsError) {
 	op := "Locker.Lock"
 
 	if !isEnabled {
-		return true, nil
+		return &lsv1alpha1.SyncObject{}, nil
 	}
 
 	log, ctx := logging.FromContextOrNew(ctx, nil, KeyMyPodName, utils.GetCurrentPodName())
@@ -48,7 +48,7 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, lserrors.Ls
 	syncObject, err := l.getSyncObject(ctx, obj)
 	if err != nil {
 		lsError := lserrors.NewWrappedError(err, op, "resolveSecret", "error getting sync object")
-		return false, lsError
+		return nil, lsError
 	}
 
 	if syncObject == nil {
@@ -58,23 +58,23 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, lserrors.Ls
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// someone else was faster
-				return false, nil
+				return nil, nil
 			}
 
 			msg := "locking: unable to create syncobject"
 			log.Error(err, msg)
 			lsError := lserrors.NewWrappedError(err, op, "createSyncObject", msg)
-			return false, lsError
+			return nil, lsError
 		}
 
 		// we have locked the object
 		log.Info("locking: lock created")
-		return true, nil
+		return syncObject, nil
 	}
 
 	if syncObject.Spec.PodName == utils.GetCurrentPodName() {
 		log.Info("locking: object is already locked by this pod")
-		return true, nil
+		return syncObject, nil
 	}
 
 	// check if syncObject.Spec.PodName contains the name of an existing pod
@@ -82,12 +82,12 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, lserrors.Ls
 	podExists, err := l.existsPod(ctx, syncObject.Spec.PodName)
 	if err != nil {
 		lsError := lserrors.NewWrappedError(err, op, "checkPodExists", "error checking if pod exists")
-		return false, lsError
+		return nil, lsError
 	}
 
 	if podExists {
 		// the object is locked by another pod which indeed exists
-		return false, nil
+		return nil, nil
 	}
 
 	// now we can try to take over the lock
@@ -96,50 +96,35 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, lserrors.Ls
 	if err := l.lsClient.Update(ctx, syncObject); err != nil {
 		if apierrors.IsConflict(err) {
 			// another pod has taken over the lock faster
-			return false, nil
+			return nil, nil
 		}
 
 		msg := "locker: unable to take over lock"
 		log.Error(err, msg)
 		lsError := lserrors.NewWrappedError(err, op, "takeOverLock", msg)
-		return false, lsError
+		return nil, lsError
 	}
 
 	log.Info("locker: lock taken over")
-	return true, nil
+	return syncObject, nil
 }
 
-func (l *Locker) Unlock(ctx context.Context, obj client.Object) error {
+func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) {
 	if !isEnabled {
-		return nil
+		return
 	}
 
 	log, ctx := logging.FromContextOrNew(ctx, nil, KeyMyPodName, utils.GetCurrentPodName())
 
-	syncObject, err := l.getSyncObject(ctx, obj)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Error(err, "locking: tried to unlock an object that is not locked")
-			return nil
-		}
-
-		return err
-	}
-
-	if syncObject.Spec.PodName != utils.GetCurrentPodName() {
-		log.Error(err, "locking: tried to unlock an object that is locked by someone else")
-		return nil
-	}
-
 	syncObject.Spec.PodName = ""
 	syncObject.Spec.LastUpdateTime = metav1.Now()
 	if err := l.lsClient.Update(ctx, syncObject); err != nil {
-		log.Error(err, "locking: unable to unlock syncobject")
-		return fmt.Errorf("locking: unable to unlock syncobject: %w", err)
+		log.Error(err, "locker: unable to unlock syncobject")
+		return
 	}
 
-	log.Info("locking: object unlocked")
-	return nil
+	log.Info("locker: object unlocked")
+	return
 }
 
 func (l *Locker) NotLockedResult() (reconcile.Result, error) {

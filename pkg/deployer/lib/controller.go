@@ -190,17 +190,17 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	locker := lock.NewLocker(c.lsClient, c.hostClient)
 
-	locked, err := locker.Lock(ctx, di)
+	syncObject, err := locker.Lock(ctx, di)
 	if err != nil {
 		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
 
-	if !locked {
+	if syncObject == nil {
 		return locker.NotLockedResult()
 	}
 
 	defer func() {
-		_ = locker.Unlock(ctx, di)
+		locker.Unlock(ctx, syncObject, di)
 	}()
 
 	if hasTestReconcileAnnotation {
