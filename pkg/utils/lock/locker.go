@@ -71,7 +71,8 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, error) {
 		return true, nil
 	}
 
-	// another pod locks the object; check if that pod still exists
+	// check if syncObject.Spec.PodName contains the name of an existing pod
+	// returns also false if syncObject.Spec.PodName is empty
 	podExists, err := l.existsPod(ctx, syncObject.Spec.PodName)
 	if err != nil {
 		return false, err
@@ -82,7 +83,7 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, error) {
 		return false, nil
 	}
 
-	// we try to take over the lock
+	// now we can try to take over the lock
 	syncObject.Spec.PodName = utils.GetCurrentPodName()
 	syncObject.Spec.LastUpdateTime = metav1.Now()
 	if err := l.lsClient.Update(ctx, syncObject); err != nil {
@@ -95,7 +96,7 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, error) {
 		return false, fmt.Errorf("locker: unable to take over lock: %w", err)
 	}
 
-	log.Info("locking: lock taken over")
+	log.Info("locker: lock taken over")
 	return true, nil
 }
 
@@ -174,6 +175,10 @@ func (l *Locker) getSyncObject(ctx context.Context, obj client.Object) (*lsv1alp
 func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
+	if podName == "" {
+		return false, nil
+	}
+
 	podKey := client.ObjectKey{
 		Namespace: utils.GetCurrentPodNamespace(),
 		Name:      podName,
@@ -184,7 +189,7 @@ func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
 			return false, nil
 		}
 
-		log.Error(err, "locking: unable to create syncobject")
+		log.Error(err, "locker: unable to get pod")
 		return false, fmt.Errorf("locker: unable to get pod %s: %w", podName, err)
 	}
 
