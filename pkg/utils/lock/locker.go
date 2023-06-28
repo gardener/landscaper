@@ -18,7 +18,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
-const isEnabled = false
+const isEnabled = true
 
 const (
 	KeyMyPodName    = "myPodName"
