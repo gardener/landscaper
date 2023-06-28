@@ -7,6 +7,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"os"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -25,8 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/pkg/metrics"
-
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
@@ -127,11 +126,11 @@ func (o *Options) run(ctx context.Context) error {
 
 	metrics.RegisterMetrics(controllerruntimeMetrics.Registry)
 
-	store, err := blueprints.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
+	store, err := blueprint.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
 	if err != nil {
 		return fmt.Errorf("unable to setup blueprint store: %w", err)
 	}
-	blueprints.SetStore(store)
+	blueprint.SetStore(store)
 
 	if err := o.ensureCRDs(ctx, lsMgr); err != nil {
 		return err

@@ -34,3 +34,7 @@ func NewRepositoryType[I RepositorySpec](name string) RepositoryType {
 func NewRepositoryTypeByConverter[I RepositorySpec, V runtime.TypedObject](name string, converter runtime.Converter[I, V]) RepositoryType {
 	return runtime.NewVersionedTypedObjectTypeByConverter[RepositorySpec, I](name, converter)
 }
+
+func NewRepositoryTypeByFormatVersion(name string, fmt runtime.FormatVersion[RepositorySpec]) RepositoryType {
+	return runtime.NewVersionedTypedObjectTypeByFormatVersion[RepositorySpec](name, fmt)
+}

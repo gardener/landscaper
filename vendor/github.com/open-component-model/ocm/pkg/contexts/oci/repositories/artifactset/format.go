@@ -202,21 +202,24 @@ func SupportedFormats() []accessio.FileFormat {
 ////////////////////////////////////////////////////////////////////////////////
 
 func OpenFromBlob(acc accessobj.AccessMode, blob accessio.BlobAccess, opts ...accessio.Option) (*Object, error) {
+	return OpenFromDataAccess(acc, blob.MimeType(), blob, opts...)
+}
+
+func OpenFromDataAccess(acc accessobj.AccessMode, mime string, data accessio.DataAccess, opts ...accessio.Option) (*Object, error) {
 	o, err := accessio.AccessOptions(nil, opts...)
 	if err != nil {
 		return nil, err
 	}
 	if o.GetFile() != nil || o.GetReader() != nil {
-		return nil, errors.ErrInvalid("file or reader option nor possible for blob access")
+		return nil, errors.ErrInvalid("file or reader option not possible for blob access")
 	}
-	reader, err := blob.Reader()
+	reader, err := data.Reader()
 	if err != nil {
 		return nil, err
 	}
 	defer reader.Close()
 	o.SetReader(reader)
 	fmt := accessio.FormatTar
-	mime := blob.MimeType()
 
 	if mime2.IsGZip(mime) {
 		fmt = accessio.FormatTGZ
@@ -265,5 +268,5 @@ func (h *formatHandler) Create(path string, opts accessio.Options, mode vfs.File
 
 // WriteToFilesystem writes the current object to a filesystem.
 func (h *formatHandler) Write(obj *Object, path string, opts accessio.Options, mode vfs.FileMode) error {
-	return h.FormatHandler.Write(obj.base.Access(), path, opts, mode)
+	return h.FormatHandler.Write(obj.container.base.Access(), path, opts, mode)
 }

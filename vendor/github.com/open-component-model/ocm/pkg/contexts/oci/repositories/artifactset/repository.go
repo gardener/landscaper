@@ -11,34 +11,37 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
-type Repository struct {
-	ctx  cpi.Context
+type RepositoryImpl struct {
+	cpi.RepositoryImplBase
 	spec *RepositorySpec
 	arch *ArtifactSet
 }
 
-var _ cpi.Repository = (*Repository)(nil)
+var _ cpi.RepositoryImpl = (*RepositoryImpl)(nil)
 
-func NewRepository(ctx cpi.Context, s *RepositorySpec) (*Repository, error) {
+func NewRepository(ctx cpi.Context, s *RepositorySpec) (cpi.Repository, error) {
 	if s.PathFileSystem == nil {
 		s.PathFileSystem = vfsattr.Get(ctx)
 	}
-	r := &Repository{ctx, s, nil}
-	_, err := r.Open()
+	r := &RepositoryImpl{
+		RepositoryImplBase: cpi.NewRepositoryImplBase(ctx),
+		spec:               s,
+	}
+	_, err := r.open()
 	if err != nil {
 		return nil, err
 	}
-	return r, err
+	return cpi.NewRepository(r, "OCI artifactset"), nil
 }
 
-func (r *Repository) Get() *ArtifactSet {
+func (r *RepositoryImpl) Get() *ArtifactSet {
 	if r.arch != nil {
 		return r.arch
 	}
 	return nil
 }
 
-func (r *Repository) Open() (*ArtifactSet, error) {
+func (r *RepositoryImpl) open() (*ArtifactSet, error) {
 	a, err := Open(r.spec.AccessMode, r.spec.FilePath, 0o700, &Options{}, &r.spec.Options, accessio.PathFileSystem(r.spec.PathFileSystem))
 	if err != nil {
 		return nil, err
@@ -47,42 +50,38 @@ func (r *Repository) Open() (*ArtifactSet, error) {
 	return a, nil
 }
 
-func (r *Repository) GetContext() cpi.Context {
-	return r.ctx
-}
-
-func (r *Repository) GetSpecification() cpi.RepositorySpec {
+func (r *RepositoryImpl) GetSpecification() cpi.RepositorySpec {
 	return r.spec
 }
 
-func (r *Repository) NamespaceLister() cpi.NamespaceLister {
+func (r *RepositoryImpl) NamespaceLister() cpi.NamespaceLister {
 	return anonymous
 }
 
-func (r *Repository) ExistsArtifact(name string, ref string) (bool, error) {
+func (r *RepositoryImpl) ExistsArtifact(name string, ref string) (bool, error) {
 	if name != "" {
 		return false, nil
 	}
 	return r.arch.HasArtifact(ref)
 }
 
-func (r *Repository) LookupArtifact(name string, ref string) (cpi.ArtifactAccess, error) {
+func (r *RepositoryImpl) LookupArtifact(name string, ref string) (cpi.ArtifactAccess, error) {
 	if name != "" {
 		return nil, cpi.ErrUnknownArtifact(name, ref)
 	}
 	return r.arch.GetArtifact(ref)
 }
 
-func (r *Repository) LookupNamespace(name string) (cpi.NamespaceAccess, error) {
+func (r *RepositoryImpl) LookupNamespace(name string) (cpi.NamespaceAccess, error) {
 	if name != "" {
 		return nil, errors.ErrNotSupported("namespace", name)
 	}
-	return r.arch, nil
+	return r.arch.Dup()
 }
 
-func (r Repository) Close() error {
+func (r RepositoryImpl) Close() error {
 	if r.arch != nil {
-		r.arch.Close()
+		return r.arch.Close()
 	}
 	return nil
 }

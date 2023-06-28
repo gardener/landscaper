@@ -25,26 +25,32 @@ func init() {
 // Config describes a memory based repository interface.
 type Config struct {
 	runtime.ObjectVersionedType `json:",inline"`
-	Configurations              []*cpi.GenericConfig `json:"configurations"`
+	cpi.ConfigurationList       `json:",inline"`
+	Sets                        map[string]cpi.ConfigSet `json:"sets,omitempty"`
 }
 
-// NewConfigSpec creates a new memory ConfigSpec.
+// New creates a new memory ConfigSpec.
 func New() *Config {
 	return &Config{
 		ObjectVersionedType: runtime.NewVersionedTypedObject(ConfigType),
-		Configurations:      []*cpi.GenericConfig{},
+		ConfigurationList:   cpi.ConfigurationList{[]*cpi.GenericConfig{}},
+		Sets:                map[string]cpi.ConfigSet{},
 	}
 }
 
-func (c *Config) AddConfig(cfg cpi.Config) error {
-	g, err := cpi.ToGenericConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("unable to convert cpi config to generic: %w", err)
+func (c *Config) AddSet(name, desc string) {
+	set := c.Sets[name]
+	set.Description = desc
+	c.Sets[name] = set
+}
+
+func (c *Config) AddConfigToSet(name string, cfg cpi.Config) error {
+	set := c.Sets[name]
+	err := set.AddConfig(cfg)
+	if err == nil {
+		c.Sets[name] = set
 	}
-
-	c.Configurations = append(c.Configurations, g)
-
-	return nil
+	return err
 }
 
 func (c *Config) GetType() string {
@@ -53,6 +59,11 @@ func (c *Config) GetType() string {
 
 func (c *Config) ApplyTo(ctx cpi.Context, target interface{}) error {
 	if cctx, ok := target.(cpi.Context); ok {
+		for n, s := range c.Sets {
+			set := s
+			cctx.AddConfigSet(n, &set)
+		}
+
 		list := errors.ErrListf("applying generic config list")
 		for i, cfg := range c.Configurations {
 			sub := fmt.Sprintf("config entry %d", i)
@@ -60,12 +71,12 @@ func (c *Config) ApplyTo(ctx cpi.Context, target interface{}) error {
 		}
 		return list.Result()
 	}
-	return nil
+	return cpi.ErrNoContext(ConfigType)
 }
 
 const usage = `
 The config type <code>` + ConfigType + `</code> can be used to define a list
-of arbitrary configuration specifications:
+of arbitrary configuration specifications and named configuration sets:
 
 <pre>
     type: ` + ConfigType + `
@@ -73,5 +84,17 @@ of arbitrary configuration specifications:
       - type: &lt;any config type>
         ...
       ...
+    sets:
+       standard:
+          description: my selectable standard config
+          configurations:
+            - type: ...
+              ...
+            ...
 </pre>
+
+Configurations are directly applied. Configuration sets are
+just stored in the configuration context and can be applied
+on-demand. On the CLI, this can be done using the main command option
+<code>--config-set &lt;name></code>.
 `

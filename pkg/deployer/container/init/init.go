@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"os"
 	"path"
 	"path/filepath"
@@ -132,11 +133,11 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 	if providerConfig.Blueprint != nil {
 		log.Info("Getting blueprint content")
 		// setup a temporary blueprint store
-		store, err := blueprints.DefaultStore(memoryfs.New())
+		store, err := blueprint.DefaultStore(memoryfs.New())
 		if err != nil {
 			return fmt.Errorf("unable to setup default blueprint store: %w", err)
 		}
-		blueprints.SetStore(store)
+		blueprint.SetStore(store)
 		contentFS, err := projectionfs.New(fs, opts.ContentDirPath)
 		if err != nil {
 			return fmt.Errorf("unable to create projection filesystem for path %s: %w", opts.ContentDirPath, err)

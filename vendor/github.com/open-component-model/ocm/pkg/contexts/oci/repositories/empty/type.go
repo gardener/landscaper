@@ -6,6 +6,7 @@ package empty
 
 import (
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -50,5 +51,5 @@ func (a *RepositorySpec) UniformRepositorySpec() *cpi.UniformRepositorySpec {
 }
 
 func (a *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentials) (cpi.Repository, error) {
-	return ctx.GetAttributes().GetOrCreateAttribute(ATTR_REPOS, newRepository).(*Repository), nil
+	return ctx.GetAttributes().GetOrCreateAttribute(ATTR_REPOS, func(datacontext.Context) interface{} { return NewRepository(ctx) }).(cpi.Repository), nil
 }

@@ -14,10 +14,14 @@ import (
 // ReferencableCloser manages closable views to a basic closer.
 // If the last view is closed, the basic closer is finally closed.
 type ReferencableCloser interface {
-	RefMgmt
+	Allocatable
+	UnrefLast() error
+	IsClosed() bool
 
 	Closer() io.Closer
 	View(main ...bool) (CloserView, error)
+
+	WithName(name string) ReferencableCloser
 }
 
 type referencableCloser struct {
@@ -27,6 +31,11 @@ type referencableCloser struct {
 
 func NewRefCloser(closer io.Closer, unused ...bool) ReferencableCloser {
 	return &referencableCloser{RefMgmt: NewAllocatable(closer.Close, unused...), closer: closer}
+}
+
+func (r *referencableCloser) WithName(name string) ReferencableCloser {
+	r.RefMgmt.WithName(name)
+	return r
 }
 
 func (r *referencableCloser) Closer() io.Closer {
@@ -51,8 +60,33 @@ func (r *referencableCloser) View(main ...bool) (CloserView, error) {
 	return v, nil
 }
 
+type LazyMode interface {
+	Lazy()
+}
+
+func Lazy(o interface{}) bool {
+	if l, ok := o.(LazyMode); ok {
+		l.Lazy()
+		return true
+	}
+	return false
+}
+
+func CloseTemporary(c io.Closer) error {
+	if !Lazy(c) {
+		return errors.ErrNotSupported("lazy mode")
+	}
+	return c.Close()
+}
+
+func PropagateCloseTemporary(errp *error, c io.Closer) {
+	errors.PropagateError(errp, func() error { return CloseTemporary(c) })
+}
+
 type CloserView interface {
 	io.Closer
+	LazyMode
+
 	IsClosed() bool
 
 	View() (CloserView, error)
@@ -73,6 +107,10 @@ type view struct {
 }
 
 var _ CloserView = (*view)(nil)
+
+func (v *view) Lazy() {
+	v.main = false
+}
 
 func (v *view) Execute(f func() error) error {
 	v.lock.Lock()
@@ -102,11 +140,9 @@ func (v *view) Finalize() error {
 	}
 
 	if err := v.ref.UnrefLast(); err != nil {
-		return errors.ErrStillInUseWrap(errors.Wrapf(err, "unable to unref last: %w"))
+		return err
 	}
-
 	v.closed = true
-
 	return nil
 }
 

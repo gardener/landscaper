@@ -130,9 +130,7 @@ func (c *ComponentVersion) GetResource(name string, identity map[string]string) 
 		return nil, fmt.Errorf("there is more than one resource with name %s and extra identities %v", name, identity)
 	}
 
-	return &Resource{
-		resourceAccess: resources[0],
-	}, nil
+	return NewResource(resources[0]), nil
 }
 
 func (c *ComponentVersion) GetBlobResolver() (model.BlobResolver, error) {

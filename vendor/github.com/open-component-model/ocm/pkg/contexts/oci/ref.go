@@ -50,15 +50,10 @@ func ParseRepo(ref string) (UniformRepositorySpec, error) {
 	}, nil
 }
 
-// RefSpec is a go internal representation of a oci reference.
+// RefSpec is a go internal representation of an oci reference.
 type RefSpec struct {
-	UniformRepositorySpec
-	// Repository is the part of a reference without its hostname
-	Repository string `json:"repository"`
-	// +optional
-	Tag *string `json:"tag,omitempty"`
-	// +optional
-	Digest *digest.Digest `json:"digest,omitempty"`
+	UniformRepositorySpec `json:",inline"`
+	ArtSpec               `json:",inline"`
 }
 
 func pointer(b []byte) *string {
@@ -180,28 +175,6 @@ func (r *RefSpec) Name() string {
 	return r.UniformRepositorySpec.ComposeRef(r.Repository)
 }
 
-func (r *RefSpec) Version() string {
-	if r.Tag != nil {
-		return *r.Tag
-	}
-	if r.Digest != nil {
-		return "@" + string(*r.Digest)
-	}
-	return "latest"
-}
-
-func (r *RefSpec) IsRegistry() bool {
-	return r.Repository == ""
-}
-
-func (r *RefSpec) IsVersion() bool {
-	return r.Tag != nil || r.Digest != nil
-}
-
-func (r *RefSpec) IsTagged() bool {
-	return r.Tag != nil
-}
-
 func (r *RefSpec) String() string {
 	art := r.Repository
 	if r.Tag != nil {
@@ -267,15 +240,33 @@ func ParseArt(art string) (ArtSpec, error) {
 // ArtSpec is a go internal representation of a oci reference.
 type ArtSpec struct {
 	// Repository is the part of a reference without its hostname
-	Repository string
+	Repository string `json:"repository"`
 	// +optional
-	Tag *string
+	Tag *string `json:"tag,omitempty"`
 	// +optional
-	Digest *digest.Digest
+	Digest *digest.Digest `json:"digest,omitempty"`
+}
+
+func (r *ArtSpec) Version() string {
+	if r.Tag != nil {
+		return *r.Tag
+	}
+	if r.Digest != nil {
+		return "@" + string(*r.Digest)
+	}
+	return "latest"
+}
+
+func (r *ArtSpec) IsRegistry() bool {
+	return r.Repository == ""
 }
 
 func (r *ArtSpec) IsVersion() bool {
 	return r.Tag != nil || r.Digest != nil
+}
+
+func (r *ArtSpec) IsTagged() bool {
+	return r.Tag != nil
 }
 
 func (r *ArtSpec) Reference() string {

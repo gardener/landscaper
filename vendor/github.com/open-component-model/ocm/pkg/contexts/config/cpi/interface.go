@@ -24,9 +24,16 @@ type (
 	ConfigType       = internal.ConfigType
 	ConfigTypeScheme = internal.ConfigTypeScheme
 	GenericConfig    = internal.GenericConfig
+
+	ConfigSet         = internal.ConfigSet
+	ConfigurationList = internal.ConfigurationList
 )
 
 var DefaultContext = internal.DefaultContext
+
+func FromProvider(p ContextProvider) Context {
+	return internal.FromProvider(p)
+}
 
 func NewGenericConfig(data []byte, unmarshaler runtime.Unmarshaler) (Config, error) {
 	return internal.NewGenericConfig(data, unmarshaler)

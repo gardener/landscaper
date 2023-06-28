@@ -16,11 +16,11 @@ const ComponentDescriptorFileName = compdesc.ComponentDescriptorFileName
 // that are stored as tar.
 const ComponentDescriptorTarMimeType = "application/vnd.ocm.software.component-descriptor.v2+yaml+tar"
 
-// LegacyComponentDescriptorTarMimeType is the legacy mimetype for component-descriptor-blobs
+// Legacy2ComponentDescriptorTarMimeType is the legacy mimetype for component-descriptor-blobs
 // that are stored as tar.
 const (
-	LegacyComponentDescriptorTarMimeType  = "application/vnd.oci.gardener.cloud.cnudie.component-descriptor.config.v2+yaml+tar"
-	Legacy2ComponentDescriptorTarMimeType = "application/vnd.gardener.cloud.cnudie.component-descriptor.v2+yaml+tar"
+	LegacyComponentDescriptorTarMimeType  = "application/vnd.gardener.cloud.cnudie.component-descriptor.v2+yaml+tar"
+	Legacy2ComponentDescriptorTarMimeType = "application/vnd.oci.gardener.cloud.cnudie.component-descriptor.config.v2+yaml+tar"
 )
 
 // ComponentDescriptorJSONMimeType is the mimetype for component-descriptor-blobs
@@ -40,7 +40,7 @@ const (
 // ComponentDescriptorMimeType are the mimetypes for component-descriptor-blobs.
 var ComponentDescriptorMimeType = []string{
 	ComponentDescriptorTarMimeType,
-	LegacyComponentDescriptorTarMimeType,
+	Legacy2ComponentDescriptorTarMimeType,
 	ComponentDescriptorJSONMimeType,
 	LegacyComponentDescriptorJSONMimeType,
 }

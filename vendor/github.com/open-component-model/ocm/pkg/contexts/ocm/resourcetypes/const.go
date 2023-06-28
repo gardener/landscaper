@@ -18,6 +18,10 @@ const (
 	// HELM_CHART describes a helm chart, either stored as OCI artifact or as tar
 	// blob (tar media type).
 	HELM_CHART = "helmChart"
+	// BLUEPRINT describes a Gardener Landscaper blueprint which is an artifact used in its installations describing
+	// how to deploy a software component.
+	BLUEPRINT        = "landscaper.gardener.cloud/blueprint"
+	BLUEPRINT_LEGACY = "blueprint"
 	// BLOB describes any anonymous untyped blob data.
 	BLOB = "blob"
 	// FILESYSTEM describes a directory structure stored as archive (tar, tgz).

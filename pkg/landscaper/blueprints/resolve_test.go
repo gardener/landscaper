@@ -6,6 +6,7 @@ package blueprints_test
 
 import (
 	"context"
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"io"
 	"math/rand"
 
@@ -53,7 +54,9 @@ func (r dummyBlobResolver) Resolve(_ context.Context, _ types.Resource, writer i
 			return nil, err
 		}
 	}
-	return nil, nil
+	return &ctf.BlobInfo{
+		MediaType: r.mediaType,
+	}, nil
 }
 
 func (r dummyBlobResolver) CanResolve(resource types.Resource) bool {
@@ -75,9 +78,9 @@ var _ = Describe("Resolve", func() {
 		It("should resolve a blueprint from a blobresolver", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
-			blueprints.SetStore(store)
+			blueprint.SetStore(store)
 
 			memFs := memoryfs.New()
 			err = bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -119,17 +122,21 @@ var _ = Describe("Resolve", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			bp, err := blueprints.ResolveBlueprintFromComponentVersion(ctx, componentVersion, "my-bp")
+			resource, err := componentVersion.GetResource("my-bp", nil)
+			Expect(err).NotTo(HaveOccurred())
+			content, err := resource.GetBlobNew(ctx)
 			Expect(err).ToNot(HaveOccurred())
+			bp, ok := content.Resource.(*blueprints.Blueprint)
+			Expect(ok).To(BeTrue())
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
 		})
 
 		It("should resolve a blueprint from a blobresolver with a gzipped blueprint", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
-			blueprints.SetStore(store)
+			blueprint.SetStore(store)
 
 			memFs := memoryfs.New()
 			err = bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -171,17 +178,21 @@ var _ = Describe("Resolve", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			bp, err := blueprints.ResolveBlueprintFromComponentVersion(ctx, componentVersion, "my-bp")
+			resource, err := componentVersion.GetResource("my-bp", nil)
+			Expect(err).NotTo(HaveOccurred())
+			content, err := resource.GetBlobNew(ctx)
 			Expect(err).ToNot(HaveOccurred())
+			bp, ok := content.Resource.(*blueprints.Blueprint)
+			Expect(ok).To(BeTrue())
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
 		})
 
 		It("should throw an error if a gzipped blueprint is expected but a tar is given", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
-			blueprints.SetStore(store)
+			blueprint.SetStore(store)
 
 			memFs := memoryfs.New()
 			err = bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -223,16 +234,19 @@ var _ = Describe("Resolve", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = blueprints.ResolveBlueprintFromComponentVersion(ctx, componentVersion, "my-bp")
+			resource, err := componentVersion.GetResource("my-bp", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = resource.GetBlobNew(ctx)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should throw an error if a blueprint is received corrupted", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
-			blueprints.SetStore(store)
+			blueprint.SetStore(store)
 
 			mediaType := mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).String()
 			blobResolver := newDummyBlobResolver(mediaType)
@@ -265,16 +279,19 @@ var _ = Describe("Resolve", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = blueprints.ResolveBlueprintFromComponentVersion(ctx, componentVersion, "my-bp")
+			resource, err := componentVersion.GetResource("my-bp", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = resource.GetBlobNew(ctx)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should throw an error if a blueprint is received corrupted with gzipped media type", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
-			blueprints.SetStore(store)
+			blueprint.SetStore(store)
 
 			mediaType := mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()
 			blobResolver := newDummyBlobResolver(mediaType)
@@ -307,7 +324,10 @@ var _ = Describe("Resolve", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = blueprints.ResolveBlueprintFromComponentVersion(ctx, componentVersion, "my-bp")
+			resource, err := componentVersion.GetResource("my-bp", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = resource.GetBlobNew(ctx)
 			Expect(err).To(HaveOccurred())
 		})
 

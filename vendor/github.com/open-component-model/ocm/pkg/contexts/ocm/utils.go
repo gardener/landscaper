@@ -15,6 +15,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ctf"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -118,4 +119,8 @@ func IsUnknownRepositorySpec(s RepositorySpec) bool {
 
 func IsUnknownAccessSpec(s AccessSpec) bool {
 	return runtime.IsUnknown(s)
+}
+
+func WrapContextProvider(ctx LocalContextProvider) ContextProvider {
+	return internal.WrapContextProvider(ctx)
 }

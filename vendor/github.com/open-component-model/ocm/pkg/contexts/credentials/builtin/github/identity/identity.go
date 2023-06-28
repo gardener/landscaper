@@ -9,9 +9,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/open-component-model/ocm/cmds/ocm/pkg/listformat"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/identity/hostpath"
+	"github.com/open-component-model/ocm/pkg/listformat"
 )
 
 const CONSUMER_TYPE = "Github"

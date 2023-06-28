@@ -39,9 +39,16 @@ func NewConfigType[I Config](name string, usages ...string) ConfigType {
 	}
 }
 
-func NewRepositoryTypeByConverter[I Config, V runtime.TypedObject](name string, converter runtime.Converter[I, V], usages ...string) ConfigType {
+func NewConfigTypeyConverter[I Config, V runtime.TypedObject](name string, converter runtime.Converter[I, V], usages ...string) ConfigType {
 	return &configType{
 		VersionedTypedObjectType: runtime.NewVersionedTypedObjectTypeByConverter[Config, I](name, converter),
+		usage:                    strings.Join(usages, "\n"),
+	}
+}
+
+func NewConfigTypeByFormatVersion(name string, fmt runtime.FormatVersion[Config], usages ...string) ConfigType {
+	return &configType{
+		VersionedTypedObjectType: runtime.NewVersionedTypedObjectTypeByFormatVersion[Config](name, fmt),
 		usage:                    strings.Join(usages, "\n"),
 	}
 }

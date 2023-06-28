@@ -12,7 +12,6 @@ import (
 
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
-	"github.com/open-component-model/ocm/pkg/errors"
 )
 
 type dockerSource struct {
@@ -70,57 +69,4 @@ func (d *dockerSource) GetBlobData(digest digest.Digest) (int64, accessio.DataAc
 		}
 	}
 	return -1, nil, cpi.ErrBlobNotFound(digest)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type daemonArtifactProvider struct {
-	lock      sync.Mutex
-	namespace *NamespaceContainer
-	cache     accessio.BlobCache
-}
-
-var _ cpi.ArtifactProvider = (*daemonArtifactProvider)(nil)
-
-func (d *daemonArtifactProvider) IsClosed() bool {
-	d.lock.Lock()
-	defer d.lock.Unlock()
-	return d.cache == nil
-}
-
-func (d *daemonArtifactProvider) IsReadOnly() bool {
-	return d.namespace.IsReadOnly()
-}
-
-func (d *daemonArtifactProvider) GetBlobDescriptor(digest digest.Digest) *cpi.Descriptor {
-	return nil
-}
-
-func (d *daemonArtifactProvider) Close() error {
-	d.lock.Lock()
-	defer d.lock.Unlock()
-
-	if d.cache != nil {
-		err := d.cache.Unref()
-		d.cache = nil
-		return err
-	}
-	return nil
-}
-
-func (d *daemonArtifactProvider) GetBlobData(digest digest.Digest) (int64, cpi.DataAccess, error) {
-	return d.cache.GetBlobData(digest)
-}
-
-func (d *daemonArtifactProvider) GetArtifact(digest digest.Digest) (cpi.ArtifactAccess, error) {
-	return nil, errors.ErrInvalid()
-}
-
-func (d *daemonArtifactProvider) AddBlob(access cpi.BlobAccess) error {
-	_, _, err := d.cache.AddBlob(access)
-	return err
-}
-
-func (d *daemonArtifactProvider) AddArtifact(art cpi.Artifact) (access accessio.BlobAccess, err error) {
-	return nil, errors.ErrInvalid()
 }

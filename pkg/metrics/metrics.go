@@ -6,6 +6,7 @@ package metrics
 
 import (
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
+	"github.com/gardener/landscaper/pkg/components/cache"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -18,6 +19,7 @@ import (
 
 // RegisterMetrics allows to register all landscaper exposed metrics
 func RegisterMetrics(reg prometheus.Registerer) {
+	cache.RegisterStoreMetrics(reg)
 	blueprints.RegisterStoreMetrics(reg)
 	componentcliMetrics.RegisterCacheMetrics(reg)
 }

@@ -23,11 +23,11 @@ type localFilesystemBlobAccessMethod struct {
 
 var _ cpi.AccessMethod = (*localFilesystemBlobAccessMethod)(nil)
 
-func newLocalFilesystemBlobAccessMethod(a *localblob.AccessSpec, base support.ComponentVersionContainer) (cpi.AccessMethod, error) {
+func newLocalFilesystemBlobAccessMethod(a *localblob.AccessSpec, base support.ComponentVersionContainer) cpi.AccessMethod {
 	return &localFilesystemBlobAccessMethod{
 		spec: a,
 		base: base,
-	}, nil
+	}
 }
 
 func (m *localFilesystemBlobAccessMethod) AccessSpec() cpi.AccessSpec {

@@ -124,6 +124,10 @@ func (a *AccessSpec) AccessMethod(c cpi.ComponentVersionAccess) (cpi.AccessMetho
 	return newMethod(c, a)
 }
 
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVersionAccess) string {
+	return a.Commit
+}
+
 func (a *AccessSpec) createHTTPClient(token string) *http.Client {
 	if token != "" {
 		ts := oauth2.StaticTokenSource(

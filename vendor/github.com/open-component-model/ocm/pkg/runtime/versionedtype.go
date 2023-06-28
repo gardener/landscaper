@@ -7,6 +7,8 @@ package runtime
 import (
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
@@ -115,15 +117,21 @@ func NewVersionedTypedObjectType[T VersionedTypedObject, I VersionedTypedObject]
 func NewVersionedTypedObjectTypeByProtoConverter[T VersionedTypedObject, I VersionedTypedObject](name string, proto TypedObject, converter Converter[I, TypedObject]) VersionedTypedObjectType[T] {
 	return &versionedTypedObjectType[T]{
 		_VersionedObjectType: NewVersionedObjectType(name),
-		_FormatVersion:       NewConvertedVersion[T, I](proto, converter),
+		_FormatVersion:       NewConvertedVersionByProto[T, I](proto, converter),
 	}
 }
 
 func NewVersionedTypedObjectTypeByConverter[T VersionedTypedObject, I VersionedTypedObject, V TypedObject](name string, converter Converter[I, V]) VersionedTypedObjectType[T] {
-	var proto V
 	return &versionedTypedObjectType[T]{
 		_VersionedObjectType: NewVersionedObjectType(name),
-		_FormatVersion:       NewConvertedVersion[T, I, V](proto, converter),
+		_FormatVersion:       NewConvertedVersion[T, I, V](converter),
+	}
+}
+
+func NewVersionedTypedObjectTypeByFormatVersion[T VersionedTypedObject](name string, fmt FormatVersion[T]) VersionedTypedObjectType[T] {
+	return &versionedTypedObjectType[T]{
+		_VersionedObjectType: NewVersionedObjectType(name),
+		_FormatVersion:       fmt,
 	}
 }
 
@@ -154,22 +162,29 @@ type VersionedTypeRegistry[T VersionedTypedObject, R VersionedTypedObjectType[T]
 // TypeVersionScheme is used to register different versions for the same internal
 // representation of a versioned typed object.
 type TypeVersionScheme[T VersionedTypedObject, R VersionedTypedObjectType[T]] interface {
+	WithKindAliases(kind ...string) TypeVersionScheme[T, R]
 	Register(t R) error
 	versionedTypeRegistryBase[T, R]
 }
 
 type typeVersionScheme[T VersionedTypedObject, R VersionedTypedObjectType[T]] struct {
 	kind                            string
+	aliases                         []string
 	base                            VersionedTypeRegistry[T, R]
 	versionedTypeRegistryBase[T, R] // required for Goland, cannot handle overwrite of Register method with different signature
 }
 
 func NewTypeVersionScheme[T VersionedTypedObject, R VersionedTypedObjectType[T]](kind string, reg VersionedTypeRegistry[T, R]) TypeVersionScheme[T, R] {
-	return &typeVersionScheme[T, R]{kind, reg, reg}
+	return &typeVersionScheme[T, R]{kind, nil, reg, reg}
+}
+
+func (s *typeVersionScheme[T, R]) WithKindAliases(kind ...string) TypeVersionScheme[T, R] {
+	s.aliases = append(s.aliases, kind...)
+	return s
 }
 
 func (s *typeVersionScheme[T, R]) Register(t R) error {
-	if t.GetKind() != s.kind {
+	if t.GetKind() != s.kind && !slices.Contains(s.aliases, t.GetKind()) {
 		return errors.ErrInvalid("repository spec type", t.GetType(), "kind", s.kind)
 	}
 

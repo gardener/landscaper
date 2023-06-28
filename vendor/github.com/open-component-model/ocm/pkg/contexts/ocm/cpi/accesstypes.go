@@ -5,8 +5,6 @@
 package cpi
 
 import (
-	"strings"
-
 	"github.com/open-component-model/ocm/pkg/cobrautils/flagsets"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -27,10 +25,22 @@ func RegisterAccessTypeVersions(s AccessTypeVersionScheme) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+type AccessSpecFormatVersionRegistry = runtime.FormatVersionRegistry[AccessSpec]
+
+func NewAccessSpecFormatVersionRegistry() AccessSpecFormatVersionRegistry {
+	return runtime.NewFormatVersionRegistry[AccessSpec]()
+}
+
+func MustNewAccessSpecMultiFormatVersion(kind string, formats AccessSpecFormatVersionRegistry) runtime.FormatVersion[AccessSpec] {
+	return runtime.MustNewMultiFormatVersion[AccessSpec](kind, formats)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 type additionalTypeInfo interface {
 	ConfigOptionTypeSetHandler() flagsets.ConfigOptionTypeSetHandler
 	Description() string
-	Format(cli bool) string
+	Format() string
 }
 
 type accessType struct {
@@ -42,7 +52,7 @@ type accessType struct {
 
 var _ additionalTypeInfo = (*accessType)(nil)
 
-func newAccessSpecType(vt runtime.VersionedTypedObjectType[AccessSpec], opts []AccessSpecTypeOption) AccessType {
+func NewAccessSpecTypeByBaseType(vt runtime.VersionedTypedObjectType[AccessSpec], opts ...AccessSpecTypeOption) AccessType {
 	t := accessTypeTarget{&accessType{
 		VersionedTypedObjectType: vt,
 	}}
@@ -53,11 +63,15 @@ func newAccessSpecType(vt runtime.VersionedTypedObjectType[AccessSpec], opts []A
 }
 
 func NewAccessSpecType[I AccessSpec](name string, opts ...AccessSpecTypeOption) AccessType {
-	return newAccessSpecType(runtime.NewVersionedTypedObjectType[AccessSpec, I](name), opts)
+	return NewAccessSpecTypeByBaseType(runtime.NewVersionedTypedObjectType[AccessSpec, I](name), opts...)
 }
 
 func NewAccessSpecTypeByConverter[I AccessSpec, V runtime.VersionedTypedObject](name string, converter runtime.Converter[I, V], opts ...AccessSpecTypeOption) AccessType {
-	return newAccessSpecType(runtime.NewVersionedTypedObjectTypeByConverter[AccessSpec, I, V](name, converter), opts)
+	return NewAccessSpecTypeByBaseType(runtime.NewVersionedTypedObjectTypeByConverter[AccessSpec, I, V](name, converter), opts...)
+}
+
+func NewAccessSpecTypeByFormatVersion(name string, fmt runtime.FormatVersion[AccessSpec], opts ...AccessSpecTypeOption) AccessType {
+	return NewAccessSpecTypeByBaseType(runtime.NewVersionedTypedObjectTypeByFormatVersion[AccessSpec](name, fmt), opts...)
 }
 
 func (t *accessType) ConfigOptionTypeSetHandler() flagsets.ConfigOptionTypeSetHandler {
@@ -68,19 +82,8 @@ func (t *accessType) Description() string {
 	return t.description
 }
 
-func (t *accessType) Format(cli bool) string {
-	group := ""
-	if t.handler != nil && cli {
-		opts := t.handler.OptionTypeNames()
-		var names []string
-		if len(opts) > 0 {
-			for _, o := range opts {
-				names = append(names, "<code>--"+o+"</code>")
-			}
-			group = "\nOptions used to configure fields: " + strings.Join(names, ", ")
-		}
-	}
-	return t.format + group
+func (t *accessType) Format() string {
+	return t.format
 }
 
 ////////////////////////////////////////////////////////////////////////////////

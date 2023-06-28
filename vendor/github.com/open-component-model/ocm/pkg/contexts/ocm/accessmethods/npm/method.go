@@ -89,26 +89,42 @@ func (a *AccessSpec) AccessMethod(c cpi.ComponentVersionAccess) (cpi.AccessMetho
 	return newMethod(c, a)
 }
 
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVersionAccess) string {
+	meta, _ := a.getPackageMeta(access.GetContext())
+	if meta != nil {
+		return meta.Dist.Shasum
+	}
+	return ""
+}
+
+func (a *AccessSpec) getPackageMeta(ctx cpi.Context) (*meta, error) {
+	url := a.Registry + path.Join("/", a.Package, a.Version)
+	r, err := reader(url, vfsattr.Get(ctx))
+	if err != nil {
+		return nil, err
+	}
+	buf := &bytes.Buffer{}
+	_, err = io.Copy(buf, io.LimitReader(r, 200000))
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot get version metadata for %s", url)
+	}
+
+	var metadata meta
+
+	err = json.Unmarshal(buf.Bytes(), &metadata)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot unmarshal version metadata for %s", url)
+	}
+	return &metadata, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func newMethod(c cpi.ComponentVersionAccess, a *AccessSpec) (cpi.AccessMethod, error) {
 	factory := func() (accessio.BlobAccess, error) {
-		url := a.Registry + path.Join("/", a.Package, a.Version)
-		r, err := reader(url, vfsattr.Get(c.GetContext()))
+		meta, err := a.getPackageMeta(c.GetContext())
 		if err != nil {
 			return nil, err
-		}
-		buf := &bytes.Buffer{}
-		_, err = io.Copy(buf, io.LimitReader(r, 200000))
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot get version metadata for %s", url)
-		}
-
-		var meta meta
-
-		err = json.Unmarshal(buf.Bytes(), &meta)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot unmarshal version metadata for %s", url)
 		}
 
 		f := func() (io.ReadCloser, error) {

@@ -48,6 +48,13 @@ func NewRepositoryTypeByConverter[I RepositorySpec, V runtime.VersionedTypedObje
 	}
 }
 
+func NewRepositoryTypeByFormatVersion(name string, fmt runtime.FormatVersion[RepositorySpec], checker RepositoryAccessMethodChecker) RepositoryType {
+	return &repositoryType{
+		VersionedTypedObjectType: runtime.NewVersionedTypedObjectTypeByFormatVersion[RepositorySpec](name, fmt),
+		checker:                  checker,
+	}
+}
+
 func (t *repositoryType) LocalSupportForAccessSpec(ctx Context, a compdesc.AccessSpec) bool {
 	if t.checker != nil {
 		return t.checker(ctx, a)

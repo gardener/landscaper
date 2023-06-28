@@ -51,6 +51,18 @@ func ParseRepo(ref string) (UniformRepositorySpec, error) {
 	})
 }
 
+func ParseRepoToSpec(ctx Context, ref string) (RepositorySpec, error) {
+	uni, err := ParseRepo(ref)
+	if err != nil {
+		return nil, errors.ErrInvalidWrap(err, KIND_REPOSITORYSPEC, ref)
+	}
+	repoSpec, err := ctx.MapUniformRepositorySpec(&uni)
+	if err != nil {
+		return nil, errors.ErrInvalidWrap(err, KIND_REPOSITORYSPEC, ref)
+	}
+	return repoSpec, nil
+}
+
 // RefSpec is a go internal representation of a oci reference.
 type RefSpec struct {
 	UniformRepositorySpec

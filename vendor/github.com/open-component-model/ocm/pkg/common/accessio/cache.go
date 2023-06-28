@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -18,7 +20,12 @@ import (
 
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/logging"
 )
+
+var ALLOC_REALM = logging.DefineSubRealm("reference counting", "refcnt")
+
+var allocLog = logging.DynamicLogger(ALLOC_REALM)
 
 type Allocatable interface {
 	Ref() error
@@ -28,6 +35,9 @@ type Allocatable interface {
 type RefMgmt interface {
 	Allocatable
 	UnrefLast() error
+	IsClosed() bool
+
+	WithName(name string) RefMgmt
 }
 
 type refMgmt struct {
@@ -35,6 +45,7 @@ type refMgmt struct {
 	refcount int
 	closed   bool
 	cleanup  func() error
+	name     string
 }
 
 func NewAllocatable(cleanup func() error, unused ...bool) RefMgmt {
@@ -44,7 +55,18 @@ func NewAllocatable(cleanup func() error, unused ...bool) RefMgmt {
 			n = 0
 		}
 	}
-	return &refMgmt{refcount: n, cleanup: cleanup}
+	return &refMgmt{refcount: n, cleanup: cleanup, name: "object"}
+}
+
+func (c *refMgmt) WithName(name string) RefMgmt {
+	c.name = name
+	return c
+}
+
+func (c *refMgmt) IsClosed() bool {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	return c.closed
 }
 
 func (c *refMgmt) Ref() error {
@@ -54,6 +76,7 @@ func (c *refMgmt) Ref() error {
 		return ErrClosed
 	}
 	c.refcount++
+	allocLog.Trace("ref", "name", c.name, "refcnt", c.refcount)
 	return nil
 }
 
@@ -67,6 +90,7 @@ func (c *refMgmt) Unref() error {
 	var err error
 
 	c.refcount--
+	allocLog.Trace("unref", "name", c.name, "refcnt", c.refcount)
 	if c.refcount <= 0 {
 		if c.cleanup != nil {
 			err = c.cleanup()
@@ -76,7 +100,7 @@ func (c *refMgmt) Unref() error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("unable to unref: %w", err)
+		return fmt.Errorf("unable to unref %s: %w", c.name, err)
 	}
 
 	return nil
@@ -90,12 +114,13 @@ func (c *refMgmt) UnrefLast() error {
 	}
 
 	if c.refcount > 1 {
-		return errors.Newf("object still in use: %d reference(s) pending", c.refcount)
+		return errors.ErrStillInUseWrap(errors.Newf("%d reference(s) pending", c.refcount), c.name)
 	}
 
 	var err error
 
 	c.refcount--
+	allocLog.Trace("unref last", "name", c.name, "refcnt", c.refcount)
 	if c.refcount <= 0 {
 		if c.cleanup != nil {
 			err = c.cleanup()
@@ -105,7 +130,7 @@ func (c *refMgmt) UnrefLast() error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("unable to unref last: %w", err)
+		return errors.Wrapf(err, "unable to unref last %s ref", c.name)
 	}
 
 	return nil
@@ -132,6 +157,15 @@ type RootedCache interface {
 	Root() (string, vfs.FileSystem)
 }
 
+type CleanupCache interface {
+	// Cleanup can be implemented to offer a cache reorg.
+	// It returns the number and size of
+	//	- handled entries (cnt, size)
+	//	- not handled entries (ncnt, nsize)
+	//	- failing entries (fcnt, fsize)
+	Cleanup(p common.Printer, before *time.Time, dryrun bool) (cnt int, ncnt int, fcnt int, size int64, nsize int64, fsize int64, err error)
+}
+
 type BlobCache interface {
 	BlobSource
 	BlobSink
@@ -148,6 +182,12 @@ var (
 	_ sync.Locker = (*blobCache)(nil)
 	_ RootedCache = (*blobCache)(nil)
 )
+
+// ACCESS_SUFFIX is the suffix of an additional blob related
+// file used to track the last access time by its modification time,
+// because Go does not support a platform independent way to access the
+// last access time attribute of a filesystem.
+const ACCESS_SUFFIX = ".acc"
 
 func NewDefaultBlobCache(fss ...vfs.FileSystem) (BlobCache, error) {
 	var err error
@@ -190,6 +230,61 @@ func (c *blobCache) Unlock() {
 	c.lock.Unlock()
 }
 
+func (c *blobCache) Cleanup(p common.Printer, before *time.Time, dryrun bool) (cnt int, ncnt int, fcnt int, size int64, nsize int64, fsize int64, err error) {
+	c.Lock()
+	defer c.Unlock()
+
+	if p == nil {
+		p = common.NewPrinter(nil)
+	}
+	path, fs := c.Root()
+
+	entries, err := vfs.ReadDir(fs, path)
+	if err != nil {
+		return 0, 0, 0, 0, 0, 0, err
+	}
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ACCESS_SUFFIX) {
+			continue
+		}
+		base := vfs.Join(fs, path, e.Name())
+		if before != nil && !before.IsZero() {
+			fi, err := fs.Stat(base + ACCESS_SUFFIX)
+			if err != nil {
+				if !vfs.IsErrNotExist(err) {
+					if p != nil {
+						p.Printf("cannot stat %q: %s", e.Name(), err)
+					}
+					fcnt++
+					fsize += e.Size()
+					continue
+				}
+			} else {
+				if fi.ModTime().After(*before) {
+					ncnt++
+					nsize += e.Size()
+					continue
+				}
+			}
+		}
+		if !dryrun {
+			err := fs.RemoveAll(base)
+			if err != nil {
+				if p != nil {
+					p.Printf("cannot delete %q: %s", e.Name(), err)
+				}
+				fcnt++
+				fsize += e.Size()
+				continue
+			}
+			fs.RemoveAll(base + ACCESS_SUFFIX)
+		}
+		cnt++
+		size += e.Size()
+	}
+	return cnt, ncnt, fcnt, size, nsize, fsize, nil
+}
+
 func (c *blobCache) cleanup() error {
 	return vfs.Cleanup(c.cache)
 }
@@ -204,6 +299,9 @@ func (c *blobCache) GetBlobData(digest digest.Digest) (int64, DataAccess, error)
 		path := common.DigestToFileName(digest)
 		fi, err := c.cache.Stat(path)
 		if err == nil {
+			vfs.WriteFile(c.cache, path+ACCESS_SUFFIX, []byte{}, 0o600)
+			// now := time.Now()
+			// c.cache.Chtimes(path+ACCESS_SUFFIX, now, now)
 			return fi.Size(), DataAccessForFile(c.cache, path), nil
 		}
 		if os.IsNotExist(err) {
@@ -272,6 +370,7 @@ func (c *blobCache) AddBlob(blob BlobAccess) (int64, digest.Digest, error) {
 		err = c.cache.Rename(tmp, target)
 	}
 	c.cache.Remove(tmp)
+	vfs.WriteFile(c.cache, target+ACCESS_SUFFIX, []byte{}, 0o600)
 	return size, digest, err
 }
 

@@ -135,7 +135,15 @@ func NewSimpleVersion[T VersionedTypedObject, I VersionedTypedObject]() FormatVe
 // Therefore, I must be subtype of T, which cannot be expressed in Go.
 // The converter must convert between the external version, specified by the given prototype and
 // the *internal* representation (type I) used to internally represent a set of variants as Go object.
-func NewConvertedVersion[T VersionedTypedObject, I VersionedTypedObject, V TypedObject](proto V, converter Converter[I, V]) FormatVersion[T] {
+func NewConvertedVersion[T VersionedTypedObject, I VersionedTypedObject, V TypedObject](converter Converter[I, V]) FormatVersion[T] {
+	var proto V
+	return &formatVersion[T, I, V]{
+		decoder:   MustNewDirectDecoder[V](proto),
+		converter: converter,
+	}
+}
+
+func NewConvertedVersionByProto[T VersionedTypedObject, I VersionedTypedObject, V TypedObject](proto V, converter Converter[I, V]) FormatVersion[T] {
 	return &formatVersion[T, I, V]{
 		decoder:   MustNewDirectDecoder[V](proto),
 		converter: converter,

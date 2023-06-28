@@ -11,6 +11,7 @@ import (
 	. "github.com/open-component-model/ocm/pkg/exception"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/mime"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
@@ -126,6 +127,9 @@ func (a *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
 }
 
 func (a *AccessSpec) GetMimeType() string {
+	if a.MediaType == "" {
+		return mime.MIME_OCTET
+	}
 	return a.MediaType
 }
 
@@ -135,6 +139,10 @@ func (a *AccessSpec) GetReferenceHint(cv cpi.ComponentVersionAccess) string {
 
 func (a *AccessSpec) AccessMethod(cv cpi.ComponentVersionAccess) (cpi.AccessMethod, error) {
 	return cv.AccessMethod(a)
+}
+
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(cv cpi.ComponentVersionAccess) string {
+	return cv.GetInexpensiveContentVersionIdentity(a)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

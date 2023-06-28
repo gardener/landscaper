@@ -4,6 +4,10 @@
 
 package flagsets
 
+import (
+	"strings"
+)
+
 // Config is a generic structured config stored in a string map.
 type Config = map[string]interface{}
 
@@ -57,4 +61,19 @@ func NewNopConfigHandler() ConfigHandler {
 
 func (c *nopConfigHandler) ApplyConfig(options ConfigOptions, config Config) error {
 	return nil
+}
+
+func FormatConfigOptions(handler ConfigOptionTypeSetHandler) string {
+	group := ""
+	if handler != nil {
+		opts := handler.OptionTypeNames()
+		var names []string
+		if len(opts) > 0 {
+			for _, o := range opts {
+				names = append(names, "<code>--"+o+"</code>")
+			}
+			group = "\nOptions used to configure fields: " + strings.Join(names, ", ") + "\n"
+		}
+	}
+	return group
 }

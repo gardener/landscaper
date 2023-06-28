@@ -60,7 +60,7 @@ func (b Builder) New(m ...datacontext.BuilderMode) Context {
 		if !ok && mode != datacontext.MODE_SHARED {
 			b.credentials = credentials.New(mode)
 		} else {
-			b.credentials = credentials.ForContext(ctx)
+			b.credentials = credentials.FromContext(ctx)
 		}
 	}
 	if b.reposcheme == nil {

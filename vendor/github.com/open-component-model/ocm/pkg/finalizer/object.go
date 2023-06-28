@@ -25,7 +25,10 @@ func (n *NumberRange) NextId() uint64 {
 	return n.id
 }
 
-var objectrange = NumberRange{}
+var (
+	lock         sync.Mutex
+	objectranges = map[string]*NumberRange{}
+)
 
 type ObjectIdentity string
 
@@ -34,7 +37,14 @@ func (i ObjectIdentity) String() string {
 }
 
 func NewObjectIdentity(kind string) ObjectIdentity {
-	return ObjectIdentity(fmt.Sprintf("%s/%d", kind, objectrange.NextId()))
+	lock.Lock()
+	defer lock.Unlock()
+	nr := objectranges[kind]
+	if nr == nil {
+		nr = &NumberRange{}
+		objectranges[kind] = nr
+	}
+	return ObjectIdentity(fmt.Sprintf("%s/%d", kind, nr.NextId()))
 }
 
 type RuntimeFinalizationRecoder struct {

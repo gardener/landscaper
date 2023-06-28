@@ -15,8 +15,8 @@ import (
 )
 
 type ImplementationRepositoryType struct {
-	ContextType    string
-	RepositoryType string
+	ContextType    string `json:"contextType,omitempty"`
+	RepositoryType string `json:"repositoryType,omitempty"`
 }
 
 func (t ImplementationRepositoryType) String() string {
@@ -96,8 +96,8 @@ func (m MultiBlobHandler) Swap(i, j int) {
 ////////////////////////////////////////////////////////////////////////////////
 
 type BlobHandlerOptions struct {
-	BlobHandlerKey
-	Priority int
+	BlobHandlerKey `json:",inline"`
+	Priority       int `json:"priority,omitempty"`
 }
 
 func NewBlobHandlerOptions(olist ...BlobHandlerOption) *BlobHandlerOptions {
@@ -135,9 +135,9 @@ func (o prio) ApplyBlobHandlerOptionTo(opts *BlobHandlerOptions) {
 
 // BlobHandlerKey is the registration key for BlobHandlers.
 type BlobHandlerKey struct {
-	ImplementationRepositoryType
-	ArtifactType string
-	MimeType     string
+	ImplementationRepositoryType `json:",inline"`
+	ArtifactType                 string `json:"artifactType,omitempty"`
+	MimeType                     string `json:"mimeType,omitempty"`
 }
 
 var _ BlobHandlerOption = BlobHandlerKey{}
@@ -420,7 +420,7 @@ func (r *blobHandlerRegistry) lookupHandler(key BlobHandlerKey) (BlobHandler, *h
 	if len(multi) == 0 {
 		return nil, r.cache
 	}
-	sort.Sort(multi)
+	sort.Stable(multi)
 	return multi, r.cache
 }
 

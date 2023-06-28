@@ -21,7 +21,7 @@ func NewFileSystemBlobAccess(access *accessobj.AccessObject) *FileSystemBlobAcce
 	return &FileSystemBlobAccess{accessobj.NewFileSystemBlobAccess(access)}
 }
 
-func (i *FileSystemBlobAccess) GetArtifact(access support.ArtifactSetContainerImpl, digest digest.Digest) (acc cpi.ArtifactAccess, err error) {
+func (i *FileSystemBlobAccess) GetArtifact(access support.NamespaceAccessImpl, digest digest.Digest) (acc cpi.ArtifactAccess, err error) {
 	v, err := access.View()
 	if err != nil {
 		return nil, err

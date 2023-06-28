@@ -9,6 +9,7 @@ import (
 
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/common/accessio/resource"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
@@ -18,7 +19,7 @@ type ComponentVersionResolver interface {
 	LookupComponentVersion(name string, version string) (ComponentVersionAccess, error)
 }
 
-type Repository interface {
+type RepositoryImpl interface {
 	GetContext() Context
 
 	GetSpecification() RepositorySpec
@@ -29,6 +30,12 @@ type Repository interface {
 	LookupComponent(name string) (ComponentAccess, error)
 
 	Close() error
+}
+
+type Repository interface {
+	resource.ResourceView[Repository]
+
+	RepositoryImpl
 }
 
 // ConsumerIdentityProvider is an interface for object requiring
@@ -42,17 +49,23 @@ type (
 	MimeType   = accessio.MimeType
 )
 
-type ComponentAccess interface {
+type ComponentAccessImpl interface {
 	GetContext() Context
 	GetName() string
 
 	ListVersions() ([]string, error)
 	LookupVersion(version string) (ComponentVersionAccess, error)
+	HasVersion(vers string) (bool, error)
 	AddVersion(ComponentVersionAccess) error
 	NewVersion(version string, overrides ...bool) (ComponentVersionAccess, error)
 
 	Close() error
-	Dup() (ComponentAccess, error)
+}
+
+type ComponentAccess interface {
+	resource.ResourceView[ComponentAccess]
+
+	ComponentAccessImpl
 }
 
 type (
@@ -78,7 +91,7 @@ type SourceAccess interface {
 	BaseAccess
 }
 
-type ComponentVersionAccess interface {
+type ComponentVersionAccessImpl interface {
 	common.VersionedElement
 
 	Repository() Repository
@@ -86,6 +99,21 @@ type ComponentVersionAccess interface {
 	GetContext() Context
 
 	GetDescriptor() *compdesc.ComponentDescriptor
+
+	SetResource(*ResourceMeta, compdesc.AccessSpec) error
+	SetSource(*SourceMeta, compdesc.AccessSpec) error
+
+	SetReference(ref *ComponentReference) error
+
+	DiscardChanges()
+
+	io.Closer
+}
+
+type ComponentVersionAccess interface {
+	resource.ResourceView[ComponentVersionAccess]
+
+	ComponentVersionAccessImpl
 
 	GetResources() []ResourceAccess
 	GetResource(meta metav1.Identity) (ResourceAccess, error)
@@ -104,6 +132,15 @@ type ComponentVersionAccess interface {
 	GetReferencesByIdentitySelectors(selectors ...compdesc.IdentitySelector) (compdesc.References, error)
 	GetReferencesByReferenceSelectors(selectors ...compdesc.ReferenceSelector) (compdesc.References, error)
 
+	// AddBlob adds a local blob and returns an appropriate local access spec.
+	AddBlob(blob BlobAccess, artType, refName string, global AccessSpec) (AccessSpec, error)
+
+	// AdjustResourceAccess is used to modify the access spec. The old and new one MUST refer to the same content.
+	AdjustResourceAccess(meta *ResourceMeta, acc compdesc.AccessSpec) error
+	SetResourceBlob(meta *ResourceMeta, blob BlobAccess, refname string, global AccessSpec) error
+	AdjustSourceAccess(meta *SourceMeta, acc compdesc.AccessSpec) error
+	SetSourceBlob(meta *SourceMeta, blob BlobAccess, refname string, global AccessSpec) error
+
 	// AccessMethod provides an access method implementation for
 	// an access spec. This might be a repository local implementation
 	// or a global one. It might be called by the AccessSpec method
@@ -115,25 +152,11 @@ type ComponentVersionAccess interface {
 	// not supported by the actual repository type.
 	AccessMethod(AccessSpec) (AccessMethod, error)
 
-	// AddBlob adds a local blob and returns an appropriate local access spec.
-	AddBlob(blob BlobAccess, artType, refName string, global AccessSpec) (AccessSpec, error)
-
-	SetResourceBlob(meta *ResourceMeta, blob BlobAccess, refname string, global AccessSpec) error
-	SetResource(*ResourceMeta, compdesc.AccessSpec) error
-	// AdjustResourceAccess is used to modify the access spec. The old and new one MUST refer to the same content.
-	AdjustResourceAccess(meta *ResourceMeta, acc compdesc.AccessSpec) error
-
-	SetSourceBlob(meta *SourceMeta, blob BlobAccess, refname string, global AccessSpec) error
-	SetSource(*SourceMeta, compdesc.AccessSpec) error
-
-	SetReference(ref *ComponentReference) error
-
-	DiscardChanges()
-
-	// Dup provides a separately closeable view to a component version access.
-	// If the actual instance is already closed, an error is returned.
-	Dup() (ComponentVersionAccess, error)
-	io.Closer
+	// GetInexpensiveContentVersionIdentity implements a method that attempts to provide an inexpensive identity for
+	// the specified artifact. Therefore, an identity that can be provided without requiring the entire object (e.g.
+	// calculating the digest from the bytes), which would defeat the purpose of caching.
+	// It follows the same contract as AccessMethod.
+	GetInexpensiveContentVersionIdentity(spec AccessSpec) string
 }
 
 // ComponentLister provides the optional repository list functionality of

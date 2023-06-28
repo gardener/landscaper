@@ -38,7 +38,11 @@ func DefaultContext() internal.Context {
 }
 
 func ForContext(ctx context.Context) Context {
-	return internal.ForContext(ctx)
+	return internal.FromContext(ctx)
+}
+
+func FromProvider(p ContextProvider) Context {
+	return internal.FromProvider(p)
 }
 
 func DefinedForContext(ctx context.Context) (Context, bool) {

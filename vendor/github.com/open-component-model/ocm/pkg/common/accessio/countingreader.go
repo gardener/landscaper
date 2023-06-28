@@ -29,3 +29,27 @@ func NewCountingReader(r io.Reader) *CountingReader {
 		count:  0,
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+type CountingWriter struct {
+	writer io.Writer
+	count  int64
+}
+
+func (w *CountingWriter) Size() int64 {
+	return w.count
+}
+
+func (w *CountingWriter) Write(buf []byte) (int, error) {
+	c, err := w.writer.Write(buf)
+	w.count += int64(c)
+	return c, err
+}
+
+func NewCountingWriter(w io.Writer) *CountingWriter {
+	return &CountingWriter{
+		writer: w,
+		count:  0,
+	}
+}

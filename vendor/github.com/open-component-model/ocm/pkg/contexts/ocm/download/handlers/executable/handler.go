@@ -21,10 +21,11 @@ import (
 type Handler struct{}
 
 func init() {
-	download.Register(resourcetypes.OCM_PLUGIN, mime.MIME_OCTET, &Handler{})
-	download.Register(resourcetypes.OCM_PLUGIN, mime.MIME_GZIP, &Handler{})
-	download.Register(resourcetypes.EXECUTABLE, mime.MIME_OCTET, &Handler{})
-	download.Register(resourcetypes.EXECUTABLE, mime.MIME_GZIP, &Handler{})
+	h := &Handler{}
+	download.Register(h, download.ForCombi(resourcetypes.OCM_PLUGIN, mime.MIME_OCTET))
+	download.Register(h, download.ForCombi(resourcetypes.OCM_PLUGIN, mime.MIME_GZIP))
+	download.Register(h, download.ForCombi(resourcetypes.EXECUTABLE, mime.MIME_OCTET))
+	download.Register(h, download.ForCombi(resourcetypes.EXECUTABLE, mime.MIME_GZIP))
 }
 
 func wrapErr(err error, racc cpi.ResourceAccess) error {
@@ -45,6 +46,9 @@ func (_ Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string
 	r, _, err := compression.AutoDecompress(rd)
 	if err != nil {
 		return true, "", err
+	}
+	if path == "" {
+		path = racc.Meta().GetName()
 	}
 	file, err := fs.OpenFile(path, vfs.O_TRUNC|vfs.O_CREATE|vfs.O_WRONLY, 0o660)
 	if err != nil {

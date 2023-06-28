@@ -25,21 +25,25 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg/componentmapping"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
-func NewState(mode accessobj.AccessMode, name, version string, access oci.ManifestAccess) (accessobj.State, error) {
-	return accessobj.NewState(mode, NewStateAccess(access), NewStateHandler(name, version))
+func NewState(mode accessobj.AccessMode, name, version string, access oci.ManifestAccess, compat ...bool) (accessobj.State, error) {
+	return accessobj.NewState(mode, NewStateAccess(access, compat...), NewStateHandler(name, version))
 }
 
 // StateAccess handles the component descriptor persistence in an OCI Manifest.
 type StateAccess struct {
-	access oci.ManifestAccess
+	access     oci.ManifestAccess
+	layerMedia string
+	compat     bool
 }
 
 var _ accessobj.StateAccess = (*StateAccess)(nil)
 
-func NewStateAccess(access oci.ManifestAccess) accessobj.StateAccess {
+func NewStateAccess(access oci.ManifestAccess, compat ...bool) accessobj.StateAccess {
 	return &StateAccess{
+		compat: utils.Optional(compat...),
 		access: access,
 	}
 }
@@ -77,10 +81,11 @@ func (s *StateAccess) get() (accessio.BlobAccess, error) {
 		componentmapping.LegacyComponentDescriptorJSONMimeType,
 		componentmapping.ComponentDescriptorYAMLMimeType,
 		componentmapping.LegacyComponentDescriptorYAMLMimeType:
+		s.layerMedia = ""
 		return s.access.GetBlob(config.ComponentDescriptorLayer.Digest)
 	case componentmapping.ComponentDescriptorTarMimeType,
-		componentmapping.Legacy2ComponentDescriptorTarMimeType,
-		componentmapping.LegacyComponentDescriptorTarMimeType:
+		componentmapping.LegacyComponentDescriptorTarMimeType,
+		componentmapping.Legacy2ComponentDescriptorTarMimeType:
 		d, err := s.access.GetBlob(config.ComponentDescriptorLayer.Digest)
 		if err != nil {
 			return nil, err
@@ -94,6 +99,7 @@ func (s *StateAccess) get() (accessio.BlobAccess, error) {
 		if err != nil {
 			return nil, err
 		}
+		s.layerMedia = config.ComponentDescriptorLayer.MediaType
 		return accessio.BlobAccessForData(componentmapping.ComponentDescriptorYAMLMimeType, data), nil
 	default:
 		return nil, errors.ErrInvalid("config mediatype", config.ComponentDescriptorLayer.MediaType)
@@ -143,11 +149,15 @@ func (s *StateAccess) Put(data []byte) error {
 	desc := s.access.GetDescriptor()
 	mediaType := desc.Config.MediaType
 	if mediaType == "" {
-		mediaType = componentmapping.ComponentDescriptorConfigMimeType
+		if s.compat {
+			mediaType = componentmapping.LegacyComponentDescriptorConfigMimeType
+		} else {
+			mediaType = componentmapping.ComponentDescriptorConfigMimeType
+		}
 		desc.Config.MediaType = mediaType
 	}
 
-	arch, err := s.writeComponentDescriptorFromTar(data)
+	arch, err := s.writeComponentDescriptorTar(data)
 	if err != nil {
 		return err
 	}
@@ -164,7 +174,8 @@ func (s *StateAccess) Put(data []byte) error {
 	if err != nil {
 		return err
 	}
-	configblob := accessio.BlobAccessForData(componentmapping.ComponentDescriptorConfigMimeType, configdata)
+	s.layerMedia = arch.MimeType()
+	configblob := accessio.BlobAccessForData(mediaType, configdata)
 	err = s.access.AddBlob(configblob)
 	if err != nil {
 		return err
@@ -178,9 +189,9 @@ func (s *StateAccess) Put(data []byte) error {
 	return nil
 }
 
-// readComponentDescriptorFromTar reads the component descriptor from a tar.
+// writeComponentDescriptorTar writes the component descriptor into a tar.
 // The component is expected to be inside the tar at "/component-descriptor.yaml".
-func (s *StateAccess) writeComponentDescriptorFromTar(data []byte) (cpi.BlobAccess, error) {
+func (s *StateAccess) writeComponentDescriptorTar(data []byte) (cpi.BlobAccess, error) {
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
 	err := tw.WriteHeader(&tar.Header{
@@ -189,6 +200,15 @@ func (s *StateAccess) writeComponentDescriptorFromTar(data []byte) (cpi.BlobAcce
 		Size:     int64(len(data)),
 		ModTime:  format.ModTime,
 	})
+
+	media := s.layerMedia
+	if media == "" {
+		if s.compat {
+			media = componentmapping.LegacyComponentDescriptorTarMimeType
+		} else {
+			media = componentmapping.ComponentDescriptorTarMimeType
+		}
+	}
 	if err != nil {
 		return nil, errors.Newf("unable to add component descriptor header: %s", err)
 	}
@@ -198,7 +218,7 @@ func (s *StateAccess) writeComponentDescriptorFromTar(data []byte) (cpi.BlobAcce
 	if err := tw.Close(); err != nil {
 		return nil, errors.Newf("unable to close tar writer: %s", err)
 	}
-	return accessio.BlobAccessForData(componentmapping.ComponentDescriptorTarMimeType, buf.Bytes()), nil
+	return accessio.BlobAccessForData(media, buf.Bytes()), nil
 }
 
 // ComponentDescriptorConfig is a Component-Descriptor OCI configuration that is used to store the reference to the

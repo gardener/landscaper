@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/generics"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
@@ -22,6 +23,7 @@ type HandlerConfig interface{}
 
 type HandlerRegistrationHandler[T any, O any] interface {
 	RegisterByName(handler string, target T, config HandlerConfig, opts ...O) (bool, error)
+	GetHandlers(T) HandlerInfos
 }
 
 type HandlerRegistrationRegistry[T any, O any] interface {
@@ -60,6 +62,10 @@ func (p NamePath) IsPrefixOf(o NamePath) bool {
 	return true
 }
 
+func (p NamePath) String() string {
+	return strings.Join(p, "/")
+}
+
 type RegistrationHandlerInfo[T any, O any] struct {
 	prefix  NamePath
 	handler HandlerRegistrationHandler[T, O]
@@ -79,6 +85,19 @@ func (i *RegistrationHandlerInfo[T, O]) RegisterByName(handler string, target T,
 		return false, nil
 	}
 	return i.handler.RegisterByName(strings.Join(path[len(i.prefix):], "/"), target, config, opts...)
+}
+
+func (i *RegistrationHandlerInfo[T, O]) GetHandlers(target T) HandlerInfos {
+	infos := i.handler.GetHandlers(target)
+	if len(infos) > 0 {
+		prefix := i.prefix.String()
+		if prefix != "" {
+			for i := range infos {
+				infos[i].Name = prefix + generics.Conditional(infos[i].Name == "", "", "/"+infos[i].Name)
+			}
+		}
+	}
+	return infos
 }
 
 type handlerRegistrationRegistry[T any, O any] struct {
@@ -151,4 +170,27 @@ func (c *handlerRegistrationRegistry[T, O]) RegisterByName(handler string, targe
 		return false, errlist.Result()
 	}
 	return false, fmt.Errorf("no registration handler found for %s", handler)
+}
+
+func (c *handlerRegistrationRegistry[T, O]) GetHandlers(target T) HandlerInfos {
+	infos := HandlerInfos{}
+
+	for _, h := range c.handlers {
+		infos = append(infos, h.GetHandlers(target)...)
+	}
+	if c.base != nil {
+		infos = append(infos, c.base.GetHandlers(target)...)
+	}
+
+	set := generics.Set[string]{}
+	i := 0
+	for i < len(infos) {
+		if set.Contains(infos[i].Name) {
+			infos = append(infos[:i], infos[i+1:]...)
+			continue
+		}
+		set.Add(infos[i].Name)
+		i++
+	}
+	return infos
 }

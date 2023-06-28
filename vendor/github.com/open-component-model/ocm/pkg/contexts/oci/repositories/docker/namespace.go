@@ -16,62 +16,65 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	"github.com/open-component-model/ocm/pkg/common/accessio"
-	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi/support"
+	"github.com/open-component-model/ocm/pkg/contexts/oci/internal"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
-type NamespaceContainer struct {
-	lock      sync.RWMutex
-	repo      *Repository
-	namespace string
-	cache     accessio.BlobCache
-	log       logging.Logger
+type blobHandler struct {
+	accessio.BlobCache
 }
 
-var (
-	_ cpi.ArtifactSetContainer = (*NamespaceContainer)(nil)
-	_ cpi.NamespaceAccess      = (*Namespace)(nil)
-)
+var _ support.BlobProvider = (*blobHandler)(nil)
 
-func NewNamespace(repo *Repository, name string) (*Namespace, error) {
-	cache, err := accessio.NewCascadedBlobCache(nil)
+func newBlobHandler(cache accessio.BlobCache) support.BlobProvider {
+	return &blobHandler{cache}
+}
+
+func (b blobHandler) AddBlob(access internal.BlobAccess) error {
+	_, _, err := b.BlobCache.AddBlob(access)
+	return err
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// namespaceContainer delegates functionality but blob access to an underlying
+// handler.
+// blob access is handled locally.
+type namespaceContainer struct {
+	*namespaceHandler
+	blobs support.BlobProvider
+}
+
+var _ support.NamespaceContainer = (*namespaceContainer)(nil)
+
+func newNamespaceContainer(handler *namespaceHandler, blobs support.BlobProvider) *namespaceContainer {
+	return &namespaceContainer{
+		namespaceHandler: handler,
+		blobs:            blobs,
+	}
+}
+
+func NewNamespace(repo *RepositoryImpl, name string) (cpi.NamespaceAccess, error) {
+	h, err := newNamespaceHandler(repo)
 	if err != nil {
 		return nil, err
 	}
-	n := &Namespace{
-		access: &NamespaceContainer{
-			repo:      repo,
-			namespace: name,
-			cache:     cache,
-			log:       repo.ctx.Logger(),
-		},
-	}
-	return n, nil
+	// initial container wrapper releases base cache with close of namespace
+	// container on last namespace ref.
+	// base cache has initial user count of 1.
+	return support.NewNamespaceAccess(name, newNamespaceContainer(h, h.blobs), repo, "docker namespace")
 }
 
-func (n *NamespaceContainer) GetNamepace() string {
-	return n.namespace
-}
-
-func (n *NamespaceContainer) IsReadOnly() bool {
-	return n.repo.IsReadOnly()
-}
-
-func (n *NamespaceContainer) IsClosed() bool {
-	n.lock.RLock()
-	defer n.lock.RUnlock()
-	return n.cache == nil
-}
-
-func (n *NamespaceContainer) Close() error {
+func (n *namespaceContainer) Close() error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
-	if n.cache != nil {
-		err := n.cache.Unref()
-		n.cache = nil
+	if n.blobs != nil {
+		err := n.blobs.Unref()
+		n.blobs = nil
 		if err != nil {
 			return fmt.Errorf("failed to unref: %w", err)
 		}
@@ -79,18 +82,61 @@ func (n *NamespaceContainer) Close() error {
 	return nil
 }
 
-func (n *NamespaceContainer) GetBlobDescriptor(digest digest.Digest) *cpi.Descriptor {
+func (n *namespaceContainer) GetBlobData(digest digest.Digest) (int64, cpi.DataAccess, error) {
+	return n.blobs.GetBlobData(digest)
+}
+
+func (n *namespaceContainer) AddBlob(blob cpi.BlobAccess) error {
+	if err := n.blobs.AddBlob(blob); err != nil {
+		return fmt.Errorf("failed to add blob to cache: %w", err)
+	}
+
 	return nil
 }
 
-func (n *NamespaceContainer) ListTags() ([]string, error) {
+////////////////////////////////////////////////////////////////////////////////
+
+type namespaceHandler struct {
+	impl  support.NamespaceAccessImpl
+	lock  sync.RWMutex
+	repo  *RepositoryImpl
+	blobs support.BlobProvider
+	log   logging.Logger
+}
+
+func newNamespaceHandler(repo *RepositoryImpl) (*namespaceHandler, error) {
+	cache, err := accessio.NewCascadedBlobCache(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &namespaceHandler{
+		repo:  repo,
+		blobs: newBlobHandler(cache),
+		log:   repo.GetContext().Logger(),
+	}, nil
+}
+
+func (n *namespaceHandler) SetImplementation(impl support.NamespaceAccessImpl) {
+	n.impl = impl
+}
+
+func (n *namespaceHandler) IsReadOnly() bool {
+	return n.repo.IsReadOnly()
+}
+
+func (n *namespaceContainer) GetBlobDescriptor(digest digest.Digest) *cpi.Descriptor {
+	return nil
+}
+
+func (n *namespaceHandler) ListTags() ([]string, error) {
 	opts := dockertypes.ImageListOptions{}
 	list, err := n.repo.client.ImageList(dummyContext, opts)
 	if err != nil {
 		return nil, err
 	}
 	var result []string
-	if n.namespace == "" {
+	if n.impl.GetNamespace() == "" {
 		for _, e := range list {
 			// ID is always the config digest
 			// filter images without a repo tag for empty namespace
@@ -102,7 +148,7 @@ func (n *NamespaceContainer) ListTags() ([]string, error) {
 			}
 		}
 	} else {
-		prefix := n.namespace + ":"
+		prefix := n.impl.GetNamespace() + ":"
 		for _, e := range list {
 			for _, t := range e.RepoTags {
 				if strings.HasPrefix(t, prefix) {
@@ -114,20 +160,8 @@ func (n *NamespaceContainer) ListTags() ([]string, error) {
 	return result, nil
 }
 
-func (n *NamespaceContainer) GetBlobData(digest digest.Digest) (int64, cpi.DataAccess, error) {
-	return n.cache.GetBlobData(digest)
-}
-
-func (n *NamespaceContainer) AddBlob(blob cpi.BlobAccess) error {
-	if _, _, err := n.cache.AddBlob(blob); err != nil {
-		return fmt.Errorf("failed to add blob to cache: %w", err)
-	}
-
-	return nil
-}
-
-func (n *NamespaceContainer) GetArtifact(vers string) (cpi.ArtifactAccess, error) {
-	ref, err := ParseRef(n.namespace, vers)
+func (n *namespaceHandler) GetArtifact(i support.NamespaceAccessImpl, vers string) (cpi.ArtifactAccess, error) {
+	ref, err := ParseRef(n.impl.GetNamespace(), vers)
 	if err != nil {
 		return nil, err
 	}
@@ -158,23 +192,35 @@ func (n *NamespaceContainer) GetArtifact(vers string) (cpi.ArtifactAccess, error
 		return nil, err
 	}
 
-	cache, err := accessio.NewCascadedBlobCacheForSource(n.cache, newDockerSource(img, src))
+	cache, err := accessio.NewCascadedBlobCacheForSource(n.blobs, newDockerSource(img, src))
 	if err != nil {
 		return nil, err
 	}
-	p := &daemonArtifactProvider{
-		namespace: n,
-		cache:     cache,
-	}
-	return cpi.NewArtifactForProviderBlob(n, p, accessio.BlobAccessForData(mime, data))
+
+	priv := i.WithContainer(newNamespaceContainer(n, newBlobHandler(cache)))
+	// assure explicit close of wrapper container for artifact close
+	return support.NewArtifactForBlob(priv, accessio.BlobAccessForData(mime, data), priv)
 }
 
-func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
+func (n *namespaceHandler) HasArtifact(vers string) (bool, error) {
+	list, err := n.ListTags()
+	if err != nil {
+		return false, err
+	}
+	for _, e := range list {
+		if e == vers {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (n *namespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
 	tag := "latest"
 	if len(tags) > 0 {
 		tag = tags[0]
 	}
-	ref, err := ParseRef(n.namespace, tag)
+	ref, err := ParseRef(n.impl.GetNamespace(), tag)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +230,7 @@ func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) 
 	}
 	defer dst.Close()
 
-	blob, err := Convert(artifact, n.cache, dst)
+	blob, err := Convert(artifact, n.blobs, dst)
 	if err != nil {
 		return nil, err
 	}
@@ -196,12 +242,12 @@ func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) 
 	return blob, nil
 }
 
-func (n *NamespaceContainer) AddTags(digest digest.Digest, tags ...string) error {
+func (n *namespaceContainer) AddTags(digest digest.Digest, tags ...string) error {
 	if ok, _ := artdesc.IsDigest(digest.String()); ok {
 		return errors.ErrNotSupported("image access by digest")
 	}
 
-	src := n.namespace + ":" + digest.String()
+	src := n.impl.GetNamespace() + ":" + digest.String()
 
 	if pattern.MatchString(digest.String()) {
 		// this definitely no digest, but the library expects it this way
@@ -209,7 +255,7 @@ func (n *NamespaceContainer) AddTags(digest digest.Digest, tags ...string) error
 	}
 
 	for _, tag := range tags {
-		err := n.repo.client.ImageTag(dummyContext, src, n.namespace+":"+tag)
+		err := n.repo.client.ImageTag(dummyContext, src, n.impl.GetNamespace()+":"+tag)
 		if err != nil {
 			return fmt.Errorf("failed to add image tag: %w", err)
 		}
@@ -218,34 +264,8 @@ func (n *NamespaceContainer) AddTags(digest digest.Digest, tags ...string) error
 	return nil
 }
 
-func (n *NamespaceContainer) NewArtifactProvider(state accessobj.State) (cpi.ArtifactProvider, error) {
-	return nil, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type Namespace struct {
-	access *NamespaceContainer
-}
-
-func (n *Namespace) Close() error {
-	return n.access.Close()
-}
-
-func (n *Namespace) GetRepository() cpi.Repository {
-	return n.access.repo
-}
-
-func (n *Namespace) GetNamespace() string {
-	return n.access.GetNamepace()
-}
-
-func (n *Namespace) ListTags() ([]string, error) {
-	return n.access.ListTags()
-}
-
-func (n *Namespace) NewArtifact(art ...*artdesc.Artifact) (cpi.ArtifactAccess, error) {
-	if n.access.IsReadOnly() {
+func (n *namespaceContainer) NewArtifact(i support.NamespaceAccessImpl, art ...*artdesc.Artifact) (cpi.ArtifactAccess, error) {
+	if n.IsReadOnly() {
 		return nil, accessio.ErrReadOnly
 	}
 	var m *artdesc.Artifact
@@ -260,25 +280,5 @@ func (n *Namespace) NewArtifact(art ...*artdesc.Artifact) (cpi.ArtifactAccess, e
 		}
 		m = art[0]
 	}
-	return cpi.NewArtifact(n.access, m)
-}
-
-func (n *Namespace) GetBlobData(digest digest.Digest) (int64, cpi.DataAccess, error) {
-	return n.access.GetBlobData(digest)
-}
-
-func (n *Namespace) GetArtifact(vers string) (cpi.ArtifactAccess, error) {
-	return n.access.GetArtifact(vers)
-}
-
-func (n *Namespace) AddArtifact(artifact cpi.Artifact, tags ...string) (accessio.BlobAccess, error) {
-	return n.access.AddArtifact(artifact, tags...)
-}
-
-func (n *Namespace) AddTags(digest digest.Digest, tags ...string) error {
-	return n.access.AddTags(digest, tags...)
-}
-
-func (n *Namespace) AddBlob(blob cpi.BlobAccess) error {
-	return n.access.AddBlob(blob)
+	return support.NewArtifact(i, m)
 }

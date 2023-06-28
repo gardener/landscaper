@@ -60,6 +60,11 @@ func ToDescriptorMediaType(media string) string {
 	return ToContentMediaType(media) + "+json"
 }
 
+func ToArchiveMediaTypes(media string) []string {
+	base := ToContentMediaType(media)
+	return []string{base + "+tar", base + "+tar+gzip"}
+}
+
 func IsOCIMediaType(media string) bool {
 	c := ToContentMediaType(media)
 	for _, t := range ContentTypes() {
@@ -90,8 +95,7 @@ func DescriptorTypes() []string {
 func ArchiveBlobTypes() []string {
 	r := []string{}
 	for _, t := range ContentTypes() {
-		t = ToContentMediaType(t)
-		r = append(r, t+"+tar", t+"+tar+gzip")
+		r = append(r, ToArchiveMediaTypes(t)...)
 	}
 	return r
 }

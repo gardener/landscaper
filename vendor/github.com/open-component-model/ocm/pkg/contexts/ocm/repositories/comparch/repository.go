@@ -5,6 +5,7 @@
 package comparch
 
 import (
+	"io"
 	"strings"
 	"sync"
 
@@ -15,16 +16,17 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
-type Repository struct {
+type _RepositoryImplBase = cpi.RepositoryImplBase
+
+type RepositoryImpl struct {
+	_RepositoryImplBase
 	lock sync.RWMutex
-	ctx  cpi.Context
-	spec *RepositorySpec
 	arch *ComponentArchive
 }
 
-var _ cpi.Repository = (*Repository)(nil)
+var _ cpi.RepositoryImpl = (*RepositoryImpl)(nil)
 
-func NewRepository(ctx cpi.Context, s *RepositorySpec) (*Repository, error) {
+func NewRepository(ctx cpi.Context, s *RepositorySpec) (cpi.Repository, error) {
 	if s.GetPathFileSystem() == nil {
 		s.SetPathFileSystem(vfsattr.Get(ctx))
 	}
@@ -32,14 +34,23 @@ func NewRepository(ctx cpi.Context, s *RepositorySpec) (*Repository, error) {
 	if err != nil {
 		return nil, err
 	}
-	return a.comp.repo, nil
+	return a.Repository(), nil
 }
 
-func (r *Repository) ComponentLister() cpi.ComponentLister {
+func newRepository(a *ComponentArchive) (io.Closer, cpi.Repository) {
+	base := cpi.NewRepositoryImplBase(a.GetContext(), a.ComponentVersionAccess)
+	impl := &RepositoryImpl{
+		_RepositoryImplBase: *base,
+		arch:                a,
+	}
+	return cpi.NewRepository(impl), cpi.NewNoneRefRepositoryView(impl)
+}
+
+func (r *RepositoryImpl) ComponentLister() cpi.ComponentLister {
 	return r
 }
 
-func (r *Repository) matchPrefix(prefix string, closure bool) bool {
+func (r *RepositoryImpl) matchPrefix(prefix string, closure bool) bool {
 	if r.arch.GetName() != prefix {
 		if prefix != "" && !strings.HasSuffix(prefix, "/") {
 			prefix += "/"
@@ -51,7 +62,7 @@ func (r *Repository) matchPrefix(prefix string, closure bool) bool {
 	return true
 }
 
-func (r *Repository) NumComponents(prefix string) (int, error) {
+func (r *RepositoryImpl) NumComponents(prefix string) (int, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	if r.arch == nil {
@@ -63,7 +74,7 @@ func (r *Repository) NumComponents(prefix string) (int, error) {
 	return 1, nil
 }
 
-func (r *Repository) GetComponents(prefix string, closure bool) ([]string, error) {
+func (r *RepositoryImpl) GetComponents(prefix string, closure bool) ([]string, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	if r.arch == nil {
@@ -75,7 +86,7 @@ func (r *Repository) GetComponents(prefix string, closure bool) ([]string, error
 	return []string{r.arch.GetName()}, nil
 }
 
-func (r *Repository) Get() *ComponentArchive {
+func (r *RepositoryImpl) Get() *ComponentArchive {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	if r.arch != nil {
@@ -84,29 +95,11 @@ func (r *Repository) Get() *ComponentArchive {
 	return nil
 }
 
-func (r *Repository) Open() (*ComponentArchive, error) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	if r.arch != nil {
-		return r.arch, nil
-	}
-	a, err := Open(r.ctx, r.spec.AccessMode, r.spec.FilePath, 0o700, r.spec)
-	if err != nil {
-		return nil, err
-	}
-	r.arch = a
-	return a, nil
+func (r *RepositoryImpl) GetSpecification() cpi.RepositorySpec {
+	return r.arch.spec
 }
 
-func (r *Repository) GetContext() cpi.Context {
-	return r.ctx
-}
-
-func (r *Repository) GetSpecification() cpi.RepositorySpec {
-	return r.spec
-}
-
-func (r *Repository) ExistsComponentVersion(name string, ref string) (bool, error) {
+func (r *RepositoryImpl) ExistsComponentVersion(name string, ref string) (bool, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	if r.arch == nil {
@@ -115,12 +108,12 @@ func (r *Repository) ExistsComponentVersion(name string, ref string) (bool, erro
 	return r.arch.GetName() == name && r.arch.GetVersion() == ref, nil
 }
 
-func (r *Repository) LookupComponentVersion(name string, version string) (cpi.ComponentVersionAccess, error) {
+func (r *RepositoryImpl) LookupComponentVersion(name string, version string) (cpi.ComponentVersionAccess, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	ok, err := r.ExistsComponentVersion(name, version)
 	if ok {
-		return r.arch, nil
+		return r.arch.Dup()
 	}
 	if err == nil {
 		err = errors.ErrNotFound(cpi.KIND_COMPONENTVERSION, common.NewNameVersion(name, version).String(), Type)
@@ -128,7 +121,7 @@ func (r *Repository) LookupComponentVersion(name string, version string) (cpi.Co
 	return nil, err
 }
 
-func (r *Repository) LookupComponent(name string) (cpi.ComponentAccess, error) {
+func (r *RepositoryImpl) LookupComponent(name string) (cpi.ComponentAccess, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	if r.arch == nil {
@@ -137,54 +130,48 @@ func (r *Repository) LookupComponent(name string) (cpi.ComponentAccess, error) {
 	if r.arch.GetName() != name {
 		return nil, errors.ErrNotFound(errors.KIND_COMPONENT, name, Type)
 	}
-	return r.arch.comp, nil
-}
-
-func (r *Repository) Close() error {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	if r.arch != nil {
-		r.arch.Close()
-	}
-	return nil
+	return newComponentAccess(r)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type ComponentAccess struct {
-	repo *Repository
+type _ComponentAccessImplBase = cpi.ComponentAccessImplBase
+
+type ComponentAccessImpl struct {
+	_ComponentAccessImplBase
+	repo *RepositoryImpl
 }
 
-var _ cpi.ComponentAccess = (*ComponentAccess)(nil)
+var _ cpi.ComponentAccessImpl = (*ComponentAccessImpl)(nil)
 
-func (c *ComponentAccess) GetContext() cpi.Context {
-	return c.repo.GetContext()
+func newComponentAccess(r *RepositoryImpl) (cpi.ComponentAccess, error) {
+	base, err := cpi.NewComponentAccessImplBase(r.GetContext(), r.arch.GetName(), r)
+	if err != nil {
+		return nil, err
+	}
+	impl := &ComponentAccessImpl{
+		_ComponentAccessImplBase: *base,
+		repo:                     r,
+	}
+	return cpi.NewComponentAccess(impl, "component archive"), nil
 }
 
-func (c *ComponentAccess) Close() error {
-	return nil
-}
-
-func (c *ComponentAccess) Dup() (cpi.ComponentAccess, error) {
-	return c, nil
-}
-
-func (c *ComponentAccess) GetName() string {
-	return c.repo.arch.GetName()
-}
-
-func (c *ComponentAccess) ListVersions() ([]string, error) {
+func (c *ComponentAccessImpl) ListVersions() ([]string, error) {
 	return []string{c.repo.arch.GetVersion()}, nil
 }
 
-func (c *ComponentAccess) LookupVersion(ref string) (cpi.ComponentVersionAccess, error) {
+func (c *ComponentAccessImpl) HasVersion(vers string) (bool, error) {
+	return vers == c.repo.arch.GetVersion(), nil
+}
+
+func (c *ComponentAccessImpl) LookupVersion(ref string) (cpi.ComponentVersionAccess, error) {
 	return c.repo.LookupComponentVersion(c.repo.arch.GetName(), ref)
 }
 
-func (c *ComponentAccess) AddVersion(access cpi.ComponentVersionAccess) error {
+func (c *ComponentAccessImpl) AddVersion(access cpi.ComponentVersionAccess) error {
 	return errors.ErrNotSupported(errors.KIND_FUNCTION, "add version", Type)
 }
 
-func (c *ComponentAccess) NewVersion(version string, overrides ...bool) (cpi.ComponentVersionAccess, error) {
+func (c *ComponentAccessImpl) NewVersion(version string, overrides ...bool) (cpi.ComponentVersionAccess, error) {
 	return nil, errors.ErrNotSupported(errors.KIND_FUNCTION, "new version", Type)
 }

@@ -23,6 +23,22 @@ func (d *DummyComponentVersionAccess) GetContext() Context {
 	return d.Context
 }
 
+func (d *DummyComponentVersionAccess) Close() error {
+	return nil
+}
+
+func (d *DummyComponentVersionAccess) IsClosed() bool {
+	return false
+}
+
+func (d *DummyComponentVersionAccess) Dup() (ComponentVersionAccess, error) {
+	return d, nil
+}
+
+func (d *DummyComponentVersionAccess) AdjustSourceAccess(meta *internal.SourceMeta, acc compdesc.AccessSpec) error {
+	panic("implement me")
+}
+
 func (c *DummyComponentVersionAccess) Repository() Repository {
 	panic("implement me")
 }
@@ -79,6 +95,10 @@ func (d *DummyComponentVersionAccess) AccessMethod(spec AccessSpec) (AccessMetho
 	panic("implement me")
 }
 
+func (d *DummyComponentVersionAccess) GetInexpensiveContentVersionIdentity(spec AccessSpec) string {
+	panic("implement me")
+}
+
 func (d *DummyComponentVersionAccess) AddBlob(blob BlobAccess, arttype, refName string, global AccessSpec) (AccessSpec, error) {
 	panic("implement me")
 }
@@ -108,14 +128,6 @@ func (d *DummyComponentVersionAccess) SetReference(ref *ComponentReference) erro
 }
 
 func (d *DummyComponentVersionAccess) DiscardChanges() {
-}
-
-func (d *DummyComponentVersionAccess) Close() error {
-	return nil
-}
-
-func (d *DummyComponentVersionAccess) Dup() (ComponentVersionAccess, error) {
-	return d, nil
 }
 
 func (d *DummyComponentVersionAccess) GetResourcesByIdentitySelectors(selectors ...compdesc.IdentitySelector) ([]internal.ResourceAccess, error) {

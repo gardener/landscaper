@@ -23,6 +23,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/logging"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 // Type is the access type of a oci registry.
@@ -104,7 +105,19 @@ func (_ *AccessSpec) GetType() string {
 }
 
 func (a *AccessSpec) AccessMethod(c cpi.ComponentVersionAccess) (cpi.AccessMethod, error) {
-	return newMethod(c, a)
+	return NewMethod(c.GetContext(), a, a.ImageReference)
+}
+
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(cv cpi.ComponentVersionAccess) string {
+	ref, err := oci.ParseRef(a.ImageReference)
+	if err != nil {
+		return ""
+	}
+	if ref.Digest != nil {
+		return ref.Digest.String()
+	}
+	// TODO: optimize for oci registries
+	return ""
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -112,9 +125,11 @@ func (a *AccessSpec) AccessMethod(c cpi.ComponentVersionAccess) (cpi.AccessMetho
 type AccessMethod = *accessMethod
 
 type accessMethod struct {
-	lock sync.Mutex
-	comp cpi.ComponentVersionAccess
-	spec *AccessSpec
+	lock      sync.Mutex
+	ctx       cpi.Context
+	spec      cpi.AccessSpec
+	repo      oci.Repository
+	reference string
 
 	finalizer Finalizer
 	err       error
@@ -128,15 +143,17 @@ var (
 	_ accessio.DigestSource = (*accessMethod)(nil)
 )
 
-func newMethod(c cpi.ComponentVersionAccess, a *AccessSpec) (*accessMethod, error) {
+func NewMethod(ctx cpi.ContextProvider, a cpi.AccessSpec, ref string, repo ...oci.Repository) (*accessMethod, error) {
 	return &accessMethod{
-		spec: a,
-		comp: c,
+		spec:      a,
+		reference: ref,
+		repo:      utils.Optional(repo...),
+		ctx:       ctx.OCMContext(),
 	}, nil
 }
 
 func (m *accessMethod) GetKind() string {
-	return Type
+	return m.spec.GetKind()
 }
 
 func (m *accessMethod) AccessSpec() cpi.AccessSpec {
@@ -152,17 +169,29 @@ func (m *accessMethod) Close() error {
 }
 
 func (m *accessMethod) eval() (oci.Repository, *oci.RefSpec, error) {
-	ref, err := oci.ParseRef(m.spec.ImageReference)
+	if m.repo == nil {
+		ref, err := oci.ParseRef(m.reference)
+		if err != nil {
+			return nil, nil, err
+		}
+		ocictx := m.ctx.OCIContext()
+		spec := ocictx.GetAlias(ref.Host)
+		if spec == nil {
+			spec = ocireg.NewRepositorySpec(ref.Host)
+		}
+		repo, err := ocictx.RepositoryForSpec(spec)
+		return repo, &ref, err
+	}
+
+	art, err := oci.ParseArt(m.reference)
 	if err != nil {
 		return nil, nil, err
 	}
-	ocictx := m.comp.GetContext().OCIContext()
-	spec := ocictx.GetAlias(ref.Host)
-	if spec == nil {
-		spec = ocireg.NewRepositorySpec(ref.Host)
+	ref := oci.RefSpec{
+		UniformRepositorySpec: *m.repo.GetSpecification().UniformRepositorySpec(),
+		ArtSpec:               art,
 	}
-	repo, err := ocictx.RepositoryForSpec(spec)
-	return repo, &ref, err
+	return m.repo, &ref, err
 }
 
 func (m *accessMethod) GetArtifact(finalizer *Finalizer) (oci.ArtifactAccess, *oci.RefSpec, error) {
@@ -250,10 +279,10 @@ func (m *accessMethod) getBlob() (artifactset.ArtifactBlob, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger := Logger(m.comp)
-	logger.Info("synthesize artifact blob", "ref", m.spec.ImageReference)
+	logger := Logger(WrapContextProvider(m.ctx))
+	logger.Info("synthesize artifact blob", "ref", m.reference)
 	m.blob, err = artifactset.SynthesizeArtifactBlobForArtifact(art, ref.Version())
-	logger.Info("synthesize artifact blob done", "ref", m.spec.ImageReference, "error", logging.ErrorMessage(err))
+	logger.Info("synthesize artifact blob done", "ref", m.reference, "error", logging.ErrorMessage(err))
 	if err != nil {
 		return nil, err
 	}

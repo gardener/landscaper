@@ -9,7 +9,6 @@ import "fmt"
 type UpdateComponentVersionContainerError struct {
 	Name    string
 	Version string
-	Type    string
 
 	Original error
 }

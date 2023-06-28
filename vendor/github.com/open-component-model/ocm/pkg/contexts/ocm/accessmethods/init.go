@@ -14,5 +14,6 @@ import (
 	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/npm"
 	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/ociartifact"
 	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/ociblob"
+	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/relativeociref"
 	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/s3"
 )

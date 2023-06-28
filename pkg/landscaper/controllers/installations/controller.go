@@ -216,7 +216,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
-	intBlueprint, err := blueprints.ResolveBlueprint(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
+	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "ResolveBlueprint", err.Error())
 	}
@@ -316,7 +316,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	}
 
 	if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {
-		// The installation is about to finish. Store the names of dependent installations in the status.
+		// The installation is about to finish. Put the names of dependent installations in the status.
 		// The dependents will then be triggered in the beginning of the next reconcile event.
 		dependents, err := installations.NewInstallationTrigger(c.Client(), inst).DetermineDependents(ctx)
 		if err != nil {

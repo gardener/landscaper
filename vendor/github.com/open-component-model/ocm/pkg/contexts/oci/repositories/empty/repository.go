@@ -5,17 +5,30 @@
 package empty
 
 import (
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
-type Repository struct{}
+type Repository struct {
+	ctx cpi.Context
+}
 
-var _ cpi.Repository = &Repository{}
+var _ cpi.Repository = (*Repository)(nil)
 
-func newRepository(ctx datacontext.Context) interface{} {
-	return &Repository{}
+func NewRepository(ctx cpi.Context) *Repository {
+	return &Repository{ctx}
+}
+
+func (r *Repository) GetContext() cpi.Context {
+	return r.ctx
+}
+
+func (r *Repository) IsClosed() bool {
+	return false
+}
+
+func (r *Repository) Dup() (cpi.Repository, error) {
+	return r, nil
 }
 
 func (r Repository) GetSpecification() cpi.RepositorySpec {

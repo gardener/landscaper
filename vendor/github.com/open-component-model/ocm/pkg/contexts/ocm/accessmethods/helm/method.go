@@ -82,6 +82,11 @@ func (s *AccessSpec) AccessMethod(access cpi.ComponentVersionAccess) (cpi.Access
 	return &accessMethod{comp: access, spec: s}, nil
 }
 
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVersionAccess) string {
+	return ""
+	// TODO: research possibilities with provenance file
+}
+
 ///////////////////
 
 func (s *AccessSpec) GetVersion() string {

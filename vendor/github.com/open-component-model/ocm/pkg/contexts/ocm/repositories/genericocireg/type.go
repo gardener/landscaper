@@ -81,10 +81,10 @@ type ComponentRepositoryMeta struct {
 }
 
 func NewComponentRepositoryMeta(subPath string, mapping ComponentNameMapping) *ComponentRepositoryMeta {
-	return &ComponentRepositoryMeta{
+	return DefaultComponentRepositoryMeta(&ComponentRepositoryMeta{
 		ComponentNameMapping: mapping,
 		SubPath:              subPath,
-	}
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -73,8 +73,15 @@ func ResolveBlueprint(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
-
-	return ResolveBlueprintFromComponentVersion(ctx, componentVersion, bpDef.Reference.ResourceName)
+	resource, err := componentVersion.GetResource(bpDef.Reference.ResourceName, nil)
+	if err != nil {
+		return nil, err
+	}
+	content, err := resource.GetBlobNew(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return content.Resource.(*Blueprint), nil
 }
 
 // Resolve returns a blueprint from a given reference.
@@ -125,17 +132,25 @@ func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *ls
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
 
-	return ResolveBlueprintFromComponentVersion(ctx, componentVersion, bpDef.Reference.ResourceName)
+	resource, err := componentVersion.GetResource(bpDef.Reference.ResourceName, nil)
+	if err != nil {
+		return nil, err
+	}
+	content, err := resource.GetBlobNew(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return content.Resource.(*Blueprint), nil
 }
 
 // ResolveBlueprintFromComponentVersion resolves a blueprint defined by a component version.
-func ResolveBlueprintFromComponentVersion(
-	ctx context.Context,
-	componentVersion model.ComponentVersion,
-	blueprintName string) (*Blueprint, error) {
-
-	return GetStore().Fetch(ctx, componentVersion, blueprintName)
-}
+//func ResolveBlueprintFromComponentVersion(
+//	ctx context.Context,
+//	componentVersion model.ComponentVersion,
+//	blueprintName string) (*Blueprint, error) {
+//
+//	return GetStore().Fetch(ctx, componentVersion, blueprintName)
+//}
 
 // GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.
 func GetBlueprintResourceFromComponentDescriptor(cd *types.ComponentDescriptor, blueprintName string) (types.Resource, error) {

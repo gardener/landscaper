@@ -13,7 +13,7 @@ This implementation is based on three interfaces that have to implemented:
   - ComponentVersionContainer
     is used to provide access to component version for  component.
 
-The function NewComponentVersionAccess can be used to create an
+The function NewComponentVersionAccessImpl can be used to create an
 object implementing the complete ComponentVersionAccess contract.
 */
 package support

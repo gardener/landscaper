@@ -485,7 +485,6 @@ github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.m
 github.com/envoyproxy/go-control-plane v0.9.9-0.20210217033140-668b12f5399d/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/go-control-plane v0.9.9-0.20210512163311-63b5d3c536b0/go.mod h1:hliV/p42l8fGbc6Y9bQ70uLwIvmJyVE5k4iMKlh8wCQ=
 github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021/go.mod h1:AFq3mo9L8Lqqiid3OhADV3RfLJnjiw63cSpi+fDTRC0=
-github.com/envoyproxy/go-control-plane v0.10.2-0.20220325020618-49ff273808a1/go.mod h1:KJwIaB5Mv44NWtYuAOFCVOjcI94vtpEz2JU/D2v6IjE=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5/go.mod h1:a2zkGnVExMxdzMo3M0Hi/3sEU+cWnZpSni0O6/Yb/P0=
 github.com/evanphx/json-patch v0.5.2/go.mod h1:ZWS5hhDbVDyob71nXKNL0+PWn6ToqBHMikGIFbs31qQ=
@@ -498,6 +497,8 @@ github.com/evanphx/json-patch/v5 v5.6.0 h1:b91NhWfaz02IuVxO9faSllyAtNXHMPkC5J8sJ
 github.com/evanphx/json-patch/v5 v5.6.0/go.mod h1:G79N1coSVB93tBe7j6PhzjmR3/2VvlbKOFpnXhI9Bw4=
 github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d h1:105gxyaGwCFad8crR9dcMQWvV9Hvulu6hwUh4tWPJnM=
 github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d/go.mod h1:ZZMPRZwes7CROmyNKgQzC3XPs6L/G2EJLHddWejkmf4=
+github.com/fabianburth/ocm v0.0.0-20230622110919-2f97ef373e5e h1:vtSscwTPu94oBRHDU2wcvlwIHQaXjo7G3INae4gMrZ8=
+github.com/fabianburth/ocm v0.0.0-20230622110919-2f97ef373e5e/go.mod h1:I62RZpENXDA1yXEbSPGHeDBih+cf7136EPHfh6sOK6g=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.13.0 h1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
@@ -888,8 +889,7 @@ github.com/mandelsoft/filepath v0.0.0-20230412200429-36b1eb66bd27 h1:VivN6K8H4H0
 github.com/mandelsoft/filepath v0.0.0-20230412200429-36b1eb66bd27/go.mod h1:LxhqC7khDoRENwooP6f/vWvia9ivj6TqLYrR39zqkN0=
 github.com/mandelsoft/logging v0.0.0-20230331123830-36542ef18f6f h1:ZoqAURpfhE54QFLpcRot25aZEA0dfLVcGh0DmG5qLm4=
 github.com/mandelsoft/logging v0.0.0-20230331123830-36542ef18f6f/go.mod h1:HjtBPH5tsJygvyYEu2r/ZwOOBGcu+oR2sKH73VEnHtg=
-github.com/mandelsoft/spiff v1.3.0-beta-7.0.20230414131619-0bc30bac11fc h1:ZAPrgV5lQ6LziSVrf8HPTH9TwjNh7l6haECmDrjES+o=
-github.com/mandelsoft/spiff v1.3.0-beta-7.0.20230414131619-0bc30bac11fc/go.mod h1:TwEeOPuRZxlzQBCLEyVTlHmBSruSGGNdiQ2fovVJ8ao=
+github.com/mandelsoft/spiff v1.7.0-beta-5 h1:3kC10nTviDQhL8diSxp7i4IC2iSiDg6KPbH1CAq7Lfw=
 github.com/mandelsoft/spiff v1.7.0-beta-5/go.mod h1:TwEeOPuRZxlzQBCLEyVTlHmBSruSGGNdiQ2fovVJ8ao=
 github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91/go.mod h1:74aV7kulg9C434HiI3zNALN79QHc9IZMN+SI4UdLn14=
 github.com/mandelsoft/vfs v0.0.0-20230506183150-975954b82357 h1:BJKXJKeVAn9Z1Ke6N1p3G20SjMwOuJNBeSxT9two2FA=
@@ -1034,10 +1034,6 @@ github.com/onsi/gomega v1.13.0/go.mod h1:lRk9szgn8TxENtWd0Tp4c3wjlRfMTMH27I+3Je4
 github.com/onsi/gomega v1.15.0/go.mod h1:cIuvLEne0aoVhAgh/O6ac0Op8WWw9H6eYCriF+tEHG0=
 github.com/onsi/gomega v1.27.4 h1:Z2AnStgsdSayCMDiCU42qIz+HLqEPcgiOCXjAU/w+8E=
 github.com/onsi/gomega v1.27.4/go.mod h1:riYq/GJKh8hhoM01HN6Vmuy93AarCXCBGpvFDK3q3fQ=
-github.com/open-component-model/ocm v0.3.0-rc.1.0.20230523092841-902e7427c9aa h1:w8Xa/Wii8jcxY6D1qMK3lDr+YxQiiTNWdyU4IefbjUg=
-github.com/open-component-model/ocm v0.3.0-rc.1.0.20230523092841-902e7427c9aa/go.mod h1:EUDPb8Viu5xThhcgfnn1hIW93cL7dU2c0BM90zYwhYM=
-github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b h1:sdi5i+XHERqrC53RuULF75qa/opyPgcqNX/W0q6T+ro=
-github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b/go.mod h1:I62RZpENXDA1yXEbSPGHeDBih+cf7136EPHfh6sOK6g=
 github.com/opencontainers/distribution-spec v1.0.1 h1:hT6tF6uKZAQh+HH3BrJqn7/xHhMoDHzahIg4KxD2DqM=
 github.com/opencontainers/distribution-spec v1.0.1/go.mod h1:copR2flp+jTEvQIFMb6MIx45OkrxzqyjszPDT3hx/5Q=
 github.com/opencontainers/go-digest v0.0.0-20170106003457-a6d0ee40d420/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
@@ -1409,6 +1405,8 @@ golang.org/x/exp v0.0.0-20191227195350-da58074b4299/go.mod h1:2RIsYlXP63K8oxa1u0
 golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a/go.mod h1:2RIsYlXP63K8oxa1u096TMicItID8zy7Y6sNkU49FU4=
 golang.org/x/exp v0.0.0-20200207192155-f17229e696bd/go.mod h1:J/WKrq2StrnmMY6+EHIKF9dgMWnmCNThgcyBT1FY9mM=
 golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6/go.mod h1:3jZMyOhIsHpP37uCMkUooju7aAi5cS1Q23tOzKc+0MU=
+golang.org/x/exp v0.0.0-20221212164502-fae10dda9338 h1:OvjRkcNHnf6/W5FZXSxODbxwD+X7fspczG7Jn/xQVD4=
+golang.org/x/exp v0.0.0-20221212164502-fae10dda9338/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
 golang.org/x/image v0.0.0-20190227222117-0694c2d4d067/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.0.0-20190802002840-cff245a6509b/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=

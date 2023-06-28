@@ -87,11 +87,14 @@ type ConfigStore struct {
 	generation int64
 	types      map[string]AppliedConfigs
 	configs    AppliedConfigs
+
+	sets map[string]*ConfigSet
 }
 
 func NewConfigStore() *ConfigStore {
 	return &ConfigStore{
 		types: map[string]AppliedConfigs{},
+		sets:  map[string]*ConfigSet{},
 	}
 }
 
@@ -163,4 +166,16 @@ func (c *ConfigStore) GetConfigForType(ctx Context, typ string, selector Applied
 	}
 	sort.Sort(result)
 	return c.generation, result
+}
+
+func (c *ConfigStore) AddSet(name string, set *ConfigSet) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.sets[name] = set
+}
+
+func (c *ConfigStore) GetSet(name string) *ConfigSet {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	return c.sets[name]
 }

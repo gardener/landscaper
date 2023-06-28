@@ -45,6 +45,7 @@ type (
 	BlobAccess                       = internal.BlobAccess
 	DataAccess                       = internal.DataAccess
 	RepositorySource                 = internal.RepositorySource
+	ConsumerIdentityProvider         = internal.ConsumerIdentityProvider
 )
 
 type Descriptor = ociv1.Descriptor
@@ -53,6 +54,10 @@ var DefaultContext = internal.DefaultContext
 
 func New(m ...datacontext.BuilderMode) Context {
 	return internal.Builder{}.New(m...)
+}
+
+func FromProvider(p ContextProvider) Context {
+	return internal.FromProvider(p)
 }
 
 func RegisterRepositorySpecHandler(handler RepositorySpecHandler, types ...string) {

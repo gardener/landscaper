@@ -50,6 +50,10 @@ type (
 
 var DefaultContext = internal.DefaultContext
 
+func FromProvider(p ContextProvider) Context {
+	return internal.FromProvider(p)
+}
+
 func New(m ...datacontext.BuilderMode) Context {
 	return internal.Builder{}.New(m...)
 }

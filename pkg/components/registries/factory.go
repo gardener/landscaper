@@ -39,19 +39,8 @@ func (f *Factory) NewRegistryAccess(ctx context.Context,
 	ociRegistryConfig *config.OCIConfiguration,
 	inlineCd *types.ComponentDescriptor,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewRegistryAccess(ctx, secrets, sharedCache, localRegistryConfig, ociRegistryConfig, inlineCd, additionalBlobResolvers...)
-	//return f.ocmFactory.NewRegistryAccess(ctx, secrets, sharedCache, localRegistryConfig, ociRegistryConfig, inlineCd, additionalBlobResolvers...)
-}
-
-func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
-	log logr.Logger,
-	fs vfs.FileSystem,
-	allowPlainHttp bool,
-	skipTLSVerify bool,
-	registryConfigPath string,
-	concourseConfigPath string,
-	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewRegistryAccessFromOciOptions(ctx, log, fs, allowPlainHttp, skipTLSVerify, registryConfigPath, concourseConfigPath, predefinedComponentDescriptors...)
+	return f.ocmFactory.NewRegistryAccess(ctx, secrets, sharedCache, localRegistryConfig, ociRegistryConfig, inlineCd, additionalBlobResolvers...)
+	//return f.cnudieFactory.NewRegistryAccess(ctx, secrets, sharedCache, localRegistryConfig, ociRegistryConfig, inlineCd, additionalBlobResolvers...)
 }
 
 func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,

@@ -5,21 +5,32 @@
 package internal
 
 import (
+	"io"
+
 	"github.com/opencontainers/go-digest"
 
 	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/common/accessio/resource"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 )
 
-type Repository interface {
+type RepositoryImpl interface {
 	GetSpecification() RepositorySpec
-	NamespaceLister() NamespaceLister
+	GetContext() Context
 
+	NamespaceLister() NamespaceLister
 	ExistsArtifact(name string, ref string) (bool, error)
 	LookupArtifact(name string, ref string) (ArtifactAccess, error)
 	LookupNamespace(name string) (NamespaceAccess, error)
-	Close() error
+
+	io.Closer
+}
+
+type Repository interface {
+	resource.ResourceView[Repository]
+
+	RepositoryImpl
 }
 
 // ConsumerIdentityProvider is an optional interface for repositories
@@ -54,16 +65,22 @@ type ArtifactSource interface {
 	GetBlobData(digest digest.Digest) (int64, DataAccess, error)
 }
 
-type NamespaceAccess interface {
+type NamespaceAccessImpl interface {
 	ArtifactSource
 	ArtifactSink
-
 	GetNamespace() string
 	ListTags() ([]string, error)
 
-	NewArtifact(...*artdesc.Artifact) (ArtifactAccess, error)
+	HasArtifact(vers string) (bool, error)
 
-	Close() error
+	NewArtifact(...*artdesc.Artifact) (ArtifactAccess, error)
+	io.Closer
+}
+
+type NamespaceAccess interface {
+	resource.ResourceView[NamespaceAccess]
+
+	NamespaceAccessImpl
 }
 
 type Artifact interface {
@@ -77,14 +94,12 @@ type Artifact interface {
 	Index() (*artdesc.Index, error)
 }
 
-type ArtifactAccess interface {
+type ArtifactAccessImpl interface {
 	Artifact
 	BlobSource
 	BlobSink
 
 	GetDescriptor() *artdesc.Artifact
-	ManifestAccess() ManifestAccess
-	IndexAccess() IndexAccess
 	GetBlob(digest digest.Digest) (BlobAccess, error)
 
 	GetArtifact(digest digest.Digest) (ArtifactAccess, error)
@@ -93,7 +108,21 @@ type ArtifactAccess interface {
 	AddArtifact(Artifact, *artdesc.Platform) (BlobAccess, error)
 	AddLayer(BlobAccess, *artdesc.Descriptor) (int, error)
 
-	Close() error
+	NewArtifact(...*artdesc.Artifact) (ArtifactAccess, error)
+
+	io.Closer
+}
+
+type ArtifactAccessSlaves interface {
+	ManifestAccess() ManifestAccess
+	IndexAccess() IndexAccess
+}
+
+type ArtifactAccess interface {
+	resource.ResourceView[ArtifactAccess]
+
+	ArtifactAccessImpl
+	ArtifactAccessSlaves
 }
 
 type ManifestAccess interface {

@@ -15,11 +15,12 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
-type IndexImpl struct {
+type IndexAccess struct {
+	master cpi.ArtifactAccess
 	artifactBase
 }
 
-var _ cpi.IndexAccess = (*IndexImpl)(nil)
+var _ cpi.IndexAccess = (*IndexAccess)(nil)
 
 type indexMapper struct {
 	accessobj.State
@@ -35,8 +36,9 @@ func (m *indexMapper) GetOriginalState() interface{} {
 	return m.State.GetOriginalState().(*artdesc.Artifact).Index()
 }
 
-func NewIndexForArtifact(a *ArtifactImpl) *IndexImpl {
-	m := &IndexImpl{
+func NewIndexForArtifact(master cpi.ArtifactAccess, a *ArtifactAccessImpl) *IndexAccess {
+	m := &IndexAccess{
+		master: master,
 		artifactBase: artifactBase{
 			container: a.container,
 			state:     &indexMapper{a.state},
@@ -45,44 +47,46 @@ func NewIndexForArtifact(a *ArtifactImpl) *IndexImpl {
 	return m
 }
 
-func (a *IndexImpl) NewArtifact(art ...*artdesc.Artifact) (cpi.ArtifactAccess, error) {
-	return a.newArtifact(art...)
+func (i *IndexAccess) NewArtifact(art ...*artdesc.Artifact) (cpi.ArtifactAccess, error) {
+	return i.master.NewArtifact(art...)
 }
 
-func (i *IndexImpl) AddBlob(blob internal.BlobAccess) error {
-	return i.container.AddBlob(blob)
+func (i *IndexAccess) AddBlob(blob internal.BlobAccess) error {
+	return i.master.AddBlob(blob)
 }
 
-func (i *IndexImpl) Manifest() (*artdesc.Manifest, error) {
+func (i *IndexAccess) Manifest() (*artdesc.Manifest, error) {
 	return nil, errors.ErrInvalid()
 }
 
-func (i *IndexImpl) Index() (*artdesc.Index, error) {
+func (i *IndexAccess) Index() (*artdesc.Index, error) {
 	return i.GetDescriptor(), nil
 }
 
-func (i *IndexImpl) Artifact() *artdesc.Artifact {
+func (i *IndexAccess) Artifact() *artdesc.Artifact {
 	a := artdesc.New()
 	_ = a.SetIndex(i.GetDescriptor())
 	return a
 }
 
-func (i *IndexImpl) GetDescriptor() *artdesc.Index {
+func (i *IndexAccess) GetDescriptor() *artdesc.Index {
 	return i.state.GetState().(*artdesc.Index)
 }
 
-func (i *IndexImpl) GetBlobDescriptor(digest digest.Digest) *cpi.Descriptor {
+func (i *IndexAccess) GetBlobDescriptor(digest digest.Digest) *cpi.Descriptor {
 	d := i.GetDescriptor().GetBlobDescriptor(digest)
-	if d != nil {
-		return d
-	}
-	return i.container.GetBlobDescriptor(digest)
+	/*
+		if d == nil {
+			d = i.container.GetBlobDescriptor(digest)
+		}
+	*/
+	return d
 }
 
-func (i *IndexImpl) GetBlob(digest digest.Digest) (internal.BlobAccess, error) {
+func (i *IndexAccess) GetBlob(digest digest.Digest) (internal.BlobAccess, error) {
 	d := i.GetBlobDescriptor(digest)
 	if d != nil {
-		size, data, err := i.container.GetBlobData(digest)
+		size, data, err := i.master.GetBlobData(digest)
 		if err != nil {
 			return nil, err
 		}
@@ -95,32 +99,15 @@ func (i *IndexImpl) GetBlob(digest digest.Digest) (internal.BlobAccess, error) {
 	return nil, cpi.ErrBlobNotFound(digest)
 }
 
-func (i *IndexImpl) GetArtifact(digest digest.Digest) (internal.ArtifactAccess, error) {
+func (i *IndexAccess) GetArtifact(digest digest.Digest) (internal.ArtifactAccess, error) {
 	for _, d := range i.GetDescriptor().Manifests {
 		if d.Digest == digest {
-			return i.container.GetArtifact("@" + digest.String())
+			return i.master.GetArtifact(digest)
 		}
 	}
 	return nil, errors.ErrNotFound(cpi.KIND_OCIARTIFACT, digest.String())
 }
 
-func (a *IndexImpl) AddArtifact(art cpi.Artifact, platform *artdesc.Platform) (access accessio.BlobAccess, err error) {
-	blob, err := a.container.AddArtifact(art)
-	if err != nil {
-		return nil, err
-	}
-
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
-	d := a.GetDescriptor()
-	d.Manifests = append(d.Manifests, cpi.Descriptor{
-		MediaType:   blob.MimeType(),
-		Digest:      blob.Digest(),
-		Size:        blob.Size(),
-		URLs:        nil,
-		Annotations: nil,
-		Platform:    platform,
-	})
-	return blob, nil
+func (a *IndexAccess) AddArtifact(art cpi.Artifact, platform *artdesc.Platform) (access accessio.BlobAccess, err error) {
+	return a.master.AddArtifact(art, platform)
 }

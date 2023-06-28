@@ -80,6 +80,10 @@ func (s *AccessSpec) AccessMethod(access cpi.ComponentVersionAccess) (cpi.Access
 	return &accessMethod{comp: access, spec: s}, nil
 }
 
+func (s *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVersionAccess) string {
+	return s.Digest.String()
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // TODO add cache

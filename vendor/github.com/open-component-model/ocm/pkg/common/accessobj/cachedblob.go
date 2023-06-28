@@ -60,6 +60,7 @@ func (c *CachedBlobAccess) setup() error {
 
 	c.size, c.digest, err = c.source.WriteTo(file)
 	if err != nil {
+		defer c.cache.Filesystem.Remove(file.Name())
 		return fmt.Errorf("unable to write source to file '%s': %w", file.Name(), err)
 	}
 

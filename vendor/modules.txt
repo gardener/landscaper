@@ -602,7 +602,7 @@ github.com/mandelsoft/logging
 github.com/mandelsoft/logging/config
 github.com/mandelsoft/logging/logrusr
 github.com/mandelsoft/logging/scheme
-# github.com/mandelsoft/spiff v1.3.0-beta-7.0.20230414131619-0bc30bac11fc
+# github.com/mandelsoft/spiff v1.7.0-beta-5
 ## explicit; go 1.18
 github.com/mandelsoft/spiff/debug
 github.com/mandelsoft/spiff/dynaml
@@ -619,6 +619,7 @@ github.com/mandelsoft/spiff/spiffing
 github.com/mandelsoft/spiff/yaml
 # github.com/mandelsoft/vfs v0.0.0-20230506183150-975954b82357
 ## explicit; go 1.19
+github.com/mandelsoft/vfs/pkg/layerfs
 github.com/mandelsoft/vfs/pkg/memoryfs
 github.com/mandelsoft/vfs/pkg/osfs
 github.com/mandelsoft/vfs/pkg/projectionfs
@@ -758,9 +759,8 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230523092841-902e7427c9aa
+# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b => github.com/fabianburth/ocm v0.0.0-20230622110919-2f97ef373e5e
 ## explicit; go 1.19
-github.com/open-component-model/ocm/cmds/ocm/pkg/listformat
 github.com/open-component-model/ocm/pkg/cobrautils/flag
 github.com/open-component-model/ocm/pkg/cobrautils/flagsets
 github.com/open-component-model/ocm/pkg/cobrautils/groups
@@ -769,6 +769,7 @@ github.com/open-component-model/ocm/pkg/common/accessio
 github.com/open-component-model/ocm/pkg/common/accessio/downloader
 github.com/open-component-model/ocm/pkg/common/accessio/downloader/http
 github.com/open-component-model/ocm/pkg/common/accessio/downloader/s3
+github.com/open-component-model/ocm/pkg/common/accessio/resource
 github.com/open-component-model/ocm/pkg/common/accessobj
 github.com/open-component-model/ocm/pkg/common/compression
 github.com/open-component-model/ocm/pkg/contexts/config
@@ -838,17 +839,20 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/npm
 github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/ociartifact
 github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/ociblob
 github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/options
+github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/relativeociref
 github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/s3
 github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/s3/identity
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/compatattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/keepblobattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/ociuploadattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler
-github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/generic/ocirepo
-github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/oci
-github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/oci/ocirepo
-github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/ocm
-github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/ocm/comparch
+github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/config
+github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers
+github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/generic/ocirepo
+github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/oci
+github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/oci/ocirepo
+github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/ocm
+github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/ocm/comparch
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/normalizations
@@ -867,10 +871,14 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/digester/digesters
 github.com/open-component-model/ocm/pkg/contexts/ocm/digester/digesters/artifact
 github.com/open-component-model/ocm/pkg/contexts/ocm/digester/digesters/blob
 github.com/open-component-model/ocm/pkg/contexts/ocm/download
+github.com/open-component-model/ocm/pkg/contexts/ocm/download/config
 github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers
 github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/blob
+github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/blueprint
+github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/dirtree
 github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/executable
 github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/helm
+github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/ocirepo
 github.com/open-component-model/ocm/pkg/contexts/ocm/grammar
 github.com/open-component-model/ocm/pkg/contexts/ocm/internal
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories
@@ -879,7 +887,6 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ctf
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg/componentmapping
 github.com/open-component-model/ocm/pkg/contexts/ocm/resourcetypes
-github.com/open-component-model/ocm/pkg/contexts/ocm/utils
 github.com/open-component-model/ocm/pkg/contexts/ocm/utils/registry
 github.com/open-component-model/ocm/pkg/docker
 github.com/open-component-model/ocm/pkg/docker/resolve
@@ -889,6 +896,7 @@ github.com/open-component-model/ocm/pkg/finalizer
 github.com/open-component-model/ocm/pkg/generics
 github.com/open-component-model/ocm/pkg/helm
 github.com/open-component-model/ocm/pkg/helm/identity
+github.com/open-component-model/ocm/pkg/listformat
 github.com/open-component-model/ocm/pkg/logging
 github.com/open-component-model/ocm/pkg/mime
 github.com/open-component-model/ocm/pkg/regex
@@ -1060,6 +1068,10 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
+# golang.org/x/exp v0.0.0-20221212164502-fae10dda9338
+## explicit; go 1.18
+golang.org/x/exp/constraints
+golang.org/x/exp/slices
 # golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 ## explicit; go 1.11
 golang.org/x/lint
@@ -1768,4 +1780,5 @@ sigs.k8s.io/yaml
 # github.com/gardener/landscaper/apis => ./apis
 # github.com/gardener/landscaper/controller-utils => ./controller-utils
 # github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
+# github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230622110919-2f97ef373e5e
 # k8s.io/kubectl => k8s.io/kubectl v0.26.1

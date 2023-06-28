@@ -14,16 +14,16 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 )
 
-type Repository struct {
-	ctx    cpi.Context
+type RepositoryImpl struct {
+	cpi.RepositoryImplBase
 	spec   *RepositorySpec
 	sysctx *types.SystemContext
 	client *client.Client
 }
 
-var _ cpi.Repository = &Repository{}
+var _ cpi.RepositoryImpl = (*RepositoryImpl)(nil)
 
-func NewRepository(ctx cpi.Context, spec *RepositorySpec) (*Repository, error) {
+func NewRepository(ctx cpi.Context, spec *RepositorySpec) (cpi.Repository, error) {
 	client, err := newDockerClient(spec.DockerHost)
 	if err != nil {
 		return nil, err
@@ -33,19 +33,32 @@ func NewRepository(ctx cpi.Context, spec *RepositorySpec) (*Repository, error) {
 		DockerDaemonHost: client.DaemonHost(),
 	}
 
-	return &Repository{
-		ctx:    ctx,
-		spec:   spec,
-		sysctx: sysctx,
-		client: client,
-	}, nil
+	i := &RepositoryImpl{
+		RepositoryImplBase: cpi.NewRepositoryImplBase(ctx),
+		spec:               spec,
+		sysctx:             sysctx,
+		client:             client,
+	}
+	return cpi.NewRepository(i, "docker"), nil
 }
 
-func (r *Repository) NamespaceLister() cpi.NamespaceLister {
+func (r *RepositoryImpl) Close() error {
+	return nil
+}
+
+func (r *RepositoryImpl) IsReadOnly() bool {
+	return true
+}
+
+func (r *RepositoryImpl) GetSpecification() cpi.RepositorySpec {
+	return r.spec
+}
+
+func (r *RepositoryImpl) NamespaceLister() cpi.NamespaceLister {
 	return r
 }
 
-func (r *Repository) NumNamespaces(prefix string) (int, error) {
+func (r *RepositoryImpl) NumNamespaces(prefix string) (int, error) {
 	repos, err := r.GetRepositories()
 	if err != nil {
 		return -1, err
@@ -53,7 +66,7 @@ func (r *Repository) NumNamespaces(prefix string) (int, error) {
 	return len(cpi.FilterByNamespacePrefix(prefix, repos)), nil
 }
 
-func (r *Repository) GetNamespaces(prefix string, closure bool) ([]string, error) {
+func (r *RepositoryImpl) GetNamespaces(prefix string, closure bool) ([]string, error) {
 	repos, err := r.GetRepositories()
 	if err != nil {
 		return nil, err
@@ -61,7 +74,7 @@ func (r *Repository) GetNamespaces(prefix string, closure bool) ([]string, error
 	return cpi.FilterChildren(closure, cpi.FilterByNamespacePrefix(prefix, repos)), nil
 }
 
-func (r *Repository) GetRepositories() ([]string, error) {
+func (r *RepositoryImpl) GetRepositories() ([]string, error) {
 	opts := dockertypes.ImageListOptions{}
 	list, err := r.client.ImageList(dummyContext, opts)
 	if err != nil {
@@ -85,19 +98,7 @@ func (r *Repository) GetRepositories() ([]string, error) {
 	return result, nil
 }
 
-func (r *Repository) IsReadOnly() bool {
-	return true
-}
-
-func (r *Repository) IsClosed() bool {
-	return false
-}
-
-func (r *Repository) GetSpecification() cpi.RepositorySpec {
-	return r.spec
-}
-
-func (r *Repository) ExistsArtifact(name string, version string) (bool, error) {
+func (r *RepositoryImpl) ExistsArtifact(name string, version string) (bool, error) {
 	ref, err := ParseRef(name, version)
 	if err != nil {
 		return false, err
@@ -111,7 +112,7 @@ func (r *Repository) ExistsArtifact(name string, version string) (bool, error) {
 	return len(list) > 0, nil
 }
 
-func (r *Repository) LookupArtifact(name string, version string) (cpi.ArtifactAccess, error) {
+func (r *RepositoryImpl) LookupArtifact(name string, version string) (cpi.ArtifactAccess, error) {
 	n, err := r.LookupNamespace(name)
 	if err != nil {
 		return nil, err
@@ -119,10 +120,6 @@ func (r *Repository) LookupArtifact(name string, version string) (cpi.ArtifactAc
 	return n.GetArtifact(version)
 }
 
-func (r *Repository) LookupNamespace(name string) (cpi.NamespaceAccess, error) {
+func (r *RepositoryImpl) LookupNamespace(name string) (cpi.NamespaceAccess, error) {
 	return NewNamespace(r, name)
-}
-
-func (r *Repository) Close() error {
-	return nil
 }

@@ -139,7 +139,6 @@ func (v DisableValidation) ApplyDecodeOption(options *DecodeOptions) {
 ////////////////////////////////////////////////////////////////////////////////
 
 // Encode encodes a component into the given object.
-// The obj is expected to be of type v2.ComponentDescriptor or v2.ComponentDescriptorList.
 // If the serialization version is left blank, the schema version configured in the
 // component descriptor will be used.
 func Encode(obj *ComponentDescriptor, opts ...EncodeOption) ([]byte, error) {
@@ -151,7 +150,7 @@ func Encode(obj *ComponentDescriptor, opts ...EncodeOption) ([]byte, error) {
 	return o.Codec.Encode(v)
 }
 
-// Convert concerts a component descriptor into ta dedicated schem version.
+// Convert converts a component descriptor into a dedicated scheme version.
 // If the serialization version is left blank, the schema version configured in the
 // component descriptor will be used.
 func Convert(obj *ComponentDescriptor, opts ...EncodeOption) (ComponentDescriptorVersion, error) {

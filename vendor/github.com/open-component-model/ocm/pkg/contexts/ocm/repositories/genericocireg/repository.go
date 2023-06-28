@@ -22,52 +22,46 @@ import (
 )
 
 type OCIBasedRepository interface {
-	cpi.Repository
 	OCIRepository() ocicpi.Repository
 }
 
-type Repository struct {
-	view accessio.CloserView
-	*RepositoryImpl
+func GetOCIRepository(r cpi.Repository) ocicpi.Repository {
+	if o, ok := r.(OCIBasedRepository); ok {
+		return o.OCIRepository()
+	}
+	impl, err := cpi.GetRepositoryImplementation(r)
+	if err != nil {
+		return nil
+	}
+	if o, ok := impl.(OCIBasedRepository); ok {
+		return o.OCIRepository()
+	}
+	return nil
 }
 
-func (r *Repository) IsClosed() bool {
-	return r.view.IsClosed()
-}
-
-func (r *Repository) Close() error {
-	return r.view.Close()
-}
+type _RepositoryImplBase = cpi.RepositoryImplBase
 
 type RepositoryImpl struct {
-	refs accessio.ReferencableCloser
-
-	ctx     cpi.Context
+	_RepositoryImplBase
 	meta    ComponentRepositoryMeta
+	nonref  cpi.Repository
 	ocirepo oci.Repository
 }
 
 var (
-	_ OCIBasedRepository                   = (*Repository)(nil)
-	_ credentials.ConsumerIdentityProvider = (*Repository)(nil)
+	_ cpi.RepositoryImpl                   = (*RepositoryImpl)(nil)
+	_ credentials.ConsumerIdentityProvider = (*RepositoryImpl)(nil)
 )
 
 func NewRepository(ctx cpi.Context, meta *ComponentRepositoryMeta, ocirepo oci.Repository) (cpi.Repository, error) {
-	repo := &RepositoryImpl{
-		ctx:     ctx,
-		meta:    *DefaultComponentRepositoryMeta(meta),
-		ocirepo: ocirepo,
+	impl := &RepositoryImpl{
+		_RepositoryImplBase: *cpi.NewRepositoryImplBase(ctx.OCMContext()),
+		meta:                *DefaultComponentRepositoryMeta(meta),
+		ocirepo:             ocirepo,
 	}
-	repo.refs = accessio.NewRefCloser(repo, true)
-	return repo.View(true)
-}
-
-func (r *RepositoryImpl) View(main ...bool) (*Repository, error) {
-	v, err := r.refs.View(main...)
-	if err != nil {
-		return nil, err
-	}
-	return &Repository{view: v, RepositoryImpl: r}, nil
+	impl.nonref = cpi.NewNoneRefRepositoryView(impl)
+	r := cpi.NewRepository(impl, "OCM repo[OCI]")
+	return r, nil
 }
 
 func (r *RepositoryImpl) GetConsumerId(uctx ...credentials.UsageContext) credentials.ConsumerIdentity {
@@ -90,10 +84,6 @@ func (r *RepositoryImpl) GetIdentityMatcher() string {
 
 func (r *RepositoryImpl) Close() error {
 	return r.ocirepo.Close()
-}
-
-func (r *RepositoryImpl) GetContext() cpi.Context {
-	return r.ctx
 }
 
 func (r *RepositoryImpl) OCIRepository() ocicpi.Repository {
@@ -188,7 +178,7 @@ func (r *RepositoryImpl) LookupComponentVersion(name string, version string) (cp
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
+	defer accessio.PropagateCloseTemporary(&err, c) // temporary component object not exposed.
 	return c.LookupVersion(version)
 }
 

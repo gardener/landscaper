@@ -19,6 +19,7 @@ const (
 	KIND_RESOURCE           = internal.KIND_RESOURCE
 	KIND_SOURCE             = internal.KIND_SOURCE
 	KIND_REFERENCE          = internal.KIND_REFERENCE
+	KIND_REPOSITORYSPEC     = internal.KIND_REPOSITORYSPEC
 )
 
 const CONTEXT_TYPE = internal.CONTEXT_TYPE
@@ -28,6 +29,7 @@ const CommonTransportFormat = internal.CommonTransportFormat
 type (
 	Context                          = internal.Context
 	ContextProvider                  = internal.ContextProvider
+	LocalContextProvider             = internal.LocalContextProvider
 	ComponentVersionResolver         = internal.ComponentVersionResolver
 	Repository                       = internal.Repository
 	RepositorySpecHandlers           = internal.RepositorySpecHandlers
@@ -91,10 +93,14 @@ func NewRepositoryDelegationRegistry(base ...RepositoryDelegationRegistry) Repos
 	return internal.NewDelegationRegistry[Context, RepositorySpec](base...)
 }
 
-// ForContext returns the Context to use for context.Context.
+// FromContext returns the Context to use for context.Context.
 // This is either an explicit context or the default context.
-func ForContext(ctx context.Context) Context {
-	return internal.ForContext(ctx)
+func FromContext(ctx context.Context) Context {
+	return internal.FromContext(ctx)
+}
+
+func FromProvider(p ContextProvider) Context {
+	return internal.FromProvider(p)
 }
 
 func DefinedForContext(ctx context.Context) (Context, bool) {

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/modern-go/reflect2"
 	"github.com/sirupsen/logrus"
@@ -64,6 +65,64 @@ func (m UnstructuredMap) FlatCopy() UnstructuredMap {
 		r[k] = v
 	}
 	return r
+}
+
+func (m UnstructuredMap) Match(o UnstructuredMap) bool {
+	for k, v := range m {
+		vo := o[k]
+		if !matchValue(v, vo) {
+			return false
+		}
+	}
+	for k, v := range o {
+		if _, ok := m[k]; ok {
+			continue
+		}
+		if !matchValue(v, nil) {
+			return false
+		}
+	}
+	return true
+}
+
+func matchValue(a, b interface{}) bool {
+	if a == nil {
+		if b == nil {
+			return true
+		}
+		a, b = b, a
+	}
+	// a in not nil
+	if b != nil {
+		if reflect.TypeOf(a) != reflect.TypeOf(b) {
+			return false
+		}
+		switch v := a.(type) {
+		case []interface{}:
+			if len(v) != len(b.([]interface{})) {
+				return false
+			}
+			for i, e := range b.([]interface{}) {
+				if !matchValue(v[i], e) {
+					return false
+				}
+			}
+			return true
+		case map[string]interface{}:
+			return UnstructuredMap(v).Match(UnstructuredMap(b.(map[string]interface{})))
+		default:
+			return reflect.DeepEqual(a, b)
+		}
+	}
+	// check initial (b==nil)
+	switch v := a.(type) {
+	case []interface{}:
+		return len(v) == 0
+	case map[string]interface{}:
+		return len(v) == 0
+	default:
+		return reflect.ValueOf(a).IsZero()
+	}
 }
 
 // UnstructuredTypesEqual compares two unstructured object.

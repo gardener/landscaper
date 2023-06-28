@@ -30,7 +30,7 @@ func (a AttributeType) Description() string {
 	return `
 *bool*
 Keep local blobs when importing OCI artifacts to OCI registries from <code>localBlob</code>
-access methods. By default they will be expanded to OCI artifacts with the
+access methods. By default, they will be expanded to OCI artifacts with the
 access method <code>ociRegistry</code>. If this option is set to true, they will be stored
 as local blobs, also. The access method will still be <code>localBlob</code> but with a nested
 <code>ociRegistry</code> access method for describing the global access.

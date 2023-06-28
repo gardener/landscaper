@@ -110,6 +110,13 @@ func (a *AccessSpecRef) AccessMethod(access ComponentVersionAccess) (AccessMetho
 	return a.evaluated.AccessMethod(access)
 }
 
+func (a *AccessSpecRef) GetInexpensiveContentVersionIdentity(access ComponentVersionAccess) string {
+	if err := a.assure(access.GetContext()); err != nil {
+		return ""
+	}
+	return a.evaluated.GetInexpensiveContentVersionIdentity(access)
+}
+
 func (a *AccessSpecRef) Evaluate(ctx Context) (AccessSpec, error) {
 	err := a.assure(ctx)
 	if err != nil {

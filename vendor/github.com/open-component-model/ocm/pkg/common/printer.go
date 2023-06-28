@@ -50,6 +50,13 @@ func NewPrinter(writer io.Writer) Printer {
 	return &printer{writer: writer, state: &printerState{true}}
 }
 
+func AssurePrinter(p Printer) Printer {
+	if p != nil {
+		return p
+	}
+	return NewPrinter(nil)
+}
+
 func NewBufferedPrinter() (Printer, *bytes.Buffer) {
 	buf := bytes.NewBuffer(nil)
 	return NewPrinter(buf), buf

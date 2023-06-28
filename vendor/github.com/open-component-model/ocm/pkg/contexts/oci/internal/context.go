@@ -28,6 +28,7 @@ type Context interface {
 	datacontext.Context
 	config.ContextProvider
 	credentials.ContextProvider
+	ContextProvider
 
 	RepositorySpecHandlers() RepositorySpecHandlers
 	MapUniformRepositorySpec(u *UniformRepositorySpec) (RepositorySpec, error)
@@ -51,6 +52,13 @@ var DefaultContext = Builder{}.New(datacontext.MODE_SHARED)
 func ForContext(ctx context.Context) Context {
 	c, _ := datacontext.ForContextByKey(ctx, key, DefaultContext)
 	return c.(Context)
+}
+
+func FromProvider(p ContextProvider) Context {
+	if p == nil {
+		return nil
+	}
+	return p.OCIContext()
 }
 
 func DefinedForContext(ctx context.Context) (Context, bool) {

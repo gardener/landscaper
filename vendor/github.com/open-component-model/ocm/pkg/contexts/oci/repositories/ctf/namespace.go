@@ -15,108 +15,68 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
-type Namespace struct {
-	view accessio.CloserView
-	*NamespaceContainer
+func NewNamespace(repo *RepositoryImpl, name string) (cpi.NamespaceAccess, error) {
+	return support.NewNamespaceAccess(name, newNamespaceContainer(repo), repo, "CTF namespace")
 }
 
-// implemented by view
-// the rest is directly taken from the artifact set implementation
-
-func (s *Namespace) Close() error {
-	return s.view.Close()
+type namespaceContainer struct {
+	impl support.NamespaceAccessImpl
+	repo *RepositoryImpl
 }
 
-func (s *Namespace) IsClosed() bool {
-	return s.view.IsClosed()
-}
+var _ support.NamespaceContainer = (*namespaceContainer)(nil)
 
-func newNamespace(repo *RepositoryImpl, name string, main bool) (*Namespace, error) {
-	r, err := repo.View()
-	if err != nil {
-		return nil, err
+func newNamespaceContainer(repo *RepositoryImpl) support.NamespaceContainer {
+	return &namespaceContainer{
+		repo: repo,
 	}
-	container := &NamespaceContainer{
-		repo:      r,
-		namespace: name,
-	}
-	container.refs = accessio.NewRefCloser(container, true)
-	container.ArtifactSetAccess = support.NewArtifactSetAccess(container)
-	return container.view(main)
 }
 
-type NamespaceContainer struct {
-	refs              accessio.ReferencableCloser
-	repo              *Repository
-	namespace         string
-	ArtifactSetAccess *support.ArtifactSetAccess
+func (n *namespaceContainer) SetImplementation(impl support.NamespaceAccessImpl) {
+	n.impl = impl
 }
 
-var (
-	_ support.ArtifactSetContainer = (*NamespaceContainer)(nil)
-	_ cpi.NamespaceAccess          = (*Namespace)(nil)
-)
-
-func (a *NamespaceContainer) View(main ...bool) (support.ArtifactSetContainer, error) {
-	ns, err := a.view(main...)
-	if err != nil || ns == nil {
-		return nil, err
-	}
-	return ns, err
-}
-
-func (a *NamespaceContainer) view(main ...bool) (*Namespace, error) {
-	v, err := a.refs.View(main...)
-	if err != nil {
-		return nil, err
-	}
-	return &Namespace{view: v, NamespaceContainer: a}, nil
-}
-
-func (n *NamespaceContainer) GetNamespace() string {
-	return n.namespace
-}
-
-func (n *NamespaceContainer) IsReadOnly() bool {
+func (n *namespaceContainer) IsReadOnly() bool {
 	return n.repo.IsReadOnly()
 }
 
-func (n *NamespaceContainer) IsClosed() bool {
-	return n.repo.IsClosed()
-}
-
-func (n *NamespaceContainer) Close() error {
-	return n.repo.Close()
-}
-
-func (n *NamespaceContainer) GetBlobDescriptor(digest digest.Digest) *cpi.Descriptor {
+func (n *namespaceContainer) Close() error {
 	return nil
 }
 
-func (n *NamespaceContainer) ListTags() ([]string, error) {
-	return n.repo.getIndex().GetTags(n.namespace), nil // return digests as tags, also
+func (n *namespaceContainer) GetBlobDescriptor(digest digest.Digest) *cpi.Descriptor {
+	return nil
 }
 
-func (n *NamespaceContainer) GetBlobData(digest digest.Digest) (int64, cpi.DataAccess, error) {
+func (n *namespaceContainer) ListTags() ([]string, error) {
+	return n.repo.getIndex().GetTags(n.impl.GetNamespace()), nil // return digests as tags, also
+}
+
+func (n *namespaceContainer) GetBlobData(digest digest.Digest) (int64, cpi.DataAccess, error) {
 	return n.repo.base.GetBlobData(digest)
 }
 
-func (n *NamespaceContainer) AddBlob(blob cpi.BlobAccess) error {
+func (n *namespaceContainer) AddBlob(blob cpi.BlobAccess) error {
 	n.repo.base.Lock()
 	defer n.repo.base.Unlock()
 
 	return n.repo.base.AddBlob(blob)
 }
 
-func (n *NamespaceContainer) GetArtifact(vers string) (cpi.ArtifactAccess, error) {
-	meta := n.repo.getIndex().GetArtifactInfo(n.namespace, vers)
+func (n *namespaceContainer) GetArtifact(i support.NamespaceAccessImpl, vers string) (cpi.ArtifactAccess, error) {
+	meta := n.repo.getIndex().GetArtifactInfo(n.impl.GetNamespace(), vers)
 	if meta == nil {
-		return nil, errors.ErrNotFound(cpi.KIND_OCIARTIFACT, vers, n.namespace)
+		return nil, errors.ErrNotFound(cpi.KIND_OCIARTIFACT, vers, n.impl.GetNamespace())
 	}
-	return n.repo.base.GetArtifact(n, meta.Digest)
+	return n.repo.base.GetArtifact(i, meta.Digest)
 }
 
-func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
+func (n *namespaceContainer) HasArtifact(vers string) (bool, error) {
+	meta := n.repo.getIndex().GetArtifactInfo(n.impl.GetNamespace(), vers)
+	return meta != nil, nil
+}
+
+func (n *namespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
 	n.repo.base.Lock()
 	defer n.repo.base.Unlock()
 
@@ -125,26 +85,20 @@ func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) 
 		return nil, err
 	}
 	n.repo.getIndex().AddArtifactInfo(&index.ArtifactMeta{
-		Repository: n.namespace,
+		Repository: n.impl.GetNamespace(),
 		Tag:        "",
 		Digest:     blob.Digest(),
 	})
 	return blob, n.AddTags(blob.Digest(), tags...)
 }
 
-func (n *NamespaceContainer) AddTags(digest digest.Digest, tags ...string) error {
-	return n.repo.getIndex().AddTagsFor(n.namespace, digest, tags...)
+func (n *namespaceContainer) AddTags(digest digest.Digest, tags ...string) error {
+	return n.repo.getIndex().AddTagsFor(n.impl.GetNamespace(), digest, tags...)
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-func (n *NamespaceContainer) GetRepository() cpi.Repository {
-	return n.repo
-}
-
-func (n *NamespaceContainer) NewArtifact(art ...*artdesc.Artifact) (cpi.ArtifactAccess, error) {
+func (n *namespaceContainer) NewArtifact(i support.NamespaceAccessImpl, art ...*artdesc.Artifact) (cpi.ArtifactAccess, error) {
 	if n.IsReadOnly() {
 		return nil, accessio.ErrReadOnly
 	}
-	return support.NewArtifact(n, art...)
+	return support.NewArtifact(i, art...)
 }
