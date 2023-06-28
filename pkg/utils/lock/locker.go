@@ -3,6 +3,7 @@ package lock
 import (
 	"context"
 	"fmt"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -35,7 +36,9 @@ func NewLocker(lsClient, hostClient client.Client) *Locker {
 	}
 }
 
-func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, error) {
+func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, lserrors.LsError) {
+	op := "Locker.Lock"
+
 	if !isEnabled {
 		return true, nil
 	}
@@ -44,7 +47,8 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, error) {
 
 	syncObject, err := l.getSyncObject(ctx, obj)
 	if err != nil {
-		return false, err
+		lsError := lserrors.NewWrappedError(err, op, "resolveSecret", "error getting sync object")
+		return false, lsError
 	}
 
 	if syncObject == nil {
@@ -57,8 +61,10 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, error) {
 				return false, nil
 			}
 
-			log.Error(err, "locking: unable to create syncobject")
-			return false, fmt.Errorf("locking: unable to create syncobject")
+			msg := "locking: unable to create syncobject"
+			log.Error(err, msg)
+			lsError := lserrors.NewWrappedError(err, op, "createSyncObject", msg)
+			return false, lsError
 		}
 
 		// we have locked the object
@@ -75,7 +81,8 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, error) {
 	// returns also false if syncObject.Spec.PodName is empty
 	podExists, err := l.existsPod(ctx, syncObject.Spec.PodName)
 	if err != nil {
-		return false, err
+		lsError := lserrors.NewWrappedError(err, op, "checkPodExists", "error checking if pod exists")
+		return false, lsError
 	}
 
 	if podExists {
@@ -92,8 +99,10 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (bool, error) {
 			return false, nil
 		}
 
-		log.Error(err, "locker: unable to take over lock")
-		return false, fmt.Errorf("locker: unable to take over lock: %w", err)
+		msg := "locker: unable to take over lock"
+		log.Error(err, msg)
+		lsError := lserrors.NewWrappedError(err, op, "takeOverLock", msg)
+		return false, lsError
 	}
 
 	log.Info("locker: lock taken over")

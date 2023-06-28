@@ -192,7 +192,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	locked, err := locker.Lock(ctx, di)
 	if err != nil {
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
 
 	if !locked {
