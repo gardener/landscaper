@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 )
@@ -37,7 +36,7 @@ func NewLocker(lsClient, hostClient client.Client) *Locker {
 	}
 }
 
-func (l *Locker) Lock(ctx context.Context, obj client.Object) (*lsv1alpha1.SyncObject, lserrors.LsError) {
+func (l *Locker) Lock(ctx context.Context, obj client.Object, kind string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
 	op := "Locker.Lock"
 
 	if !isEnabled {
@@ -54,7 +53,7 @@ func (l *Locker) Lock(ctx context.Context, obj client.Object) (*lsv1alpha1.SyncO
 
 	if syncObject == nil {
 		// the object is not yet locked; try to lock it
-		syncObject = l.newSyncObject(obj)
+		syncObject = l.newSyncObject(obj, kind)
 		err = l.lsClient.Create(ctx, syncObject)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
@@ -131,7 +130,7 @@ func (l *Locker) NotLockedResult() (reconcile.Result, error) {
 	return reconcile.Result{RequeueAfter: 3 * time.Minute}, nil
 }
 
-func (l *Locker) newSyncObject(obj client.Object) *lsv1alpha1.SyncObject {
+func (l *Locker) newSyncObject(obj client.Object, kind string) *lsv1alpha1.SyncObject {
 	return &lsv1alpha1.SyncObject{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      string(obj.GetUID()),
@@ -139,7 +138,7 @@ func (l *Locker) newSyncObject(obj client.Object) *lsv1alpha1.SyncObject {
 		},
 		Spec: lsv1alpha1.SyncObjectSpec{
 			PodName:        utils.GetCurrentPodName(),
-			Kind:           obj.GetObjectKind().GroupVersionKind().Kind,
+			Kind:           kind,
 			Name:           obj.GetName(),
 			LastUpdateTime: metav1.Now(),
 		},

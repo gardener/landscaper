@@ -41,6 +41,8 @@ import (
 	"github.com/gardener/landscaper/pkg/version"
 )
 
+const KindDeployItem = "DeployItem"
+
 // Deployer defines a controller that acts upon deployitems.
 type Deployer interface {
 	// Reconcile the deployitem.
@@ -190,7 +192,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	locker := lock.NewLocker(c.lsClient, c.hostClient)
 
-	syncObject, err := locker.Lock(ctx, di)
+	syncObject, err := locker.Lock(ctx, di, KindDeployItem)
 	if err != nil {
 		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
