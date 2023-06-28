@@ -1,25 +1,24 @@
 # Ordering of Objects during deployment and deletion of Charts with Helm Manifest Deployer
 
-If deploying a DeployItem with the Helm Deployer and the entry `helmDeployment` is set to false the Chart is only 
+If deploying a Helm Chart with the Helm Deployer and the entry `helmDeployment` is set to false the Chart is only 
 templated with Helm and the resulting manifests are just deployed with standard kubernetes means instead of using Helm
 ([see](https://github.com/gardener/landscaper/blob/master/docs/deployer/helm.md#manifest-only-deployment)).
 
-This document describes the behaviour of the current implementation and proposals how to improve the logic.  
+This document describes the behaviour of the current implementation and proposals how to improve the logic. The main 
+focus is on the deletion of Charts but the concepts could also be extended to the installation and upgrade process
+if later required.
 
 ## Installation and Upgrade of Chart
 
-During the installation and upgrade the manifests are currently deployed in the following order:
+During the installation and upgrade of a Helm Chart, the manifests are currently deployed in the following order:
 
 - CRDs
 - Manifests for non namespaced objects like namespaces, cluster roles etc.
 - Manifests for namespaced objects, i.e. objects stored in a namespace
 
-This behaviour seems to be quite reasonable and will not be changed.
-
-Open questions: 
-
-- Do we require some possibility to influence the deploy order more fine grained?
-- Do we need a more elaborated order like helm ([see](https://helm.sh/docs/intro/using_helm/))?
+This behaviour seems to be quite reasonable and will not be changed. If required, the proposals in the next
+Chapter could be also applied to the installation of a Chart to get a better control about the deploy order 
+of particular manifest types.
 
 ## Uninstall Chart
 
@@ -31,15 +30,15 @@ Currently, when removing a Chart, the objects deployed by the chart are deleted 
 - Not namespaced objects deployed by the Chart
 - CRDs deployed by the Chart
 
-The algorithm does not wait until particular objects are gone before it continues deleting the next ones.The removal of 
-a Chart is successful if all objects were gone. Objects not deployed by the Chart, e.g. custom resources (CRs) deployed
-by some operator/job are not removed.
+The algorithm does not wait until particular objects are gone (e.g. if thei have some finalizers) before it continues 
+deleting the next ones. The removal of a Chart is successful if all objects were gone. Objects not deployed by the Chart, 
+e.g. custom resources (CRs) deployed by some operator/job are not removed.
 
 ### New Solution
 
-## Default Deletion Behaviour
-
 We propose the following solution to have more control over the deletion process.
+
+## Default Deletion Behaviour
 
 The basic order of deleting the deployed manifests remains the same as before and is divided into three deletion groups:
 
@@ -155,36 +154,58 @@ deletionGroups:
 Every item of the list `deletionGroups` must contain exactly one of `resources` or `predefinedResourceGroup` to
 define a set of resources.
 
+##### Example: delete CRs first
+
+In this example, some CRs should be deleted before the namespaces objects. As the deletion algorithm only proceeds
+to the deletion of the namespaced object if all specified CRs are gone, potential operators have the time to do their cleanup,
+before they remove the finalizers from the CRs.
+
+```yaml
+deletionGroups:
+  - resources:
+    - group:   <group of CR>
+      version: <version of CR>"
+      kind:    <kind of CR>
+  - predefinedResourceGroup: namespaced-resources
+  - predefinedResourceGroup: cluster-scoped-resources
+  - predefinedResourceGroup: crds
+```
+
 ### Force Delete
 
 Another important point is the possibility to force the deletion of particular objects by specifying
 the entry `forceDelete`. The meaning of the additional fields is that after a successful deletion call to all objects 
-of the deletion group, the finalizer of these objects are also removed.
+of the deletion group, the finalizers of these objects are also removed.
 
 ##### Example: force-delete
 
-In this example, the `force-delete` mode is enabled for all namespaced and cluster-scoped resources:
+In this example, the `force-delete` mode is enabled for config maps and cluster-scoped resources:
 
 ```yaml
 deletionGroups:
-  - predefinedResourceGroup: namespaced-resources
+  - resources:
+    - group:   ""
+      version: "v1"
+      kind:    "configmaps"
     force-delete:
       enabled: true
+  - predefinedResourceGroup: namespaced-resources
   - predefinedResourceGroup: cluster-scoped-resources
     force-delete:
       enabled: true
   - predefinedResourceGroup: crds
 ```
 
-Of course `forceDelete` could also be applied for cluster group definitions for particular object types.
-
 ### Deleting all Resources
 
 In the current deletion process only objects deployed by the chart are removed. This is also the default behaviour
 for the new approach. 
 
-You can change this behaviour by specifying `seletor.all=true` and all objects of that type are removed. We could later 
-extend the selector by rules for namespaces, labels, object names etc. to allow more elaborated deletion rules.
+You can change this behaviour by specifying `seletor.all=true` and all objects of that type are removed. Later 
+the selector could be extended by rules for namespaces, labels, object names etc. to allow more elaborated deletion rules.
+
+This approach allows to delete also objects which where not directly created by the Chart but e.g. by some operators or 
+jobs which itself where deployed by the Chart.
 
 ##### Example: delete resources outside the chart
 
@@ -241,6 +262,19 @@ The field `deletionGroups` is a list. Its items have the following fields:
 
 > Maybe later we need a field `excludedResources` to express something like: all namespaced resources except configmaps.
 
-## Open questions: 
+## Deletion of objects during upgrades
 
-- How to handle deletions in Chart upgrades?
+During the upgrade of Helm Charts, objects might not be deployed by the Chart anymore which therefore have to be deleted.
+Currently, these are deleted in some arbitrary order.
+
+With the new approach, the deletion of these objects is executed in the same order as for the default deletion behaviour:
+
+- Namespaced objects deployed by the Chart
+- Not namespaced objects deployed by the Chart (except CRDs)
+- CRDs deployed by the Chart
+
+Again, objects of the next deletion goup are only deleted if all the objecs of the deletion group before are gone.
+
+If later required, it is also possible to use the ideas of custom groups here to allow more control 
+about the deletion order during an upgrade.
+ 
