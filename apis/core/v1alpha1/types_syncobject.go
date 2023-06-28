@@ -6,6 +6,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -50,4 +52,37 @@ type SyncObjectSpec struct {
 
 // SyncObjectStatus contains the status.
 type SyncObjectStatus struct {
+}
+
+// SyncObjectDefinition defines the SyncObjectDefinition resource CRD.
+var SyncObjectDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "syncobjects",
+		Singular: "syncobject",
+		ShortNames: []string{
+			"so",
+		},
+		Kind: "SyncObject",
+	},
+	Scope:             lsschema.NamespaceScoped,
+	Storage:           true,
+	Served:            true,
+	SubresourceStatus: true,
+	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "PodName",
+			Type:     "string",
+			JSONPath: ".spec.podName",
+		},
+		{
+			Name:     "Kind",
+			Type:     "string",
+			JSONPath: ".spec.kind",
+		},
+		{
+			Name:     "Name",
+			Type:     "string",
+			JSONPath: ".spec.name",
+		},
+	},
 }
