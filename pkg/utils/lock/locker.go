@@ -3,8 +3,9 @@ package lock
 import (
 	"context"
 	"fmt"
-	lserrors "github.com/gardener/landscaper/apis/errors"
 	"time"
+
+	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -124,7 +125,6 @@ func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) 
 	}
 
 	log.Info("locker: object unlocked")
-	return
 }
 
 func (l *Locker) NotLockedResult() (reconcile.Result, error) {

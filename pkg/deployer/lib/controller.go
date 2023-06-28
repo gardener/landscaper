@@ -200,7 +200,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	defer func() {
-		locker.Unlock(ctx, syncObject, di)
+		locker.Unlock(ctx, syncObject)
 	}()
 
 	if hasTestReconcileAnnotation {
