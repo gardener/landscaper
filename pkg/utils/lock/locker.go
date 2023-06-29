@@ -223,7 +223,7 @@ func (l *Locker) StartPeriodicalSyncObjectCleanup(ctx context.Context, logger lo
 
 func (l *Locker) cleanupSyncObjects(ctx context.Context) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
-	log.Info("starting syncobject cleanup")
+	log.Info("locker: starting syncobject cleanup")
 
 	namespaces := &v1.NamespaceList{}
 	if err := l.lsClient.List(ctx, namespaces); err != nil {
@@ -245,7 +245,9 @@ func (l *Locker) cleanupSyncObjects(ctx context.Context) {
 }
 
 func (l *Locker) cleanupSyncObject(ctx context.Context, syncObject *lsv1alpha1.SyncObject) {
-	log, ctx := logging.FromContextOrNew(ctx, nil)
+	log, ctx := logging.FromContextOrNew(ctx, nil,
+		lc.KeyResource, client.ObjectKeyFromObject(syncObject).String(),
+		lc.KeyResourceKind, syncObject.Spec.Kind)
 
 	exists, err := l.existsResource(ctx, syncObject)
 	if err != nil {
@@ -273,7 +275,7 @@ func (l *Locker) existsResource(ctx context.Context, syncObject *lsv1alpha1.Sync
 	case kindDeployItem:
 		resource = &lsv1alpha1.DeployItem{}
 	default:
-		log.Error(nil, "locker: unsupported kind", lc.KeyResourceKind, syncObject.Spec.Kind)
+		log.Error(nil, "locker: unsupported kind")
 		return false, fmt.Errorf("locker: unsupported kind %s", syncObject.Spec.Kind)
 	}
 
