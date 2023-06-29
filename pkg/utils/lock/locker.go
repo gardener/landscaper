@@ -22,10 +22,10 @@ import (
 const isEnabled = true
 
 const (
-	KeyMyPodName = "myPodName"
+	keyMyPodName = "myPodName"
 	keyNamespace = "lockNamespace"
 
-	KindDeployItem = "DeployItem"
+	kindDeployItem = "DeployItem"
 
 	cleanupInterval = time.Minute
 )
@@ -42,14 +42,18 @@ func NewLocker(lsClient, hostClient client.Client) *Locker {
 	}
 }
 
-func (l *Locker) Lock(ctx context.Context, obj client.Object, kind string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
+func (l *Locker) LockDI(ctx context.Context, obj *lsv1alpha1.DeployItem) (*lsv1alpha1.SyncObject, lserrors.LsError) {
+	return l.lock(ctx, obj, kindDeployItem)
+}
+
+func (l *Locker) lock(ctx context.Context, obj client.Object, kind string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
 	op := "Locker.Lock"
 
 	if !isEnabled {
 		return &lsv1alpha1.SyncObject{}, nil
 	}
 
-	log, ctx := logging.FromContextOrNew(ctx, nil, KeyMyPodName, utils.GetCurrentPodName())
+	log, ctx := logging.FromContextOrNew(ctx, nil, keyMyPodName, utils.GetCurrentPodName())
 
 	syncObject, err := l.getSyncObject(ctx, obj)
 	if err != nil {
@@ -120,7 +124,7 @@ func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) 
 		return
 	}
 
-	log, ctx := logging.FromContextOrNew(ctx, nil, KeyMyPodName, utils.GetCurrentPodName())
+	log, ctx := logging.FromContextOrNew(ctx, nil, keyMyPodName, utils.GetCurrentPodName())
 
 	syncObject.Spec.PodName = ""
 	syncObject.Spec.LastUpdateTime = metav1.Now()
@@ -251,7 +255,7 @@ func (l *Locker) existsResource(ctx context.Context, syncObject *lsv1alpha1.Sync
 	var resource client.Object
 
 	switch syncObject.Spec.Kind {
-	case KindDeployItem:
+	case kindDeployItem:
 		resource = &lsv1alpha1.DeployItem{}
 	default:
 		log.Error(nil, "locker: unsupported kind", lc.KeyResourceKind, syncObject.Spec.Kind)
@@ -272,5 +276,5 @@ func (l *Locker) existsResource(ctx context.Context, syncObject *lsv1alpha1.Sync
 		return false, err
 	}
 
-	return true, nil
+	return syncObject.GetName() == string(resource.GetUID()), nil
 }
