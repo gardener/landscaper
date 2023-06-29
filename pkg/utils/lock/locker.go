@@ -29,7 +29,7 @@ const (
 	kindDeployItem         = "DeployItem"
 	kindSingletonByTimeout = "SingletonByTimeout"
 
-	cleanupInterval = 2 * time.Minute
+	cleanupInterval = 3 * time.Hour
 )
 
 type Locker struct {
