@@ -25,7 +25,8 @@ const (
 	keyMyPodName = "myPodName"
 	keyNamespace = "lockNamespace"
 
-	kindDeployItem = "DeployItem"
+	kindDeployItem         = "DeployItem"
+	kindSingletonByTimeout = "SingletonByTimeout"
 
 	cleanupInterval = time.Minute
 )
@@ -42,20 +43,28 @@ func NewLocker(lsClient, hostClient client.Client) *Locker {
 	}
 }
 
+func (l *Locker) LockSingletonByTimeout(ctx context.Context, namespace, name string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
+	if !isEnabled {
+		return &lsv1alpha1.SyncObject{}, nil
+	}
+
+	return nil, nil
+}
+
 func (l *Locker) LockDI(ctx context.Context, obj *lsv1alpha1.DeployItem) (*lsv1alpha1.SyncObject, lserrors.LsError) {
 	return l.lock(ctx, obj, kindDeployItem)
 }
 
 func (l *Locker) lock(ctx context.Context, obj client.Object, kind string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
-	op := "Locker.Lock"
-
 	if !isEnabled {
 		return &lsv1alpha1.SyncObject{}, nil
 	}
 
+	op := "Locker.Lock"
+
 	log, ctx := logging.FromContextOrNew(ctx, nil, keyMyPodName, utils.GetCurrentPodName())
 
-	syncObject, err := l.getSyncObject(ctx, obj)
+	syncObject, err := l.getSyncObject(ctx, obj.GetNamespace(), string(obj.GetUID()))
 	if err != nil {
 		lsError := lserrors.NewWrappedError(err, op, "resolveSecret", "error getting syncobject")
 		return nil, lsError
@@ -155,12 +164,12 @@ func (l *Locker) newSyncObject(obj client.Object, kind string) *lsv1alpha1.SyncO
 	}
 }
 
-func (l *Locker) getSyncObject(ctx context.Context, obj client.Object) (*lsv1alpha1.SyncObject, error) {
+func (l *Locker) getSyncObject(ctx context.Context, namespace, name string) (*lsv1alpha1.SyncObject, error) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
 	syncObjectKey := client.ObjectKey{
-		Namespace: obj.GetNamespace(),
-		Name:      string(obj.GetUID()),
+		Namespace: namespace,
+		Name:      name,
 	}
 	syncObject := &lsv1alpha1.SyncObject{}
 	if err := l.lsClient.Get(ctx, syncObjectKey, syncObject); err != nil {

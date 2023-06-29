@@ -21,6 +21,7 @@ rules:
   - list
   - update
   - patch
+
 - apiGroups:
   - landscaper.gardener.cloud
   resources:
@@ -30,6 +31,20 @@ rules:
   - get
   - watch
   - list
+
+- apiGroups:
+    - landscaper.gardener.cloud
+  resources:
+    - syncobjects
+  verbs:
+    - get
+    - watch
+    - list
+    - create
+    - update
+    - patch
+    - delete
+
 - apiGroups:
   - ""
   resources:
@@ -40,24 +55,28 @@ rules:
   - watch
   - patch
   - update
+
 - apiGroups:
   - ""
   resources:
   - "pod"
   verbs:
   - "*"
+
 - apiGroups:
   - ""
   resources:
   - "secrets"
   verbs:
   - "*"
+
 - apiGroups:
   - ""
   resources:
   - "pod/status"
   verbs:
   - get
+
 - apiGroups:
   - ""
   resources:
@@ -65,12 +84,14 @@ rules:
   - "pods/status"
   verbs:
   - "*"
+
 - apiGroups:
   - ""
   resources:
   - "serviceaccounts"
   verbs:
   - "*"
+
 - apiGroups:
   - "rbac.authorization.k8s.io"
   resources:
