@@ -81,19 +81,19 @@ func (l *Locker) lock(ctx context.Context, obj client.Object, kind string) (*lsv
 				return nil, nil
 			}
 
-			msg := "locking: unable to create syncobject"
+			msg := "locker: unable to create syncobject"
 			log.Error(err, msg)
 			lsError := lserrors.NewWrappedError(err, op, "createSyncObject", msg)
 			return nil, lsError
 		}
 
 		// we have locked the object
-		log.Info("locking: lock created")
+		log.Info("locker: lock created")
 		return syncObject, nil
 	}
 
 	if syncObject.Spec.PodName == utils.GetCurrentPodName() {
-		log.Info("locking: object is already locked by this pod")
+		log.Info("locker: object is already locked by this pod")
 		return syncObject, nil
 	}
 
@@ -209,8 +209,10 @@ func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
 	return true, nil
 }
 
-func (l *Locker) StartPeriodicalSyncObjectCleanup(ctx context.Context) {
-	log, ctx := logging.FromContextOrNew(ctx, nil)
+func (l *Locker) StartPeriodicalSyncObjectCleanup(ctx context.Context, logger logging.Logger) {
+	log := logger.WithName("syncobject-cleanup")
+	ctx = logging.NewContext(ctx, log)
+
 	log.Info("locker: starting periodical syncobject cleanup")
 
 	startDelay := time.Duration(rand.Float64() * float64(cleanupInterval))
