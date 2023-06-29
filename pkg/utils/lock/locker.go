@@ -3,6 +3,7 @@ package lock
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -28,7 +29,7 @@ const (
 	kindDeployItem         = "DeployItem"
 	kindSingletonByTimeout = "SingletonByTimeout"
 
-	cleanupInterval = time.Minute
+	cleanupInterval = 2 * time.Minute
 )
 
 type Locker struct {
@@ -210,7 +211,10 @@ func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
 
 func (l *Locker) StartPeriodicalSyncObjectCleanup(ctx context.Context) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
-	log.Info("starting periodical syncobject cleanup")
+	log.Info("locker: starting periodical syncobject cleanup")
+
+	startDelay := time.Duration(rand.Float64() * float64(cleanupInterval))
+	time.Sleep(startDelay)
 
 	wait.UntilWithContext(ctx, l.cleanupSyncObjects, cleanupInterval)
 }

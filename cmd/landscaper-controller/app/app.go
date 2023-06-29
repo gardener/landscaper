@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gardener/landscaper/pkg/utils/lock"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
@@ -201,9 +203,15 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to register target sync controller: %w", err)
 	}
 
-	setupLogger.Info("starting the controllers")
 	eg, ctx := errgroup.WithContext(ctx)
 
+	eg.Go(func() error {
+		locker := lock.NewLocker(lsMgr.GetClient(), hostMgr.GetClient())
+		locker.StartPeriodicalSyncObjectCleanup(ctx)
+		return nil
+	})
+
+	setupLogger.Info("starting the controllers")
 	if lsMgr != hostMgr {
 		eg.Go(func() error {
 			if err := hostMgr.Start(ctx); err != nil {
