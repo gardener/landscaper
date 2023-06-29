@@ -71,16 +71,4 @@ rules:
       - create
       - update
       - delete
-  - apiGroups:
-      - landscaper.gardener.cloud
-    resources:
-      - syncobjects
-    verbs:
-      - get
-      - watch
-      - list
-      - create
-      - update
-      - patch
-      - delete
 {{- end }}

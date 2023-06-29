@@ -59,23 +59,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - "pod"
-  verbs:
-  - "*"
-
-- apiGroups:
-  - ""
-  resources:
   - "secrets"
   verbs:
   - "*"
-
-- apiGroups:
-  - ""
-  resources:
-  - "pod/status"
-  verbs:
-  - get
 
 - apiGroups:
   - ""
