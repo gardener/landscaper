@@ -22,6 +22,8 @@ spec:
         {{- end }}
       labels:
         {{- include "deployer.selectorLabels" . | nindent 8 }}
+        landscaper.gardener.cloud/topology: mock-deployer
+        landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -84,3 +86,18 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              landscaper.gardener.cloud/topology: mock-deployer
+              landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              landscaper.gardener.cloud/topology: mock-deployer
+              landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
