@@ -9,8 +9,6 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/gardener/landscaper/test/integration/question"
-
 	"github.com/gardener/landscaper/test/integration/core"
 	"github.com/gardener/landscaper/test/integration/dependencies"
 	"github.com/gardener/landscaper/test/integration/deployers"
@@ -75,7 +73,6 @@ func TestConfig(t *testing.T) {
 		}
 	}
 
-	question.RegisterTests(f)
 	importexport.RegisterTests(f)
 	rootinstallations.RegisterTests(f)
 	subinstallations.RegisterTests(f)
