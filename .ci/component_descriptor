@@ -29,7 +29,7 @@ component:
   sources: []
 "
 
-COMPONENT_DESCRIPTOR_DIR=$(pwd)/${COMPONENT_DESCRIPTOR_DIR}
+COMPONENT_DESCRIPTOR_DIR="$(pwd)"
 
 echo ${COMPONENT_DESCRIPTOR} > ${COMPONENT_DESCRIPTOR_DIR}/component_descriptor_v2
 
