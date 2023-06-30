@@ -29,5 +29,5 @@ component:
   sources: []
 "
 
-echo ${COMPONENT_DESCRIPTOR} > ${COMPONENT_DESCRIPTOR_DIR}
+echo ${COMPONENT_DESCRIPTOR} > ${COMPONENT_DESCRIPTOR_DIR}/component_descriptor_v2
 
