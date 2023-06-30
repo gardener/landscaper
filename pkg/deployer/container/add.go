@@ -34,7 +34,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 	log := logger.WithName("container")
 
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerTreads", config.Controller.Workers)
+		"numberOfWorkerThreads", config.Controller.Workers)
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
 		Scheme: hostMgr.GetScheme(),

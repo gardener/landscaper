@@ -25,7 +25,7 @@ func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config *
 	log := logger.Reconciles("installation", "Installation")
 
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerTreads", config.Controllers.Installations.CommonControllerConfig.Workers)
+		"numberOfWorkerThreads", config.Controllers.Installations.CommonControllerConfig.Workers)
 
 	a, err := NewController(
 		log,
@@ -33,6 +33,7 @@ func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config *
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("Landscaper"),
 		config,
+		config.Controllers.Installations.CommonControllerConfig.Workers,
 	)
 	if err != nil {
 		return err

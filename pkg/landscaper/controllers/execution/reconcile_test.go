@@ -32,7 +32,8 @@ var _ = Describe("Reconcile", func() {
 	)
 	BeforeEach(func() {
 		var err error
-		ctrl, err = execution.NewController(logging.Discard(), testenv.Client, api.Scheme, record.NewFakeRecorder(1024))
+		ctrl, err = execution.NewController(logging.Discard(), testenv.Client, api.Scheme,
+			record.NewFakeRecorder(1024), 1000)
 		Expect(err).ToNot(HaveOccurred())
 		state, err = testenv.InitState(context.TODO())
 		Expect(err).ToNot(HaveOccurred())
