@@ -90,7 +90,7 @@ func (args DeployerArgs) Validate() error {
 }
 
 // Add adds a deployer to the given managers using the given args.
-func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) error {
+func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int) error {
 	args.Default()
 	if err := args.Validate(); err != nil {
 		return err
@@ -100,7 +100,8 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) 
 		lsMgr.GetEventRecorderFor(args.Name),
 		hostMgr.GetClient(),
 		hostMgr.GetScheme(),
-		args)
+		args,
+		maxNumberOfWorkers)
 
 	log = log.Reconciles("", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
 
@@ -124,6 +125,8 @@ type controller struct {
 	lsEventRecorder record.EventRecorder
 	hostClient      client.Client
 	hostScheme      *runtime.Scheme
+
+	workerCounter *lsutil.WorkerCounter
 }
 
 // NewController creates a new generic deployitem controller.
@@ -132,7 +135,11 @@ func NewController(lsClient client.Client,
 	lsEventRecorder record.EventRecorder,
 	hostClient client.Client,
 	hostScheme *runtime.Scheme,
-	args DeployerArgs) *controller {
+	args DeployerArgs,
+	maxNumberOfWorkers int) *controller {
+
+	wc := lsutil.NewWorkerCounter(maxNumberOfWorkers)
+
 	return &controller{
 		deployerType: args.Type,
 		deployer:     args.Deployer,
@@ -147,11 +154,15 @@ func NewController(lsClient client.Client,
 		lsEventRecorder: lsEventRecorder,
 		hostClient:      hostClient,
 		hostScheme:      hostScheme,
+		workerCounter:   wc,
 	}
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
+
+	c.workerCounter.EnterWithLog(logger, 70)
+	defer c.workerCounter.Exit()
 
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, req.NamespacedName, di); err != nil {

@@ -44,7 +44,7 @@ func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
 		Type:            Type,
 		Deployer:        d,
 		TargetSelectors: config.TargetSelector,
-	})
+	}, 1000)
 }
 
 // NewController creates a new simple controller.
@@ -67,5 +67,5 @@ func NewController(log logging.Logger, kubeClient client.Client, scheme *runtime
 			Type:            Type,
 			Deployer:        d,
 			TargetSelectors: config.TargetSelector,
-		}), nil
+		}, 1000), nil
 }

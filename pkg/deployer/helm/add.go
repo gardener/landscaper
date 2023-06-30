@@ -51,5 +51,5 @@ func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
 		Deployer:        d,
 		TargetSelectors: config.TargetSelector,
 		Options:         options,
-	})
+	}, config.Controller.Workers)
 }

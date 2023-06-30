@@ -76,7 +76,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		Deployer:        deployer,
 		TargetSelectors: config.TargetSelector,
 		Options:         options,
-	})
+	}, config.Controller.Workers)
 	if err != nil {
 		return err
 	}
