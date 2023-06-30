@@ -73,7 +73,7 @@ landscaper:
         component_descriptor_real:
           execute:
           - component_descriptor_real
-          trait_deplends:
+          trait_depends:
           - publish
         integration_test:
           execute:
@@ -87,7 +87,7 @@ landscaper:
         component_descriptor_real:
           execute:
           - component_descriptor_real
-          trait_deplends:
+          trait_depends:
           - publish
         integration_test:
           depends:
@@ -117,7 +117,7 @@ landscaper:
         component_descriptor_real:
           execute:
           - component_descriptor_real
-          trait_deplends:
+          trait_depends:
           - publish
         integration_test:
           execute:
