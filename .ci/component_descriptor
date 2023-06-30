@@ -10,26 +10,9 @@ set -o pipefail
 
 echo "component descriptor dummy step"
 
+SOURCE_PATH="$(dirname $0)/.."
 VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
 REPO_CTX="eu.gcr.io/gardener-project/development"
+COMPONENT_DESCRIPTOR_FILE="${SOURCE_PATH}/../../${COMPONENT_DESCRIPTOR_DIR}/component_descriptor_v2"
 
-COMPONENT_DESCRIPTOR="
-meta:
-  schemaVersion: v2
-component:
-  name: github.com/gardener/landscaper
-  version: ${VERSION}-dummy
-  provider: internal
-  repositoryContexts:
-  - baseUrl: ${REPO_CTX}
-    componentNameMapping: urlPath
-    type: ociRegistry
-  componentReferences: []
-  resources: []
-  sources: []
-"
-
-COMPONENT_DESCRIPTOR_DIR="$(pwd)"
-
-echo ${COMPONENT_DESCRIPTOR} > ${COMPONENT_DESCRIPTOR_DIR}/component_descriptor_v2
-
+VERSION="${VERSION}-dummy" REPO_CTX="${REPO_CTX}" COMPONENT_DESCRIPTOR_FILE="${COMPONENT_DESCRIPTOR_FILE}" python ${SOURCE_PATH}/hack/create-dummy-cd.py
