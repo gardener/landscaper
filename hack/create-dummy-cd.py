@@ -20,6 +20,9 @@ cd = {
           "type": "ociRegistry"
         }
       ],
+      "sources": [],
+      "resources": [],
+      "componentReferences": []
     }
 }
 
