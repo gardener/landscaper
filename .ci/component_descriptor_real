@@ -94,6 +94,12 @@ ${COMP_CLI} ca component-references add ${LS_CA_PATH} \
     VERSION=${VERSION} \
     ${SOURCE_PATH}/.landscaper/component-references.yaml
 
+printf "> add sources"
+${COMP_CLI} ca sources add ${LS_CA_PATH} \
+    VERSION=${VERSION} \
+    COMMIT_SHA=${COMMIT_SHA} \
+    ${SOURCE_PATH}/.landscaper/sources.yaml
+
 cat ${LS_CA_PATH}/component-descriptor.yaml
 
 printf "> Add Landscaper CA to ctf\n"
