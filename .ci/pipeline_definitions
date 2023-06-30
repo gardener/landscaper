@@ -70,7 +70,7 @@ landscaper:
               - committers
               - codeowners
       steps:
-        component_descriptor:
+        component_descriptor_real:
           execute:
           - component_descriptor_real
           trait_deplends:
@@ -84,7 +84,7 @@ landscaper:
           output_dir: 'integration_test'
     pull-request:
       steps:
-        component_descriptor:
+        component_descriptor_real:
           execute:
           - component_descriptor_real
           trait_deplends:
@@ -114,7 +114,7 @@ landscaper:
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
-        component_descriptor:
+        component_descriptor_real:
           execute:
           - component_descriptor_real
           trait_deplends:
