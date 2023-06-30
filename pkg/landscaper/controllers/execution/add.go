@@ -5,6 +5,8 @@
 package execution
 
 import (
+	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -22,7 +24,7 @@ import (
 func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config config.ExecutionsController) error {
 	log := logger.Reconciles("execution", "Execution")
 
-	log.Info("Running execution controller",
+	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
 		"numberOfWorkerTreads", config.CommonControllerConfig.Workers)
 
 	a, err := NewController(
