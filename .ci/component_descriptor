@@ -13,7 +13,21 @@ echo "component descriptor dummy step"
 VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
 REPO_CTX="eu.gcr.io/gardener-project/development"
 
-${COMP_CLI}  ca create "${COMPONENT_DESCRIPTOR_DIR}" \
-  --component-name=github.com/gardener/landscaper \
-  --component-version=${VERSION} \
-  --repo-ctx=${REPO_CTX}
+COMPONENT_DESCRIPTOR="
+meta:
+  schemaVersion: v2
+component:
+  name: github.com/gardener/landscaper
+  version: ${VERSION}-dummy
+  provider: internal
+  repositoryContexts:
+  - baseUrl: ${REPO_CTX}
+    componentNameMapping: urlPath
+    type: ociRegistry
+  componentReferences: []
+  resources: []
+  sources: []
+"
+
+echo ${COMPONENT_DESCRIPTOR} > ${COMPONENT_DESCRIPTOR_DIR}
+
