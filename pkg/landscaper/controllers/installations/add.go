@@ -21,6 +21,10 @@ import (
 // AddControllerToManager register the installation Controller in a manager.
 func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
 	log := logger.Reconciles("installation", "Installation")
+
+	log.Info("Running installation controller",
+		"numberOfWorkerTreads", config.Controllers.Installations.CommonControllerConfig.Workers)
+
 	a, err := NewController(
 		log,
 		mgr.GetClient(),

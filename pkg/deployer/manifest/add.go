@@ -23,7 +23,8 @@ import (
 func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config manifestv1alpha2.Configuration) error {
 	log := logger.WithName("k8sManifest")
 
-	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()))
+	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
+		"numberOfWorkerTreads", config.Controller.Workers)
 
 	d, err := NewDeployer(
 		log,
