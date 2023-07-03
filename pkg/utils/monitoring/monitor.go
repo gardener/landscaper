@@ -2,10 +2,10 @@ package monitoring
 
 import (
 	"context"
+	v1 "k8s.io/api/core/v1"
 	"time"
 
 	v2 "k8s.io/api/autoscaling/v2"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -54,13 +54,14 @@ func (m *Monitor) monitorHpas(ctx context.Context) {
 
 		for j := range hpa.Status.CurrentMetrics {
 			metric := &hpa.Status.CurrentMetrics[j]
-
-			if metric.Resource.Name == v1.ResourceMemory {
-				keyValueList = append(keyValueList, "memoryAverageUtilization", metric.Resource.Current.AverageUtilization)
-				keyValueList = append(keyValueList, "memoryAverageValue", metric.Resource.Current.AverageValue)
-			} else if metric.Resource.Name == v1.ResourceCPU {
-				keyValueList = append(keyValueList, "cpuAverageUtilization", metric.Resource.Current.AverageUtilization)
-				keyValueList = append(keyValueList, "cpuAverageValue", metric.Resource.Current.AverageValue)
+			if metric.Type == v2.ResourceMetricSourceType && metric.Resource != nil {
+				if metric.Resource.Name == v1.ResourceMemory {
+					keyValueList = append(keyValueList, "memoryAverageUtilization", metric.Resource.Current.AverageUtilization)
+					keyValueList = append(keyValueList, "memoryAverageValue", metric.Resource.Current.AverageValue)
+				} else if metric.Resource.Name == v1.ResourceCPU {
+					keyValueList = append(keyValueList, "cpuAverageUtilization", metric.Resource.Current.AverageUtilization)
+					keyValueList = append(keyValueList, "cpuAverageValue", metric.Resource.Current.AverageValue)
+				}
 			}
 		}
 
