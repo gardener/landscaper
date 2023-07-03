@@ -7,6 +7,8 @@ package deployitem
 import (
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -22,8 +24,13 @@ import (
 // It is expected that deployers remove the timestamp annotation from deploy items during reconciliation. If the timestamp annotation exists and is older than a specified duration,
 // the controller marks the deploy item as failed.
 // pickupTimeout is a string containing the pickup timeout duration, either as 'none' or as a duration that can be parsed by time.ParseDuration.
-func NewController(logger logging.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout, defaultTimeout *lscore.Duration) (reconcile.Reconciler, error) {
-	con := controller{log: logger, c: c, scheme: scheme}
+func NewController(logger logging.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout,
+	defaultTimeout *lscore.Duration, maxNumberOfWorkers int) (reconcile.Reconciler, error) {
+
+	wc := utils.NewWorkerCounter(maxNumberOfWorkers)
+
+	con := controller{log: logger, c: c, scheme: scheme, workerCounter: wc}
+
 	if pickupTimeout != nil {
 		con.pickupTimeout = pickupTimeout.Duration
 	} else {
@@ -48,6 +55,7 @@ type controller struct {
 	scheme         *runtime.Scheme
 	pickupTimeout  time.Duration
 	defaultTimeout time.Duration
+	workerCounter  *utils.WorkerCounter
 }
 
 func (con *controller) Writer() *read_write_layer.Writer {

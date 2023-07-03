@@ -5,6 +5,8 @@
 package deployitem
 
 import (
+	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -24,13 +26,19 @@ func AddControllerToManager(logger logging.Logger,
 	config config.DeployItemsController,
 	deployItemPickupTimeout,
 	deployItemDefaultTimeout *lscore.Duration) error {
+
 	log := logger.Reconciles("", "DeployItem")
+
+	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
+		"numberOfWorkerThreads", config.CommonControllerConfig.Workers)
+
 	a, err := NewController(
 		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		deployItemPickupTimeout,
 		deployItemDefaultTimeout,
+		config.CommonControllerConfig.Workers,
 	)
 	if err != nil {
 		return err
