@@ -2,10 +2,10 @@ package monitoring
 
 import (
 	"context"
-	v1 "k8s.io/api/core/v1"
 	"time"
 
 	v2 "k8s.io/api/autoscaling/v2"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -47,9 +47,16 @@ func (m *Monitor) monitorHpas(ctx context.Context) {
 	for i := range hpas.Items {
 		hpa := &hpas.Items[i]
 
+		shouldLog := false
+
 		keyValueList := []interface{}{
 			lc.KeyResource, client.ObjectKey{Namespace: m.namespace, Name: hpa.Spec.ScaleTargetRef.Name},
 			"currentReplicas", hpa.Status.CurrentReplicas,
+			"desiredReplicas", hpa.Status.DesiredReplicas,
+		}
+
+		if hpa.Status.CurrentReplicas > 2 || hpa.Status.DesiredReplicas > 2 {
+			shouldLog = true
 		}
 
 		for j := range hpa.Status.CurrentMetrics {
@@ -58,13 +65,21 @@ func (m *Monitor) monitorHpas(ctx context.Context) {
 				if metric.Resource.Name == v1.ResourceMemory {
 					keyValueList = append(keyValueList, "memoryAverageUtilization", metric.Resource.Current.AverageUtilization)
 					keyValueList = append(keyValueList, "memoryAverageValue", metric.Resource.Current.AverageValue)
+					if metric.Resource.Current.AverageUtilization != nil && *metric.Resource.Current.AverageUtilization > 50 {
+						shouldLog = true
+					}
 				} else if metric.Resource.Name == v1.ResourceCPU {
 					keyValueList = append(keyValueList, "cpuAverageUtilization", metric.Resource.Current.AverageUtilization)
 					keyValueList = append(keyValueList, "cpuAverageValue", metric.Resource.Current.AverageValue)
+					if metric.Resource.Current.AverageUtilization != nil && *metric.Resource.Current.AverageUtilization > 50 {
+						shouldLog = true
+					}
 				}
 			}
 		}
 
-		log.Info("HPA Statistics", keyValueList...)
+		if shouldLog {
+			log.Info("HPA Statistics", keyValueList...)
+		}
 	}
 }
