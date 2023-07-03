@@ -13,6 +13,15 @@ import (
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
+const (
+	keyCurrentReplicas          = "currentReplicas"
+	keyDesiredReplicas          = "desiredReplicas"
+	keyMemoryAverageUtilization = "memoryAverageUtilization"
+	keyMemoryAverageValue       = "memoryAverageValue"
+	keyCpuAverageUtilization    = "cpuAverageUtilization"
+	keyCpuAverageValue          = "cpuAverageValue"
+)
+
 type Monitor struct {
 	namespace  string
 	hostClient client.Client
@@ -36,7 +45,7 @@ func (m *Monitor) StartMonitoring(ctx context.Context, logger logging.Logger) {
 
 func (m *Monitor) monitorHpas(ctx context.Context) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
-	log.Info("monitor: starting monitoring hpas")
+	log.Debug("monitor: starting monitoring hpas")
 
 	hpas := &v2.HorizontalPodAutoscalerList{}
 	if err := m.hostClient.List(ctx, hpas, client.InNamespace(m.namespace)); err != nil {
@@ -51,8 +60,8 @@ func (m *Monitor) monitorHpas(ctx context.Context) {
 
 		keyValueList := []interface{}{
 			lc.KeyResource, client.ObjectKey{Namespace: m.namespace, Name: hpa.Spec.ScaleTargetRef.Name},
-			"currentReplicas", hpa.Status.CurrentReplicas,
-			"desiredReplicas", hpa.Status.DesiredReplicas,
+			keyCurrentReplicas, hpa.Status.CurrentReplicas,
+			keyDesiredReplicas, hpa.Status.DesiredReplicas,
 		}
 
 		if hpa.Status.CurrentReplicas > 2 || hpa.Status.DesiredReplicas > 2 {
@@ -63,14 +72,14 @@ func (m *Monitor) monitorHpas(ctx context.Context) {
 			metric := &hpa.Status.CurrentMetrics[j]
 			if metric.Type == v2.ResourceMetricSourceType && metric.Resource != nil {
 				if metric.Resource.Name == v1.ResourceMemory {
-					keyValueList = append(keyValueList, "memoryAverageUtilization", metric.Resource.Current.AverageUtilization)
-					keyValueList = append(keyValueList, "memoryAverageValue", metric.Resource.Current.AverageValue)
+					keyValueList = append(keyValueList, keyMemoryAverageUtilization, metric.Resource.Current.AverageUtilization)
+					keyValueList = append(keyValueList, keyMemoryAverageValue, metric.Resource.Current.AverageValue)
 					if metric.Resource.Current.AverageUtilization != nil && *metric.Resource.Current.AverageUtilization > 50 {
 						shouldLog = true
 					}
 				} else if metric.Resource.Name == v1.ResourceCPU {
-					keyValueList = append(keyValueList, "cpuAverageUtilization", metric.Resource.Current.AverageUtilization)
-					keyValueList = append(keyValueList, "cpuAverageValue", metric.Resource.Current.AverageValue)
+					keyValueList = append(keyValueList, keyCpuAverageUtilization, metric.Resource.Current.AverageUtilization)
+					keyValueList = append(keyValueList, keyCpuAverageValue, metric.Resource.Current.AverageValue)
 					if metric.Resource.Current.AverageUtilization != nil && *metric.Resource.Current.AverageUtilization > 50 {
 						shouldLog = true
 					}
