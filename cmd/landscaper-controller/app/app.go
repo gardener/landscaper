@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gardener/landscaper/pkg/utils/monitoring"
+
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -198,6 +200,12 @@ func (o *Options) run(ctx context.Context) error {
 	eg.Go(func() error {
 		locker := lock.NewLocker(lsMgr.GetClient(), hostMgr.GetClient())
 		locker.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
+		return nil
+	})
+
+	eg.Go(func() error {
+		locker := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostMgr.GetClient())
+		locker.StartMonitoring(ctx, ctrlLogger)
 		return nil
 	})
 
