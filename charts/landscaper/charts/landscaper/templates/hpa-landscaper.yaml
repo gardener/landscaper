@@ -13,8 +13,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ include "landscaper.fullname" . }}
-  minReplicas: {{ .Values.controller.replicaCount }}
-  maxReplicas: {{ .Values.controller.replicaCount }}
+  minReplicas: 1
+  maxReplicas: 1
   metrics:
     - type: Resource
       resource:

@@ -13,8 +13,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ include "landscaper.webhooks.fullname" . }}
-  minReplicas: {{ .Values.webhooksServer.replicaCount }}
-  maxReplicas: {{ .Values.webhooksServer.replicaCount }}
+  minReplicas: 2
+  maxReplicas: 10
   metrics:
     - type: Resource
       resource:
