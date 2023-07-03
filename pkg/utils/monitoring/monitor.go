@@ -34,6 +34,9 @@ func NewMonitor(namespace string, hostClient client.Client) *Monitor {
 	}
 }
 
+// StartMonitoring is a blocking method that periodically logs data from the status of HorizontalPodAutoscaler objects.
+// It takes into account all HPAs in the same namespace as the current landscaper deployment. In this way it allows a
+// simple monitoring of the cpu and memory consumption of the landscaper pods.
 func (m *Monitor) StartMonitoring(ctx context.Context, logger logging.Logger) {
 	log := logger.WithName("landscaper-monitoring")
 	ctx = logging.NewContext(ctx, log)
