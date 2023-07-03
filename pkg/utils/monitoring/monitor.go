@@ -71,13 +71,14 @@ func (m *Monitor) monitorHpas(ctx context.Context) {
 		for j := range hpa.Status.CurrentMetrics {
 			metric := &hpa.Status.CurrentMetrics[j]
 			if metric.Type == v2.ResourceMetricSourceType && metric.Resource != nil {
-				if metric.Resource.Name == v1.ResourceMemory {
+				switch metric.Resource.Name {
+				case v1.ResourceMemory:
 					keyValueList = append(keyValueList, keyMemoryAverageUtilization, metric.Resource.Current.AverageUtilization)
 					keyValueList = append(keyValueList, keyMemoryAverageValue, metric.Resource.Current.AverageValue)
 					if metric.Resource.Current.AverageUtilization != nil && *metric.Resource.Current.AverageUtilization > 50 {
 						shouldLog = true
 					}
-				} else if metric.Resource.Name == v1.ResourceCPU {
+				case v1.ResourceCPU:
 					keyValueList = append(keyValueList, keyCpuAverageUtilization, metric.Resource.Current.AverageUtilization)
 					keyValueList = append(keyValueList, keyCpuAverageValue, metric.Resource.Current.AverageValue)
 					if metric.Resource.Current.AverageUtilization != nil && *metric.Resource.Current.AverageUtilization > 50 {

@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gardener/landscaper/pkg/utils/monitoring"
-
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -35,12 +33,12 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/healthcheck"
 	installationsctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
+	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
 	"github.com/gardener/landscaper/pkg/metrics"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/lock"
+	"github.com/gardener/landscaper/pkg/utils/monitoring"
 	"github.com/gardener/landscaper/pkg/version"
-
-	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
 )
 
 // NewLandscaperControllerCommand creates a new landscaper command that runs the landscaper controller.

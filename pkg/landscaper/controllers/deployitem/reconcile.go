@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	lsutil "github.com/gardener/landscaper/pkg/utils"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -19,6 +17,7 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
