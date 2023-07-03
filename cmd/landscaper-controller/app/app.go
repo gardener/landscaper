@@ -204,8 +204,8 @@ func (o *Options) run(ctx context.Context) error {
 	})
 
 	eg.Go(func() error {
-		locker := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostMgr.GetClient())
-		locker.StartMonitoring(ctx, ctrlLogger)
+		monitor := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostMgr.GetClient())
+		monitor.StartMonitoring(ctx, ctrlLogger)
 		return nil
 	})
 
