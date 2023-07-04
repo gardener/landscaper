@@ -20,8 +20,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
-const isEnabled = true
-
 const (
 	keyMyPodName = "myPodName"
 	keyNamespace = "lockNamespace"
@@ -44,22 +42,11 @@ func NewLocker(lsClient, hostClient client.Client) *Locker {
 	}
 }
 
-func (l *Locker) LockSingletonByTimeout(ctx context.Context, namespace, name string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
-	if !isEnabled {
-		return &lsv1alpha1.SyncObject{}, nil
-	}
-
-	return nil, nil
-}
-
 func (l *Locker) LockDI(ctx context.Context, obj *lsv1alpha1.DeployItem) (*lsv1alpha1.SyncObject, lserrors.LsError) {
 	return l.lock(ctx, obj, kindDeployItem)
 }
 
 func (l *Locker) lock(ctx context.Context, obj client.Object, kind string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
-	if !isEnabled {
-		return &lsv1alpha1.SyncObject{}, nil
-	}
 
 	op := "Locker.Lock"
 
@@ -67,7 +54,7 @@ func (l *Locker) lock(ctx context.Context, obj client.Object, kind string) (*lsv
 
 	syncObject, err := l.getSyncObject(ctx, obj.GetNamespace(), string(obj.GetUID()))
 	if err != nil {
-		lsError := lserrors.NewWrappedError(err, op, "resolveSecret", "error getting syncobject")
+		lsError := lserrors.NewWrappedError(err, op, "resolveSyncObject", "error getting syncobject")
 		return nil, lsError
 	}
 
@@ -88,12 +75,12 @@ func (l *Locker) lock(ctx context.Context, obj client.Object, kind string) (*lsv
 		}
 
 		// we have locked the object
-		log.Info("locker: lock created")
+		log.Debug("locker: lock created")
 		return syncObject, nil
 	}
 
 	if syncObject.Spec.PodName == utils.GetCurrentPodName() {
-		log.Info("locker: object is already locked by this pod")
+		log.Debug("locker: object is already locked by this pod")
 		return syncObject, nil
 	}
 
@@ -125,14 +112,11 @@ func (l *Locker) lock(ctx context.Context, obj client.Object, kind string) (*lsv
 		return nil, lsError
 	}
 
-	log.Info("locker: lock taken over")
+	log.Debug("locker: lock taken over")
 	return syncObject, nil
 }
 
 func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) {
-	if !isEnabled {
-		return
-	}
 
 	log, ctx := logging.FromContextOrNew(ctx, nil, keyMyPodName, utils.GetCurrentPodName())
 
@@ -143,7 +127,7 @@ func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) 
 		return
 	}
 
-	log.Info("locker: object unlocked")
+	log.Debug("locker: object unlocked")
 }
 
 func (l *Locker) NotLockedResult() (reconcile.Result, error) {
@@ -263,7 +247,7 @@ func (l *Locker) cleanupSyncObject(ctx context.Context, syncObject *lsv1alpha1.S
 		return
 	}
 
-	log.Info("locker: cleanup of syncobject done")
+	log.Debug("locker: cleanup of syncobject done")
 }
 
 func (l *Locker) existsResource(ctx context.Context, syncObject *lsv1alpha1.SyncObject) (bool, error) {
