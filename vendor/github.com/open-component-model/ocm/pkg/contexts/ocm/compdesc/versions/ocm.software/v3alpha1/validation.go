@@ -174,14 +174,6 @@ func ValidateResources(fldPath *field.Path, resources Resources, componentVersio
 		localPath := fldPath.Index(i)
 		allErrs = append(allErrs, ValidateResource(localPath, res, true)...)
 
-		// only Validate the component version if it is defined
-		if res.Relation == metav1.LocalRelation && len(componentVersion) != 0 {
-			if res.GetVersion() != componentVersion {
-				allErrs = append(allErrs, field.Invalid(localPath.Child("version"), "invalid version",
-					"version of local resources must match the component version"))
-			}
-		}
-
 		if err := ValidateSourceRefs(localPath.Child("sourceRef"), res.SourceRef); err != nil {
 			allErrs = append(allErrs, err...)
 		}

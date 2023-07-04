@@ -13,7 +13,7 @@ spec:
     ref: 
       repositoryContext:
         type: local
-        baseUrl: "./"
+        filePath: "./definitions"
       componentName: example.com/root
       version: 1.0.0
 

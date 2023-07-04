@@ -35,6 +35,9 @@ type HandlerRegistrationRegistry[T any, O any] interface {
 type NamePath []string
 
 func NewNamePath(path string) NamePath {
+	if path == "" {
+		return nil
+	}
 	return strings.Split(path, "/")
 }
 

@@ -127,10 +127,9 @@ func Verify(cd *ComponentDescriptor, registry signing.Registry, signatureName st
 		return errors.ErrUnknown(KIND_SIGN_ALGORITHM, matchingSignature.Signature.Algorithm)
 	}
 	publicKey := registry.GetPublicKey(signatureName)
-	if verifier == nil {
+	if publicKey == nil {
 		return errors.ErrNotFound(KIND_PUBLIC_KEY, signatureName)
 	}
-
 	hasher := registry.GetHasher(matchingSignature.Digest.HashAlgorithm)
 	if hasher == nil {
 		return errors.ErrUnknown(KIND_HASH_ALGORITHM, matchingSignature.Digest.HashAlgorithm)

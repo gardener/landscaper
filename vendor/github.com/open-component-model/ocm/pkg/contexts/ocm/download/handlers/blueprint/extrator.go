@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	BLUEPRINT_MIMETYPE_LEGACY = "application/vnd.gardener.landscaper.blueprint.layer.v1.tar"
-	BLUEPRINT_MIMETYPE        = "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+	BLUEPRINT_MIMETYPE_LEGACY            = "application/vnd.gardener.landscaper.blueprint.layer.v1.tar"
+	BLUEPRINT_MIMETYPE_LEGACY_COMPRESSED = "application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip"
+	BLUEPRINT_MIMETYPE                   = "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
 )
 
 func ExtractArchive(pr common.Printer, _ *Handler, access accessio.DataAccess, path string, fs vfs.FileSystem) (_ bool, rerr error) {

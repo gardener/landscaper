@@ -47,7 +47,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		return err
 	}
 
-	src := source.NewKindWithCache(&corev1.Pod{}, hostMgr.GetCache())
+	src := source.Kind(hostMgr.GetCache(), &corev1.Pod{})
 	podRec := NewPodReconciler(
 		log.WithName("podReconciler"),
 		lsMgr.GetClient(),
@@ -79,7 +79,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 	if err := ctrl.NewControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(noopPredicate{})).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
-		Watches(src, &PodEventHandler{}).
+		WatchesRawSource(src, &PodEventHandler{}).
 		Complete(podRec); err != nil {
 		return err
 	}

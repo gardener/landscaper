@@ -10,11 +10,14 @@ import (
 	"os"
 	"sync"
 
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/mime"
+	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 )
 
 type FileSystemBlobAccess struct {
@@ -85,14 +88,31 @@ func (a *FileSystemBlobAccess) GetBlobDataByName(name string) (accessio.DataAcce
 	if a.IsClosed() {
 		return nil, accessio.ErrClosed
 	}
+
 	path := a.BlobPath(name)
-	if ok, err := vfs.FileExists(a.base.GetFileSystem(), path); ok {
-		return accessio.DataAccessForFile(a.base.GetFileSystem(), path), nil
+	if ok, err := vfs.IsDir(a.base.GetFileSystem(), path); ok {
+		tempfile, err := accessio.NewTempFile(osfs.New(), os.TempDir(), "COMPARCH")
+		if err != nil {
+			return nil, err
+		}
+		err = tarutils.PackFsIntoTar(a.base.GetFileSystem(), path, tempfile.Writer(), tarutils.TarFileSystemOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return tempfile.AsBlob(mime.MIME_TAR), nil
 	} else {
 		if err != nil {
 			return nil, err
 		}
-		return nil, accessio.ErrBlobNotFound(digest.Digest(name))
+
+		if ok, err := vfs.FileExists(a.base.GetFileSystem(), path); ok {
+			return accessio.DataAccessForFile(a.base.GetFileSystem(), path), nil
+		} else {
+			if err != nil {
+				return nil, err
+			}
+			return nil, accessio.ErrBlobNotFound(digest.Digest(name))
+		}
 	}
 }
 

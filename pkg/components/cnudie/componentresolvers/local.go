@@ -31,6 +31,10 @@ import (
 // LocalRepositoryType defines the local repository context type.
 const LocalRepositoryType = "local"
 
+// ComponentArchiveRepositoryType defines an alternative local repository context type that can also be handled by this
+// implementation
+const ComponentArchiveRepositoryType = "ComponentArchive"
+
 // FilesystemBlobType is the access type of a blob that is located in a filesystem.
 const FilesystemBlobType = "filesystemBlob"
 
@@ -107,6 +111,10 @@ func NewLocalClient(rootPath string) (TypedRegistry, error) {
 	}, nil
 }
 
+func IsLocalType(typ string) bool {
+	return typ == LocalRepositoryType || typ == ComponentArchiveRepositoryType
+}
+
 // Type return the oci registry type that can be handled by this ociClient
 func (c *localClient) Type() string {
 	return LocalRepositoryType
@@ -114,8 +122,8 @@ func (c *localClient) Type() string {
 
 // Resolve resolves a reference and returns the component descriptor.
 func (c *localClient) Resolve(ctx context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, error) {
-	if repoCtx.GetType() != LocalRepositoryType {
-		return nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.GetType(), LocalRepositoryType)
+	if !IsLocalType(repoCtx.GetType()) {
+		return nil, fmt.Errorf("unsupported type %s expected %s or %s", repoCtx.GetType(), LocalRepositoryType, ComponentArchiveRepositoryType)
 	}
 
 	cd, _, err := c.searchInFs(ctx, name, version)
@@ -127,8 +135,8 @@ func (c *localClient) Resolve(ctx context.Context, repoCtx cdv2.Repository, name
 
 // ResolveWithBlobResolver resolves a reference and returns the component descriptor.
 func (c *localClient) ResolveWithBlobResolver(ctx context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
-	if repoCtx.GetType() != LocalRepositoryType {
-		return nil, nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.GetType(), LocalRepositoryType)
+	if !IsLocalType(repoCtx.GetType()) {
+		return nil, nil, fmt.Errorf("unsupported type %s expected %s or %s", repoCtx.GetType(), LocalRepositoryType, ComponentArchiveRepositoryType)
 	}
 
 	cd, localFilesystemBlobResolver, err := c.searchInFs(ctx, name, version)
@@ -301,10 +309,12 @@ func (ca *LocalFilesystemBlobResolver) resolve(res types.Resource) (*ctf.BlobInf
 	if res.Access == nil || res.Access.GetType() != cdv2.LocalFilesystemBlobType {
 		return nil, nil, ctf.UnsupportedResolveType
 	}
+
 	localFSAccess := &cdv2.LocalFilesystemBlobAccess{}
 	if err := cdv2.NewCodec(nil, nil, nil).Decode(res.Access.Raw, localFSAccess); err != nil {
 		return nil, nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
 	}
+
 	blobpath := ctf.BlobPath(localFSAccess.Filename)
 
 	info, file, err := ca.ResolveFromFs(blobpath)

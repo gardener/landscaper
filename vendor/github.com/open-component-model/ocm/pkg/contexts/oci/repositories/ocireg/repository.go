@@ -147,7 +147,7 @@ func (r *RepositoryImpl) getResolver(comp string) (resolve.Resolver, error) {
 	return docker.NewResolver(opts), nil
 }
 
-func (r *RepositoryImpl) getRef(comp, vers string) string {
+func (r *RepositoryImpl) GetRef(comp, vers string) string {
 	base := path.Join(r.info.Locator, comp)
 	if vers == "" {
 		return base
@@ -167,7 +167,7 @@ func (r *RepositoryImpl) ExistsArtifact(name string, version string) (bool, erro
 	if err != nil {
 		return false, err
 	}
-	ref := r.getRef(name, version)
+	ref := r.GetRef(name, version)
 	_, _, err = res.Resolve(context.Background(), ref)
 
 	if err != nil {

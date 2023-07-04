@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Open Component Model contributors.
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Open Component Model contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -56,15 +56,16 @@ func (c *CompoundResolver) AddResolver(r ComponentVersionResolver) {
 	c.resolvers = append(c.resolvers, r)
 }
 
-type sessionBasedResolver struct {
-	session    Session
-	repository Repository
+////////////////////////////////////////////////////////////////////////////////
+
+type MatchingResolver interface {
+	ComponentVersionResolver
+	ContextProvider
+
+	AddRule(prefix string, spec RepositorySpec, prio ...int)
+	Finalize() error
 }
 
-func NewSessionBasedResolver(session Session, repo Repository) ComponentVersionResolver {
-	return &sessionBasedResolver{session, repo}
-}
-
-func (c *sessionBasedResolver) LookupComponentVersion(name string, version string) (internal.ComponentVersionAccess, error) {
-	return c.session.LookupComponentVersion(c.repository, name, version)
+func NewMatchingResolver(ctx ContextProvider) MatchingResolver {
+	return internal.NewMatchingResolver(ctx.OCMContext())
 }

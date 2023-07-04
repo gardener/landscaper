@@ -43,7 +43,7 @@ type Options interface {
 
 type StandardOptions struct {
 	// FilePath is the path of the repository base in the filesystem
-	FileFormat *FileFormat `json:"fileFormat"`
+	FileFormat *FileFormat `json:"fileFormat,omitempty"`
 	// FileSystem is the virtual filesystem to evaluate the file path. Default is the OS filesytem
 	// or the filesystem defined as base filesystem for the context
 	// This configuration option is not available for the textual representation of

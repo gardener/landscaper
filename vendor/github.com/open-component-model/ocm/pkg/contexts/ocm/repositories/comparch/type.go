@@ -26,7 +26,7 @@ func init() {
 
 type RepositorySpec struct {
 	runtime.ObjectVersionedType `json:",inline"`
-	accessio.Options            `json:",inline"`
+	accessio.StandardOptions    `json:",omitempty"`
 
 	// FileFormat is the format of the repository file
 	FilePath string `json:"filePath"`
@@ -42,16 +42,17 @@ var (
 
 // NewRepositorySpec creates a new RepositorySpec.
 func NewRepositorySpec(acc accessobj.AccessMode, filePath string, opts ...accessio.Option) (*RepositorySpec, error) {
-	o, err := accessio.AccessOptions(nil, opts...)
+	spec := &RepositorySpec{
+		ObjectVersionedType: runtime.NewVersionedTypedObject(Type),
+		FilePath:            filePath,
+		AccessMode:          acc,
+	}
+
+	_, err := accessio.AccessOptions(&spec.StandardOptions, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &RepositorySpec{
-		ObjectVersionedType: runtime.NewVersionedTypedObject(Type),
-		FilePath:            filePath,
-		Options:             o,
-		AccessMode:          acc,
-	}, nil
+	return spec, nil
 }
 
 func (a *RepositorySpec) IsIntermediate() bool {

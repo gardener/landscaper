@@ -45,6 +45,16 @@ func (m *Manager) Set(registries ...TypedRegistry) error {
 	return nil
 }
 
+// SetRegistryForAlias enables using a specific registry implementation for a different type than its statically
+// configured type (the type returned by registry.Type() )
+func (m *Manager) SetRegistryForAlias(registry TypedRegistry, alias string) error {
+	if m.registries == nil {
+		m.registries = map[string]ctf.ComponentResolver{}
+	}
+	m.registries[alias] = registry
+	return nil
+}
+
 // SharedCache returns the shared cache for all managed registries.
 // Returns nil if there is no shared cache.
 func (m *Manager) SharedCache() cache.Cache {

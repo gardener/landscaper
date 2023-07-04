@@ -39,10 +39,12 @@ type Handler struct {
 func init() {
 	supportedArtifactTypes = []string{TYPE, LEGACY_TYPE}
 	mimeTypeExtractorRegistry = map[string]Extractor{
-		mime.MIME_TAR:      ExtractArchive,
-		mime.MIME_TGZ:      ExtractArchive,
-		mime.MIME_TGZ_ALT:  ExtractArchive,
-		BLUEPRINT_MIMETYPE: ExtractArchive,
+		mime.MIME_TAR:                        ExtractArchive,
+		mime.MIME_TGZ:                        ExtractArchive,
+		mime.MIME_TGZ_ALT:                    ExtractArchive,
+		BLUEPRINT_MIMETYPE:                   ExtractArchive,
+		BLUEPRINT_MIMETYPE_LEGACY:            ExtractArchive,
+		BLUEPRINT_MIMETYPE_LEGACY_COMPRESSED: ExtractArchive,
 	}
 	for _, t := range append(artdesc.ToArchiveMediaTypes(artdesc.MediaTypeImageManifest), artdesc.ToArchiveMediaTypes(artdesc.MediaTypeDockerSchema2Manifest)...) {
 		mimeTypeExtractorRegistry[t] = ExtractArtifact

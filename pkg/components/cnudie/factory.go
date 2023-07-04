@@ -58,6 +58,9 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		if err := compResolver.Set(localRegistry); err != nil {
 			return nil, err
 		}
+		if err := compResolver.SetRegistryForAlias(localRegistry, componentresolvers.ComponentArchiveRepositoryType); err != nil {
+			return nil, err
+		}
 	}
 
 	// always add an oci client to support unauthenticated requests

@@ -10,10 +10,15 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/go-logr/logr"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/comparch"
 	"github.com/open-component-model/ocm/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,10 +39,19 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	//logger, _ := logging.FromContextOrNew(ctx, nil)
 
 	octx := ocm.DefaultContext()
+	cpi.RegisterRepositoryType(cpi.NewRepositoryType[*comparch.RepositorySpec]("local", nil))
 
 	ociConfigFiles := make([]string, 0)
 	if ociRegistryConfig != nil {
 		ociConfigFiles = ociRegistryConfig.ConfigFiles
+	}
+
+	if localRegistryConfig != nil {
+		pfs, err := projectionfs.New(osfs.New(), localRegistryConfig.RootPath)
+		if err != nil {
+			return nil, err
+		}
+		vfsattr.Set(octx, pfs)
 	}
 
 	// set available default credentials from dockerconfig files

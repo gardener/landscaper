@@ -193,13 +193,21 @@ func (c *_context) ApplyConfig(spec Config, desc string) error {
 		unknown = errors.ErrUnknown(KIND_CONFIGTYPE, spec.GetType())
 	}
 
-	ctx := c.WithInfo(desc)
-	err := spec.ApplyTo(c, ctx)
-	if IsErrNoContext(err) {
-		err = unknown
+	c.configs.Apply(spec, desc)
+
+	var err error
+	for {
+		// apply directly and also indirectly described configurations
+		if gen, in := c.updater.State(); err != nil || in || gen >= c.configs.Generation() {
+			break
+		}
+		err = c.Update()
+		if IsErrNoContext(err) {
+			err = unknown
+		}
 	}
-	err = errors.Wrapf(err, ctx.Info())
-	c.configs.Apply(spec, ctx.Info())
+
+	err = errors.Wrapf(err, "%s", desc)
 	return err
 }
 
@@ -238,7 +246,7 @@ func (c *_context) ApplyTo(gen int64, target interface{}) (int64, error) {
 
 	list := errors.ErrListf("config apply errors")
 	for _, cfg := range cfgs {
-		err := errors.Wrapf(cfg.config.ApplyTo(c, target), cfg.description)
+		err := errors.Wrapf(cfg.config.ApplyTo(c.WithInfo(cfg.description), target), "%s", cfg.description)
 		if !IsErrNoContext(err) {
 			list.Add(err)
 		}

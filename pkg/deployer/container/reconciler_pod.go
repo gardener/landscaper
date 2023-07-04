@@ -94,25 +94,25 @@ func (p *PodEventHandler) getReconcileDeployItemRequest(object metav1.Object) (r
 	return req, true
 }
 
-func (p *PodEventHandler) Create(event event.CreateEvent, q workqueue.RateLimitingInterface) {
+func (p *PodEventHandler) Create(ctx context.Context, event event.CreateEvent, q workqueue.RateLimitingInterface) {
 	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
 		q.Add(req)
 	}
 }
 
-func (p *PodEventHandler) Update(event event.UpdateEvent, q workqueue.RateLimitingInterface) {
+func (p *PodEventHandler) Update(ctx context.Context, event event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	if req, ok := p.getReconcileDeployItemRequest(event.ObjectNew); ok {
 		q.Add(req)
 	}
 }
 
-func (p *PodEventHandler) Delete(event event.DeleteEvent, q workqueue.RateLimitingInterface) {
+func (p *PodEventHandler) Delete(ctx context.Context, event event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
 		q.Add(req)
 	}
 }
 
-func (p *PodEventHandler) Generic(event event.GenericEvent, q workqueue.RateLimitingInterface) {
+func (p *PodEventHandler) Generic(ctx context.Context, event event.GenericEvent, q workqueue.RateLimitingInterface) {
 	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
 		q.Add(req)
 	}

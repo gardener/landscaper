@@ -17,6 +17,7 @@ type Updater interface {
 	// stored in a configuration context.
 	// It should be created for and called from within such a context
 	Update() error
+	State() (int64, bool)
 	GetContext() Context
 
 	Lock()
@@ -48,6 +49,12 @@ func (u *updater) GetContext() Context {
 
 func (u *updater) GetTarget() interface{} {
 	return u.target
+}
+
+func (u *updater) State() (int64, bool) {
+	u.RLock()
+	defer u.RUnlock()
+	return u.lastGeneration, u.inupdate
 }
 
 func (u *updater) Update() error {

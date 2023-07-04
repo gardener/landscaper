@@ -17,7 +17,7 @@ import (
 )
 
 func Close(c io.Closer, msg ...interface{}) {
-	Defer(c.Close)
+	Defer(c.Close, msg...)
 }
 
 func Defer(f func() error, msg ...interface{}) {

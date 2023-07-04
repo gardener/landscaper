@@ -26,6 +26,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/ociblob"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/compatattr"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/keepblobattr"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/mapocirepoattr"
 	storagecontext "github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
@@ -187,6 +188,20 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 		} else {
 			name = path.Join(prefix, hint)
 		}
+
+		hash := mapocirepoattr.Get(ctx.GetContext())
+		orig := name
+		name = hash.Map(name)
+		if name == orig {
+			log.Debug("namespace derived from hint",
+				append(values, "namespace", name),
+			)
+		} else {
+			log.Debug("mapped namespace derived from hint",
+				append(values, "namespace", name),
+			)
+		}
+
 		namespace, err = ocictx.Repository.LookupNamespace(name)
 		if err != nil {
 			return nil, err

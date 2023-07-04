@@ -73,6 +73,9 @@ type Context interface {
 	GetAlias(name string) RepositorySpec
 	SetAlias(name string, spec RepositorySpec)
 
+	GetResolver() ComponentVersionResolver
+	AddResolverRule(prefix string, spec RepositorySpec, prio ...int)
+
 	// Finalize finalizes elements implicitly opened during resource operations.
 	// For example, registered blob handler may open objects, which are kept open
 	// for performance reasons. At the end of a usage finalize should be called
@@ -130,6 +133,7 @@ type _context struct {
 	blobHandlers  BlobHandlerRegistry
 	blobDigesters BlobDigesterRegistry
 	aliases       map[string]RepositorySpec
+	resolver      *resolver
 	finalizer     Finalizer
 }
 
@@ -153,6 +157,10 @@ func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme Repo
 	}
 	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.GetAttributes(), delegates)
 	c.updater = cfgcpi.NewUpdater(credctx.ConfigContext(), c)
+	c.resolver = &resolver{
+		ctx:              c,
+		MatchingResolver: NewMatchingResolver(c),
+	}
 	return c
 }
 
@@ -165,6 +173,7 @@ func (c *_context) Update() error {
 }
 
 func (c *_context) Finalize() error {
+	c.finalizer.With(c.resolver.Finalize)
 	return c.finalizer.Finalize()
 }
 
@@ -283,4 +292,25 @@ func (c *_context) SetAlias(name string, spec RepositorySpec) {
 	c.updater.Lock()
 	defer c.updater.Unlock()
 	c.aliases[name] = spec
+}
+
+func (c *_context) GetResolver() ComponentVersionResolver {
+	if len(c.resolver.rules) == 0 {
+		return nil
+	}
+	return c.resolver
+}
+
+func (c *_context) AddResolverRule(prefix string, spec RepositorySpec, prio ...int) {
+	c.resolver.AddRule(prefix, spec, prio...)
+}
+
+type resolver struct {
+	ctx *_context
+	*MatchingResolver
+}
+
+func (r *resolver) LookupComponentVersion(name, version string) (ComponentVersionAccess, error) {
+	r.ctx.Update()
+	return r.MatchingResolver.LookupComponentVersion(name, version)
 }

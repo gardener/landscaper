@@ -36,7 +36,7 @@ type NamespaceContainer struct {
 var _ support.NamespaceContainer = (*NamespaceContainer)(nil)
 
 func NewNamespace(repo *RepositoryImpl, name string) (cpi.NamespaceAccess, error) {
-	ref := repo.getRef(name, "")
+	ref := repo.GetRef(name, "")
 	resolver, err := repo.getResolver(name)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (n *NamespaceContainer) getPusher(vers string) (resolve.Pusher, error) {
 		return nil, err
 	}
 
-	ref := n.repo.getRef(n.impl.GetNamespace(), vers)
+	ref := n.repo.GetRef(n.impl.GetNamespace(), vers)
 	resolver := n.resolver
 
 	n.repo.GetContext().Logger().Trace("get pusher", "ref", ref)
@@ -147,7 +147,7 @@ func (n *NamespaceContainer) ListTags() ([]string, error) {
 }
 
 func (n *NamespaceContainer) GetArtifact(i support.NamespaceAccessImpl, vers string) (cpi.ArtifactAccess, error) {
-	ref := n.repo.getRef(n.impl.GetNamespace(), vers)
+	ref := n.repo.GetRef(n.impl.GetNamespace(), vers)
 	n.repo.GetContext().Logger().Debug("get artifact", "ref", ref)
 	_, desc, err := n.resolver.Resolve(context.Background(), ref)
 	n.repo.GetContext().Logger().Debug("done", "digest", desc.Digest, "size", desc.Size, "mimetype", desc.MediaType, "error", logging.ErrorMessage(err))
@@ -169,7 +169,7 @@ func (n *NamespaceContainer) GetArtifact(i support.NamespaceAccessImpl, vers str
 }
 
 func (n *NamespaceContainer) HasArtifact(vers string) (bool, error) {
-	ref := n.repo.getRef(n.impl.GetNamespace(), vers)
+	ref := n.repo.GetRef(n.impl.GetNamespace(), vers)
 	n.repo.GetContext().Logger().Debug("check artifact", "ref", ref)
 	_, desc, err := n.resolver.Resolve(context.Background(), ref)
 	n.repo.GetContext().Logger().Debug("done", "digest", desc.Digest, "size", desc.Size, "mimetype", desc.MediaType, "error", logging.ErrorMessage(err))
@@ -234,7 +234,7 @@ func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) 
 }
 
 func (n *NamespaceContainer) AddTags(digest digest.Digest, tags ...string) error {
-	_, desc, err := n.resolver.Resolve(context.Background(), n.repo.getRef(n.impl.GetNamespace(), digest.String()))
+	_, desc, err := n.resolver.Resolve(context.Background(), n.repo.GetRef(n.impl.GetNamespace(), digest.String()))
 	if err != nil {
 		return fmt.Errorf("unable to resolve: %w", err)
 	}

@@ -67,7 +67,7 @@ func (c *Config) ApplyTo(ctx cpi.Context, target interface{}) error {
 		list := errors.ErrListf("applying generic config list")
 		for i, cfg := range c.Configurations {
 			sub := fmt.Sprintf("config entry %d", i)
-			list.Add(cctx.ApplyConfig(cfg, sub))
+			list.Add(cctx.ApplyConfig(cfg, ctx.WithInfo(sub).Info()))
 		}
 		return list.Result()
 	}

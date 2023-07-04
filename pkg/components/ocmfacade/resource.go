@@ -14,6 +14,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"io"
+	"path/filepath"
 )
 
 type Resource struct {
@@ -102,7 +103,7 @@ func (r *Resource) GetBlobNew(ctx context.Context) (*model.TypedResourceContent,
 	}
 
 	fs := memoryfs.New()
-	_, _, err = download.DefaultRegistry.Download(nil, r.resourceAccess, "/", fs)
+	_, _, err = download.DefaultRegistry.Download(nil, r.resourceAccess, filepath.Join("/"), fs)
 	if err != nil {
 		return nil, err
 	}
