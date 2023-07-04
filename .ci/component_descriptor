@@ -8,7 +8,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-echo "create dummy component descriptor"
+echo "create dummy component descriptor BEGIN"
 
 SOURCE_PATH="$(dirname $0)/.."
 VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
@@ -17,6 +17,10 @@ COMPONENT_DESCRIPTOR_DIR="${SOURCE_PATH}/../${COMPONENT_DESCRIPTOR_DIR}"
 
 VERSION="${VERSION}-dummy" REPO_CTX="${REPO_CTX}" COMPONENT_DESCRIPTOR_DIR="${COMPONENT_DESCRIPTOR_DIR}" python ${SOURCE_PATH}/hack/create-dummy-cd.py
 
-echo "create real component descriptor"
+echo "create dummy component descriptor END"
+
+echo "create real component descriptor BEGIN"
 
 ${SOURCE_PATH}/.ci/component_descriptor_real
+
+echo "create real component descriptor END"
