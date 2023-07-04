@@ -20,7 +20,6 @@ rules:
   - watch
   - list
   - update
-
 - apiGroups:
   - landscaper.gardener.cloud
   resources:
@@ -30,24 +29,4 @@ rules:
   - get
   - watch
   - list
-
-- apiGroups:
-    - landscaper.gardener.cloud
-  resources:
-    - syncobjects
-  verbs:
-    - get
-    - watch
-    - list
-    - create
-    - update
-    - patch
-    - delete
-
-- apiGroups:
-    - ""
-  resources:
-    - "pods"
-  verbs:
-    - get
 {{ end }}

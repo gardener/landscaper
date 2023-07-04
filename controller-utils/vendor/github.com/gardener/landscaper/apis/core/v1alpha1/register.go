@@ -61,8 +61,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&EnvironmentList{},
 		&DeployerRegistration{},
 		&DeployerRegistrationList{},
-		&SyncObject{},
-		&SyncObjectList{},
 		&TargetSync{},
 		&TargetSyncList{},
 	)
@@ -91,7 +89,6 @@ var ResourceDefinition = func() lsschema.CustomResourceDefinitions {
 			DeployerRegistrationDefinition,
 			EnvironmentDefinition,
 			ComponentVersionOverwritesDefinition,
-			SyncObjectDefinition,
 			TargetSyncDefinition,
 		},
 	}

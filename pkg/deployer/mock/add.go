@@ -5,15 +5,11 @@
 package mock
 
 import (
-	"fmt"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"github.com/gardener/landscaper/pkg/utils"
 
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -24,9 +20,6 @@ import (
 // AddDeployerToManager adds a new helm deployers to a controller manager.
 func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config mockv1alpha1.Configuration) error {
 	log := logger.WithName("mock")
-
-	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()))
-
 	d, err := NewDeployer(
 		log,
 		lsMgr.GetClient(),
@@ -44,7 +37,7 @@ func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
 		Type:            Type,
 		Deployer:        d,
 		TargetSelectors: config.TargetSelector,
-	}, 1000)
+	})
 }
 
 // NewController creates a new simple controller.
@@ -67,5 +60,5 @@ func NewController(log logging.Logger, kubeClient client.Client, scheme *runtime
 			Type:            Type,
 			Deployer:        d,
 			TargetSelectors: config.TargetSelector,
-		}, 1000), nil
+		}), nil
 }
