@@ -105,8 +105,8 @@ cat ${LS_CA_PATH}/component-descriptor.yaml
 printf "> Add Landscaper CA to ctf\n"
 ${COMP_CLI} ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
 
-printf "> Pulbish Landscaper Components to ${REPO_CTX}\n"
+printf "> Publish Landscaper Components to ${REPO_CTX}\n"
 ${COMP_CLI} ctf push --repo-ctx=${REPO_CTX} "${CTF_PATH}"
 
-printf "> Pulbish Landscaper Components to ${REPO_CTX_DEV}\n"
+printf "> Publish Landscaper Components to ${REPO_CTX_DEV}\n"
 ${COMP_CLI} ctf push --repo-ctx=${REPO_CTX_DEV} "${CTF_PATH}"
