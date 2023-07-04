@@ -69,7 +69,7 @@ var _ = Describe("Helm Deployer", func() {
 				Type:     helmctrl.Type,
 				Deployer: deployer,
 			},
-		)
+			1000)
 
 		kubeconfigBytes, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())

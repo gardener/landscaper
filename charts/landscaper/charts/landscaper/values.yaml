@@ -12,10 +12,10 @@ landscaper:
   controllers:
     # syncPeriod: 10h
     installations:
-      workers: 5
+      workers: 10
       # cacheSyncTimeout: 2m
     executions:
-      workers: 5
+      workers: 10
       # cacheSyncTimeout: 2m
     deployItems:
       workers: 5
@@ -137,8 +137,8 @@ webhooksServer:
 
   resources:
     requests:
-      cpu: 10m
-      memory: 40Mi
+      cpu: 100m
+      memory: 100Mi
     # limits:
     #   cpu: 100m
     #   memory: 128Mi
@@ -181,7 +181,7 @@ service:
 
 resources:
   requests:
-    cpu: 10m
+    cpu: 100m
     memory: 100Mi
   # limits:
   #   cpu: 100m
