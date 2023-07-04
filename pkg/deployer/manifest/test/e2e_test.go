@@ -63,7 +63,7 @@ var _ = Describe("Manifest Deployer", func() {
 				Type:     manifestctlr.Type,
 				Deployer: deployer,
 			},
-			1000)
+		)
 	})
 
 	AfterEach(func() {

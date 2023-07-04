@@ -7,8 +7,6 @@ package container
 import (
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/utils"
-
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -32,9 +30,6 @@ import (
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
 func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manager, config containerv1alpha1.Configuration) error {
 	log := logger.WithName("container")
-
-	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.Controller.Workers)
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
 		Scheme: hostMgr.GetScheme(),
@@ -76,7 +71,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		Deployer:        deployer,
 		TargetSelectors: config.TargetSelector,
 		Options:         options,
-	}, config.Controller.Workers)
+	})
 	if err != nil {
 		return err
 	}

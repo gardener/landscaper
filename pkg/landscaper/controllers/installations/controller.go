@@ -47,16 +47,12 @@ func NewController(logger logging.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
-	lsConfig *config.LandscaperConfiguration,
-	maxNumberOfWorkers int) (reconcile.Reconciler, error) {
-
-	ws := utils.NewWorkerCounter(maxNumberOfWorkers)
+	lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
 
 	ctrl := &Controller{
-		log:           logger,
-		clock:         clock.RealClock{},
-		LsConfig:      lsConfig,
-		workerCounter: ws,
+		log:      logger,
+		clock:    clock.RealClock{},
+		LsConfig: lsConfig,
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -78,29 +74,24 @@ func NewTestActuator(op operation.Operation, logger logging.Logger, passiveClock
 	configuration *config.LandscaperConfiguration) *Controller {
 
 	return &Controller{
-		log:           logger,
-		clock:         passiveClock,
-		Operation:     op,
-		LsConfig:      configuration,
-		workerCounter: utils.NewWorkerCounter(1000),
+		log:       logger,
+		clock:     passiveClock,
+		Operation: op,
+		LsConfig:  configuration,
 	}
 }
 
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
-	log           logging.Logger
-	clock         clock.PassiveClock
-	LsConfig      *config.LandscaperConfiguration
-	SharedCache   cache.Cache
-	workerCounter *utils.WorkerCounter
+	log         logging.Logger
+	clock       clock.PassiveClock
+	LsConfig    *config.LandscaperConfiguration
+	SharedCache cache.Cache
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
-
-	c.workerCounter.EnterWithLog(logger, 70)
-	defer c.workerCounter.Exit()
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {

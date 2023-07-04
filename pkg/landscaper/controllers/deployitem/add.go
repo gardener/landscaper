@@ -5,18 +5,18 @@
 package deployitem
 
 import (
-	"fmt"
-
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/go-logr/logr"
+
 	"github.com/gardener/landscaper/apis/config"
-	lscore "github.com/gardener/landscaper/apis/core"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
+
+	lscore "github.com/gardener/landscaper/apis/core"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 func AddControllerToManager(logger logging.Logger,
@@ -24,19 +24,13 @@ func AddControllerToManager(logger logging.Logger,
 	config config.DeployItemsController,
 	deployItemPickupTimeout,
 	deployItemDefaultTimeout *lscore.Duration) error {
-
 	log := logger.Reconciles("", "DeployItem")
-
-	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.CommonControllerConfig.Workers)
-
 	a, err := NewController(
 		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		deployItemPickupTimeout,
 		deployItemDefaultTimeout,
-		config.CommonControllerConfig.Workers,
 	)
 	if err != nil {
 		return err

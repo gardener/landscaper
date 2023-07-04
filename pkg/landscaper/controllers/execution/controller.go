@@ -28,17 +28,12 @@ import (
 )
 
 // NewController creates a new execution controller that reconcile Execution resources.
-func NewController(logger logging.Logger, kubeClient client.Client, scheme *runtime.Scheme,
-	eventRecorder record.EventRecorder, maxNumberOfWorker int) (reconcile.Reconciler, error) {
-
-	wc := lsutil.NewWorkerCounter(maxNumberOfWorker)
-
+func NewController(logger logging.Logger, kubeClient client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) (reconcile.Reconciler, error) {
 	return &controller{
 		log:           logger,
 		client:        kubeClient,
 		scheme:        scheme,
 		eventRecorder: eventRecorder,
-		workerCounter: wc,
 	}, nil
 }
 
@@ -47,15 +42,11 @@ type controller struct {
 	client        client.Client
 	eventRecorder record.EventRecorder
 	scheme        *runtime.Scheme
-	workerCounter *lsutil.WorkerCounter
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.log.StartReconcile(req)
 	ctx = logging.NewContext(ctx, logger)
-
-	c.workerCounter.EnterWithLog(logger, 70)
-	defer c.workerCounter.Exit()
 
 	exec := &lsv1alpha1.Execution{}
 	if err := read_write_layer.GetExecution(ctx, c.client, req.NamespacedName, exec); err != nil {

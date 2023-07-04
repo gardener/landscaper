@@ -23,8 +23,6 @@ spec:
         {{- end }}
       labels:
         {{- include "deployer.selectorLabels" . | nindent 8 }}
-        landscaper.gardener.cloud/topology: container-deployer
-        landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -60,16 +58,6 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          env:
-          - name: MY_POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: MY_POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-
       volumes:
       - name: config
         secret:
@@ -100,18 +88,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              landscaper.gardener.cloud/topology: container-deployer
-              landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              landscaper.gardener.cloud/topology: container-deployer
-              landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}

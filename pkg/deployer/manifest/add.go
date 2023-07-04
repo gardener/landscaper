@@ -5,12 +5,8 @@
 package manifest
 
 import (
-	"fmt"
-
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
@@ -22,10 +18,6 @@ import (
 // AddDeployerToManager adds a new helm deployers to a controller manager.
 func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config manifestv1alpha2.Configuration) error {
 	log := logger.WithName("k8sManifest")
-
-	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.Controller.Workers)
-
 	d, err := NewDeployer(
 		log,
 		lsMgr.GetClient(),
@@ -51,5 +43,5 @@ func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
 		Deployer:        d,
 		TargetSelectors: config.TargetSelector,
 		Options:         options,
-	}, config.Controller.Workers)
+	})
 }
