@@ -8,41 +8,33 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-
-	lserror "github.com/gardener/landscaper/apis/errors"
-
-	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
-
+	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
-
 	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage"
 	"helm.sh/helm/v3/pkg/storage/driver"
-	"k8s.io/client-go/rest"
-
-	"helm.sh/helm/v3/pkg/action"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/types"
+	apimachineryyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/yaml"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+	lserror "github.com/gardener/landscaper/apis/errors"
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 )
 
@@ -296,62 +288,72 @@ func (c *RealHelmDeployer) createLogFunc(ctx context.Context) func(format string
 	}
 }
 
-func (c *RealHelmDeployer) GetManagedResourcesStatus(ctx context.Context,
-	manifests []managedresource.Manifest) ([]managedresource.ManagedResourceStatus, error) {
+type ManifestObject struct {
+	APIVersion string               `json:"apiVersion"`
+	Kind       string               `json:"kind"`
+	ObjectMeta types.NamespacedName `json:"metadata"`
+
+	// Items are needed for lists, e.g. ConfigMapLists.
+	// Caution! The pointer is necessary to distinguish nil (ordinary object) from empty list.
+	Items *[]ManifestObject `json:"items"`
+}
+
+func (o *ManifestObject) setDefaultNamespace(defaultNamespace string) *ManifestObject {
+	if len(o.ObjectMeta.Namespace) == 0 {
+		o.ObjectMeta.Namespace = defaultNamespace
+	}
+	return o
+}
+
+func (o *ManifestObject) toManagedResourceStatus() *managedresource.ManagedResourceStatus {
+	return &managedresource.ManagedResourceStatus{
+		Resource: corev1.ObjectReference{
+			APIVersion: o.APIVersion,
+			Kind:       o.Kind,
+			Namespace:  o.ObjectMeta.Namespace,
+			Name:       o.ObjectMeta.Name,
+		},
+	}
+}
+
+func (c *RealHelmDeployer) GetManagedResourcesStatus(ctx context.Context) ([]managedresource.ManagedResourceStatus, error) {
+	release, err := c.getRelease(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	result := make([]managedresource.ManagedResourceStatus, 0)
-
-	for i := range manifests {
-		typeMeta := metav1.TypeMeta{}
-		if err := json.Unmarshal(manifests[i].Manifest.Raw, &typeMeta); err != nil {
-			return nil, fmt.Errorf("unable to parse type metadata: %w", err)
-		}
-		innerManifest := &resourcemanager.Manifest{
-			TypeMeta: typeMeta,
-			Policy:   manifests[i].Policy,
-			Manifest: manifests[i].Manifest,
-		}
-
-		nextResourceStatus, err := c.getResourceStatus(ctx, innerManifest)
-		if err != nil {
-			return nil, fmt.Errorf("unable to fetch next resource status: %w", err)
+	reader := strings.NewReader(release.Manifest)
+	decoder := apimachineryyaml.NewYAMLOrJSONDecoder(reader, 1024)
+	for {
+		obj := &ManifestObject{}
+		if err := decoder.Decode(&obj); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("unable to decode item of helm manifest: %w", err)
 		}
 
-		result = append(result, *nextResourceStatus)
+		if obj == nil {
+			// Happens if the chart contains an empty template file, for example due to conditions.
+			continue
+		}
+
+		// Caution! We must distinguish the case where obj.Items is nil (==> ordinary object, the most common case),
+		// from the case where obj.Items is not nil but has length 0 (==> empty list).
+		if obj.Items == nil {
+			result = append(result, *obj.setDefaultNamespace(c.defaultNamespace).toManagedResourceStatus())
+		} else {
+			// expand object list
+			items := *obj.Items
+			for i := range items {
+				item := &items[i]
+				result = append(result, *item.setDefaultNamespace(c.defaultNamespace).toManagedResourceStatus())
+			}
+		}
 	}
 
 	return result, nil
-}
-
-func (c *RealHelmDeployer) getResourceStatus(_ context.Context,
-	manifest *resourcemanager.Manifest) (*managedresource.ManagedResourceStatus, error) {
-	currOp := "GetResourceStatus"
-
-	gvk := manifest.TypeMeta.GetObjectKind().GroupVersionKind().String()
-	obj := &unstructured.Unstructured{}
-	if _, _, err := c.decoder.Decode(manifest.Manifest.Raw, nil, obj); err != nil {
-		err2 := fmt.Errorf("error while decoding manifest %s: %w", gvk, err)
-		return nil, lserror.NewWrappedError(err2, currOp, "ParseManifest", err2.Error())
-	}
-
-	if len(c.defaultNamespace) != 0 && len(obj.GetNamespace()) == 0 {
-		// need to default the namespace if it is not given, as some helmcharts
-		// do not use ".Release.Namespace" and depend on the helm/kubectl defaulting.
-		apiresource, err := c.apiResourceHandler.GetApiResource(manifest)
-		if err != nil {
-			return nil, err
-		}
-		// only default namespaced resources.
-		if apiresource.Namespaced {
-			obj.SetNamespace(c.defaultNamespace)
-		}
-	}
-
-	mr := &managedresource.ManagedResourceStatus{
-		Policy:   manifest.Policy,
-		Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
-	}
-
-	return mr, nil
 }
 
 func (c *RealHelmDeployer) isReleaseNotFoundErr(err error) bool {

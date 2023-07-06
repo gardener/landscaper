@@ -60,11 +60,6 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		}
 	}
 
-	manifests, err := h.createManifests(ctx, currOp, files, crds)
-	if err != nil {
-		return err
-	}
-
 	var (
 		managedResourceStatusList managedresource.ManagedResourceStatusList
 		deployErr                 error
@@ -73,19 +68,23 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 	shouldUseRealHelmDeployer := pointer.BoolDeref(h.ProviderConfiguration.HelmDeployment, true)
 
 	if shouldUseRealHelmDeployer {
-		// apply helm
-		// convert manifests in ManagedResourceStatusList
-		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration,
-			h.TargetRestConfig, targetClientSet)
+		// apply helm install/upgrade, and afterwards get the list of deployed resources by helm get release
+		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, h.TargetRestConfig, targetClientSet)
 		deployErr = realHelmDeployer.Deploy(ctx)
 		if deployErr == nil {
-			managedResourceStatusList, err = realHelmDeployer.GetManagedResourcesStatus(ctx, manifests)
+			managedResourceStatusList, err = realHelmDeployer.GetManagedResourcesStatus(ctx)
 			if err != nil {
 				return err
 			}
 			h.ProviderStatus.ManagedResources = managedResourceStatusList
 		}
+
 	} else {
+		manifests, err := h.createManifests(ctx, currOp, files, crds)
+		if err != nil {
+			return err
+		}
+
 		var applier *resourcemanager.ManifestApplier
 		applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
 		managedResourceStatusList = applier.GetManagedResourcesStatus()
