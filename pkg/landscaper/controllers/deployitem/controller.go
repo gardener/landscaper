@@ -22,17 +22,12 @@ import (
 // It is expected that deployers remove the timestamp annotation from deploy items during reconciliation. If the timestamp annotation exists and is older than a specified duration,
 // the controller marks the deploy item as failed.
 // pickupTimeout is a string containing the pickup timeout duration, either as 'none' or as a duration that can be parsed by time.ParseDuration.
-func NewController(logger logging.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout, abortingTimeout, defaultTimeout *lscore.Duration) (reconcile.Reconciler, error) {
+func NewController(logger logging.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout, defaultTimeout *lscore.Duration) (reconcile.Reconciler, error) {
 	con := controller{log: logger, c: c, scheme: scheme}
 	if pickupTimeout != nil {
 		con.pickupTimeout = pickupTimeout.Duration
 	} else {
 		con.pickupTimeout = time.Duration(0)
-	}
-	if abortingTimeout != nil {
-		con.abortingTimeout = abortingTimeout.Duration
-	} else {
-		con.abortingTimeout = time.Duration(0)
 	}
 	if defaultTimeout != nil {
 		con.defaultTimeout = defaultTimeout.Duration
@@ -42,19 +37,17 @@ func NewController(logger logging.Logger, c client.Client, scheme *runtime.Schem
 
 	// log pickup timeout
 	logger.Info("deploy item pickup timeout detection", "active", con.pickupTimeout != 0, "timeout", con.pickupTimeout.String())
-	logger.Info("deploy item aborting timeout detection", "active", con.abortingTimeout != 0, "timeout", con.abortingTimeout.String())
 	logger.Info("deploy item default timeout", "active", con.defaultTimeout != 0, "timeout", con.defaultTimeout.String())
 
 	return &con, nil
 }
 
 type controller struct {
-	log             logging.Logger
-	c               client.Client
-	scheme          *runtime.Scheme
-	pickupTimeout   time.Duration
-	abortingTimeout time.Duration
-	defaultTimeout  time.Duration
+	log            logging.Logger
+	c              client.Client
+	scheme         *runtime.Scheme
+	pickupTimeout  time.Duration
+	defaultTimeout time.Duration
 }
 
 func (con *controller) Writer() *read_write_layer.Writer {

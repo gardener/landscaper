@@ -15,7 +15,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+	appsv1 "k8s.io/api/apps/v1"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -27,11 +27,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
 // Environment is a internal landscaper test environment
@@ -80,8 +80,9 @@ func (e *Environment) Start() (client.Client, error) {
 		return nil, err
 	}
 
-	e.Client = fakeClient
-	return fakeClient, nil
+	retryClient := NewRetryingClient(fakeClient, utils.NewDiscardLogger())
+	e.Client = retryClient
+	return retryClient, nil
 }
 
 // Stop stops the running dev environment
@@ -288,6 +289,18 @@ func decodeAndAppendLSObject(data []byte, objects []client.Object, state *State)
 		}
 		state.ConfigMaps[types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}.String()] = cm
 		return append(objects, cm), nil
+	case DeploymentGVK.Kind:
+		deployment := &appsv1.Deployment{}
+		if _, _, err := decoder.Decode(data, nil, deployment); err != nil {
+			return nil, fmt.Errorf("unable to decode file as deployment: %w", err)
+		}
+		return append(objects, deployment), nil
+	case LSHealthCheckGVK.Kind:
+		lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
+		if _, _, err := decoder.Decode(data, nil, lsHealthCheck); err != nil {
+			return nil, fmt.Errorf("unable to decode file as lshealthcheck: %w", err)
+		}
+		return append(objects, lsHealthCheck), nil
 	default:
 		return objects, nil
 	}

@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
@@ -17,16 +17,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	lscheme "github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
+	lstypes "github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -63,14 +62,14 @@ func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) 
 	return internalInstallations
 }
 
-// ResolveComponentDescriptor resolves the component descriptor of a installation.
+// ResolveComponentDescriptor resolves the component descriptor of an installation.
 // Inline Component Descriptors take precedence
-func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResolver, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
+func ResolveComponentDescriptor(ctx context.Context, registryAccess model.RegistryAccess, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter) (model.ComponentVersion, error) {
 	if inst.Spec.ComponentDescriptor == nil || (inst.Spec.ComponentDescriptor.Reference == nil && inst.Spec.ComponentDescriptor.Inline == nil) {
-		return nil, nil, nil
+		return nil, nil
 	}
 	var (
-		repoCtx *cdv2.UnstructuredTypedObject
+		repoCtx *lstypes.UnstructuredTypedObject
 		ref     cdv2.ObjectMeta
 	)
 	//case inline component descriptor
@@ -82,17 +81,22 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 		repoCtx = inst.Spec.ComponentDescriptor.Reference.RepositoryContext
 		ref = inst.Spec.ComponentDescriptor.Reference.ObjectMeta()
 	}
-	return cdutils.ResolveWithBlobResolverWithOverwriter(ctx, compRepo, repoCtx, ref.GetName(), ref.GetVersion(), overwriter)
+
+	return model.GetComponentVersionWithOverwriter(ctx, registryAccess, &lsv1alpha1.ComponentDescriptorReference{
+		RepositoryContext: repoCtx,
+		ComponentName:     ref.GetName(),
+		Version:           ref.GetVersion(),
+	}, overwriter)
 }
 
 // CreateInternalInstallation creates an internal installation for an Installation
 // DEPRECATED: use CreateInternalInstallationWithContext instead
-func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*InstallationImportsAndBlueprint, error) {
+func CreateInternalInstallation(ctx context.Context, registry model.RegistryAccess, inst *lsv1alpha1.Installation) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint)
+	blue, err := blueprints.ResolveBlueprint(ctx, registry, cdRef, inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
@@ -103,7 +107,7 @@ func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentR
 func CreateInternalInstallationWithContext(ctx context.Context,
 	inst *lsv1alpha1.Installation,
 	kubeClient client.Client,
-	compResolver ctf.ComponentResolver) (*InstallationImportsAndBlueprint, error) {
+	registry model.RegistryAccess) (*InstallationImportsAndBlueprint, error) {
 	if inst == nil {
 		return nil, nil
 	}
@@ -111,7 +115,7 @@ func CreateInternalInstallationWithContext(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	blue, err := blueprints.Resolve(ctx, compResolver, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
+	blue, err := blueprints.ResolveBlueprint(ctx, registry, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

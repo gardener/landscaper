@@ -7,6 +7,7 @@ package imports
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
@@ -14,9 +15,19 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
+)
+
+const (
+	// TemplatingFailedReason is the reason that is defined during templating.
+	TemplatingFailedReason = "ImportValidationFailed"
 )
 
 // NewConstructor creates a new Import Constructor.
@@ -269,4 +280,44 @@ func (c *Constructor) templateDataMappings(
 		values[key] = data
 	}
 	return values, nil
+}
+
+// RenderImportExecutions renders the blueprint's ImportExecutions.
+// Has to be called after import construction (c.Construct(...))
+func (c *Constructor) RenderImportExecutions() error {
+	cond := lsv1alpha1helper.GetOrInitCondition(c.Operation.Inst.GetInstallation().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
+
+	templateStateHandler := template.KubernetesStateHandler{
+		KubeClient: c.Operation.Client(),
+		Inst:       c.Operation.Inst.GetInstallation(),
+	}
+	targetResolver := secretresolver.New(c.Operation.Client())
+	tmpl := template.New(
+		gotemplate.New(templateStateHandler, targetResolver),
+		spiff.New(templateStateHandler))
+	errors, bindings, err := tmpl.TemplateImportExecutions(
+		template.NewBlueprintExecutionOptions(
+			c.Operation.Context().External.InjectComponentDescriptorRef(c.Operation.Inst.GetInstallation()),
+			c.Operation.Inst.GetBlueprint(),
+			c.Operation.ComponentVersion,
+			c.Operation.ResolvedComponentDescriptorList,
+			c.Operation.Inst.GetImports()))
+
+	if err != nil {
+		c.Operation.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			TemplatingFailedReason, "Unable to template executions"))
+		return fmt.Errorf("unable to template executions: %w", err)
+	}
+
+	for k, v := range bindings {
+		c.Operation.Inst.GetImports()[k] = v
+	}
+	if len(errors) == 0 {
+		return nil
+	}
+
+	msg := strings.Join(errors, ", ")
+	c.Operation.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+		TemplatingFailedReason, msg))
+	return fmt.Errorf("import validation failed: %w", fmt.Errorf("%s", msg))
 }

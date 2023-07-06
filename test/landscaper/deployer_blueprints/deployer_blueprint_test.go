@@ -5,22 +5,24 @@
 package deployer_blueprints_test
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
@@ -32,7 +34,7 @@ func TestConfig(t *testing.T) {
 
 const projectRoot = "../../../"
 
-func RenderBlueprint(deployer string) *lsutils.RenderedDeployItemsSubInstallations {
+func RenderBlueprint(deployer, componentName, version string) *lsutils.RenderedDeployItemsSubInstallations {
 	fs := osfs.New()
 	overlayFs, err := projectionfs.New(fs, filepath.Join(projectRoot, ".landscaper", deployer))
 	Expect(err).ToNot(HaveOccurred())
@@ -51,18 +53,26 @@ func RenderBlueprint(deployer string) *lsutils.RenderedDeployItemsSubInstallatio
 	err = yaml.Unmarshal(importsData, &imports)
 	Expect(err).ToNot(HaveOccurred())
 
-	cdData, err := vfs.ReadFile(exampleFs, "component-descriptor.yaml")
+	registryPath := filepath.Join(projectRoot, ".landscaper", deployer, "example")
+	registryAccess, err := registries.NewFactory().NewLocalRegistryAccess(registryPath)
 	Expect(err).ToNot(HaveOccurred())
-	var cd cdv2.ComponentDescriptor
-	err = yaml.Unmarshal(cdData, &cd)
+	repository := componentresolvers.NewLocalRepository(registryPath)
+	repositoryContext, err := cdv2.NewUnstructured(repository)
 	Expect(err).ToNot(HaveOccurred())
 
-	renderer := lsutils.NewBlueprintRenderer(&cdv2.ComponentDescriptorList{}, nil, nil)
+	componentVersion, err := registryAccess.GetComponentVersion(context.Background(), &lsv1alpha1.ComponentDescriptorReference{
+		RepositoryContext: &repositoryContext,
+		ComponentName:     componentName,
+		Version:           version,
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	renderer := lsutils.NewBlueprintRenderer(&model.ComponentVersionList{}, nil, nil)
 
 	out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
-		ComponentDescriptor: &cd,
-		Installation:        &lsv1alpha1.Installation{},
-		Blueprint:           blueprint,
+		ComponentVersion: componentVersion,
+		Installation:     &lsv1alpha1.Installation{},
+		Blueprint:        blueprint,
 	}, imports["imports"].(map[string]interface{}))
 	testutils.ExpectNoError(err)
 	return out
@@ -71,7 +81,7 @@ func RenderBlueprint(deployer string) *lsutils.RenderedDeployItemsSubInstallatio
 var _ = Describe("Blueprint", func() {
 
 	It("ContainerDeployer", func() {
-		out := RenderBlueprint("container-deployer")
+		out := RenderBlueprint("container-deployer", "eu.gcr.io/gardener-project/landscaper/container-deployer-controller", "v0.5.3")
 		Expect(out.DeployItems).To(HaveLen(1))
 		Expect(out.Installations).To(HaveLen(0))
 
@@ -129,7 +139,7 @@ var _ = Describe("Blueprint", func() {
 	})
 
 	It("HelmDeployer", func() {
-		out := RenderBlueprint("helm-deployer")
+		out := RenderBlueprint("helm-deployer", "eu.gcr.io/gardener-project/landscaper/helm-deployer-controller", "v0.5.3")
 		Expect(out.DeployItems).To(HaveLen(1))
 		Expect(out.Installations).To(HaveLen(0))
 
@@ -167,7 +177,7 @@ var _ = Describe("Blueprint", func() {
 	})
 
 	It("ManifestDeployer", func() {
-		out := RenderBlueprint("manifest-deployer")
+		out := RenderBlueprint("manifest-deployer", "eu.gcr.io/gardener-project/landscaper/manifest-deployer-controller", "v0.5.3")
 		Expect(out.DeployItems).To(HaveLen(1))
 		Expect(out.Installations).To(HaveLen(0))
 
@@ -205,7 +215,7 @@ var _ = Describe("Blueprint", func() {
 	})
 
 	It("MockDeployer", func() {
-		out := RenderBlueprint("mock-deployer")
+		out := RenderBlueprint("mock-deployer", "eu.gcr.io/gardener-project/landscaper/mock-deployer-controller", "v0.5.3")
 		Expect(out.DeployItems).To(HaveLen(1))
 		Expect(out.Installations).To(HaveLen(0))
 

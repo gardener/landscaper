@@ -8,24 +8,19 @@ import (
 	"context"
 	"time"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	utils2 "github.com/gardener/landscaper/pkg/utils"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
-
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	dictrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
+	utils2 "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/test/utils"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -41,7 +36,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	BeforeEach(func() {
 		var err error
 
-		deployItemController, err = dictrl.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, &testPickupTimeoutDuration, &testAbortingTimeoutDuration, &testProgressingTimeoutDuration)
+		deployItemController, err = dictrl.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, &testPickupTimeoutDuration, &testProgressingTimeoutDuration)
 		Expect(err).ToNot(HaveOccurred())
 
 		mockController, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{})
@@ -79,8 +74,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		By("Verify that timed out deploy items are in 'Failed' phase")
 		testutils.ShouldReconcile(ctx, deployItemController, diReq)
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseFailed))
-		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseFailed)).To(BeTrue())
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed))
 		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
 	})
 
@@ -104,7 +98,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 
 		// verify state
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseProgressing)).To(BeTrue())
+		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhases.Progressing)).To(BeTrue())
 		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeFalse())
 		Expect(di.Status.LastReconcileTime).NotTo(BeNil())
 		old := di.DeepCopy()
@@ -121,14 +115,13 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		di.Status.JobIDGenerationTime = &timedOut
 		utils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
 
-		By("Verify that timed out deploy items get an abort annotation")
+		By("Verify that timed out deploy items fail")
 		testutils.ShouldReconcile(ctx, deployItemController, diReq)
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-		Expect(di.Annotations).NotTo(BeNil())
-		Expect(metav1.HasAnnotation(di.ObjectMeta, lsv1alpha1.AbortTimestampAnnotation)).To(BeTrue(), "deploy item should have an abort timestamp annotation")
-		Expect(lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.AbortOperation)).To(BeTrue(), "deploy item should have an abort operation annotation")
-		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseProgressing)).To(BeTrue())
-		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeFalse())
+		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhases.Failed)).To(BeTrue())
+		Expect(di.Status.LastError.Reason).To(Equal(lsv1alpha1.ProgressingTimeoutReason))
+		Expect(di.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout))
+		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
 	})
 
 	It("Should not detect progressing timeouts for deploy items in a final phase", func() {
@@ -162,9 +155,9 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReqS.NamespacedName, diS))
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReqF.NamespacedName, diF))
 
-		Expect(utils2.IsDeployItemPhase(diS, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(utils2.IsDeployItemPhase(diS, lsv1alpha1.DeployItemPhases.Succeeded)).To(BeTrue())
 		Expect(utils2.IsDeployItemJobIDsIdentical(diS)).To(BeTrue())
-		Expect(utils2.IsDeployItemPhase(diF, lsv1alpha1.DeployItemPhaseFailed)).To(BeTrue())
+		Expect(utils2.IsDeployItemPhase(diF, lsv1alpha1.DeployItemPhases.Failed)).To(BeTrue())
 		Expect(utils2.IsDeployItemJobIDsIdentical(diF)).To(BeTrue())
 
 		Expect(diS.Status.LastReconcileTime).NotTo(BeNil())
@@ -207,7 +200,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 
 		// verify state
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseProgressing)).To(BeTrue())
+		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhases.Progressing)).To(BeTrue())
 		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeFalse())
 
 		By("Set timed out LastReconcileTime timestamp (using default timeout duration)")
@@ -230,53 +223,9 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		By("Verify that deploy item is timed out")
 		testutils.ShouldReconcile(ctx, deployItemController, diReq)
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-		Expect(di.Annotations).NotTo(BeNil())
-		Expect(metav1.HasAnnotation(di.ObjectMeta, lsv1alpha1.AbortTimestampAnnotation)).To(BeTrue(), "deploy item should have an abort timestamp annotation")
-		Expect(lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.AbortOperation)).To(BeTrue(), "deploy item should have an abort operation annotation")
-		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseProgressing)).To(BeTrue())
-	})
-
-	It("Should detect aborting timeouts", func() {
-		ctx := context.Background()
-		defer ctx.Done()
-
-		var err error
-		state, err = testenv.InitResources(ctx, testdataDir)
-		Expect(err).ToNot(HaveOccurred())
-
-		By("Prepare test deploy items")
-		di := &lsv1alpha1.DeployItem{}
-		diReq := testutils.Request("mock-di-prog", state.Namespace)
-		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-		Expect(testutils.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
-
-		testutils.ShouldReconcile(ctx, mockController, diReq)
-		testutils.ShouldReconcile(ctx, mockController, diReq)
-
-		// verify state
-		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseProgressing)).To(BeTrue())
-		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeFalse())
-
-		By("Set timed out abort timestamp annotation")
-		timedOut := time.Now().Add(-(testAbortingTimeoutDuration.Duration + (5 * time.Second)))
-		lsv1alpha1helper.SetOperation(&di.ObjectMeta, lsv1alpha1.AbortOperation)
-		metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.AbortTimestampAnnotation, timedOut.Format(time.RFC3339))
-		utils.ExpectNoError(testenv.Client.Update(ctx, di))
-
-		By("Verify that timed out deploy items are in 'Failed' phase")
-		testutils.ShouldReconcile(ctx, deployItemController, diReq)
-		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-
-		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseFailed)).To(BeTrue())
+		Expect(utils2.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhases.Failed)).To(BeTrue())
+		Expect(di.Status.LastError.Reason).To(Equal(lsv1alpha1.ProgressingTimeoutReason))
+		Expect(di.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout))
 		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
-		Expect(di.Status).To(MatchFields(IgnoreExtras, Fields{
-			"Phase": Equal(lsv1alpha1.ExecutionPhaseFailed),
-			"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
-				"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
-				"Reason": Equal(lsv1alpha1.AbortingTimeoutReason),
-			})),
-		}))
 	})
-
 })

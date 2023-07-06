@@ -75,8 +75,8 @@ func Convert_mock_Configuration_To_v1alpha1_Configuration(in *mock.Configuration
 }
 
 func autoConvert_v1alpha1_ProviderConfiguration_To_mock_ProviderConfiguration(in *ProviderConfiguration, out *mock.ProviderConfiguration, s conversion.Scope) error {
-	out.Phase = (*corev1alpha1.ExecutionPhase)(unsafe.Pointer(in.Phase))
-	out.InitialPhase = (*corev1alpha1.ExecutionPhase)(unsafe.Pointer(in.InitialPhase))
+	out.Phase = (*corev1alpha1.DeployItemPhase)(unsafe.Pointer(in.Phase))
+	out.InitialPhase = (*corev1alpha1.DeployItemPhase)(unsafe.Pointer(in.InitialPhase))
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.Export = (*json.RawMessage)(unsafe.Pointer(in.Export))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
@@ -89,8 +89,8 @@ func Convert_v1alpha1_ProviderConfiguration_To_mock_ProviderConfiguration(in *Pr
 }
 
 func autoConvert_mock_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *mock.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
-	out.Phase = (*corev1alpha1.ExecutionPhase)(unsafe.Pointer(in.Phase))
-	out.InitialPhase = (*corev1alpha1.ExecutionPhase)(unsafe.Pointer(in.InitialPhase))
+	out.Phase = (*corev1alpha1.DeployItemPhase)(unsafe.Pointer(in.Phase))
+	out.InitialPhase = (*corev1alpha1.DeployItemPhase)(unsafe.Pointer(in.InitialPhase))
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.Export = (*json.RawMessage)(unsafe.Pointer(in.Export))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))

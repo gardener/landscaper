@@ -13,4 +13,5 @@ func RegisterTests(f *framework.Framework) {
 	ImportExportTests(f)
 	ImportDataMappingsTests(f)
 	ImportValidationTests(f)
+	ImportExecutionsTests(f)
 }

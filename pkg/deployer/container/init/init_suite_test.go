@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -24,6 +23,7 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	mock_client "github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/test/utils"
 )
 
@@ -139,7 +139,7 @@ var _ = Describe("Constructor", func() {
 		data, err := vfs.ReadFile(fs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
 
-		cd := &cdv2.ComponentDescriptorList{}
+		cd := &types.ComponentDescriptorList{}
 		Expect(codec.Decode(data, cd)).To(Succeed())
 		Expect(cd.Components).To(HaveLen(1))
 	})
@@ -160,7 +160,7 @@ var _ = Describe("Constructor", func() {
 		data, err := vfs.ReadFile(fs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
 
-		cd := &cdv2.ComponentDescriptorList{}
+		cd := &types.ComponentDescriptorList{}
 		Expect(codec.Decode(data, cd)).To(Succeed())
 		Expect(cd.Components).To(HaveLen(1))
 	})
@@ -204,7 +204,7 @@ var _ = Describe("Constructor", func() {
 
 		data, err := vfs.ReadFile(fs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
-		cd := &cdv2.ComponentDescriptorList{}
+		cd := &types.ComponentDescriptorList{}
 		Expect(codec.Decode(data, cd)).To(Succeed())
 		Expect(cd.Components).To(HaveLen(1))
 	})

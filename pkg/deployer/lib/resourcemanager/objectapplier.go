@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/imdario/mergo"
-
 	corev1 "k8s.io/api/core/v1"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,13 +25,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 )
 
 // ApplyManifests creates or updates all configured manifests.
@@ -99,6 +98,8 @@ type Manifest struct {
 	Manifest *runtime.RawExtension `json:"manifest,omitempty"`
 	// AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.
 	AnnotateBeforeCreate map[string]string `json:"annotateBeforeCreate,omitempty"`
+	// AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.
+	AnnotateBeforeDelete map[string]string `json:"annotateBeforeDelete,omitempty"`
 }
 
 // NewManifestApplier creates a new manifest deployer
@@ -235,14 +236,16 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 			return nil, fmt.Errorf("unable to create resource %s: %w", key.String(), err)
 		}
 		return &managedresource.ManagedResourceStatus{
-			Policy:   manifest.Policy,
-			Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
+			AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
+			Policy:               manifest.Policy,
+			Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
 		}, nil
 	}
 
 	mr := &managedresource.ManagedResourceStatus{
-		Policy:   manifest.Policy,
-		Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
+		AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
+		Policy:               manifest.Policy,
+		Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
 	}
 
 	// if fallback policy is set and the resource is already managed by another deployer
@@ -389,7 +392,13 @@ func (a *ManifestApplier) prepareManifests() error {
 	a.manifestExecutions = [3][]*Manifest{}
 	crdNamespacedInfo := map[string]bool{}
 	todo := []*Manifest{}
-	for _, obj := range a.manifests {
+
+	managedResourceManifests, err := lib.ExpandManagedResourceManifests(a.manifests)
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range managedResourceManifests {
 		typeMeta := metav1.TypeMeta{}
 		if err := json.Unmarshal(obj.Manifest.Raw, &typeMeta); err != nil {
 			return fmt.Errorf("unable to parse type metadata: %w", err)
@@ -401,6 +410,7 @@ func (a *ManifestApplier) prepareManifests() error {
 			Policy:               obj.Policy,
 			Manifest:             obj.Manifest,
 			AnnotateBeforeCreate: obj.AnnotateBeforeCreate,
+			AnnotateBeforeDelete: obj.AnnotateBeforeDelete,
 		}
 		// add to specific execution group
 		if kind == "CustomResourceDefinition" {

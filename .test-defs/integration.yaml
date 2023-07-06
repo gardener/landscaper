@@ -16,4 +16,4 @@ spec:
     --ls-namespace=ls-system
     --ls-version=$(./hack/get-version.sh)
 
-  image: golang:1.19.5
+  image: golang:1.19.10

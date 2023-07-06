@@ -70,7 +70,7 @@ func newDeployItemClassification(executionJobID string, items []*executionItem) 
 		} else if item.DeployItem.Status.GetJobID() == executionJobID {
 			if item.DeployItem.Status.GetJobID() != item.DeployItem.Status.JobIDFinished {
 				c.runningItems = append(c.runningItems, item)
-			} else if item.DeployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded {
+			} else if item.DeployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Succeeded {
 				c.succeededItems = append(c.succeededItems, item)
 			} else {
 				c.failedItems = append(c.failedItems, item)
@@ -140,7 +140,7 @@ func newDeployItemClassificationForDelete(executionJobID string, items []*execut
 			if item.DeployItem.Status.GetJobID() != item.DeployItem.Status.JobIDFinished {
 				c.runningItems = append(c.runningItems, item)
 			} else if item.DeployItem.Status.GetJobID() == item.DeployItem.Status.JobIDFinished &&
-				item.DeployItem.Status.DeployItemPhase != lsv1alpha1.DeployItemPhaseFailed {
+				!item.DeployItem.Status.Phase.IsFailed() {
 				c.runningItems = append(c.runningItems, item)
 			} else {
 				c.failedItems = append(c.failedItems, item)

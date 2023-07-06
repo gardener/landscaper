@@ -11,7 +11,7 @@ import (
 	"github.com/gardener/component-cli/ociclient/cache"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
+	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
 
@@ -39,7 +39,7 @@ func NewDeployer(log logging.Logger,
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log.Logr(), utils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
+		sharedCache, err = cache.NewCache(log.Logr(), cnudieutils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
 		if err != nil {
 			return nil, err
 		}
@@ -73,6 +73,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 	if err != nil {
 		return err
 	}
+	ctx = logging.NewContext(ctx, d.log)
 	return containerOp.Reconcile(ctx, container.OperationReconcile)
 }
 
@@ -81,6 +82,7 @@ func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv
 	if err != nil {
 		return err
 	}
+	ctx = logging.NewContext(ctx, d.log)
 	return containerOp.Delete(ctx)
 }
 

@@ -7,17 +7,16 @@ package subinstallations
 import (
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/gardener/landscaper/apis/core"
-	"github.com/gardener/landscaper/apis/core/validation"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+	"github.com/gardener/landscaper/apis/core/validation"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -25,9 +24,8 @@ import (
 func GetBlueprintDefinitionFromInstallationTemplate(
 	inst *lsv1alpha1.Installation,
 	subInstTmpl *lsv1alpha1.InstallationTemplate,
-	cd *cdv2.ComponentDescriptor,
-	compResolver ctf.ComponentResolver,
-	repositoryContext *cdv2.UnstructuredTypedObject,
+	componentVersion model.ComponentVersion,
+	repositoryContext *types.UnstructuredTypedObject,
 	overwriter componentoverwrites.Overwriter) (*lsv1alpha1.BlueprintDefinition, *lsv1alpha1.ComponentDescriptorDefinition, error) {
 	subBlueprint := &lsv1alpha1.BlueprintDefinition{}
 
@@ -46,24 +44,24 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 		if err != nil {
 			return nil, nil, err
 		}
-		if cd == nil {
+		if componentVersion == nil {
 			return nil, nil, errors.New("no component descriptor defined to resolve the blueprint ref")
 		}
 
 		// resolve component descriptor list
-		_, res, err := uri.Get(cd, compResolver, repositoryContext)
+		_, res, err := uri.Get(componentVersion, repositoryContext)
 		if err != nil {
-			return nil, nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", cd.Name, err)
+			return nil, nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", componentVersion.GetName(), err)
 		}
-		// the result of the uri has to be an resource
-		resource, ok := res.(cdv2.Resource)
+		// the result of the uri has to be a resource
+		resource, ok := res.(model.Resource)
 		if !ok {
-			return nil, nil, fmt.Errorf("expected a resource from the component descriptor %s", cd.Name)
+			return nil, nil, fmt.Errorf("expected a resource from the component descriptor %s", componentVersion.GetName())
 		}
 
-		subInstCompDesc, subInstCdRef, err := uri.GetComponent(cd, compResolver, repositoryContext, overwriter)
+		subInstCompVers, subInstCdRef, err := uri.GetComponent(componentVersion, repositoryContext, overwriter)
 		if err != nil {
-			return nil, nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", cd.Name, err)
+			return nil, nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", componentVersion.GetName(), err)
 		}
 
 		// remove parent component descriptor
@@ -72,10 +70,10 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 		// check, if the component descriptor of the subinstallation has been defined as a nested inline CD in the parent installation
 		if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Inline != nil {
 			for _, ref := range inst.Spec.ComponentDescriptor.Inline.ComponentReferences {
-				if ref.ComponentName == subInstCompDesc.GetName() && ref.Version == subInstCompDesc.GetVersion() {
+				if ref.ComponentName == subInstCompVers.GetName() && ref.Version == subInstCompVers.GetVersion() {
 					if label, exists := ref.Labels.Get(lsv1alpha1.InlineComponentDescriptorLabel); exists {
 						// unmarshal again form parent installation to retain all levels of nested component descriptors
-						var cdFromLabel cdv2.ComponentDescriptor
+						var cdFromLabel types.ComponentDescriptor
 						if err := codec.Decode(label, &cdFromLabel); err != nil {
 							return nil, nil, err
 						}
@@ -92,7 +90,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 		}
 
 		subBlueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{
-			ResourceName: resource.Name,
+			ResourceName: resource.GetName(),
 		}
 	}
 

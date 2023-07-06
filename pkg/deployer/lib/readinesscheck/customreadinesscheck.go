@@ -11,11 +11,12 @@ import (
 	"reflect"
 	"strings"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,7 +24,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	lserror "github.com/gardener/landscaper/apis/errors"
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/utils"
 )
@@ -41,27 +41,34 @@ type CustomReadinessCheck struct {
 
 // CheckResourcesReady starts a custom readiness check by checking the readiness of the submitted resources
 func (c *CustomReadinessCheck) CheckResourcesReady() error {
-	if c.Configuration.Disabled || len(c.ManagedResources) == 0 {
+	if c.Configuration.Disabled {
 		// nothing to do
 		return nil
 	}
 
 	var objects []*unstructured.Unstructured
-
-	if c.Configuration.Resource != nil {
-		objects = getObjectsByTypedReference(c.ManagedResources, c.Configuration.Resource)
-	}
-
-	if c.Configuration.LabelSelector != nil {
-		o, err := getObjectsByLabels(c.Context, c.Client, c.ManagedResources, c.Configuration.LabelSelector)
-		if err != nil {
-			return lserror.NewWrappedError(err, c.CurrentOp, "get objects by LabelSelector", err.Error(), lsv1alpha1.ErrorInternalProblem)
+	getObjectsFunc := func() ([]*unstructured.Unstructured, error) {
+		if c.Configuration.Resource != nil {
+			o, err := getObjectsByTypedReference(c.Context, c.Client, c.Configuration.Resource)
+			if err != nil {
+				return nil, err
+			}
+			objects = append(objects, o...)
 		}
-		objects = append(objects, o...)
+
+		if c.Configuration.LabelSelector != nil {
+			o, err := getObjectsByLabels(c.Context, c.Client, c.Configuration.LabelSelector)
+			if err != nil {
+				return nil, err
+			}
+			objects = append(objects, o...)
+		}
+
+		return objects, nil
 	}
 
 	timeout := c.Timeout.Duration
-	if err := WaitForObjectsReady(c.Context, timeout, c.Client, objects, c.CheckObject, c.InterruptionChecker); err != nil {
+	if err := WaitForObjectsReady(c.Context, timeout, c.Client, getObjectsFunc, c.CheckObject, c.InterruptionChecker); err != nil {
 		return lserror.NewWrappedError(err,
 			c.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}
@@ -147,58 +154,51 @@ func matchResourceConditions(object interface{}, values []interface{}, operator 
 }
 
 // getObjectsByTypedReference returns an object from a list of TypedObjectReferences identified by a given TypedObjectReference as unstructured.Unstructured
-func getObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key []lsv1alpha1.TypedObjectReference) []*unstructured.Unstructured {
+func getObjectsByTypedReference(ctx context.Context, cl client.Client, key []lsv1alpha1.TypedObjectReference) ([]*unstructured.Unstructured, error) {
 	var results []*unstructured.Unstructured
 
-	for _, o := range objects {
-		for _, k := range key {
-			if o == k {
-				obj := kutil.ObjectFromTypedObjectReference(&o)
-				results = append(results, obj)
+	for _, k := range key {
+		obj := &unstructured.Unstructured{}
+		obj.SetAPIVersion(k.APIVersion)
+		obj.SetKind(k.Kind)
+		if err := cl.Get(ctx, k.ObjectReference.NamespacedName(), obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil, NewObjectNotReadyError(obj, err)
+			} else {
+				return nil, NewRecoverableError(err)
 			}
 		}
+		results = append(results, obj)
 	}
 
-	return results
+	return results, nil
 }
 
 // getObjectsByLabels returns all objects from a list of TypedObjectReferences that match a certain label selector as a slice of unstructured.Unstructured
-func getObjectsByLabels(ctx context.Context, client client.Client, objects []lsv1alpha1.TypedObjectReference, selector *health.LabelSelectorSpec) ([]*unstructured.Unstructured, error) {
+func getObjectsByLabels(ctx context.Context, cl client.Client, selector *health.LabelSelectorSpec) ([]*unstructured.Unstructured, error) {
 	var results []*unstructured.Unstructured
 
-	selectorGv, err := schema.ParseGroupVersion(selector.APIVersion)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to parse group/version of selector %s", selector.APIVersion)
+	objList := &unstructured.UnstructuredList{}
+	objList.SetAPIVersion(selector.APIVersion)
+	objList.SetKind(selector.Kind)
+
+	if err := cl.List(ctx, objList, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selector.Labels),
+	}); err != nil {
+		return nil, NewRecoverableError(err)
 	}
-	selectorGvk := selectorGv.WithKind(selector.Kind)
 
-	for _, o := range objects {
-		obj := kutil.ObjectFromTypedObjectReference(&o)
-		if obj.GroupVersionKind() != selectorGvk {
-			continue
+	if len(objList.Items) == 0 {
+		return nil, &ObjectNotReadyError{
+			objectGVK:       fmt.Sprintf("%s, Kind=%s", selector.APIVersion, selector.Kind),
+			objectName:      "",
+			objectNamespace: "",
+			err:             fmt.Errorf("object list by label selector is empty"),
 		}
+	}
 
-		key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-		if err := client.Get(ctx, key, obj); err != nil {
-			return nil, errors.Wrapf(err, "unable to get object %s %s/%s", obj.GroupVersionKind().String(), obj.GetName(), obj.GetNamespace())
-		}
-
-		objectLabels := labels.Set(obj.GetLabels())
-
-		found := true
-		for key, value := range selector.Labels {
-			if !objectLabels.Has(key) {
-				found = false
-				continue
-			}
-			if objectLabels.Get(key) != value {
-				found = false
-			}
-		}
-
-		if found {
-			results = append(results, obj)
-		}
+	for _, obj := range objList.Items {
+		results = append(results, &obj)
 	}
 
 	return results, nil

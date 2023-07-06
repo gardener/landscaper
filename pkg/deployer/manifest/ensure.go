@@ -33,7 +33,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	currOp := "ReconcileManifests"
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, currOp})
 
-	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+	m.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 
 	_, targetClient, targetClientSet, err := m.TargetClient(ctx)
 	if err != nil {
@@ -110,7 +110,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		}
 	}
 
-	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	m.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 
 	return nil
 }
@@ -164,7 +164,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "Delete")
 
 	currOp := "DeleteManifests"
-	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+	m.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 
 	if m.ProviderStatus == nil || len(m.ProviderStatus.ManagedResources) == 0 {
 		controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
@@ -204,12 +204,12 @@ func (m *Manifest) Delete(ctx context.Context) error {
 			continue
 		}
 
-		if m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete != nil {
+		if mr.AnnotateBeforeDelete != nil {
 			objAnnotations := currObj.GetAnnotations()
 			if objAnnotations == nil {
-				objAnnotations = m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete
+				objAnnotations = mr.AnnotateBeforeDelete
 			} else {
-				if err := mergo.Merge(&objAnnotations, m.ProviderConfiguration.Manifests[i].AnnotateBeforeDelete, mergo.WithOverride); err != nil {
+				if err := mergo.Merge(&objAnnotations, mr.AnnotateBeforeDelete, mergo.WithOverride); err != nil {
 					logger.Error(err, "unable to merge resource annotations with before delete annotations", lc.KeyResource, key.String())
 				}
 			}

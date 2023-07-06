@@ -54,3 +54,7 @@ In this tour, you will learn about the different Landscaper features by simple e
 [12. Import Data Mappings](./import-export/import-data-mappings)
 
 [13. Export Parameters](./import-export/export-parameters)
+
+## Templating
+
+[14. Templating: Accessing Component Descriptors ](./templating/components)

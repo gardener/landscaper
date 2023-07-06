@@ -13,8 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
 
@@ -25,7 +24,7 @@ func TestConfig(t *testing.T) {
 
 func createDefaultContextsForNamespaces(kubeClient client.Client) {
 	// create default repo for all namespaces
-	repoCtx := componentsregistry.NewLocalRepository("../testdata/registry")
+	repoCtx := componentresolvers.NewLocalRepository("../testdata/registry")
 	for i := 1; i <= 11; i++ {
 		Expect(testutils.CreateDefaultContext(context.TODO(), kubeClient, repoCtx, fmt.Sprintf("test%d", i))).To(Succeed())
 	}

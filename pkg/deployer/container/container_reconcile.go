@@ -12,36 +12,32 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/gardener/component-cli/ociclient/credentials"
-	cdoci "github.com/gardener/component-spec/bindings-go/oci"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/gardener/landscaper/pkg/deployer/lib"
-
-	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
+	dockerreference "github.com/containerd/containerd/reference/docker"
 	dockerconfig "github.com/docker/cli/cli/config"
 	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/types"
+	"github.com/gardener/component-cli/ociclient/credentials"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/registries"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	installationhelper "github.com/gardener/landscaper/pkg/landscaper/installations"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
-
-	dockerreference "github.com/containerd/containerd/reference/docker"
-
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -49,6 +45,7 @@ import (
 // todo: do retries on failure: difference between main container failure and init/wait container failure
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
 	pod, err := c.getPod(ctx)
+	logger := logging.FromContextOrDiscard(ctx)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return lserrors.NewWrappedError(err,
 			"Reconcile", "FetchRunningPod", err.Error())
@@ -59,13 +56,13 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	// do nothing if the pod is still running
 	if pod != nil {
 		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
-			if err := c.collectAndSetPodStatus(pod); err != nil {
+			if err := c.collectAndSetPodStatus(pod, false); err != nil {
 				return lserrors.NewWrappedError(err,
 					"Reconcile", "UpdatePodStatus", err.Error())
 			}
 			// check if pod is in error state
 			if err := podIsInErrorState(pod); err != nil {
-				c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+				lsv1alpha1helper.SetDeployItemToFailed(c.DeployItem)
 				if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000055, c.DeployItem); err != nil {
 					return err // returns the error and retry
 				}
@@ -76,13 +73,12 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				}
 				return err
 			}
-			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+			c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 			return nil
 		}
 	}
 
-	if c.shouldRunNewPod(pod) {
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+	if c.shouldRunNewPod(ctx, pod) {
 		operationName := "DeployPod"
 
 		// before we start syncing lets read the current deploy item from the server
@@ -154,17 +150,16 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 		// update status
 		c.ProviderStatus.LastOperation = string(operation)
-		if err := c.collectAndSetPodStatus(pod); err != nil {
+		if err := c.collectAndSetPodStatus(pod, false); err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "UpdatePodStatus", err.Error())
 		}
 
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 		if operation == container.OperationDelete {
-			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+			c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 		}
 
-		// we have to persist the observed changes so lets do a patch
 		if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000063, c.DeployItem); err != nil {
 			return lserrors.NewWrappedError(err, operationName, "UpdateDeployItemStatus", err.Error())
 		}
@@ -178,44 +173,50 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		return nil
 	}
 
-	if pod == nil {
-		return nil
-	}
 	operationName := "Complete"
-
-	if pod.Status.Phase == corev1.PodSucceeded {
-		if err := c.SyncExport(ctx); err != nil {
-			return lserrors.NewWrappedError(err,
-				operationName, "SyncExport", err.Error())
+	if pod != nil {
+		podSucceeded := pod.Status.Phase == corev1.PodSucceeded
+		if podSucceeded {
+			if err := c.SyncExport(ctx); err != nil {
+				return lserrors.NewWrappedError(err,
+					operationName, "SyncExport", err.Error())
+			}
+		} else if pod.Status.Phase == corev1.PodFailed {
+			lsv1alpha1helper.SetDeployItemToFailed(c.DeployItem)
 		}
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	}
-	if pod.Status.Phase == corev1.PodFailed {
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-	}
 
-	c.ProviderStatus.LastOperation = string(operation)
-	if err := c.collectAndSetPodStatus(pod); err != nil {
-		return lserrors.NewWrappedError(err,
-			"Reconcile", "UpdatePodStatus", err.Error())
-	}
+		c.ProviderStatus.LastOperation = string(operation)
+		if err := c.collectAndSetPodStatus(pod, podSucceeded); err != nil {
+			return lserrors.NewWrappedError(err,
+				"Reconcile", "UpdatePodStatus", err.Error())
+		}
 
-	if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000066, c.DeployItem); err != nil {
-		return lserrors.NewWrappedError(err,
-			operationName, "UpdateDeployItemStatus", err.Error())
-	}
+		// write status to ensure podStatus is saved before deleting the pod
+		if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000031, c.DeployItem); err != nil {
+			return lserrors.NewWrappedError(err, operationName, "UpdateDeployItemStatus", err.Error())
+		}
 
-	// only remove the finalizer if we get the status of the pod
-	if err := c.CleanupPod(ctx, pod); err != nil {
-		return err
+		// only remove the finalizer if we get the status of the pod
+		logger.Debug("Deleting pod, as it has finished", "podStatus", pod.Status.Phase)
+		if err := c.CleanupPod(ctx, pod); err != nil {
+			return err
+		}
+	}
+	if c.ProviderStatus != nil && c.ProviderStatus.PodStatus != nil && c.ProviderStatus.PodStatus.LastSuccessfulJobID != nil && *c.ProviderStatus.PodStatus.LastSuccessfulJobID == c.DeployItem.Status.JobID {
+		logger.Debug("Setting phase to 'Succeeded', because pod was seen successfully finished for current jobID", lc.KeyJobID, c.DeployItem.Status.JobID)
+		c.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 	}
 	return nil
 }
 
 // collectAndSetPodStatus the pod status and updates the container provider status
-func (c *Container) collectAndSetPodStatus(pod *corev1.Pod) error {
+func (c *Container) collectAndSetPodStatus(pod *corev1.Pod, updateLastSuccessfulJobID bool) error {
 	c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
-	if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
+	var jobID *string
+	if updateLastSuccessfulJobID {
+		jobID = pointer.String(c.DeployItem.Status.JobID)
+	}
+	if err := setStatusFromPod(pod, c.ProviderStatus, jobID); err != nil {
 		return err
 	}
 
@@ -227,10 +228,12 @@ func (c *Container) collectAndSetPodStatus(pod *corev1.Pod) error {
 	return nil
 }
 
-func (c *Container) shouldRunNewPod(pod *corev1.Pod) bool {
+func (c *Container) shouldRunNewPod(ctx context.Context, pod *corev1.Pod) bool {
 	// if there is already a pod we need to be sure that the current observed generation is not already run.
+	genString := ""
 	if pod != nil {
-		if genString, ok := pod.Annotations[container.ContainerDeployerDeployItemGenerationLabel]; ok {
+		ok := false
+		if genString, ok = pod.Labels[container.ContainerDeployerDeployItemGenerationLabel]; ok {
 			gen, err := strconv.Atoi(genString)
 			if err == nil {
 				if int64(gen) == c.DeployItem.Generation {
@@ -239,20 +242,33 @@ func (c *Container) shouldRunNewPod(pod *corev1.Pod) bool {
 			}
 		}
 	}
-	// HandleAnnotationsAndGeneration will set the phase to init if either the generation changed or a ReconcileAnnotation is present
-	if c.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseInit {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	if c.ProviderStatus != nil && c.ProviderStatus.PodStatus != nil && c.ProviderStatus.PodStatus.LastSuccessfulJobID != nil && *c.ProviderStatus.PodStatus.LastSuccessfulJobID == c.DeployItem.Status.JobID {
+		logger.Debug("No new pod required, pod for current JobID has successfully finished", lc.KeyJobID, c.DeployItem.Status.JobID, lc.KeyJobIDFinished, c.DeployItem.Status.JobIDFinished)
+		return false
+	}
+	if c.DeployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Init {
+		var lsji *string
+		if c.ProviderStatus != nil && c.ProviderStatus.PodStatus != nil {
+			lsji = c.ProviderStatus.PodStatus.LastSuccessfulJobID
+		}
+		logger.Debug("New pod required", "podExists", pod != nil, "podGenerationLabel", genString, lc.KeyDeployItemPhase, c.DeployItem.Status.Phase, "podStatusLastSuccessfulJobID", lsji)
 		return true
 	}
 	return false
 }
 
-func setStatusFromPod(pod *corev1.Pod, providerStatus *containerv1alpha1.ProviderStatus) error {
+func setStatusFromPod(pod *corev1.Pod, providerStatus *containerv1alpha1.ProviderStatus, currentJobID *string) error {
 	podStatus := &containerv1alpha1.PodStatus{
 		PodName: pod.Name,
 		LastRun: &pod.CreationTimestamp,
 	}
 	if providerStatus.PodStatus != nil {
 		podStatus = providerStatus.PodStatus
+	}
+
+	if currentJobID != nil {
+		podStatus.LastSuccessfulJobID = currentJobID
 	}
 
 	if mainContainerStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName); err == nil {
@@ -562,7 +578,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 	// sync pull secrets for BluePrint
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		compReg, err := componentsregistry.NewOCIRegistry(log, c.Configuration.OCI, c.sharedCache, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		registryAccess, err := registries.NewFactory().NewOCIRegistryAccess(ctx, c.Configuration.OCI, c.sharedCache, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
@@ -571,13 +587,13 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 		compRef := installationhelper.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
 		blueprintName := c.ProviderConfiguration.Blueprint.Reference.ResourceName
 
-		cd, err := compReg.Resolve(ctx, compRef.RepositoryContext, compRef.ComponentName, compRef.Version)
+		componentVersion, err := registryAccess.GetComponentVersion(ctx, compRef)
 		if err != nil {
 			erro = fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
 		}
 
-		resource, err := blueprints.GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
+		resource, err := blueprints.GetBlueprintResourceFromComponentVersion(componentVersion, blueprintName)
 		if err != nil {
 			erro = fmt.Errorf("unable to find blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
@@ -585,13 +601,20 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 		// currently only 2 access methods are supported: localOCIBlob and oci artifact
 		// if the resource is a local oci blob then the same credentials as for the component descriptor is used
-		if resource.Access.GetType() == cdv2.LocalOCIBlobType {
+		if resource.GetAccessType() == cdv2.LocalOCIBlobType {
 			return
 		}
 
-		// if the resource is a oci artifact then we need to parse the actual oci image reference
+		// if the resource is an oci artifact then we need to parse the actual oci image reference
 		ociRegistryAccess := &cdv2.OCIRegistryAccess{}
-		if err := cdv2.NewCodec(nil, nil, nil).Decode(resource.Access.Raw, ociRegistryAccess); err != nil {
+		resourceEntry, err := resource.GetResource()
+		if err != nil {
+			erro = fmt.Errorf("unable to get entry of the blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+			return
+		}
+
+		accessRaw := resourceEntry.Access.Raw
+		if err := cdv2.NewCodec(nil, nil, nil).Decode(accessRaw, ociRegistryAccess); err != nil {
 			erro = fmt.Errorf("unable to parse oci registry access of blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
 		}
@@ -601,8 +624,8 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 			erro = fmt.Errorf("unable to obtain and sync blueprint pull secret to host cluster: %w", err)
 			return
 		}
-
 	}
+
 	return
 }
 

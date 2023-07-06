@@ -20,12 +20,13 @@ import (
 
 // ApplyDeployItemTemplate sets and updates the values defined by deploy item template on a deploy item.
 func ApplyDeployItemTemplate(di *lsv1alpha1.DeployItem, tmpl lsv1alpha1.DeployItemTemplate) {
-	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 	lsv1alpha1helper.SetTimestampAnnotationNow(&di.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp)
 	di.Spec.Type = tmpl.Type
 	di.Spec.Target = tmpl.Target
 	di.Spec.Configuration = tmpl.Configuration
+	di.Spec.Timeout = tmpl.Timeout
 	di.Spec.UpdateOnChangeOnly = tmpl.UpdateOnChangeOnly
+	di.Spec.OnDelete = tmpl.OnDelete
 	for k, v := range tmpl.Labels {
 		kutil.SetMetaDataLabel(&di.ObjectMeta, k, v)
 	}

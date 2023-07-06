@@ -8,16 +8,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // Templater implements all available template executors.
@@ -43,27 +42,27 @@ type ExecutionTemplater interface {
 	// TemplateImportExecutions templates an import executor and return a list of error messages.
 	TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecutor,
 		blueprint *blueprints.Blueprint,
-		cd *cdv2.ComponentDescriptor,
-		cdList *cdv2.ComponentDescriptorList,
+		cd model.ComponentVersion,
+		cdList *model.ComponentVersionList,
 		values map[string]interface{}) (*ImportExecutorOutput, error)
 	// TemplateSubinstallationExecutions templates a subinstallation executor and return a list of installations templates.
 	TemplateSubinstallationExecutions(tmplExec lsv1alpha1.TemplateExecutor,
 		blueprint *blueprints.Blueprint,
-		cd *cdv2.ComponentDescriptor,
-		cdList *cdv2.ComponentDescriptorList,
+		cd model.ComponentVersion,
+		cdList *model.ComponentVersionList,
 		values map[string]interface{}) (*SubinstallationExecutorOutput, error)
 	// TemplateDeployExecutions templates a deploy executor and return a list of deployitem templates.
 	TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor,
 		blueprint *blueprints.Blueprint,
-		cd *cdv2.ComponentDescriptor,
-		cdList *cdv2.ComponentDescriptorList,
+		cd model.ComponentVersion,
+		cdList *model.ComponentVersionList,
 		values map[string]interface{}) (*DeployExecutorOutput, error)
 	// TemplateExportExecutions templates a export executor.
 	// It return the exported data as key value map where the key is the name of the export.
 	TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor,
 		blueprint *blueprints.Blueprint,
-		descriptor *cdv2.ComponentDescriptor,
-		cdList *cdv2.ComponentDescriptorList,
+		descriptor model.ComponentVersion,
+		cdList *model.ComponentVersionList,
 		values map[string]interface{}) (*ExportExecutorOutput, error)
 }
 
@@ -139,9 +138,18 @@ type DeployItemSpecification struct {
 	// DependsOn lists deploy items that need to be executed before this one
 	DependsOn []string `json:"dependsOn,omitempty"`
 
+	// Timeout specifies how long the deployer may take to apply the deploy item.
+	// When the time is exceeded, the deploy item fails.
+	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
+	// Defaults to ten minutes if not specified.
+	// +optional
+	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
+
 	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
 	// +optional
 	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
+
+	OnDelete *core.OnDeleteConfig
 }
 
 // DeployExecutorOutput describes the output of deploy executor.
@@ -169,7 +177,7 @@ func (o *Templater) TemplateImportExecutions(opts BlueprintExecutionOptions) ([]
 			return nil, nil, fmt.Errorf("unknown template type %s", tmplExec.Type)
 		}
 
-		output, err := impl.TemplateImportExecutions(tmplExec, opts.Blueprint, opts.ComponentDescriptor, opts.ComponentDescriptors, values)
+		output, err := impl.TemplateImportExecutions(tmplExec, opts.Blueprint, opts.ComponentVersion, opts.ComponentVersions, values)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -210,7 +218,7 @@ func (o *Templater) TemplateSubinstallationExecutions(opts DeployExecutionOption
 			return nil, fmt.Errorf("unknown template type %s", tmplExec.Type)
 		}
 
-		output, err := impl.TemplateSubinstallationExecutions(tmplExec, opts.Blueprint, opts.ComponentDescriptor, opts.ComponentDescriptors, values)
+		output, err := impl.TemplateSubinstallationExecutions(tmplExec, opts.Blueprint, opts.ComponentVersion, opts.ComponentVersions, values)
 		if err != nil {
 			return nil, err
 		}
@@ -238,7 +246,7 @@ func (o *Templater) TemplateDeployExecutions(opts DeployExecutionOptions) ([]Dep
 			return nil, fmt.Errorf("unknown template type %s", tmplExec.Type)
 		}
 
-		output, err := impl.TemplateDeployExecutions(tmplExec, opts.Blueprint, opts.ComponentDescriptor, opts.ComponentDescriptors, values)
+		output, err := impl.TemplateDeployExecutions(tmplExec, opts.Blueprint, opts.ComponentVersion, opts.ComponentVersions, values)
 		if err != nil {
 			return nil, err
 		}
@@ -265,7 +273,7 @@ func (o *Templater) TemplateExportExecutions(opts ExportExecutionOptions) (map[s
 			return nil, fmt.Errorf("unknown template type %s", tmplExec.Type)
 		}
 
-		output, err := impl.TemplateExportExecutions(tmplExec, opts.Blueprint, opts.ComponentDescriptor, opts.ComponentDescriptors, values)
+		output, err := impl.TemplateExportExecutions(tmplExec, opts.Blueprint, opts.ComponentVersion, opts.ComponentVersions, values)
 		if err != nil {
 			return nil, err
 		}
@@ -275,14 +283,21 @@ func (o *Templater) TemplateExportExecutions(opts ExportExecutionOptions) (map[s
 	return exportData, nil
 }
 
-func serializeComponentDescriptor(cd *cdv2.ComponentDescriptor) (interface{}, error) {
-	if cd == nil {
+func serializeComponentDescriptor(componentVersion model.ComponentVersion) (interface{}, error) {
+	if componentVersion == nil {
 		return nil, nil
 	}
+
+	cd, err := componentVersion.GetComponentDescriptor()
+	if err != nil {
+		return nil, err
+	}
+
 	data, err := codec.Encode(cd)
 	if err != nil {
 		return nil, err
 	}
+
 	var val interface{}
 	if err := json.Unmarshal(data, &val); err != nil {
 		return nil, err
@@ -290,14 +305,20 @@ func serializeComponentDescriptor(cd *cdv2.ComponentDescriptor) (interface{}, er
 	return val, nil
 }
 
-func serializeComponentDescriptorList(cd *cdv2.ComponentDescriptorList) (interface{}, error) {
-	if cd == nil {
+func serializeComponentDescriptorList(componentVersionList *model.ComponentVersionList) (interface{}, error) {
+	if componentVersionList == nil {
 		return nil, nil
 	}
+	cd, err := model.ConvertComponentVersionList(componentVersionList)
+	if err != nil {
+		return nil, err
+	}
+
 	data, err := codec.Encode(cd)
 	if err != nil {
 		return nil, err
 	}
+
 	var val interface{}
 	if err := json.Unmarshal(data, &val); err != nil {
 		return nil, err

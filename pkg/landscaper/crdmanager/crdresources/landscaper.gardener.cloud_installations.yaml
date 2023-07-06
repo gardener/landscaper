@@ -637,6 +637,16 @@ spec:
               configGeneration:
                 description: ConfigGeneration is the generation of the exported values.
                 type: string
+              dependentsToTrigger:
+                description: DependentsToTrigger lists dependent installations to
+                  be triggered
+                items:
+                  properties:
+                    name:
+                      description: Name is the name of the dependent installation
+                      type: string
+                  type: object
+                type: array
               executionRef:
                 description: ExecutionReference is the reference to the execution
                   that schedules the templated execution items.
@@ -807,6 +817,10 @@ spec:
                 type: integer
               phase:
                 description: InstallationPhase is the current phase of the installation.
+                type: string
+              phaseTransitionTime:
+                description: PhaseTransitionTime is the time when the phase last changed.
+                format: date-time
                 type: string
             required:
             - observedGeneration

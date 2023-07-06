@@ -15,26 +15,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
+	testcred "github.com/gardener/component-cli/ociclient/credentials"
+	testreg "github.com/gardener/component-cli/ociclient/test/envtest"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/registries"
+	componentstestutils "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
-
-	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-cli/ociclient/cache"
-	testcred "github.com/gardener/component-cli/ociclient/credentials"
-	testreg "github.com/gardener/component-cli/ociclient/test/envtest"
-	cdoci "github.com/gardener/component-spec/bindings-go/oci"
-
 	"github.com/gardener/landscaper/test/utils"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
@@ -316,38 +317,90 @@ var _ = Describe("jsonschema", func() {
 		var (
 			config *jsonschema.ReferenceContext
 			blobFs vfs.FileSystem
+			cd     *types.ComponentDescriptor
 		)
+
 		BeforeEach(func() {
+			ctx := context.Background()
+			version := "v0.0.0"
+			schemaBytes := []byte(`{ "type": "string"}`)
+
+			// prepare a memory file system with 3 resources (json schemas)
 			blobFs = memoryfs.New()
 			Expect(blobFs.Mkdir(ctf.BlobsDirectoryName, os.ModePerm)).To(Succeed())
 
-			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/reg", ""))
+			// first resource: a json schema
+			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default1.json"), schemaBytes, os.ModePerm)).To(Succeed())
+			access1, err := componentresolvers.NewLocalFilesystemBlobAccess("default1.json", mediatype.JSONSchemaArtifactsMediaTypeV1)
 			Expect(err).ToNot(HaveOccurred())
-			cd := &cdv2.ComponentDescriptor{}
-			cd.Name = "example.com/test"
-			cd.Version = "v0.0.0"
-			cd.RepositoryContexts = []*cdv2.UnstructuredTypedObject{&repoCtx}
-			compRes, err := ctf.NewListResolver(&cdv2.ComponentDescriptorList{
-				Components: []cdv2.ComponentDescriptor{*cd},
-			}, componentsregistry.NewLocalFilesystemBlobResolver(blobFs))
-			Expect(err).To(Not(HaveOccurred()))
-
-			localSchema := []byte(`{ "type": "string"}`)
-			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default.json"), localSchema, os.ModePerm)).To(Succeed())
-			acc, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default.json", mediatype.JSONSchemaArtifactsMediaTypeV1))
-			Expect(err).ToNot(HaveOccurred())
-			cd.Resources = append(cd.Resources, cdv2.Resource{
+			resource1 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "default",
-					Version: cd.Version,
+					Version: version,
 				},
 				Relation: cdv2.LocalRelation,
-				Access:   &acc,
+				Access:   &access1,
+			}
+
+			// second resource: a compressed json schema
+			var compressedSchema bytes.Buffer
+			w := gzip.NewWriter(&compressedSchema)
+			_, err = w.Write(schemaBytes)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(w.Close()).To(Succeed())
+			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default2.json"), compressedSchema.Bytes(), os.ModePerm)).To(Succeed())
+			access2, err := componentresolvers.NewLocalFilesystemBlobAccess("default2.json",
+				mediatype.NewBuilder(mediatype.JSONSchemaArtifactsMediaTypeV1).Compression(mediatype.GZipCompression).Build().String())
+			Expect(err).ToNot(HaveOccurred())
+			resource2 := types.Resource{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Name:    "comp",
+					Version: version,
+				},
+				Relation: cdv2.LocalRelation,
+				Access:   &access2,
+			}
+
+			// third resource: like the first resource, but with an unknown mediatype
+			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default3.json"), schemaBytes, os.ModePerm)).To(Succeed())
+			access3, err := componentresolvers.NewLocalFilesystemBlobAccess("default3.json", "application/unknown")
+			Expect(err).ToNot(HaveOccurred())
+			resource3 := types.Resource{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Name:    "unknown",
+					Version: version,
+				},
+				Relation: cdv2.LocalRelation,
+				Access:   &access3,
+			}
+
+			// prepare component descriptor and registry
+			repoCtx, err := componentresolvers.NewOCIRepositoryContext("example.com/reg")
+			Expect(err).ToNot(HaveOccurred())
+
+			cd = &types.ComponentDescriptor{
+				ComponentSpec: cdv2.ComponentSpec{
+					ObjectMeta:         cdv2.ObjectMeta{Name: "example.com/test", Version: version},
+					RepositoryContexts: []*types.UnstructuredTypedObject{&repoCtx},
+					Resources:          []types.Resource{resource1, resource2, resource3},
+				},
+			}
+
+			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(blobFs)
+
+			registryAccess := componentstestutils.NewTestRegistryAccess(*cd).WithBlobResolver(blobResolver)
+
+			// read component from registry
+			componentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
+				RepositoryContext: &repoCtx,
+				ComponentName:     cd.GetName(),
+				Version:           cd.GetVersion(),
 			})
+			Expect(err).To(Not(HaveOccurred()))
 
 			config = &jsonschema.ReferenceContext{
-				ComponentDescriptor: cd,
-				ComponentResolver:   compRes,
+				ComponentVersion: componentVersion,
+				RegistryAccess:   registryAccess,
 			}
 		})
 
@@ -373,26 +426,6 @@ var _ = Describe("jsonschema", func() {
 		})
 
 		It("should pass with a gzip compressed schema from a component descriptor resource", func() {
-			var localSchema bytes.Buffer
-
-			w := gzip.NewWriter(&localSchema)
-			_, err := w.Write([]byte(`{ "type": "string"}`))
-			Expect(err).ToNot(HaveOccurred())
-			Expect(w.Close()).To(Succeed())
-
-			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default.json"), localSchema.Bytes(), os.ModePerm)).To(Succeed())
-			acc, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default.json",
-				mediatype.NewBuilder(mediatype.JSONSchemaArtifactsMediaTypeV1).Compression(mediatype.GZipCompression).Build().String()))
-			Expect(err).ToNot(HaveOccurred())
-			config.ComponentDescriptor.Resources = append(config.ComponentDescriptor.Resources, cdv2.Resource{
-				IdentityObjectMeta: cdv2.IdentityObjectMeta{
-					Name:    "comp",
-					Version: config.ComponentDescriptor.Version,
-				},
-				Relation: cdv2.LocalRelation,
-				Access:   &acc,
-			})
-
 			schemaBytes := []byte(`{ "$ref": "cd://resources/comp"}`)
 			data := []byte(`"valid"`)
 
@@ -400,22 +433,10 @@ var _ = Describe("jsonschema", func() {
 		})
 
 		It("should throw an error if a wrong media type is used", func() {
-			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default.json"), []byte(`{ "type": "string"}`), os.ModePerm)).To(Succeed())
-			acc, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("default.json", "application/unknown"))
-			Expect(err).ToNot(HaveOccurred())
-			config.ComponentDescriptor.Resources = append(config.ComponentDescriptor.Resources, cdv2.Resource{
-				IdentityObjectMeta: cdv2.IdentityObjectMeta{
-					Name:    "unknown",
-					Version: config.ComponentDescriptor.Version,
-				},
-				Relation: cdv2.LocalRelation,
-				Access:   &acc,
-			})
-
 			schemaBytes := []byte(`{ "$ref": "cd://resources/unknown"}`)
 			data := []byte(`"valid"`)
 
-			err = jsonschema.ValidateBytes(schemaBytes, data, config)
+			err := jsonschema.ValidateBytes(schemaBytes, data, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("unknown media type"))
 		})
@@ -447,10 +468,11 @@ var _ = Describe("jsonschema", func() {
 	Context("WithRealRegistry", func() {
 		// tests which require a real (local) registry
 		var (
-			ctx       context.Context
-			testenv   *testreg.Environment
-			ociCache  cache.Cache
-			ociClient ociclient.Client
+			ctx            context.Context
+			testenv        *testreg.Environment
+			ociCache       cache.Cache
+			ociClient      ociclient.Client
+			registryAccess model.RegistryAccess
 		)
 
 		BeforeEach(func() {
@@ -476,6 +498,9 @@ var _ = Describe("jsonschema", func() {
 			testutils.ExpectNoError(err)
 			ociClient, err = ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
 			testutils.ExpectNoError(err)
+
+			registryAccess, err = registries.NewFactory().NewOCITestRegistryAccess(testenv.Addr, testenv.BasicAuth.Username, testenv.BasicAuth.Password)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -522,7 +547,7 @@ var _ = Describe("jsonschema", func() {
 			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 			baseResourceName := "jsonschema"
 
-			cdRes := []cdv2.Resource{
+			cdRes := []types.Resource{
 				createBlobResource(blobfs, baseResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema.json", `
 					{
 						"type": "string"
@@ -543,7 +568,7 @@ var _ = Describe("jsonschema", func() {
 			refString := fmt.Sprintf("cd://componentReferences/%s/resources/%s", baseConfig.ComponentNameInReference, baseConfig.ReferencedResourceName)
 			complexSchemaResourceName := "firstjsonschemarefcomplex"
 
-			cdRes = []cdv2.Resource{
+			cdRes = []types.Resource{
 				createBlobResource(blobfs, firstRefConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "plain.json", fmt.Sprintf(`
 					{
 						"$ref": "%s"
@@ -570,7 +595,7 @@ var _ = Describe("jsonschema", func() {
 				`, refString, fmt.Sprintf("cd://componentReferences/%s/resources/%s", baseConfig.ComponentNameInReference, baseResourceName))),
 			}
 
-			cdRef := []cdv2.ComponentReference{
+			cdRef := []types.ComponentReference{
 				{
 					Name:          baseConfig.ComponentNameInReference,
 					ComponentName: baseConfig.ComponentNameInRegistry,
@@ -584,7 +609,7 @@ var _ = Describe("jsonschema", func() {
 			blobfs = memoryfs.New()
 			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 
-			cdRes = []cdv2.Resource{
+			cdRes = []types.Resource{
 				createBlobResource(blobfs, secondRefConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema2.json", fmt.Sprintf(`
 					{
 						"$ref": "cd://componentReferences/%s/resources/%s"
@@ -592,7 +617,7 @@ var _ = Describe("jsonschema", func() {
 				`, firstRefConfig.ComponentNameInReference, firstRefConfig.ReferencedResourceName)),
 			}
 
-			cdRef = []cdv2.ComponentReference{
+			cdRef = []types.ComponentReference{
 				{
 					Name:          firstRefConfig.ComponentNameInReference,
 					ComponentName: firstRefConfig.ComponentNameInRegistry,
@@ -602,9 +627,16 @@ var _ = Describe("jsonschema", func() {
 
 			cd := buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, secondRefConfig.ComponentNameInRegistry, secondRefConfig.Version, cdRef, cdRes, blobfs, ociClient, ociCache)
 
+			secondComponentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
+				RepositoryContext: cd.GetEffectiveRepositoryContext(),
+				ComponentName:     cd.GetName(),
+				Version:           cd.GetVersion(),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
 			val := jsonschema.NewValidator(&jsonschema.ReferenceContext{
-				ComponentDescriptor: cd,
-				ComponentResolver:   cdoci.NewResolver(ociClient),
+				ComponentVersion: secondComponentVersion,
+				RegistryAccess:   registryAccess,
 			})
 
 			// this references the jsonschema resource in the secondRef component
@@ -667,7 +699,7 @@ var _ = Describe("jsonschema", func() {
 			falsePositiveResourceName := "identical"
 
 			// create referenced component
-			cdRes := []cdv2.Resource{
+			cdRes := []types.Resource{
 				createBlobResource(blobfs, cycleConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema.json", fmt.Sprintf(`
 					{
 						"$ref": "cd://resources/%s"
@@ -691,7 +723,7 @@ var _ = Describe("jsonschema", func() {
 			blobfs = memoryfs.New()
 			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 
-			cdRef := []cdv2.ComponentReference{
+			cdRef := []types.ComponentReference{
 				{
 					Name:          cycleConfig.ComponentNameInReference,
 					ComponentName: cycleConfig.ComponentNameInRegistry,
@@ -699,7 +731,7 @@ var _ = Describe("jsonschema", func() {
 				},
 			}
 
-			cdResSource := []cdv2.Resource{
+			cdResSource := []types.Resource{
 				createBlobResource(blobfs, falsePositiveResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema3.json", fmt.Sprintf(`
 					{
 						"$ref": "cd://componentReferences/%s/resources/%s"
@@ -709,9 +741,16 @@ var _ = Describe("jsonschema", func() {
 
 			cd := buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, "example.com/testcd", "v0.0.0", cdRef, cdResSource, blobfs, ociClient, ociCache)
 
+			componentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
+				RepositoryContext: cd.GetEffectiveRepositoryContext(),
+				ComponentName:     cd.GetName(),
+				Version:           cd.GetVersion(),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
 			val := jsonschema.NewValidator(&jsonschema.ReferenceContext{
-				ComponentDescriptor: cd,
-				ComponentResolver:   cdoci.NewResolver(ociClient),
+				ComponentVersion: componentVersion,
+				RegistryAccess:   registryAccess,
 			})
 
 			By("Test for false positives in cycle detection")
@@ -756,42 +795,35 @@ var _ = Describe("jsonschema", func() {
 	Context("WithLocalRegistry", func() {
 
 		var (
-			registry          componentsregistry.TypedRegistry
-			repository        *componentsregistry.LocalRepository
-			cd                *cdv2.ComponentDescriptor
-			repositoryContext cdv2.UnstructuredTypedObject
+			registryAccess    model.RegistryAccess
+			componentVersion  model.ComponentVersion
+			repositoryContext types.UnstructuredTypedObject
 		)
 
 		BeforeEach(func() {
 			var err error
+			ctx := context.Background()
 
-			registry, err = componentsregistry.NewLocalClient("./testdata/registry")
+			registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 
-			repository = componentsregistry.NewLocalRepository("./testdata/registry")
-
-			cd, err = registry.Resolve(context.Background(), repository, "example.com/root", "v0.1.0")
+			repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(cd).ToNot(BeNil())
 
-			repoCtx := &cdv2.OCIRegistryRepository{
-				ObjectType: cdv2.ObjectType{
-					Type: registry.Type(),
-				},
-				BaseURL: "./testdata/registry",
-			}
-
-			repositoryContext.SetType(registry.Type())
-			repoCtxRaw, err := json.Marshal(repoCtx)
+			componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
+				RepositoryContext: &repositoryContext,
+				ComponentName:     "example.com/root",
+				Version:           "v0.1.0",
+			})
 			Expect(err).ToNot(HaveOccurred())
-			repositoryContext.Raw = repoCtxRaw
+			Expect(componentVersion).ToNot(BeNil())
 		})
 
 		It("should resolve with explicit repository context", func() {
 			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
-				ComponentDescriptor: cd,
-				ComponentResolver:   registry,
-				RepositoryContext:   &repositoryContext,
+				ComponentVersion:  componentVersion,
+				RegistryAccess:    registryAccess,
+				RepositoryContext: &repositoryContext,
 			})
 
 			resolved, err := referenceResolver.Resolve([]byte(`
@@ -804,8 +836,8 @@ var _ = Describe("jsonschema", func() {
 
 		It("should not resolve without explicit repository context", func() {
 			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
-				ComponentDescriptor: cd,
-				ComponentResolver:   registry,
+				ComponentVersion: componentVersion,
+				RegistryAccess:   registryAccess,
 			})
 
 			resolved, err := referenceResolver.Resolve([]byte(`
@@ -830,9 +862,9 @@ type componentConfig struct {
 	ReferencedResourceName string
 }
 
-func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, name, version string, cdRefs []cdv2.ComponentReference, cdRes []cdv2.Resource, fs vfs.FileSystem, ociClient ociclient.Client, ociCache cache.Cache) *cdv2.ComponentDescriptor {
+func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, name, version string, cdRefs []types.ComponentReference, cdRes []types.Resource, fs vfs.FileSystem, ociClient ociclient.Client, ociCache cache.Cache) *types.ComponentDescriptor {
 	// define component descriptor
-	cd := &cdv2.ComponentDescriptor{}
+	cd := &types.ComponentDescriptor{}
 
 	cd.Name = name
 	cd.Version = version
@@ -861,20 +893,19 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, n
 	return cd
 }
 
-func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Resource {
-	res := cdv2.Resource{}
+func buildLocalFilesystemResource(name, ttype, mediaType, path string) types.Resource {
+	res := types.Resource{}
 	res.Name = name
 	res.Type = ttype
 	res.Relation = cdv2.LocalRelation
 
-	localFsAccess := cdv2.NewLocalFilesystemBlobAccess(path, mediaType)
-	uAcc, err := cdv2.NewUnstructured(localFsAccess)
+	localFsAccess, err := componentresolvers.NewLocalFilesystemBlobAccess(path, mediaType)
 	testutils.ExpectNoError(err)
-	res.Access = &uAcc
+	res.Access = &localFsAccess
 	return res
 }
 
-func createBlobResource(fs vfs.FileSystem, resourceName, resourceType, mediaType, blobPath, fileName, content string) cdv2.Resource {
+func createBlobResource(fs vfs.FileSystem, resourceName, resourceType, mediaType, blobPath, fileName, content string) types.Resource {
 	file, err := fs.Create(filepath.Join(blobPath, fileName))
 	testutils.ExpectNoError(err)
 	_, err = file.WriteString(content)

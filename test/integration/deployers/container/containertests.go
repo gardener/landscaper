@@ -88,7 +88,7 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(state.Create(ctx, inst))
 
 		By("Wait for installation to finish")
-		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 5*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 5*time.Minute))
 
 		var (
 			configmapName string
@@ -115,7 +115,7 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(state.Create(ctx, inst))
 
 		By("Wait for installation to finish")
-		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 5*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 5*time.Minute))
 
 		var (
 			configmapDataExpected map[string]string
@@ -183,7 +183,7 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(state.Create(ctx, inst))
 
 		By("Wait for installation to finish")
-		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 5*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 5*time.Minute))
 
 		var configmapName string
 		utils.ExpectNoError(json.Unmarshal(doName.Data.RawMessage, &configmapName))
@@ -216,7 +216,7 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(state.Create(ctx, inst))
 
 		By("Wait for installation to finish")
-		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 5*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 5*time.Minute))
 
 		stateExport := &lsv1alpha1.DataObject{}
 		var stateData map[string]interface{}
@@ -235,7 +235,7 @@ func ContainerTests(f *framework.Framework) {
 		utils.ExpectNoError(state.Client.Update(ctx, inst))
 
 		By("Wait for installation to finish")
-		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 5*time.Minute))
+		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 5*time.Minute))
 
 		utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: "state", Namespace: state.Namespace}, stateExport))
 		utils.ExpectNoError(json.Unmarshal(stateExport.Data.RawMessage, &stateData))
@@ -301,7 +301,7 @@ func ContainerTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhaseSucceeded, 3*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
 			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
@@ -344,7 +344,7 @@ func ContainerTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhaseSucceeded, 3*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
 			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))
@@ -388,7 +388,7 @@ func ContainerTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(target), target))
 
 			utils.ExpectNoError(state.Create(ctx, cdi))
-			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhaseSucceeded, 3*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, state.Client, cdi, lsv1alpha1.DeployItemPhases.Succeeded, 3*time.Minute))
 
 			exportSecret := &v1.Secret{}
 			utils.ExpectNoError(state.Client.Get(ctx, cdi.Status.ExportReference.NamespacedName(), exportSecret))

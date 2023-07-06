@@ -7,7 +7,6 @@ package imports_test
 import (
 	"context"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/tools/record"
@@ -15,11 +14,11 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -27,13 +26,13 @@ var _ = Describe("ImportExecutions", func() {
 
 	var (
 		op *installations.Operation
+		c  *imports.Constructor
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
-		fakeCompRepo      ctf.ComponentResolver
 	)
 
-	Load := func(inst string) (context.Context, *installations.InstallationImportsAndBlueprint) {
+	Load := func(inst string) *imports.Constructor {
 		ctx := context.Background()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations[inst])
 		Expect(err).ToNot(HaveOccurred())
@@ -46,7 +45,7 @@ var _ = Describe("ImportExecutions", func() {
 		Expect(err).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, imps)).To(Succeed())
-		return ctx, inInstRoot
+		return c
 	}
 
 	BeforeEach(func() {
@@ -60,48 +59,43 @@ var _ = Describe("ImportExecutions", func() {
 		createDefaultContextsForNamespace(fakeClient)
 		fakeInstallations = state.Installations
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient("../testdata/registry")
+		registryAccess, err := registries.NewFactory().NewLocalRegistryAccess("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
-			Operation: lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).
-				SetComponentsRegistry(fakeCompRepo),
+			Operation: lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess),
 		}
 	})
 
 	It("should extend imports by import executions", func() {
-		ctx, inst := Load("test11/root")
-		exec := imports.New(op)
-		err := exec.Ensure(ctx, inst)
+		c = Load("test11/root")
+		err := c.RenderImportExecutions()
 		Expect(err).To(Succeed())
-		Expect(inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
+		Expect(c.Inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
 	})
 
 	It("should extend imports incrementally by import executions", func() {
-		ctx, inst := Load("test11/multi")
-		exec := imports.New(op)
-		err := exec.Ensure(ctx, inst)
+		c = Load("test11/multi")
+		err := c.RenderImportExecutions()
 		Expect(err).To(Succeed())
-		Expect(inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
-		Expect(inst.GetImports()["further"]).To(Equal("mytestvalue(extended)(further)"))
+		Expect(c.Inst.GetImports()["processed"]).To(Equal("mytestvalue(extended)"))
+		Expect(c.Inst.GetImports()["further"]).To(Equal("mytestvalue(extended)(further)"))
 	})
 
 	It("should validate imports by import executions", func() {
-		ctx, inst := Load("test11/ok")
-		exec := imports.New(op)
-		err := exec.Ensure(ctx, inst)
+		c = Load("test11/ok")
+		err := c.RenderImportExecutions()
 		Expect(err).To(Succeed())
 	})
 
 	It("should reject wrong imports by import executions", func() {
-		ctx, inst := Load("test11/error")
-		exec := imports.New(op)
-		err := exec.Ensure(ctx, inst)
+		c = Load("test11/error")
+		err := c.RenderImportExecutions()
 		Expect(err).NotTo(Succeed())
 		Expect(err.Error()).To(Equal("import validation failed: invalid test data:other"))
-		Expect(inst.GetInstallation().Status.Conditions[0].Type).To(Equal(lsv1alpha1.ConditionType("ValidateImports")))
-		Expect(inst.GetInstallation().Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionStatus("False")))
-		Expect(inst.GetInstallation().Status.Conditions[0].Reason).To(Equal("ImportValidationFailed"))
-		Expect(inst.GetInstallation().Status.Conditions[0].Message).To(Equal("invalid test data:other"))
+		Expect(c.Inst.GetInstallation().Status.Conditions[0].Type).To(Equal(lsv1alpha1.ConditionType("ValidateImports")))
+		Expect(c.Inst.GetInstallation().Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionStatus("False")))
+		Expect(c.Inst.GetInstallation().Status.Conditions[0].Reason).To(Equal("ImportValidationFailed"))
+		Expect(c.Inst.GetInstallation().Status.Conditions[0].Message).To(Equal("invalid test data:other"))
 	})
 })

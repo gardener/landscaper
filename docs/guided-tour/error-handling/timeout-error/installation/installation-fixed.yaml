@@ -38,6 +38,8 @@ spec:
                     target:
                       import: cluster
           
+                    timeout: 2m   # progressing timeout of the DeployItem
+          
                     config:
                       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
                       kind: ProviderConfiguration

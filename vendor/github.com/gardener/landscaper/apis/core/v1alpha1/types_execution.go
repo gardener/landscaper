@@ -5,10 +5,14 @@
 package v1alpha1
 
 import (
+	"encoding/json"
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsschema "github.com/gardener/landscaper/apis/schema"
+	"github.com/gardener/landscaper/apis/utils"
 )
 
 // ExecutionManagedByLabel is the label of a deploy item that contains the name of the managed execution.
@@ -32,27 +36,60 @@ const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
 
 type ExecutionPhase string
 
-const (
-	ExecutionPhaseInit        ExecutionPhase = "Init"
-	ExecutionPhaseProgressing ExecutionPhase = "Progressing"
-	ExecutionPhaseDeleting    ExecutionPhase = "Deleting"
-	ExecutionPhaseSucceeded   ExecutionPhase = "Succeeded"
-	ExecutionPhaseFailed      ExecutionPhase = "Failed"
-)
+func (p ExecutionPhase) String() string {
+	return string(p)
+}
 
-type ExecPhase string
+func (p ExecutionPhase) IsFinal() bool {
+	switch p {
+	case ExecutionPhases.Succeeded, ExecutionPhases.Failed, ExecutionPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
 
-const (
-	ExecPhaseInit        ExecPhase = "Init"
-	ExecPhaseProgressing ExecPhase = "Progressing"
-	ExecPhaseCompleting  ExecPhase = "Completing"
-	ExecPhaseSucceeded   ExecPhase = "Succeeded"
-	ExecPhaseFailed      ExecPhase = "Failed"
+func (p ExecutionPhase) IsDeletion() bool {
+	switch p {
+	case ExecutionPhases.InitDelete, ExecutionPhases.TriggerDelete, ExecutionPhases.Deleting, ExecutionPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
 
-	ExecPhaseInitDelete    ExecPhase = "InitDelete"
-	ExecPhaseTriggerDelete ExecPhase = "TriggerDelete"
-	ExecPhaseDeleting      ExecPhase = "Deleting"
-	ExecPhaseDeleteFailed  ExecPhase = "DeleteFailed"
+func (p ExecutionPhase) IsFailed() bool {
+	switch p {
+	case ExecutionPhases.Failed, ExecutionPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p ExecutionPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
+var (
+	ExecutionPhases = struct {
+		Init,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		InitDelete,
+		TriggerDelete,
+		Deleting,
+		DeleteFailed ExecutionPhase
+	}{
+		Init:          ExecutionPhase(PhaseStringInit),
+		Progressing:   ExecutionPhase(PhaseStringProgressing),
+		Completing:    ExecutionPhase(PhaseStringCompleting),
+		Succeeded:     ExecutionPhase(PhaseStringSucceeded),
+		Failed:        ExecutionPhase(PhaseStringFailed),
+		InitDelete:    ExecutionPhase(PhaseStringInitDelete),
+		TriggerDelete: ExecutionPhase(PhaseStringTriggerDelete),
+		Deleting:      ExecutionPhase(PhaseStringDeleting),
+		DeleteFailed:  ExecutionPhase(PhaseStringDeleteFailed),
+	}
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -125,6 +162,9 @@ type ExecutionSpec struct {
 	// DeployItems defines all execution items that need to be scheduled.
 	DeployItems DeployItemTemplateList `json:"deployItems,omitempty"`
 
+	// DeployItemsCompressed as zipped byte array
+	DeployItemsCompressed []byte `json:"deployItemsCompressed,omitempty"`
+
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints, component descriptors and jsonschemas from the respective registry.
 	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -169,7 +209,11 @@ type ExecutionStatus struct {
 	JobIDFinished string `json:"jobIDFinished,omitempty"`
 
 	// ExecutionPhase is the current phase of the execution.
-	ExecutionPhase ExecPhase `json:"phase,omitempty"`
+	ExecutionPhase ExecutionPhase `json:"phase,omitempty"`
+
+	// PhaseTransitionTime is the time when the phase last changed.
+	// +optional
+	PhaseTransitionTime *metav1.Time `json:"phaseTransitionTime,omitempty"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.
@@ -206,7 +250,75 @@ type DeployItemTemplate struct {
 	// DependsOn lists deploy items that need to be executed before this one
 	DependsOn []string `json:"dependsOn,omitempty"`
 
+	// Timeout specifies how long the deployer may take to apply the deploy item.
+	// When the time is exceeded, the deploy item fails.
+	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
+	// Defaults to ten minutes if not specified.
+	// +optional
+	Timeout *Duration `json:"timeout,omitempty"`
+
 	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
 	// +optional
 	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
+
+	// OnDelete specifies particular setting when deleting a deploy item
+	OnDelete *OnDeleteConfig `json:"onDelete,omitempty"`
+}
+
+// OnDeleteConfig specifies particular setting when deleting a deploy item
+type OnDeleteConfig struct {
+	// SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted.
+	// Works only in the context of an existing target sync object which is used to check the Garden project with
+	// the shoot cluster resources
+	SkipUninstallIfClusterRemoved bool `json:"skipUninstallIfClusterRemoved,omitempty"`
+}
+
+func (r *ExecutionSpec) UnmarshalJSON(data []byte) error {
+	type Alias ExecutionSpec
+	a := (*Alias)(r)
+
+	if err := json.Unmarshal(data, &a); err != nil {
+		return fmt.Errorf("unable to unmarshal execution spec: %w", err)
+	}
+
+	if len(a.DeployItemsCompressed) > 0 {
+		diBytes, err := utils.Gunzip(a.DeployItemsCompressed)
+		if err != nil {
+			return fmt.Errorf("unable to gunzip deployitems of execution spec: %w", err)
+		}
+
+		deployItems := DeployItemTemplateList{}
+		if err := json.Unmarshal(diBytes, &deployItems); err != nil {
+			return fmt.Errorf("unable to unmarshal deployitems of execution spec: %w", err)
+		}
+
+		a.DeployItemsCompressed = nil
+		a.DeployItems = deployItems
+	}
+
+	return nil
+}
+
+func (r ExecutionSpec) MarshalJSON() ([]byte, error) {
+	// Copy the ExecutionSpec type. The copied type has the standard marshaling behaviour,
+	// whereas ExecutionSpec has the custom marshaling behaviour defined in this method.
+	type Alias ExecutionSpec
+	a := Alias(r)
+
+	if len(r.DeployItems) > 0 {
+		diBytes, err := json.Marshal(r.DeployItems)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal deployitems of execution spec: %w", err)
+		}
+
+		diZippedBytes, err := utils.Gzip(diBytes)
+		if err != nil {
+			return nil, fmt.Errorf("unable to gzip deployitems of execution spec: %w", err)
+		}
+
+		a.DeployItems = nil
+		a.DeployItemsCompressed = diZippedBytes
+	}
+
+	return json.Marshal(a)
 }

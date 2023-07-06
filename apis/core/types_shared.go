@@ -35,8 +35,8 @@ func (s *JSONSchemaDefinition) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (_ JSONSchemaDefinition) OpenAPISchemaType() []string { return []string{"object"} }
-func (_ JSONSchemaDefinition) OpenAPISchemaFormat() string { return "" }
+func (JSONSchemaDefinition) OpenAPISchemaType() []string { return []string{"object"} }
+func (JSONSchemaDefinition) OpenAPISchemaFormat() string { return "" }
 
 // Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.
 type Duration struct {
@@ -69,8 +69,8 @@ func (d *Duration) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (_ Duration) OpenAPISchemaType() []string { return []string{"string"} }
-func (_ Duration) OpenAPISchemaFormat() string { return "" }
+func (Duration) OpenAPISchemaType() []string { return []string{"string"} }
+func (Duration) OpenAPISchemaFormat() string { return "" }
 
 // AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all
 // it is correctly generated
@@ -106,7 +106,7 @@ func (s *AnyJSON) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (_ AnyJSON) OpenAPISchemaType() []string {
+func (AnyJSON) OpenAPISchemaType() []string {
 	return []string{
 		"object",
 		"string",
@@ -115,7 +115,7 @@ func (_ AnyJSON) OpenAPISchemaType() []string {
 		"boolean",
 	}
 }
-func (_ AnyJSON) OpenAPISchemaFormat() string { return "" }
+func (AnyJSON) OpenAPISchemaFormat() string { return "" }
 
 // ConditionStatus is the status of a condition.
 type ConditionStatus string
@@ -160,6 +160,8 @@ const (
 	ErrorWebhook ErrorCode = "ERR_WEBHOOK"
 	// ErrorUnfinished indicates that there are unfinished sub-objects.
 	ErrorUnfinished ErrorCode = "ERR_UNFINISHED"
+	// ErrorForInfoOnly indicates that the error is no real error but an info and should be logged only on infor level.
+	ErrorForInfoOnly ErrorCode = "ERR_FOR_INFO_ONLY"
 )
 
 // Condition holds the information about the state of a resource.
@@ -207,9 +209,6 @@ const (
 
 	// ForceReconcileOperation is currently not used.
 	ForceReconcileOperation Operation = "force-reconcile"
-
-	// AbortOperation is the annotation to let the landscaper abort all currently running children and itself.
-	AbortOperation Operation = "abort"
 
 	// InterruptOperation is the annotation to let the landscaper interrupt all currently running deploy items of an
 	// installation and its subinstallations. It differs from abort by not waiting some time such that the responsible

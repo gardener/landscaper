@@ -8,16 +8,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-
 	"github.com/pkg/errors"
-
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +24,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 )
 
 // State contains the state of initialized fake client
@@ -147,20 +143,15 @@ func (s UpdateStatus) ApplyOption(options *CreateOptions) error {
 	return nil
 }
 
+// CreateWithClient creates or updates a kubernetes resource and adds it to the current state
 func (s *State) CreateWithClient(ctx context.Context, c client.Client, obj client.Object, opts ...CreateOption) error {
 	options := &CreateOptions{}
 	if err := options.ApplyOptions(opts...); err != nil {
 		return err
 	}
 	tmp := obj.DeepCopyObject().(client.Object)
+
 	if err := c.Create(ctx, obj); err != nil {
-		if s.checkIfSporadicError(err) {
-			s.log.Logln("state CreateWithClient-create failed but retried: " + err.Error())
-			if err := c.Create(ctx, obj); err != nil {
-				return err
-			}
-
-		}
 		return err
 	}
 
@@ -174,60 +165,6 @@ func (s *State) CreateWithClient(ctx context.Context, c client.Client, obj clien
 		if err := c.Status().Update(ctx, tmp); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return err
-			}
-
-			if strings.Contains(err.Error(), "connection refused") {
-				s.log.Logln("state CreateWithClient-update failed but retried: " + err.Error())
-				if err := c.Status().Update(ctx, tmp); err != nil {
-					if !apierrors.IsNotFound(err) {
-						return err
-					}
-				}
-			}
-		}
-	}
-	return s.AddResources(tmp)
-}
-
-// CreateWithClient creates or updates a kubernetes resource and adds it to the current state
-func (s *State) CreateWithClientAndRetries(ctx context.Context, c client.Client, obj client.Object, opts ...CreateOption) error {
-	options := &CreateOptions{}
-	if err := options.ApplyOptions(opts...); err != nil {
-		return err
-	}
-	tmp := obj.DeepCopyObject().(client.Object)
-
-	for i := 0; i < 10; i++ {
-		err := c.Create(ctx, obj)
-		if err == nil {
-			break
-		} else if s.checkIfSporadicError(err) {
-			s.log.Logln("state CreateWithClient-create failed but retried: " + err.Error())
-			time.Sleep(5 * time.Second)
-		} else {
-			return err
-		}
-	}
-
-	tmp.SetName(obj.GetName())
-	tmp.SetNamespace(obj.GetNamespace())
-	tmp.SetResourceVersion(obj.GetResourceVersion())
-	tmp.SetGeneration(obj.GetGeneration())
-	tmp.SetUID(obj.GetUID())
-	tmp.SetCreationTimestamp(obj.GetCreationTimestamp())
-	if options.UpdateStatus {
-		if err := c.Status().Update(ctx, tmp); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return err
-			}
-
-			if strings.Contains(err.Error(), "connection refused") {
-				s.log.Logln("state CreateWithClient-update failed but retried: " + err.Error())
-				if err := c.Status().Update(ctx, tmp); err != nil {
-					if !apierrors.IsNotFound(err) {
-						return err
-					}
-				}
 			}
 		}
 	}
@@ -236,7 +173,7 @@ func (s *State) CreateWithClientAndRetries(ctx context.Context, c client.Client,
 
 // Create creates or updates a kubernetes resources and adds it to the current state
 func (s *State) Create(ctx context.Context, obj client.Object, opts ...CreateOption) error {
-	return s.CreateWithClientAndRetries(ctx, s.Client, obj, opts...)
+	return s.CreateWithClient(ctx, s.Client, obj, opts...)
 }
 
 // Update a kubernetes resources
@@ -245,18 +182,7 @@ func (s *State) Update(ctx context.Context, obj client.Object, opts ...client.Up
 }
 
 func (s *State) UpdateWithClient(ctx context.Context, cl client.Client, obj client.Object, opts ...client.UpdateOption) error {
-	for i := 0; i < 10; i++ {
-		err := cl.Update(ctx, obj, opts...)
-		if err == nil {
-			break
-		} else if s.checkIfSporadicError(err) {
-			s.log.Logln("state Update failed but retried: " + err.Error())
-			time.Sleep(5 * time.Second)
-		} else {
-			return err
-		}
-	}
-	return nil
+	return cl.Update(ctx, obj, opts...)
 }
 
 // InitResourcesWithClient creates a new isolated environment with its own namespace.
@@ -508,12 +434,6 @@ func (s *State) CleanupState(ctx context.Context, opts ...CleanupOption) error {
 	return s.CleanupStateWithClient(ctx, s.Client, opts...)
 }
 
-func (s *State) checkIfSporadicError(err error) bool {
-	return strings.Contains(err.Error(), "connection refused") ||
-		strings.Contains(err.Error(), "context deadline exceeded") ||
-		strings.Contains(err.Error(), "failed to call webhook")
-}
-
 // CleanupForObject cleans up a object from a cluster
 func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
@@ -538,7 +458,8 @@ func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, t
 }
 
 // CleanupForInstallation cleans up an installation from a cluster
-func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation, timeout time.Duration) error {
+func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation,
+	timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil

@@ -10,19 +10,21 @@ import (
 	"fmt"
 	"path"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 )
 
@@ -61,15 +63,14 @@ func (c *TestSimulatorCallbacks) OnExports(path string, exports map[string]inter
 
 var _ = Describe("Installation Simulator", func() {
 	var (
-		testDataDir       = "./testdata/01-subinstallations"
-		registry          componentsregistry.TypedRegistry
-		repository        *componentsregistry.LocalRepository
-		cd                *cdv2.ComponentDescriptor
-		cdList            cdv2.ComponentDescriptorList
-		blueprint         *blueprints.Blueprint
-		repositoryContext cdv2.UnstructuredTypedObject
-		exportTemplates   lsutils.ExportTemplates
-		callbacks         = &TestSimulatorCallbacks{
+		testDataDir          = "./testdata/01-subinstallations"
+		registryAccess       model.RegistryAccess
+		rootComponentVersion model.ComponentVersion
+		componentVersionList *model.ComponentVersionList
+		blueprint            *blueprints.Blueprint
+		repositoryContext    types.UnstructuredTypedObject
+		exportTemplates      lsutils.ExportTemplates
+		callbacks            = &TestSimulatorCallbacks{
 			installations:     make(map[string]*lsv1alpha1.Installation),
 			installationState: make(map[string]map[string][]byte),
 			deployItems:       make(map[string]*lsv1alpha1.DeployItem),
@@ -84,27 +85,41 @@ var _ = Describe("Installation Simulator", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		registry, err = componentsregistry.NewLocalClient(testDataDir)
+		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
-		repository = componentsregistry.NewLocalRepository(testDataDir)
-
-		root, err := registry.Resolve(ctx, repository, "example.com/root", "v0.1.0")
+		repositoryContext, err = componentresolvers.NewLocalRepositoryContext(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(root).ToNot(BeNil())
 
-		componentA, err := registry.Resolve(ctx, repository, "example.com/componenta", "v0.1.0")
+		rootComponentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
+			RepositoryContext: &repositoryContext,
+			ComponentName:     "example.com/root",
+			Version:           "v0.1.0",
+		})
 		Expect(err).ToNot(HaveOccurred())
-		Expect(componentA).ToNot(BeNil())
+		Expect(rootComponentVersion).ToNot(BeNil())
 
-		componentB, err := registry.Resolve(ctx, repository, "example.com/componentb", "v0.1.0")
+		componentVersionA, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
+			RepositoryContext: &repositoryContext,
+			ComponentName:     "example.com/componenta",
+			Version:           "v0.1.0",
+		})
 		Expect(err).ToNot(HaveOccurred())
-		Expect(componentB).ToNot(BeNil())
+		Expect(componentVersionA).ToNot(BeNil())
 
-		cd = root
-		cdList.Components = []cdv2.ComponentDescriptor{
-			*root,
-			*componentA,
-			*componentB,
+		componentVersionB, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
+			RepositoryContext: &repositoryContext,
+			ComponentName:     "example.com/componentb",
+			Version:           "v0.1.0",
+		})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(componentVersionA).ToNot(BeNil())
+
+		componentVersionList = &model.ComponentVersionList{
+			Components: []model.ComponentVersion{
+				rootComponentVersion,
+				componentVersionA,
+				componentVersionB,
+			},
 		}
 
 		fs := osfs.New()
@@ -116,7 +131,7 @@ var _ = Describe("Installation Simulator", func() {
 
 		repoCtx := &cdv2.OCIRegistryRepository{
 			ObjectType: cdv2.ObjectType{
-				Type: registry.Type(),
+				Type: repositoryContext.GetType(),
 			},
 			BaseURL: testDataDir,
 		}
@@ -162,7 +177,7 @@ targetExports: []
 	})
 
 	It("should simulate an installation with subinstallations", func() {
-		simulator, err := lsutils.NewInstallationSimulator(&cdList, registry, &repositoryContext, exportTemplates)
+		simulator, err := lsutils.NewInstallationSimulator(componentVersionList, registryAccess, &repositoryContext, exportTemplates)
 		Expect(err).ToNot(HaveOccurred())
 		simulator.SetCallbacks(callbacks)
 
@@ -193,17 +208,14 @@ targetExports: []
 		err = yaml.Unmarshal(marshaled, &clusterListMap)
 		Expect(err).ToNot(HaveOccurred())
 
-		dataImports := map[string]interface{}{
+		imports := map[string]interface{}{
 			"root-param-a": "valua-a",
 			"root-param-b": "value-b",
+			"cluster":      clusterMap,
+			"clusters":     clusterListMap,
 		}
 
-		targetImports := map[string]interface{}{
-			"cluster":  clusterMap,
-			"clusters": clusterListMap,
-		}
-
-		exports, err := simulator.Run(cd, blueprint, dataImports, targetImports)
+		exports, err := simulator.Run(rootComponentVersion, blueprint, imports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exports).ToNot(BeNil())
 
@@ -245,6 +257,8 @@ targetExports: []
 		Expect(callbacks.imports).To(HaveKey("root/subinst-a"))
 		Expect(callbacks.imports).To(HaveKey("root/subinst-b"))
 		Expect(callbacks.imports).To(HaveKey("root/subinst-c"))
+
+		Expect(callbacks.imports["root"]).To(HaveKeyWithValue("foo", "bar"))
 
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-a"))
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-b"))

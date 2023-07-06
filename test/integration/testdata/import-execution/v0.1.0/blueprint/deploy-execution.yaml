@@ -1,0 +1,8 @@
+deployItems:
+- name: default
+  type: landscaper.gardener.cloud/mock
+
+  config:
+    apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+    imps: (( imports ))

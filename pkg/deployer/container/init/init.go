@@ -12,34 +12,28 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/gardener/landscaper/pkg/components/registries"
+
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-
-	"github.com/gardener/component-cli/ociclient/credentials"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containercore "github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // Run downloads the import config, the component descriptor and the blob content
@@ -111,8 +105,8 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 	log.Info("All directories have been successfully created")
 
 	var (
-		cdReference *lsv1alpha1.ComponentDescriptorReference
-		cdResolver  ctf.ComponentResolver
+		cdReference    *lsv1alpha1.ComponentDescriptorReference
+		registryAccess model.RegistryAccess
 	)
 
 	if providerConfig.ComponentDescriptor != nil {
@@ -121,17 +115,16 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			return fmt.Errorf("no inline component descriptor or reference found")
 		}
 
-		ociClient, err := createOciClientFromDockerAuthConfig(ctx, fs, opts.RegistrySecretBasePath)
+		registryAccess, err = registries.NewFactory().NewOCIRegistryAccessFromDockerAuthConfig(
+			ctx,
+			fs,
+			opts.RegistrySecretBasePath,
+			providerConfig.ComponentDescriptor.Inline)
 		if err != nil {
 			return err
 		}
 
-		cdResolver, err = componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient, providerConfig.ComponentDescriptor.Inline)
-		if err != nil {
-			return errors.Wrap(err, "unable to setup components registry")
-		}
-
-		if err := fetchComponentDescriptor(ctx, cdResolver, opts, fs, providerConfig); err != nil {
+		if err := fetchComponentDescriptor(ctx, registryAccess, opts, fs, cdReference); err != nil {
 			return fmt.Errorf("unable to fetch component descriptor: %w", err)
 		}
 	}
@@ -149,7 +142,7 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			return fmt.Errorf("unable to create projection filesystem for path %s: %w", opts.ContentDirPath, err)
 		}
 
-		bp, err := blueprints.Resolve(ctx, cdResolver, cdReference, *providerConfig.Blueprint)
+		bp, err := blueprints.Resolve(ctx, registryAccess, cdReference, *providerConfig.Blueprint)
 		if err != nil {
 			return fmt.Errorf("unable to resolve blueprint and component descriptor: %w", err)
 		}
@@ -187,26 +180,33 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 
 func fetchComponentDescriptor(
 	ctx context.Context,
-	resolver ctf.ComponentResolver,
+	registryAccess model.RegistryAccess,
 	opts *options,
 	fs vfs.FileSystem,
-	providerConfig *containerv1alpha1.ProviderConfiguration) error {
+	cdRef *lsv1alpha1.ComponentDescriptorReference) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
-	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
 	if cdRef == nil || cdRef.RepositoryContext == nil {
 		return nil
 	}
 
 	log.Info("Resolving component descriptor")
-	cd, err := resolver.Resolve(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
+	componentVersion, err := registryAccess.GetComponentVersion(ctx, cdRef)
 	if err != nil {
 		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", string(cdRef.RepositoryContext.Raw), cdRef.ComponentName, cdRef.Version, err)
 	}
 
-	resolvedComponents, err := cdutils.ResolveToComponentDescriptorList(ctx, resolver, *cd, cdRef.RepositoryContext, nil) // TODO: we probably need to take overwrites into account here!
+	resolvedComponentVersions, err := model.GetTransitiveComponentReferences(ctx,
+		componentVersion,
+		cdRef.RepositoryContext,
+		nil)
 	if err != nil {
-		return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
+		return errors.Wrapf(err, "unable to resolve transitive component references for component version %s:%s", componentVersion.GetName(), componentVersion.GetVersion())
+	}
+
+	resolvedComponents, err := model.ConvertComponentVersionList(resolvedComponentVersions)
+	if err != nil {
+		return errors.Wrapf(err, "unable to convert list of component references of component version %s:%s", componentVersion.GetName(), componentVersion.GetVersion())
 	}
 
 	cdListJSONBytes, err := json.Marshal(resolvedComponents)
@@ -217,37 +217,4 @@ func fetchComponentDescriptor(
 		return errors.Wrapf(err, "unable to write mapped component descriptor to file %s", opts.ComponentDescriptorFilePath)
 	}
 	return nil
-}
-
-// todo: add retries
-func createOciClientFromDockerAuthConfig(ctx context.Context, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
-	log, _ := logging.FromContextOrNew(ctx, nil)
-	var secrets []string
-	err := vfs.Walk(fs, registryPullSecretsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() || info.Name() != corev1.DockerConfigJsonKey {
-			return nil
-		}
-
-		secrets = append(secrets, path)
-
-		return nil
-	})
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("unable to add local registry pull secrets: %w", err)
-	}
-
-	keyring, err := credentials.CreateOCIRegistryKeyringFromFilesystem(nil, secrets, fs)
-	if err != nil {
-		return nil, err
-	}
-
-	ociClient, err := ociclient.NewClient(log.Logr(), ociclient.WithKeyring(keyring))
-	if err != nil {
-		return nil, err
-	}
-
-	return ociClient, err
 }

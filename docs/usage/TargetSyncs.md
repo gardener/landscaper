@@ -54,6 +54,8 @@ The entries of such a *TargetSync* object have the following meaning:
 - secretRef: A reference to a secret in the same namespace as the *TargetSync* object, containing a kubeconfig.yaml in its data section under the specified *key*. This kubeconfig must provide access to the Garden project namespace. This secret must be created together with the *TargetSync* object.
 - tokenRotation: Will be explained further below.
 
+For every *TargetSync* object every 5 minutes the corresponding shoots are checked and targets and secrets for new or deleted shoot are created or deleted. The token in the secrets for all other shoots have a live time of 24 hours and are refreshed every 12 hours.
+
 An example demonstrating how to create a *TargetSync* object to create targets for shoot clusters can be found
 [here](https://github.com/gardener/landscaper-examples/tree/master/sync-targets/example2).
 
@@ -75,7 +77,8 @@ The resulting situation is depicted in the following picture:
 ![targets-sync2](images/target-sync2.png)
 
 If the secrets in *Other-Namespace 1* on cluster 2 are changed, i.e. a new secret is created,
-and existing one is modified or deleted, this is synchronized to cluster 1 after at most 5 minutes and the  corresponding secrets and targets are created, updated or deleted.
+or an existing one is modified or deleted, this is synchronized to cluster 1 every 5 minutes and the  corresponding 
+secrets and targets are created, updated or deleted.
 
 Currently, it is assumed that the secrets on cluster 2 contain the access data to the clusters in an entry 
 *kubeconfig* of their data section and the data itself must be a kubeconfig.yaml.
@@ -159,3 +162,7 @@ users:
 ```
 
 Token rotation requires that the corresponding service account is allowed to request new tokens for itself.
+
+## Trigger the Reconciliation of a *TargetSync* object
+
+The reconciliation of a *TargetSync* object usually takes place every 5 minutes. It could be triggered immediately by just modifying its annotations. If you add the special annotation `landscaper.gardener.cloud/operation: reconcile` the *TargetSync* object is also reconciled immediately and the annotation is removed when the operation has finished, i.e. either succeeded or failed.

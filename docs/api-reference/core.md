@@ -576,8 +576,7 @@ Duration
 <td>
 <em>(Optional)</em>
 <p>Timeout specifies how long the deployer may take to apply the deploy item.
-When the time is exceeded, the landscaper will add the abort annotation to the deploy item
-and later put it in &lsquo;Failed&rsquo; if the deployer doesn&rsquo;t handle the abort properly.
+When the time is exceeded, the deploy item fails.
 Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactivate the timeout).
 Defaults to ten minutes if not specified.</p>
 </td>
@@ -592,6 +591,19 @@ bool
 <td>
 <em>(Optional)</em>
 <p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>onDelete</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.OnDeleteConfig">
+OnDeleteConfig
+</a>
+</em>
+</td>
+<td>
+<p>OnDelete specifies particular setting when deleting a deploy item</p>
 </td>
 </tr>
 </table>
@@ -912,6 +924,17 @@ DeployItemTemplateList
 </td>
 <td>
 <p>DeployItems defines all execution items that need to be scheduled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deployItemsCompressed</code></br>
+<em>
+[]byte
+</em>
+</td>
+<td>
+<p>DeployItemsCompressed as zipped byte array</p>
 </td>
 </tr>
 <tr>
@@ -2099,10 +2122,6 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentInstallationPhase">ComponentInstallationPhase
-(<code>string</code> alias)</p></h3>
-<p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrite">ComponentVersionOverwrite
 </h3>
 <p>
@@ -2534,6 +2553,35 @@ AnyJSON
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DependentToTrigger">DependentToTrigger
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the dependent installation</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemPhase">DeployItemPhase
 (<code>string</code> alias)</p></h3>
 <p>
@@ -2642,8 +2690,7 @@ Duration
 <td>
 <em>(Optional)</em>
 <p>Timeout specifies how long the deployer may take to apply the deploy item.
-When the time is exceeded, the landscaper will add the abort annotation to the deploy item
-and later put it in &lsquo;Failed&rsquo; if the deployer doesn&rsquo;t handle the abort properly.
+When the time is exceeded, the deploy item fails.
 Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactivate the timeout).
 Defaults to ten minutes if not specified.</p>
 </td>
@@ -2658,6 +2705,19 @@ bool
 <td>
 <em>(Optional)</em>
 <p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>onDelete</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.OnDeleteConfig">
+OnDeleteConfig
+</a>
+</em>
+</td>
+<td>
+<p>OnDelete specifies particular setting when deleting a deploy item</p>
 </td>
 </tr>
 </tbody>
@@ -2684,8 +2744,8 @@ todo: add operation</p>
 <td>
 <code>phase</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionPhase">
-ExecutionPhase
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemPhase">
+DeployItemPhase
 </a>
 </em>
 </td>
@@ -2853,13 +2913,11 @@ Kubernetes meta/v1.Time
 <td>
 <code>deployItemPhase</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemPhase">
-DeployItemPhase
-</a>
+string
 </em>
 </td>
 <td>
-<p>DeployItemPhase is the current phase of the deploy item.</p>
+<p>DeployerPhase is DEPRECATED and will soon be removed.</p>
 </td>
 </tr>
 </tbody>
@@ -2953,6 +3011,23 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </tr>
 <tr>
 <td>
+<code>timeout</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Timeout specifies how long the deployer may take to apply the deploy item.
+When the time is exceeded, the deploy item fails.
+Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactivate the timeout).
+Defaults to ten minutes if not specified.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>updateOnChangeOnly</code></br>
 <em>
 bool
@@ -2961,6 +3036,19 @@ bool
 <td>
 <em>(Optional)</em>
 <p>UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>onDelete</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.OnDeleteConfig">
+OnDeleteConfig
+</a>
+</em>
+</td>
+<td>
+<p>OnDelete specifies particular setting when deleting a deploy item</p>
 </td>
 </tr>
 </tbody>
@@ -3187,6 +3275,7 @@ Error
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.FailedReconcile">FailedReconcile</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.SucceededReconcile">SucceededReconcile</a>)
 </p>
@@ -3395,14 +3484,6 @@ string
 <p>
 <p>ErrorCode is a string alias.</p>
 </p>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ExecPhase">ExecPhase
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
-</p>
-<p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionGeneration">ExecutionGeneration
 </h3>
 <p>
@@ -3448,7 +3529,7 @@ int64
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
 </p>
 <p>
 </p>
@@ -3492,6 +3573,17 @@ DeployItemTemplateList
 </td>
 <td>
 <p>DeployItems defines all execution items that need to be scheduled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deployItemsCompressed</code></br>
+<em>
+[]byte
+</em>
+</td>
+<td>
+<p>DeployItemsCompressed as zipped byte array</p>
 </td>
 </tr>
 <tr>
@@ -3641,13 +3733,27 @@ string
 <td>
 <code>phase</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecPhase">
-ExecPhase
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionPhase">
+ExecutionPhase
 </a>
 </em>
 </td>
 <td>
 <p>ExecutionPhase is the current phase of the execution.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>phaseTransitionTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PhaseTransitionTime is the time when the phase last changed.</p>
 </td>
 </tr>
 </tbody>
@@ -4481,6 +4587,20 @@ InstallationPhase
 </tr>
 <tr>
 <td>
+<code>phaseTransitionTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PhaseTransitionTime is the time when the phase last changed.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>importsHash</code></br>
 <em>
 string
@@ -4502,6 +4622,20 @@ AutomaticReconcileStatus
 <td>
 <em>(Optional)</em>
 <p>AutomaticReconcileStatus describes the status of automatically triggered reconciles.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dependentsToTrigger</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DependentToTrigger">
+[]DependentToTrigger
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DependentsToTrigger lists dependent installations to be triggered</p>
 </td>
 </tr>
 </tbody>
@@ -4778,6 +4912,39 @@ string
 <td>
 <em>(Optional)</em>
 <p>Namespace is the namespace of kubernetes object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.OnDeleteConfig">OnDeleteConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>)
+</p>
+<p>
+<p>OnDeleteConfig specifies particular setting when deleting a deploy item</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>skipUninstallIfClusterRemoved</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted.
+Works only in the context of an existing target sync object which is used to check the Garden project with
+the shoot cluster resources</p>
 </td>
 </tr>
 </tbody>

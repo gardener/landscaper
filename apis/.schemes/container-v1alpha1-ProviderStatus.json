@@ -63,6 +63,10 @@
           "description": "LastRun is the time when the pod was executed the last time.",
           "$ref": "#/definitions/meta-v1-Time"
         },
+        "lastSuccessfulJobID": {
+          "description": "LastSuccessfulJobID is set to the current JobID when the pod successfully finished. If the pod has not yet finished, this field will be nil.",
+          "type": "string"
+        },
         "podName": {
           "description": "PodName is the name of the created pod.",
           "type": "string",

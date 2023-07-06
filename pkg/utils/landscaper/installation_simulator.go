@@ -12,14 +12,14 @@ import (
 	gotmpl "text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
@@ -170,9 +170,9 @@ type InstallationSimulator struct {
 
 // NewInstallationSimulator creates a new installation simulator.
 // The repositoryContext parameter is optional and can be set to nil.
-func NewInstallationSimulator(cdList *cdv2.ComponentDescriptorList,
-	resolver ctf.ComponentResolver,
-	repositoryContext *cdv2.UnstructuredTypedObject,
+func NewInstallationSimulator(cdList *model.ComponentVersionList,
+	registryAccess model.RegistryAccess,
+	repositoryContext *types.UnstructuredTypedObject,
 	exportTemplates ExportTemplates) (*InstallationSimulator, error) {
 
 	for _, template := range exportTemplates.DeployItemExports {
@@ -192,7 +192,7 @@ func NewInstallationSimulator(cdList *cdv2.ComponentDescriptorList,
 	}
 
 	return &InstallationSimulator{
-		blueprintRenderer: NewBlueprintRenderer(cdList, resolver, repositoryContext),
+		blueprintRenderer: NewBlueprintRenderer(cdList, registryAccess, repositoryContext),
 		exportTemplates:   exportTemplates,
 		callbacks:         emptySimulatorCallbacks{},
 	}, nil
@@ -205,9 +205,9 @@ func (s *InstallationSimulator) SetCallbacks(callbacks InstallationSimulatorCall
 }
 
 // Run starts the simulation for the given component descriptor, blueprint and imports and returns the calculated exports.
-func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blueprints.Blueprint, dataImports, targetImports map[string]interface{}) (*BlueprintExports, error) {
+func (s *InstallationSimulator) Run(componentVersion model.ComponentVersion, blueprint *blueprints.Blueprint, imports map[string]interface{}) (*BlueprintExports, error) {
 	ctx := &ResolvedInstallation{
-		ComponentDescriptor: cd,
+		ComponentVersion: componentVersion,
 		Installation: &lsv1alpha1.Installation{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: rootInstallationName,
@@ -219,7 +219,7 @@ func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blu
 		Blueprint: blueprint,
 	}
 
-	_, exports, err := s.executeInstallation(ctx, nil, dataImports, targetImports)
+	_, exports, err := s.executeInstallation(ctx, nil, imports, imports)
 	return exports, err
 }
 
@@ -237,6 +237,11 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	mergeMaps(imports, dataImports)
 	mergeMaps(imports, targetImports)
 
+	imports, err := s.blueprintRenderer.RenderImportExecutions(ctx, imports)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error while executing import executions: %w", err)
+	}
+
 	s.callbacks.OnInstallation(pathString, ctx.Installation)
 	s.callbacks.OnImports(pathString, imports)
 
@@ -249,7 +254,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 		s.callbacks.OnInstallationTemplateState(pathString, renderedDeployItemsAndSubInst.InstallationTemplateState)
 	}
 
-	exportsByDeployItem, err := s.handleDeployItems(pathString, renderedDeployItemsAndSubInst, ctx.ComponentDescriptor, imports)
+	exportsByDeployItem, err := s.handleDeployItems(pathString, renderedDeployItemsAndSubInst, ctx.ComponentVersion, imports)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -464,7 +469,7 @@ func (s *InstallationSimulator) handleSubInstallation(installationPath *Installa
 			}
 			templateInput["installation"] = installationEncoded
 
-			cdEncoded, err := encodeTemplateInput(subInstallation.ComponentDescriptor)
+			cdEncoded, err := encodeTemplateInput(subInstallation.ComponentVersion)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encode component descriptor for installation %s: %w", subInstallationPathString, err)
 			}
@@ -515,7 +520,9 @@ func (s *InstallationSimulator) handleSubInstallation(installationPath *Installa
 }
 
 // handleDeployItems handles the export calculation of the deploy items defined for an installation.
-func (s *InstallationSimulator) handleDeployItems(installationPath string, renderedDeployItems *RenderedDeployItemsSubInstallations, cd *cdv2.ComponentDescriptor, imports map[string]interface{}) (map[string]interface{}, error) {
+func (s *InstallationSimulator) handleDeployItems(installationPath string, renderedDeployItems *RenderedDeployItemsSubInstallations,
+	componentVersion model.ComponentVersion, imports map[string]interface{}) (map[string]interface{}, error) {
+
 	exportsByDeployItem := make(map[string]interface{})
 
 	if len(renderedDeployItems.DeployItemTemplateState) > 0 {
@@ -544,13 +551,22 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 				}
 				templateInput["deployItem"] = deployItemEncoded
 
+				cd, err := model.GetComponentDescriptor(componentVersion)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get component descriptor for deploy item %s: %w", deployItem.Name, err)
+				}
 				cdEncoded, err := encodeTemplateInput(cd)
 				if err != nil {
 					return nil, fmt.Errorf("failed to encode component descriptor for deploy item %s: %w", deployItem.Name, err)
 				}
 				templateInput["cd"] = cdEncoded
 
-				componentsEncoded, err := encodeTemplateInput(s.blueprintRenderer.cdList)
+				componentDescriptorList, err := model.ConvertComponentVersionList(s.blueprintRenderer.cdList)
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert component descriptor list for deploy item %s: %w", deployItem.Name, err)
+				}
+
+				componentsEncoded, err := encodeTemplateInput(componentDescriptorList)
 				if err != nil {
 					return nil, fmt.Errorf("failed to encode component descriptor list for deploy item %s: %w", deployItem.Name, err)
 				}

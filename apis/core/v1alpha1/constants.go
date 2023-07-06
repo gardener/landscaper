@@ -41,9 +41,6 @@ const (
 	// ReconcileTimestampAnnotation is used to recognize timeouts in deployitems
 	ReconcileTimestampAnnotation = LandscaperDomain + "/reconcile-time"
 
-	// AbortTimestampAnnotation is used to recognize timeouts in deployitems
-	AbortTimestampAnnotation = LandscaperDomain + "/abort-time"
-
 	// IgnoreAnnotation can be used to stop reconciliation for landscaper resources.
 	// Will only have an effect if set to 'true'.
 	IgnoreAnnotation = LandscaperDomain + "/ignore"
@@ -96,8 +93,24 @@ const (
 
 // DeployItem care controller constants
 const (
-	PickupTimeoutReason      = "PickupTimeout"    // for error messages
-	PickupTimeoutOperation   = "WaitingForPickup" // for error messages
-	AbortingTimeoutReason    = "AbortingTimeout"  // for error messages
-	AbortingTimeoutOperation = "WaitingForAbort"  // for error messages
+	PickupTimeoutReason      = "PickupTimeout"      // for error messages
+	PickupTimeoutOperation   = "WaitingForPickup"   // for error messages
+	ProgressingTimeoutReason = "ProgressingTimeout" // for error messages
+)
+
+// define common constants for phase names here, so all phases which use any of them
+// will use the same ones
+const (
+	PhaseStringInit            string = "Init"
+	PhaseStringCleanupOrphaned string = "CleanupOrphaned"
+	PhaseStringObjectsCreated  string = "ObjectsCreated"
+	PhaseStringProgressing     string = "Progressing"
+	PhaseStringCompleting      string = "Completing"
+	PhaseStringSucceeded       string = "Succeeded"
+	PhaseStringFailed          string = "Failed"
+
+	PhaseStringInitDelete    string = "InitDelete"
+	PhaseStringTriggerDelete string = "TriggerDelete"
+	PhaseStringDeleting      string = "Deleting"
+	PhaseStringDeleteFailed  string = "DeleteFailed"
 )

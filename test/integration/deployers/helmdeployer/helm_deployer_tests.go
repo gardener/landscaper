@@ -246,7 +246,7 @@ func deployDeployItemAndWaitForSuccess(
 	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 	By("Waiting for the DeployItem to succeed")
-	err = lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 1*time.Minute)
+	err = lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 1*time.Minute)
 
 	return di, err
 }
@@ -278,7 +278,7 @@ func updateDeployItemAndWaitForSuccess(
 	Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 	Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 	By("Waiting for the DeployItem Update to succeed")
-	utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 20*time.Second))
+	utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 20*time.Second))
 	return di
 }
 

@@ -7,8 +7,8 @@ package spiff
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	imagevector "github.com/gardener/image-vector/pkg"
 	"github.com/mandelsoft/spiff/dynaml"
@@ -16,19 +16,33 @@ import (
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 )
 
-func LandscaperSpiffFuncs(functions spiffing.Functions, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) {
+func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.ComponentVersion, componentVersions *model.ComponentVersionList) error {
+	cd, err := model.GetComponentDescriptor(componentVersion)
+	if err != nil {
+		return fmt.Errorf("unable to get component descriptor to register spiff functions: %w", err)
+	}
+
+	cdList, err := model.ConvertComponentVersionList(componentVersions)
+	if err != nil {
+		return fmt.Errorf("unable to convert component descriptor list to register spiff functions: %w", err)
+	}
+
 	functions.RegisterFunction("getResource", spiffResolveResources(cd))
 	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList))
 	functions.RegisterFunction("generateImageOverwrite", spiffGenerateImageOverwrite(cd, cdList))
 	functions.RegisterFunction("parseOCIRef", parseOCIReference)
 	functions.RegisterFunction("ociRefRepo", getOCIReferenceRepository)
 	functions.RegisterFunction("ociRefVersion", getOCIReferenceVersion)
+
+	return nil
 }
 
-func spiffResolveResources(cd *cdv2.ComponentDescriptor) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+func spiffResolveResources(cd *types.ComponentDescriptor) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 		info := dynaml.DefaultInfo()
 		data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments, ""))
@@ -64,7 +78,7 @@ func spiffResolveResources(cd *cdv2.ComponentDescriptor) func(arguments []interf
 	}
 }
 
-func spiffResolveComponent(cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+func spiffResolveComponent(cd *types.ComponentDescriptor, cdList *types.ComponentDescriptorList) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 		info := dynaml.DefaultInfo()
 		data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments, ""))
@@ -100,7 +114,7 @@ func spiffResolveComponent(cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentD
 	}
 }
 
-func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+func spiffGenerateImageOverwrite(cd *types.ComponentDescriptor, cdList *types.ComponentDescriptorList) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 		info := dynaml.DefaultInfo()
 
@@ -117,7 +131,7 @@ func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.Comp
 				return info.Error(err.Error())
 			}
 
-			internalCd = &cdv2.ComponentDescriptor{}
+			internalCd = &types.ComponentDescriptor{}
 			if err := yaml.Unmarshal(data, internalCd); err != nil {
 				return info.Error(err.Error())
 			}
@@ -129,7 +143,7 @@ func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.Comp
 				return info.Error(err.Error())
 			}
 
-			internalComponents = &cdv2.ComponentDescriptorList{}
+			internalComponents = &types.ComponentDescriptorList{}
 			if err := yaml.Unmarshal(componentsData, internalComponents); err != nil {
 				return info.Error(err.Error())
 			}

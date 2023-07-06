@@ -195,12 +195,12 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 			Inst:       o.Inst.GetInstallation(),
 		}
 		targetResolver := secretresolver.New(o.Client())
-		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler, targetResolver), spiff.New(templateStateHandler))
+		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
 				o.Context().External.InjectComponentDescriptorRef(o.Inst.GetInstallation().DeepCopy()),
 				o.Inst.GetBlueprint(),
-				o.ComponentDescriptor,
+				o.ComponentVersion,
 				o.ResolvedComponentDescriptorList,
 				o.Inst.GetImports())))
 
@@ -268,8 +268,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 
 	subBlueprint, subCdDef, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
 		subInstTmpl,
-		o.ComponentDescriptor,
-		o.ComponentsRegistry(),
+		o.ComponentVersion,
 		o.Context().External.RepositoryContext,
 		o.Context().External.Overwriter)
 	if err != nil {

@@ -22,9 +22,11 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
 	"github.com/gardener/landscaper/pkg/utils/targetresolver"
-	"github.com/gardener/landscaper/pkg/utils/token"
 )
 
 // LandscaperSprigFuncMap returns the sanitized spring function map.
@@ -37,8 +39,20 @@ func LandscaperSprigFuncMap() gotmpl.FuncMap {
 
 // LandscaperTplFuncMap contains all additional landscaper functions that are
 // available in the executors templates.
-func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList,
-	blobResolver ctf.BlobResolver, targetResolver targetresolver.TargetResolver) map[string]interface{} {
+func LandscaperTplFuncMap(fs vfs.FileSystem,
+	componentVersion model.ComponentVersion,
+	componentVersions *model.ComponentVersionList,
+	targetResolver targetresolver.TargetResolver) (map[string]interface{}, error) {
+
+	cd, err := model.GetComponentDescriptor(componentVersion)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get component descriptor to register go template functions: %w", err)
+	}
+
+	cdList, err := model.ConvertComponentVersionList(componentVersions)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert component descriptor list to register go template functions: %w", err)
+	}
 
 	funcs := map[string]interface{}{
 		"readFile": readFileFunc(fs),
@@ -49,7 +63,7 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"parseOCIRef":   lstmpl.ParseOCIReference,
 		"ociRefRepo":    getOCIReferenceRepository,
 		"ociRefVersion": getOCIReferenceVersion,
-		"resolve":       resolveArtifactFunc(blobResolver),
+		"resolve":       resolveArtifactFunc(componentVersion),
 
 		"getResource":          getResourceGoFunc(cd),
 		"getResources":         getResourcesGoFunc(cd),
@@ -62,7 +76,8 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 
 		"generateImageOverwrite": generateImageVectorGoFunc(cd, cdList),
 	}
-	return funcs
+
+	return funcs, nil
 }
 
 // readFileFunc returns a function that reads a file from a location in a filesystem
@@ -113,19 +128,29 @@ func getOCIReferenceRepository(ref string) string {
 }
 
 // resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access
-func resolveArtifactFunc(blobResolver ctf.BlobResolver) func(access map[string]interface{}) []byte {
-	return func(access map[string]interface{}) []byte {
+func resolveArtifactFunc(componentVersion model.ComponentVersion) func(access map[string]interface{}) ([]byte, error) {
+	return func(access map[string]interface{}) ([]byte, error) {
 		ctx := context.Background()
 		defer ctx.Done()
+
+		if componentVersion == nil {
+			return nil, fmt.Errorf("unable to resolve artifact, because no component version is provided")
+		}
+
+		blobResolver, err := componentVersion.GetBlobResolver()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob resolver to resolve artifact: %w", err)
+		}
+
 		var data bytes.Buffer
-		if _, err := blobResolver.Resolve(ctx, cdv2.Resource{Access: cdv2.NewUnstructuredType(access["type"].(string), access)}, &data); err != nil {
+		if _, err := blobResolver.Resolve(ctx, types.Resource{Access: cdv2.NewUnstructuredType(access["type"].(string), access)}, &data); err != nil {
 			panic(err)
 		}
-		return data.Bytes()
+		return data.Bytes(), nil
 	}
 }
 
-func getResourcesGoFunc(cd *cdv2.ComponentDescriptor) func(...interface{}) []map[string]interface{} {
+func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []map[string]interface{} {
 	return func(args ...interface{}) []map[string]interface{} {
 		if cd == nil {
 			panic("Unable to search for a resource as no ComponentDescriptor is defined.")
@@ -148,7 +173,7 @@ func getResourcesGoFunc(cd *cdv2.ComponentDescriptor) func(...interface{}) []map
 	}
 }
 
-func getResourceGoFunc(cd *cdv2.ComponentDescriptor) func(args ...interface{}) map[string]interface{} {
+func getResourceGoFunc(cd *types.ComponentDescriptor) func(args ...interface{}) map[string]interface{} {
 	return func(args ...interface{}) map[string]interface{} {
 		if cd == nil {
 			panic("Unable to search for a resource as no ComponentDescriptor is defined.")
@@ -185,7 +210,7 @@ func getEffectiveRepositoryContextGoFunc(arg interface{}) map[string]interface{}
 	if err != nil {
 		panic(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
 	}
-	cd := &cdv2.ComponentDescriptor{}
+	cd := &types.ComponentDescriptor{}
 	if err := codec.Decode(data, cd); err != nil {
 		panic(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
 	}
@@ -202,7 +227,7 @@ func getEffectiveRepositoryContextGoFunc(arg interface{}) map[string]interface{}
 	return parsedRepoCtx
 }
 
-func getComponentGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
+func getComponentGoFunc(cd *types.ComponentDescriptor, list *types.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
 	return func(args ...interface{}) map[string]interface{} {
 		if cd == nil {
 			panic("Unable to search for a component as no ComponentDescriptor is defined.")
@@ -226,7 +251,7 @@ func getComponentGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescri
 	}
 }
 
-func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
+func generateImageVectorGoFunc(cd *types.ComponentDescriptor, list *types.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
 	return func(args ...interface{}) map[string]interface{} {
 		internalCd := cd
 		internalComponents := list
@@ -241,7 +266,7 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 				panic("Unable to marshal first argument to json.")
 			}
 
-			internalCd = &cdv2.ComponentDescriptor{}
+			internalCd = &types.ComponentDescriptor{}
 			if err = codec.Decode(data, internalCd); err != nil {
 				panic("Unable to decode first argument to component descriptor.")
 			}
@@ -253,7 +278,7 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 				panic("Unable to marshal second argument to json.")
 			}
 
-			internalComponents = &cdv2.ComponentDescriptorList{}
+			internalComponents = &types.ComponentDescriptorList{}
 			if err := codec.Decode(componentsData, internalComponents); err != nil {
 				panic("Unable to decode second argument to component descriptor list.")
 			}
@@ -326,7 +351,7 @@ func getShootAdminKubeconfigGoFunc(targetResolver targetresolver.TargetResolver)
 		}
 
 		ctx := context.Background()
-		shootClient, err := token.NewShootClientFromTarget(ctx, target, targetResolver)
+		shootClient, err := clusters.NewShootClientFromTarget(ctx, target, targetResolver)
 		if err != nil {
 			return "", err
 		}
@@ -369,7 +394,7 @@ func getServiceAccountKubeconfigGoFunc(targetResolver targetresolver.TargetResol
 		}
 
 		ctx := context.Background()
-		tokenClient, err := token.NewTokenClientFromTarget(ctx, target, targetResolver)
+		tokenClient, err := clusters.NewTokenClientFromTarget(ctx, target, targetResolver)
 		if err != nil {
 			return "", err
 		}
@@ -407,7 +432,7 @@ func getOidcKubeconfigGoFunc(targetResolver targetresolver.TargetResolver) func(
 		}
 
 		ctx := context.Background()
-		return token.BuildOIDCKubeconfig(ctx, issuerURL, clientID, target, targetResolver)
+		return clusters.BuildOIDCKubeconfig(ctx, issuerURL, clientID, target, targetResolver)
 	}
 }
 

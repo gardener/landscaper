@@ -15,6 +15,8 @@ type DeployItemType string
 
 type DeployItemPhase string
 
+type DeployerPhase string
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItemList contains a list of DeployItems
@@ -60,8 +62,7 @@ type DeployItemSpec struct {
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
 	// Timeout specifies how long the deployer may take to apply the deploy item.
-	// When the time is exceeded, the landscaper will add the abort annotation to the deploy item
-	// and later put it in 'Failed' if the deployer doesn't handle the abort properly.
+	// When the time is exceeded, the deploy item fails.
 	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
 	// Defaults to ten minutes if not specified.
 	// +optional
@@ -69,12 +70,15 @@ type DeployItemSpec struct {
 	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
 	// +optional
 	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
+
+	// OnDelete specifies particular setting when deleting a deploy item
+	OnDelete *OnDeleteConfig `json:"onDelete,omitempty"`
 }
 
 // DeployItemStatus contains the status of a deploy item
 type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
-	Phase ExecutionPhase `json:"phase,omitempty"`
+	Phase DeployItemPhase `json:"phase,omitempty"`
 
 	// ObservedGeneration is the most recent generation observed for this DeployItem.
 	// It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
@@ -118,8 +122,8 @@ type DeployItemStatus struct {
 	// JobIDGenerationTime is the timestamp when the JobID was set.
 	JobIDGenerationTime *metav1.Time `json:"jobIDGenerationTime,omitempty"`
 
-	// DeployItemPhase is the current phase of the deploy item.
-	DeployItemPhase DeployItemPhase `json:"deployItemPhase,omitempty"`
+	// DeployerPhase is DEPRECATED and will soon be removed.
+	DeployerPhase *string `json:"deployItemPhase,omitempty"`
 }
 
 // DeployerInformation holds additional information about the deployer that

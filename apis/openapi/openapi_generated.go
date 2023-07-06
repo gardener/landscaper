@@ -100,6 +100,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataObject":                                         schema_landscaper_apis_core_v1alpha1_DataObject(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataObjectList":                                     schema_landscaper_apis_core_v1alpha1_DataObjectList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Default":                                            schema_landscaper_apis_core_v1alpha1_Default(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger":                                 schema_landscaper_apis_core_v1alpha1_DependentToTrigger(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItem":                                         schema_landscaper_apis_core_v1alpha1_DeployItem(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemList":                                     schema_landscaper_apis_core_v1alpha1_DeployItemList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemSpec":                                     schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref),
@@ -142,6 +143,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheckList":                                  schema_landscaper_apis_core_v1alpha1_LsHealthCheckList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference":                               schema_landscaper_apis_core_v1alpha1_NamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference":                                    schema_landscaper_apis_core_v1alpha1_ObjectReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig":                                     schema_landscaper_apis_core_v1alpha1_OnDeleteConfig(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.RemoteBlueprintReference":                           schema_landscaper_apis_core_v1alpha1_RemoteBlueprintReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Requirement":                                        schema_landscaper_apis_core_v1alpha1_Requirement(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResolvedTarget":                                     schema_landscaper_apis_core_v1alpha1_ResolvedTarget(ref),
@@ -3851,6 +3853,25 @@ func schema_landscaper_apis_core_v1alpha1_Default(ref common.ReferenceCallback) 
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_DependentToTrigger(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the dependent installation",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_DeployItem(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3998,7 +4019,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Timeout specifies how long the deployer may take to apply the deploy item. When the time is exceeded, the landscaper will add the abort annotation to the deploy item and later put it in 'Failed' if the deployer doesn't handle the abort properly. Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout). Defaults to ten minutes if not specified.",
+							Description: "Timeout specifies how long the deployer may take to apply the deploy item. When the time is exceeded, the deploy item fails. Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout). Defaults to ten minutes if not specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
@@ -4009,12 +4030,18 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"onDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnDelete specifies particular setting when deleting a deploy item",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig"),
+						},
+					},
 				},
 				Required: []string{"type"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -4126,7 +4153,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 					},
 					"deployItemPhase": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeployItemPhase is the current phase of the deploy item.",
+							Description: "DeployerPhase is DEPRECATED and will soon be removed.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4206,6 +4233,12 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref common.Referenc
 							},
 						},
 					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout specifies how long the deployer may take to apply the deploy item. When the time is exceeded, the deploy item fails. Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout). Defaults to ten minutes if not specified.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
 					"updateOnChangeOnly": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.",
@@ -4213,12 +4246,18 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"onDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnDelete specifies particular setting when deleting a deploy item",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig"),
+						},
+					},
 				},
 				Required: []string{"name", "type", "config"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -4849,6 +4888,13 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref common.ReferenceCall
 							},
 						},
 					},
+					"deployItemsCompressed": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployItemsCompressed as zipped byte array",
+							Type:        []string{"string"},
+							Format:      "byte",
+						},
+					},
 					"registryPullSecrets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.",
@@ -4961,11 +5007,17 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							Format:      "",
 						},
 					},
+					"phaseTransitionTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PhaseTransitionTime is the time when the phase last changed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -5640,6 +5692,12 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"phaseTransitionTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PhaseTransitionTime is the time when the phase last changed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
 					"importsHash": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ImportsHash is the hash of the import data.",
@@ -5653,12 +5711,26 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus"),
 						},
 					},
+					"dependentsToTrigger": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DependentsToTrigger lists dependent installations to be triggered",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"observedGeneration", "configGeneration"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -6013,6 +6085,26 @@ func schema_landscaper_apis_core_v1alpha1_ObjectReference(ref common.ReferenceCa
 					},
 				},
 				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_OnDeleteConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OnDeleteConfig specifies particular setting when deleting a deploy item",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"skipUninstallIfClusterRemoved": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted. Works only in the context of an existing target sync object which is used to check the Garden project with the shoot cluster resources",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -7561,6 +7653,13 @@ func schema_apis_deployer_container_v1alpha1_PodStatus(ref common.ReferenceCallb
 						SchemaProps: spec.SchemaProps{
 							Description: "LastRun is the time when the pod was executed the last time.",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"lastSuccessfulJobID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastSuccessfulJobID is set to the current JobID when the pod successfully finished. If the pod has not yet finished, this field will be nil.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"containerStatus": {
@@ -9262,6 +9361,22 @@ func schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref common
 				Description: "ManagedResourceStatus describes the managed resource and their metadata.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"annotateBeforeDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 					"policy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Policy defines the manage policy for that resource.",

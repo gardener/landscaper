@@ -11,9 +11,10 @@ import (
 	"strings"
 
 	"github.com/gardener/component-cli/ociclient/oci"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
+
+	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 // ResolveResources is a helper function that can be used in the specific templating implementations to
@@ -23,7 +24,7 @@ import (
 // The arguments are expected to be a set of key value pairs that describe the identity of the resource.
 // e.g. []interface{}{"name", "my-resource"}.
 // Optionally the first argument can be a component descriptor provided as map[string]interface{}
-func ResolveResources(defaultCD *cdv2.ComponentDescriptor, args []interface{}) ([]cdv2.Resource, error) {
+func ResolveResources(defaultCD *types.ComponentDescriptor, args []interface{}) ([]types.Resource, error) {
 	if len(args) < 2 {
 		panic("at least 2 arguments are expected")
 	}
@@ -35,7 +36,7 @@ func ResolveResources(defaultCD *cdv2.ComponentDescriptor, args []interface{}) (
 		if err != nil {
 			return nil, fmt.Errorf(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
 		}
-		desc = &cdv2.ComponentDescriptor{}
+		desc = &types.ComponentDescriptor{}
 		if err := codec.Decode(data, desc); err != nil {
 			return nil, err
 		}
@@ -75,7 +76,7 @@ func ResolveResources(defaultCD *cdv2.ComponentDescriptor, args []interface{}) (
 // The arguments are expected to be a set of key value pairs that describe the identity of the resource.
 // e.g. []interface{}{"name", "my-component"}.
 // Optionally the first argument can be a component descriptor provided as map[string]interface{}
-func ResolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList, args []interface{}) ([]cdv2.ComponentDescriptor, error) {
+func ResolveComponents(defaultCD *types.ComponentDescriptor, list *types.ComponentDescriptorList, args []interface{}) ([]types.ComponentDescriptor, error) {
 	if len(args) < 2 {
 		panic("at least 2 arguments are expected")
 	}
@@ -87,7 +88,7 @@ func ResolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.Component
 		if err != nil {
 			return nil, fmt.Errorf(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
 		}
-		desc = &cdv2.ComponentDescriptor{}
+		desc = &types.ComponentDescriptor{}
 		if err := codec.Decode(data, desc); err != nil {
 			return nil, err
 		}
@@ -118,7 +119,7 @@ func ResolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.Component
 		return nil, err
 	}
 
-	components := make([]cdv2.ComponentDescriptor, len(compRefs))
+	components := make([]types.ComponentDescriptor, len(compRefs))
 	for i, compRef := range compRefs {
 		cd, err := list.GetComponent(compRef.ComponentName, compRef.Version)
 		if err != nil {

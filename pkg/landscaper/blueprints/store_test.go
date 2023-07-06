@@ -6,28 +6,23 @@ package blueprints_test
 
 import (
 	"context"
-	"io"
 	"os"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/gardener/landscaper/apis/mediatype"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
-
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
-
+	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
-
-	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
+	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 )
 
 var _ = Describe("Store", func() {
@@ -46,10 +41,10 @@ var _ = Describe("Store", func() {
 		store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 		Expect(err).ToNot(HaveOccurred())
 
-		cd := &cdv2.ComponentDescriptor{}
+		cd := &types.ComponentDescriptor{}
 		cd.Name = "example.com/a"
 		cd.Version = "0.0.1"
-		res := cdv2.Resource{}
+		res := types.Resource{}
 		res.Name = "blueprint"
 		res.Version = "0.0.2"
 		_, err = store.Get(ctx, "a")
@@ -70,13 +65,14 @@ var _ = Describe("Store", func() {
 		Expect(err).ToNot(HaveOccurred())
 		defer data.Close()
 
-		cd := &cdv2.ComponentDescriptor{}
+		cd := &types.ComponentDescriptor{}
 		cd.Name = "example.com/a"
 		cd.Version = "0.0.1"
-		res := cdv2.Resource{}
+		res := types.Resource{}
 		res.Name = "blueprint"
 		res.Version = "0.0.2"
-		_, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
+		resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
+		_, err = store.Store(ctx, resource, "a", nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		bp, err := store.Get(ctx, "a")
@@ -100,18 +96,19 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			res.Type = mediatype.BlueprintType
 			cd.Resources = append(cd.Resources, res)
-			_, err = store.Fetch(ctx, cd, defaultBlobResolver(data, blobInfo), "blueprint")
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd, data, blobInfo)
+			_, err = store.Fetch(ctx, componentVersion, "blueprint")
 			Expect(err).ToNot(HaveOccurred())
 
-			bp, err := store.Fetch(ctx, cd, defaultBlobResolver(data, blobInfo), "blueprint")
+			bp, err := store.Fetch(ctx, componentVersion, "blueprint")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
 		})
@@ -131,15 +128,16 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			res.Type = mediatype.BlueprintType
 			cd.Resources = append(cd.Resources, res)
-			_, err = store.Fetch(ctx, cd, defaultBlobResolver(data, blobInfo), "blueprint")
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd, data, blobInfo)
+			_, err = store.Fetch(ctx, componentVersion, "blueprint")
 			Expect(err).ToNot(HaveOccurred())
 
 			data2, blobInfo2, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -150,7 +148,8 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			bp, err := store.Fetch(ctx, cd, defaultBlobResolver(data2, blobInfo2), "blueprint")
+			componentVersion2 := testutils.NewTestComponentVersionFromReader(cd, data2, blobInfo2)
+			bp, err := store.Fetch(ctx, componentVersion2, "blueprint")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
 		})
@@ -170,15 +169,16 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
 			res.Type = mediatype.BlueprintType
 			cd.Resources = append(cd.Resources, res)
-			_, err = store.Fetch(ctx, cd, defaultBlobResolver(data, blobInfo), "blueprint")
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd, data, blobInfo)
+			_, err = store.Fetch(ctx, componentVersion, "blueprint")
 			Expect(err).ToNot(HaveOccurred())
 
 			data2, blobInfo2, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -187,9 +187,10 @@ var _ = Describe("Store", func() {
 				},
 			}).BuildResource(false)
 			Expect(err).ToNot(HaveOccurred())
-			defer data.Close()
+			defer data2.Close()
 
-			bp, err := store.Fetch(ctx, cd, defaultBlobResolver(data2, blobInfo2), "blueprint")
+			componentVersion2 := testutils.NewTestComponentVersionFromReader(cd, data2, blobInfo2)
+			bp, err := store.Fetch(ctx, componentVersion2, "blueprint")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val2"))
 		})
@@ -212,13 +213,14 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
-			_, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
+			resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
+			_, err = store.Store(ctx, resource, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			_, err = store.Get(ctx, "a")
@@ -240,13 +242,14 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
-			bp, err := store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
+			resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
+			bp, err := store.Store(ctx, resource, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
@@ -259,7 +262,8 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			bp, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
+			resource = testutils.NewTestResourceFromReader(&res, data, blobInfo)
+			bp, err = store.Store(ctx, resource, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
@@ -280,13 +284,14 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
-			bp, err := store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
+			resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
+			bp, err := store.Store(ctx, resource, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
@@ -299,7 +304,8 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			bp, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
+			resource = testutils.NewTestResourceFromReader(&res, data, blobInfo)
+			bp, err = store.Store(ctx, resource, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val2"))
@@ -323,13 +329,14 @@ var _ = Describe("Store", func() {
 			}).BuildResource(false)
 			Expect(err).ToNot(HaveOccurred())
 
-			cd := &cdv2.ComponentDescriptor{}
+			cd := &types.ComponentDescriptor{}
 			cd.Name = "example.com/a"
 			cd.Version = "0.0.1"
-			res := cdv2.Resource{}
+			res := types.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
-			_, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
+			resource := testutils.NewTestResourceFromReader(&res, data, blobInfo)
+			_, err = store.Store(ctx, resource, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(data.Close()).To(Succeed())
 
@@ -342,10 +349,11 @@ var _ = Describe("Store", func() {
 				},
 			}).BuildResource(false)
 			Expect(err).ToNot(HaveOccurred())
-			res2 := cdv2.Resource{}
+			res2 := types.Resource{}
 			res2.Name = "blueprint2"
 			res2.Version = "0.0.2"
-			_, err = store.Store(ctx, defaultBlobResolver(data2, blobInfo2), res, "b", nil)
+			resource2 := testutils.NewTestResourceFromReader(&res, data2, blobInfo2)
+			_, err = store.Store(ctx, resource2, "b", nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(data2.Close()).To(Succeed())
 
@@ -364,14 +372,3 @@ var _ = Describe("Store", func() {
 	})
 
 })
-
-func defaultBlobResolver(data io.Reader, blobInfo *ctf.BlobInfo) ctf.BlobResolver {
-	return cdutils.NewBlobResolverFunc(func(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
-		if _, err := io.Copy(writer, data); err != nil {
-			return nil, err
-		}
-		return blobInfo, nil
-	}).WithInfo(func(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error) {
-		return blobInfo, nil
-	})
-}

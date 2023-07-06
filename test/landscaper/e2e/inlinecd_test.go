@@ -8,27 +8,24 @@ import (
 	"context"
 	"path/filepath"
 
-	"k8s.io/utils/clock"
-
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -36,19 +33,17 @@ import (
 var _ = Describe("Inline Component Descriptor", func() {
 
 	var (
-		state                 *envtest.State
-		fakeComponentRegistry ctf.ComponentResolver
+		state *envtest.State
 
 		execActuator, instActuator, mockActuator reconcile.Reconciler
 	)
 
 	BeforeEach(func() {
 		var err error
-		fakeComponentRegistry, err = componentsregistry.NewLocalClient(filepath.Join(projectRoot, "examples", "02-inline-cd"))
+		registryAccess, err := registries.NewFactory().NewLocalRegistryAccess(filepath.Join(projectRoot, "examples", "02-inline-cd"))
 		Expect(err).ToNot(HaveOccurred())
 
-		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).
-			SetComponentsRegistry(fakeComponentRegistry)
+		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 
 		instActuator = instctlr.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
@@ -86,12 +81,12 @@ var _ = Describe("Inline Component Descriptor", func() {
 		inst := &lsv1alpha1.Installation{}
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
 		Expect(testutils.AddReconcileAnnotation(ctx, testenv, inst)).To(Succeed())
-		testutils.ShouldReconcile(ctx, instActuator, instReq)        // add finalizer
-		testutils.ShouldReconcile(ctx, instActuator, instReq)        // remove reconcile annotation and generate jobID
-		_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
+		testutils.ShouldReconcile(ctx, instActuator, instReq)         // add finalizer
+		testutils.ShouldReconcile(ctx, instActuator, instReq)         // remove reconcile annotation and generate jobID
+		testutils.ShouldReconcileButRetry(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseProgressing))
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Progressing))
 		Expect(inst.Status.JobID).NotTo(BeEmpty())
 		Expect(inst.Status.JobIDFinished).To(BeEmpty())
 		Expect(inst.Status.ExecutionReference).ToNot(BeNil())
@@ -111,10 +106,10 @@ var _ = Describe("Inline Component Descriptor", func() {
 		Expect(exec.Status.JobIDFinished).To(BeEmpty())
 
 		// reconcile execution
-		_ = testutils.ShouldNotReconcile(ctx, execActuator, execReq) // not finished
+		testutils.ShouldReconcileButRetry(ctx, execActuator, execReq) // not finished
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
-		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseProgressing))
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Progressing))
 		Expect(exec.Status.JobID).To(Equal(jobID))
 		Expect(exec.Status.JobIDFinished).To(BeEmpty())
 		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
@@ -125,7 +120,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
 		di := &lsv1alpha1.DeployItem{}
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-		Expect(di.Status.DeployItemPhase).To(BeEmpty())
+		Expect(di.Status.Phase).To(BeEmpty())
 		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(BeEmpty())
 
@@ -134,7 +129,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
-		Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 
@@ -143,7 +138,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		testutils.ShouldReconcile(ctx, execActuator, execReq)
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
-		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseSucceeded))
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Succeeded))
 		Expect(exec.Status.JobID).To(Equal(jobID))
 		Expect(exec.Status.JobIDFinished).To(Equal(jobID))
 		Expect(exec.Status.ExportReference).ToNot(BeNil())
@@ -153,7 +148,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		testutils.ShouldReconcile(ctx, instActuator, instReq)
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseSucceeded))
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Succeeded))
 		Expect(inst.Status.JobID).To(Equal(jobID))
 		Expect(inst.Status.JobIDFinished).To(Equal(jobID))
 
@@ -161,11 +156,11 @@ var _ = Describe("Inline Component Descriptor", func() {
 		Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
 
 		// the installation controller should propagate the deletion to the execution
-		testutils.ShouldReconcile(ctx, instActuator, instReq)        // generate jobID for deletion
-		_ = testutils.ShouldNotReconcile(ctx, instActuator, instReq) // delete execution
+		testutils.ShouldReconcile(ctx, instActuator, instReq)         // generate jobID for deletion
+		testutils.ShouldReconcileButRetry(ctx, instActuator, instReq) // delete execution
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
-		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhaseDeleting))
+		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Deleting))
 		Expect(inst.Status.JobID).NotTo(Equal(jobID))
 		Expect(inst.Status.JobIDFinished).To(Equal(jobID))
 
@@ -173,7 +168,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
 		Expect(exec.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecPhaseSucceeded))
+		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Succeeded))
 		Expect(exec.Status.JobID).To(Equal(deletionJobID))
 		Expect(exec.Status.JobIDFinished).To(Equal(jobID))
 
@@ -182,7 +177,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
 		Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-		Expect(di.Status.DeployItemPhase).To(Equal(lsv1alpha1.DeployItemPhaseSucceeded))
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 		Expect(di.Status.GetJobID()).To(Equal(deletionJobID))
 		Expect(di.Status.JobIDFinished).To(Equal(jobID))
 

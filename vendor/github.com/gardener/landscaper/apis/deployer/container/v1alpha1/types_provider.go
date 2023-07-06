@@ -83,6 +83,9 @@ type PodStatus struct {
 	PodName string `json:"podName"`
 	// LastRun is the time when the pod was executed the last time.
 	LastRun *metav1.Time `json:"lastRun,omitempty"`
+	// LastSuccessfulJobID is set to the current JobID when the pod successfully finished.
+	// If the pod has not yet finished, this field will be nil.
+	LastSuccessfulJobID *string `json:"lastSuccessfulJobID,omitempty"`
 	// ContainerStatus contains the status of the pod that
 	// executes the configured container.
 	ContainerStatus ContainerStatus `json:"containerStatus"`

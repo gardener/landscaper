@@ -62,7 +62,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst1, path.Join(testdataDir, "installation-target-exporter-1", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed Target")
 			targetKey := client.ObjectKey{Namespace: state.Namespace, Name: "target-1"}
@@ -86,7 +86,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst2, path.Join(testdataDir, "installation-target-exporter-2", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst2, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst2, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed Target")
 			targetKey = client.ObjectKey{Namespace: state.Namespace, Name: "target-2"}
@@ -110,7 +110,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst3, path.Join(testdataDir, "installation-target-importer-1", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst3, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst3, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			expectedData := map[string]string{"target-1": "dummy kubeconfig 1", "target-2": "dummy kubeconfig 2"}
@@ -148,7 +148,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-importer-2", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMaps")
 			expectedData := map[string]string{"targetName": "target-1", "kubeconfig": "dummy kubeconfig 1"}
@@ -189,7 +189,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-root-1", "installation-1.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed configmap")
 			configMapKey := client.ObjectKey{Namespace: state.Namespace, Name: "cm-kubeconfigs"}
@@ -219,7 +219,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Update(ctx, inst))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed configmap")
 			configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-kubeconfigs"}
@@ -240,7 +240,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-root-1", "installation-2.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed configmap")
 			configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-kubeconfigs"}
@@ -265,7 +265,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-root-1", "installation-2.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed configmap")
 			configMapKey = client.ObjectKey{Namespace: state.Namespace, Name: "cm-kubeconfigs"}
@@ -299,7 +299,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-target-secretref", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			configMapKey := client.ObjectKey{Namespace: state.Namespace, Name: "cm-kubeconfigs"}
@@ -329,7 +329,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst1, path.Join(testdataDir, "installation-target-exporter-root", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check exported Target")
 			targetKey := client.ObjectKey{Namespace: state.Namespace, Name: "target-1"}
@@ -348,7 +348,7 @@ func TargetTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst1, path.Join(testdataDir, "installation-target-exporter-root", "installation.yaml")))
 
 			By("Wait for Installation to finish")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst1, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check exported Target")
 			target = &lsv1alpha1.Target{}

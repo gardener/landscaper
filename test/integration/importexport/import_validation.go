@@ -57,7 +57,7 @@ func ImportValidationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-5", "installation-neg.yaml")))
 
 			By("Wait for installation to fail")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseFailed, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Failed, 2*time.Minute))
 
 			// Fix the installation by adding the missing import
 
@@ -68,7 +68,7 @@ func ImportValidationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-5", "installation-pos.yaml")))
 
 			By("Wait for Installation to succeed")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			expectedData := map[string]string{"foo": "bar"}
@@ -95,7 +95,7 @@ func ImportValidationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-6", "installation.yaml")))
 
 			By("Wait for installation to fail")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseFailed, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Failed, 2*time.Minute))
 
 			// Fix the type of import value
 
@@ -106,7 +106,7 @@ func ImportValidationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.UpdateInstallationFromFile(ctx, state.State, inst, path.Join(testdataDir, "installation-6", "installation.yaml")))
 
 			By("Wait for Installation to succeed")
-			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployed ConfigMap")
 			expectedData := map[string]string{"foo": "bar"}

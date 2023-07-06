@@ -63,6 +63,18 @@ spec:
                     name:
                       description: Name is the unique name of the execution.
                       type: string
+                    onDelete:
+                      description: OnDelete specifies particular setting when deleting
+                        a deploy item
+                      properties:
+                        skipUninstallIfClusterRemoved:
+                          description: SkipUninstallIfClusterRemoved specifies that
+                            uninstall is skipped if the target cluster is already
+                            deleted. Works only in the context of an existing target
+                            sync object which is used to check the Garden project
+                            with the shoot cluster resources
+                          type: boolean
+                      type: object
                     target:
                       description: Target is the object reference to the target that
                         the deploy item should deploy to.
@@ -76,6 +88,13 @@ spec:
                       required:
                       - name
                       type: object
+                    timeout:
+                      description: Timeout specifies how long the deployer may take
+                        to apply the deploy item. When the time is exceeded, the deploy
+                        item fails. Value has to be parsable by time.ParseDuration
+                        (or 'none' to deactivate the timeout). Defaults to ten minutes
+                        if not specified.
+                      type: string
                     type:
                       description: DataType is the DeployItem type of the execution.
                       type: string
@@ -90,6 +109,10 @@ spec:
                   - config
                   type: object
                 type: array
+              deployItemsCompressed:
+                description: DeployItemsCompressed as zipped byte array
+                format: byte
+                type: string
               registryPullSecrets:
                 description: 'RegistryPullSecrets defines a list of registry credentials
                   that are used to pull blueprints, component descriptors and jsonschemas
@@ -275,6 +298,10 @@ spec:
                 type: integer
               phase:
                 description: ExecutionPhase is the current phase of the execution.
+                type: string
+              phaseTransitionTime:
+                description: PhaseTransitionTime is the time when the phase last changed.
+                format: date-time
                 type: string
             type: object
         required:

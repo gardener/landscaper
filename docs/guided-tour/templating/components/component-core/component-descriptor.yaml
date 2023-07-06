@@ -1,0 +1,37 @@
+meta:
+  schemaVersion: 'v2'
+component:
+  name: 'github.com/gardener/landscaper-examples/guided-tour/templating-components-core'
+  version: '1.0.0'
+
+  repositoryContexts:
+    - type: 'ociRegistry'
+      baseUrl: 'eu.gcr.io/gardener-project/landscaper/examples'
+
+  provider: 'internal'
+
+  componentReferences: []
+
+  sources: []
+
+  resources:
+    - access:
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/images/image-a:1.0.0
+        type: ociRegistry
+      labels:
+        - name: landscaper.gardener.cloud/guided-tour/type
+          value: type-a
+      name: image-a
+      relation: external
+      type: ociImage
+      version: 1.0.0
+    - access:
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/images/image-b:1.0.0
+        type: ociRegistry
+      labels:
+        - name: landscaper.gardener.cloud/guided-tour/auxiliary
+          value: aux-b
+      name: image-b
+      relation: external
+      type: ociImage
+      version: 1.0.0

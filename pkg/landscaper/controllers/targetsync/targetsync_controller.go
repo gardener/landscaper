@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,13 +40,13 @@ import (
 	kutils "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/utils/token"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 
 // AddControllerToManagerForTargetSyncs adds the controller to the manager
 func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Manager) error {
 	log := logger.Reconciles("targetSync", "TargetSync")
-	ctrl := NewTargetSyncController(log, mgr.GetClient(), NewDefaultSourceClientProvider())
+	ctrl := NewTargetSyncController(log, mgr.GetClient(), clusters.NewDefaultSourceClientProvider())
 
 	predicates := builder.WithPredicates(predicate.Or(predicate.LabelChangedPredicate{},
 		predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))
@@ -59,11 +61,11 @@ func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Man
 type TargetSyncController struct {
 	log                  logging.Logger
 	targetClient         client.Client
-	sourceClientProvider SourceClientProvider
+	sourceClientProvider clusters.SourceClientProvider
 }
 
 // NewTargetSyncController returns a new TargetSync controller
-func NewTargetSyncController(logger logging.Logger, targetClient client.Client, p SourceClientProvider) reconcile.Reconciler {
+func NewTargetSyncController(logger logging.Logger, targetClient client.Client, p clusters.SourceClientProvider) reconcile.Reconciler {
 	return &TargetSyncController{
 		log:                  logger,
 		targetClient:         targetClient,
@@ -82,7 +84,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 			return reconcile.Result{}, nil
 		}
 		logger.Error(err, "fetching targetsync object failed")
-		return reconcile.Result{}, err
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// set finalizer
@@ -90,20 +92,33 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 		controllerutil.AddFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
 		if err := c.targetClient.Update(ctx, targetSync); err != nil {
 			logger.Error(err, "adding finalizer to targetsync object failed")
-			return reconcile.Result{}, err
+			return reconcile.Result{Requeue: true}, nil
 		}
 		// do not return here because the controller only watches for particular events and setting a finalizer is not part of this
 	}
 
 	if targetSync.DeletionTimestamp.IsZero() {
-		if err := c.handleReconcile(ctx, targetSync); err != nil {
+		err := c.handleReconcile(ctx, targetSync)
+
+		if helper.HasOperation(targetSync.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+			logger.Info("Removing reconcile annotation from target sync object.")
+			if err2 := c.removeReconcileAnnotation(ctx, targetSync); err2 != nil {
+				if err == nil {
+					err = err2
+				} else {
+					logger.Error(err2, "removing reconcile operation for target sync object failed")
+				}
+			}
+		}
+
+		if err != nil {
 			logger.Error(err, "reconciling targetsync object failed")
-			return reconcile.Result{}, err
+			return reconcile.Result{Requeue: true}, nil
 		}
 	} else {
 		if err := c.handleDelete(ctx, targetSync); err != nil {
-			logger.Error(err, "deleting targetsync object failed")
-			return reconcile.Result{}, err
+			logger.Error(err, "deleting target sync object failed")
+			return reconcile.Result{Requeue: true}, nil
 		}
 	}
 
@@ -111,6 +126,20 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 		Requeue:      true,
 		RequeueAfter: requeueInterval,
 	}, nil
+}
+
+func (c *TargetSyncController) removeReconcileAnnotation(ctx context.Context, targetSync *lsv1alpha1.TargetSync) lserrors.LsError {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(targetSync).String()})
+
+	if helper.HasOperation(targetSync.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		logger.Debug("remove reconcile annotation from target sync")
+		delete(targetSync.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := c.targetClient.Update(ctx, targetSync); err != nil {
+			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateTargetSync", err.Error())
+		}
+	}
+
+	return nil
 }
 
 func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *lsv1alpha1.TargetSync) error {
@@ -128,7 +157,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 	} else {
 		sourceClient, restConfig, err := c.sourceClientProvider.GetSourceClient(ctx, targetSync, c.targetClient, nil)
 		if err != nil {
-			logger.Error(err, "fetching source client for targetsync object failed")
+			utils.LogHelper{}.LogErrorButNotFoundAsInfo(ctx, err, "fetching source client for targetsync object failed")
 			errors = append(errors, err)
 		} else {
 			err = c.refreshToken(ctx, targetSync, restConfig)
@@ -332,7 +361,7 @@ func (c *TargetSyncController) handleSecret(ctx context.Context, targetSync *lsv
 }
 
 func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1alpha1.TargetSync,
-	shootClient *token.ShootClient, shoot *unstructured.Unstructured) error {
+	shootClient *clusters.ShootClient, shoot *unstructured.Unstructured) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targetName := c.deriveTargetNameFromShootName(shoot.GetName())

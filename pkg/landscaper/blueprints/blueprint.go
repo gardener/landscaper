@@ -109,27 +109,3 @@ func (b *Blueprint) GetSubinstallations() ([]*lsv1alpha1.InstallationTemplate, e
 
 	return templates, nil
 }
-
-//// RemoteBlueprintReference returns the remote blueprint ref for the current component given the effective component descriptor
-//func (r InstallationTemplate) RemoteBlueprintReference(cdList cdv2.ComponentDescriptorList) (lsv1alpha1.BlueprintDefinition, error) {
-//	components := cdList.GetComponentByName(r.Info.Reference.ComponentName)
-//	if len(components) == 0 {
-//		return lsv1alpha1.BlueprintDefinition{}, cdv2.NotFound
-//	}
-//
-//	res, err := cdutils.FindResourceInComponentByReference(components[0], lsv1alpha1.BlueprintResourceType, r.Info.Reference)
-//	if err != nil {
-//		return lsv1alpha1.BlueprintDefinition{}, cdv2.NotFound
-//	}
-//
-//	repoCtx := components[0].GetEffectiveRepositoryContext()
-//	return lsv1alpha1.BlueprintDefinition{
-//		Reference: &lsv1alpha1.RemoteBlueprintReference{
-//			RepositoryContext: &repoCtx,
-//			VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
-//				ResourceReference: r.Info.Reference,
-//				Version:           res.Version,
-//			},
-//		},
-//	}, nil
-//}

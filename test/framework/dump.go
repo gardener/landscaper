@@ -127,7 +127,7 @@ func (d *Dumper) dumpInstallationsInNamespace(ctx context.Context, namespace str
 // DumpInstallation dumps information about the installation
 func DumpInstallation(logger utils.Logger, inst *lsv1alpha1.Installation) error {
 	// do not dummp the full spec if the installation was successfull
-	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded {
+	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Succeeded {
 		logger.Logf("--- Installation %s succeeded\n", inst.Name)
 		return nil
 	}
@@ -153,7 +153,7 @@ func (d *Dumper) DumpDeployItemsInNamespace(ctx context.Context, namespace strin
 
 // DumpDeployItems dumps information about the deploy items
 func DumpDeployItems(logger utils.Logger, deployItem *lsv1alpha1.DeployItem) error {
-	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
+	if deployItem.Status.Phase == lsv1alpha1.DeployItemPhases.Succeeded {
 		logger.Logf("--- DeployItem %s succeeded\n", deployItem.Name)
 		return nil
 	}
@@ -209,7 +209,7 @@ func (d *Dumper) DumpExecutionInNamespace(ctx context.Context, namespace string)
 
 // DumpExecution dumps information about the execution
 func DumpExecution(logger utils.Logger, exec *lsv1alpha1.Execution) error {
-	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseSucceeded {
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded {
 		logger.Logf("--- Execution %s succeeded\n", exec.Name)
 		return nil
 	}

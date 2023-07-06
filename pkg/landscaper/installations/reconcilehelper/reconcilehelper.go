@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	lserror "github.com/gardener/landscaper/apis/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -159,24 +161,30 @@ func (rh *ReconcileHelper) GetPredecessors(installation *lsv1alpha1.Installation
 	return predecessorMap, nil
 }
 
-func (rh *ReconcileHelper) AllPredecessorsFinished(installation *lsv1alpha1.Installation, predecessorMap map[string]*installations.InstallationAndImports) error {
+func (rh *ReconcileHelper) AllPredecessorsFinished(installation *lsv1alpha1.Installation,
+	predecessorMap map[string]*installations.InstallationAndImports) lserror.LsError {
 	// iterate over siblings which is depended on (either directly or transitively) and check if they are 'ready'
 	for name := range predecessorMap {
 		predecessor := predecessorMap[name]
+		reason := string(installations.NotCompletedDependents)
+
 		if installations.IsRootInstallation(installation) {
 			if lsv1alpha1helper.HasOperation(predecessor.GetInstallation().ObjectMeta, lsv1alpha1.ReconcileOperation) {
-				return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which has reconcile annotation",
+				msg := fmt.Sprintf("depending on installation %q which has reconcile annotation",
 					kutil.ObjectKeyFromObject(predecessor.GetInstallation()).String())
+				return lserror.NewWrappedError(nil, reason, reason, msg, lsv1alpha1.ErrorForInfoOnly)
 			}
 
 			if predecessor.GetInstallation().Status.JobID != predecessor.GetInstallation().Status.JobIDFinished {
-				return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which not finished current job %q",
+				msg := fmt.Sprintf("depending on installation %q which not finished current job %q",
 					kutil.ObjectKeyFromObject(predecessor.GetInstallation()).String(), installation.Status.JobID)
+				return lserror.NewWrappedError(nil, reason, reason, msg, lsv1alpha1.ErrorForInfoOnly)
 			}
 		} else {
 			if installation.Status.JobID != predecessor.GetInstallation().Status.JobIDFinished {
-				return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which not finished current job %q",
+				msg := fmt.Sprintf("depending on installation %q which not finished current job %q",
 					kutil.ObjectKeyFromObject(predecessor.GetInstallation()).String(), installation.Status.JobID)
+				return lserror.NewWrappedError(nil, reason, reason, msg, lsv1alpha1.ErrorForInfoOnly)
 			}
 		}
 	}
@@ -188,9 +196,11 @@ func (rh *ReconcileHelper) AllPredecessorsSucceeded(installation *lsv1alpha1.Ins
 	for name := range predecessorMap {
 		predecessor := predecessorMap[name]
 
-		if predecessor.GetInstallation().Status.InstallationPhase != lsv1alpha1.InstallationPhaseSucceeded {
-			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which is not succeeded",
+		if predecessor.GetInstallation().Status.InstallationPhase != lsv1alpha1.InstallationPhases.Succeeded {
+			reason := string(installations.NotCompletedDependents)
+			msg := fmt.Sprintf("depending on installation %q which is not succeeded",
 				kutil.ObjectKeyFromObject(predecessor.GetInstallation()).String())
+			return lserror.NewWrappedError(nil, reason, reason, msg, lsv1alpha1.ErrorForInfoOnly)
 		}
 	}
 

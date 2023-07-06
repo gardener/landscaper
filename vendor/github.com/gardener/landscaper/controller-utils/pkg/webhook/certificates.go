@@ -12,12 +12,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates"
 )
@@ -53,12 +57,10 @@ func GetDNSNamesFromURL(rawurl string) ([]string, error) {
 
 // GenerateCertificates generates the certificates that are required for a webhook. It returns the ca bundle, and it
 // stores the server certificate and key locally on the file system.
-func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir, namespace, name, certSecretName string, dnsNames []string) ([]byte, error) {
-	var (
-		caCert     *certificates.Certificate
-		serverCert *certificates.Certificate
-		err        error
-	)
+func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir, namespace, name, certSecretName string,
+	dnsNames []string) ([]byte, error) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "GenerateCertificates")
 
 	caConfig := &certificates.CertificateSecretConfig{
 		CommonName: "webhook-ca",
@@ -66,72 +68,125 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 		PKCS:       certificates.PKCS8,
 	}
 
-	// If the namespace is not set then the webhook controller is running locally. We simply generate a new certificate in this case.
-	if len(namespace) == 0 {
-		caCert, serverCert, err = GenerateNewCAAndServerCert(name, dnsNames, *caConfig)
-		if err != nil {
-			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
-		}
-		return writeCertificates(certDir, caCert, serverCert)
-	}
-
 	// The controller stores the generated webhook certificate in a secret in the cluster. It tries to read it. If it does not exist a
 	// new certificate is generated.
 
-	generateAndUpdateCertificate := func() ([]byte, error) {
-		// The secret was not found, let's generate new certificates and store them in the secret afterwards.
-		caCert, serverCert, err = GenerateNewCAAndServerCert(name, dnsNames, *caConfig)
-		if err != nil {
-			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
-		}
-
-		secret := &corev1.Secret{}
-		secret.ObjectMeta = metav1.ObjectMeta{Namespace: namespace, Name: certSecretName}
-		secret.Type = corev1.SecretTypeOpaque
-		secret.Data = map[string][]byte{
-			certificates.DataKeyCertificateCA: caCert.CertificatePEM,
-			certificates.DataKeyPrivateKeyCA:  caCert.PrivateKeyPEM,
-			certificates.DataKeyCertificate:   serverCert.CertificatePEM,
-			certificates.DataKeyPrivateKey:    serverCert.PrivateKeyPEM,
-		}
-
-		if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, secret, func() error {
-			secret.Type = corev1.SecretTypeOpaque
-			secret.Data = map[string][]byte{
-				certificates.DataKeyCertificateCA: caCert.CertificatePEM,
-				certificates.DataKeyPrivateKeyCA:  caCert.PrivateKeyPEM,
-				certificates.DataKeyCertificate:   serverCert.CertificatePEM,
-				certificates.DataKeyPrivateKey:    serverCert.PrivateKeyPEM,
-			}
-			return nil
-		}); err != nil {
-			return nil, err
-		}
-
-		return writeCertificates(certDir, caCert, serverCert)
-	}
+	logger.Info("GenerateCertificates: fetch secrets")
 
 	secret := &corev1.Secret{}
 	if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
-		return generateAndUpdateCertificate()
+		logger.Info("GenerateCertificates: fetch secrets failed")
+
+		if !apierrors.IsNotFound(err) {
+			logger.Info("GenerateCertificates: fetch failed hard")
+			return nil, errors.Wrapf(err, "error fetching secret for webhook server")
+		}
+
+		logger.Info("GenerateCertificates: generate new cert")
+		caCert, serverCert, err := generateNewCAAndServerCert(name, dnsNames, *caConfig)
+		if err != nil {
+			logger.Info("GenerateCertificates: generate new cert failed")
+			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
+		}
+
+		err = createOrUpdateSecret(ctx, kubeClient, caCert, serverCert, namespace, certSecretName, true)
+		if err == nil {
+			logger.Info("GenerateCertificates: new secret generated")
+			return writeCertificates(certDir, caCert, serverCert)
+		} else {
+			// try to refetch secret if it was created by another replica
+			logger.Info("GenerateCertificates: new secret generation failed")
+			if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
+				logger.Info("GenerateCertificates: fetching new secret failed")
+				return nil, errors.Wrapf(err, "could not fetch secret for webhook")
+			}
+		}
 	}
 
-	// The secret has been found and we are now trying to read the stored certificate inside it.
-	caCert, serverCert, err = loadExistingCAAndServerCert(secret.Data, caConfig.PKCS)
+	// The secret has been found and we are now trying to read the stored certificate inside it and updates it if
+	// required
+	logger.Info("GenerateCertificates: loadAndUpdateSecret start")
+	caCert, serverCert, retry, err := loadAndUpdateSecret(ctx, kubeClient, secret, name, dnsNames, caConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error reading data of secret %s/%s", namespace, certSecretName)
+
+		if retry {
+			logger.Info("GenerateCertificates: loadAndUpdateSecret failed and retried")
+			secret = &corev1.Secret{}
+			if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
+				logger.Info("GenerateCertificates: fetch updated secret failed")
+				return nil, err
+			}
+			caCert, serverCert, _, err = loadAndUpdateSecret(ctx, kubeClient, secret, name, dnsNames, caConfig)
+			if err != nil {
+				logger.Info("GenerateCertificates: loadAndUpdateSecret retry failed")
+				return nil, err
+			}
+		} else {
+			logger.Info("GenerateCertificates: loadAndUpdateSecret failed")
+			return nil, err
+		}
+
 	}
 
-	// update certificates if the dns names have changed
-	if !sets.NewString(caCert.Certificate.DNSNames...).HasAll(dnsNames...) {
-		return generateAndUpdateCertificate()
-	}
-
+	logger.Info("GenerateCertificates: cert returned")
 	return writeCertificates(certDir, caCert, serverCert)
 }
 
+func loadAndUpdateSecret(ctx context.Context, kubeClient client.Client, secret *corev1.Secret, name string, dnsNames []string,
+	caConfig *certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, bool, error) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "GenerateCertificates")
+
+	logger.Info("loadAndUpdateSecret: load existing cert")
+
+	caCert, serverCert, err := loadExistingCAAndServerCert(secret.Data, caConfig.PKCS)
+	if err != nil {
+		logger.Info("loadAndUpdateSecret: load existing cert failed")
+		return nil, nil, false, errors.Wrapf(err, "error reading data of secret %s/%s", secret.Namespace, secret.Name)
+	}
+
+	// update certificates if the dns names have changed
+	if !sets.NewString(serverCert.Certificate.DNSNames...).HasAll(dnsNames...) {
+		logger.Info("loadAndUpdateSecret: dns names have changed")
+
+		caCert, serverCert, err = generateNewCAAndServerCert(name, dnsNames, *caConfig)
+		if err != nil {
+			logger.Info("loadAndUpdateSecret: generate new cert failed")
+			return nil, nil, false, errors.Wrapf(err, "error generating new certificates for webhook server")
+		}
+
+		if err = createOrUpdateSecret(ctx, kubeClient, caCert, serverCert, secret.Namespace, secret.Name, false); err != nil {
+			logger.Info("loadAndUpdateSecret: updating secret failed")
+			return nil, nil, true, errors.Wrapf(err, "error updating secret for webhook")
+		}
+	}
+
+	logger.Info("loadAndUpdateSecret: return cert data")
+	return caCert, serverCert, false, nil
+}
+
+func createOrUpdateSecret(ctx context.Context, kubeClient client.Client, caCert, serverCert *certificates.Certificate,
+	namespace, certSecretName string, create bool) error {
+	// The secret was not found, let's generate new certificates and store them in the secret afterwards.
+	secret := &corev1.Secret{}
+	secret.ObjectMeta = metav1.ObjectMeta{Namespace: namespace, Name: certSecretName}
+	secret.Type = corev1.SecretTypeOpaque
+	secret.Data = map[string][]byte{
+		certificates.DataKeyCertificateCA: caCert.CertificatePEM,
+		certificates.DataKeyPrivateKeyCA:  caCert.PrivateKeyPEM,
+		certificates.DataKeyCertificate:   serverCert.CertificatePEM,
+		certificates.DataKeyPrivateKey:    serverCert.PrivateKeyPEM,
+	}
+
+	if create {
+		return kubeClient.Create(ctx, secret)
+	} else {
+		return kubeClient.Update(ctx, secret)
+	}
+}
+
 // GenerateNewCAAndServerCert generates a new ca and server certificate for a service in a name and namespace.
-func GenerateNewCAAndServerCert(name string, dnsNames []string, caConfig certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, error) {
+func generateNewCAAndServerCert(name string, dnsNames []string, caConfig certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, error) {
 	caCert, err := caConfig.GenerateCertificate()
 	if err != nil {
 		return nil, nil, err

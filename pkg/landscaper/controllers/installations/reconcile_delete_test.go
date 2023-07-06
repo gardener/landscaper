@@ -11,32 +11,27 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/utils/clock"
-
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/gardener/landscaper/pkg/utils/simplelogger"
-
 	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	testutils "github.com/gardener/landscaper/test/utils"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/simplelogger"
+	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -47,16 +42,14 @@ var _ = Describe("Delete", func() {
 			op   *lsoperation.Operation
 			ctrl reconcile.Reconciler
 
-			state        *envtest.State
-			fakeCompRepo ctf.ComponentResolver
+			state *envtest.State
 		)
 
 		BeforeEach(func() {
 			var err error
-			fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata")
+			registryAccess, err := registries.NewFactory().NewLocalRegistryAccess("./testdata")
 			Expect(err).ToNot(HaveOccurred())
-
-			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 
 			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
@@ -94,10 +87,10 @@ var _ = Describe("Delete", func() {
 			testutils.ExpectNoError(testenv.Client.Delete(ctx, inst))
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleting)).To(BeTrue())
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.Deleting)).To(BeTrue())
 			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeFalse())
 
 			exec := &lsv1alpha1.Execution{}
@@ -120,17 +113,17 @@ var _ = Describe("Delete", func() {
 			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inst := state.Installations[state.Namespace+"/a"]
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleteFailed)).To(BeTrue())
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.DeleteFailed)).To(BeTrue())
 			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeTrue())
 
 			inst = state.Installations[state.Namespace+"/root"]
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleteFailed)).To(BeTrue())
+			Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhases.DeleteFailed)).To(BeTrue())
 			Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeTrue())
 		})
 	})
@@ -178,7 +171,7 @@ var _ = Describe("Delete", func() {
 			inst := state.Installations[state.Namespace+"/a"]
 			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)).ToNot(HaveOccurred())
-			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
 			Expect(testutils.UpdateJobIdForInstallation(ctx, testenv, inst)).ToNot(HaveOccurred())
 
 			Eventually(func() error {

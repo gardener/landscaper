@@ -26,9 +26,6 @@ var (
 	testPickupTimeoutDuration = lscore.Duration{
 		Duration: 10 * time.Second,
 	}
-	testAbortingTimeoutDuration = lscore.Duration{
-		Duration: 10 * time.Second,
-	}
 	testProgressingTimeoutDuration = lscore.Duration{
 		Duration: 30 * time.Second,
 	}

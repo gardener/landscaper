@@ -20,12 +20,58 @@ type DeployItemType string
 
 type DeployItemPhase string
 
-const (
-	DeployItemPhaseSucceeded   DeployItemPhase = "Succeeded"
-	DeployItemPhaseFailed      DeployItemPhase = "Failed"
-	DeployItemPhaseInit        DeployItemPhase = "Init"
-	DeployItemPhaseProgressing DeployItemPhase = "Progressing"
-	DeployItemPhaseDeleting    DeployItemPhase = "Deleting"
+func (p DeployItemPhase) String() string {
+	return string(p)
+}
+
+func (p DeployItemPhase) IsFinal() bool {
+	switch p {
+	case DeployItemPhases.Succeeded, DeployItemPhases.Failed, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployItemPhase) IsDeletion() bool {
+	switch p {
+	case DeployItemPhases.InitDelete, DeployItemPhases.Deleting, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployItemPhase) IsFailed() bool {
+	switch p {
+	case DeployItemPhases.Failed, DeployItemPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p DeployItemPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
+var (
+	DeployItemPhases = struct {
+		Init,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		InitDelete,
+		Deleting,
+		DeleteFailed DeployItemPhase
+	}{
+		Init:         DeployItemPhase(PhaseStringInit),
+		Progressing:  DeployItemPhase(PhaseStringProgressing),
+		Completing:   DeployItemPhase(PhaseStringCompleting),
+		Succeeded:    DeployItemPhase(PhaseStringSucceeded),
+		Failed:       DeployItemPhase(PhaseStringFailed),
+		InitDelete:   DeployItemPhase(PhaseStringInitDelete),
+		Deleting:     DeployItemPhase(PhaseStringDeleting),
+		DeleteFailed: DeployItemPhase(PhaseStringDeleteFailed),
+	}
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -61,11 +107,6 @@ var DeployItemDefinition = lsschema.CustomResourceDefinition{
 			Name:     "Phase",
 			Type:     "string",
 			JSONPath: ".status.phase",
-		},
-		{
-			Name:     "DeployItemPhase",
-			Type:     "string",
-			JSONPath: ".status.deployItemPhase",
 		},
 		{
 			Name:     "ExportRef",
@@ -115,8 +156,7 @@ type DeployItemSpec struct {
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
 	// Timeout specifies how long the deployer may take to apply the deploy item.
-	// When the time is exceeded, the landscaper will add the abort annotation to the deploy item
-	// and later put it in 'Failed' if the deployer doesn't handle the abort properly.
+	// When the time is exceeded, the deploy item fails.
 	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
 	// Defaults to ten minutes if not specified.
 	// +optional
@@ -124,13 +164,16 @@ type DeployItemSpec struct {
 	// UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed.
 	// +optional
 	UpdateOnChangeOnly bool `json:"updateOnChangeOnly,omitempty"`
+
+	// OnDelete specifies particular setting when deleting a deploy item
+	OnDelete *OnDeleteConfig `json:"onDelete,omitempty"`
 }
 
 // DeployItemStatus contains the status of a deploy item.
 // todo: add operation
 type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
-	Phase ExecutionPhase `json:"phase,omitempty"`
+	Phase DeployItemPhase `json:"phase,omitempty"`
 
 	// ObservedGeneration is the most recent generation observed for this DeployItem.
 	// It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
@@ -174,8 +217,8 @@ type DeployItemStatus struct {
 	// JobIDGenerationTime is the timestamp when the JobID was set.
 	JobIDGenerationTime *metav1.Time `json:"jobIDGenerationTime,omitempty"`
 
-	// DeployItemPhase is the current phase of the deploy item.
-	DeployItemPhase DeployItemPhase `json:"deployItemPhase,omitempty"`
+	// DeployerPhase is DEPRECATED and will soon be removed.
+	DeployerPhase *string `json:"deployItemPhase,omitempty"`
 }
 
 func (r *DeployItemStatus) GetLastError() *Error {

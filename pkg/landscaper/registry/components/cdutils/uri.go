@@ -12,11 +12,10 @@ import (
 	"path"
 	"strings"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 const Scheme = "cd"
@@ -84,9 +83,9 @@ func ParseURI(cdURI string) (*URI, error) {
 	}, nil
 }
 
-// Get resolves to a resource or component descriptor specified by the URI.
+// Get resolves to a resource (model.Resource) or component (model.ComponentVersion) specified by the URI.
 // It also returns the resource kind.
-func (u *URI) Get(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject) (lsv1alpha1.ComponentDescriptorKind, interface{}, error) {
+func (u *URI) Get(cd model.ComponentVersion, repositoryContext *types.UnstructuredTypedObject) (lsv1alpha1.ComponentDescriptorKind, interface{}, error) {
 	var (
 		ctx       = context.Background()
 		component = cd
@@ -96,13 +95,15 @@ func (u *URI) Get(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolv
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
 		case ComponentReferences:
-			refs, err := cd.GetComponentReferencesByName(elem.Value)
-			if err != nil || len(refs) == 0 {
-				return "", nil, fmt.Errorf("component %s cannot be found", elem.Value)
+			ref, err := component.GetComponentReference(elem.Value)
+			if err != nil {
+				return "", nil, fmt.Errorf("unable to get component reference %s in Get: %w", elem.Value, err)
+			}
+			if ref == nil {
+				return "", nil, fmt.Errorf("component reference %s cannot be found", elem.Value)
 			}
 
-			ref := refs[0]
-			component, err = compResolver.Resolve(ctx, repositoryContext, ref.ComponentName, ref.Version)
+			component, err = component.GetReferencedComponentVersion(ctx, ref, repositoryContext, nil)
 			if err != nil {
 				return "", nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
@@ -110,14 +111,14 @@ func (u *URI) Get(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolv
 				return lsv1alpha1.ComponentResourceKind, component, nil
 			}
 		case Resources:
-			res, err := component.GetResourcesByName(elem.Value)
+			res, err := component.GetResource(elem.Value, nil)
 			if err != nil {
 				return "", nil, fmt.Errorf("local resource %s cannot be found", elem.Value)
 			}
 			if !isLast {
 				return "", nil, fmt.Errorf("the selector seems to contain more path segements after a external resource")
 			}
-			return lsv1alpha1.ResourceKind, res[0], nil
+			return lsv1alpha1.ResourceKind, res, nil
 		default:
 			return "", nil, fmt.Errorf("unknown keyword %s", elem.Keyword)
 		}
@@ -128,32 +129,44 @@ func (u *URI) Get(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolv
 // GetComponent resolves to the component descriptor specified by the URI.
 // If a resource is specified, the component descriptor of the resource is returned, in combination with the reference from which it was resolved.
 // ComponentVersionOverwrites are taken into account, but unlike the returned component, the reference is not overwritten.
-func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (*cdv2.ComponentDescriptor, *lsv1alpha1.ComponentDescriptorReference, error) {
+func (u *URI) GetComponent(cd model.ComponentVersion, repositoryContext *types.UnstructuredTypedObject,
+	overwriter componentoverwrites.Overwriter) (model.ComponentVersion, *lsv1alpha1.ComponentDescriptorReference, error) {
+
+	cdRepositoryContext, err := cd.GetRepositoryContext()
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get repository context in GetComponent: %w", err)
+	}
+
 	var (
 		ctx       = context.Background()
 		component = cd
 		cdRef     = &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: cd.GetEffectiveRepositoryContext(),
-			ComponentName:     cd.Name,
-			Version:           cd.Version,
+			RepositoryContext: cdRepositoryContext,
+			ComponentName:     cd.GetName(),
+			Version:           cd.GetVersion(),
 		}
 	)
+
 	defer ctx.Done()
 	for i, elem := range u.Path {
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
 		case ComponentReferences:
-			refs, err := component.GetComponentReferencesByName(elem.Value)
-			if err != nil || len(refs) == 0 {
-				return nil, nil, fmt.Errorf("component %s cannot be found", elem.Value)
+			ref, err := component.GetComponentReference(elem.Value)
+			if err != nil {
+				return nil, nil, fmt.Errorf("unable to get component reference %s in GetComponent: %w", elem.Value, err)
 			}
-			ref := refs[0]
+			if ref == nil {
+				return nil, nil, fmt.Errorf("component reference %s cannot be found", elem.Value)
+			}
+
 			cdRef = &lsv1alpha1.ComponentDescriptorReference{
 				RepositoryContext: repositoryContext,
 				ComponentName:     ref.ComponentName,
 				Version:           ref.Version,
 			}
-			component, err = ResolveWithOverwriter(ctx, compResolver, repositoryContext, ref.ComponentName, ref.Version, overwriter)
+
+			component, err = component.GetReferencedComponentVersion(ctx, ref, repositoryContext, overwriter)
 			if err != nil {
 				return nil, nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
@@ -174,7 +187,7 @@ func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, compResolver ctf.Compon
 
 // GetResource resolves to a resource specified by the URI.
 // It also returns the resource kind.
-func (u *URI) GetResource(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject) (*cdv2.ComponentDescriptor, cdv2.Resource, error) {
+func (u *URI) GetResource(cd model.ComponentVersion, repositoryContext *types.UnstructuredTypedObject) (model.ComponentVersion, model.Resource, error) {
 	var (
 		ctx       = context.Background()
 		component = cd
@@ -184,31 +197,33 @@ func (u *URI) GetResource(cd *cdv2.ComponentDescriptor, compResolver ctf.Compone
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
 		case ComponentReferences:
-			refs, err := cd.GetComponentReferencesByName(elem.Value)
-			if err != nil || len(refs) == 0 {
-				return nil, cdv2.Resource{}, fmt.Errorf("component %s cannot be found", elem.Value)
+			ref, err := component.GetComponentReference(elem.Value)
+			if err != nil {
+				return nil, nil, fmt.Errorf("unable to get component reference %s in GetResource: %w", elem.Value, err)
+			}
+			if ref == nil {
+				return nil, nil, fmt.Errorf("component reference %s cannot be found", elem.Value)
 			}
 
-			ref := refs[0]
-			component, err = compResolver.Resolve(ctx, repositoryContext, ref.ComponentName, ref.Version)
+			component, err = component.GetReferencedComponentVersion(ctx, ref, repositoryContext, nil)
 			if err != nil {
-				return nil, cdv2.Resource{}, fmt.Errorf("component %s cannot be found", elem.Value)
+				return nil, nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
 			if isLast {
-				return nil, cdv2.Resource{}, fmt.Errorf("the selector seems to target a component desscriptor but a resource is requested")
+				return nil, nil, fmt.Errorf("the selector seems to target a component desscriptor but a resource is requested")
 			}
 		case Resources:
-			res, err := component.GetResourcesByName(elem.Value)
+			res, err := component.GetResource(elem.Value, nil)
 			if err != nil {
-				return nil, cdv2.Resource{}, fmt.Errorf("local resource %s cannot be found", elem.Value)
+				return nil, nil, fmt.Errorf("local resource %s cannot be found", elem.Value)
 			}
 			if !isLast {
-				return nil, cdv2.Resource{}, fmt.Errorf("the selector seems to contain more path segements after a external resource")
+				return nil, nil, fmt.Errorf("the selector seems to contain more path segements after a external resource")
 			}
-			return component, res[0], nil
+			return component, res, nil
 		default:
-			return nil, cdv2.Resource{}, fmt.Errorf("unknown keyword %s", elem.Keyword)
+			return nil, nil, fmt.Errorf("unknown keyword %s", elem.Keyword)
 		}
 	}
-	return nil, cdv2.Resource{}, fmt.Errorf("unable to find resource %q", u.Raw)
+	return nil, nil, fmt.Errorf("unable to find resource %q", u.Raw)
 }

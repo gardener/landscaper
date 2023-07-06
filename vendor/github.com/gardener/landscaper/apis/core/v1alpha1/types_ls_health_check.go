@@ -69,4 +69,5 @@ type LsHealthCheckStatus string
 const (
 	LsHealthCheckStatusOk     LsHealthCheckStatus = "Ok"
 	LsHealthCheckStatusFailed LsHealthCheckStatus = "Failed"
+	LsHealthCheckStatusInit   LsHealthCheckStatus = "Init"
 )

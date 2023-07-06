@@ -15,7 +15,7 @@ controllers:
   componentOverwrites:
     workers: 5
     # cacheSyncTimeout: 2m
-  context:
+  contexts:
     workers: 5
     # cacheSyncTimeout: 2m
     config:
@@ -56,7 +56,6 @@ deployerManagement:
 
 #deployItemTimeouts:
 #  pickup: "5m"
-#  abort: "5m"
 #  progressingDefault: "5m"
 
 blueprintStore:

@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/clock"
@@ -28,6 +29,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
+	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
@@ -55,7 +57,7 @@ func NewController(logger logging.Logger,
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
 		var err error
-		ctrl.SharedCache, err = cache.NewCache(logger.Logr(), utils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
+		ctrl.SharedCache, err = cache.NewCache(logger.Logr(), cnudieutils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
 		if err != nil {
 			return nil, err
 		}
@@ -150,6 +152,10 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 		return reconcile.Result{}, nil
 	}
 
+	if err := installations.NewInstallationTrigger(c.Client(), inst).TriggerDependents(ctx); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.InterruptOperation) {
 		if err := c.handleInterruptOperation(ctx, inst); err != nil {
 			return reconcile.Result{}, err
@@ -165,11 +171,10 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
-
 	}
 
 	// generate new jobID
-	isFirstDelete := !inst.DeletionTimestamp.IsZero() && !lsv1alpha1helper.IsDeletionInstallationPhase(inst.Status.InstallationPhase)
+	isFirstDelete := !inst.DeletionTimestamp.IsZero() && !inst.Status.InstallationPhase.IsDeletion()
 	if installations.IsRootInstallation(inst) &&
 		(lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || isFirstDelete) &&
 		inst.Status.JobID == inst.Status.JobIDFinished {
@@ -188,10 +193,8 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 
 	// handle reconcile
 	if inst.Status.JobID != inst.Status.JobIDFinished {
-
 		err := c.handleReconcilePhase(ctx, inst)
-		return reconcile.Result{}, err
-
+		return utils.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	} else {
 		// job finished; nothing to do
 		return reconcile.Result{}, nil
@@ -213,7 +216,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
-	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
+	intBlueprint, err := blueprints.ResolveBlueprint(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "ResolveBlueprint", err.Error())
 	}
@@ -290,12 +293,11 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 
 func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
 	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
+	op := "setInstallationPhaseAndUpdate"
 
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
-
-	if lsError != nil && !lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorUnfinished) {
-		logger.Error(lsError, "setInstallationPhaseAndUpdate:"+lsError.Error())
-	}
+	logger, ctx := logging.FromContextOrNew(ctx,
+		[]interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()},
+		lc.KeyMethod, op)
 
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, lsError)
 
@@ -304,15 +306,33 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		c.EventRecorder().Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
 	}
 
+	if phase != inst.Status.InstallationPhase {
+		now := metav1.Now()
+		inst.Status.PhaseTransitionTime = &now
+	}
 	inst.Status.InstallationPhase = phase
-	if phase == lsv1alpha1.InstallationPhaseFailed ||
-		phase == lsv1alpha1.InstallationPhaseSucceeded ||
-		phase == lsv1alpha1.InstallationPhaseDeleteFailed {
+	if phase.IsFinal() {
 		inst.Status.JobIDFinished = inst.Status.JobID
 	}
 
-	if err := c.Writer().UpdateInstallationStatus(ctx, writeID, inst); err != nil {
-		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleting {
+	if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {
+		// The installation is about to finish. Store the names of dependent installations in the status.
+		// The dependents will then be triggered in the beginning of the next reconcile event.
+		dependents, err := installations.NewInstallationTrigger(c.Client(), inst).DetermineDependents(ctx)
+		if err != nil {
+			logger.Error(err, "unable to determine successor installations")
+			if lsError == nil {
+				return lserrors.NewWrappedError(err, op, "DetermineDependents", err.Error())
+			}
+			return lsError
+		}
+
+		inst.Status.DependentsToTrigger = dependents
+	}
+
+	err := c.Writer().UpdateInstallationStatus(ctx, writeID, inst)
+	if err != nil {
+		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Deleting {
 			// recheck if already deleted
 			instRecheck := &lsv1alpha1.Installation{}
 			errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), instRecheck)
@@ -323,8 +343,10 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 
 		logger.Error(err, "unable to update installation status")
 		if lsError == nil {
-			return lserrors.NewWrappedError(err, "setInstallationPhaseAndUpdate", "UpdateInstallationStatus", err.Error())
+			return lserrors.NewWrappedError(err, op, "UpdateInstallationStatus", err.Error())
 		}
+
+		return lsError
 	}
 
 	return lsError

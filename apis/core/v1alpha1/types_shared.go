@@ -167,6 +167,8 @@ const (
 	ErrorWebhook ErrorCode = "ERR_WEBHOOK"
 	// ErrorUnfinished indicates that there are unfinished sub-objects.
 	ErrorUnfinished ErrorCode = "ERR_UNFINISHED"
+	// ErrorForInfoOnly indicates that the error is no real error but an info and should be logged only on infor level.
+	ErrorForInfoOnly ErrorCode = "ERR_FOR_INFO_ONLY"
 )
 
 // UnrecoverableErrorCodes defines unrecoverable error codes
@@ -223,9 +225,6 @@ const (
 
 	// ForceReconcileOperation is currently not used.
 	ForceReconcileOperation Operation = "force-reconcile"
-
-	// AbortOperation is the annotation to let the landscaper abort all currently running children and itself.
-	AbortOperation Operation = "abort"
 
 	// InterruptOperation is the annotation to let the landscaper interrupt all currently running deploy items of an
 	// installation and its subinstallations. It differs from abort by not waiting some time such that the responsible

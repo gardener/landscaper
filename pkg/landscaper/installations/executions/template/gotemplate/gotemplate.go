@@ -11,18 +11,15 @@ import (
 	"fmt"
 	gotmpl "text/template"
 
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
-
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
-	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 )
 
 const (
@@ -31,16 +28,14 @@ const (
 
 // Templater is the go template implementation for landscaper templating.
 type Templater struct {
-	blobResolver   ctf.BlobResolver
 	state          lstmpl.GenericStateHandler
 	inputFormatter *lstmpl.TemplateInputFormatter
 	targetResolver targetresolver.TargetResolver
 }
 
 // New creates a new go template execution templater.
-func New(blobResolver ctf.BlobResolver, state lstmpl.GenericStateHandler, targetResolver targetresolver.TargetResolver) *Templater {
+func New(state lstmpl.GenericStateHandler, targetResolver targetresolver.TargetResolver) *Templater {
 	return &Templater{
-		blobResolver:   blobResolver,
 		state:          state,
 		inputFormatter: lstmpl.NewTemplateInputFormatter(false, "imports", "targets", "values", "state"),
 		targetResolver: targetResolver,
@@ -59,16 +54,23 @@ type TemplateExecution struct {
 	includedNames map[string]int
 }
 
-func NewTemplateExecution(blueprint *blueprints.Blueprint, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList,
-	blobResolver ctf.BlobResolver, targetResolver targetresolver.TargetResolver) *TemplateExecution {
+func NewTemplateExecution(blueprint *blueprints.Blueprint,
+	cd model.ComponentVersion,
+	cdList *model.ComponentVersionList,
+	targetResolver targetresolver.TargetResolver) (*TemplateExecution, error) {
+
+	funcs, err := LandscaperTplFuncMap(blueprint.Fs, cd, cdList, targetResolver)
+	if err != nil {
+		return nil, err
+	}
 
 	t := &TemplateExecution{
-		funcMap:       LandscaperTplFuncMap(blueprint.Fs, cd, cdList, blobResolver, targetResolver),
+		funcMap:       funcs,
 		blueprint:     blueprint,
 		includedNames: map[string]int{},
 	}
 	t.funcMap["include"] = t.include
-	return t
+	return t, nil
 }
 
 func (te *TemplateExecution) include(name string, binding interface{}) (string, error) {
@@ -115,15 +117,24 @@ func (t Templater) Type() lsv1alpha1.TemplateType {
 	return lsv1alpha1.GOTemplateType
 }
 
-func (t *Templater) TemplateExecution(rawTemplate string, blueprint *blueprints.Blueprint, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) ([]byte, error) {
-	te := NewTemplateExecution(blueprint, cd, cdList, t.blobResolver, t.targetResolver)
+func (t *Templater) TemplateExecution(rawTemplate string,
+	blueprint *blueprints.Blueprint,
+	cd model.ComponentVersion,
+	cdList *model.ComponentVersionList,
+	values map[string]interface{}) ([]byte, error) {
+
+	te, err := NewTemplateExecution(blueprint, cd, cdList, t.targetResolver)
+	if err != nil {
+		return nil, err
+	}
+
 	return te.Execute(rawTemplate, values)
 }
 
 func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.TemplateExecutor,
 	blueprint *blueprints.Blueprint,
-	cd *cdv2.ComponentDescriptor,
-	cdList *cdv2.ComponentDescriptorList,
+	cd model.ComponentVersion,
+	cdList *model.ComponentVersionList,
 	values map[string]interface{}) (*lstmpl.SubinstallationExecutorOutput, error) {
 
 	const templateName = "subinstallation execution"
@@ -164,8 +175,12 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 }
 
 // TemplateImportExecutions is the GoTemplate executor for an import execution.
-func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint,
-	descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*lstmpl.ImportExecutorOutput, error) {
+func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecutor,
+	blueprint *blueprints.Blueprint,
+	descriptor model.ComponentVersion,
+	cdList *model.ComponentVersionList,
+	values map[string]interface{}) (*lstmpl.ImportExecutorOutput, error) {
+
 	rawTemplate, err := getTemplateFromExecution(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
@@ -190,8 +205,11 @@ func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 }
 
 // TemplateDeployExecutions is the GoTemplate executor for a deploy execution.
-func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint,
-	descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*lstmpl.DeployExecutorOutput, error) {
+func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor,
+	blueprint *blueprints.Blueprint,
+	descriptor model.ComponentVersion,
+	cdList *model.ComponentVersionList,
+	values map[string]interface{}) (*lstmpl.DeployExecutorOutput, error) {
 
 	const templateName = "deploy execution"
 
@@ -230,8 +248,12 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	return output, nil
 }
 
-func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint,
-	descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*lstmpl.ExportExecutorOutput, error) {
+func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor,
+	blueprint *blueprints.Blueprint,
+	descriptor model.ComponentVersion,
+	cdList *model.ComponentVersionList,
+	values map[string]interface{}) (*lstmpl.ExportExecutorOutput, error) {
+
 	const templateName = "export execution"
 	rawTemplate, err := getTemplateFromExecution(tmplExec, blueprint)
 	if err != nil {

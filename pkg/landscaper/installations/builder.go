@@ -8,14 +8,12 @@ import (
 	"context"
 	"errors"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/pkg/components/model"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
 // OperationBuilder is a builder helper struct for building an installation operation.
@@ -23,10 +21,9 @@ type OperationBuilder struct {
 	lsoperation.Builder
 
 	inst                            *InstallationImportsAndBlueprint
-	cd                              *cdv2.ComponentDescriptor
+	componentVersion                model.ComponentVersion
 	op                              *lsoperation.Operation
-	blobResolver                    ctf.BlobResolver
-	resolvedComponentDescriptorList *cdv2.ComponentDescriptorList
+	resolvedComponentDescriptorList *model.ComponentVersionList
 	context                         *Scope
 }
 
@@ -43,23 +40,16 @@ func (b *OperationBuilder) Installation(inst *InstallationImportsAndBlueprint) *
 	return b
 }
 
-// ComponentDescriptor sets the component descriptor for the builder.
+// ComponentVersion sets the component version for the builder.
 // Will be calculated if not set.
-func (b *OperationBuilder) ComponentDescriptor(cd *cdv2.ComponentDescriptor) *OperationBuilder {
-	b.cd = cd
-	return b
-}
-
-// WithBlobResolver sets the blob resolver for the component descriptor.
-// Will be calculated if not set.
-func (b *OperationBuilder) WithBlobResolver(resolver ctf.BlobResolver) *OperationBuilder {
-	b.blobResolver = resolver
+func (b *OperationBuilder) ComponentVersion(componentVersion model.ComponentVersion) *OperationBuilder {
+	b.componentVersion = componentVersion
 	return b
 }
 
 // WithComponentDescriptorList sets the list of transitive component descriptors.
 // Will be calculated if not set.
-func (b *OperationBuilder) WithComponentDescriptorList(list *cdv2.ComponentDescriptorList) *OperationBuilder {
+func (b *OperationBuilder) WithComponentDescriptorList(list *model.ComponentVersionList) *OperationBuilder {
 	b.resolvedComponentDescriptorList = list
 	return b
 }
@@ -92,8 +82,8 @@ func (b *OperationBuilder) Scheme(s *runtime.Scheme) *OperationBuilder {
 }
 
 // ComponentRegistry sets the component registry.
-func (b *OperationBuilder) ComponentRegistry(resolver ctf.ComponentResolver) *OperationBuilder {
-	b.Builder.ComponentRegistry(resolver)
+func (b *OperationBuilder) ComponentRegistry(registry model.RegistryAccess) *OperationBuilder {
+	b.Builder.ComponentRegistry(registry)
 	return b
 }
 
@@ -127,8 +117,7 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	instOp := &Operation{
 		Operation:                       b.op,
 		Inst:                            b.inst,
-		ComponentDescriptor:             b.cd,
-		BlobResolver:                    b.blobResolver,
+		ComponentVersion:                b.componentVersion,
 		ResolvedComponentDescriptorList: b.resolvedComponentDescriptorList,
 	}
 
@@ -141,44 +130,31 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 	instOp.context = *b.context
 
-	if instOp.ComponentDescriptor == nil {
+	if instOp.ComponentVersion == nil {
+		registryAccess := instOp.ComponentsRegistry()
 		cdRef := instOp.Context().External.ComponentDescriptorRef()
-		if cdRef == nil {
+		if cdRef == nil || registryAccess == nil {
 			return instOp, nil
 		}
-		var err error
-		if b.blobResolver == nil {
-			instOp.ComponentDescriptor, instOp.BlobResolver, err = instOp.ComponentsRegistry().
-				ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			instOp.ComponentDescriptor, err = instOp.ComponentsRegistry().
-				Resolve(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	if instOp.BlobResolver == nil {
-		cdRef := instOp.Context().External.ComponentDescriptorRef()
-		if cdRef != nil {
-			var err error
-			_, instOp.BlobResolver, err = instOp.ComponentsRegistry().
-				ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	if instOp.ResolvedComponentDescriptorList == nil {
-		var err error
-		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, instOp.ComponentsRegistry(), *instOp.ComponentDescriptor, instOp.Context().External.RepositoryContext, instOp.Context().External.Overwriter)
+
+		componentVersion, err := registryAccess.GetComponentVersion(ctx, cdRef)
 		if err != nil {
 			return nil, err
 		}
-		instOp.ResolvedComponentDescriptorList = &resolvedCD
+
+		instOp.ComponentVersion = componentVersion
+	}
+
+	if instOp.ResolvedComponentDescriptorList == nil {
+		componentVersions, err := model.GetTransitiveComponentReferences(ctx,
+			instOp.ComponentVersion,
+			instOp.Context().External.RepositoryContext,
+			instOp.Context().External.Overwriter)
+		if err != nil {
+			return nil, err
+		}
+
+		instOp.ResolvedComponentDescriptorList = componentVersions
 	}
 
 	return instOp, nil

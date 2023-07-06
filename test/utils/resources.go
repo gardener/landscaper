@@ -18,7 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/onsi/gomega"
@@ -29,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
 
 	"github.com/gardener/landscaper/pkg/api"
@@ -65,18 +63,6 @@ type TestInstallationConfig struct {
 	// BlueprintFilePath defines the filepath to the blueprint definition.
 	// Will be defaulted to <BlueprintContentPath>/blueprint.yaml if not defined.
 	BlueprintFilePath string
-}
-
-// LocalRemoteComponentDescriptorRef creates a new default local remote component descriptor reference
-func LocalRemoteComponentDescriptorRef(componentName, version, baseURL string) *lsv1alpha1.ComponentDescriptorDefinition {
-	repoCtx, _ := cdv2.NewUnstructured(componentsregistry.NewLocalRepository(baseURL))
-	return &lsv1alpha1.ComponentDescriptorDefinition{
-		Reference: &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &repoCtx,
-			ComponentName:     componentName,
-			Version:           version,
-		},
-	}
 }
 
 // LocalRemoteBlueprintRef creates a new default local remote blueprint reference

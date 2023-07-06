@@ -3,7 +3,7 @@ package utils
 import lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 
 func IsDeployItemPhase(di *lsv1alpha1.DeployItem, phase lsv1alpha1.DeployItemPhase) bool {
-	return di.Status.DeployItemPhase == phase
+	return di.Status.Phase == phase
 }
 
 func IsInstallationPhase(inst *lsv1alpha1.Installation, phase lsv1alpha1.InstallationPhase) bool {

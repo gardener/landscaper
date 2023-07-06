@@ -89,14 +89,14 @@ func ImportExportTests(f *framework.Framework) {
 					return "", err
 				}
 				return root.Status.InstallationPhase, nil
-			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhaseSucceeded), "root installation should be in phase '%s'", lsv1alpha1.InstallationPhaseSucceeded)
+			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhases.Succeeded), "root installation should be in phase '%s'", lsv1alpha1.InstallationPhases.Succeeded)
 			Eventually(func() (lsv1alpha1.InstallationPhase, error) {
 				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst)
 				if err != nil {
 					return "", err
 				}
 				return subinst.Status.InstallationPhase, nil
-			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhaseSucceeded), "subinstallation should be in phase '%s'", lsv1alpha1.InstallationPhaseSucceeded)
+			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhases.Succeeded), "subinstallation should be in phase '%s'", lsv1alpha1.InstallationPhases.Succeeded)
 
 			labels := map[string]string{
 				lsv1alpha1.DataObjectSourceTypeLabel: "export",

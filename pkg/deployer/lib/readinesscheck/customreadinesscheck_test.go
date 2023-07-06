@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -92,6 +94,31 @@ var _ = Describe("Custom health checks", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("should fail on a ConfigMap with a non matching value", func() {
+		testFileName := "04-configmap.yaml"
+		failValue := "value_WRONG"
+
+		testObjects, objectRefs := loadSingleObjectFromFile(testFileName)
+		Expect(testObjects).To(HaveLen(1))
+		customHealthCheck.ManagedResources = objectRefs
+		ref := customHealthCheck.ManagedResources[0]
+
+		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
+			Name:     "check " + ref.Kind,
+			Resource: []lsv1alpha1.TypedObjectReference{ref},
+			Requirements: []health.RequirementSpec{
+				{
+					JsonPath: ".data.mykey",
+					Operator: selection.Equals,
+					Value:    getRawValues(failValue),
+				},
+			},
+		}
+
+		err := customHealthCheck.CheckObject(testObjects[0])
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("should successfully perform a health check on a resource with a nested compare value", func() {
 		testFileName := "03-deployment-with-nested-status.yaml"
 		successValue := map[string]interface{}{
@@ -138,7 +165,7 @@ var _ = Describe("Custom health checks", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("should succed on a test that checks for a missing field", func() {
+	It("should succeed on a test that checks for a missing field", func() {
 		testFileName := "01-simple-deployment.yaml"
 
 		testObjects, objectRefs := loadSingleObjectFromFile(testFileName)
@@ -171,7 +198,7 @@ var _ = Describe("Custom health checks", func() {
 			},
 		}
 
-		obj, err := getObjectsByLabels(ctx, testenv.Client, objectRefs, selector)
+		obj, err := getObjectsByLabels(ctx, testenv.Client, selector)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(obj).To(HaveLen(2))
 	})
@@ -188,7 +215,8 @@ var _ = Describe("Custom health checks", func() {
 			},
 		}
 
-		obj := getObjectsByTypedReference(objectRefs, selector)
+		obj, err := getObjectsByTypedReference(ctx, testenv.Client, selector)
+		Expect(err).ToNot(HaveOccurred())
 		Expect(obj).To(HaveLen(1))
 	})
 
@@ -212,7 +240,8 @@ var _ = Describe("Custom health checks", func() {
 			},
 		}
 
-		obj := getObjectsByTypedReference(objectRefs, selector)
+		obj, err := getObjectsByTypedReference(ctx, testenv.Client, selector)
+		Expect(err).ToNot(HaveOccurred())
 		Expect(obj).To(HaveLen(2))
 	})
 
@@ -290,6 +319,73 @@ var _ = Describe("Custom health checks", func() {
 			Expect(cm.Object["data"]).ToNot(HaveKey("invalid"))
 			return true
 		}).WithTimeout(1 * time.Minute).Should(BeTrue())
+	})
+
+	It("should perform checks on non-managed resources", func() {
+		configmap1 := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "non-managed-1",
+				Namespace: state.Namespace,
+			},
+			Data: map[string]string{
+				"ready": "true",
+			},
+		}
+
+		configmap2 := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "non-managed-2",
+				Namespace: state.Namespace,
+				Labels: map[string]string{
+					"app.name": "non-managed",
+				},
+			},
+			Data: map[string]string{
+				"ready": "true",
+			},
+		}
+
+		configmap1Ref, err := kutil.TypedObjectReferenceFromObject(configmap1, testenv.Client.Scheme())
+		Expect(err).ToNot(HaveOccurred())
+
+		configmap2Ref, err := kutil.TypedObjectReferenceFromObject(configmap2, testenv.Client.Scheme())
+		Expect(err).ToNot(HaveOccurred())
+
+		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
+			Timeout: &lsv1alpha1.Duration{
+				Duration: 1 * time.Minute,
+			},
+			Name: "check-non-managed",
+			Resource: []lsv1alpha1.TypedObjectReference{
+				*configmap1Ref,
+			},
+			LabelSelector: &health.LabelSelectorSpec{
+				APIVersion: configmap2Ref.APIVersion,
+				Kind:       configmap2Ref.Kind,
+				Labels: map[string]string{
+					"app.name": "non-managed",
+				},
+			},
+			Requirements: []health.RequirementSpec{
+				{
+					JsonPath: "data.ready",
+					Operator: selection.Equals,
+					Value:    getRawValues("true"),
+				},
+			},
+		}
+
+		go func() {
+			defer GinkgoRecover()
+			time.Sleep(1 * time.Second)
+			Expect(testenv.Client.Create(ctx, configmap1)).ToNot(HaveOccurred())
+			Expect(testenv.Client.Create(ctx, configmap2)).ToNot(HaveOccurred())
+		}()
+
+		Eventually(func() bool {
+			return customHealthCheck.CheckResourcesReady() == nil
+		}).WithTimeout(1 * time.Minute).Should(BeTrue())
+
 	})
 })
 

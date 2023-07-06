@@ -9,28 +9,29 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	"k8s.io/apimachinery/pkg/util/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = Describe("Execution Operation", func() {
 	var (
-		componentResolver componentsregistry.TypedRegistry
+		registryAccess    model.RegistryAccess
+		repositoryContext types.UnstructuredTypedObject
+		componentVersion  model.ComponentVersion
 		state             *envtest.State
 		kClient           client.Client
 		testInstallations map[string]*lsv1alpha1.Installation
-		cd                *cdv2.ComponentDescriptor
 	)
 
 	BeforeEach(func() {
@@ -44,13 +45,19 @@ var _ = Describe("Execution Operation", func() {
 		kClient = testenv.Client
 		testInstallations = state.Installations
 
-		componentResolver, err = componentsregistry.NewLocalClient("./testdata/registry")
+		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
-		repository := componentsregistry.NewLocalRepository("./testdata/registry")
 
-		cd, err = componentResolver.Resolve(ctx, repository, "example.com/root", "v1.0.0")
+		repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(cd).ToNot(BeNil())
+
+		componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
+			RepositoryContext: &repositoryContext,
+			ComponentName:     "example.com/root",
+			Version:           "v1.0.0",
+		})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(componentVersion).ToNot(BeNil())
 	})
 
 	It("to create an execution with the correct configuration", func() {
@@ -58,21 +65,6 @@ var _ = Describe("Execution Operation", func() {
 		defer ctx.Done()
 
 		var err error
-
-		repoCtx := &cdv2.OCIRegistryRepository{
-			ObjectType: cdv2.ObjectType{
-				Type: componentResolver.Type(),
-			},
-			BaseURL: "./testdata/registry",
-		}
-
-		var repositoryContext cdv2.UnstructuredTypedObject
-
-		repositoryContext.ObjectType = repoCtx.ObjectType
-		repositoryContext.Raw, err = json.Marshal(repoCtx)
-		Expect(err).ToNot(HaveOccurred())
-		err = json.Unmarshal(repositoryContext.Raw, &repositoryContext.Object)
-		Expect(err).ToNot(HaveOccurred())
 
 		lsCtx := &installations.Scope{
 			Name:     "default",
@@ -89,7 +81,7 @@ var _ = Describe("Execution Operation", func() {
 
 		inst := testInstallations["test1/root"]
 		Expect(inst).ToNot(BeNil())
-		intBlueprint, err := blueprints.Resolve(ctx, componentResolver, lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
+		intBlueprint, err := blueprints.Resolve(ctx, registryAccess, lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 		Expect(err).ToNot(HaveOccurred())
 
 		internalInst := installations.NewInstallationImportsAndBlueprint(inst, intBlueprint)
@@ -105,8 +97,8 @@ var _ = Describe("Execution Operation", func() {
 
 		installationOperation, err := installations.NewOperationBuilder(internalInst).
 			Client(kClient).
-			ComponentDescriptor(cd).
-			ComponentRegistry(componentResolver).
+			ComponentVersion(componentVersion).
+			ComponentRegistry(registryAccess).
 			WithContext(lsCtx).
 			Build(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -131,7 +123,7 @@ var _ = Describe("Execution Operation", func() {
 		Expect(providerConfig.ComponentDescriptor.Reference.ComponentName).To(Equal("example.com/root"))
 		Expect(providerConfig.ComponentDescriptor.Reference.Version).To(Equal("v1.0.0"))
 
-		Expect(providerConfig.ComponentDescriptor.Reference.RepositoryContext.Type).To(Equal(componentResolver.Type()))
+		Expect(providerConfig.ComponentDescriptor.Reference.RepositoryContext.Type).To(Equal(repositoryContext.GetType()))
 		Expect(providerConfig.ComponentDescriptor.Reference.RepositoryContext.Object).To(HaveKey("baseUrl"))
 		Expect(providerConfig.ComponentDescriptor.Reference.RepositoryContext.Object["baseUrl"]).To(Equal("./testdata/registry"))
 

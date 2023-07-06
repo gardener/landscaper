@@ -26,7 +26,7 @@ import (
 
 // NewLsHealthCheckController creates a new health check controller that reconciles the health  object in the namespaces.
 func NewLsHealthCheckController(initialLogger logging.Logger, agentConfig *config.AgentConfiguration, lsDeployments *config.LsDeployments,
-	cl client.Client, scheme *runtime.Scheme, enabledDeployers []string) reconcile.Reconciler {
+	cl client.Client, scheme *runtime.Scheme, enabledDeployers []string, durationBorder time.Duration) reconcile.Reconciler {
 	return &lsHealthCheckController{
 		initialLogger:    initialLogger,
 		agentConfig:      agentConfig,
@@ -35,6 +35,7 @@ func NewLsHealthCheckController(initialLogger logging.Logger, agentConfig *confi
 		scheme:           scheme,
 		enabledDeployers: enabledDeployers,
 		oldStatus:        lsv1alpha1.LsHealthCheckStatusOk,
+		durationBorder:   durationBorder,
 	}
 }
 
@@ -46,6 +47,12 @@ type lsHealthCheckController struct {
 	scheme           *runtime.Scheme
 	enabledDeployers []string
 	oldStatus        lsv1alpha1.LsHealthCheckStatus
+	durationBorder   time.Duration
+}
+
+// SetDurationBorder is used for testing.
+func (c *lsHealthCheckController) SetDurationBorder(durationBorder time.Duration) {
+	c.durationBorder = durationBorder
 }
 
 func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -62,12 +69,10 @@ func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	durationBorder := time.Minute * 1
-
-	if time.Since(lsHealthCheck.LastUpdateTime.Time) < durationBorder {
+	if time.Since(lsHealthCheck.LastUpdateTime.Time) < c.durationBorder {
 		return reconcile.Result{
 			Requeue:      true,
-			RequeueAfter: durationBorder - time.Since(lsHealthCheck.LastUpdateTime.Time) + time.Second,
+			RequeueAfter: c.durationBorder - time.Since(lsHealthCheck.LastUpdateTime.Time) + time.Second,
 		}, nil
 	} else {
 		newStatus, description := c.check(ctx)
@@ -76,6 +81,8 @@ func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.R
 			lsHealthCheck.Status = newStatus
 			lsHealthCheck.Description = "ok"
 		} else if c.oldStatus == lsv1alpha1.LsHealthCheckStatusFailed && newStatus == lsv1alpha1.LsHealthCheckStatusFailed {
+			// Only log the error when the precious state was also in failed.
+			// This should help to prevent sporadic errors like "API Service is temporarily not available".
 			lsHealthCheck.Status = newStatus
 			lsHealthCheck.Description = description
 		}
@@ -126,9 +133,14 @@ func (c *lsHealthCheckController) checkDeployment(ctx context.Context, namespace
 		return false, fmt.Sprintf("deployment %s/%s could not be be fetched", namespace, name)
 	}
 
+	expectedReplicas := int32(1)
+	if deployment.Spec.Replicas != nil {
+		expectedReplicas = *deployment.Spec.Replicas
+	}
+
 	if deployment.Generation != deployment.Status.ObservedGeneration ||
-		deployment.Status.UpdatedReplicas != 1 ||
-		deployment.Status.AvailableReplicas != 1 {
+		deployment.Status.UpdatedReplicas != expectedReplicas ||
+		deployment.Status.AvailableReplicas != expectedReplicas {
 		message := fmt.Sprintf("not all pods are running or at the latest state for deployment %s/%s ", namespace, name)
 		logger.Info(message)
 		return false, message

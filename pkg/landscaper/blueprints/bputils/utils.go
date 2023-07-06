@@ -10,20 +10,17 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	"github.com/gardener/landscaper/pkg/utils/tar"
-
-	"github.com/gardener/landscaper/apis/mediatype"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/pkg/api"
-
-	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/landscaper/pkg/components/model/tar"
 )
 
 // BuildNewBlueprint creates a ocispec Manifest from a component definition.

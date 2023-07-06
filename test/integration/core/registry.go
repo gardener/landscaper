@@ -13,11 +13,6 @@ import (
 	"path/filepath"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -28,12 +23,15 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
-
-	"github.com/gardener/landscaper/apis/mediatype"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/mediatype"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
@@ -108,12 +106,12 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Create(ctx, inst))
 
 				// wait for installation to finish
-				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 				deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 				utils.ExpectNoError(err)
 				Expect(deployItems).To(HaveLen(1))
-				Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+				Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 
 				// expect that the nginx deployment is successfully running
 				nginxIngressDeploymentName := "test-ingress-nginx-controller"
@@ -259,7 +257,7 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Create(ctx, inst))
 
 				// wait for installation to finish
-				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 				By("fetch subinstallations of source installation")
 				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
@@ -455,7 +453,7 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Create(ctx, inst))
 
 				// wait for installation to finish
-				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, state.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
 				var sourceIntermediateSubinst *lsv1alpha1.Installation
@@ -643,9 +641,8 @@ func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Reso
 	res.Type = ttype
 	res.Relation = cdv2.LocalRelation
 
-	localFsAccess := cdv2.NewLocalFilesystemBlobAccess(path, mediaType)
-	uAcc, err := cdv2.NewUnstructured(localFsAccess)
+	localFsAccess, err := componentresolvers.NewLocalFilesystemBlobAccess(path, mediaType)
 	utils.ExpectNoError(err)
-	res.Access = &uAcc
+	res.Access = &localFsAccess
 	return res
 }

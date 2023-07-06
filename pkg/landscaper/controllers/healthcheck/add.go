@@ -3,6 +3,7 @@ package healthcheck
 import (
 	"context"
 	"fmt"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +31,7 @@ func AddControllersToManager(ctx context.Context, logger logging.Logger, hostMgr
 		if apierrors.IsNotFound(err) {
 			lsHealthCheck = &lsv1alpha1.LsHealthCheck{
 				ObjectMeta:     metav1.ObjectMeta{Name: agentConfig.Name, Namespace: agentConfig.Namespace},
-				Status:         lsv1alpha1.LsHealthCheckStatusOk,
+				Status:         lsv1alpha1.LsHealthCheckStatusInit,
 				Description:    "ok",
 				LastUpdateTime: metav1.Unix(0, 0),
 			}
@@ -45,7 +46,7 @@ func AddControllersToManager(ctx context.Context, logger logging.Logger, hostMgr
 
 	log := logger.Reconciles("lsHealthCheck", "LsHealthCheck")
 	healthCheckController := NewLsHealthCheckController(log, agentConfig, lsDeployments,
-		cl, hostMgr.GetScheme(), enabledDeployers)
+		cl, hostMgr.GetScheme(), enabledDeployers, 1*time.Minute)
 
 	err := builder.ControllerManagedBy(hostMgr).
 		For(&lsv1alpha1.LsHealthCheck{}).

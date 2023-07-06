@@ -40,19 +40,25 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 		return nil
 	}
 
-	objects := make([]*unstructured.Unstructured, len(d.ManagedResources))
-	for i, ref := range d.ManagedResources {
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
-		objects[i] = obj
+	var objects []*unstructured.Unstructured
+	getObjectsFunc := func() ([]*unstructured.Unstructured, error) {
+		if objects == nil {
+			objects = make([]*unstructured.Unstructured, len(d.ManagedResources))
+			for i, ref := range d.ManagedResources {
+				obj := kutil.ObjectFromTypedObjectReference(&ref)
+				objects[i] = obj
+			}
+
+			// In case if the manifest and fake helm deployer we check for all objects at least the existence.
+			// In case of a real helm deployment we check only Pods, Deployments, etc, because the other objects could
+			// be temporary due to helm hooks.
+			objects = d.filterObjects(objects)
+		}
+		return objects, nil
 	}
 
-	// In case if the manifest and fake helm deployer we check for all objects at least the existence.
-	// In case of a real helm deployment we check only Pods, Deployments, etc, because the other objects could
-	// be temporary due to helm hooks.
-	objects = d.filterObjects(objects)
-
 	timeout := d.Timeout.Duration
-	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject, d.InterruptionChecker); err != nil {
+	if err := WaitForObjectsReady(d.Context, timeout, d.Client, getObjectsFunc, d.CheckObject, d.InterruptionChecker); err != nil {
 		return lserror.NewWrappedError(err,
 			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}
@@ -194,29 +200,6 @@ func CheckPod(pod *corev1.Pod) error {
 	return nil
 }
 
-var (
-	trueDeploymentConditionTypes = []appsv1.DeploymentConditionType{
-		appsv1.DeploymentAvailable,
-	}
-
-	trueOptionalDeploymentConditionTypes = []appsv1.DeploymentConditionType{
-		appsv1.DeploymentProgressing,
-	}
-
-	falseOptionalDeploymentConditionTypes = []appsv1.DeploymentConditionType{
-		appsv1.DeploymentReplicaFailure,
-	}
-)
-
-func getDeploymentCondition(conditions []appsv1.DeploymentCondition, conditionType appsv1.DeploymentConditionType) *appsv1.DeploymentCondition {
-	for _, condition := range conditions {
-		if condition.Type == conditionType {
-			return &condition
-		}
-	}
-	return nil
-}
-
 // CheckDeployment checks whether the given Deployment is ready.
 // A Deployment is considered ready if the controller observed its current revision and
 // if the number of updated replicas is equal to the number of replicas.
@@ -225,37 +208,13 @@ func CheckDeployment(dp *appsv1.Deployment) error {
 		return outdatedGeneration(dp.Status.ObservedGeneration, dp.Generation)
 	}
 
-	for _, trueConditionType := range trueDeploymentConditionTypes {
-		conditionType := string(trueConditionType)
-		condition := getDeploymentCondition(dp.Status.Conditions, trueConditionType)
-		if condition == nil {
-			return requiredConditionMissing(conditionType)
-		}
-		if err := checkConditionState(conditionType, string(corev1.ConditionTrue), string(condition.Status), condition.Reason, condition.Message); err != nil {
-			return err
-		}
+	replicas := int32(1)
+	if dp.Spec.Replicas != nil {
+		replicas = *dp.Spec.Replicas
 	}
 
-	for _, trueOptionalConditionType := range trueOptionalDeploymentConditionTypes {
-		conditionType := string(trueOptionalConditionType)
-		condition := getDeploymentCondition(dp.Status.Conditions, trueOptionalConditionType)
-		if condition == nil {
-			continue
-		}
-		if err := checkConditionState(conditionType, string(corev1.ConditionTrue), string(condition.Status), condition.Reason, condition.Message); err != nil {
-			return err
-		}
-	}
-
-	for _, falseOptionalConditionType := range falseOptionalDeploymentConditionTypes {
-		conditionType := string(falseOptionalConditionType)
-		condition := getDeploymentCondition(dp.Status.Conditions, falseOptionalConditionType)
-		if condition == nil {
-			continue
-		}
-		if err := checkConditionState(conditionType, string(corev1.ConditionFalse), string(condition.Status), condition.Reason, condition.Message); err != nil {
-			return err
-		}
+	if dp.Status.UpdatedReplicas < replicas || dp.Status.AvailableReplicas < replicas {
+		return notEnoughReadyReplicas(dp.Status.AvailableReplicas, replicas)
 	}
 
 	return nil
@@ -275,9 +234,10 @@ func CheckStatefulSet(sts *appsv1.StatefulSet) error {
 		replicas = *sts.Spec.Replicas
 	}
 
-	if sts.Status.ReadyReplicas < replicas {
-		return notEnoughReadyReplicas(sts.Status.ReadyReplicas, replicas)
+	if sts.Status.UpdatedReplicas < replicas || sts.Status.AvailableReplicas < replicas {
+		return notEnoughReadyReplicas(sts.Status.AvailableReplicas, replicas)
 	}
+
 	return nil
 }
 

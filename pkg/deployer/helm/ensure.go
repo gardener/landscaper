@@ -118,7 +118,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return err
 	}
 
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	h.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 
 	return nil
 }
@@ -154,6 +154,12 @@ func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds m
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
 	}
+
+	objects, err = deployerlib.ExpandManifests(objects)
+	if err != nil {
+		return nil, lserrors.NewWrappedError(err, currOp, "ExpandManifests", err.Error())
+	}
+
 	crdObjects, err := kutil.ParseFilesToRawExtension(logger, crds)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
@@ -216,11 +222,15 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 
 	if h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
+			timeout := customReadinessCheckConfig.Timeout
+			if timeout == nil {
+				timeout = h.ProviderConfiguration.ReadinessChecks.Timeout
+			}
 			customReadinessCheck := health.CustomReadinessCheck{
 				Context:             ctx,
 				Client:              client,
 				CurrentOp:           "CustomCheckResourcesReadinessHelm",
-				Timeout:             h.ProviderConfiguration.ReadinessChecks.Timeout,
+				Timeout:             timeout,
 				ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:       customReadinessCheckConfig,
 				InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
@@ -283,7 +293,7 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "deleteManifests"})
 	logger.Info("Deleting files")
 
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+	h.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 
 	if h.ProviderStatus == nil || len(h.ProviderStatus.ManagedResources) == 0 {
 		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
@@ -324,7 +334,7 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "lsHealthCheckController.check"})
 	logger.Info("Deleting files with real helm deployer")
 
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+	h.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 
 	if h.ProviderStatus == nil {
 		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)

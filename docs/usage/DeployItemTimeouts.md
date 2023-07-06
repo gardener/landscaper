@@ -1,6 +1,6 @@
 # DeployItem Timeouts
 
-If not deactivated in the configuration, the landscaper checks for three different timeouts on deployitems:
+If not deactivated in the configuration, the landscaper checks for two different timeouts on deployitems:
 
 ## Types of Timeouts
 
@@ -34,36 +34,16 @@ timeframe.
 
 ##### Effects
 
-A progressing timeout causes the Landscaper to abort the deployitem by adding the 
-[abort operation annotation](../usage/Annotations.md) to it. It will also add the abort timestamp annotation, which 
-is required for the aborting timeout. 
+A progressing timeout causes the Landscaper to put the status fields `phase` of the deployitem
+on `Failed` and sets the `finishedJobID` on the value of `jobID`. The `lastError` field will contain the reason
+`ProgressingTimeout`.
 
 ##### Configuration and Default
 
 There are two possibilities to configure the progressing timeout for a deployitem:
 - The timespan can be configured per deployitem using the deployitem's `.spec.timeout` field.
 - If not configured in the deployitem, the default from the Landscaper config is used. It can be set via 
-  the `deployItemTimeouts.progressingDefault` field.
-
-If not overwritten, the `.spec.timeout` field is empty and the default in the Landscaper config is set to 10 minutes.
-
-#### Aborting Timeout
-
-An aborting timeout occurs if the deployer takes too long to abort the processing of a deployitem (abort is currently 
-not implemented by the deployer lib or one of the standard deployers). This is checked via an abort timestamp 
-annotation (`landscaper.gardener.cloud/abort-time`) which is set by the Landscaper when a progressing timeout occurs.
-
-##### Effects
-
-A abortion timeout causes the Landscaper to put the status fields `Phase` and `DeployItemPhase` of the deployitem
-on `Failed` and sets the `finishedJobID` on the value of `jobID`. The `.status.lastError` field will contain the reason 
-`AbortingTimeout`.
-
-##### Configuration and Default
-
-The timespan can be configured in the Landscaper config by setting `deployItemTimeouts.abort`.
-
-The default is 5 minutes.
+  the `deployItemTimeouts.progressingDefault` field, resp. defaults to 10 minutes.
 
 
 ## Configuring the Timeouts
@@ -85,7 +65,6 @@ landscaper:
 
   deployItemTimeouts:
     pickup: 30s
-    abort: none
     progressingDefault: 1h
 ```
 
@@ -100,6 +79,5 @@ landscaper:
 
     deployItemTimeouts:
       pickup: 30s
-      abort: none
       progressingDefault: 1h
 ```

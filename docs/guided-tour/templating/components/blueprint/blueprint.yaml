@@ -1,0 +1,13 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+imports:
+  - name: cluster
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+deployExecutions:
+  - name: default-deploy-execution
+    file: /deploy-execution.yaml
+    type: GoTemplate

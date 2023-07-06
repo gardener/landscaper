@@ -16,9 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils/clusters"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -32,7 +34,7 @@ var _ = Describe("TargetSync Controller", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl = NewTargetSyncController(logging.Discard(), testenv.Client, NewTrivialSourceClientProvider(testenv.Client, nil))
+			ctrl = NewTargetSyncController(logging.Discard(), testenv.Client, clusters.NewTrivialSourceClientProvider(testenv.Client, nil))
 		})
 
 		AfterEach(func() {
@@ -125,11 +127,17 @@ var _ = Describe("TargetSync Controller", func() {
 			tgs.Spec.CreateTargetToSource = true
 			tgs.Spec.TargetToSourceName = sourceTargetName
 
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			Expect(helper.HasOperation(tgs.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeTrue())
+
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
 
 			checkTargetAndSecret(ctx, secretName1)
 			checkTargetAndSecret(ctx, secretName2)
 			checkTarget(ctx, sourceTargetName, tgs.Spec.SecretRef.Name, tgs.Spec.SecretRef.Key)
+
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			Expect(helper.HasOperation(tgs.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeFalse())
 
 			// Update secret
 
@@ -172,11 +180,14 @@ var _ = Describe("TargetSync Controller", func() {
 			tgs.Name = targetSyncName
 			tgs.Namespace = state.Namespace
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			Expect(helper.HasOperation(tgs.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeTrue())
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(tgs))
 
 			checkTargetAndSecret(ctx, secretName1)
 			checkTargetAndSecret(ctx, secretName2)
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs), tgs))
+			Expect(helper.HasOperation(tgs.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeFalse())
 
 			// Update TargetSync object
 
@@ -219,13 +230,16 @@ var _ = Describe("TargetSync Controller", func() {
 			tgs1.Name = targetSyncName1
 			tgs1.Namespace = state.Namespace
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs1), tgs1))
+			Expect(helper.HasOperation(tgs1.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeTrue())
 
-			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(tgs1))
+			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(tgs1))
 
 			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs1), tgs1))
 			Expect(tgs1.Status.LastErrors).NotTo(BeEmpty())
 
 			checkTargetAndSecretDoNotExist(ctx, secretName)
+			testutils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(tgs1), tgs1))
+			Expect(helper.HasOperation(tgs1.ObjectMeta, lsv1alpha1.ReconcileOperation)).To(BeFalse())
 		})
 	})
 

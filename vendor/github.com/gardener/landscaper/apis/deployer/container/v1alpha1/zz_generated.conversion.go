@@ -306,6 +306,7 @@ func Convert_container_GarbageCollection_To_v1alpha1_GarbageCollection(in *conta
 func autoConvert_v1alpha1_PodStatus_To_container_PodStatus(in *PodStatus, out *container.PodStatus, s conversion.Scope) error {
 	out.PodName = in.PodName
 	out.LastRun = (*metav1.Time)(unsafe.Pointer(in.LastRun))
+	out.LastSuccessfulJobID = (*string)(unsafe.Pointer(in.LastSuccessfulJobID))
 	if err := Convert_v1alpha1_ContainerStatus_To_container_ContainerStatus(&in.ContainerStatus, &out.ContainerStatus, s); err != nil {
 		return err
 	}
@@ -326,6 +327,7 @@ func Convert_v1alpha1_PodStatus_To_container_PodStatus(in *PodStatus, out *conta
 func autoConvert_container_PodStatus_To_v1alpha1_PodStatus(in *container.PodStatus, out *PodStatus, s conversion.Scope) error {
 	out.PodName = in.PodName
 	out.LastRun = (*metav1.Time)(unsafe.Pointer(in.LastRun))
+	out.LastSuccessfulJobID = (*string)(unsafe.Pointer(in.LastSuccessfulJobID))
 	if err := Convert_container_ContainerStatus_To_v1alpha1_ContainerStatus(&in.ContainerStatus, &out.ContainerStatus, s); err != nil {
 		return err
 	}

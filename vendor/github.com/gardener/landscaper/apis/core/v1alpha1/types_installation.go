@@ -50,23 +50,66 @@ const ValidateExportCondition ConditionType = "ValidateExport"
 // ComponentReferenceOverwriteCondition is the Conditions type to indicate that the component reference was overwritten.
 const ComponentReferenceOverwriteCondition ConditionType = "ComponentReferenceOverwrite"
 
-type ComponentInstallationPhase string
-
 type InstallationPhase string
 
-const (
-	InstallationPhaseInit            InstallationPhase = "Init"
-	InstallationPhaseCleanupOrphaned InstallationPhase = "CleanupOrphaned"
-	InstallationPhaseObjectsCreated  InstallationPhase = "ObjectsCreated"
-	InstallationPhaseProgressing     InstallationPhase = "Progressing"
-	InstallationPhaseCompleting      InstallationPhase = "Completing"
-	InstallationPhaseSucceeded       InstallationPhase = "Succeeded"
-	InstallationPhaseFailed          InstallationPhase = "Failed"
+func (p InstallationPhase) String() string {
+	return string(p)
+}
 
-	InstallationPhaseInitDelete    InstallationPhase = "InitDelete"
-	InstallationPhaseTriggerDelete InstallationPhase = "TriggerDelete"
-	InstallationPhaseDeleting      InstallationPhase = "Deleting"
-	InstallationPhaseDeleteFailed  InstallationPhase = "DeleteFailed"
+func (p InstallationPhase) IsFinal() bool {
+	switch p {
+	case InstallationPhases.Succeeded, InstallationPhases.Failed, InstallationPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p InstallationPhase) IsDeletion() bool {
+	switch p {
+	case InstallationPhases.InitDelete, InstallationPhases.TriggerDelete, InstallationPhases.Deleting, InstallationPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p InstallationPhase) IsFailed() bool {
+	switch p {
+	case InstallationPhases.Failed, InstallationPhases.DeleteFailed:
+		return true
+	}
+	return false
+}
+
+func (p InstallationPhase) IsEmpty() bool {
+	return p.String() == ""
+}
+
+var (
+	InstallationPhases = struct {
+		Init,
+		CleanupOrphaned,
+		ObjectsCreated,
+		Progressing,
+		Completing,
+		Succeeded,
+		Failed,
+		InitDelete,
+		TriggerDelete,
+		Deleting,
+		DeleteFailed InstallationPhase
+	}{
+		Init:            InstallationPhase(PhaseStringInit),
+		CleanupOrphaned: InstallationPhase(PhaseStringCleanupOrphaned),
+		ObjectsCreated:  InstallationPhase(PhaseStringObjectsCreated),
+		Progressing:     InstallationPhase(PhaseStringProgressing),
+		Completing:      InstallationPhase(PhaseStringCompleting),
+		Succeeded:       InstallationPhase(PhaseStringSucceeded),
+		Failed:          InstallationPhase(PhaseStringFailed),
+		InitDelete:      InstallationPhase(PhaseStringInitDelete),
+		TriggerDelete:   InstallationPhase(PhaseStringTriggerDelete),
+		Deleting:        InstallationPhase(PhaseStringDeleting),
+		DeleteFailed:    InstallationPhase(PhaseStringDeleteFailed),
+	}
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -242,12 +285,25 @@ type InstallationStatus struct {
 	// InstallationPhase is the current phase of the installation.
 	InstallationPhase InstallationPhase `json:"phase,omitempty"`
 
+	// PhaseTransitionTime is the time when the phase last changed.
+	// +optional
+	PhaseTransitionTime *metav1.Time `json:"phaseTransitionTime,omitempty"`
+
 	// ImportsHash is the hash of the import data.
 	ImportsHash string `json:"importsHash,omitempty"`
 
 	// AutomaticReconcileStatus describes the status of automatically triggered reconciles.
 	// +optional
 	AutomaticReconcileStatus *AutomaticReconcileStatus `json:"automaticReconcileStatus,omitempty"`
+
+	// DependentsToTrigger lists dependent installations to be triggered
+	// +optional
+	DependentsToTrigger []DependentToTrigger `json:"dependentsToTrigger,omitempty"`
+}
+
+type DependentToTrigger struct {
+	// Name is the name of the dependent installation
+	Name string `json:"name,omitempty"`
 }
 
 // AutomaticReconcileStatus describes the status of automatically triggered reconciles.
@@ -519,4 +575,41 @@ func (ti TargetImport) MarshalJSON() ([]byte, error) {
 		return json.Marshal(TargetImportWithoutTargets(ti))
 	}
 	return json.Marshal(TargetImportWithTargets(ti))
+}
+
+// isSuccessor determines whether the given sibling imports any DataObject or Target that the given inst exports.
+func (inst *Installation) IsSuccessor(sibling *Installation) bool {
+	for _, dataExport := range inst.Spec.Exports.Data {
+		if sibling.IsImportingData(dataExport.DataRef) {
+			return true
+		}
+	}
+
+	for _, targetExport := range inst.Spec.Exports.Targets {
+		if sibling.IsImportingTarget(targetExport.Target) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsImportingData checks if the current component imports a data object with the given name.
+func (inst *Installation) IsImportingData(name string) bool {
+	for _, def := range inst.Spec.Imports.Data {
+		if def.DataRef == name {
+			return true
+		}
+	}
+	return false
+}
+
+// IsImportingTarget checks if the current component imports a target with the given name.
+func (inst *Installation) IsImportingTarget(name string) bool {
+	for _, def := range inst.Spec.Imports.Targets {
+		if def.Target == name {
+			return true
+		}
+	}
+	return false
 }
