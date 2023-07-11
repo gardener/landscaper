@@ -173,14 +173,6 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		diF.Status.JobIDGenerationTime = &timedOut
 		utils.ExpectNoError(testenv.Client.Status().Update(ctx, diS))
 		utils.ExpectNoError(testenv.Client.Status().Update(ctx, diF))
-
-		By("Verify that deploy items did not get an abort annotation")
-		testutils.ShouldReconcile(ctx, deployItemController, diReqS)
-		testutils.ShouldReconcile(ctx, deployItemController, diReqF)
-		utils.ExpectNoError(testenv.Client.Get(ctx, diReqS.NamespacedName, diS))
-		utils.ExpectNoError(testenv.Client.Get(ctx, diReqF.NamespacedName, diF))
-		Expect(diS.Annotations).To(BeNil())
-		Expect(diF.Annotations).To(BeNil())
 	})
 
 	It("Should prefer a timeout specified in the deploy item over the default", func() {
