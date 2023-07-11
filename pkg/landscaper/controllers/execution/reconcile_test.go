@@ -7,6 +7,8 @@ package execution_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -80,6 +82,7 @@ var _ = Describe("Reconcile", func() {
 		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(state.Client.Status().Update(ctx, di))
+		lib.SetFinishedHint(ctx, state.Client, di)
 
 		// reconcile execution and check that it is failed
 		testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
@@ -207,6 +210,7 @@ var _ = Describe("Reconcile", func() {
 		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
+		lib.SetFinishedHint(ctx, testenv.Client, di)
 
 		// then reconcile the execution and expect the execution to be Failed
 		testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
@@ -222,6 +226,7 @@ var _ = Describe("Reconcile", func() {
 		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
+		lib.SetFinishedHint(ctx, testenv.Client, di)
 
 		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
@@ -237,6 +242,7 @@ var _ = Describe("Reconcile", func() {
 		di.Status.SetJobID(exec.Status.JobID)
 		di.Status.JobIDFinished = exec.Status.JobID
 		testutils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
+		lib.SetFinishedHint(ctx, testenv.Client, di)
 
 		testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
@@ -336,6 +342,7 @@ var _ = Describe("Reconcile", func() {
 			di1.Status.JobIDFinished = currentJobID
 			di1.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di1)).To(Succeed())
+			lib.SetFinishedHint(ctx, testenv.Client, di1)
 
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 			Expect(state.Client.Status().Update(ctx, di1)).To(Succeed())
@@ -357,6 +364,7 @@ var _ = Describe("Reconcile", func() {
 			di2.Status.JobIDFinished = currentJobID
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di2)).To(Succeed())
+			lib.SetFinishedHint(ctx, testenv.Client, di2)
 
 			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
 
@@ -374,6 +382,7 @@ var _ = Describe("Reconcile", func() {
 			di3.Status.JobIDFinished = currentJobID
 			di3.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di3)).To(Succeed())
+			lib.SetFinishedHint(ctx, testenv.Client, di3)
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
@@ -426,6 +435,7 @@ var _ = Describe("Reconcile", func() {
 			di1.Status.JobIDFinished = currentJobID
 			di1.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di1)).To(Succeed())
+			lib.SetFinishedHint(ctx, testenv.Client, di1)
 
 			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
 
@@ -451,6 +461,7 @@ var _ = Describe("Reconcile", func() {
 			di2.Status.JobIDFinished = currentJobID
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di2)).To(Succeed())
+			lib.SetFinishedHint(ctx, testenv.Client, di2)
 
 			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
 
@@ -476,6 +487,7 @@ var _ = Describe("Reconcile", func() {
 			di3.Status.JobIDFinished = currentJobID
 			di3.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di3)).To(Succeed())
+			lib.SetFinishedHint(ctx, testenv.Client, di3)
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 

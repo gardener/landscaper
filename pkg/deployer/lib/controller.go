@@ -166,6 +166,13 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, c.callerName)
 	defer c.workerCounter.Exit()
 
+	// Reasons for this sleep:
+	// 1) When updating a deploy item, first the finished hint is removed before the job id is adapted. This sleep
+	// prevents to react on the first event before the id is updated.
+	// 2) When a deploy item is finished, first its jobIDs and status are updated and then the finished hint is added.
+	// Again this sleep prevents from reacting on the first event only.
+	SleepForHint()
+
 	metadata := lsutil.EmptyDeployItemMetadata()
 	if err := c.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -173,6 +180,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
+	}
+
+	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(metadata.ObjectMeta, lsv1alpha1.TestReconcileOperation)
+	_, hasFinishedHint := metadata.Annotations[lsv1alpha1.FinishedHintAnnotation]
+	if hasFinishedHint && !hasTestReconcileAnnotation {
+		return reconcile.Result{}, nil
 	}
 
 	// this check is only for compatibility reasons
@@ -239,12 +252,12 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 	}
 
 	if hasTestReconcileAnnotation {
-		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
+		if err := c.removeTestReconcileAnnotationAndFinishedHint(ctx, di); err != nil {
 			return reconcile.Result{}, err
 		}
 
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
-		di.Status.JobID = uuid.New().String()
+		di.Status.SetJobID(uuid.New().String())
 	}
 
 	if di.Status.Phase.IsFinal() || di.Status.Phase.IsEmpty() {
@@ -359,13 +372,14 @@ func (c *controller) updateDiValuesForNewReconcile(ctx context.Context, di *lsv1
 	lsutil.InitErrors(&di.Status)
 }
 
-func (c *controller) removeTestReconcileAnnotation(ctx context.Context, di *lsv1alpha1.DeployItem) lserrors.LsError {
+func (c *controller) removeTestReconcileAnnotationAndFinishedHint(ctx context.Context, di *lsv1alpha1.DeployItem) lserrors.LsError {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(di).String()})
 
 	logger.Info("remove test-reconcile annotation")
 	delete(di.Annotations, lsv1alpha1.OperationAnnotation)
-	if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000149, di); client.IgnoreNotFound(err) != nil {
-		return lserrors.NewWrappedError(err, "RemoveTestReconcileAnnotation", "UpdateDeployItem", err.Error())
+
+	if err := RemoveFinishedHint(ctx, c.lsClient, di, true); err != nil {
+		return lserrors.NewWrappedError(err, "removeTestReconcileAnnotation", "RemoveFinishedHint", err.Error())
 	}
 
 	return nil

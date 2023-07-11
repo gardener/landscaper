@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -132,6 +134,8 @@ func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1a
 		return err
 	}
 
+	lib.SetFinishedHint(ctx, con.c, di)
+
 	return nil
 }
 
@@ -180,6 +184,8 @@ func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, di *
 		logger.Error(err, "unable to set deployitem status")
 		return err
 	}
+
+	lib.SetFinishedHint(ctx, con.c, di)
 
 	return nil
 }

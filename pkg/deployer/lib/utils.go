@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
@@ -185,9 +186,49 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 				return err2
 			}
 		}
+
+		// add a hint that deploy item is finished
+		SetFinishedHint(ctx, lsClient, deployItem)
 	}
 
 	return err
+}
+
+func SetFinishedHint(ctx context.Context, lsClient client.Client, deployItem *lsv1alpha1.DeployItem) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	if deployItem.Status.Phase.IsFinal() {
+		metav1.SetMetaDataAnnotation(&deployItem.ObjectMeta, lsv1alpha1.FinishedHintAnnotation, lsv1alpha1.FinishedHintValue)
+		if err := read_write_layer.NewWriter(lsClient).UpdateDeployItem(ctx, read_write_layer.W000035, deployItem); err != nil {
+			logger.Error(err, "SetFinishedHint failed")
+		}
+	}
+}
+
+func RemoveFinishedHint(ctx context.Context, lsClient client.Client, deployItem *lsv1alpha1.DeployItem, alwaysUpdate bool) lserrors.LsError {
+
+	ok := false
+	if len(deployItem.Annotations) > 0 {
+		_, ok = deployItem.Annotations[lsv1alpha1.FinishedHintAnnotation]
+
+		if ok {
+			delete(deployItem.Annotations, lsv1alpha1.FinishedHintAnnotation)
+		}
+	}
+
+	if ok || alwaysUpdate {
+		if err := read_write_layer.NewWriter(lsClient).UpdateDeployItem(ctx, read_write_layer.W000035, deployItem); err != nil {
+			return lserrors.NewWrappedError(err, "RemoveFinishedHint", "updateDeployItem",
+				"storing deploy item failed")
+		}
+	}
+
+	return nil
+}
+
+func SleepForHint() {
+	time.Sleep(1 * time.Second)
 }
 
 func CheckResponsibility(ctx context.Context, lsClient client.Client, obj *metav1.PartialObjectMetadata,

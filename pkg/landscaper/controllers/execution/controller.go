@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -241,6 +243,7 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1
 		if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(exec.ObjectMeta) &&
 			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(item.ObjectMeta) {
 			metav1.SetMetaDataAnnotation(&item.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
+			metav1.SetMetaDataAnnotation(&item.ObjectMeta, lsv1alpha1.FinishedHintAnnotation, lsv1alpha1.FinishedHintValue)
 			if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000104, item); err != nil {
 				return lserrors.NewWrappedError(err, "DeleteDeployItem",
 					fmt.Sprintf("unable to set deleteWithoutUninstall annotation before deleting deploy item %s / %s", item.Namespace, item.Name), err.Error())
@@ -302,6 +305,8 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 				return lserrors.NewWrappedError(err, "UpdateDeployItemStatus",
 					fmt.Sprintf("unable to update deploy item %s / %s for interrupt", item.Namespace, item.Name), err.Error())
 			}
+
+			lib.SetFinishedHint(ctx, c.client, item)
 		}
 	}
 

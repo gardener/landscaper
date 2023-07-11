@@ -15,7 +15,7 @@ import (
 var _ = Describe("DeployItem Classification", func() {
 
 	buildExecutionItem := func(name string, dependsOn []string, jobID, jobIDFinished string, phase lsv1alpha1.DeployItemPhase) *executionItem {
-		return &executionItem{
+		exec := &executionItem{
 			Info: lsv1alpha1.DeployItemTemplate{
 				Name:      name,
 				DependsOn: dependsOn,
@@ -23,12 +23,15 @@ var _ = Describe("DeployItem Classification", func() {
 			DeployItem: &lsv1alpha1.DeployItem{
 				ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ""},
 				Status: lsv1alpha1.DeployItemStatus{
-					JobID:         jobID,
 					JobIDFinished: jobIDFinished,
 					Phase:         phase,
 				},
 			},
 		}
+
+		exec.DeployItem.Status.SetJobID(jobID)
+
+		return exec
 	}
 
 	buildExecutionItemWithoutDeployItem := func(name string, dependsOn []string) *executionItem {

@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -172,6 +174,10 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 	di = &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
+	}
+
+	if err := lib.RemoveFinishedHint(ctx, o.Client(), di, false); err != nil {
+		return lserrors.NewWrappedError(err, op, "RemoveFinishedHint", err.Error())
 	}
 
 	di.Status.SetJobID(o.exec.Status.JobID)

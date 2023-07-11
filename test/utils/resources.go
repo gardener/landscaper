@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 
@@ -282,12 +284,20 @@ func AddReconcileAnnotation(ctx context.Context, testenv *envtest.Environment, i
 }
 
 func UpdateJobIdForDeployItem(ctx context.Context, testenv *envtest.Environment, di *lsv1alpha1.DeployItem, time metav1.Time) error {
+	if err := lib.RemoveFinishedHint(ctx, testenv.Client, di, false); err != nil {
+		return err
+	}
+
 	di.Status.SetJobID(di.Status.GetJobID() + "-1")
 	di.Status.JobIDGenerationTime = &time
 	return testenv.Client.Status().Update(ctx, di)
 }
 
 func UpdateJobIdForDeployItemC(ctx context.Context, cl client.Client, di *lsv1alpha1.DeployItem, time metav1.Time) error {
+	if err := lib.RemoveFinishedHint(ctx, cl, di, false); err != nil {
+		return err
+	}
+
 	di.Status.SetJobID(di.Status.GetJobID() + "-1")
 	di.Status.JobIDGenerationTime = &time
 	return cl.Status().Update(ctx, di)

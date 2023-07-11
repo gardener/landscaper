@@ -38,6 +38,7 @@ func ApplyDeployItemTemplate(di *lsv1alpha1.DeployItem, tmpl lsv1alpha1.DeployIt
 		targetName = di.Spec.Target.Name
 	}
 	metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.DeployerTargetNameAnnotation, targetName)
+	metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.FinishedHintAnnotation, lsv1alpha1.FinishedHintValue)
 }
 
 func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string) (int, bool) {

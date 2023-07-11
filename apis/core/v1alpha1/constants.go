@@ -58,6 +58,10 @@ const (
 	DeployerTargetNameAnnotation = LandscaperDomain + "/deployer-target-name"
 	NoTargetNameValue            = "LandscaperDomain" + ".noTargetName"
 
+	// FinishedHintAnnotation is the annotation that specifies the processing of an item is finished.
+	FinishedHintAnnotation = LandscaperDomain + "/finished-hint"
+	FinishedHintValue      = "LandscaperDomain" + ".finishedHint"
+
 	// Labels
 
 	// LandscaperComponentLabelName is the name of the labels the holds the information about landscaper components.

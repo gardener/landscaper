@@ -132,6 +132,8 @@ var _ = Describe("Helm Deployer", func() {
 			Expect(testenv.Client.Get(ctx, testutil.Request(obj.GetName(), obj.GetNamespace()).NamespacedName, obj)).To(Succeed())
 			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
 		}
+
+		Expect(deployerlib.RemoveFinishedHint(ctx, testenv.Client, di, false)).To(Succeed())
 		di.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 		di.Status.SetJobID(di.Status.GetJobID() + "-1")
 		Expect(testenv.Client.Status().Update(ctx, di)).To(Succeed())

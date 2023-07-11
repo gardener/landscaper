@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -582,6 +584,10 @@ func updateJobIdForDeployItem(ctx context.Context, c client.Client, obj *lsv1alp
 	}
 
 	if obj != nil && obj.Status.GetJobID() == obj.Status.JobIDFinished {
+		if err := lib.RemoveFinishedHint(ctx, c, obj, false); err != nil {
+			return errors.Wrap(err, "Failed remove finished hint of deploy item during cleanup")
+		}
+
 		time := v1.Now()
 		obj.Status.SetJobID(obj.Status.GetJobID() + "-1")
 		obj.Status.JobIDGenerationTime = &time
