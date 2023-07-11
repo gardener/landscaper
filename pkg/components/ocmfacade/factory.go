@@ -9,6 +9,7 @@ import (
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/inlinecompdesc"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -20,6 +21,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/comparch"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,8 +39,10 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 
 	//logger, _ := logging.FromContextOrNew(ctx, nil)
+	registryAccess := &RegistryAccess{}
+	registryAccess.octx = ocm.DefaultContext()
+	registryAccess.session = ocm.NewSession(datacontext.NewSession())
 
-	octx := ocm.DefaultContext()
 	cpi.RegisterRepositoryType(cpi.NewRepositoryType[*comparch.RepositorySpec]("local", nil))
 
 	ociConfigFiles := make([]string, 0)
@@ -51,14 +55,30 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		vfsattr.Set(octx, pfs)
+		vfsattr.Set(registryAccess.octx, pfs)
+	}
+
+	if inlineCd != nil {
+		cd, err := runtime.DefaultYAMLEncoding.Marshal(inlineCd)
+		if err != nil {
+			return nil, err
+		}
+		inline, err := inlinecompdesc.New(cd)
+		if err != nil {
+			return nil, err
+		}
+		list, err := inline.GetFlatList()
+		if err != nil {
+			return nil, err
+		}
+		registryAccess.predefinedComponentDescriptors = list
 	}
 
 	// set available default credentials from dockerconfig files
 	var spec *dockerconfig.RepositorySpec
 	for _, path := range ociConfigFiles {
 		spec = dockerconfig.NewRepositorySpec(path, true)
-		_, err := octx.CredentialsContext().RepositoryForSpec(spec)
+		_, err := registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot access %v", path)
 		}
@@ -74,16 +94,13 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 			continue
 		}
 		spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes)
-		_, err := octx.CredentialsContext().RepositoryForSpec(spec)
+		_, err := registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot create credentials from secret")
 		}
 	}
 
-	return &RegistryAccess{
-		octx:    octx,
-		session: ocm.NewSession(datacontext.NewSession()),
-	}, nil
+	return registryAccess, nil
 }
 
 func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context, log logr.Logger, fs vfs.FileSystem, allowPlainHttp bool, skipTLSVerify bool, registryConfigPath string, concourseConfigPath string, predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
