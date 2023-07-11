@@ -292,7 +292,7 @@ var _ = Describe("Template", func() {
 
 			helmProviderStatus := &helmv1alpha1.ProviderStatus{}
 			Expect(json.Unmarshal(item.Status.ProviderStatus.Raw, helmProviderStatus)).To(Succeed())
-			Expect(helmProviderStatus.ManagedResources).To(HaveLen(3)) // 3 configmaps
+			Expect(helmProviderStatus.ManagedResources).To(HaveLen(0)) // would contain only resources that are relevant for the default readiness check
 			cm := &corev1.ConfigMap{}
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-cm-1", "some-namespace"), cm)).To(Succeed())
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-cm-2", "some-namespace"), cm)).To(Succeed())
@@ -359,7 +359,7 @@ var _ = Describe("Template", func() {
 			helmProviderStatus := &helmv1alpha1.ProviderStatus{}
 			Expect(json.Unmarshal(item.Status.ProviderStatus.Raw, helmProviderStatus)).To(Succeed())
 			// There should be 2 configmaps, one from the chart and one from the subchart
-			Expect(helmProviderStatus.ManagedResources).To(HaveLen(2))
+			Expect(helmProviderStatus.ManagedResources).To(HaveLen(0))
 			cm := &corev1.ConfigMap{}
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-chart-configmap", "some-namespace"), cm)).To(Succeed())
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-subchart-configmap", "some-namespace"), cm)).To(Succeed())
@@ -425,7 +425,7 @@ var _ = Describe("Template", func() {
 			helmProviderStatus := &helmv1alpha1.ProviderStatus{}
 			Expect(json.Unmarshal(item.Status.ProviderStatus.Raw, helmProviderStatus)).To(Succeed())
 			// There should be only 1 configmap, the other one in the subchart should not have been deployed
-			Expect(helmProviderStatus.ManagedResources).To(HaveLen(1))
+			Expect(helmProviderStatus.ManagedResources).To(HaveLen(0))
 			cm := &corev1.ConfigMap{}
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-chart-configmap", "some-namespace"), cm)).To(Succeed())
 
