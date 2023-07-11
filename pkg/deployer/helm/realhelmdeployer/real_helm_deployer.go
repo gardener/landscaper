@@ -20,6 +20,7 @@ import (
 	"helm.sh/helm/v3/pkg/storage/driver"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	apimachineryyaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -35,6 +36,7 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 )
 
@@ -298,6 +300,14 @@ type ManifestObject struct {
 	Items *[]ManifestObject `json:"items"`
 }
 
+func (o *ManifestObject) groupVersionKind() schema.GroupVersionKind {
+	gv, err := schema.ParseGroupVersion(o.APIVersion)
+	if err != nil {
+		return schema.GroupVersionKind{}
+	}
+	return gv.WithKind(o.Kind)
+}
+
 func (o *ManifestObject) setDefaultNamespace(defaultNamespace string) *ManifestObject {
 	if len(o.ObjectMeta.Namespace) == 0 {
 		o.ObjectMeta.Namespace = defaultNamespace
@@ -336,6 +346,10 @@ func (c *RealHelmDeployer) GetManagedResourcesStatus(ctx context.Context) ([]man
 
 		if obj == nil {
 			// Happens if the chart contains an empty template file, for example due to conditions.
+			continue
+		}
+
+		if !readinesscheck.IsRelevantForDefaultReadinessCheck(obj.groupVersionKind().GroupKind()) {
 			continue
 		}
 
