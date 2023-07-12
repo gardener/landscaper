@@ -32,10 +32,10 @@ func (e ProjectionExpr) Evaluate(binding Binding, locally bool) (interface{}, Ev
 				if !ok {
 					return nil, infoa, false
 				}
-				if !isLocallyResolvedValue(newList[index]) {
+				if !isLocallyResolvedValue(newList[index], binding) {
 					return e, infoa, true
 				}
-				if !locally && !isResolvedValue(newList[index]) {
+				if !locally && !isResolvedValue(newList[index], binding) {
 					return e, infoa, true
 				}
 				newList[index] = NewNode(result, binding)
@@ -50,10 +50,10 @@ func (e ProjectionExpr) Evaluate(binding Binding, locally bool) (interface{}, Ev
 			if !ok {
 				return nil, infoa, false
 			}
-			if !isLocallyResolvedValue(newList[index]) {
+			if !isLocallyResolvedValue(newList[index], binding) {
 				return e, infoa, true
 			}
-			if !locally && !isResolvedValue(newList[index]) {
+			if !locally && !isResolvedValue(newList[index], binding) {
 				return e, infoa, true
 			}
 			newList[index] = NewNode(result, binding)

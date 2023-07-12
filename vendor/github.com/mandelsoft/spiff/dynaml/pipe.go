@@ -6,15 +6,20 @@ import (
 )
 
 func func_pipe(cached bool, arguments []interface{}, binding Binding) (interface{}, EvaluationInfo, bool) {
+	var cache ExecCache
 	info := DefaultInfo()
 
 	if len(arguments) <= 2 {
-		return info.Error("pipe requires ")
+		return info.Error("pipe requires at least two arguments")
 	}
 	if !binding.GetState().OSAccessAllowed() {
 		return info.DenyOSOperation("pipe")
 	}
+	if cached {
+		cache = binding.GetState().GetExecCache()
+	}
 	args := []string{}
+	wopt := WriteOpts{}
 	debug.Debug("pipe: found %d arguments for call\n", len(arguments))
 	for i, arg := range arguments {
 		if i == 1 {
@@ -24,8 +29,8 @@ func func_pipe(cached bool, arguments []interface{}, binding Binding) (interface
 				if len(arguments) == 2 && len(list) > 0 {
 					// handle single list argument to gain command and argument
 					for j, arg := range list {
-						v, _, ok := getArg(j, arg.Value(), j != 0)
-						if !ok {
+						v, _, err := getArg(j, arg.Value(), wopt, j != 0)
+						if err != nil {
 							return info.Error("command argument must be string")
 						}
 						args = append(args, v)
@@ -34,21 +39,21 @@ func func_pipe(cached bool, arguments []interface{}, binding Binding) (interface
 					return info.Error("list not allowed for command argument")
 				}
 			} else {
-				v, _, ok := getArg(i, arg, i != 1)
-				if !ok {
+				v, _, err := getArg(i, arg, wopt, i != 1)
+				if err != nil {
 					return info.Error("command argument must be string")
 				}
 				args = append(args, v)
 			}
 		} else {
-			v, _, ok := getArg(i, arg, i != 1)
-			if !ok {
+			v, _, err := getArg(i, arg, wopt, i != 1)
+			if err != nil {
 				return info.Error("command argument must be string")
 			}
 			args = append(args, v)
 		}
 	}
-	result, err := cachedExecute(cached, &args[0], args[1:])
+	result, err := cachedExecute(cache, &args[0], args[1:])
 	if err != nil {
 		return info.Error("execution '%s' failed", args[1])
 	}

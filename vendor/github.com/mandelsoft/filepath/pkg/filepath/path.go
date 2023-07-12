@@ -104,7 +104,7 @@ func walk(p string, parent int, exist bool) (string, error) {
 	for !IsRoot(p) && p != "" {
 		n, b := Split2(p)
 		if b == "" {
-			fmt.Printf("debug: ignoring empty base -> %s \n", n)
+			debug("debug: ignoring empty base -> %s \n", n)
 			p = n
 			continue
 		}
@@ -250,7 +250,6 @@ func Base(path string) string {
 
 // Trim eleminates additional slashes and dot segments from a path name.
 // An empty path is unchanged.
-//
 func Trim(path string) string {
 	vol := VolumeName(path)
 	i := len(path) - 1

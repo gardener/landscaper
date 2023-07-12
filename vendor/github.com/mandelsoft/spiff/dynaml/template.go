@@ -16,7 +16,7 @@ type SubstitutionExpr struct {
 func (e SubstitutionExpr) Evaluate(binding Binding, locally bool) (interface{}, EvaluationInfo, bool) {
 	debug.Debug("evaluating expression to determine template: %s\n", binding)
 	n, info, ok := e.Template.Evaluate(binding, false)
-	if !ok || isExpression(n) {
+	if !ok || IsExpression(n) {
 		return e, info, ok
 	}
 	inp := map[string]yaml.Node{}
@@ -30,6 +30,9 @@ func (e SubstitutionExpr) Evaluate(binding Binding, locally bool) (interface{}, 
 	debug.Debug("resolving template '%s' %s\n", strings.Join(template.Path, "."), binding)
 	result, state := binding.WithLocalScope(inp).Flow(prepared, false)
 	info = DefaultInfo()
+	if result != nil && result.Undefined() {
+		info.Undefined = true
+	}
 	if state != nil {
 		if state.HasError() {
 			debug.Debug("resolving template failed: " + state.Error())
@@ -63,7 +66,7 @@ func NewTemplateValue(path []string, prepared yaml.Node, orig yaml.Node, binding
 }
 
 func (e TemplateValue) String() string {
-	return fmt.Sprintf("<template %s: %s>", path.Join(e.Path...), shorten(short(e.Prepared, false)))
+	return fmt.Sprintf("<template %s: %s>", path.Join(e.Path...), Shorten(Short(e.Prepared, false)))
 }
 
 func (e TemplateValue) MarshalYAML() (tag string, value interface{}, err error) {

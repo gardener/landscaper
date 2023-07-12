@@ -7,7 +7,8 @@ Prefer <- ws 'prefer' req_ws Expression
 
 MarkedExpression <- ws Marker ( req_ws SubsequentMarker )* ws MarkerExpression ? ws
 SubsequentMarker <- Marker
-Marker <- '&' ( 'template' / 'temporary' / 'local' / 'inject' / 'state' / 'default' )
+Marker <- '&' ( 'template' / 'temporary' / 'local' / 'inject' / 'state' / 'default' / 'dynamic' / TagMarker )
+TagMarker <- 'tag:' '*'? Tag
 MarkerExpression <- Grouped
 
 Expression <- ( Scoped / LambdaExpr / Level7 ) ws
@@ -44,12 +45,14 @@ Division <-  '/' req_ws Level0
 Modulo <-  '%' req_ws Level0
 
 Level0 <- IP / String / Number / Boolean / Undefined / Nil / Symbol / Not /
-          Substitution / Merge / Auto / Lambda / Chained 
+          Substitution / Merge / Auto / Lambda / Chained
 
-Chained <- ( MapMapping / Sync / Catch / Mapping / MapSelection / Selection / Sum / List / Map / Range / Grouped / Reference ) ChainedQualifiedExpression*
+Chained <- ( MapMapping / Sync / Catch / Mapping / MapSelection / Selection / Sum / List / Map / Range / Grouped / Reference / TopIndex ) ChainedQualifiedExpression*
 ChainedQualifiedExpression <- ChainedCall / Currying / ChainedRef / ChainedDynRef / Projection
 ChainedRef <-  PathComponent FollowUpRef
-ChainedDynRef <- '.'? '[' Expression ']'
+ChainedDynRef <- '.'? Indices
+TopIndex <- '.' Indices
+Indices <- StartList ExpressionList ']'
 Slice <- Range
 Currying <- '*' ChainedCall
 ChainedCall <- StartArguments  NameArgumentList? ')'
@@ -71,7 +74,7 @@ Range <- StartRange Expression? RangeOp Expression? ']'
 StartRange <- '['
 RangeOp <- '..'
 
-Number <-  '-'? [0-9] [0-9_]* ( '.' [0-9] [0-9]* )?  ( ( 'e' / 'E' ) '-'? [0-9] [0-9]* )?
+Number <-  '-'? [0-9] [0-9_]* ( '.' [0-9] [0-9]* )?  ( ( 'e' / 'E' ) '-'? [0-9] [0-9]* )? !'::'
 String <- '"' ('\\"' / !'"' .)* '"'
 Boolean <- 'true' / 'false'
 Nil <- 'nil' / '~'
@@ -118,7 +121,10 @@ Name <- [a-zA-Z0-9_]+
 DefaultValue <- '=' Expression
 VarParams <- '...' ws
 
-Reference <- '.'? Key FollowUpRef
+Reference <- (( TagPrefix  ('.' / Key )) / ( '.'? Key )) FollowUpRef
+TagPrefix <- ( ('doc' [.:] '-'? [0-9]+) / Tag ) '::'
+Tag <- TagComponent ( [.:] TagComponent )*
+TagComponent <- [a-zA-Z_] [a-zA-Z0-9_]*
 FollowUpRef <- PathComponent*
 PathComponent <- ( '.' Key ) / ( '.'? Index )
 

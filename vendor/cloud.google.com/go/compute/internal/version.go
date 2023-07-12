@@ -15,4 +15,8 @@
 package internal
 
 // Version is the current tagged release of the library.
+<<<<<<< HEAD
 const Version = "1.15.1"
+=======
+const Version = "1.19.3"
+>>>>>>> bab04a37 (update dependencies and adjust to incompatible API changes)

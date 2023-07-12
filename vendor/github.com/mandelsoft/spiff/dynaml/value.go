@@ -42,6 +42,8 @@ func ValueAsString(val interface{}, all bool) string {
 		return fmt.Sprintf("\"%s\"", v)
 	case int64:
 		return strconv.FormatInt(v, 10)
+	case float64:
+		return strconv.FormatFloat(v, 'g', -1, 64)
 	case bool:
 		return strconv.FormatBool(v)
 	default:

@@ -95,7 +95,7 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			}
 			var lastErr error
 			// The waiting intervals do not increase exponentially, because no backoff factor is set
-			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func() (done bool, err error) {
+			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func(ctx context.Context) (done bool, err error) {
 
 				if err := e.interruptionChecker.Check(ctx); err != nil {
 					return false, err

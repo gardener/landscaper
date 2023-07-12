@@ -51,7 +51,7 @@ func resolveLOperands(a, b Expression, binding Binding) (eff_a, eff_b interface{
 
 	va, infoa, first_ok = a.Evaluate(binding, false)
 	if first_ok {
-		if isExpression(va) {
+		if IsExpression(va) {
 			return nil, nil, infoa, false, true, true
 		}
 
@@ -61,7 +61,7 @@ func resolveLOperands(a, b Expression, binding Binding) (eff_a, eff_b interface{
 			return va, nil, info, true, true, false
 		}
 
-		if isExpression(vb) {
+		if IsExpression(vb) {
 			return nil, nil, info, false, true, true
 		}
 

@@ -30,6 +30,41 @@ func func_ip(op func(ip net.IP, cidr *net.IPNet) interface{}, arguments []interf
 	return op(ip, cidr), info, true
 }
 
+func func_containsIP(arguments []interface{}, binding Binding) (interface{}, EvaluationInfo, bool) {
+	info := DefaultInfo()
+
+	if len(arguments) != 2 {
+		info.Issue = yaml.NewIssue("contains_ip requires CIDR and IP argument")
+		return nil, info, false
+	}
+
+	str, ok := arguments[0].(string)
+	if !ok {
+		info.Issue = yaml.NewIssue("CIDR required as first argument")
+		return nil, info, false
+	}
+
+	_, cidr, err := net.ParseCIDR(str)
+
+	if err != nil {
+		info.Issue = yaml.NewIssue("CIDR argument required: %s", err)
+		return nil, info, false
+	}
+
+	str, ok = arguments[1].(string)
+	if !ok {
+		info.Issue = yaml.NewIssue("IP required as second argument")
+		return nil, info, false
+	}
+
+	ip := net.ParseIP(str)
+	if ip == nil {
+		info.Issue = yaml.NewIssue("IP argument required: %s", str)
+		return nil, info, false
+	}
+	return cidr.Contains(ip), info, true
+}
+
 func func_minIP(arguments []interface{}, binding Binding) (interface{}, EvaluationInfo, bool) {
 	return func_ip(func(ip net.IP, cidr *net.IPNet) interface{} {
 		return ip.Mask(cidr.Mask).String()

@@ -2,39 +2,45 @@ package dynaml
 
 import (
 	"fmt"
-	"github.com/mandelsoft/spiff/yaml"
 	"strings"
+
+	"github.com/mandelsoft/spiff/yaml"
 
 	"github.com/mandelsoft/spiff/debug"
 )
 
 type Function func(arguments []interface{}, binding Binding) (interface{}, EvaluationInfo, bool)
 
-type Registry interface {
+type Functions interface {
 	RegisterFunction(name string, f Function)
 	LookupFunction(name string) Function
 }
-type registry struct {
+
+type functionRegistry struct {
 	functions map[string]Function
 }
 
-func NewRegistry() Registry {
-	return &registry{map[string]Function{}}
+func NewFunctions() Functions {
+	return &functionRegistry{map[string]Function{}}
 }
 
-func (r *registry) RegisterFunction(name string, f Function) {
+func (r *functionRegistry) RegisterFunction(name string, f Function) {
 	r.functions[name] = f
 }
 
-func (r *registry) LookupFunction(name string) Function {
-	return r.functions[name]
+func (r *functionRegistry) LookupFunction(name string) Function {
+	f := r.functions[name]
+	if f != nil || r == function_registry {
+		return f
+	}
+	return function_registry.(*functionRegistry).functions[name]
 }
-
-var functions = NewRegistry()
 
 func RegisterFunction(name string, f Function) {
-	functions.RegisterFunction(name, f)
+	function_registry.RegisterFunction(name, f)
 }
+
+var function_registry = NewFunctions()
 
 type NameArgument struct {
 	Name string
@@ -58,7 +64,7 @@ func (e CallExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 	var info EvaluationInfo
 
 	ref, okf := e.Function.(ReferenceExpr)
-	if okf && len(ref.Path) == 1 && ref.Path[0] != "" && ref.Path[0] != "_" {
+	if okf && ref.Tag == "" && len(ref.Path) == 1 && ref.Path[0] != "" && ref.Path[0] != "_" {
 		funcName = ref.Path[0]
 	} else {
 		value, info, okf = ResolveExpressionOrPushEvaluation(&e.Function, &resolved, &info, binding, false)
@@ -139,9 +145,9 @@ func (e CallExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 		for i, v := range values {
 			args[i] = ValueExpr{v}
 		}
-		args[len(values)] = ListExpansionExpr{ReferenceExpr{[]string{"__args"}}}
+		args[len(values)] = ListExpansionExpr{NewReferenceExpr("__args")}
 		expr := CallExpr{
-			Function:  ReferenceExpr{[]string{funcName}},
+			Function:  NewReferenceExpr(funcName),
 			Arguments: args,
 		}
 
@@ -254,6 +260,9 @@ func (e CallExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 	case "num_ip":
 		result, sub, ok = func_numIP(values, binding)
 
+	case "contains_ip":
+		result, sub, ok = func_containsIP(values, binding)
+
 	case "makemap":
 		result, sub, ok = func_makemap(values, binding)
 
@@ -308,6 +317,8 @@ func (e CallExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 
 	case "validate":
 		resolved, result, sub, ok = func_validate(values, binding)
+	case "check":
+		resolved, result, sub, ok = func_check(values, binding)
 
 	case "type":
 		if info.Undefined {
@@ -318,14 +329,7 @@ func (e CallExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 		}
 
 	default:
-		var f Function
-		ext := binding.GetState().GetFunctions()
-		if ext != nil {
-			f = ext.LookupFunction(funcName)
-		}
-		if f == nil {
-			f = functions.LookupFunction(funcName)
-		}
+		f := binding.GetState().GetRegistry().LookupFunction(funcName)
 		if f == nil {
 			return info.Error("unknown function '%s'", funcName)
 		}
@@ -335,7 +339,7 @@ func (e CallExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 	if cleaned {
 		info.Cleanup()
 	}
-	if ok && (!resolved || isExpression(result)) {
+	if ok && (!resolved || IsExpression(result)) {
 		return e, sub.Join(info), true
 	}
 	return result, sub.Join(info), ok
