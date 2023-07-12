@@ -20,10 +20,13 @@ import (
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	"github.com/gardener/landscaper/pkg/agent"
 	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -184,10 +187,19 @@ func (o *Options) run(ctx context.Context) error {
 			return err
 		}
 
-		if err := healthcheck.AddControllersToManager(ctx, ctrlLogger, hostMgr,
-			&o.Config.DeployerManagement.Agent.AgentConfiguration, o.Config.LsDeployments, o.Deployer.EnabledDeployers); err != nil {
-			return fmt.Errorf("unable to register health check controller: %w", err)
+		if o.Config.LsDeployments.AdditionalDeployments == nil {
+			o.Config.LsDeployments.AdditionalDeployments = &config.AdditionalDeployments{
+				Deployments: []string{},
+			}
 		}
+		for _, deployer := range o.Deployer.EnabledDeployers {
+			deploymentName := deployer + "-" + o.Config.DeployerManagement.Agent.Name + "-" + deployer + "-deployer"
+			o.Config.LsDeployments.AdditionalDeployments.Deployments = append(o.Config.LsDeployments.AdditionalDeployments.Deployments, deploymentName)
+		}
+	}
+
+	if err := healthcheck.AddControllersToManager(ctx, ctrlLogger, hostMgr, o.Config.LsDeployments); err != nil {
+		return fmt.Errorf("unable to register health check controller: %w", err)
 	}
 
 	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, lsMgr); err != nil {

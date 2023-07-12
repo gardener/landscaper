@@ -37,6 +37,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/component-spec/bindings-go/apis/v2.Source":                                        schema_component_spec_bindings_go_apis_v2_Source(ref),
 		"github.com/gardener/component-spec/bindings-go/apis/v2.SourceRef":                                     schema_component_spec_bindings_go_apis_v2_SourceRef(ref),
 		"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject":                       schema_component_spec_bindings_go_apis_v2_UnstructuredTypedObject(ref),
+		"github.com/gardener/landscaper/apis/config.AdditionalDeployments":                                     schema_gardener_landscaper_apis_config_AdditionalDeployments(ref),
 		"github.com/gardener/landscaper/apis/config.AgentConfiguration":                                        schema_gardener_landscaper_apis_config_AgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.BlueprintStore":                                            schema_gardener_landscaper_apis_config_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config.CommonControllerConfig":                                    schema_gardener_landscaper_apis_config_CommonControllerConfig(ref),
@@ -59,6 +60,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config.OCICacheConfiguration":                                     schema_gardener_landscaper_apis_config_OCICacheConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.OCIConfiguration":                                          schema_gardener_landscaper_apis_config_OCIConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.RegistryConfiguration":                                     schema_gardener_landscaper_apis_config_RegistryConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.AdditionalDeployments":                            schema_landscaper_apis_config_v1alpha1_AdditionalDeployments(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.AgentConfiguration":                               schema_landscaper_apis_config_v1alpha1_AgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore":                                   schema_landscaper_apis_config_v1alpha1_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig":                           schema_landscaper_apis_config_v1alpha1_CommonControllerConfig(ref),
@@ -1193,6 +1195,35 @@ func schema_component_spec_bindings_go_apis_v2_UnstructuredTypedObject(ref commo
 	}
 }
 
+func schema_gardener_landscaper_apis_config_AdditionalDeployments(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AdditionalDeployments is the definition of additional deployments that shall be watched.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Deployments": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deployments is the list of deployments that shall be watched.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"Deployments"},
+			},
+		},
+	}
+}
+
 func schema_gardener_landscaper_apis_config_AgentConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1905,22 +1936,48 @@ func schema_gardener_landscaper_apis_config_LsDeployments(ref common.ReferenceCa
 				Properties: map[string]spec.Schema{
 					"LsController": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Description: "LsController is the name of the Landscaper controller deployment.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"WebHook": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Description: "LsController is the name of the Landscaper webhook server deployment.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"DeploymentsNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeploymentsNamespace is the namespace in which the deployments are located.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"LsHealthCheckName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LsHealthCheckName is the name of the LsHealthCheck object.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"AdditionalDeployments": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AdditionalDeployments is the definition of additional deployments that shall be watched.",
+							Ref:         ref("github.com/gardener/landscaper/apis/config.AdditionalDeployments"),
 						},
 					},
 				},
-				Required: []string{"LsController", "WebHook"},
+				Required: []string{"LsController", "WebHook", "DeploymentsNamespace", "LsHealthCheckName"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.AdditionalDeployments"},
 	}
 }
 
@@ -2051,6 +2108,35 @@ func schema_gardener_landscaper_apis_config_RegistryConfiguration(ref common.Ref
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/config.LocalRegistryConfiguration", "github.com/gardener/landscaper/apis/config.OCIConfiguration"},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_AdditionalDeployments(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AdditionalDeployments is the definition of additional deployments that shall be watched.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"deployments": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deployments is the list of deployments that shall be watched.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"deployments"},
+			},
+		},
 	}
 }
 
@@ -2770,22 +2856,48 @@ func schema_landscaper_apis_config_v1alpha1_LsDeployments(ref common.ReferenceCa
 				Properties: map[string]spec.Schema{
 					"lsController": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Description: "LsController is the name of the Landscaper controller deployment.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"webHook": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Description: "LsController is the name of the Landscaper webhook server deployment.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"deploymentsNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeploymentsNamespace is the namespace in which the deployments are located.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lsHealthCheckName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LsHealthCheckName is the name of the LsHealthCheck object.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"additionalDeployments": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AdditionalDeployments is the definition of additional deployments that shall be watched.",
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.AdditionalDeployments"),
 						},
 					},
 				},
-				Required: []string{"lsController", "webHook"},
+				Required: []string{"lsController", "webHook", "deploymentsNamespace", "lsHealthCheckName"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.AdditionalDeployments"},
 	}
 }
 

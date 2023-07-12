@@ -25,29 +25,25 @@ import (
 )
 
 // NewLsHealthCheckController creates a new health check controller that reconciles the health  object in the namespaces.
-func NewLsHealthCheckController(initialLogger logging.Logger, agentConfig *config.AgentConfiguration, lsDeployments *config.LsDeployments,
-	cl client.Client, scheme *runtime.Scheme, enabledDeployers []string, durationBorder time.Duration) reconcile.Reconciler {
+func NewLsHealthCheckController(initialLogger logging.Logger, lsDeployments *config.LsDeployments,
+	cl client.Client, scheme *runtime.Scheme, durationBorder time.Duration) reconcile.Reconciler {
 	return &lsHealthCheckController{
-		initialLogger:    initialLogger,
-		agentConfig:      agentConfig,
-		lsDeployments:    lsDeployments,
-		client:           cl,
-		scheme:           scheme,
-		enabledDeployers: enabledDeployers,
-		oldStatus:        lsv1alpha1.LsHealthCheckStatusOk,
-		durationBorder:   durationBorder,
+		initialLogger:  initialLogger,
+		lsDeployments:  lsDeployments,
+		client:         cl,
+		scheme:         scheme,
+		oldStatus:      lsv1alpha1.LsHealthCheckStatusOk,
+		durationBorder: durationBorder,
 	}
 }
 
 type lsHealthCheckController struct {
-	initialLogger    logging.Logger
-	agentConfig      *config.AgentConfiguration
-	lsDeployments    *config.LsDeployments
-	client           client.Client
-	scheme           *runtime.Scheme
-	enabledDeployers []string
-	oldStatus        lsv1alpha1.LsHealthCheckStatus
-	durationBorder   time.Duration
+	initialLogger  logging.Logger
+	lsDeployments  *config.LsDeployments
+	client         client.Client
+	scheme         *runtime.Scheme
+	oldStatus      lsv1alpha1.LsHealthCheckStatus
+	durationBorder time.Duration
 }
 
 // SetDurationBorder is used for testing.
@@ -58,7 +54,7 @@ func (c *lsHealthCheckController) SetDurationBorder(durationBorder time.Duration
 func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := c.initialLogger.StartReconcileAndAddToContext(ctx, req)
 
-	if req.Namespace != c.agentConfig.Namespace || req.Name != c.agentConfig.Name {
+	if req.Namespace != c.lsDeployments.DeploymentsNamespace || req.Name != c.lsDeployments.LsHealthCheckName {
 		return reconcile.Result{}, nil
 	}
 
@@ -101,21 +97,22 @@ func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.R
 
 func (c *lsHealthCheckController) check(ctx context.Context) (lsv1alpha1.LsHealthCheckStatus, string) {
 	if c.lsDeployments != nil {
-		isOk, description := c.checkDeployment(ctx, c.agentConfig.Namespace, c.lsDeployments.LsController)
+		isOk, description := c.checkDeployment(ctx, c.lsDeployments.DeploymentsNamespace, c.lsDeployments.LsController)
 		if !isOk {
 			return lsv1alpha1.LsHealthCheckStatusFailed, description
 		}
 
-		isOk, description = c.checkDeployment(ctx, c.agentConfig.Namespace, c.lsDeployments.WebHook)
+		isOk, description = c.checkDeployment(ctx, c.lsDeployments.DeploymentsNamespace, c.lsDeployments.WebHook)
 		if !isOk {
 			return lsv1alpha1.LsHealthCheckStatusFailed, description
 		}
 
-		for _, deployer := range c.enabledDeployers {
-			deploymentName := deployer + "-" + c.agentConfig.Name + "-" + deployer + "-deployer"
-			isOk, description = c.checkDeployment(ctx, c.agentConfig.Namespace, deploymentName)
-			if !isOk {
-				return lsv1alpha1.LsHealthCheckStatusFailed, description
+		if c.lsDeployments.AdditionalDeployments != nil {
+			for _, deployer := range c.lsDeployments.AdditionalDeployments.Deployments {
+				isOk, description = c.checkDeployment(ctx, c.lsDeployments.DeploymentsNamespace, deployer)
+				if !isOk {
+					return lsv1alpha1.LsHealthCheckStatusFailed, description
+				}
 			}
 		}
 	}

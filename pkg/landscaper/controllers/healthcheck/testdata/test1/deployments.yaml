@@ -64,7 +64,7 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: helm-landscaper-helm-deployer
+  name: helm
   namespace: {{ .Namespace }}
   generation: 1
   labels:
