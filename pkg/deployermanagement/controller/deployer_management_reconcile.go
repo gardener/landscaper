@@ -266,7 +266,7 @@ func (dm *DeployerManagement) CleanupInstallation(ctx context.Context, inst *lsv
 		return fmt.Errorf("unable to delete clusterrolebinding %q: %w", crb.Name, err)
 	}
 
-	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 2*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		obj := crb.DeepCopy()
 		if err := dm.client.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
 			if apierrors.IsNotFound(err) {

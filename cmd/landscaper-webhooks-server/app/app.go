@@ -7,13 +7,14 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	kubernetesscheme "k8s.io/client-go/kubernetes/scheme"
-	"net/http"
-	"os"
-	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 

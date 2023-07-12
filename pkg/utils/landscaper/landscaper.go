@@ -59,7 +59,7 @@ func WaitForInstallationToBeDeleted(
 	inst *lsv1alpha1.Installation,
 	timeout time.Duration) error {
 
-	pollErr := wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
+	pollErr := wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(ctx context.Context) (done bool, err error) {
 		updated := &lsv1alpha1.Installation{}
 		getErr := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated)
 		return getErr != nil && apierrors.IsNotFound(getErr), nil
@@ -82,7 +82,7 @@ func WaitForInstallationToHaveCondition(
 	cond InstallationConditionFunc,
 	timeout time.Duration) error {
 
-	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		updated := &lsv1alpha1.Installation{}
 		if err := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated); err != nil {
 			return false, err
@@ -100,7 +100,7 @@ func WaitForDeployItemToFinish(
 	phase lsv1alpha1.DeployItemPhase,
 	timeout time.Duration) error {
 
-	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 5*time.Second, timeout, false, func(ctx context.Context) (bool, error) {
 		updated := &lsv1alpha1.DeployItem{}
 		if err := read_write_layer.GetDeployItem(ctx, kubeClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err != nil {
 			return false, err
