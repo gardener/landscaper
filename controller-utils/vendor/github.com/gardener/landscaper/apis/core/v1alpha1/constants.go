@@ -56,7 +56,7 @@ const (
 
 	// DeployerTargetNameAnnotation is the annotation that specifies the name of the target.
 	DeployerTargetNameAnnotation = LandscaperDomain + "/deployer-target-name"
-	NoTargetNameValue            = "LandscaperDomain" + ".noTargetName"
+	NoTargetNameValue            = ".noTargetName"
 
 	// Labels
 
