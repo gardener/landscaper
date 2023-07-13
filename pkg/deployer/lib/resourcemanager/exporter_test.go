@@ -70,16 +70,6 @@ var _ = Describe("Exporter", func() {
 		}
 		res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 			KubeClient: testenv.Client,
-			Objects: managedresource.ManagedResourceStatusList{
-				{
-					Resource: corev1.ObjectReference{
-						APIVersion: "v1",
-						Kind:       "ConfigMap",
-						Name:       cm.Name,
-						Namespace:  cm.Namespace,
-					},
-				},
-			},
 		}).Export(ctx, exports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(Equal(map[string]interface{}{
@@ -123,16 +113,6 @@ var _ = Describe("Exporter", func() {
 		}
 		res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 			KubeClient: testenv.Client,
-			Objects: managedresource.ManagedResourceStatusList{
-				{
-					Resource: corev1.ObjectReference{
-						APIVersion: "v1",
-						Kind:       "ConfigMap",
-						Name:       cm.Name,
-						Namespace:  cm.Namespace,
-					},
-				},
-			},
 		}).Export(ctx, exports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(Equal(map[string]interface{}{
@@ -179,16 +159,6 @@ var _ = Describe("Exporter", func() {
 		res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 			KubeClient:     testenv.Client,
 			DefaultTimeout: &timeout,
-			Objects: managedresource.ManagedResourceStatusList{
-				{
-					Resource: corev1.ObjectReference{
-						APIVersion: "v1",
-						Kind:       "ConfigMap",
-						Name:       cm.Name,
-						Namespace:  cm.Namespace,
-					},
-				},
-			},
 		}).Export(ctx, exports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(Equal(map[string]interface{}{
@@ -225,7 +195,6 @@ var _ = Describe("Exporter", func() {
 		_, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 			KubeClient:     testenv.Client,
 			DefaultTimeout: &timeout,
-			Objects:        managedresource.ManagedResourceStatusList{},
 		}).Export(ctx, exports)
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -273,16 +242,6 @@ var _ = Describe("Exporter", func() {
 			res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 				KubeClient:     testenv.Client,
 				DefaultTimeout: &timeout,
-				Objects: managedresource.ManagedResourceStatusList{
-					{
-						Resource: corev1.ObjectReference{
-							APIVersion: "v1",
-							Kind:       "ConfigMap",
-							Name:       cm.Name,
-							Namespace:  cm.Namespace,
-						},
-					},
-				},
 			}).Export(ctx, exports)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(Equal(map[string]interface{}{
@@ -335,16 +294,6 @@ var _ = Describe("Exporter", func() {
 			res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
 				KubeClient:     testenv.Client,
 				DefaultTimeout: &timeout,
-				Objects: managedresource.ManagedResourceStatusList{
-					{
-						Resource: corev1.ObjectReference{
-							APIVersion: "v1",
-							Kind:       "ServiceAccount",
-							Name:       sa.Name,
-							Namespace:  sa.Namespace,
-						},
-					},
-				},
 			}).Export(ctx, exports)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(Equal(map[string]interface{}{

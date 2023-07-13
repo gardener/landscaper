@@ -12,9 +12,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/kustomize/kyaml/sets"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserror "github.com/gardener/landscaper/apis/errors"
@@ -135,9 +135,16 @@ func (d *DefaultReadinessCheck) CheckObject(u *unstructured.Unstructured) error 
 }
 
 func (d *DefaultReadinessCheck) isCheckRelevant(u *unstructured.Unstructured) bool {
-	checkRelevant := sets.String{}
-	checkRelevant.Insert("Pod", "Deployment.apps", "ReplicaSet.apps", "StatefulSet.apps", "DaemonSet.apps", "ReplicationController")
-	return checkRelevant.Has(u.GroupVersionKind().GroupKind().String())
+	return IsRelevantForDefaultReadinessCheck(u.GroupVersionKind().GroupKind())
+}
+
+func IsRelevantForDefaultReadinessCheck(groupKind schema.GroupKind) bool {
+	switch groupKind.String() {
+	case "Pod", "Deployment.apps", "ReplicaSet.apps", "StatefulSet.apps", "DaemonSet.apps", "ReplicationController":
+		return true
+	default:
+		return false
+	}
 }
 
 func outdatedGeneration(current, expected int64) error {

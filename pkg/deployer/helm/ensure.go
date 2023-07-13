@@ -60,35 +60,30 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		}
 	}
 
-	manifests, err := h.createManifests(ctx, currOp, files, crds)
-	if err != nil {
-		return err
-	}
-
-	var (
-		managedResourceStatusList managedresource.ManagedResourceStatusList
-		deployErr                 error
-	)
+	var deployErr error
 
 	shouldUseRealHelmDeployer := pointer.BoolDeref(h.ProviderConfiguration.HelmDeployment, true)
 
 	if shouldUseRealHelmDeployer {
-		// apply helm
-		// convert manifests in ManagedResourceStatusList
-		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration,
-			h.TargetRestConfig, targetClientSet)
+		// Apply helm install/upgrade. Afterwards get the list of deployed resources by helm get release.
+		// The list is filtered, i.e. it contains only the resources that are needed for the default readiness check.
+		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, h.TargetRestConfig, targetClientSet)
 		deployErr = realHelmDeployer.Deploy(ctx)
 		if deployErr == nil {
-			managedResourceStatusList, err = realHelmDeployer.GetManagedResourcesStatus(ctx, manifests)
+			managedResourceStatusList, err := realHelmDeployer.GetManagedResourcesStatus(ctx)
 			if err != nil {
 				return err
 			}
 			h.ProviderStatus.ManagedResources = managedResourceStatusList
 		}
+
 	} else {
-		var applier *resourcemanager.ManifestApplier
-		applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
-		managedResourceStatusList = applier.GetManagedResourcesStatus()
+		manifests, err := h.createManifests(ctx, currOp, files, crds)
+		if err != nil {
+			return err
+		}
+
+		deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
 	}
 
 	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
@@ -114,7 +109,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return err
 	}
 
-	if err := h.readExportValues(ctx, currOp, targetClient, managedResourceStatusList, exports); err != nil {
+	if err := h.readExportValues(ctx, currOp, targetClient, exports); err != nil {
 		return err
 	}
 
@@ -124,7 +119,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 }
 
 func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, targetClientSet kubernetes.Interface,
-	manifests []managedresource.Manifest) (*resourcemanager.ManifestApplier, error) {
+	manifests []managedresource.Manifest) error {
 	applier := resourcemanager.NewManifestApplier(resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
 		KubeClient:       targetClient,
@@ -143,7 +138,7 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 	err := applier.Apply(ctx)
 	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
 
-	return applier, err
+	return err
 }
 
 func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds map[string]string) ([]managedresource.Manifest, error) {
@@ -245,9 +240,7 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 	return nil
 }
 
-func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient client.Client,
-	managedResourceStatusList managedresource.ManagedResourceStatusList, exports map[string]interface{}) error {
-
+func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient client.Client, exports map[string]interface{}) error {
 	exportDefinition := &managedresource.Exports{}
 	if h.ProviderConfiguration.Exports != nil {
 		exportDefinition = h.ProviderConfiguration.Exports
@@ -258,7 +251,6 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 	if len(exportDefinition.Exports) != 0 {
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
-			Objects:             managedResourceStatusList,
 			InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
 		}
 		if h.Configuration.Export.DefaultTimeout != nil {

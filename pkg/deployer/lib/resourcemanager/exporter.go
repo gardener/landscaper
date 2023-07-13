@@ -27,21 +27,15 @@ import (
 
 // ExporterOptions defines the options for the exporter.
 type ExporterOptions struct {
-	KubeClient     client.Client
-	DefaultTimeout *time.Duration
-
-	Objects managedresource.ManagedResourceStatusList
-
+	KubeClient          client.Client
+	DefaultTimeout      *time.Duration
 	InterruptionChecker *lib.InterruptionChecker
 }
 
 // Exporter defines the export of data from manifests.
 type Exporter struct {
-	kubeClient     client.Client
-	defaultTimeout time.Duration
-
-	objects managedresource.ManagedResourceStatusList
-
+	kubeClient          client.Client
+	defaultTimeout      time.Duration
 	interruptionChecker *lib.InterruptionChecker
 }
 
@@ -50,7 +44,6 @@ func NewExporter(opts ExporterOptions) *Exporter {
 	exporter := &Exporter{
 		kubeClient:          opts.KubeClient,
 		defaultTimeout:      5 * time.Minute,
-		objects:             opts.Objects,
 		interruptionChecker: opts.InterruptionChecker,
 	}
 	if opts.DefaultTimeout != nil {
