@@ -103,6 +103,10 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 		return locker.NotLockedResult()
 	}
 
+	defer func() {
+		locker.Unlock(ctx, syncObject)
+	}()
+
 	deployItem, _, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, req)
 	if err != nil {
 		return reconcile.Result{}, err
