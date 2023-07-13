@@ -52,10 +52,12 @@ var _ = Describe("Simple", func() {
 			},
 		})
 
-		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,
+			record.NewFakeRecorder(1024), 1000)
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{})
+		mockActuator, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,
+			record.NewFakeRecorder(1024), mockv1alpha1.Configuration{}, "test-simple"+testutils.GetNextCounter())
 		Expect(err).ToNot(HaveOccurred())
 	})
 

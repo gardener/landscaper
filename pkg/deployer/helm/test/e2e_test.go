@@ -69,7 +69,7 @@ var _ = Describe("Helm Deployer", func() {
 				Type:     helmctrl.Type,
 				Deployer: deployer,
 			},
-		)
+			5, "nginx-test"+testutil.GetNextCounter())
 
 		kubeconfigBytes, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())

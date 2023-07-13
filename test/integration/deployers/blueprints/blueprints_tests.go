@@ -223,10 +223,29 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 			utils.ExpectNoError(err)
 		}
 		g.Expect(di).ToNot(g.BeNil())
+
+		itemStringInit := "Found DI init: " + fmt.Sprintf("%+v\n", *di)
+
 		utils.ExpectNoError(state.Create(ctx, di))
+
+		itemStringCreate := "Found DI create: " + fmt.Sprintf("%+v\n", *di)
+
 		// Set a new jobID to trigger a reconcile of the deploy item
 		utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-		utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now()))
+		itemStringBefore := "Found DI before: " + fmt.Sprintf("%+v\n", *di)
+
+		err = utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now())
+
+		if err != nil {
+			f.TestLog().Logfln(itemStringInit)
+			f.TestLog().Logfln(itemStringCreate)
+			f.TestLog().Logfln(itemStringBefore)
+			utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+			f.TestLog().Logfln("Found DI after: " + fmt.Sprintf("%+v\n", *di))
+		}
+
+		utils.ExpectNoError(err)
+
 		ginkgo.By("Waiting for deploy item " + di.GetName() + " to succeed")
 		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 2*time.Minute))
 

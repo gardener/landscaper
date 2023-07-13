@@ -8,6 +8,8 @@ import (
 	goflag "flag"
 	"strings"
 
+	"github.com/gardener/landscaper/apis/core"
+
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -19,22 +21,22 @@ import (
 func defaultWebhookedResources() map[string]webhook.WebhookedResourceDefinition {
 	return map[string]webhook.WebhookedResourceDefinition{
 		"installations": {
-			APIGroup:     "landscaper.gardener.cloud",
+			APIGroup:     core.GroupName,
 			APIVersions:  []string{"v1alpha1"},
 			ResourceName: "installations",
 		},
 		"deployitems": {
-			APIGroup:     "landscaper.gardener.cloud",
+			APIGroup:     core.GroupName,
 			APIVersions:  []string{"v1alpha1"},
 			ResourceName: "deployitems",
 		},
 		"executions": {
-			APIGroup:     "landscaper.gardener.cloud",
+			APIGroup:     core.GroupName,
 			APIVersions:  []string{"v1alpha1"},
 			ResourceName: "executions",
 		},
 		"targets": {
-			APIGroup:     "landscaper.gardener.cloud",
+			APIGroup:     core.GroupName,
 			APIVersions:  []string{"v1alpha1"},
 			ResourceName: "targets",
 		},

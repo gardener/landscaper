@@ -7,6 +7,12 @@ package container
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
+
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
@@ -36,6 +42,9 @@ type PodReconciler struct {
 	hostClient      client.Client
 	config          containerv1alpha1.Configuration
 	diRec           deployerlib.Deployer
+	deployerType    lsv1alpha1.DeployItemType
+	callerName      string
+	targetSelectors []lsv1alpha1.TargetSelector
 }
 
 func NewPodReconciler(
@@ -44,7 +53,11 @@ func NewPodReconciler(
 	hostClient client.Client,
 	lsEventRecorder record.EventRecorder,
 	config containerv1alpha1.Configuration,
-	deployer deployerlib.Deployer) *PodReconciler {
+	deployer deployerlib.Deployer,
+	deployerType lsv1alpha1.DeployItemType,
+	callerName string,
+	targetSelectors []lsv1alpha1.TargetSelector) *PodReconciler {
+
 	return &PodReconciler{
 		log:             log,
 		config:          config,
@@ -52,11 +65,48 @@ func NewPodReconciler(
 		lsEventRecorder: lsEventRecorder,
 		hostClient:      hostClient,
 		diRec:           deployer,
+		deployerType:    deployerType,
+		callerName:      callerName,
+		targetSelectors: targetSelectors,
 	}
 }
 
 func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	_, ctx = r.log.StartReconcileAndAddToContext(ctx, req)
+	logger, ctx := r.log.StartReconcileAndAddToContext(ctx, req)
+
+	metadata := lsutil.EmptyDeployItemMetadata()
+	if err := r.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Debug(err.Error())
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	// this check is only for compatibility reasons
+	_, reponsible, lsErr := deployerlib.CheckResponsibility(ctx, r.lsClient, metadata, r.deployerType, r.targetSelectors)
+	if lsErr != nil {
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, lsErr)
+	}
+
+	if !reponsible {
+		return reconcile.Result{}, nil
+	}
+
+	locker := lock.NewLocker(r.lsClient, r.hostClient, r.callerName)
+	syncObject, lsErr := locker.LockDI(ctx, metadata)
+	if lsErr != nil {
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, lsErr)
+	}
+
+	if syncObject == nil {
+		return locker.NotLockedResult()
+	}
+
+	defer func() {
+		locker.Unlock(ctx, syncObject)
+	}()
+
 	deployItem, _, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, req)
 	if err != nil {
 		return reconcile.Result{}, err

@@ -127,7 +127,7 @@ func DeployerManagementTests(f *framework.Framework) {
 					Name:                "testenv",
 					Namespace:           state.Namespace,
 					LandscaperNamespace: f.LsNamespace,
-				})
+				}, "dm-test-helm"+testutil.GetNextCounter())
 				testutil.ExpectNoError(err)
 
 				wg = sync.WaitGroup{}

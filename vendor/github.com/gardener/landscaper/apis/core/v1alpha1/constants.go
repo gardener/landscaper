@@ -51,6 +51,13 @@ const (
 	// RotateTokenAnnotation is the annotation that specifies to rotate a token (used e.g. in the context of TargetSyncObjects)
 	RotateTokenAnnotation = LandscaperDomain + "/rotate-token"
 
+	// DeployerTypeAnnotation is the annotation that specifies the type of the deployer.
+	DeployerTypeAnnotation = LandscaperDomain + "/deployer-type"
+
+	// DeployerTargetNameAnnotation is the annotation that specifies the name of the target.
+	DeployerTargetNameAnnotation = LandscaperDomain + "/deployer-target-name"
+	NoTargetNameValue            = ".noTargetName"
+
 	// Labels
 
 	// LandscaperComponentLabelName is the name of the labels the holds the information about landscaper components.
