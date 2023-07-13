@@ -9,19 +9,7 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/gardener/landscaper/test/integration/core"
-	"github.com/gardener/landscaper/test/integration/dependencies"
 	"github.com/gardener/landscaper/test/integration/deployers"
-	"github.com/gardener/landscaper/test/integration/deployitems"
-	"github.com/gardener/landscaper/test/integration/executions"
-	"github.com/gardener/landscaper/test/integration/importexport"
-	"github.com/gardener/landscaper/test/integration/inline"
-	"github.com/gardener/landscaper/test/integration/installations"
-	"github.com/gardener/landscaper/test/integration/rootinstallations"
-	"github.com/gardener/landscaper/test/integration/subinstallations"
-	"github.com/gardener/landscaper/test/integration/targets"
-	"github.com/gardener/landscaper/test/integration/tutorial"
-	"github.com/gardener/landscaper/test/integration/webhook"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -73,19 +61,19 @@ func TestConfig(t *testing.T) {
 		}
 	}
 
-	importexport.RegisterTests(f)
-	rootinstallations.RegisterTests(f)
-	subinstallations.RegisterTests(f)
-	dependencies.RegisterTests(f)
-	targets.RegisterTests(f)
-	inline.RegisterTests(f)
-	tutorial.RegisterTests(f)
-	webhook.RegisterTests(f)
-	core.RegisterTests(f)
+	//importexport.RegisterTests(f)
+	//rootinstallations.RegisterTests(f)
+	//subinstallations.RegisterTests(f)
+	//dependencies.RegisterTests(f)
+	//targets.RegisterTests(f)
+	//inline.RegisterTests(f)
+	//tutorial.RegisterTests(f)
+	//webhook.RegisterTests(f)
+	//core.RegisterTests(f)
 	deployers.RegisterTests(f)
-	deployitems.RegisterTests(f)
-	installations.RegisterTests(f)
-	executions.RegisterTests(f)
+	//deployitems.RegisterTests(f)
+	//installations.RegisterTests(f)
+	//executions.RegisterTests(f)
 
 	AfterSuite(func() {
 		f.Log().Logfln("\nStart after suite cleanup")

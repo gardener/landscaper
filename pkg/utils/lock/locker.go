@@ -118,7 +118,7 @@ func (l *Locker) lock(ctx context.Context, obj *metav1.PartialObjectMetadata,
 }
 
 func (l *Locker) getSyncObjectName(obj *metav1.PartialObjectMetadata) string {
-	return l.prefix + string(obj.GetUID())
+	return getName(l.prefix, obj)
 }
 
 func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) {
@@ -201,4 +201,8 @@ func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func getName(prefix string, obj *metav1.PartialObjectMetadata) string {
+	return prefix + "-" + string(obj.GetUID())
 }

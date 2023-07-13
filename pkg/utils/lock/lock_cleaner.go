@@ -114,5 +114,5 @@ func (l *LockCleaner) existsResource(ctx context.Context, syncObject *lsv1alpha1
 		return false, err
 	}
 
-	return syncObject.GetName() == syncObject.Spec.Prefix+string(resource.GetUID()), nil
+	return syncObject.GetName() == getName(syncObject.Spec.Prefix, resource), nil
 }
