@@ -60,19 +60,17 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		}
 	}
 
-	var (
-		managedResourceStatusList managedresource.ManagedResourceStatusList
-		deployErr                 error
-	)
+	var deployErr error
 
 	shouldUseRealHelmDeployer := pointer.BoolDeref(h.ProviderConfiguration.HelmDeployment, true)
 
 	if shouldUseRealHelmDeployer {
-		// apply helm install/upgrade, and afterwards get the list of deployed resources by helm get release
+		// Apply helm install/upgrade. Afterwards get the list of deployed resources by helm get release.
+		// The list is filtered, i.e. it contains only the resources that are needed for the default readiness check.
 		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, h.TargetRestConfig, targetClientSet)
 		deployErr = realHelmDeployer.Deploy(ctx)
 		if deployErr == nil {
-			managedResourceStatusList, err = realHelmDeployer.GetManagedResourcesStatus(ctx)
+			managedResourceStatusList, err := realHelmDeployer.GetManagedResourcesStatus(ctx)
 			if err != nil {
 				return err
 			}
@@ -85,7 +83,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 			return err
 		}
 
-		_, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
+		deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
 	}
 
 	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
@@ -121,7 +119,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 }
 
 func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, targetClientSet kubernetes.Interface,
-	manifests []managedresource.Manifest) (*resourcemanager.ManifestApplier, error) {
+	manifests []managedresource.Manifest) error {
 	applier := resourcemanager.NewManifestApplier(resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
 		KubeClient:       targetClient,
@@ -140,7 +138,7 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 	err := applier.Apply(ctx)
 	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
 
-	return applier, err
+	return err
 }
 
 func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds map[string]string) ([]managedresource.Manifest, error) {
@@ -242,9 +240,7 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 	return nil
 }
 
-func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient client.Client,
-	exports map[string]interface{}) error {
-
+func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient client.Client, exports map[string]interface{}) error {
 	exportDefinition := &managedresource.Exports{}
 	if h.ProviderConfiguration.Exports != nil {
 		exportDefinition = h.ProviderConfiguration.Exports
