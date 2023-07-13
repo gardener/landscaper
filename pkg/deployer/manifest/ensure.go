@@ -93,7 +93,6 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	if m.ProviderConfiguration.Exports != nil {
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
-			Objects:             applier.GetManagedResourcesStatus(),
 			InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
 		}
 		if m.Configuration.Export.DefaultTimeout != nil {

@@ -85,9 +85,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 			return err
 		}
 
-		var applier *resourcemanager.ManifestApplier
-		applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
-		managedResourceStatusList = applier.GetManagedResourcesStatus()
+		_, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
 	}
 
 	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
@@ -113,7 +111,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return err
 	}
 
-	if err := h.readExportValues(ctx, currOp, targetClient, managedResourceStatusList, exports); err != nil {
+	if err := h.readExportValues(ctx, currOp, targetClient, exports); err != nil {
 		return err
 	}
 
@@ -245,7 +243,7 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 }
 
 func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient client.Client,
-	managedResourceStatusList managedresource.ManagedResourceStatusList, exports map[string]interface{}) error {
+	exports map[string]interface{}) error {
 
 	exportDefinition := &managedresource.Exports{}
 	if h.ProviderConfiguration.Exports != nil {
@@ -257,7 +255,6 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 	if len(exportDefinition.Exports) != 0 {
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
-			Objects:             managedResourceStatusList,
 			InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
 		}
 		if h.Configuration.Export.DefaultTimeout != nil {

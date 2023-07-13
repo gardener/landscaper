@@ -30,8 +30,6 @@ type ExporterOptions struct {
 	KubeClient     client.Client
 	DefaultTimeout *time.Duration
 
-	Objects managedresource.ManagedResourceStatusList
-
 	InterruptionChecker *lib.InterruptionChecker
 }
 
@@ -39,8 +37,6 @@ type ExporterOptions struct {
 type Exporter struct {
 	kubeClient     client.Client
 	defaultTimeout time.Duration
-
-	objects managedresource.ManagedResourceStatusList
 
 	interruptionChecker *lib.InterruptionChecker
 }
@@ -50,7 +46,6 @@ func NewExporter(opts ExporterOptions) *Exporter {
 	exporter := &Exporter{
 		kubeClient:          opts.KubeClient,
 		defaultTimeout:      5 * time.Minute,
-		objects:             opts.Objects,
 		interruptionChecker: opts.InterruptionChecker,
 	}
 	if opts.DefaultTimeout != nil {
