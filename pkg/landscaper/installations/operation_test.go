@@ -233,9 +233,6 @@ var _ = Describe("Operation", func() {
 			}
 
 			testutils.ExpectNoError(kubeClient.Create(ctx, op.Inst.GetInstallation()))
-			inst := &lsv1alpha1.Installation{}
-			err := kubeClient.Get(ctx, client.ObjectKeyFromObject(op.Inst.GetInstallation()), inst)
-			_ = err
 			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, targetExtensions))
 
 			targetList := &lsv1alpha1.TargetList{}
