@@ -10,8 +10,8 @@ require (
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.66
 	github.com/gardener/image-vector v0.10.0
-	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
-	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/apis v0.68.0
+	github.com/gardener/landscaper/controller-utils v0.68.0
 	github.com/go-logr/logr v1.2.3
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
@@ -43,7 +43,6 @@ require (
 	k8s.io/client-go v0.26.1
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491
 	sigs.k8s.io/controller-runtime v0.14.0
-	sigs.k8s.io/kustomize/kyaml v0.13.9
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -169,6 +168,7 @@ require (
 	oras.land/oras-go v1.2.2 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
