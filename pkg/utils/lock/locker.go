@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	keyMyPodName = "myPodName"
-	keyNamespace = "lockNamespace"
+	keyMyPodName      = "myPodName"
+	keyNamespace      = "lockNamespace"
+	keySyncObjectName = "syncObjectName"
 
 	cleanupInterval = 3 * time.Hour
 )
@@ -50,9 +51,13 @@ func (l *Locker) lock(ctx context.Context, obj *metav1.PartialObjectMetadata,
 	kind string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
 	op := "Locker.Lock"
 
-	log, ctx := logging.FromContextOrNew(ctx, nil, keyMyPodName, utils.GetCurrentPodName())
+	syncObjectName := l.getSyncObjectName(obj)
 
-	syncObject, err := l.getSyncObject(ctx, obj.GetNamespace(), l.getSyncObjectName(obj))
+	log, ctx := logging.FromContextOrNew(ctx, nil,
+		keyMyPodName, utils.GetCurrentPodName(),
+		keySyncObjectName, syncObjectName)
+
+	syncObject, err := l.getSyncObject(ctx, obj.GetNamespace(), syncObjectName)
 	if err != nil {
 		lsError := lserrors.NewWrappedError(err, op, "resolveSyncObject",
 			"error getting syncobject "+l.getSyncObjectName(obj))
@@ -123,7 +128,9 @@ func (l *Locker) getSyncObjectName(obj *metav1.PartialObjectMetadata) string {
 
 func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) {
 
-	log, ctx := logging.FromContextOrNew(ctx, nil, keyMyPodName, utils.GetCurrentPodName())
+	log, ctx := logging.FromContextOrNew(ctx, nil,
+		keyMyPodName, utils.GetCurrentPodName(),
+		keySyncObjectName, syncObject.GetName())
 
 	syncObject.Spec.PodName = ""
 	syncObject.Spec.LastUpdateTime = metav1.Now()
