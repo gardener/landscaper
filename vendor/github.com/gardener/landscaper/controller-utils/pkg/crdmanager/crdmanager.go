@@ -96,7 +96,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 		}
 	}
 
-	err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 30*time.Second, false, func(ctx context.Context) (bool, error) {
 		aggregatedStatus := true
 		causingCRDs := sets.NewString()
 

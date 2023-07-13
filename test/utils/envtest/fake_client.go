@@ -6,6 +6,7 @@ package envtest
 
 import (
 	"bytes"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -59,7 +60,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		}
 	}
 
-	kubeclient := fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithObjects(objects...).Build()
+	kubeclient := fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithStatusSubresource(&lsv1alpha1.Installation{}, &lsv1alpha1.Execution{}, &lsv1alpha1.DeployItem{}, &lsv1alpha1.TargetSync{}, &lsv1alpha1.DeployerRegistration{}).WithObjects(objects...).Build()
 	state.Client = kubeclient
 	return kubeclient, state, nil
 }
