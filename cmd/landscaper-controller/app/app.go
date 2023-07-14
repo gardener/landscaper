@@ -119,12 +119,61 @@ func (o *Options) run(ctx context.Context) error {
 	}
 
 	metrics.RegisterMetrics(controllerruntimeMetrics.Registry)
+	ctrlLogger := o.Log.WithName("controllers")
+
+	if os.Getenv("LANDSCAPER_MODE") == "central-landscaper" {
+		return o.startCentralLandscaper(ctx, lsMgr, hostMgr, ctrlLogger, setupLogger)
+	} else {
+		return o.startMainController(ctx, lsMgr, hostMgr, ctrlLogger, setupLogger)
+	}
+
+}
+
+func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manager.Manager,
+	ctrlLogger, setupLogger logging.Logger) error {
+	install.Install(lsMgr.GetScheme())
 
 	store, err := blueprints.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
 	if err != nil {
 		return fmt.Errorf("unable to setup blueprint store: %w", err)
 	}
 	blueprints.SetStore(store)
+
+	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config, "installations"); err != nil {
+		return fmt.Errorf("unable to setup installation controller: %w", err)
+	}
+
+	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config.Controllers.Executions); err != nil {
+		return fmt.Errorf("unable to setup execution controller: %w", err)
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	setupLogger.Info("starting the controllers")
+	if lsMgr != hostMgr {
+		eg.Go(func() error {
+			if err := hostMgr.Start(ctx); err != nil {
+				return fmt.Errorf("error while running host manager: %w", err)
+			}
+			return nil
+		})
+		setupLogger.Info("Waiting for host cluster cache to sync")
+		if !hostMgr.GetCache().WaitForCacheSync(ctx) {
+			return fmt.Errorf("unable to sync host cluster cache")
+		}
+		setupLogger.Info("Cache of host cluster successfully synced")
+	}
+	eg.Go(func() error {
+		if err := lsMgr.Start(ctx); err != nil {
+			return fmt.Errorf("error while running landscaper manager: %w", err)
+		}
+		return nil
+	})
+	return eg.Wait()
+}
+
+func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr manager.Manager,
+	ctrlLogger, setupLogger logging.Logger) error {
 
 	if err := o.ensureCRDs(ctx, lsMgr); err != nil {
 		return err
@@ -137,23 +186,6 @@ func (o *Options) run(ctx context.Context) error {
 	}
 
 	install.Install(lsMgr.GetScheme())
-
-	ctrlLogger := o.Log.WithName("controllers")
-	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config); err != nil {
-		return fmt.Errorf("unable to setup installation controller: %w", err)
-	}
-
-	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config.Controllers.Executions); err != nil {
-		return fmt.Errorf("unable to setup execution controller: %w", err)
-	}
-
-	if err := deployitemctrl.AddControllerToManager(ctrlLogger,
-		lsMgr,
-		o.Config.Controllers.DeployItems,
-		o.Config.DeployItemTimeouts.Pickup,
-		o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
-		return fmt.Errorf("unable to setup deployitem controller: %w", err)
-	}
 
 	if err := contextctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup context controller: %w", err)
@@ -188,6 +220,14 @@ func (o *Options) run(ctx context.Context) error {
 			&o.Config.DeployerManagement.Agent.AgentConfiguration, o.Config.LsDeployments, o.Deployer.EnabledDeployers); err != nil {
 			return fmt.Errorf("unable to register health check controller: %w", err)
 		}
+	}
+
+	if err := deployitemctrl.AddControllerToManager(ctrlLogger,
+		lsMgr,
+		o.Config.Controllers.DeployItems,
+		o.Config.DeployItemTimeouts.Pickup,
+		o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
+		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 
 	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, lsMgr); err != nil {

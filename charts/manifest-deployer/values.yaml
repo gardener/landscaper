@@ -72,6 +72,9 @@ resources:
   #   cpu: 100m
   #   memory: 128Mi
 
+hpa:
+  maxReplicas: 10
+
 nodeSelector: {}
 
 tolerations: []

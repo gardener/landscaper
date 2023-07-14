@@ -143,6 +143,9 @@ webhooksServer:
     #   cpu: 100m
     #   memory: 128Mi
 
+  hpa:
+    maxReplicas: 10
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -186,6 +189,14 @@ resources:
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
+
+resourcesMain:
+  requests:
+    cpu: 300m
+    memory: 300Mi
+
+hpaMain:
+  maxReplicas: 10
 
 nodeSelector: {}
 

@@ -5,16 +5,16 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "deployer.fullname" . }}
+  name: {{ include "landscaper.main.fullname" . }}
   labels:
-    {{- include "deployer.labels" . | nindent 4 }}
+    {{- include "landscaper.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "deployer.fullname" . }}
+    name: {{ include "landscaper.main.fullname" . }}
   minReplicas: 1
-  maxReplicas: {{ .Values.hpa.maxReplicas }}
+  maxReplicas: {{ .Values.hpaMain.maxReplicas }}
   metrics:
     - type: Resource
       resource:

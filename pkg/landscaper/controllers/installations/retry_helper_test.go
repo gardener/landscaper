@@ -46,13 +46,14 @@ var _ = Describe("Retry handler", func() {
 
 			clok = &testing.FakePassiveClock{}
 
-			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clok, &config.LandscaperConfiguration{
-				Registry: config.RegistryConfiguration{
-					Local: &config.LocalRegistryConfiguration{
-						RootPath: "./testdata",
+			ctrl = installationsctl.NewTestActuator(*op, testenv.Client, logging.Discard(), clok,
+				&config.LandscaperConfiguration{
+					Registry: config.RegistryConfiguration{
+						Local: &config.LocalRegistryConfiguration{
+							RootPath: "./testdata",
+						},
 					},
-				},
-			})
+				}, "test-inst2-"+testutils.GetNextCounter())
 		})
 
 		AfterEach(func() {
