@@ -7,7 +7,7 @@ Each HPA specifies a minimum and maximum number of pods. Within these limits, a 
 average cpu or memory consumption exceeds 80% of the value specified in the corresponding Deployment.
 The pods are distributed evenly across nodes and zones.
 
-- [Landscaper HPA](../../charts/landscaper/charts/landscaper/templates/hpa-landscaper.yaml):  
+- [Landscaper HPA](../../charts/landscaper/charts/landscaper/templates/hpa-central-landscaper.yaml):  
   Currently, we start exactly 1 landscaper pod, because the controllers are not yet prepared to run with multiple 
   replicas in parallel.  
 - [Webhok HPA](../../charts/landscaper/charts/landscaper/templates/hpa-webhook.yaml):  

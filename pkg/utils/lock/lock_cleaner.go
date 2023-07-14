@@ -93,6 +93,10 @@ func (l *LockCleaner) existsResource(ctx context.Context, syncObject *lsv1alpha1
 	var resource *metav1.PartialObjectMetadata
 
 	switch syncObject.Spec.Kind {
+	case utils.InstallationKind:
+		resource = utils.EmptyInstallationMetadata()
+	case utils.ExecutionKind:
+		resource = utils.EmptyExecutionMetadata()
 	case utils.DeployItemKind:
 		resource = utils.EmptyDeployItemMetadata()
 	default:

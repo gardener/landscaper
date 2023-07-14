@@ -47,6 +47,22 @@ func (l *Locker) LockDI(ctx context.Context, obj *metav1.PartialObjectMetadata) 
 	return l.lock(ctx, obj, utils.DeployItemKind)
 }
 
+func (l *Locker) LockExecution(ctx context.Context, obj *metav1.PartialObjectMetadata) (*lsv1alpha1.SyncObject, lserrors.LsError) {
+	if obj.GroupVersionKind() != utils.ExecutionGVK {
+		lsError := lserrors.NewError("LockExecution", "invalidGKV", "invalid GKV of object")
+		return nil, lsError
+	}
+	return l.lock(ctx, obj, utils.ExecutionKind)
+}
+
+func (l *Locker) LockInstallation(ctx context.Context, obj *metav1.PartialObjectMetadata) (*lsv1alpha1.SyncObject, lserrors.LsError) {
+	if obj.GroupVersionKind() != utils.InstallationGVK {
+		lsError := lserrors.NewError("LockInstallation", "invalidGKV", "invalid GKV of object")
+		return nil, lsError
+	}
+	return l.lock(ctx, obj, utils.InstallationKind)
+}
+
 func (l *Locker) lock(ctx context.Context, obj *metav1.PartialObjectMetadata,
 	kind string) (*lsv1alpha1.SyncObject, lserrors.LsError) {
 	op := "Locker.Lock"

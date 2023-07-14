@@ -41,13 +41,13 @@ var _ = Describe("Installation Controller", func() {
 
 			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 
-			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
+			ctrl = installationsctl.NewTestActuator(*op, testenv.Client, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
 					Local: &config.LocalRegistryConfiguration{
 						RootPath: "./testdata",
 					},
 				},
-			})
+			}, "test-inst5-"+testutils.GetNextCounter())
 		})
 
 		AfterEach(func() {

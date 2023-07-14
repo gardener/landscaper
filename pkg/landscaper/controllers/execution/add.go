@@ -21,7 +21,7 @@ import (
 )
 
 // AddControllerToManager adds the execution controller to the controller manager
-func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config config.ExecutionsController) error {
+func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config config.ExecutionsController) error {
 	log := logger.Reconciles("execution", "Execution")
 
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
@@ -29,18 +29,20 @@ func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config c
 
 	a, err := NewController(
 		log,
-		mgr.GetClient(),
-		mgr.GetScheme(),
-		mgr.GetEventRecorderFor("Landscaper"),
+		lsMgr.GetClient(),
+		hostMgr.GetClient(),
+		lsMgr.GetScheme(),
+		lsMgr.GetEventRecorderFor("Landscaper"),
 		config.CommonControllerConfig.Workers,
+		"executions",
 	)
 	if err != nil {
 		return err
 	}
 
-	return builder.ControllerManagedBy(mgr).
-		For(&lsv1alpha1.Execution{}).
-		Owns(&lsv1alpha1.DeployItem{}).
+	return builder.ControllerManagedBy(lsMgr).
+		For(&lsv1alpha1.Execution{}, builder.OnlyMetadata).
+		Owns(&lsv1alpha1.DeployItem{}, builder.OnlyMetadata).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(a)
