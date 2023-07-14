@@ -169,10 +169,14 @@ func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, di *
 	di.Status.JobIDFinished = di.Status.GetJobID()
 	di.Status.ObservedGeneration = di.Generation
 	lsv1alpha1helper.SetDeployItemToFailed(di)
+
+	message := fmt.Sprintf("deployer has not finished this deploy item within %d seconds - probably some of the "+
+		"installed items (deployments, jobs, daemons etc.) in the target system were not up and running within this time period",
+		progressingTimeout/time.Second)
 	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
 		operation,
 		lsv1alpha1.ProgressingTimeoutReason,
-		fmt.Sprintf("deployer has not finished this deploy item within %d seconds", progressingTimeout/time.Second),
+		message,
 		lsv1alpha1.ErrorTimeout))
 
 	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000111, di); err != nil {
