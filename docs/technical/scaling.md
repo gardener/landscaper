@@ -92,8 +92,6 @@ Optimistic locking of the create/update operation ensures that only one replica 
 Unlocking is done at the end of a reconciliation. The processing replica (pod) removes its identifier (pod name) from 
 the SyncObject. It does not delete the SyncObject. 
 
-(No optimistic locking for delete operations.)
-
 ### Controlling the Lock Owner
 
 Other replicas of the same deployer, which do not get the lock, check whether the current owner of the lock still exists. 
@@ -105,8 +103,9 @@ A go function deletes SyncObjects whose corresponding object (the object with th
 
 It does not matter if in the meantime a new object with the same name is being created. The locking of the deleted old object
 and the new object is done by different SyncObjects, because of the different UIDs. 
-(If we would use the object name instead of the UID, the cleanup might delete a SyncObject which is recycled and locks
-a new object with the same name.)
+(If we would use the object name instead of the UID, the cleanup might delete a SyncObject which was just recycled and 
+locks a new object with the same name. The delete operation would not conflict with a parallel update, because there is 
+no optimistic locking for delete operations.)
 
 
 
