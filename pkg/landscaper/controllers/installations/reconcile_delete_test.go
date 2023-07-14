@@ -51,13 +51,14 @@ var _ = Describe("Delete", func() {
 			Expect(err).ToNot(HaveOccurred())
 			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 
-			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
-				Registry: config.RegistryConfiguration{
-					Local: &config.LocalRegistryConfiguration{
-						RootPath: "./testdata",
+			ctrl = installationsctl.NewTestActuator(*op, testenv.Client, logging.Discard(), clock.RealClock{},
+				&config.LandscaperConfiguration{
+					Registry: config.RegistryConfiguration{
+						Local: &config.LocalRegistryConfiguration{
+							RootPath: "./testdata",
+						},
 					},
-				},
-			})
+				}, "test-inst1-"+testutils.GetNextCounter())
 		})
 
 		AfterEach(func() {
@@ -143,7 +144,7 @@ var _ = Describe("Delete", func() {
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
 				Scheme:             api.LandscaperScheme,
 				MetricsBindAddress: "0",
-				NewClient:          lsutils.NewUncachedClient,
+				NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 			})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -151,7 +152,8 @@ var _ = Describe("Delete", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
-			Expect(installationsctl.AddControllerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, &config.LandscaperConfiguration{})).To(Succeed())
+			Expect(installationsctl.AddControllerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr,
+				&config.LandscaperConfiguration{}, "inst-"+testutils.GetNextCounter())).To(Succeed())
 			go func() {
 				Expect(mgr.Start(ctx)).To(Succeed())
 			}()

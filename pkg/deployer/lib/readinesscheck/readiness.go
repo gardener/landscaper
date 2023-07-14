@@ -60,6 +60,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 		objects, err = getObjects()
 		if err != nil {
 			if IsRecoverableError(err) {
+				log.Info("WaitForObjectsReady: failed getObjects: " + err.Error())
 				return false, nil
 			} else {
 				return false, err
@@ -69,6 +70,8 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 		for _, obj := range objects {
 			if err = IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
 				if IsRecoverableError(err) {
+					log.Info(fmt.Sprintf("WaitForObjectsReady: resource %s/%s of type %s is not ready",
+						obj.GetNamespace(), obj.GetName(), obj.GetKind()))
 					return false, nil
 				} else {
 					return false, err

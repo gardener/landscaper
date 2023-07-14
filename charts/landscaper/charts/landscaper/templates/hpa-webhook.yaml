@@ -14,7 +14,7 @@ spec:
     kind: Deployment
     name: {{ include "landscaper.webhooks.fullname" . }}
   minReplicas: 2
-  maxReplicas: 10
+  maxReplicas: {{ .Values.webhooksServer.hpa.maxReplicas }}
   metrics:
     - type: Resource
       resource:

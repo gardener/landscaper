@@ -63,7 +63,7 @@ func (o *options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		NewClient:          lsutils.NewUncachedClient,
+		NewClient:          lsutils.NewUncachedClient(10, 8),
 	}
 
 	data, err := os.ReadFile(o.landscaperKubeconfigPath)

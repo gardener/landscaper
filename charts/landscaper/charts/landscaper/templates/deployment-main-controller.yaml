@@ -1,0 +1,153 @@
+{{/* SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+
+ SPDX-License-Identifier: Apache-2.0
+*/}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "landscaper.main.fullname" . }}
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "landscaper.main.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "landscaper-config" . |  sha256sum }}
+        checksum/registrysecrets: {{ toJson .Values.landscaper.registryConfig |  sha256sum }}
+        {{- if .Values.landscaper.deployersConfig }}
+        checksum/deployerconfig: {{ toYaml .Values.landscaper.deployersConfig |  sha256sum }}
+        {{- end }}
+
+        {{ range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value}}
+        {{- end }}
+      labels:
+        {{- include "landscaper.main.selectorLabels" . | nindent 8 }}
+        landscaper.gardener.cloud/topology: main-controller
+        landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "landscaper.controller.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "landscaper.main.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ include "landscaper-image" . }}"
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          args:
+          {{- if .Values.controller.landscaperKubeconfig }}
+          - "--landscaper-kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          {{- end }}
+          - "--config=/app/ls/config/config.yaml"
+          - "-v={{ .Values.landscaper.verbosity }}"
+          {{- if .Values.landscaper.deployers }}
+          - "--deployers={{  .Values.landscaper.deployers | join "," }}"
+          {{- end }}
+          {{- if .Values.landscaper.deployersConfig }}
+          - "--deployers-config=/app/ls/deployers/deployers-config.yaml"
+          {{- end }}
+          {{- if .Values.landscaper.metrics }}
+          ports:
+          - name: metrics
+            containerPort: {{ .Values.landscaper.metrics.port }}
+          {{- end}}
+          volumeMounts:
+          - name: oci-cache
+            mountPath: /app/ls/oci-cache
+          - name: config
+            mountPath: /app/ls/config
+          {{- if .Values.landscaper.registryConfig.secrets }}
+          - name: registrypullsecrets
+            mountPath: /app/ls/registry/secrets
+          {{- end }}
+          {{- if .Values.landscaper.deployersConfig }}
+          - name: deployers-config
+            mountPath: /app/ls/deployers
+          {{- end }}
+          {{- if .Values.controller.landscaperKubeconfig }}
+          - name: landscaper-cluster-kubeconfig
+            mountPath: /app/ls/landscaper-cluster-kubeconfig
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resourcesMain | nindent 12 }}
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- if .Values.landscaper.k8sClientSettings }}
+            - name: LS_HOST_CLIENT_BURST
+              value: {{ .Values.landscaper.k8sClientSettings.hostClient.burst | quote }}
+            - name: LS_HOST_CLIENT_QPS
+              value: {{ .Values.landscaper.k8sClientSettings.hostClient.qps | quote }}
+            - name: LS_RESOURCE_CLIENT_BURST
+              value: {{ .Values.landscaper.k8sClientSettings.resourceClient.burst | quote }}
+            - name: LS_RECOURCE_CLIENT_QPS
+              value: {{ .Values.landscaper.k8sClientSettings.resourceClient.qps | quote }}
+            {{- end }}
+      volumes:
+      - name: oci-cache
+        emptyDir: {}
+      - name: config
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-config
+      {{- if .Values.landscaper.registryConfig.secrets }}
+      - name: registrypullsecrets
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-registry
+      {{- end }}
+      {{- if .Values.landscaper.deployersConfig }}
+      - name: deployers-config
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-deployers-config
+      {{- end }}
+      {{- if .Values.controller.landscaperKubeconfig }}
+      - name: landscaper-cluster-kubeconfig
+        secret:
+          {{- if .Values.controller.landscaperKubeconfig.kubeconfig }}
+          secretName: {{ include "landscaper.fullname" . }}-controller-cluster-kubeconfig
+          {{- else }}
+          secretName: {{ .Values.controller.landscaperKubeconfig.secretRef }}
+          {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              landscaper.gardener.cloud/topology: main-controller
+              landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              landscaper.gardener.cloud/topology: main-controller
+              landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}

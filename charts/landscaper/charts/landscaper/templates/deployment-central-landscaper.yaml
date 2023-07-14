@@ -19,6 +19,10 @@ spec:
       annotations:
         checksum/config: {{ include "landscaper-config" . |  sha256sum }}
         checksum/registrysecrets: {{ toJson .Values.landscaper.registryConfig |  sha256sum }}
+        {{- if .Values.landscaper.deployersConfig }}
+        checksum/deployerconfig: {{ toYaml .Values.landscaper.deployersConfig |  sha256sum }}
+        {{- end }}
+
         {{ range $key, $value := .Values.podAnnotations }}
         {{ $key }}: {{ $value}}
         {{- end }}
@@ -83,6 +87,18 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: LANDSCAPER_MODE
+              value: "central-landscaper"
+            {{- if .Values.landscaper.k8sClientSettings }}
+            - name: LS_HOST_CLIENT_BURST
+              value: {{ .Values.landscaper.k8sClientSettings.hostClient.burst | quote }}
+            - name: LS_HOST_CLIENT_QPS
+              value: {{ .Values.landscaper.k8sClientSettings.hostClient.qps | quote }}
+            - name: LS_RESOURCE_CLIENT_BURST
+              value: {{ .Values.landscaper.k8sClientSettings.resourceClient.burst | quote }}
+            - name: LS_RECOURCE_CLIENT_QPS
+              value: {{ .Values.landscaper.k8sClientSettings.resourceClient.qps | quote }}
+            {{- end }}
       volumes:
       - name: oci-cache
         emptyDir: {}
