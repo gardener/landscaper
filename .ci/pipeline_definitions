@@ -111,5 +111,3 @@ landscaper:
           - update_release.py
           trait_depends:
           - release
-          depends:
-          - integration_test
