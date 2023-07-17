@@ -70,7 +70,7 @@ type InstallationValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger := iv.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+	logger := iv.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version, lc.KeyResource, fmt.Sprintf("%s/%s", req.Namespace, req.Name))
 	ctx = logging.NewContext(ctx, logger)
 
 	timeBefore := time.Now()
@@ -104,9 +104,12 @@ func (iv *InstallationValidator) handlePrivate(ctx context.Context, req admissio
 	}
 
 	if errs := validation.ValidateInstallation(inst); len(errs) > 0 {
-		return admission.Denied(errs.ToAggregate().Error())
+		errMsg := errs.ToAggregate().Error()
+		logger.Info("Denied request", lc.KeyError, errMsg)
+		return admission.Denied(errMsg)
 	}
 
+	logger.Info("Allowed request")
 	return admission.Allowed("Installation is valid")
 }
 
@@ -117,7 +120,7 @@ type DeployItemValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (div *DeployItemValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger := div.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+	logger := div.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version, lc.KeyResource, fmt.Sprintf("%s/%s", req.Namespace, req.Name))
 	ctx = logging.NewContext(ctx, logger)
 
 	timeBefore := time.Now()
@@ -139,7 +142,9 @@ func (div *DeployItemValidator) handlePrivate(ctx context.Context, req admission
 	}
 
 	if errs := validation.ValidateDeployItem(di); len(errs) > 0 {
-		return admission.Denied(errs.ToAggregate().Error())
+		errMsg := errs.ToAggregate().Error()
+		logger.Info("Denied request", lc.KeyError, errMsg)
+		return admission.Denied(errMsg)
 	}
 
 	// check if the type was updated for update events
@@ -154,6 +159,7 @@ func (div *DeployItemValidator) handlePrivate(ctx context.Context, req admission
 		}
 	}
 
+	logger.Info("Allowed request")
 	return admission.Allowed("DeployItem is valid")
 }
 
@@ -164,7 +170,7 @@ type ExecutionValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (ev *ExecutionValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger := ev.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+	logger := ev.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version, lc.KeyResource, fmt.Sprintf("%s/%s", req.Namespace, req.Name))
 	ctx = logging.NewContext(ctx, logger)
 
 	timeBefore := time.Now()
@@ -186,9 +192,12 @@ func (ev *ExecutionValidator) handlePrivate(ctx context.Context, req admission.R
 	}
 
 	if errs := validation.ValidateExecution(exec); len(errs) > 0 {
-		return admission.Denied(errs.ToAggregate().Error())
+		errMsg := errs.ToAggregate().Error()
+		logger.Info("Denied request", lc.KeyError, errMsg)
+		return admission.Denied(errMsg)
 	}
 
+	logger.Info("Allowed request")
 	return admission.Allowed("Execution is valid")
 }
 
@@ -199,7 +208,7 @@ type TargetValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (tv *TargetValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger := tv.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version)
+	logger := tv.log.WithValues(lc.KeyResourceGroup, req.Kind.Group, lc.KeyResourceKind, req.Kind.Kind, lc.KeyResourceVersion, req.Kind.Version, lc.KeyResource, fmt.Sprintf("%s/%s", req.Namespace, req.Name))
 	ctx = logging.NewContext(ctx, logger)
 
 	timeBefore := time.Now()
@@ -221,8 +230,11 @@ func (tv *TargetValidator) handlePrivate(ctx context.Context, req admission.Requ
 	}
 
 	if errs := validation.ValidateTarget(t); len(errs) > 0 {
-		return admission.Denied(errs.ToAggregate().Error())
+		errMsg := errs.ToAggregate().Error()
+		logger.Info("Denied request", lc.KeyError, errMsg)
+		return admission.Denied(errMsg)
 	}
 
+	logger.Info("Allowed request")
 	return admission.Allowed("Target is valid")
 }
