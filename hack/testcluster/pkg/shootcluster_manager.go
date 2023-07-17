@@ -10,7 +10,6 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"fmt"
-	"math/rand"
 	"os"
 	"path"
 	"sort"
@@ -255,8 +254,7 @@ func (o *ShootClusterManager) checkAndDeleteExistingTestShoots(ctx context.Conte
 }
 
 func (o *ShootClusterManager) generateShootName() string {
-	rand.Seed(time.Now().UnixNano())
-	return namePrefix + prPrefix + o.prID + "-" + strconv.Itoa(rand.Intn(9000)+1000)
+	return namePrefix + prPrefix + o.prID + "-" + strconv.Itoa(rng.Intn(9000)+1000)
 }
 
 func (o *ShootClusterManager) matchesNamePattern(name string) bool {
