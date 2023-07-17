@@ -7,10 +7,10 @@ package pkg
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
