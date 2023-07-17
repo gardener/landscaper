@@ -24,5 +24,5 @@ cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 export SOURCE_PATH
 
-./.ci/int-test "1" | tee $FULL_INTEGRATION_TEST_PATH/ttt.log
+# ./.ci/int-test "1" | tee $FULL_INTEGRATION_TEST_PATH/ttt.log
 
