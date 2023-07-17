@@ -104,13 +104,6 @@ landscaper:
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
-        integration_test:
-          execute:
-          - integration-test
-          trait_depends:
-          - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
-          output_dir: 'integration_test'
         update_release:
           inputs:
             INTEGRATION_TEST_PATH: integration_test_path
