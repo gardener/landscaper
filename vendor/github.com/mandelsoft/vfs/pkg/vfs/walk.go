@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Mandelsoft. All rights reserved.
+ * Copyright 2022 Mandelsoft. All rights reserved.
  *  This file is licensed under the Apache Software License, v. 2 except as noted
  *  otherwise in the LICENSE file
  *
@@ -20,7 +20,6 @@ package vfs
 
 import (
 	"os"
-	fp "path/filepath"
 	"sort"
 
 	"github.com/mandelsoft/filepath/pkg/filepath"
@@ -45,9 +44,12 @@ func readDirNames(fs FileSystem, dirname string) ([]string, error) {
 
 // adapted from https://golang.org/src/path/filepath/path.go
 func walkFS(fs FileSystem, path string, info os.FileInfo, err error, walkFn WalkFunc) error {
-	err = walkFn(path, info, err)
-	if err != nil {
-		return err
+	err1 := walkFn(path, info, err)
+	if err != nil || err1 != nil {
+		if err1 == SkipDir {
+			return nil
+		}
+		return err1
 	}
 
 	if info == nil || !info.IsDir() {
@@ -57,7 +59,7 @@ func walkFS(fs FileSystem, path string, info os.FileInfo, err error, walkFn Walk
 	names, err := readDirNames(fs, path)
 	if err != nil {
 		err := walkFn(path, info, err)
-		if err == fp.SkipDir {
+		if err == SkipDir {
 			return nil
 		}
 		return err

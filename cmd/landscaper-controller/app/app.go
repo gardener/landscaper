@@ -83,8 +83,9 @@ func (o *Options) run(ctx context.Context) error {
 		NewClient:          lsutils.NewUncachedClient,
 	}
 
+	//TODO: investigate whether this is used with an uncached client
 	if o.Config.Controllers.SyncPeriod != nil {
-		opts.SyncPeriod = &o.Config.Controllers.SyncPeriod.Duration
+		opts.Cache.SyncPeriod = &o.Config.Controllers.SyncPeriod.Duration
 	}
 
 	if o.Config.Metrics != nil {

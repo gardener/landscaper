@@ -57,7 +57,7 @@ func CreateSecretForServiceAccount(ctx context.Context, kubeClient client.Client
 }
 
 func WaitForServiceAccountToken(ctx context.Context, kubeClient client.Client, secretKey client.ObjectKey) error {
-	return wait.PollImmediate(10*time.Second, 5*time.Minute, func() (done bool, err error) {
+	return wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		secret := &corev1.Secret{}
 		if err := kubeClient.Get(ctx, secretKey, secret); err != nil {
 			return false, nil

@@ -17,27 +17,23 @@ func func_tempfile(arguments []interface{}, binding Binding) (interface{}, Evalu
 		return info.Error("temp_file requires exactly one or two arguments")
 	}
 
-	permissions := int64(0644)
-	binary := false
-	if len(arguments) == 2 {
-		switch v := arguments[1].(type) {
-		case string:
-			permissions, binary, err = getWriteOptions(v, permissions)
-		case int64:
-			permissions = v
-		default:
-			return info.Error("permissions must be given as int or int string")
-		}
+	wopt := WriteOpts{
+		Permissions: 0644,
 	}
-
-	_, _, data, _ := getData("", binary, 0, arguments[0], true)
+	if len(arguments) == 2 {
+		wopt, err = getWriteOptions(arguments[1], wopt, false)
+	}
+	if err != nil {
+		return info.Error("cannot create temporary file: %s", err)
+	}
+	_, _, data, _ := getData("", wopt, 0, arguments[0], true)
 
 	name, err := binding.GetTempName(data)
 	if err != nil {
 		return info.Error("cannot create temporary file: %s", err)
 	}
 
-	err = binding.GetState().FileSystem().WriteFile(name, []byte(data), os.FileMode(permissions))
+	err = binding.GetState().FileSystem().WriteFile(name, []byte(data), os.FileMode(wopt.Permissions))
 	if err != nil {
 		return info.Error("cannot write file: %s", err)
 	}

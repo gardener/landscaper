@@ -16,7 +16,7 @@ func (e ValidOrExpr) Evaluate(binding Binding, locally bool) (interface{}, Evalu
 		if reflect.DeepEqual(a, e.A) {
 			return nil, infoa, false
 		}
-		if isExpression(a) {
+		if IsExpression(a) {
 			return e, infoa, true
 		}
 		if a != nil {

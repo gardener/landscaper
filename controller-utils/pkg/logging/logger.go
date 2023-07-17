@@ -16,7 +16,8 @@ import (
 )
 
 type Logger struct {
-	internal logr.Logger
+	internal    logr.Logger
+	initialized bool
 }
 
 type LogLevel int
@@ -87,7 +88,7 @@ func ParseLogFormat(raw string) (LogFormat, error) {
 // Enabled tests whether logging at the provided level is enabled.
 // This deviates from the logr Enabled() function, which doesn't take an argument.
 func (l Logger) Enabled(lvl LogLevel) bool {
-	return l.internal.GetSink().Enabled(levelToVerbosity(lvl))
+	return l.internal.GetSink() != nil && l.internal.GetSink().Enabled(levelToVerbosity(lvl))
 }
 
 // Info logs a non-error message with the given key/value pairs as context.
@@ -156,7 +157,7 @@ func Discard() Logger {
 
 // Wrap constructs a new Logger, using the provided logr.Logger internally.
 func Wrap(log logr.Logger) Logger {
-	return Logger{internal: log}
+	return Logger{internal: log, initialized: true}
 }
 
 // FromContextOrNew tries to fetch a logger from the context.
@@ -223,7 +224,7 @@ func (l Logger) Log(lvl LogLevel, msg string, keysAndValues ...interface{}) {
 // IsInitialized returns true if the logger is ready to be used and
 // false if it is an 'empty' logger (e.g. created by Logger{}).
 func (l Logger) IsInitialized() bool {
-	return l.internal.GetSink() != nil
+	return l.initialized
 }
 
 // Reconciles is meant to be used for the logger initialization for controllers.

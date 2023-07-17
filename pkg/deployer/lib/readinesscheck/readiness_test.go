@@ -127,7 +127,7 @@ var _ = Describe("WaitForObjectsReady", func() {
 		fakeClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("network error"))
 		fakeClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-		err := WaitForObjectsReady(ctx, 10*time.Second, fakeClient,
+		err := WaitForObjectsReady(ctx, 20*time.Second, fakeClient,
 			getObjectsFunc,
 			checkObjectsFunc,
 			&MockInterruptionChecker{})

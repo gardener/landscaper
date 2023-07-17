@@ -15,6 +15,7 @@ const (
 	INJECT    = "&inject"
 	DEFAULT   = "&default"
 	STATE     = "&state"
+	DYNAMIC   = "&dynamic" // POC
 )
 
 type MarkerExpr struct {
@@ -22,11 +23,34 @@ type MarkerExpr struct {
 	expr Expression
 }
 
+func NewTemplateMarker(expr Expression) MarkerExpr {
+	return MarkerExpr{list: []string{TEMPLATE}, expr: expr}
+}
+
+func (e MarkerExpr) Add(marker string) MarkerExpr {
+	for _, v := range e.list {
+		if v == marker {
+			return e
+		}
+	}
+	e.list = append(e.list, marker)
+	return e
+}
+
 func (e MarkerExpr) String() string {
 	if e.expr != nil {
 		return fmt.Sprintf("%s (%s)", strings.Join(e.list, " "), e.expr)
 	}
 	return fmt.Sprintf("%s", strings.Join(e.list, " "))
+}
+
+func (e MarkerExpr) GetTag() string {
+	for _, m := range e.list {
+		if strings.HasPrefix(m, "&tag:") {
+			return m[5:]
+		}
+	}
+	return ""
 }
 
 func (e MarkerExpr) GetFlags() yaml.NodeFlags {
@@ -43,6 +67,8 @@ func (e MarkerExpr) GetFlags() yaml.NodeFlags {
 			flags.SetDefault()
 		case STATE:
 			flags.SetState()
+		case DYNAMIC:
+			flags.SetDynamic()
 		}
 	}
 	return flags
@@ -93,11 +119,14 @@ func (e MarkerExpr) TemplateExpression(orig yaml.Node) yaml.Node {
 			debug.Debug(" omitting marker %s", m)
 		}
 	}
-	if len(nlist) > 0 {
-		return yaml.SubstituteNode(fmt.Sprintf("(( %s ))", MarkerExpr{nlist, e.expr}), orig)
+	m := MarkerExpr{nlist, e.expr}
+
+	// TODO: remove case
+	if false && len(nlist) > 0 {
+		return yaml.SubstituteNode(fmt.Sprintf("(( %s ))", m), orig)
 	}
 	if e.expr != nil {
-		return yaml.SubstituteNode(fmt.Sprintf("(( %s ))", e.expr), orig)
+		return yaml.AddFlags(yaml.SubstituteNode(fmt.Sprintf("(( %s ))", e.expr), orig), m.GetFlags())
 	}
 	return nil
 }

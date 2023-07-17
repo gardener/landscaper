@@ -48,10 +48,11 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 	)
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
-	_ = wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		log.Debug("Wait until resources are ready", "try", try)
 		try++
 
+		var err error
 		if err = interruptionChecker.Check(ctx); err != nil {
 			return false, err
 		}

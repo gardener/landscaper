@@ -20,7 +20,18 @@ const conflictModifierFormatString = "%s_conflict(%d)"
 // and replace them to avoid conflicts.
 type KeyConflictPreventionLayer struct {
 	logr.LogSink
-	keys sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
+	keys sets.Set[string]
+}
+
+func (kcpl KeyConflictPreventionLayer) Init(info logr.RuntimeInfo) {
+	if kcpl.LogSink == nil {
+		return
+	}
+	kcpl.LogSink.Init(info)
+}
+
+func (kcpl KeyConflictPreventionLayer) Enabled(level int) bool {
+	return kcpl.LogSink != nil && kcpl.LogSink.Enabled(level)
 }
 
 // PreventKeyConflicts takes a logr.Logger and wraps a KeyConflictPreventionLayer around its LogSink.
@@ -29,29 +40,38 @@ type KeyConflictPreventionLayer struct {
 func PreventKeyConflicts(log logr.Logger) logr.Logger {
 	return logr.New(KeyConflictPreventionLayer{
 		LogSink: log.GetSink(),
-		keys:    sets.NewString(),
+		keys:    sets.New[string](),
 	})
 }
 func (kcpl KeyConflictPreventionLayer) wrapKeyConflictLayer(sink logr.LogSink) logr.LogSink {
 	return KeyConflictPreventionLayer{
 		LogSink: sink,
-		keys:    sets.NewString(kcpl.keys.UnsortedList()...),
+		keys:    sets.New[string](kcpl.keys.UnsortedList()...),
 	}
 }
 
 func (kcpl KeyConflictPreventionLayer) Info(level int, msg string, keysAndValues ...interface{}) {
+	if kcpl.LogSink == nil {
+		return
+	}
 	kcpl.WithValues(keysAndValues...).(KeyConflictPreventionLayer).LogSink.Info(level, msg)
 }
 
 func (kcpl KeyConflictPreventionLayer) Error(err error, msg string, keysAndValues ...interface{}) {
+	if kcpl.LogSink == nil {
+		return
+	}
 	kcpl.WithValues(keysAndValues...).(KeyConflictPreventionLayer).LogSink.Error(err, msg)
 }
 
 // WithValues works as usual, but it will replace keys which already exist with a suffixed version indicating the conflict.
 func (kcpl KeyConflictPreventionLayer) WithValues(keysAndValues ...interface{}) logr.LogSink {
+	if kcpl.LogSink == nil {
+		return nil
+	}
 	var newKeysAndValues []interface{} // lazy copying - if the slice needs to be changed, we have to copy it
 	finalKeysAndValues := keysAndValues
-	keyset := sets.NewString(kcpl.keys.UnsortedList()...)
+	keyset := sets.New[string](kcpl.keys.UnsortedList()...)
 	for i := 0; i < len(keysAndValues); i += 2 {
 		key, isString := keysAndValues[i].(string)
 		if !isString {
@@ -82,5 +102,8 @@ func (kcpl KeyConflictPreventionLayer) WithValues(keysAndValues ...interface{}) 
 }
 
 func (kcpl KeyConflictPreventionLayer) WithName(name string) logr.LogSink {
+	if kcpl.LogSink == nil {
+		return nil
+	}
 	return kcpl.wrapKeyConflictLayer(kcpl.LogSink.WithName(name))
 }
