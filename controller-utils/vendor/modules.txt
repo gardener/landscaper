@@ -21,7 +21,7 @@ github.com/fsnotify/fsnotify
 ## explicit; go 1.18
 github.com/gardener/component-spec/bindings-go/apis/v2
 github.com/gardener/component-spec/bindings-go/utils/selector
-# github.com/gardener/landscaper/apis v0.70.0 => ../apis
+# github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000 => ../apis
 ## explicit; go 1.20
 github.com/gardener/landscaper/apis/config
 github.com/gardener/landscaper/apis/core
