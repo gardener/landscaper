@@ -6,10 +6,11 @@ package envtest
 
 import (
 	"bytes"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"html/template"
 	"os"
 	"path/filepath"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

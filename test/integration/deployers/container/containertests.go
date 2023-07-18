@@ -309,6 +309,7 @@ func ContainerTests(f *framework.Framework) {
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
 			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
+			rt.Target.TypeMeta = target.TypeMeta // workaround
 			Expect(rt.Target).To(Equal(target))
 			var actualTargetContentAsObject interface{}
 			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
@@ -397,6 +398,7 @@ func ContainerTests(f *framework.Framework) {
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
 			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
+			rt.Target.TypeMeta = target.TypeMeta // workaround
 			Expect(rt.Target).To(Equal(target))
 			var actualTargetContentAsObject interface{}
 			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
