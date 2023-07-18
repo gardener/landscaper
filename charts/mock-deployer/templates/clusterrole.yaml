@@ -50,4 +50,6 @@ rules:
     - "pods"
   verbs:
     - get
+    - watch
+    - list
 {{ end }}
