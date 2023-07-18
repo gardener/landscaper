@@ -193,7 +193,7 @@ func ContainerTests(f *framework.Framework) {
 
 		utils.ExpectNoError(state.Client.Delete(ctx, inst))
 
-		err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
+		err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
 			if err1 := state.Client.Get(ctx, client.ObjectKeyFromObject(inst), inst); err1 != nil {
 				if k8serrors.IsNotFound(err1) {
 					return true, nil

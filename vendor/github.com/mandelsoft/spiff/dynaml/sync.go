@@ -132,7 +132,7 @@ func (e SyncExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluati
 		if !ok {
 			return info.AnnotateError(infoc, "value expression failed)")
 		}
-		if IsExpression(value) {
+		if isExpression(value) {
 			return e, infov, true
 		}
 

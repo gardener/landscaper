@@ -64,7 +64,7 @@ func (e LambdaExpr) Evaluate(binding Binding, locally bool) (interface{}, Evalua
 				info.Issue.Sequence = true
 				return nil, info, ok
 			}
-			if IsExpression(value) {
+			if isExpression(value) {
 				debug.Debug("delay LAMBDA expression for default argument %d", i)
 				return nil, info, ok
 			}
@@ -126,7 +126,7 @@ func (e LambdaRefExpr) Evaluate(binding Binding, locally bool) (interface{}, Eva
 			return info.Error("'%s' is no lambda expression", v)
 		}
 		value, info, ok := lexpr.Evaluate(binding, locally)
-		if !ok || IsExpression(value) {
+		if !ok || isExpression(value) {
 			return value, info, ok
 		}
 		lambda = value.(LambdaValue)
@@ -175,13 +175,13 @@ func (e LambdaValue) EquivalentTo(val interface{}) bool {
 	return ok && reflect.DeepEqual(e.lambda, o.lambda)
 }
 
-func Short(val interface{}, all bool) string {
+func short(val interface{}, all bool) string {
 	switch v := val.(type) {
 	case []yaml.Node:
 		s := "["
 		sep := ""
 		for _, e := range v {
-			s = fmt.Sprintf("%s%s%s", s, sep, Short(e.Value(), all))
+			s = fmt.Sprintf("%s%s%s", s, sep, short(e.Value(), all))
 			sep = ", "
 		}
 		return s + "]"
@@ -190,7 +190,7 @@ func Short(val interface{}, all bool) string {
 		sep := ""
 		for _, k := range getSortedKeys(v) {
 			if all || k != "_" {
-				s = fmt.Sprintf("%s%s%s: %s", s, sep, k, Short(v[k].Value(), all))
+				s = fmt.Sprintf("%s%s%s: %s", s, sep, k, short(v[k].Value(), all))
 				sep = ", "
 			}
 		}
@@ -203,9 +203,9 @@ func Short(val interface{}, all bool) string {
 func (e LambdaValue) String() string {
 	binding := ""
 	if len(e.static) > 0 {
-		binding = Short(e.static, false)
+		binding = short(e.static, false)
 	}
-	return fmt.Sprintf("%s%s", Shorten(binding), e.lambda)
+	return fmt.Sprintf("%s%s", shorten(binding), e.lambda)
 }
 
 func (e LambdaValue) NumOptional() int {
@@ -220,7 +220,7 @@ func (e LambdaValue) NumOptional() int {
 	return 0
 }
 
-func Shorten(s string) string {
+func shorten(s string) string {
 	if len(s) > 40 {
 		s = s[:17] + " ... " + s[len(s)-17:]
 	}
@@ -362,12 +362,12 @@ func (e LambdaValue) Evaluate(inline bool, curry, autocurry bool, nargs map[stri
 	if !ok {
 		debug.Debug("failed LAMBDA CALL: %s", info.Issue.Issue)
 		nested := info.Issue
-		info.SetError("evaluation of lambda expression failed: %s: %s", e, Shorten(Short(inp, false)))
+		info.SetError("evaluation of lambda expression failed: %s: %s", e, shorten(short(inp, false)))
 		info.Issue.Nested = append(info.Issue.Nested, nested)
 		info.Issue.Sequence = true
 		return false, nil, info, ok
 	}
-	if IsExpression(value) {
+	if isExpression(value) {
 		debug.Debug("delay LAMBDA CALL")
 		return false, nil, info, ok
 	}

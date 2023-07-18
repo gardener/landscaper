@@ -60,19 +60,17 @@ func NewLandscaperWebhooksCommand(ctx context.Context) *cobra.Command {
 func (o *options) run(ctx context.Context) error {
 	o.log.Info("Starting Landscaper Webhooks Server", lc.KeyVersion, version.Get().String())
 
-	opts := ctrlwebhook.Options{}
-	opts.Port = o.port
-	opts.WebhookMux = http.NewServeMux()
-	opts.WebhookMux.Handle("/healthz", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	webhookServer := &ctrlwebhook.Server{
+		Port:       o.port,
+		WebhookMux: http.NewServeMux(),
+	}
+	webhookServer.WebhookMux.Handle("/healthz", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		writer.Header().Set("X-Content-Type-Options", "nosniff")
 		if _, err := writer.Write([]byte("Ok")); err != nil {
 			o.log.Error(err, "unable to send health response")
 		}
 	}))
-	opts.CertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
-	webhookServer := ctrlwebhook.NewServer(opts)
-
 	ctrl.SetLogger(o.log.Logr())
 
 	restConfig := ctrl.GetConfigOrDie()
@@ -86,7 +84,7 @@ func (o *options) run(ctx context.Context) error {
 	}
 
 	// create ValidatingWebhookConfiguration and register webhooks, if validation is enabled, delete it otherwise
-	if err := registerWebhooks(ctx, webhookServer, kubeClient, scheme, opts.CertDir, o); err != nil {
+	if err := registerWebhooks(ctx, webhookServer, kubeClient, scheme, o); err != nil {
 		return fmt.Errorf("unable to register validation webhook: %w", err)
 	}
 
@@ -97,10 +95,9 @@ func (o *options) run(ctx context.Context) error {
 }
 
 func registerWebhooks(ctx context.Context,
-	webhookServer ctrlwebhook.Server,
+	webhookServer *ctrlwebhook.Server,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
-	certDir string,
 	o *options) error {
 
 	webhookLogger := logging.Wrap(ctrl.Log.WithName("webhook").WithName("validation"))
@@ -137,6 +134,7 @@ func registerWebhooks(ctx context.Context,
 	}
 
 	// generate certificates
+	webhookServer.CertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 	var err error
 	var dnsNames []string
 	if len(wo.WebhookURL) != 0 {
@@ -152,7 +150,7 @@ func registerWebhooks(ctx context.Context,
 		secretNamespace = o.webhook.webhookServiceNamespace
 	}
 
-	wo.CABundle, err = webhookcert.GenerateCertificates(ctx, kubeClient, certDir,
+	wo.CABundle, err = webhookcert.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir,
 		secretNamespace, "landscaper-webhook", certSecretName, dnsNames)
 	if err != nil {
 		return fmt.Errorf("unable to generate webhook certificates: %w", err)

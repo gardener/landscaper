@@ -1,9 +1,8 @@
 package dynaml
 
 import (
-	"strings"
-
 	"github.com/mandelsoft/spiff/yaml"
+	"strings"
 )
 
 func (e CallExpr) stub(binding Binding) (interface{}, EvaluationInfo, bool) {
@@ -38,10 +37,7 @@ func (e CallExpr) stub(binding Binding) (interface{}, EvaluationInfo, bool) {
 						arg = append(arg, str)
 					}
 				default:
-					if !info.Undefined {
-						return info.Error("stub() requires a string or reference argument")
-					}
-					arg = binding.Path()
+					return info.Error("stub() requires a string or reference argument")
 				}
 			}
 		} else {

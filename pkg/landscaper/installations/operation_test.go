@@ -34,7 +34,7 @@ var _ = Describe("Operation", func() {
 	)
 
 	BeforeEach(func() {
-		kubeClient = fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithStatusSubresource(&lsv1alpha1.Installation{}).Build()
+		kubeClient = fake.NewClientBuilder().WithScheme(api.LandscaperScheme).Build()
 		commonOp := operation.NewOperation(kubeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
 		instImportsAndBlueprint := installations.NewInstallationImportsAndBlueprint(&lsv1alpha1.Installation{},
 			&blueprints.Blueprint{Info: &lsv1alpha1.Blueprint{}})
@@ -233,6 +233,7 @@ var _ = Describe("Operation", func() {
 			}
 
 			testutils.ExpectNoError(kubeClient.Create(ctx, op.Inst.GetInstallation()))
+
 			testutils.ExpectNoError(op.CreateOrUpdateExports(ctx, nil, targetExtensions))
 
 			targetList := &lsv1alpha1.TargetList{}

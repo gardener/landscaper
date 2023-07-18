@@ -29,13 +29,6 @@ type Interface interface {
 	Match(obj map[string]string) (bool, error)
 }
 
-// SelectorFunc describes a function that can be used as selector interface.
-type SelectorFunc func(obj map[string]string) (bool, error)
-
-func (s SelectorFunc) Match(obj map[string]string) (bool, error) {
-	return s(obj)
-}
-
 // MatchSelectors checks whether all selectors matches the given obj.
 func MatchSelectors(obj map[string]string, selectors ...Interface) (bool, error) {
 	for _, sel := range selectors {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -16,8 +17,6 @@ import (
 )
 
 func func_exec(cached bool, arguments []interface{}, binding Binding) (interface{}, EvaluationInfo, bool) {
-	var cache ExecCache
-
 	info := DefaultInfo()
 
 	if len(arguments) < 1 {
@@ -26,11 +25,7 @@ func func_exec(cached bool, arguments []interface{}, binding Binding) (interface
 	if !binding.GetState().OSAccessAllowed() {
 		return info.DenyOSOperation("exec")
 	}
-	if cached {
-		cache = binding.GetState().GetExecCache()
-	}
 	args := []string{}
-	wopt := WriteOpts{}
 	debug.Debug("exec: found %d arguments for call\n", len(arguments))
 	for i, arg := range arguments {
 		list, ok := arg.([]yaml.Node)
@@ -39,9 +34,9 @@ func func_exec(cached bool, arguments []interface{}, binding Binding) (interface
 			if len(arguments) == 1 && len(list) > 0 {
 				// handle single list argument to gain command and argument
 				for j, arg := range list {
-					v, _, err := getArg(j, arg.Value(), wopt, j != 0)
-					if err != nil {
-						return info.Error("invalid command argument: %s", err)
+					v, _, ok := getArg(j, arg.Value(), j != 0)
+					if !ok {
+						return info.Error("command argument must be string")
 					}
 					args = append(args, v)
 				}
@@ -49,14 +44,14 @@ func func_exec(cached bool, arguments []interface{}, binding Binding) (interface
 				return info.Error("list not allowed for command argument")
 			}
 		} else {
-			v, _, err := getArg(i, arg, wopt, i != 0)
-			if err != nil {
-				return info.Error("invalid command argument: %s", err)
+			v, _, ok := getArg(i, arg, i != 0)
+			if !ok {
+				return info.Error("command argument must be string")
 			}
 			args = append(args, v)
 		}
 	}
-	result, err := cachedExecute(cache, nil, args)
+	result, err := cachedExecute(cached, nil, args)
 	if err != nil {
 		return info.Error("execution '%s' failed", args[0])
 	}
@@ -88,62 +83,44 @@ func convertOutput(data []byte) (interface{}, EvaluationInfo, bool) {
 	}
 }
 
-func getArg(key interface{}, value interface{}, wopt WriteOpts, allowyaml bool) (string, bool, error) {
+func getArg(key interface{}, value interface{}, yaml bool) (string, bool, bool) {
 	debug.Debug("arg %v: %+v\n", key, value)
 	switch v := value.(type) {
 	case string:
-		return v, true, nil
+		return v, true, true
 	case int64:
-		return strconv.FormatInt(v, 10), false, nil
-	case float64:
-		return strconv.FormatFloat(v, 'e', 64, 64), false, nil
+		return strconv.FormatInt(v, 10), false, true
 	case bool:
-		return strconv.FormatBool(v), false, nil
+		return strconv.FormatBool(v), false, true
 	default:
-		if !allowyaml || value == nil {
-			return "", false, fmt.Errorf("yaml or empty data not supported")
-		}
-		if wopt.Multi {
-			if list, ok := value.([]yaml.Node); ok {
-				result := ""
-				for i, d := range list {
-					yaml, err := candiedyaml.Marshal(d)
-					if err != nil {
-						return "", false, fmt.Errorf("error marshalling entry %d: %s", i, err)
-					}
-					result = result + "---\n" + string(yaml)
-				}
-				return result, false, nil
-			} else {
-				return "", false, fmt.Errorf("multi document mode requires a list")
-			}
+		if !yaml || value == nil {
+			return "", false, false
 		}
 		yaml, err := candiedyaml.Marshal(NewNode(value, nil))
 		if err != nil {
-			return "", false, fmt.Errorf("error marshalling manifest: %s", err)
+			log.Fatalln("error marshalling manifest:", err)
 		}
-		return "---\n" + string(yaml), false, nil
+		return "---\n" + string(yaml), false, true
 	}
 }
+
+var cache = make(map[string][]byte)
 
 type Bytes interface {
 	Bytes() []byte
 }
 
-func cachedExecute(cache ExecCache, content *string, args []string) ([]byte, error) {
+func cachedExecute(cached bool, content *string, args []string) ([]byte, error) {
 	h := md5.New()
 	if content != nil {
 		h.Write([]byte(*content))
 	}
-	args[0] = FilePath(args[0])
 	for _, arg := range args {
 		h.Write([]byte(arg))
 	}
 	hash := fmt.Sprintf("%x", h.Sum(nil))
-	if cache != nil {
-		cache.Lock()
-		defer cache.Unlock()
-		result := cache.Get(hash)
+	if cached {
+		result := cache[hash]
 		if result != nil {
 			debug.Debug("exec: reusing cache %s for %v\n", hash, args)
 			return result, nil
@@ -160,9 +137,7 @@ func cachedExecute(cache ExecCache, content *string, args []string) ([]byte, err
 		fmt.Fprintf(os.Stderr, "exec: calling %v\n", args)
 		fmt.Fprintf(os.Stderr, "  error: %v\n", stderr)
 	}
-	if cache != nil {
-		cache.Set(hash, result)
-	}
+	cache[hash] = result
 	return result, err
 }
 

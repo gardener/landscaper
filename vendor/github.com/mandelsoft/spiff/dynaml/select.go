@@ -14,25 +14,23 @@ type selectToListContext struct {
 
 var SelectToListContext = &selectToListContext{defaultContext{brackets: "[]", keyword: "select", list: true}}
 
-func (c *selectToListContext) CreateMappingAggregation(source interface{}) MappingAggregation {
-	return &selectToList{MapperForSource(source), []yaml.Node{}}
+func (c *selectToListContext) CreateMappingAggregation() MappingAggregation {
+	return &selectToList{[]yaml.Node{}}
 }
 
 type selectToList struct {
-	mapper Mapper
 	result []yaml.Node
 }
 
-func (m *selectToList) DoMapping(inline bool, value interface{}, e LambdaValue, binding Binding) (interface{}, EvaluationInfo, bool) {
-	return m.mapper(inline, value, e, binding, m)
+func newSelectToList() MappingAggregation {
+	return &mapToList{[]yaml.Node{}}
 }
 
-func (m *selectToList) Add(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) error {
+func (m *selectToList) Map(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) {
 	if info.Undefined || value == nil || !toBool(value) {
-		return nil
+		return
 	}
 	m.result = append(m.result, n)
-	return nil
 }
 
 func (m *selectToList) Result() interface{} {
@@ -49,25 +47,19 @@ type selectToMapContext struct {
 
 var SelectToMapContext = &selectToMapContext{defaultContext{brackets: "{}", keyword: "select", list: false}}
 
-func (c *selectToMapContext) CreateMappingAggregation(source interface{}) MappingAggregation {
-	return &selectToMap{MapperForSource(source), map[string]yaml.Node{}}
+func (c *selectToMapContext) CreateMappingAggregation() MappingAggregation {
+	return &selectToMap{map[string]yaml.Node{}}
 }
 
 type selectToMap struct {
-	mapper Mapper
 	result map[string]yaml.Node
 }
 
-func (m *selectToMap) DoMapping(inline bool, value interface{}, e LambdaValue, binding Binding) (interface{}, EvaluationInfo, bool) {
-	return m.mapper(inline, value, e, binding, m)
-}
-
-func (m *selectToMap) Add(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) error {
+func (m *selectToMap) Map(key interface{}, value interface{}, n yaml.Node, info EvaluationInfo) {
 	if info.Undefined || value == nil || !toBool(value) {
-		return nil
+		return
 	}
 	m.result[key.(string)] = n
-	return nil
 }
 
 func (m *selectToMap) Result() interface{} {

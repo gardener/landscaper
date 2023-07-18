@@ -14,7 +14,9 @@ import (
 
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-var rng = rand.New(rand.NewSource(time.Now().Unix()))
+func init() {
+	rand.Seed(time.Now().Unix())
+}
 
 // RandString creates a random string with n characters.
 func RandString(n int) string {

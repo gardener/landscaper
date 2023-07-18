@@ -18,10 +18,10 @@ func (e SliceExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluat
 	if !ok {
 		return nil, info, false
 	}
-	if !isLocallyResolvedValue(root, binding) {
+	if !isLocallyResolvedValue(root) {
 		return e, info, true
 	}
-	if !locally && !isResolvedValue(root, binding) {
+	if !locally && !isResolvedValue(root) {
 		return e, info, true
 	}
 

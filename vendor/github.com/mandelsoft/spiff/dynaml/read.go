@@ -152,7 +152,7 @@ func asTemplate(n yaml.Node, binding Binding) TemplateValue {
 					e, ok = m["<<"]
 				}
 				if ok {
-					s := yaml.EmbeddedDynaml(e, binding.GetState().InterpolationEnabled())
+					s := yaml.EmbeddedDynaml(e)
 					if s != nil && templ_pattern.MatchString(*s) {
 						found = true
 						break

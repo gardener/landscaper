@@ -29,43 +29,26 @@ func (e SubtractionExpr) Evaluate(binding Binding, locally bool) (interface{}, E
 
 	str, ok := a.(string)
 	if ok {
-		var cidr *net.IPNet
-		var err error
 		ip := net.ParseIP(str)
-		if ip == nil {
-			ip, cidr, err = net.ParseCIDR(str)
-			if err != nil {
-				return info.Error("first argument for substraction must be IP address, CIDR or number")
+		if ip != nil {
+			bint, bok := b.(int64)
+			if bok {
+				return IPAdd(ip, -bint).String(), info, true
 			}
-		}
-		bint, bok := b.(int64)
-		if bok {
-			ip = IPAdd(ip, -bint)
-			if cidr != nil {
-				if !cidr.Contains(ip) {
-					return info.Error("resulting ip address not in CIDR range")
+			bstr, ok := b.(string)
+			if ok {
+				ipb := net.ParseIP(bstr)
+				if ip != nil {
+					if len(ip) != len(ipb) {
+						return info.Error("IP type mismatch")
+					}
+					return DiffIP(ip, ipb), info, true
 				}
-				cidr.IP = ip
-				return cidr.String(), info, true
+				return info.Error("second argument of IP address subtraction must be IP address or integer")
 			}
-			return ip.String(), info, true
+			return info.Error("second argument of IP address subtraction must be IP address or integer")
 		}
-		bstr, ok := b.(string)
-		if ok {
-			ipb := net.ParseIP(bstr)
-			if ipb == nil {
-				ip, _, err := net.ParseCIDR(bstr)
-				if err != nil {
-					return info.Error("second argument for substraction must be IP address, CIDR or number")
-				}
-				ipb = ip
-			}
-			if len(ip) != len(ipb) {
-				return info.Error("IP type mismatch (%d != %d)", len(ip), len(ipb))
-			}
-			return DiffIP(ip, ipb), info, true
-		}
-		return info.Error("second argument of IP address subtraction must be IP address or integer")
+		return info.Error("string argument for MINUS must be an IP address")
 	}
 
 	a, b, err := NumberOperands(a, b)

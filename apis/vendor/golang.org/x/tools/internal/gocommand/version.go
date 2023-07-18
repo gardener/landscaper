@@ -23,11 +23,21 @@ import (
 func GoVersion(ctx context.Context, inv Invocation, r *Runner) (int, error) {
 	inv.Verb = "list"
 	inv.Args = []string{"-e", "-f", `{{context.ReleaseTags}}`, `--`, `unsafe`}
-	inv.BuildFlags = nil // This is not a build command.
-	inv.ModFlag = ""
+	inv.Env = append(append([]string{}, inv.Env...), "GO111MODULE=off")
+	// Unset any unneeded flags, and remove them from BuildFlags, if they're
+	// present.
 	inv.ModFile = ""
-	inv.Env = append(inv.Env[:len(inv.Env):len(inv.Env)], "GO111MODULE=off")
-
+	inv.ModFlag = ""
+	var buildFlags []string
+	for _, flag := range inv.BuildFlags {
+		// Flags can be prefixed by one or two dashes.
+		f := strings.TrimPrefix(strings.TrimPrefix(flag, "-"), "-")
+		if strings.HasPrefix(f, "mod=") || strings.HasPrefix(f, "modfile=") {
+			continue
+		}
+		buildFlags = append(buildFlags, flag)
+	}
+	inv.BuildFlags = buildFlags
 	stdoutBytes, err := r.Run(ctx, inv)
 	if err != nil {
 		return 0, err
@@ -48,24 +58,22 @@ func GoVersion(ctx context.Context, inv Invocation, r *Runner) (int, error) {
 	return 0, fmt.Errorf("no parseable ReleaseTags in %v", tags)
 }
 
-// GoVersionOutput returns the complete output of the go version command.
-func GoVersionOutput(ctx context.Context, inv Invocation, r *Runner) (string, error) {
+// GoVersionString reports the go version string as shown in `go version` command output.
+// When `go version` outputs in non-standard form, this returns an empty string.
+func GoVersionString(ctx context.Context, inv Invocation, r *Runner) (string, error) {
 	inv.Verb = "version"
 	goVersion, err := r.Run(ctx, inv)
 	if err != nil {
 		return "", err
 	}
-	return goVersion.String(), nil
+	return parseGoVersionOutput(goVersion.Bytes()), nil
 }
 
-// ParseGoVersionOutput extracts the Go version string
-// from the output of the "go version" command.
-// Given an unrecognized form, it returns an empty string.
-func ParseGoVersionOutput(data string) string {
+func parseGoVersionOutput(data []byte) string {
 	re := regexp.MustCompile(`^go version (go\S+|devel \S+)`)
-	m := re.FindStringSubmatch(data)
+	m := re.FindSubmatch(data)
 	if len(m) != 2 {
 		return "" // unrecognized version
 	}
-	return m[1]
+	return string(m[1])
 }

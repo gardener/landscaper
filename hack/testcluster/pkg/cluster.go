@@ -7,10 +7,10 @@ package pkg
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -184,7 +184,7 @@ func CreateCluster(ctx context.Context, logger utils.Logger, args CreateClusterA
 		}
 	}()
 
-	err = wait.PollUntilContextTimeout(ctx, 10*time.Second, args.Timeout, true, func(ctx context.Context) (done bool, err error) {
+	err = wait.PollImmediate(10*time.Second, args.Timeout, func() (done bool, err error) {
 		updatedPod := &corev1.Pod{}
 		if err := kubeClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, updatedPod); err != nil {
 			return false, err
@@ -262,7 +262,7 @@ func getKubeconfigFromCluster(ctx context.Context, logger utils.Logger, restConf
 		kubeconfigBytes []byte
 		err             error
 	)
-	pollErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+	pollErr := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) {
 		kubeconfigBytes, err = executeCommandOnPod(ctx, logger, restConfig, pod.Name, pod.Namespace, "cluster", "cat /kubeconfig.yaml")
 		if err != nil {
 			return false, nil
@@ -306,7 +306,7 @@ func DeleteCluster(ctx context.Context,
 // cleanupPod deletes the cluster that is running in the given pod.
 func cleanupPod(ctx context.Context, logger utils.Logger, componentName string, kubeClient client.Client, pod *corev1.Pod, timeout time.Duration) error {
 	logger.Logfln("Cleanup %s in pod %q", componentName, pod.GetName())
-	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 1*time.Minute, true, func(ctx context.Context) (done bool, err error) {
+	err := wait.PollImmediate(10*time.Second, 1*time.Minute, func() (done bool, err error) {
 		if err := kubeClient.Delete(ctx, pod); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
@@ -319,7 +319,7 @@ func cleanupPod(ctx context.Context, logger utils.Logger, componentName string, 
 	if err != nil {
 		return fmt.Errorf("unable to delete %s in pod %q", componentName, pod.GetName())
 	}
-	err = wait.PollUntilContextTimeout(ctx, 10*time.Second, timeout, true, func(ctx context.Context) (done bool, err error) {
+	err = wait.PollImmediate(10*time.Second, timeout, func() (done bool, err error) {
 		updatedPod := &corev1.Pod{}
 		if err := kubeClient.Get(ctx, kutil.ObjectKey(pod.GetName(), pod.GetNamespace()), updatedPod); err != nil {
 			if apierrors.IsNotFound(err) {

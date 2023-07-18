@@ -5,9 +5,8 @@ import (
 	"bytes"
 	"encoding/pem"
 	"fmt"
-	"strings"
-
 	. "github.com/mandelsoft/spiff/dynaml"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -55,11 +54,7 @@ func func_x509publickey(arguments []interface{}, binding Binding) (interface{}, 
 	if err != nil {
 		k, e := ParsePublicKey(str)
 		if e != nil {
-			cert, e := ParseCertificate(str)
-			if e != nil {
-				return info.Error("argument for %s must be a private/public key or certificate in pem format: %s", F_PublicKey, err)
-			}
-			k = publicKey(cert)
+			return info.Error("argument for %s must be a private key in pem format: %s", F_PublicKey, err)
 		}
 		key = k
 	}

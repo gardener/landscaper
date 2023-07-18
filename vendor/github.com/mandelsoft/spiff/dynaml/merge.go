@@ -1,9 +1,8 @@
 package dynaml
 
 import (
-	"strings"
-
 	"github.com/mandelsoft/spiff/debug"
+	"strings"
 )
 
 type MergeExpr struct {
@@ -11,7 +10,6 @@ type MergeExpr struct {
 	Redirect bool
 	Replace  bool
 	Required bool
-	None     bool
 	KeyName  string
 }
 
@@ -22,8 +20,7 @@ func (e MergeExpr) Evaluate(binding Binding, locally bool) (interface{}, Evaluat
 	if e.Redirect {
 		info.RedirectPath = e.Path
 	}
-	// if len(e.Path) == 0 {
-	if e.None {
+	if len(e.Path) == 0 {
 		info.Merged = true
 		return nil, info, true
 	}

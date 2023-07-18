@@ -79,7 +79,7 @@ var _ = Describe("TargetSync Controller", func() {
 		}
 
 		checkTargetAndSecretDoNotExist := func(ctx context.Context, secretName string) {
-			Expect(wait.PollUntilContextTimeout(ctx, time.Second, 10*time.Second, true, func(ctx context.Context) (done bool, err error) {
+			Expect(wait.PollImmediate(time.Second, 10*time.Second, func() (done bool, err error) {
 
 				target := &lsv1alpha1.Target{}
 				target.Name = secretName

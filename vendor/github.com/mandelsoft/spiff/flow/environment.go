@@ -2,18 +2,17 @@ package flow
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 
 	"github.com/mandelsoft/spiff/debug"
 	"github.com/mandelsoft/spiff/dynaml"
-	"github.com/mandelsoft/spiff/features"
 	"github.com/mandelsoft/spiff/yaml"
 )
 
 type Scope struct {
-	list   []yaml.Node
 	local  map[string]yaml.Node
 	static map[string]yaml.Node
 	path   []string
@@ -26,22 +25,11 @@ func newFakeScope(outer *Scope, path []string, local map[string]yaml.Node) *Scop
 }
 
 func newScope(outer *Scope, path []string, local, static map[string]yaml.Node) *Scope {
-	scope := &Scope{nil, local, static, path, outer, nil}
+	scope := &Scope{local, static, path, outer, nil}
 	if outer == nil || outer.root == nil {
 		scope.root = scope
 	} else {
 		scope.root = outer.root
-	}
-	return scope
-}
-
-func newListScope(outer *Scope, path []string, local []yaml.Node, static map[string]yaml.Node) *Scope {
-	scope := &Scope{local, nil, static, path, outer, nil}
-	if outer == nil || outer.root == nil {
-		scope.root = scope
-	} else {
-		scope.root = outer.root
-		scope.local = outer.local
 	}
 	return scope
 }
@@ -61,8 +49,7 @@ type DefaultEnvironment struct {
 	static map[string]yaml.Node
 	outer  dynaml.Binding
 
-	active  bool
-	binding bool
+	active bool
 }
 
 func keys(s map[string]yaml.Node) string {
@@ -75,7 +62,7 @@ func keys(s map[string]yaml.Node) string {
 	return keys + "]"
 }
 
-func (e *DefaultEnvironment) String() string {
+func (e DefaultEnvironment) String() string {
 	result := fmt.Sprintf("SCOPES: <%s> static: %s", strings.Join(e.path, "."), keys(e.static))
 	s := e.scope
 	for s != nil {
@@ -85,141 +72,98 @@ func (e *DefaultEnvironment) String() string {
 	return result
 }
 
-func (e *DefaultEnvironment) GetState() dynaml.State {
-	if e.state == nil {
-		if e.outer != nil {
-			return e.outer.GetState()
-		}
+func (e DefaultEnvironment) GetState() dynaml.State {
+	if e.outer != nil {
+		return e.outer.GetState()
 	}
 	return e.state
 }
 
-func (e *DefaultEnvironment) GetFeatures() features.FeatureFlags {
-	return e.GetState().GetFeatures()
-}
-
-func (e *DefaultEnvironment) GetTempName(data []byte) (string, error) {
+func (e DefaultEnvironment) GetTempName(data []byte) (string, error) {
 	if e.outer != nil {
 		return e.outer.GetTempName(data)
 	}
 	return e.state.GetTempName(data)
 }
 
-func (e *DefaultEnvironment) GetFileContent(file string, cached bool) ([]byte, error) {
+func (e DefaultEnvironment) GetFileContent(file string, cached bool) ([]byte, error) {
 	if e.outer != nil {
 		return e.outer.GetFileContent(file, cached)
 	}
 	return e.state.GetFileContent(file, cached)
 }
 
-func (e *DefaultEnvironment) Outer() dynaml.Binding {
+func (e DefaultEnvironment) Outer() dynaml.Binding {
 	return e.outer
 }
 
-func (e *DefaultEnvironment) Active() bool {
+func (e DefaultEnvironment) Active() bool {
 	return e.active
 }
 
-func (e *DefaultEnvironment) Deactivate() dynaml.Binding {
+func (e DefaultEnvironment) Deactivate() dynaml.Binding {
 	e.active = false
 	return e
 }
 
-func (e *DefaultEnvironment) Path() []string {
+func (e DefaultEnvironment) Path() []string {
 	return e.path
 }
 
-func (e *DefaultEnvironment) StubPath() []string {
+func (e DefaultEnvironment) StubPath() []string {
 	return e.stubPath
 }
 
-func (e *DefaultEnvironment) NoMerge() bool {
+func (e DefaultEnvironment) NoMerge() bool {
 	return e.nomerge
 }
 
-func (e *DefaultEnvironment) SourceName() string {
+func (e DefaultEnvironment) SourceName() string {
 	return e.sourceName
 }
 
-func (e *DefaultEnvironment) CurrentSourceName() string {
+func (e DefaultEnvironment) CurrentSourceName() string {
 	return e.currentSourceName
 }
 
-func (e *DefaultEnvironment) GetRootBinding() map[string]yaml.Node {
-	if e.scope == nil {
-		return nil
-	}
+func (e DefaultEnvironment) GetRootBinding() map[string]yaml.Node {
 	return e.scope.root.local
 }
 
-func (e *DefaultEnvironment) GetScope() *Scope {
+func (e DefaultEnvironment) GetScope() *Scope {
 	return e.scope
 }
 
-func (e *DefaultEnvironment) GetStaticBinding() map[string]yaml.Node {
+func (e DefaultEnvironment) GetStaticBinding() map[string]yaml.Node {
 	return e.static
 }
 
-func (e *DefaultEnvironment) FindFromRoot(path []string) (yaml.Node, bool) {
+func (e DefaultEnvironment) FindFromRoot(path []string) (yaml.Node, bool) {
 	if e.scope == nil {
 		return nil, false
 	}
 
-	var root interface{}
-
-	if e.scope.root.list != nil {
-		if len(path) == 0 {
-			// for root return root list
-			return yaml.NewNode(e.scope.root.list, "root"), true
-		}
-		// special case: for list documents, we enable root path expressions based on the top level map found.
-		if path[0] == "__map" {
-			lroot := e.scope
-			for lroot != nil {
-				if lroot.local != nil {
-					root = lroot.local
-				}
-				lroot = lroot.next
-			}
-			path = path[1:]
-		} else {
-			root = e.scope.root.list
-		}
-	} else {
-		root = e.scope.root.local
-	}
-	return yaml.FindR(true, yaml.NewNode(root, "scope"), e.GetFeatures(), path...)
+	return yaml.FindR(true, yaml.NewNode(e.scope.root.local, "scope"), path...)
 }
 
-func (e *DefaultEnvironment) FindInScopes(nodescope *Scope, path []string) (yaml.Node, bool) {
-	if len(path) > 0 {
-		scope := nodescope
-		for scope != nil {
-			val := scope.local[path[0]]
-			if val != nil {
-				return yaml.FindR(true, val, e.GetFeatures(), path[1:]...)
-			}
-			scope = scope.next
-		}
-		return nil, false
-	}
-	return yaml.FindR(true, node(nodescope.local), e.GetFeatures(), path...)
-}
-
-func (e *DefaultEnvironment) FindReference(path []string) (yaml.Node, bool) {
-	root, found, nodescope := resolveSymbol(e, path[0], e.scope)
+func (e DefaultEnvironment) FindReference(path []string) (yaml.Node, bool) {
+	root, found, nodescope := resolveSymbol(&e, path[0], e.scope)
 	if !found {
-		if path[0] == yaml.ROOT {
-			var outer dynaml.Binding = e
-			for outer.Outer() != nil {
-				outer = outer.Outer()
-			}
-			return yaml.FindR(true, node(outer.GetRootBinding()), e.GetFeatures(), path[1:]...)
-		}
 		//fmt.Printf("FIND %s: %s\n", strings.Join(path,"."), e)
 		//fmt.Printf("FOUND %s: %v\n", strings.Join(path,"."),  keys(nodescope))
 		if path[0] == yaml.DOCNODE && nodescope != nil {
-			return e.FindInScopes(nodescope, path[1:])
+			if len(path) > 1 {
+				scope := nodescope
+				for scope != nil {
+					val := scope.local[path[1]]
+					if val != nil {
+						return yaml.FindR(true, val, path[2:]...)
+					}
+					scope = scope.next
+				}
+				return nil, false
+			}
+			return yaml.FindR(true, node(nodescope.local), path[1:]...)
 		}
 		if e.outer != nil {
 			return e.outer.FindReference(path)
@@ -232,54 +176,40 @@ func (e *DefaultEnvironment) FindReference(path []string) (yaml.Node, bool) {
 		resolver := root.Resolver()
 		return resolver.FindReference(path[1:])
 	}
-	return yaml.FindR(true, root, e.GetFeatures(), path[1:]...)
+	return yaml.FindR(true, root, path[1:]...)
 }
 
-func (e *DefaultEnvironment) FindInStubs(path []string) (yaml.Node, bool) {
-	debug.Debug("lookup %v in stubs\n", path)
+func (e DefaultEnvironment) FindInStubs(path []string) (yaml.Node, bool) {
 	for _, stub := range e.stubs {
-		debug.Debug("checking stub %s\n", stub.SourceName())
-		val, found := yaml.Find(stub, e.GetFeatures(), path...)
+		val, found := yaml.Find(stub, path...)
 		if found {
 			if !val.Flags().Implied() {
-				debug.Debug("found %v\n", path)
 				return val, true
 			}
-			debug.Debug("skipping found stub %v\n", path)
 		}
 	}
 
 	return nil, false
 }
 
-func (e *DefaultEnvironment) WithSource(source string) dynaml.Binding {
-	n := *e
-	n.sourceName = source
-	return &n
+func (e DefaultEnvironment) WithSource(source string) dynaml.Binding {
+	e.sourceName = source
+	return e
 }
 
-func (e *DefaultEnvironment) WithScope(step map[string]yaml.Node) dynaml.Binding {
-	n := *e
-	n.scope = newScope(e.scope, e.path, step, e.static)
-	return &n
+func (e DefaultEnvironment) WithScope(step map[string]yaml.Node) dynaml.Binding {
+	e.scope = newScope(e.scope, e.path, step, e.static)
+	return e
 }
 
-func (e *DefaultEnvironment) WithListScope(step []yaml.Node) dynaml.Binding {
-	n := *e
-	n.scope = newListScope(e.scope, e.path, step, e.static)
-	return &n
-}
-
-func (e *DefaultEnvironment) WithNewRoot() dynaml.Binding {
-	n := *e
+func (e DefaultEnvironment) WithNewRoot() dynaml.Binding {
 	static := map[string]yaml.Node{}
-	n.scope = newScope(e.scope, e.path, static, e.static)
-	n.scope.root = nil
-	return &n
+	e.scope = newScope(e.scope, e.path, static, e.static)
+	e.scope.root = nil
+	return e
 }
 
-func (e *DefaultEnvironment) WithLocalScope(step map[string]yaml.Node) dynaml.Binding {
-	n := *e
+func (e DefaultEnvironment) WithLocalScope(step map[string]yaml.Node) dynaml.Binding {
 	static := map[string]yaml.Node{}
 	for k, v := range e.static {
 		static[k] = v
@@ -287,51 +217,45 @@ func (e *DefaultEnvironment) WithLocalScope(step map[string]yaml.Node) dynaml.Bi
 	for k, v := range step {
 		static[k] = v
 	}
-	n.static = static
-	n.scope = newScope(e.scope, nil, step, static)
-	return &n
+	e.static = static
+	e.scope = newScope(e.scope, nil, step, static)
+	return e
 }
 
-func (e *DefaultEnvironment) WithPath(step string) dynaml.Binding {
-	n := *e
+func (e DefaultEnvironment) WithPath(step string) dynaml.Binding {
 	newPath := make([]string, len(e.path))
 	copy(newPath, e.path)
-	n.path = append(newPath, step)
+	e.path = append(newPath, step)
 
 	newPath = make([]string, len(e.stubPath))
 	copy(newPath, e.stubPath)
-	n.stubPath = append(newPath, step)
-	return &n
+	e.stubPath = append(newPath, step)
+
+	return e
 }
 
-func (e *DefaultEnvironment) RedirectOverwrite(path []string) dynaml.Binding {
-	n := *e
+func (e DefaultEnvironment) RedirectOverwrite(path []string) dynaml.Binding {
 	if len(path) > 0 {
-		n.stubPath = path
-		n.nomerge = false
+		e.stubPath = path
+		e.nomerge = false
 	} else {
-		n.nomerge = true
+		e.nomerge = true
 	}
-	return &n
+	return e
 }
 
-func (e *DefaultEnvironment) Flow(source yaml.Node, shouldOverride bool) (yaml.Node, dynaml.Status) {
+func (e DefaultEnvironment) Flow(source yaml.Node, shouldOverride bool) (yaml.Node, dynaml.Status) {
 	result := source
 
 	for {
 		debug.Debug("@@{ loop:  %+v\n", result)
-		var env dynaml.Binding = e
-		if list, ok := source.Value().([]yaml.Node); ok {
-			env = e.WithListScope(list)
-		}
-		next := flow(result, env, shouldOverride, false)
+		next := flow(result, e, shouldOverride)
 		if next.Undefined() {
-			result = yaml.UndefinedNode(node(nil))
-			break
+			next = node(nil)
 		}
 		debug.Debug("@@} --->   %+v\n", next)
 
-		next = Cleanup(next, updateBinding(next, env))
+		next = Cleanup(next, updateBinding(next))
 		b := reflect.DeepEqual(result, next)
 		//b,r:=yaml.Equals(result, next,[]string{})
 		if b {
@@ -350,7 +274,7 @@ func (e *DefaultEnvironment) Flow(source yaml.Node, shouldOverride bool) (yaml.N
 	return result, nil
 }
 
-func (e *DefaultEnvironment) Cascade(outer dynaml.Binding, template yaml.Node, partial bool, templates ...yaml.Node) (yaml.Node, error) {
+func (e DefaultEnvironment) Cascade(outer dynaml.Binding, template yaml.Node, partial bool, templates ...yaml.Node) (yaml.Node, error) {
 	return Cascade(outer, template, Options{Partial: partial}, templates...)
 }
 
@@ -360,50 +284,29 @@ func NewEnvironment(stubs []yaml.Node, source string, optstate ...*State) dynaml
 		state = optstate[0]
 	}
 	if state == nil {
-		state = NewState(features.EncryptionKey(), MODE_OS_ACCESS|MODE_FILE_ACCESS)
+		state = NewState(os.Getenv("SPIFF_ENCRYPTION_KEY"), MODE_OS_ACCESS|MODE_FILE_ACCESS)
 	}
-	return &DefaultEnvironment{state: state, stubs: stubs, sourceName: source, currentSourceName: source, outer: nil, active: true, binding: true}
+	return DefaultEnvironment{state: state, stubs: stubs, sourceName: source, currentSourceName: source, outer: nil, active: true}
 }
 
 func NewProcessLocalEnvironment(stubs []yaml.Node, source string) dynaml.Binding {
-	state := NewState(features.EncryptionKey(), 0)
-	return &DefaultEnvironment{state: state, stubs: stubs, sourceName: source, currentSourceName: source, outer: nil, active: true}
+	state := NewState(os.Getenv("SPIFF_ENCRYPTION_KEY"), 0)
+	return DefaultEnvironment{state: state, stubs: stubs, sourceName: source, currentSourceName: source, outer: nil, active: true}
 }
 
 func CleanupEnvironment(binding dynaml.Binding) {
-	env, ok := binding.(*DefaultEnvironment)
+	env, ok := binding.(DefaultEnvironment)
 	if ok && env.state != nil {
 		env.state.Cleanup()
-	}
-}
-
-func ResetTags(binding dynaml.Binding) {
-	env, ok := binding.(*DefaultEnvironment)
-	if ok && env.state != nil {
-		env.state.ResetTags()
-	}
-}
-
-func ResetStream(binding dynaml.Binding) {
-	env, ok := binding.(*DefaultEnvironment)
-	if ok && env.state != nil {
-		env.state.ResetStream()
-	}
-}
-
-func PushDocument(binding dynaml.Binding, doc yaml.Node) {
-	env, ok := binding.(*DefaultEnvironment)
-	if ok && env.state != nil {
-		env.state.PushDocument(doc)
 	}
 }
 
 func NewNestedEnvironment(stubs []yaml.Node, source string, outer dynaml.Binding) dynaml.Binding {
 	var state *State
 	if outer == nil {
-		state = NewDefaultState()
+		state = NewState(os.Getenv("SPIFF_ENCRYPTION_KEY"), MODE_OS_ACCESS|MODE_FILE_ACCESS)
 	}
-	return &DefaultEnvironment{state: state, stubs: stubs, sourceName: source, currentSourceName: source, outer: outer, active: true}
+	return DefaultEnvironment{state: state, stubs: stubs, sourceName: source, currentSourceName: source, outer: outer, active: true}
 }
 
 type Updateable interface {
@@ -412,7 +315,7 @@ type Updateable interface {
 	Deactivate() dynaml.Binding
 }
 
-func updateBinding(root yaml.Node, binding dynaml.Binding) CleanupFunction {
+func updateBinding(root yaml.Node) CleanupFunction {
 	var me CleanupFunction
 	me = func(node yaml.Node) (yaml.Node, CleanupFunction) {
 		if v := node.Value(); v != nil {
@@ -422,7 +325,7 @@ func updateBinding(root yaml.Node, binding dynaml.Binding) CleanupFunction {
 					for scope := env.GetScope(); scope != nil; scope = scope.next {
 						debug.Debug("update scope %v\n", scope.path)
 						if scope.path != nil {
-							ref, ok := yaml.FindR(true, root, binding.GetFeatures(), scope.path...)
+							ref, ok := yaml.FindR(true, root, scope.path...)
 							if ok {
 								debug.Debug("found %#v\n", ref.Value())
 								m := ref.Value().(map[string]yaml.Node)
@@ -472,35 +375,6 @@ func resolveSymbol(env *DefaultEnvironment, name string, scope *Scope) (yaml.Nod
 	return nil, false, nodescope
 }
 
-func getOuters(env *DefaultEnvironment) (yaml.Node, yaml.Node) {
-	var bindings dynaml.Binding
-	var list []yaml.Node
-
-	if outer := env.Outer(); outer != nil {
-		for outer != nil {
-			if e, ok := outer.(*DefaultEnvironment); ok && e.binding {
-				bindings = outer
-			}
-			if b := outer.GetRootBinding(); b != nil {
-				list = append(list, node(b))
-			}
-			outer = outer.Outer()
-		}
-	}
-	if list == nil {
-		if bindings != nil {
-			return nil, node(bindings.GetRootBinding())
-		} else {
-			return nil, yaml.NewNode([]map[string]interface{}{}, "context")
-		}
-	}
-	if bindings != nil {
-		return node(list), node(bindings.GetRootBinding())
-	} else {
-		return node(list), yaml.NewNode([]map[string]interface{}{}, "context")
-	}
-}
-
 func createContext(env *DefaultEnvironment) yaml.Node {
 	ctx := make(map[string]yaml.Node)
 
@@ -508,7 +382,6 @@ func createContext(env *DefaultEnvironment) yaml.Node {
 	if err != nil {
 		read = env.CurrentSourceName()
 	}
-	ctx["VERSION"] = node(VERSION)
 	ctx["FILE"] = node(env.CurrentSourceName())
 	ctx["DIR"] = node(filepath.Dir(env.CurrentSourceName()))
 	ctx["RESOLVED_FILE"] = node(read)
@@ -526,11 +399,14 @@ func createContext(env *DefaultEnvironment) yaml.Node {
 		path[i] = node(v)
 	}
 	ctx["STUBPATH"] = node(path)
-	list, bindings := getOuters(env)
-	if list != nil {
-		ctx["OUTER"] = list
+	if outer := env.Outer(); outer != nil {
+		list := []yaml.Node{}
+		for outer != nil {
+			list = append(list, node(outer.GetRootBinding()))
+			outer = outer.Outer()
+		}
+		ctx["OUTER"] = node(list)
 	}
-	ctx["BINDINGS"] = bindings
 	return node(ctx)
 }
 

@@ -10,7 +10,6 @@ import (
 
 const SELF = "_"
 const DOCNODE = "__"
-const ROOT = "___"
 const MERGEKEY = "<<<"
 
 type RefResolver interface {
@@ -21,7 +20,6 @@ type Node interface {
 	candiedyaml.Marshaler
 
 	Value() interface{}
-	Template() interface{}
 	SourceName() string
 	RedirectPath() []string
 	Flags() NodeFlags
@@ -46,7 +44,6 @@ type Node interface {
 
 type AnnotatedNode struct {
 	value      interface{}
-	template   interface{}
 	resolver   RefResolver
 	sourceName string
 	Annotation
@@ -54,17 +51,12 @@ type AnnotatedNode struct {
 
 type Issue struct {
 	Issue    string
-	OrigPath []string
 	Nested   []Issue
 	Sequence bool
 }
 
 func NewIssue(msg string, args ...interface{}) Issue {
-	return Issue{fmt.Sprintf(msg, args...), nil, []Issue{}, false}
-}
-
-func NewPathIssue(path []string, msg string, args ...interface{}) Issue {
-	return Issue{fmt.Sprintf(msg, args...), path, []Issue{}, false}
+	return Issue{fmt.Sprintf(msg, args...), []Issue{}, false}
 }
 
 const (
@@ -73,7 +65,6 @@ const (
 	FLAG_INJECT    = 0x004
 	FLAG_STATE     = 0x008
 	FLAG_DEFAULT   = 0x010
-	FLAG_DYNAMIC   = 0x020
 
 	FLAG_INJECTED = 0x040
 	FLAG_IMPLIED  = 0x080
@@ -144,20 +135,8 @@ func (f *NodeFlags) SetState() *NodeFlags {
 	return f
 }
 
-func (f NodeFlags) Dynamic() bool {
-	return (f & FLAG_DYNAMIC) != 0
-}
-func (f *NodeFlags) SetDynamic() *NodeFlags {
-	*f |= FLAG_DYNAMIC
-	return f
-}
-
 func (f NodeFlags) Injected() bool {
 	return (f & FLAG_INJECTED) != 0
-}
-func (f *NodeFlags) SetInjected() *NodeFlags {
-	*f |= FLAG_INJECTED
-	return f
 }
 
 type Annotation struct {
@@ -170,23 +149,18 @@ type Annotation struct {
 	failed       bool
 	undefined    bool
 	issue        Issue
-	tag          string
 	NodeFlags
 }
 
 func copyNode(node Node) AnnotatedNode {
-	return AnnotatedNode{node.Value(), node.Template(), node.Resolver(), node.SourceName(), node.GetAnnotation()}
+	return AnnotatedNode{node.Value(), node.Resolver(), node.SourceName(), node.GetAnnotation()}
 }
 func copyNodeAnnotated(node Node, anno Annotation) AnnotatedNode {
-	return AnnotatedNode{node.Value(), node.Template(), node.Resolver(), node.SourceName(), anno}
+	return AnnotatedNode{node.Value(), node.Resolver(), node.SourceName(), anno}
 }
 
 func NewNode(value interface{}, sourcePath string) Node {
-	return AnnotatedNode{MassageType(value), nil, nil, sourcePath, EmptyAnnotation()}
-}
-
-func NewDynamicNode(value, template interface{}, sourcePath string) Node {
-	return AnnotatedNode{MassageType(value), template, nil, sourcePath, EmptyAnnotation().SetInjected().SetDynamic()}
+	return AnnotatedNode{MassageType(value), nil, sourcePath, EmptyAnnotation()}
 }
 
 func ResolverNode(node Node, resolver RefResolver) Node {
@@ -246,20 +220,8 @@ func AddFlags(node Node, flags NodeFlags) Node {
 	return copyNodeAnnotated(node, node.GetAnnotation().AddFlags(flags))
 }
 
-func SetTag(node Node, tag string) Node {
-	return copyNodeAnnotated(node, node.GetAnnotation().SetTag(tag))
-}
-
 func TemporaryNode(node Node) Node {
 	return copyNodeAnnotated(node, node.GetAnnotation().SetTemporary())
-}
-
-func InjectedNode(node Node) Node {
-	return copyNodeAnnotated(node, node.GetAnnotation().SetInjected())
-}
-
-func DefaultedNode(node Node) Node {
-	return copyNodeAnnotated(node, node.GetAnnotation().SetDefault())
 }
 
 func LocalNode(node Node) Node {
@@ -279,11 +241,11 @@ func MassageType(value interface{}) interface{} {
 }
 
 func EmptyAnnotation() Annotation {
-	return Annotation{nil, false, false, false, "", false, false, false, Issue{}, "", 0}
+	return Annotation{nil, false, false, false, "", false, false, false, Issue{}, 0}
 }
 
 func NewReferencedAnnotation(node Node) Annotation {
-	return Annotation{nil, false, false, false, node.KeyName(), node.HasError(), node.Failed(), node.Undefined(), node.Issue(), "", 0}
+	return Annotation{nil, false, false, false, node.KeyName(), node.HasError(), node.Failed(), node.Undefined(), node.Issue(), 0}
 }
 
 func (n Annotation) Flags() NodeFlags {
@@ -312,10 +274,6 @@ func (n Annotation) StandardOverride() bool {
 
 func (n Annotation) KeyName() string {
 	return n.keyName
-}
-
-func (n Annotation) Tag() string {
-	return n.tag
 }
 
 func (n Annotation) HasError() bool {
@@ -354,26 +312,6 @@ func (n Annotation) SetState() Annotation {
 	return n
 }
 
-func (n Annotation) SetInject() Annotation {
-	n.NodeFlags.SetInject()
-	return n
-}
-
-func (n Annotation) SetInjected() Annotation {
-	n.NodeFlags.SetInjected()
-	return n
-}
-
-func (n Annotation) SetDefault() Annotation {
-	n.NodeFlags.SetDefault()
-	return n
-}
-
-func (n Annotation) SetDynamic() Annotation {
-	n.NodeFlags.SetDynamic()
-	return n
-}
-
 func (n Annotation) SetRedirectPath(redirect []string) Annotation {
 	n.redirectPath = redirect
 	return n
@@ -391,11 +329,6 @@ func (n Annotation) SetPreferred() Annotation {
 
 func (n Annotation) SetMerged() Annotation {
 	n.merged = true
-	return n
-}
-
-func (n Annotation) SetTag(tag string) Annotation {
-	n.tag = tag
 	return n
 }
 
@@ -426,10 +359,6 @@ func (n AnnotatedNode) Value() interface{} {
 
 func (n AnnotatedNode) SourceName() string {
 	return n.sourceName
-}
-
-func (n AnnotatedNode) Template() interface{} {
-	return n.template
 }
 
 func (n AnnotatedNode) Resolver() RefResolver {
@@ -509,7 +438,7 @@ func (n AnnotatedNode) EquivalentToNode(o Node) bool {
 	return b
 }
 
-func EmbeddedDynaml(root Node, interpol bool) *string {
+func EmbeddedDynaml(root Node) *string {
 	rootString, ok := root.Value().(string)
 	if !ok {
 		return nil
@@ -520,16 +449,11 @@ func EmbeddedDynaml(root Node, interpol bool) *string {
 		if !strings.HasPrefix(sub, "!") {
 			return &sub
 		}
-		return nil
 	}
-	if !interpol {
-		return nil
-	}
-	_, expr := convertToExpression(rootString, false)
-	return expr
+	return nil
 }
 
-func UnescapeDynaml(root Node, interpol bool) Node {
+func UnescapeDynaml(root Node) Node {
 	if root.Value() == nil {
 		return root
 	}
@@ -540,13 +464,6 @@ func UnescapeDynaml(root Node, interpol bool) Node {
 			sub := value[2 : len(value)-2]
 			if strings.HasPrefix(sub, "!") {
 				return NewNode("(("+sub[1:]+"))", root.SourceName())
-			}
-			return root
-		}
-		if interpol {
-			str, _ := convertToExpression(value, true)
-			if str != nil && *str != value {
-				return NewNode(*str, root.SourceName())
 			}
 		}
 	case map[string]Node:

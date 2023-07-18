@@ -10,6 +10,7 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"os"
 	"path"
 	"sort"
@@ -254,7 +255,8 @@ func (o *ShootClusterManager) checkAndDeleteExistingTestShoots(ctx context.Conte
 }
 
 func (o *ShootClusterManager) generateShootName() string {
-	return namePrefix + prPrefix + o.prID + "-" + strconv.Itoa(rng.Intn(9000)+1000)
+	rand.Seed(time.Now().UnixNano())
+	return namePrefix + prPrefix + o.prID + "-" + strconv.Itoa(rand.Intn(9000)+1000)
 }
 
 func (o *ShootClusterManager) matchesNamePattern(name string) bool {
@@ -342,7 +344,7 @@ func (o *ShootClusterManager) createShootManifest(name string) (*unstructured.Un
 
 func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, gardenClient dynamic.ResourceInterface, clusterName string) error {
 
-	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 35*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+	err := wait.Poll(10*time.Second, 35*time.Minute, func() (done bool, err error) {
 		o.log.Logfln("wait for cluster is ready")
 		shoot, getError := gardenClient.Get(ctx, clusterName, metav1.GetOptions{})
 		if getError != nil {

@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	refName      = NewReferenceExpr("name")
-	refInstances = NewReferenceExpr("instances")
+	refName      = ReferenceExpr{[]string{"name"}}
+	refInstances = ReferenceExpr{[]string{"instances"}}
 )
 
 func func_static_ips(arguments []Expression, binding Binding) (interface{}, EvaluationInfo, bool) {
@@ -100,7 +100,7 @@ func generateStaticIPs(binding Binding, indices []int) (interface{}, EvaluationI
 
 func findInstanceCount(binding Binding) (*int64, EvaluationInfo, bool) {
 	nearestInstances, info, found := refInstances.Evaluate(binding, false)
-	if !found || IsExpression(nearestInstances) {
+	if !found || isExpression(nearestInstances) {
 		return nil, info, false
 	}
 
@@ -110,7 +110,7 @@ func findInstanceCount(binding Binding) (*int64, EvaluationInfo, bool) {
 
 func findStaticIPRanges(binding Binding) ([]string, EvaluationInfo, bool) {
 	nearestNetworkName, info, found := refName.Evaluate(binding, false)
-	if !found || IsExpression(nearestNetworkName) {
+	if !found || isExpression(nearestNetworkName) {
 		return nil, info, found
 	}
 
@@ -120,13 +120,13 @@ func findStaticIPRanges(binding Binding) ([]string, EvaluationInfo, bool) {
 		return nil, info, false
 	}
 
-	subnetsRef := ReferenceExpr{"", []string{"", "networks", networkName, "subnets"}}
+	subnetsRef := ReferenceExpr{[]string{"", "networks", networkName, "subnets"}}
 	subnets, info, found := subnetsRef.Evaluate(binding, false)
 
 	if !found {
 		return nil, info, false
 	}
-	if IsExpression(subnets) {
+	if isExpression(subnets) {
 		return nil, info, true
 	}
 
