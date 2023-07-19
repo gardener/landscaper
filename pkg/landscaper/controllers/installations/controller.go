@@ -61,6 +61,7 @@ func NewController(hostClient client.Client, logger logging.Logger,
 		clock:         clock.RealClock{},
 		LsConfig:      lsConfig,
 		workerCounter: ws,
+		callerName:    callerName,
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -88,6 +89,7 @@ func NewTestActuator(op operation.Operation, hostClient client.Client, logger lo
 		LsConfig:      configuration,
 		workerCounter: utils.NewWorkerCounter(1000),
 		hostClient:    hostClient,
+		callerName:    callerName,
 	}
 }
 
