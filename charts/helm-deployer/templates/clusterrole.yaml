@@ -40,6 +40,8 @@ rules:
   - "pods"
   verbs:
   - get
+  - watch
+  - list
 
 - apiGroups:
   - landscaper.gardener.cloud
