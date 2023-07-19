@@ -20,7 +20,7 @@ const (
 // and falls back to creating a new one if that fails.
 // The keys and values are only added in case of the fallback.
 func (w *Writer) getLogger(ctx context.Context, keysAndValues ...interface{}) logging.Logger {
-	log, _ := logging.FromContextOrNew(ctx, keysAndValues)
+	log, _ := logging.FromContextOrNew(ctx, nil, keysAndValues)
 	return log
 }
 
