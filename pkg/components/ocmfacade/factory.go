@@ -10,13 +10,15 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/inlinecompdesc"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/blobvfs"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/compvfs"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/localrootfs"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/comparch"
@@ -55,7 +57,9 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		vfsattr.Set(registryAccess.octx, pfs)
+		localrootfs.Set(registryAccess.octx, pfs)
+		compvfs.Set(registryAccess.octx, pfs)
+		blobvfs.Set(registryAccess.octx, pfs)
 	}
 
 	if inlineCd != nil {

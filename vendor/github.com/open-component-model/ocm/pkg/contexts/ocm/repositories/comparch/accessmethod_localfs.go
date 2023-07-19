@@ -17,7 +17,8 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 
 type localFilesystemBlobAccessMethod struct {
-	sync.RWMutex
+	sync.Mutex
+	closed     bool
 	spec       *localblob.AccessSpec
 	base       support.ComponentVersionContainer
 	blobAccess accessio.DataAccess
@@ -44,6 +45,10 @@ func (m *localFilesystemBlobAccessMethod) Reader() (io.ReadCloser, error) {
 	m.Lock()
 	defer m.Unlock()
 
+	if m.closed {
+		return nil, accessio.ErrClosed
+	}
+
 	if m.blobAccess == nil {
 		var err error
 		m.blobAccess, err = m.base.GetBlobData(m.spec.LocalReference)
@@ -57,6 +62,10 @@ func (m *localFilesystemBlobAccessMethod) Reader() (io.ReadCloser, error) {
 func (m *localFilesystemBlobAccessMethod) Get() ([]byte, error) {
 	m.Lock()
 	defer m.Unlock()
+
+	if m.closed {
+		return nil, accessio.ErrClosed
+	}
 
 	if m.blobAccess == nil {
 		var err error
@@ -76,8 +85,17 @@ func (m *localFilesystemBlobAccessMethod) Close() error {
 	m.Lock()
 	defer m.Unlock()
 
+	if m.closed {
+		return accessio.ErrClosed
+	}
+
 	if m.blobAccess != nil {
-		return m.blobAccess.Close()
+		err := m.blobAccess.Close()
+		m.blobAccess = nil
+		m.closed = true
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

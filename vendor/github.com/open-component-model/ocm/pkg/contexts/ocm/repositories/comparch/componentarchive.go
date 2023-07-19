@@ -12,6 +12,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
+	ocicpi "github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localblob"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localfsblob"
 	ocmhdlr "github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/ocm"
@@ -138,7 +139,19 @@ func (c *componentArchiveContainer) GetBlobData(name string) (cpi.DataAccess, er
 }
 
 func (c *componentArchiveContainer) GetStorageContext(cv cpi.ComponentVersionAccess) cpi.StorageContext {
-	return ocmhdlr.New(c.Repository(), cv, c.base, Type)
+	return ocmhdlr.New(c.Repository(), cv, &BlobSink{c.base}, Type)
+}
+
+type BlobSink struct {
+	Sink ocicpi.BlobSink
+}
+
+func (s *BlobSink) AddBlob(blob accessio.BlobAccess) (string, error) {
+	err := s.Sink.AddBlob(blob)
+	if err != nil {
+		return "", err
+	}
+	return blob.Digest().String(), nil
 }
 
 func (c *componentArchiveContainer) AddBlobFor(storagectx cpi.StorageContext, blob cpi.BlobAccess, refName string, global cpi.AccessSpec) (cpi.AccessSpec, error) {

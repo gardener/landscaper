@@ -51,3 +51,35 @@ func Create(ctx cpi.ContextProvider, acc accessobj.AccessMode, path string, mode
 	}
 	return genericocireg.NewRepository(cpi.FromProvider(ctx), nil, r)
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+type CTFOptions struct {
+	genericocireg.ComponentRepositoryMeta
+}
+
+type CTFOption interface {
+	accessio.Option
+	ApplyCTFOption(opts *CTFOptions)
+}
+
+// RepositoryPrefix set the OCI repository prefix used to store the component
+// versions.
+func RepositoryPrefix(path string) accessio.Option {
+	return &optPrefix{path}
+}
+
+type optPrefix struct {
+	prefix string
+}
+
+var _ CTFOption = (*optPrefix)(nil)
+
+// ApplyOption does nothing, because this is no standard option.
+func (o *optPrefix) ApplyOption(options accessio.Options) error {
+	return nil
+}
+
+func (o *optPrefix) ApplyCTFOption(opts *CTFOptions) {
+	opts.SubPath = o.prefix
+}

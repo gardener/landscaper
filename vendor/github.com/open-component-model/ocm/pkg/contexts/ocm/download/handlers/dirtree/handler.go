@@ -266,7 +266,9 @@ func (h *Handler) getForArtifactSet(finalize *finalizer.Finalizer, set *artifact
 			cfs = layerfs.New(fslayer, cfs)
 		}
 		fslayer = nil // don't cleanup used layer
-		nested.Finalize()
+		if err := nested.Finalize(); err != nil {
+			return nil, nil, err
+		}
 	}
 	fs = cfs
 	cfs = nil // don't cleanup used filesystem

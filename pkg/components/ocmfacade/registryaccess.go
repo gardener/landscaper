@@ -3,22 +3,19 @@ package ocmfacade
 import (
 	"bytes"
 	"context"
+	"fmt"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/mandelsoft/vfs/pkg/vfs"
-	"github.com/open-component-model/ocm/pkg/common/accessio"
-	"github.com/open-component-model/ocm/pkg/common/accessobj"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/localrootfs"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/internal"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localblob"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localfsblob"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localociblob"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ctf"
-	"github.com/open-component-model/ocm/pkg/finalizer"
 	"github.com/open-component-model/ocm/pkg/generics"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"os"
 	"sync"
 )
 
@@ -31,7 +28,7 @@ type RegistryAccess struct {
 	octx                           ocm.Context
 	session                        ocm.Session
 	predefinedComponentDescriptors []*compdesc.ComponentDescriptor
-	memoryfs                       vfs.FileSystem
+	predefinedRepository           ocm.Repository
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
@@ -71,7 +68,7 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 }
 
 func (r *RegistryAccess) Close() error {
-	err := vfs.Cleanup(r.memoryfs)
+	err := r.predefinedRepository.Close()
 	if err != nil {
 		return err
 	}
@@ -108,86 +105,29 @@ func (r *RegistryAccess) getRepositoryForPredefined() (_ ocm.Repository, rerr er
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	var finalize finalizer.Finalizer
-
-	if r.memoryfs != nil {
-		exists, err := vfs.DirExists(r.memoryfs, PREDEFINED_CTF_PATH)
-		if err != nil {
-			return nil, err
-		}
-		if exists {
-			return ctf.Open(r.octx, accessobj.ACC_WRITABLE, PREDEFINED_CTF_PATH, os.ModePerm, accessio.PathFileSystem(r.memoryfs))
-		}
+	if r.predefinedRepository != nil {
+		return r.predefinedRepository, nil
 	}
 
-	if r.memoryfs == nil {
-		memfs, err := osfs.NewTempFileSystem()
+	memfs := memoryfs.New()
+
+	for i, cd := range r.predefinedComponentDescriptors {
+		data, err := compdesc.Encode(cd)
 		if err != nil {
 			return nil, err
 		}
-		r.memoryfs = memfs
-	}
-
-	ocmrepo, err := ctf.Open(r.octx, accessobj.ACC_WRITABLE|accessobj.ACC_CREATE, PREDEFINED_CTF_PATH, os.ModePerm, accessio.PathFileSystem(r.memoryfs))
-	if err != nil {
-		return nil, err
-	}
-
-	finalize.Close(ocmrepo)
-
-	for _, cd := range r.predefinedComponentDescriptors {
-		loop := finalize.Nested()
-
-		comp, err := ocmrepo.LookupComponent(cd.Name)
+		file, err := memfs.Create(fmt.Sprintf("component-descriptor%d.yaml", i))
 		if err != nil {
 			return nil, err
 		}
-		loop.Close(comp)
-
-		vers, err := comp.NewVersion(cd.Version)
-		if err != nil {
+		if _, err := file.Write(data); err != nil {
 			return nil, err
 		}
-		loop.Close(vers)
-
-		for _, resource := range cd.Resources {
-			if IsLocalAccessType(resource.Access.GetType()) {
-				continue
-			}
-			err := vers.SetResource(&resource.ResourceMeta, resource.Access)
-			if err != nil {
-				return nil, err
-			}
-		}
-		for _, source := range cd.Sources {
-			if IsLocalAccessType(source.Access.GetType()) {
-				continue
-			}
-			err := vers.SetSource(&source.SourceMeta, source.Access)
-			if err != nil {
-				return nil, err
-			}
-		}
-		for _, reference := range cd.References {
-			err := vers.SetReference(&reference)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		err = comp.AddVersion(vers)
-		if err != nil {
-			return nil, err
-		}
-
-		err = loop.Finalize()
-		if err != nil {
+		if err := file.Close(); err != nil {
 			return nil, err
 		}
 	}
-	finalize.FinalizeWithErrorPropagation(&rerr)
-
-	return ctf.Open(r.octx, accessobj.ACC_WRITABLE, PREDEFINED_CTF_PATH, os.ModePerm, accessio.PathFileSystem(r.memoryfs))
+	return internal.NewRepository(r.octx, memfs, "/", localrootfs.Get(r.octx), "blobs")
 }
 
 func IsLocalAccessType(accessType string) bool {

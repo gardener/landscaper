@@ -17,8 +17,9 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.15
+	github.com/mandelsoft/filepath v0.0.0-20230412200429-36b1eb66bd27
 	github.com/mandelsoft/spiff v1.7.0-beta-5
-	github.com/mandelsoft/vfs v0.0.0-20230506183150-975954b82357
+	github.com/mandelsoft/vfs v0.0.0-20230713123140-269aa4fb1338
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
@@ -208,7 +209,6 @@ require (
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mandelsoft/filepath v0.0.0-20230412200429-36b1eb66bd27 // indirect
 	github.com/mandelsoft/logging v0.0.0-20230331123830-36542ef18f6f // indirect
 	github.com/marstr/guid v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -327,6 +327,6 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-	github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230704120423-c9e7ccf51c05
+	github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230719090507-d1cba41d4f05
 	k8s.io/kubectl => k8s.io/kubectl v0.26.1
 )

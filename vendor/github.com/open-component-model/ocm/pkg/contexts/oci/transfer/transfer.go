@@ -7,6 +7,7 @@ package transfer
 import (
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/finalizer"
 	"github.com/open-component-model/ocm/pkg/logging"
 )
 
@@ -24,15 +25,24 @@ func TransferIndex(art cpi.IndexAccess, set cpi.ArtifactSink, tags ...string) (e
 		logging.Logger().Debug("transfer OCI index done", "error", logging.ErrorMessage(err))
 	}()
 
+	var finalize finalizer.Finalizer
+	defer finalize.FinalizeWithErrorPropagation(&err)
+
 	for _, l := range art.GetDescriptor().Manifests {
+		loop := finalize.Nested()
 		logging.Logger().Debug("indexed manifest", "digest", "digest", l.Digest, "size", l.Size)
 		art, err := art.GetArtifact(l.Digest)
 		if err != nil {
 			return errors.Wrapf(err, "getting indexed artifact %s", l.Digest)
 		}
+		loop.Close(art)
 		err = TransferArtifact(art, set)
 		if err != nil {
 			return errors.Wrapf(err, "transferring indexed artifact %s", l.Digest)
+		}
+		err = loop.Finalize()
+		if err != nil {
+			return err
 		}
 	}
 	_, err = set.AddArtifact(art, tags...)
@@ -53,6 +63,7 @@ func TransferManifest(art cpi.ManifestAccess, set cpi.ArtifactSink, tags ...stri
 		return errors.Wrapf(err, "getting config blob")
 	}
 	err = set.AddBlob(blob)
+	blob.Close()
 	if err != nil {
 		return errors.Wrapf(err, "transferring config blob")
 	}
@@ -63,13 +74,14 @@ func TransferManifest(art cpi.ManifestAccess, set cpi.ArtifactSink, tags ...stri
 			return errors.Wrapf(err, "getting layer blob %s", l.Digest)
 		}
 		err = set.AddBlob(blob)
+		blob.Close()
 		if err != nil {
 			return errors.Wrapf(err, "transferring layer blob %s", l.Digest)
 		}
 	}
-	_, err = set.AddArtifact(art, tags...)
+	blob, err = set.AddArtifact(art, tags...)
 	if err != nil {
 		return errors.Wrapf(err, "transferring image artifact")
 	}
-	return err
+	return blob.Close()
 }

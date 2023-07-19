@@ -6,6 +6,7 @@ package finalizer
 
 import (
 	"io"
+	"strings"
 	"sync"
 
 	"github.com/open-component-model/ocm/pkg/errors"
@@ -63,22 +64,32 @@ func (f *Finalizer) CatchException(matchers ...exception.Matcher) *Finalizer {
 
 // Lock locks a given Locker and unlocks it again
 // during finalization.
-func (f *Finalizer) Lock(locker sync.Locker) *Finalizer {
+func (f *Finalizer) Lock(locker sync.Locker, msg ...string) *Finalizer {
 	locker.Lock()
-	return f.WithVoid(locker.Unlock)
+	return f.WithVoid(locker.Unlock, msg...)
 }
 
 // WithVoid registers a simple function to be
 // called on finalization.
-func (f *Finalizer) WithVoid(fi func()) *Finalizer {
-	return f.With(CallingV(fi))
+func (f *Finalizer) WithVoid(fi func(), msg ...string) *Finalizer {
+	return f.With(CallingV(fi), msg...)
 }
 
-func (f *Finalizer) With(fi func() error) *Finalizer {
+func (f *Finalizer) With(fi func() error, msg ...string) *Finalizer {
 	if fi != nil {
 		f.lock.Lock()
 		defer f.lock.Unlock()
 
+		if len(msg) > 0 {
+			ofi := fi
+			fi = func() error {
+				err := ofi()
+				if err == nil {
+					return nil
+				}
+				return errors.Wrapf(err, "%s", strings.Join(msg, " "))
+			}
+		}
 		f.pending = append(f.pending, fi)
 	}
 	return f
@@ -134,11 +145,11 @@ func Calling3V[T, U, V any](f func(arg1 T, arg2 U, arg3 V), arg1 T, arg2 U, arg3
 	}
 }
 
-// ClosingWith will finalize the given object by calling
-// its ClosingWith function when the finalizer is finalized.
-func (f *Finalizer) Close(c io.Closer) *Finalizer {
+// Close will finalize the given object by calling
+// its Close function when the finalizer is finalized.
+func (f *Finalizer) Close(c io.Closer, msg ...string) *Finalizer {
 	if c != nil {
-		f.With(c.Close)
+		f.With(c.Close, msg...)
 	}
 	return f
 }
@@ -210,7 +221,7 @@ func (f *Finalizer) FinalizeWithErrorPropagation(efferr *error) {
 		return
 	}
 	if r := recover(); r != nil {
-		if e := exception.Exception(r); e != nil {
+		if e := exception.Exception(r); e != nil && f.catch(e) {
 			*efferr = errors.ErrList().Add(e).Add(*efferr).Result()
 		} else {
 			panic(r)
@@ -233,7 +244,7 @@ func (f *Finalizer) FinalizeWithErrorPropagationf(efferr *error, msg string, arg
 		return
 	}
 	if r := recover(); r != nil {
-		if e := exception.Exception(r); e != nil {
+		if e := exception.Exception(r); e != nil && f.catch(e) {
 			*efferr = errors.ErrList().Add(e).Add(*efferr).Result()
 		} else {
 			panic(r)
@@ -252,13 +263,35 @@ func (f *Finalizer) Finalize() (err error) {
 		return err
 	}
 	if r := recover(); r != nil {
-		if e := exception.Exception(r); e != nil {
+		if e := exception.Exception(r); e != nil && f.catch(e) {
 			err = errors.ErrList().Add(e).Add(err).Result()
 		} else {
 			panic(r)
 		}
 	}
 	return err
+}
+
+// ThrowFinalize executes the finalization and in case
+// of an error it throws the error to be catched by an outer
+// finalize or other error handling with the exception package.
+// It is explicitly useful fo finalize nested finalizers in loops.
+func (f *Finalizer) ThrowFinalize() {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	err := f.finalize()
+	if f.catch == nil {
+		throwFinalizationError(err)
+	}
+	if r := recover(); r != nil {
+		if e := exception.Exception(r); e != nil && f.catch(e) {
+			err = errors.ErrList().Add(e).Add(err).Result()
+		} else {
+			panic(r)
+		}
+	}
+	throwFinalizationError(err)
 }
 
 func (f *Finalizer) finalize() (err error) {
@@ -268,5 +301,32 @@ func (f *Finalizer) finalize() (err error) {
 		list.Add(f.pending[l-i-1]())
 	}
 	f.pending = nil
+	// just forget nested ones. They are finalized here, but are then invalid.
+	// Adding entries after the parent has been finalized is not supported, because there is no valid determinable order.
+	f.nested = nil
 	return list.Result()
+}
+
+type FinalizationError struct {
+	error
+}
+
+func (e FinalizationError) Unwrap() error {
+	return e.error
+}
+
+// FinalizeException is an exception matcher for nested finalization exceptions.
+func FinalizeException(err error) bool {
+	if err == nil {
+		return false
+	}
+	_, ok := err.(FinalizationError) //nolint:errorlint // only for unwrapped error intended
+	return ok
+}
+
+func throwFinalizationError(err error) {
+	if err == nil {
+		return
+	}
+	exception.Throw(FinalizationError{err})
 }

@@ -130,7 +130,8 @@ func (c *refMgmt) UnrefLast() error {
 	}
 
 	if err != nil {
-		return errors.Wrapf(err, "unable to unref last %s ref", c.name)
+		allocLog.Trace("cleanup last failed", "name", c.name, "error", err.Error())
+		return errors.Wrapf(err, "unable to cleanup %s while unref last", c.name)
 	}
 
 	return nil

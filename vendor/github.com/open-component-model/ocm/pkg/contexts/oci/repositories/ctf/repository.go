@@ -90,7 +90,7 @@ func (r *RepositoryImpl) NumNamespaces(prefix string) (int, error) {
 }
 
 func (r *RepositoryImpl) GetNamespaces(prefix string, closure bool) ([]string, error) {
-	return cpi.FilterChildren(closure, cpi.FilterByNamespacePrefix(prefix, r.getIndex().RepositoryList())), nil
+	return cpi.FilterChildren(closure, prefix, r.getIndex().RepositoryList()), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

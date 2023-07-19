@@ -306,6 +306,10 @@ func NewComponentVersionAccessImplBase(ctx Context, name, version string, repo C
 	}, nil
 }
 
+func (b *ComponentVersionAccessImplBase) Close() error {
+	return b._ComponentVersionAccessImplBase.Close() // just for debugger to catch Close on this type
+}
+
 func (b *ComponentVersionAccessImplBase) GetContext() Context {
 	return b.ctx
 }

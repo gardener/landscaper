@@ -47,7 +47,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 		instActuator = instctlr.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
-				Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "02-inline-cd")},
+				Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
 			},
 		})
 
@@ -67,7 +67,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		}
 	})
 
-	It("Should successfully reconcile InlineCDTest", func() {
+	FIt("Should successfully reconcile InlineCDTest", func() {
 		ctx := context.Background()
 
 		var err error

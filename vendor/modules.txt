@@ -955,8 +955,9 @@ github.com/mandelsoft/spiff/flow
 github.com/mandelsoft/spiff/legacy/candiedyaml
 github.com/mandelsoft/spiff/spiffing
 github.com/mandelsoft/spiff/yaml
-# github.com/mandelsoft/vfs v0.0.0-20230506183150-975954b82357
+# github.com/mandelsoft/vfs v0.0.0-20230713123140-269aa4fb1338
 ## explicit; go 1.19
+github.com/mandelsoft/vfs/pkg/composefs
 github.com/mandelsoft/vfs/pkg/layerfs
 github.com/mandelsoft/vfs/pkg/memoryfs
 github.com/mandelsoft/vfs/pkg/osfs
@@ -1111,7 +1112,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b => github.com/fabianburth/ocm v0.0.0-20230704120423-c9e7ccf51c05
+# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b => github.com/fabianburth/ocm v0.0.0-20230719090507-d1cba41d4f05
 ## explicit; go 1.19
 github.com/open-component-model/ocm/pkg/cobrautils/flag
 github.com/open-component-model/ocm/pkg/cobrautils/flagsets
@@ -1198,6 +1199,7 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/compatattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/keepblobattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/mapocirepoattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/ociuploadattr
+github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/signingattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler
 github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/config
 github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers
@@ -1239,10 +1241,13 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/comparch
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ctf
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg/componentmapping
+github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/virtual
 github.com/open-component-model/ocm/pkg/contexts/ocm/resourcetypes
 github.com/open-component-model/ocm/pkg/contexts/ocm/utils/registry
 github.com/open-component-model/ocm/pkg/docker
 github.com/open-component-model/ocm/pkg/docker/resolve
+github.com/open-component-model/ocm/pkg/env
+github.com/open-component-model/ocm/pkg/env/builder
 github.com/open-component-model/ocm/pkg/errors
 github.com/open-component-model/ocm/pkg/exception
 github.com/open-component-model/ocm/pkg/finalizer
@@ -2509,5 +2514,5 @@ sigs.k8s.io/yaml
 # github.com/gardener/landscaper/apis => ./apis
 # github.com/gardener/landscaper/controller-utils => ./controller-utils
 # github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-# github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230704120423-c9e7ccf51c05
+# github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230719090507-d1cba41d4f05
 # k8s.io/kubectl => k8s.io/kubectl v0.26.1

@@ -184,15 +184,19 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 		if i > 0 {
 			version = hint[i:]
 			tag = version[1:] // remove colon
-			name = path.Join(prefix, hint[:i])
+			name = hint[:i]
 		} else {
-			name = path.Join(prefix, hint)
+			name = hint
 		}
 
 		hash := mapocirepoattr.Get(ctx.GetContext())
+		if hash.Prefix != nil {
+			prefix = *hash.Prefix
+		}
 		orig := name
-		name = hash.Map(name)
-		if name == orig {
+		mapped := hash.Map(name)
+		name = path.Join(prefix, mapped)
+		if mapped == orig {
 			log.Debug("namespace derived from hint",
 				append(values, "namespace", name),
 			)

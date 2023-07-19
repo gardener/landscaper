@@ -343,7 +343,7 @@ func (a *namespaceContainer) getArtifact(impl support.NamespaceAccessImpl, ref s
 			return a.base.GetArtifact(impl, e.Digest)
 		}
 	}
-	return nil, errors.ErrUnknown(cpi.KIND_OCIARTIFACT, ref)
+	return nil, errors.ErrNotFound(cpi.KIND_OCIARTIFACT, ref, impl.GetNamespace())
 }
 
 func (a *namespaceContainer) AnnotateArtifact(digest digest.Digest, name, value string) error {

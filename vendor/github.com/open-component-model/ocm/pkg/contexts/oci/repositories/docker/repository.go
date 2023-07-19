@@ -71,7 +71,7 @@ func (r *RepositoryImpl) GetNamespaces(prefix string, closure bool) ([]string, e
 	if err != nil {
 		return nil, err
 	}
-	return cpi.FilterChildren(closure, cpi.FilterByNamespacePrefix(prefix, repos)), nil
+	return cpi.FilterChildren(closure, prefix, repos), nil
 }
 
 func (r *RepositoryImpl) GetRepositories() ([]string, error) {

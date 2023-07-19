@@ -48,6 +48,25 @@ func MatchErr(err error, match ErrorMatcher, base error) bool {
 	return false
 }
 
+func IsNotExist(err error) bool {
+	return IsErrNotExist(err)
+}
+
+func IsExist(err error) bool {
+	return IsErrExist(err)
+}
+
+func IsPermission(err error) bool {
+	return IsErrPermission(err)
+}
+
+func IsErrPermission(err error) bool {
+	if os.IsPermission(err) {
+		return true
+	}
+	return MatchErr(err, os.IsPermission, ErrPermission)
+}
+
 func IsErrNotDir(err error) bool {
 	return MatchErr(err, isUnderlyingErrNotDir, ErrNotDir)
 }
@@ -76,6 +95,7 @@ func NewPathError(op string, path string, err error) error {
 
 var ErrNotDir = errors.New("is no directory")
 var ErrNotExist = os.ErrNotExist
+var ErrPermission = os.ErrPermission
 var ErrExist = os.ErrExist
 
 var ErrReadOnly = errors.New("filehandle is not writable")
