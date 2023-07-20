@@ -3,7 +3,6 @@ package compvfs
 import (
 	"fmt"
 
-	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
@@ -46,12 +45,10 @@ func (a AttributeType) Decode(data []byte, unmarshaller runtime.Unmarshaler) (in
 
 ////////////////////////////////////////////////////////////////////////////////
 
-var _osfs = osfs.New()
-
 func Get(ctx datacontext.Context) vfs.FileSystem {
 	v := ctx.GetAttributes().GetAttribute(ATTR_KEY)
 	if v == nil {
-		return _osfs
+		return nil
 	}
 	fs, _ := v.(vfs.FileSystem)
 	return fs

@@ -19,11 +19,7 @@ limitations under the License.
 package v1alpha2
 
 import (
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-	certificatesv1alpha1 "k8s.io/api/certificates/v1alpha1"
-========
 	resourcev1alpha2 "k8s.io/api/resource/v1alpha2"
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	managedfields "k8s.io/apimachinery/pkg/util/managedfields"
@@ -31,58 +27,6 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-// ClusterTrustBundleApplyConfiguration represents an declarative configuration of the ClusterTrustBundle type for use
-// with apply.
-type ClusterTrustBundleApplyConfiguration struct {
-	v1.TypeMetaApplyConfiguration    `json:",inline"`
-	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *ClusterTrustBundleSpecApplyConfiguration `json:"spec,omitempty"`
-}
-
-// ClusterTrustBundle constructs an declarative configuration of the ClusterTrustBundle type for use with
-// apply.
-func ClusterTrustBundle(name string) *ClusterTrustBundleApplyConfiguration {
-	b := &ClusterTrustBundleApplyConfiguration{}
-	b.WithName(name)
-	b.WithKind("ClusterTrustBundle")
-	b.WithAPIVersion("certificates.k8s.io/v1alpha1")
-	return b
-}
-
-// ExtractClusterTrustBundle extracts the applied configuration owned by fieldManager from
-// clusterTrustBundle. If no managedFields are found in clusterTrustBundle for fieldManager, a
-// ClusterTrustBundleApplyConfiguration is returned with only the Name, Namespace (if applicable),
-// APIVersion and Kind populated. It is possible that no managed fields were found for because other
-// field managers have taken ownership of all the fields previously owned by fieldManager, or because
-// the fieldManager never owned fields any fields.
-// clusterTrustBundle must be a unmodified ClusterTrustBundle API object that was retrieved from the Kubernetes API.
-// ExtractClusterTrustBundle provides a way to perform a extract/modify-in-place/apply workflow.
-// Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
-// applied if another fieldManager has updated or force applied any of the previously applied fields.
-// Experimental!
-func ExtractClusterTrustBundle(clusterTrustBundle *certificatesv1alpha1.ClusterTrustBundle, fieldManager string) (*ClusterTrustBundleApplyConfiguration, error) {
-	return extractClusterTrustBundle(clusterTrustBundle, fieldManager, "")
-}
-
-// ExtractClusterTrustBundleStatus is the same as ExtractClusterTrustBundle except
-// that it extracts the status subresource applied configuration.
-// Experimental!
-func ExtractClusterTrustBundleStatus(clusterTrustBundle *certificatesv1alpha1.ClusterTrustBundle, fieldManager string) (*ClusterTrustBundleApplyConfiguration, error) {
-	return extractClusterTrustBundle(clusterTrustBundle, fieldManager, "status")
-}
-
-func extractClusterTrustBundle(clusterTrustBundle *certificatesv1alpha1.ClusterTrustBundle, fieldManager string, subresource string) (*ClusterTrustBundleApplyConfiguration, error) {
-	b := &ClusterTrustBundleApplyConfiguration{}
-	err := managedfields.ExtractInto(clusterTrustBundle, internal.Parser().Type("io.k8s.api.certificates.v1alpha1.ClusterTrustBundle"), fieldManager, b, subresource)
-	if err != nil {
-		return nil, err
-	}
-	b.WithName(clusterTrustBundle.Name)
-
-	b.WithKind("ClusterTrustBundle")
-	b.WithAPIVersion("certificates.k8s.io/v1alpha1")
-========
 // ResourceClaimApplyConfiguration represents an declarative configuration of the ResourceClaim type for use
 // with apply.
 type ResourceClaimApplyConfiguration struct {
@@ -136,18 +80,13 @@ func extractResourceClaim(resourceClaim *resourcev1alpha2.ResourceClaim, fieldMa
 
 	b.WithKind("ResourceClaim")
 	b.WithAPIVersion("resource.k8s.io/v1alpha2")
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	return b, nil
 }
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithKind(value string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithKind(value string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.Kind = &value
 	return b
 }
@@ -155,11 +94,7 @@ func (b *ResourceClaimApplyConfiguration) WithKind(value string) *ResourceClaimA
 // WithAPIVersion sets the APIVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithAPIVersion(value string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithAPIVersion(value string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.APIVersion = &value
 	return b
 }
@@ -167,11 +102,7 @@ func (b *ResourceClaimApplyConfiguration) WithAPIVersion(value string) *Resource
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithName(value string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithName(value string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Name = &value
 	return b
@@ -180,11 +111,7 @@ func (b *ResourceClaimApplyConfiguration) WithName(value string) *ResourceClaimA
 // WithGenerateName sets the GenerateName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the GenerateName field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithGenerateName(value string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithGenerateName(value string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.GenerateName = &value
 	return b
@@ -193,11 +120,7 @@ func (b *ResourceClaimApplyConfiguration) WithGenerateName(value string) *Resour
 // WithNamespace sets the Namespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Namespace field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithNamespace(value string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithNamespace(value string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Namespace = &value
 	return b
@@ -206,11 +129,7 @@ func (b *ResourceClaimApplyConfiguration) WithNamespace(value string) *ResourceC
 // WithUID sets the UID field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UID field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithUID(value types.UID) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithUID(value types.UID) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.UID = &value
 	return b
@@ -219,11 +138,7 @@ func (b *ResourceClaimApplyConfiguration) WithUID(value types.UID) *ResourceClai
 // WithResourceVersion sets the ResourceVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithResourceVersion(value string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithResourceVersion(value string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ResourceVersion = &value
 	return b
@@ -232,11 +147,7 @@ func (b *ResourceClaimApplyConfiguration) WithResourceVersion(value string) *Res
 // WithGeneration sets the Generation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Generation field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithGeneration(value int64) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithGeneration(value int64) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.Generation = &value
 	return b
@@ -245,11 +156,7 @@ func (b *ResourceClaimApplyConfiguration) WithGeneration(value int64) *ResourceC
 // WithCreationTimestamp sets the CreationTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithCreationTimestamp(value metav1.Time) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithCreationTimestamp(value metav1.Time) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.CreationTimestamp = &value
 	return b
@@ -258,11 +165,7 @@ func (b *ResourceClaimApplyConfiguration) WithCreationTimestamp(value metav1.Tim
 // WithDeletionTimestamp sets the DeletionTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.DeletionTimestamp = &value
 	return b
@@ -271,11 +174,7 @@ func (b *ResourceClaimApplyConfiguration) WithDeletionTimestamp(value metav1.Tim
 // WithDeletionGracePeriodSeconds sets the DeletionGracePeriodSeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.DeletionGracePeriodSeconds = &value
 	return b
@@ -285,11 +184,7 @@ func (b *ResourceClaimApplyConfiguration) WithDeletionGracePeriodSeconds(value i
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithLabels(entries map[string]string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithLabels(entries map[string]string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.Labels == nil && len(entries) > 0 {
 		b.Labels = make(map[string]string, len(entries))
@@ -304,11 +199,7 @@ func (b *ResourceClaimApplyConfiguration) WithLabels(entries map[string]string) 
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithAnnotations(entries map[string]string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithAnnotations(entries map[string]string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.Annotations == nil && len(entries) > 0 {
 		b.Annotations = make(map[string]string, len(entries))
@@ -322,11 +213,7 @@ func (b *ResourceClaimApplyConfiguration) WithAnnotations(entries map[string]str
 // WithOwnerReferences adds the given value to the OwnerReferences field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the OwnerReferences field.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		if values[i] == nil {
@@ -340,11 +227,7 @@ func (b *ResourceClaimApplyConfiguration) WithOwnerReferences(values ...*v1.Owne
 // WithFinalizers adds the given value to the Finalizers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Finalizers field.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithFinalizers(values ...string) *ClusterTrustBundleApplyConfiguration {
-========
 func (b *ResourceClaimApplyConfiguration) WithFinalizers(values ...string) *ResourceClaimApplyConfiguration {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		b.Finalizers = append(b.Finalizers, values[i])
@@ -352,11 +235,7 @@ func (b *ResourceClaimApplyConfiguration) WithFinalizers(values ...string) *Reso
 	return b
 }
 
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
-========
 func (b *ResourceClaimApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go
 	if b.ObjectMetaApplyConfiguration == nil {
 		b.ObjectMetaApplyConfiguration = &v1.ObjectMetaApplyConfiguration{}
 	}
@@ -365,12 +244,6 @@ func (b *ResourceClaimApplyConfiguration) ensureObjectMetaApplyConfigurationExis
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/certificates/v1alpha1/clustertrustbundle.go
-func (b *ClusterTrustBundleApplyConfiguration) WithSpec(value *ClusterTrustBundleSpecApplyConfiguration) *ClusterTrustBundleApplyConfiguration {
-	b.Spec = value
-	return b
-}
-========
 func (b *ResourceClaimApplyConfiguration) WithSpec(value *ResourceClaimSpecApplyConfiguration) *ResourceClaimApplyConfiguration {
 	b.Spec = value
 	return b
@@ -383,4 +256,3 @@ func (b *ResourceClaimApplyConfiguration) WithStatus(value *ResourceClaimStatusA
 	b.Status = value
 	return b
 }
->>>>>>>> master:controller-utils/vendor/k8s.io/client-go/applyconfigurations/resource/v1alpha2/resourceclaim.go

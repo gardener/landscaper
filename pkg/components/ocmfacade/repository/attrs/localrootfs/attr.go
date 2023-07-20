@@ -47,6 +47,9 @@ func (a AttributeType) Decode(data []byte, unmarshaller runtime.Unmarshaler) (in
 
 func Get(ctx datacontext.Context) vfs.FileSystem {
 	v := ctx.GetAttributes().GetAttribute(ATTR_KEY)
+	if v == nil {
+		return nil
+	}
 	fs, _ := v.(vfs.FileSystem)
 	return fs
 }

@@ -18,27 +18,6 @@ limitations under the License.
 
 package v1
 
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/admissionregistration/v1alpha1/matchcondition.go
-// MatchConditionApplyConfiguration represents an declarative configuration of the MatchCondition type for use
-// with apply.
-type MatchConditionApplyConfiguration struct {
-	Name       *string `json:"name,omitempty"`
-	Expression *string `json:"expression,omitempty"`
-}
-
-// MatchConditionApplyConfiguration constructs an declarative configuration of the MatchCondition type for use with
-// apply.
-func MatchCondition() *MatchConditionApplyConfiguration {
-	return &MatchConditionApplyConfiguration{}
-}
-
-// WithName sets the Name field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Name field is set to the value of the last call.
-func (b *MatchConditionApplyConfiguration) WithName(value string) *MatchConditionApplyConfiguration {
-	b.Name = &value
-	return b
-========
 // TypeMetaApplyConfiguration represents an declarative configuration of the TypeMeta type for use
 // with apply.
 type TypeMetaApplyConfiguration struct {
@@ -50,20 +29,13 @@ type TypeMetaApplyConfiguration struct {
 // apply.
 func TypeMeta() *TypeMetaApplyConfiguration {
 	return &TypeMetaApplyConfiguration{}
->>>>>>>> master:apis/vendor/k8s.io/client-go/applyconfigurations/meta/v1/typemeta.go
 }
 
-// WithExpression sets the Expression field in the declarative configuration to the given value
+// WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-<<<<<<<< HEAD:vendor/k8s.io/client-go/applyconfigurations/admissionregistration/v1alpha1/matchcondition.go
-// If called multiple times, the Expression field is set to the value of the last call.
-func (b *MatchConditionApplyConfiguration) WithExpression(value string) *MatchConditionApplyConfiguration {
-	b.Expression = &value
-========
 // If called multiple times, the Kind field is set to the value of the last call.
 func (b *TypeMetaApplyConfiguration) WithKind(value string) *TypeMetaApplyConfiguration {
 	b.Kind = &value
->>>>>>>> master:apis/vendor/k8s.io/client-go/applyconfigurations/meta/v1/typemeta.go
 	return b
 }
 

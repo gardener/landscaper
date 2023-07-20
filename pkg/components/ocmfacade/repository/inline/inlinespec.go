@@ -3,10 +3,10 @@ package inline
 import (
 	"encoding/json"
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/errors"
 	. "github.com/open-component-model/ocm/pkg/exception"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -26,10 +26,10 @@ func init() {
 
 type RepositorySpecV1 struct {
 	runtime.ObjectVersionedType `json:",inline"`
-	CompDescFs                  json.RawMessage `json:"compDescFs"`
-	CompDescDirPath             string          `json:"compDescDirPath"`
-	BlobFs                      json.RawMessage `json:"blobFs"`
-	BlobDirPath                 string          `json:"blobDirPath"`
+	CompDescFs                  json.RawMessage `json:"compDescFs,omitempty"`
+	CompDescDirPath             string          `json:"compDescDirPath,omitempty"`
+	BlobFs                      json.RawMessage `json:"blobFs,omitempty"`
+	BlobDirPath                 string          `json:"blobDirPath,omitempty"`
 }
 
 func NewRepositorySpecV1(compDescFs vfs.FileSystem, compDescDirPath string, blobFs vfs.FileSystem, blobDirPath string) (*repository.RepositorySpec, error) {
@@ -46,32 +46,26 @@ func NewRepositorySpecV1(compDescFs vfs.FileSystem, compDescDirPath string, blob
 type converterV1 struct{}
 
 func (_ converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpecV1, error) {
-	cfs, err := yamlfs.New([]byte{})
-	if err != nil {
-		return nil, err
-	}
-	err = vfs.CopyDir(in.CompDescFs, "", cfs, "")
-	if err != nil {
-		return nil, err
+	var err error
+	var compdescYaml json.RawMessage
+	var blobYaml json.RawMessage
+
+	if fs, ok := in.CompDescFs.(yamlfs.YamlFileSystem); ok {
+		compdescYaml, err = fs.Data()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("cannot serialize non-yaml filesystem")
 	}
 
-	compdescYaml, err := cfs.Data()
-	if err != nil {
-		return nil, err
-	}
-
-	bfs, err := yamlfs.New([]byte{})
-	if err != nil {
-		return nil, err
-	}
-	err = vfs.CopyDir(in.CompDescFs, "", bfs, "")
-	if err != nil {
-		return nil, err
-	}
-
-	blobYaml, err := cfs.Data()
-	if err != nil {
-		return nil, err
+	if fs, ok := in.BlobFs.(yamlfs.YamlFileSystem); ok {
+		blobYaml, err = fs.Data()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("cannot serialize non-yaml filesystem")
 	}
 
 	return &RepositorySpecV1{
@@ -84,28 +78,19 @@ func (_ converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpec
 }
 
 func (_ converterV1) ConvertTo(in *RepositorySpecV1) (*repository.RepositorySpec, error) {
-	var cmemfs vfs.FileSystem
-	var bmemfs vfs.FileSystem
+	var err error
+	var compfs vfs.FileSystem
+	var blobfs vfs.FileSystem
 
 	if in.CompDescFs != nil {
-		cfs, err := yamlfs.New(in.CompDescFs)
-		if err != nil {
-			return nil, err
-		}
-		cmemfs = memoryfs.New()
-		err = vfs.CopyDir(cfs, "", cmemfs, "")
+		compfs, err = yamlfs.New(in.CompDescFs)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if in.BlobFs != nil {
-		bfs, err := yamlfs.New(in.BlobFs)
-		if err != nil {
-			return nil, err
-		}
-		bmemfs = memoryfs.New()
-		err = vfs.CopyDir(bfs, "", bmemfs, "")
+		blobfs, err = yamlfs.New(in.BlobFs)
 		if err != nil {
 			return nil, err
 		}
@@ -113,9 +98,9 @@ func (_ converterV1) ConvertTo(in *RepositorySpecV1) (*repository.RepositorySpec
 
 	return &repository.RepositorySpec{
 		InternalVersionedTypedObject: runtime.NewInternalVersionedTypedObject[cpi.RepositorySpec](versions, in.Type),
-		CompDescFs:                   cmemfs,
+		CompDescFs:                   compfs,
 		CompDescDirPath:              in.CompDescDirPath,
-		BlobFs:                       bmemfs,
+		BlobFs:                       blobfs,
 		BlobDirPath:                  in.BlobDirPath,
 	}, nil
 }

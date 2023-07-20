@@ -8,7 +8,6 @@ import (
 	"path"
 	"sync"
 
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	"github.com/open-component-model/ocm/pkg/common"
@@ -20,71 +19,19 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
-func NewRepositoryFromSpec(ctx cpi.Context, spec *RepositorySpec) (cpi.Repository, error) {
-	var err error
-
-	if spec.CompDescDirPath != "" && spec.CompDescDirPath != "/" {
-		spec.CompDescFs, err = projectionfs.New(spec.CompDescFs, spec.CompDescDirPath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if spec.BlobDirPath != "" && spec.BlobDirPath != "/" {
-		spec.BlobFs, err = projectionfs.New(spec.BlobFs, spec.BlobDirPath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	acc, err := NewAccess(spec.CompDescFs, spec.BlobFs)
-	if err != nil {
-		return nil, err
-	}
-	return virtual.NewRepository(ctx, acc), nil
-}
-
-func NewRepository(ctx cpi.Context, compDescFs vfs.FileSystem, compDescDirPath string, blobFs vfs.FileSystem, blobDirPath string) (cpi.Repository, error) {
-	var err error
-
-	if compDescFs == nil || blobFs == nil {
-		return nil, errors.New("compDescFs or blobFs cannot be nil")
-	}
-
-	if compDescDirPath != "" && compDescDirPath != "/" {
-		compDescFs, err = projectionfs.New(compDescFs, compDescDirPath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if blobDirPath != "" && blobDirPath != "/" {
-		blobFs, err = projectionfs.New(blobFs, blobDirPath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	acc, err := NewAccess(compDescFs, blobFs)
-	if err != nil {
-		return nil, err
-	}
-	return virtual.NewRepository(ctx.OCMContext(), acc), nil
-}
-
-type Index = virtual.Index[string]
+type Index = virtual.Index[any]
 
 type ComponentAccess struct {
-	lock         sync.Mutex
-	descriptorFs vfs.FileSystem
-	blobsFs      vfs.FileSystem
-	index        *Index
+	lock               sync.Mutex
+	descriptorProvider ComponentDescriptorProvider
+	blobsFs            vfs.FileSystem
+	index              *Index
 }
 
-func NewAccess(descriptorFs vfs.FileSystem, blobFs vfs.FileSystem) (*ComponentAccess, error) {
+func NewAccess(descriptorProvider ComponentDescriptorProvider, blobFs vfs.FileSystem) (*ComponentAccess, error) {
 	a := &ComponentAccess{
-		descriptorFs: descriptorFs,
-		blobsFs:      blobFs,
+		descriptorProvider: descriptorProvider,
+		blobsFs:            blobFs,
 	}
 	err := a.Index()
 	if err != nil {
@@ -93,35 +40,22 @@ func NewAccess(descriptorFs vfs.FileSystem, blobFs vfs.FileSystem) (*ComponentAc
 	return a, nil
 }
 
-// Index adds all Component Descriptors in the descriptorFs to the Repository Index (in other words, it makes them
+// Index adds all Component Descriptors in the descriptorProvider to the Repository Index (in other words, it makes them
 // known to the repository).
 // This function used to initialize the repository but can also be used to update the repository in case Component
-// Descriptors were added to the descriptorFs.
+// Descriptors were added to the descriptorProvider.
 func (a *ComponentAccess) Index() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	a.index = virtual.NewIndex[string]()
+	a.index = virtual.NewIndex[any]()
 
-	entries, err := vfs.ReadDir(a.descriptorFs, "/")
+	entries, err := a.descriptorProvider.List()
 	if err != nil {
 		return err
 	}
-	for _, e := range entries {
-		filename := e.Name()
-		// there might e.g. be a blob directory in this folder
-		if ok, _ := vfs.IsDir(a.descriptorFs, filename); ok {
-			continue
-		}
-		data, err := vfs.ReadFile(a.descriptorFs, filename)
-		if err != nil {
-			return err
-		}
-		cd, err := compdesc.Decode(data)
-		if err != nil {
-			return err
-		}
-		err = a.index.Add(cd, filename)
+	for _, cd := range entries {
+		err = a.index.Add(cd, nil)
 		if err != nil {
 			return err
 		}

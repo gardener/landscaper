@@ -6,7 +6,10 @@ package installations
 
 import (
 	"context"
-
+	"errors"
+	"fmt"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
 	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -28,6 +31,28 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	var inlineCd *types.ComponentDescriptor = nil
 	if installation.Spec.ComponentDescriptor != nil {
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
+
+		// This is very ugly, but necessary for supporting legacy inline component descriptors
+		if installation.Spec.ComponentDescriptor.Inline != nil {
+			if installation.Spec.ComponentDescriptor.Reference != nil {
+				if installation.Spec.ComponentDescriptor.Reference.RepositoryContext != nil &&
+					installation.Spec.ComponentDescriptor.Reference.RepositoryContext.Type != repository.InlineType {
+					return errors.New(fmt.Sprintf("cannot have repository spec of type %s when using inline component descriptor", installation.Spec.ComponentDescriptor.Reference.RepositoryContext.Type))
+				}
+				return errors.New("cannot have repository spec when using inline component descriptor")
+			}
+			installation.Spec.ComponentDescriptor.Reference = &lsv1alpha1.ComponentDescriptorReference{
+				RepositoryContext: &cdv2.UnstructuredTypedObject{
+					ObjectType: cdv2.ObjectType{
+						Type: repository.InlineType,
+					},
+					Raw: []byte(`{"type":"inline"}`),
+					Object: map[string]interface{}{
+						"type": "inline",
+					},
+				},
+			}
+		}
 	}
 
 	registry, err := registries.NewFactory().NewRegistryAccess(ctx, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)

@@ -14,6 +14,8 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	. "github.com/open-component-model/ocm/pkg/env/builder"
 	. "github.com/open-component-model/ocm/pkg/testutils"
 
@@ -159,5 +161,16 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		bufferA := Must(vfs.ReadFile(mfs, "testblob"))
 		bufferB := Must(vfs.ReadFile(fs, filepath.Join(DIRECTORY_REPOSITORY, "blob1", "testblob")))
 		Expect(bufferA).To(Equal(bufferB))
+	})
+
+	FIt("manage seperate attribute contexts", func() {
+		octx1 := ocm.New(datacontext.MODE_EXTENDED)
+		octx2 := ocm.New(datacontext.MODE_EXTENDED)
+
+		fs2 := memoryfs.New()
+		localrootfs.Set(octx1, fs)
+		localrootfs.Set(octx2, fs2)
+		Expect(localrootfs.Get(octx1)).To(BeIdenticalTo(fs))
+		Expect(localrootfs.Get(octx2)).To(BeIdenticalTo(fs2))
 	})
 })

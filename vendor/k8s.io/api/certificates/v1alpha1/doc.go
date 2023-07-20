@@ -19,10 +19,6 @@ limitations under the License.
 // +k8s:openapi-gen=true
 // +k8s:prerelease-lifecycle-gen=true
 
-<<<<<<<< HEAD:vendor/k8s.io/api/certificates/v1alpha1/doc.go
 // +groupName=certificates.k8s.io
 
 package v1alpha1 // import "k8s.io/api/certificates/v1alpha1"
-========
-package v2beta2 // import "k8s.io/api/autoscaling/v2beta2"
->>>>>>>> master:apis/vendor/k8s.io/api/autoscaling/v2beta2/doc.go

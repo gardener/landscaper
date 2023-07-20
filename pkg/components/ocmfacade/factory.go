@@ -2,6 +2,7 @@ package ocmfacade
 
 import (
 	"context"
+	"fmt"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/gardener/landscaper/apis/config"
@@ -14,14 +15,14 @@ import (
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/compvfs"
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/localrootfs"
 	"github.com/go-logr/logr"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/comparch"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
@@ -42,10 +43,10 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 
 	//logger, _ := logging.FromContextOrNew(ctx, nil)
 	registryAccess := &RegistryAccess{}
-	registryAccess.octx = ocm.DefaultContext()
+	registryAccess.octx = ocm.New(datacontext.MODE_EXTENDED)
 	registryAccess.session = ocm.NewSession(datacontext.NewSession())
 
-	cpi.RegisterRepositoryType(cpi.NewRepositoryType[*comparch.RepositorySpec]("local", nil))
+	//cpi.RegisterRepositoryType(cpi.NewRepositoryType[*comparch.RepositorySpec]("local", nil))
 
 	ociConfigFiles := make([]string, 0)
 	if ociRegistryConfig != nil {
@@ -71,11 +72,30 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		list, err := inline.GetFlatList()
+		descriptors, err := inline.GetFlatList()
 		if err != nil {
 			return nil, err
 		}
-		registryAccess.predefinedComponentDescriptors = list
+
+		memfs := memoryfs.New()
+
+		for i, cd := range descriptors {
+			data, err := compdesc.Encode(cd)
+			if err != nil {
+				return nil, err
+			}
+			file, err := memfs.Create(fmt.Sprintf("component-descriptor%d.yaml", i))
+			if err != nil {
+				return nil, err
+			}
+			if _, err := file.Write(data); err != nil {
+				return nil, err
+			}
+			if err := file.Close(); err != nil {
+				return nil, err
+			}
+		}
+		compvfs.Set(registryAccess.octx, memfs)
 	}
 
 	// set available default credentials from dockerconfig files
