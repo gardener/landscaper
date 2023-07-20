@@ -1,4 +1,4 @@
-type: inline/v2
+type: inline
 compDescFs:
     component-descriptor1.yaml: |
         meta:
@@ -56,3 +56,4 @@ compDescFs:
                 type: localFilesystemBlob
                 mediaType: text/plain
                 filename: blob1
+blobDirPath: local/testdata/distinct/blobs

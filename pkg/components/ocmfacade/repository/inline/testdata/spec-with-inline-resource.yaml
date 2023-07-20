@@ -1,4 +1,4 @@
-type: inline/v2
+type: inline
 compDescFs:
   component-descriptor1.yaml: |
     meta:
