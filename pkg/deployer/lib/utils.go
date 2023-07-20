@@ -11,29 +11,31 @@ import (
 	"fmt"
 	"reflect"
 
-	lsutil "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 
-	"k8s.io/client-go/tools/record"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/pkg/api"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/api"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
@@ -186,4 +188,104 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 	}
 
 	return err
+}
+
+func CheckResponsibility(ctx context.Context, lsClient client.Client, obj *metav1.PartialObjectMetadata,
+	deployerType lsv1alpha1.DeployItemType, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.ResolvedTarget, bool, lserrors.LsError) {
+
+	annotatedDeployerType, found := obj.GetAnnotations()[lsv1alpha1.DeployerTypeAnnotation]
+	targetName := obj.GetAnnotations()[lsv1alpha1.DeployerTargetNameAnnotation]
+	if !found {
+		// deploy item in old version
+		di := &lsv1alpha1.DeployItem{}
+		if err := read_write_layer.GetDeployItem(ctx, lsClient, client.ObjectKeyFromObject(obj), di); err != nil {
+			return nil, false, lserrors.NewWrappedError(err, "CheckResponsibility", "fetchDeployItem",
+				"fetching deploy item failed")
+		}
+
+		annotatedDeployerType = string(di.Spec.Type)
+
+		targetName = lsv1alpha1.NoTargetNameValue
+		if di.Spec.Target != nil && di.Spec.Target.Name != "" {
+			targetName = di.Spec.Target.Name
+		}
+	}
+
+	if annotatedDeployerType != string(deployerType) {
+		return nil, false, nil
+	}
+
+	return checkTargetResponsibilityAndResolve(ctx, lsClient, obj.Namespace, targetName, targetSelectors)
+}
+
+func checkTargetResponsibilityAndResolve(ctx context.Context, lsClient client.Client,
+	targetNamespace, targetName string, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.ResolvedTarget, bool, lserrors.LsError) {
+
+	target, responsible, lsError := checkTargetResponsibility(ctx, lsClient, targetNamespace, targetName, targetSelectors)
+	if lsError != nil {
+		return nil, false, lsError
+	}
+
+	if !responsible {
+		return nil, false, nil
+	}
+
+	// resolve Target reference, if any
+	var rt *lsv1alpha1.ResolvedTarget
+	var err error
+	if target != nil {
+		if target.Spec.SecretRef != nil {
+			sr := secretresolver.New(lsClient)
+			rt, err = sr.Resolve(ctx, target)
+			if err != nil {
+				msg := fmt.Sprintf("error resolving secret reference (%s/%s#%s) in target '%s/%s'",
+					target.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name)
+				lsError = lserrors.NewWrappedError(err, "checkTargetResponsibilityAndResolve", "resolveSecret", msg)
+				return nil, false, lsError
+			}
+		} else {
+			rt = targetresolver.NewResolvedTarget(target)
+		}
+	}
+
+	return rt, true, nil
+}
+
+func checkTargetResponsibility(ctx context.Context, lsClient client.Client,
+	targetNamespace, targetName string, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.Target, bool, lserrors.LsError) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	op := "checkTargetResponsibility"
+
+	if targetName == lsv1alpha1.NoTargetNameValue {
+		logger.Debug("No target defined")
+		return nil, true, nil
+	}
+
+	logger.Debug("Found target. Checking responsibility")
+	target := &lsv1alpha1.Target{}
+	if err := lsClient.Get(ctx, client.ObjectKey{Namespace: targetNamespace, Name: targetName}, target); err != nil {
+		lsError := lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item")
+		if apierrors.IsNotFound(err) {
+			lsError = lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item",
+				lsv1alpha1.ErrorForInfoOnly)
+		}
+		return nil, false, lsError
+	}
+	if len(targetSelectors) == 0 {
+		logger.Debug("No target selectors defined")
+		return target, true, nil
+	}
+	matched, err := targetselector.MatchOne(target, targetSelectors)
+	if err != nil {
+		lsError := lserrors.NewWrappedError(err, op, "MatchOne", "unable to match target selector")
+		return nil, false, lsError
+	}
+	if !matched {
+		logger.Debug("The deployitem's target has not matched the given target selector",
+			"target", target.Name)
+		return nil, false, nil
+	}
+	return target, true, nil
 }

@@ -49,6 +49,7 @@
 - [Deployer Lifecycle Management](technical/deployer_lifecycle_management.md)
 - [Execution Controller](technical/execution_controller.md)
 - [Installation Controller](technical/installation_controller.md)
+- [Scaling of Landscaper Pods](technical/scaling.md)
 - [Target Types](technical/target_types.md)
 - [Types](technical/types.md)
 

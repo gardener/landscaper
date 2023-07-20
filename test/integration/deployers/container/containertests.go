@@ -193,7 +193,7 @@ func ContainerTests(f *framework.Framework) {
 
 		utils.ExpectNoError(state.Client.Delete(ctx, inst))
 
-		err := wait.Poll(1*time.Second, 5*time.Minute, func() (bool, error) {
+		err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 			if err1 := state.Client.Get(ctx, client.ObjectKeyFromObject(inst), inst); err1 != nil {
 				if k8serrors.IsNotFound(err1) {
 					return true, nil
@@ -309,6 +309,7 @@ func ContainerTests(f *framework.Framework) {
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
 			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
+			rt.Target.TypeMeta = target.TypeMeta // workaround
 			Expect(rt.Target).To(Equal(target))
 			var actualTargetContentAsObject interface{}
 			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
@@ -352,6 +353,7 @@ func ContainerTests(f *framework.Framework) {
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
 			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
+			rt.Target.TypeMeta = target.TypeMeta // workaround
 			Expect(rt.Target).To(Equal(target))
 			var actualTargetContentAsObject interface{}
 			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
@@ -396,6 +398,7 @@ func ContainerTests(f *framework.Framework) {
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
 			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
+			rt.Target.TypeMeta = target.TypeMeta // workaround
 			Expect(rt.Target).To(Equal(target))
 			var actualTargetContentAsObject interface{}
 			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))

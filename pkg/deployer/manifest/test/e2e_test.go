@@ -63,7 +63,7 @@ var _ = Describe("Manifest Deployer", func() {
 				Type:     manifestctlr.Type,
 				Deployer: deployer,
 			},
-		)
+			5, "mantest-"+testutil.GetNextCounter())
 	})
 
 	AfterEach(func() {
@@ -106,7 +106,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 
 		// Expect that the deploy item gets deleted
-		Expect(wait.PollImmediate(5*time.Second, time.Minute, func() (done bool, err error) {
+		Expect(wait.PollUntilContextTimeout(ctx, 5*time.Second, time.Minute, true, func(ctx context.Context) (done bool, err error) {
 			if _, err = ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace())); err != nil {
 				return false, nil
 			}
@@ -173,7 +173,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 		// Expect that the deploy item gets deleted
-		Expect(wait.PollImmediate(5*time.Second, time.Minute, func() (done bool, err error) {
+		Expect(wait.PollUntilContextTimeout(ctx, 5*time.Second, time.Minute, true, func(ctx context.Context) (done bool, err error) {
 			if _, err = ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace())); err != nil {
 				return false, nil
 			}
@@ -221,7 +221,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(testutil.AddAnnotationForDeployItem(ctx, testenv, di, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")).ToNot(HaveOccurred())
 		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 		// Expect that the deploy item gets deleted
-		Expect(wait.PollImmediate(5*time.Second, time.Minute, func() (done bool, err error) {
+		Expect(wait.PollUntilContextTimeout(ctx, 5*time.Second, time.Minute, true, func(ctx context.Context) (done bool, err error) {
 			if _, err = ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace())); err != nil {
 				return false, nil
 			}
@@ -278,7 +278,7 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 	Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 
 	// Expect that the deploy item gets deleted
-	Expect(wait.PollImmediate(5*time.Second, time.Minute, func() (done bool, err error) {
+	Expect(wait.PollUntilContextTimeout(ctx, 5*time.Second, time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		if _, err = ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace())); err != nil {
 			return false, nil
 		}

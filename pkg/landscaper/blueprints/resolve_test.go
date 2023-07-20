@@ -6,9 +6,9 @@ package blueprints_test
 
 import (
 	"context"
+	"crypto/rand"
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"io"
-	"math/rand"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -47,7 +47,9 @@ func (r dummyBlobResolver) Info(_ context.Context, _ types.Resource) (*ctf.BlobI
 
 func (r dummyBlobResolver) Resolve(_ context.Context, _ types.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
 	data := make([]byte, 256)
-	rand.Read(data)
+	if _, err := rand.Read(data); err != nil {
+		return nil, err
+	}
 
 	for i := 0; i < 20; i++ {
 		if _, err := writer.Write(data); err != nil {

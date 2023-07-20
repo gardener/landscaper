@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	lsutil "github.com/gardener/landscaper/pkg/utils"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -19,12 +17,16 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := con.log.StartReconcile(req)
 	ctx = logging.NewContext(ctx, logger)
+
+	con.workerCounter.EnterWithLog(logger, 70, "di-timeout")
+	defer con.workerCounter.Exit()
 
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di); err != nil {
@@ -167,10 +169,14 @@ func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, di *
 	di.Status.JobIDFinished = di.Status.GetJobID()
 	di.Status.ObservedGeneration = di.Generation
 	lsv1alpha1helper.SetDeployItemToFailed(di)
+
+	message := fmt.Sprintf("deployer has not finished this deploy item within %d seconds - probably some of the "+
+		"installed items (deployments, jobs, daemons etc.) in the target system were not up and running within this time period",
+		progressingTimeout/time.Second)
 	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
 		operation,
 		lsv1alpha1.ProgressingTimeoutReason,
-		fmt.Sprintf("deployer has not finished this deploy item within %d seconds", progressingTimeout/time.Second),
+		message,
 		lsv1alpha1.ErrorTimeout))
 
 	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000111, di); err != nil {

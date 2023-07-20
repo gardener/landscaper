@@ -137,7 +137,7 @@ spec:
 
 ## Token Rotation
 
-If the field `tokenRotation.enabled` is set tu `true`, the token in the kubeconfig of the secret referenced by
+If the field `tokenRotation.enabled` is set to `true`, the token in the kubeconfig of the secret referenced by
 the *TargetSync* object in `spec.secretRef` is rotated every 60 days, whereby the lifetime of new every token is 60 days. It is assumed that the kubeconfig in the secret has the following format (this is the format if you download the kubeconfig of a Gardener service account, from the Gardener dashboard):
 
 ```yaml
@@ -155,13 +155,15 @@ clusters:
     cluster:
       server: https://...
 users:
-  - name: <service account name>
+  - name: <service account name> 
     user:
       token: >-
         eyJhbGciOiJSUzI1NiIsImtpZCI6IjBCOXVYUkd2ck0zdC1TMVUtMXFESWRNc1BPYzR...
 ```
 
-Token rotation requires that the corresponding service account is allowed to request new tokens for itself.
+**Attention:** 
+  - The name in the users section must be the same as the service account name in the Gardener project for which this kubeconfig (token) was created.  
+  - Token rotation requires that the corresponding service account is allowed to request new tokens for itself.
 
 ## Trigger the Reconciliation of a *TargetSync* object
 

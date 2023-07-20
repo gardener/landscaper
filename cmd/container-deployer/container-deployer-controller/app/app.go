@@ -39,7 +39,8 @@ func (o *options) run(ctx context.Context) error {
 	if err := containerctlr.AddControllerToManager(o.DeployerOptions.Log,
 		o.DeployerOptions.HostMgr,
 		o.DeployerOptions.LsMgr,
-		o.Config); err != nil {
+		o.Config,
+		"container"); err != nil {
 		return fmt.Errorf("unable to setup helm controller")
 	}
 	return o.DeployerOptions.StartManagers(ctx)

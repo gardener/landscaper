@@ -20,11 +20,14 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
-// AddControllersToManager adds all deployer registration related deployers to the manager.
+// AddControllersToManager adds the healthCheck controller to the manager.
 func AddControllersToManager(ctx context.Context, logger logging.Logger, hostMgr manager.Manager,
 	agentConfig *config.AgentConfiguration, lsDeployments *config.LsDeployments, enabledDeployers []string) error {
 	lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
-	cl := hostMgr.GetClient()
+	cl, err := client.New(hostMgr.GetConfig(), client.Options{Scheme: hostMgr.GetScheme()})
+	if err != nil {
+		return fmt.Errorf("error building client for healthCheck initialization: %w", err)
+	}
 	key := client.ObjectKey{Namespace: agentConfig.Namespace, Name: agentConfig.Name}
 
 	if err := cl.Get(ctx, key, lsHealthCheck); err != nil {
@@ -46,9 +49,9 @@ func AddControllersToManager(ctx context.Context, logger logging.Logger, hostMgr
 
 	log := logger.Reconciles("lsHealthCheck", "LsHealthCheck")
 	healthCheckController := NewLsHealthCheckController(log, agentConfig, lsDeployments,
-		cl, hostMgr.GetScheme(), enabledDeployers, 1*time.Minute)
+		hostMgr.GetClient(), hostMgr.GetScheme(), enabledDeployers, 1*time.Minute)
 
-	err := builder.ControllerManagedBy(hostMgr).
+	err = builder.ControllerManagedBy(hostMgr).
 		For(&lsv1alpha1.LsHealthCheck{}).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(healthCheckController)

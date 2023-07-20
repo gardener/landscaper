@@ -8,7 +8,7 @@ set -e
 
 SOURCE_PATH="$(dirname $0)/.."
 oci_images=$@
-REPO_CTX="eu.gcr.io/sap-se-gcr-k8s-private/cnudie/gardener/development"
+REPO_CTX="eu.gcr.io/sap-gcp-cp-k8s-stable-hub/landscaper"
 CA_PATH="$(mktemp -d)"
 BASE_DEFINITION_PATH="${CA_PATH}/component-descriptor.yaml"
 

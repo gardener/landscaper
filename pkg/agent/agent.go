@@ -230,7 +230,7 @@ func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Clien
 			}
 		}
 	}
-	err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (done bool, err error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		for _, obj := range resources {
 			if err := kubeClient.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
 				if apierrors.IsNotFound(err) {

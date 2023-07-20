@@ -10,7 +10,9 @@ landscaper:
       version:
         preprocess: 'inject-commit-hash'
         inject_effective_version: true
-      component_descriptor: ~
+      component_descriptor:
+        ctx_repository: landscaper
+        snapshot_ctx_repository: landscaper
       publish:
         dockerimages:
           landscaper-controller:
@@ -51,7 +53,7 @@ landscaper:
             image: eu.gcr.io/gardener-project/landscaper/mock-deployer-controller
     steps:
       verify:
-        image: 'golang:1.19.10'
+        image: 'golang:1.20.6'
       publish-helm-charts:
         depends:
         - verify
@@ -73,14 +75,14 @@ landscaper:
           - integration-test
           trait_depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.18.6-alpine3.16'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
           output_dir: 'integration_test'
     pull-request:
       steps:
         integration_test:
           depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.18.6-alpine3.16'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
           execute:
           - integration-test-new
           output_dir: 'integration_test'
@@ -107,7 +109,7 @@ landscaper:
           - integration-test
           trait_depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.18.6-alpine3.16'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
           output_dir: 'integration_test'
         update_release:
           inputs:

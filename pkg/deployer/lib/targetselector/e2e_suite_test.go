@@ -99,7 +99,7 @@ var _ = Describe("E2E", func() {
 					},
 				},
 			},
-		})
+		}, "test-e2e"+testutils.GetNextCounter())
 		testutils.ExpectNoError(err)
 
 		testutils.ShouldReconcile(ctx, ctrl, kutil.ReconcileRequestFromObject(di))
@@ -149,7 +149,7 @@ var _ = Describe("E2E", func() {
 					},
 				},
 			},
-		})
+		}, "test-annot"+testutils.GetNextCounter())
 		testutils.ExpectNoError(err)
 
 		testutils.ShouldReconcile(ctx, ctrl, kutil.ReconcileRequestFromObject(di))

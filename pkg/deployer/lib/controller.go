@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/lock"
+
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,11 +34,8 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
-	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
-	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/version"
 )
 
@@ -89,7 +88,7 @@ func (args DeployerArgs) Validate() error {
 }
 
 // Add adds a deployer to the given managers using the given args.
-func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) error {
+func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, callerName string) error {
 	args.Default()
 	if err := args.Validate(); err != nil {
 		return err
@@ -99,12 +98,14 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) 
 		lsMgr.GetEventRecorderFor(args.Name),
 		hostMgr.GetClient(),
 		hostMgr.GetScheme(),
-		args)
+		args,
+		maxNumberOfWorkers,
+		callerName)
 
 	log = log.Reconciles("", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
 
 	return builder.ControllerManagedBy(lsMgr).
-		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
+		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type)), builder.OnlyMetadata).
 		WithOptions(args.Options).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(con)
@@ -123,6 +124,9 @@ type controller struct {
 	lsEventRecorder record.EventRecorder
 	hostClient      client.Client
 	hostScheme      *runtime.Scheme
+
+	workerCounter *lsutil.WorkerCounter
+	callerName    string
 }
 
 // NewController creates a new generic deployitem controller.
@@ -131,7 +135,12 @@ func NewController(lsClient client.Client,
 	lsEventRecorder record.EventRecorder,
 	hostClient client.Client,
 	hostScheme *runtime.Scheme,
-	args DeployerArgs) *controller {
+	args DeployerArgs,
+	maxNumberOfWorkers int,
+	callerName string) *controller {
+
+	wc := lsutil.NewWorkerCounter(maxNumberOfWorkers)
+
 	return &controller{
 		deployerType: args.Type,
 		deployer:     args.Deployer,
@@ -146,14 +155,19 @@ func NewController(lsClient client.Client,
 		lsEventRecorder: lsEventRecorder,
 		hostClient:      hostClient,
 		hostScheme:      hostScheme,
+		workerCounter:   wc,
+		callerName:      callerName,
 	}
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
 
-	di := &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, req.NamespacedName, di); err != nil {
+	c.workerCounter.EnterWithLog(logger, 70, c.callerName)
+	defer c.workerCounter.Exit()
+
+	metadata := lsutil.EmptyDeployItemMetadata()
+	if err := c.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
@@ -161,16 +175,53 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	c.lsScheme.Default(di)
-
-	rt, shouldReconcile, lsErr := c.checkTargetResponsibilityAndResolve(ctx, logger, di)
-	if lsErr != nil {
-		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, lsErr)
+	// this check is only for compatibility reasons
+	rt, reponsible, err := CheckResponsibility(ctx, c.lsClient, metadata, c.deployerType, c.targetSelectors)
+	if err != nil {
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
 
-	if !shouldReconcile {
+	if !reponsible {
 		return reconcile.Result{}, nil
 	}
+
+	locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
+	syncObject, err := locker.LockDI(ctx, metadata)
+	if err != nil {
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
+	}
+
+	if syncObject == nil {
+		return locker.NotLockedResult()
+	}
+
+	defer func() {
+		locker.Unlock(ctx, syncObject)
+	}()
+
+	return c.reconcilePrivate(ctx, metadata, rt)
+}
+
+func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.PartialObjectMetadata,
+	rt *lsv1alpha1.ResolvedTarget) (reconcile.Result, error) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	di := &lsv1alpha1.DeployItem{}
+	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, client.ObjectKeyFromObject(metadata), di); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Debug(err.Error())
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	// do we really need to check if metadata and di have the same guid?
+	if metadata.UID != di.UID {
+		err := lserrors.NewError("Reconcile", "differentUIDs", "different UIDs")
+		return reconcile.Result{}, err
+	}
+
+	c.lsScheme.Default(di)
 
 	old := di.DeepCopy()
 
@@ -181,6 +232,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
+
+	if !hasTestReconcileAnnotation && di.Status.GetJobID() == di.Status.JobIDFinished {
+		logger.Info("deploy item not reconciled because no new job ID or test reconcile annotation")
+		return reconcile.Result{}, nil
+	}
+
 	if hasTestReconcileAnnotation {
 		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
 			return reconcile.Result{}, err
@@ -188,11 +245,6 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
 		di.Status.JobID = uuid.New().String()
-	}
-
-	if di.Status.GetJobID() == di.Status.JobIDFinished {
-		logger.Info("deploy item not reconciled because no new job ID")
-		return reconcile.Result{}, nil
 	}
 
 	if di.Status.Phase.IsFinal() || di.Status.Phase.IsEmpty() {
@@ -250,77 +302,8 @@ func (c *controller) buildResult(phase lsv1alpha1.DeployItemPhase, err error) (r
 	}
 }
 
-func (c *controller) checkTargetResponsibilityAndResolve(ctx context.Context, log logging.Logger,
-	deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.ResolvedTarget, bool, lserrors.LsError) {
-
-	target, responsible, lsError := c.checkTargetResponsibility(ctx, log, deployItem)
-	if lsError != nil {
-		return nil, false, lsError
-	}
-
-	if !responsible {
-		return nil, false, nil
-	}
-
-	// resolve Target reference, if any
-	var rt *lsv1alpha1.ResolvedTarget
-	var err error
-	if target != nil {
-		if target.Spec.SecretRef != nil {
-			sr := secretresolver.New(c.lsClient)
-			rt, err = sr.Resolve(ctx, target)
-			if err != nil {
-				msg := fmt.Sprintf("error resolving secret reference (%s/%s#%s) in target '%s/%s'",
-					target.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name)
-				lsError = lserrors.NewWrappedError(err, "checkTargetResponsibilityAndResolve", "resolveSecret", msg)
-				return nil, false, lsError
-			}
-		} else {
-			rt = targetresolver.NewResolvedTarget(target)
-		}
-	}
-
-	return rt, true, nil
-}
-
-func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.Logger,
-	deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, lserrors.LsError) {
-
-	op := "checkTargetResponsibility"
-
-	if deployItem.Spec.Target == nil {
-		log.Debug("No target defined")
-		return nil, true, nil
-	}
-	log.Debug("Found target. Checking responsibility")
-	target := &lsv1alpha1.Target{}
-	deployItem.Spec.Target.Namespace = deployItem.Namespace
-	if err := c.lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
-		lsError := lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item")
-		if apierrors.IsNotFound(err) {
-			lsError = lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item",
-				lsv1alpha1.ErrorForInfoOnly)
-		}
-		return nil, false, lsError
-	}
-	if len(c.targetSelectors) == 0 {
-		log.Debug("No target selectors defined")
-		return target, true, nil
-	}
-	matched, err := targetselector.MatchOne(target, c.targetSelectors)
-	if err != nil {
-		lsError := lserrors.NewWrappedError(err, op, "MatchOne", "unable to match target selector")
-		return nil, false, lsError
-	}
-	if !matched {
-		log.Debug("The deployitem's target has not matched the given target selector",
-			"target", target.Name)
-		return nil, false, nil
-	}
-	return target, true, nil
-}
-
-func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
+func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem,
+	rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
 	if !controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000050, deployItem); err != nil {
@@ -400,11 +383,12 @@ func NewTypePredicate(dtype lsv1alpha1.DeployItemType) predicate.Predicate {
 }
 
 func (p typePredicate) handleObj(obj client.Object) bool {
-	di, ok := obj.(*lsv1alpha1.DeployItem)
-	if !ok {
-		return false
+	deployerType, found := obj.GetAnnotations()[lsv1alpha1.DeployerTypeAnnotation]
+	if !found {
+		return true
 	}
-	return di.Spec.Type == p.Type
+
+	return deployerType == string(p.Type)
 }
 
 func (p typePredicate) Create(event event.CreateEvent) bool {

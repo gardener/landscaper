@@ -131,7 +131,7 @@ func MimicKCMServiceAccountTokenGeneration(ctx context.Context, client client.Cl
 		args.Timeout = 20 * time.Second
 	}
 	go func() {
-		_ = wait.PollImmediate(1*time.Second, args.Timeout, func() (done bool, err error) {
+		_ = wait.PollUntilContextTimeout(ctx, 1*time.Second, args.Timeout, true, func(ctx context.Context) (done bool, err error) {
 			secrets, err := kutil.GetSecretsForServiceAccount(ctx, client, kutil.ObjectKey(args.Name, args.Namespace))
 			if err != nil {
 				return false, err
@@ -166,7 +166,7 @@ func MimicKCMServiceAccount(ctx context.Context, client client.Client, args Mimi
 		args.Timeout = 20 * time.Second
 	}
 	go func() {
-		_ = wait.PollImmediate(1*time.Second, args.Timeout, func() (done bool, err error) {
+		_ = wait.PollUntilContextTimeout(ctx, 1*time.Second, args.Timeout, true, func(ctx context.Context) (done bool, err error) {
 			// mimics the kube-controller-manager that creates a secret for the service account
 			sa := &corev1.ServiceAccount{}
 			if err := client.Get(ctx, kutil.ObjectKey(args.Name, args.Namespace), sa); err != nil {

@@ -266,7 +266,7 @@ func (dm *DeployerManagement) CleanupInstallation(ctx context.Context, inst *lsv
 		return fmt.Errorf("unable to delete clusterrolebinding %q: %w", crb.Name, err)
 	}
 
-	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 2*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		obj := crb.DeepCopy()
 		if err := dm.client.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -308,6 +308,11 @@ func (dm *DeployerManagement) EnsureRBACRoles(ctx context.Context) error {
 				APIGroups: []string{lsv1alpha1.SchemeGroupVersion.Group},
 				Resources: []string{"deployitems/status"},
 				Verbs:     []string{"get", "watch", "list", "update", "patch"},
+			},
+			{
+				APIGroups: []string{lsv1alpha1.SchemeGroupVersion.Group},
+				Resources: []string{"syncobjects"},
+				Verbs:     []string{"get", "watch", "list", "create", "update", "patch", "delete"},
 			},
 			{
 				APIGroups: []string{lsv1alpha1.SchemeGroupVersion.Group},

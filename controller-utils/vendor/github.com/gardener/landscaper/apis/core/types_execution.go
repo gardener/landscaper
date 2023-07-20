@@ -5,8 +5,13 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/gardener/landscaper/apis/utils"
 )
 
 // ExecutionManagedByLabel is the label of a deploy item that contains the name of the managed execution.
@@ -52,8 +57,12 @@ type ExecutionSpec struct {
 	// Context defines the current context of the execution.
 	// +optional
 	Context string `json:"context,omitempty"`
+
 	// DeployItems defines all execution items that need to be scheduled.
 	DeployItems DeployItemTemplateList `json:"deployItems,omitempty"`
+
+	// DeployItemsCompressed as zipped byte array
+	DeployItemsCompressed []byte `json:"deployItemsCompressed,omitempty"`
 
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints, component descriptors and jsonschemas from the respective registry.
@@ -156,4 +165,54 @@ type OnDeleteConfig struct {
 	// Works only in the context of an existing target sync object which is used to check the Garden project with
 	// the shoot cluster resources
 	SkipUninstallIfClusterRemoved bool `json:"skipUninstallIfClusterRemoved,omitempty"`
+}
+
+func (r *ExecutionSpec) UnmarshalJSON(data []byte) error {
+	type Alias ExecutionSpec
+	a := (*Alias)(r)
+
+	if err := json.Unmarshal(data, &a); err != nil {
+		return fmt.Errorf("unable to unmarshal execution spec: %w", err)
+	}
+
+	if len(a.DeployItemsCompressed) > 0 {
+		diBytes, err := utils.Gunzip(a.DeployItemsCompressed)
+		if err != nil {
+			return fmt.Errorf("unable to gunzip deployitems of execution spec: %w", err)
+		}
+
+		deployItems := DeployItemTemplateList{}
+		if err := json.Unmarshal(diBytes, &deployItems); err != nil {
+			return fmt.Errorf("unable to unmarshal deployitems of execution spec: %w", err)
+		}
+
+		a.DeployItemsCompressed = nil
+		a.DeployItems = deployItems
+	}
+
+	return nil
+}
+
+func (r ExecutionSpec) MarshalJSON() ([]byte, error) {
+	// Copy the ExecutionSpec type. The copied type has the standard marshaling behaviour,
+	// whereas ExecutionSpec has the custom marshaling behaviour defined in this method.
+	type Alias ExecutionSpec
+	a := Alias(r)
+
+	if len(r.DeployItems) > 0 {
+		diBytes, err := json.Marshal(r.DeployItems)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal deployitems of execution spec: %w", err)
+		}
+
+		diZippedBytes, err := utils.Gzip(diBytes)
+		if err != nil {
+			return nil, fmt.Errorf("unable to gzip deployitems of execution spec: %w", err)
+		}
+
+		a.DeployItems = nil
+		a.DeployItemsCompressed = diZippedBytes
+	}
+
+	return json.Marshal(a)
 }

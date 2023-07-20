@@ -202,7 +202,7 @@ func CreateRegistry(ctx context.Context,
 	}
 	logger.Logfln("Created registry %q", pod.Name)
 
-	err = wait.PollImmediate(10*time.Second, timeout, func() (done bool, err error) {
+	err = wait.PollUntilContextTimeout(ctx, 10*time.Second, timeout, true, func(ctx context.Context) (done bool, err error) {
 		updatedPod := &corev1.Pod{}
 		if err := kubeClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, updatedPod); err != nil {
 			return false, err
@@ -261,7 +261,7 @@ func CreateRegistry(ctx context.Context,
 	case DNSFormatExternal:
 		if runOnShoot {
 			logger.Logln("Waiting for loadbalancer service to get ip/hostname ...")
-			err = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
+			err = wait.PollUntilContextTimeout(ctx, 10*time.Second, 2*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 				tmpSvc := &corev1.Service{}
 				if tmpErr := kubeClient.Get(ctx, client.ObjectKeyFromObject(svc), tmpSvc); tmpErr != nil {
 					return false, tmpErr
@@ -455,7 +455,7 @@ func cleanupObject(ctx context.Context, logger utils.Logger, componentName strin
 	}
 	objDesc := fmt.Sprintf("%q %q of %s", gvk.String(), obj.GetName(), componentName)
 	logger.Logfln("Cleanup %s", objDesc)
-	err = wait.PollImmediate(10*time.Second, 1*time.Minute, func() (done bool, err error) {
+	err = wait.PollUntilContextTimeout(ctx, 10*time.Second, 1*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		if err := kubeClient.Delete(ctx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
@@ -468,7 +468,7 @@ func cleanupObject(ctx context.Context, logger utils.Logger, componentName strin
 	if err != nil {
 		return fmt.Errorf("unable to delete %s", objDesc)
 	}
-	err = wait.PollImmediate(10*time.Second, timeout, func() (done bool, err error) {
+	err = wait.PollUntilContextTimeout(ctx, 10*time.Second, timeout, true, func(ctx context.Context) (done bool, err error) {
 		updated := obj.DeepCopyObject().(client.Object)
 		if err := kubeClient.Get(ctx, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()), updated); err != nil {
 			if apierrors.IsNotFound(err) {

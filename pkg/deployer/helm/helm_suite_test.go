@@ -129,7 +129,8 @@ var _ = Describe("Template", func() {
 				NewClient:          lsutils.NewUncachedClient,
 			})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{})).To(Succeed())
+			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{},
+				"helmintegration"+utils.GetNextCounter())).To(Succeed())
 
 			go func() {
 				Expect(mgr.Start(ctx)).To(Succeed())
@@ -292,11 +293,142 @@ var _ = Describe("Template", func() {
 
 			helmProviderStatus := &helmv1alpha1.ProviderStatus{}
 			Expect(json.Unmarshal(item.Status.ProviderStatus.Raw, helmProviderStatus)).To(Succeed())
-			Expect(helmProviderStatus.ManagedResources).To(HaveLen(4)) // namespace + 3 configmaps
+			Expect(helmProviderStatus.ManagedResources).To(HaveLen(0)) // would contain only resources that are relevant for the default readiness check
 			cm := &corev1.ConfigMap{}
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-cm-1", "some-namespace"), cm)).To(Succeed())
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-cm-2", "some-namespace"), cm)).To(Succeed())
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-cm-3", "some-namespace"), cm)).To(Succeed())
+
+			itemObjectKey := client.ObjectKeyFromObject(item)
+			Expect(testenv.Client.Delete(ctx, item)).To(Succeed())
+			Eventually(func() error {
+				Expect(testenv.Client.Get(ctx, itemObjectKey, item)).To(Succeed())
+				return utils.UpdateJobIdForDeployItem(ctx, testenv, item, metav1.Now())
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should be updated with a new job id")
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, itemObjectKey, item); apierrors.IsNotFound(err) {
+					return nil
+				}
+				return fmt.Errorf("deploy item not yet deleted")
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should be deleted")
+		})
+
+		It("should deploy a chart with subchart", func() {
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart5")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Chart:           chartAccess,
+				Name:            "test",
+				Namespace:       "some-namespace",
+				CreateNamespace: true,
+				Values:          []byte(`{"subchart-enabled": true}`), // subchart enabled
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "myitem").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item); err != nil {
+					return err
+				}
+				if !item.Status.Phase.IsFinal() {
+					return fmt.Errorf("deploy item is unfinished")
+				}
+				return nil
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should reach a final phase")
+
+			Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
+
+			helmProviderStatus := &helmv1alpha1.ProviderStatus{}
+			Expect(json.Unmarshal(item.Status.ProviderStatus.Raw, helmProviderStatus)).To(Succeed())
+			// There should be 2 configmaps, one from the chart and one from the subchart
+			Expect(helmProviderStatus.ManagedResources).To(HaveLen(0))
+			cm := &corev1.ConfigMap{}
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-chart-configmap", "some-namespace"), cm)).To(Succeed())
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-subchart-configmap", "some-namespace"), cm)).To(Succeed())
+
+			itemObjectKey := client.ObjectKeyFromObject(item)
+			Expect(testenv.Client.Delete(ctx, item)).To(Succeed())
+			Eventually(func() error {
+				Expect(testenv.Client.Get(ctx, itemObjectKey, item)).To(Succeed())
+				return utils.UpdateJobIdForDeployItem(ctx, testenv, item, metav1.Now())
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should be updated with a new job id")
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, itemObjectKey, item); apierrors.IsNotFound(err) {
+					return nil
+				}
+				return fmt.Errorf("deploy item not yet deleted")
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should be deleted")
+		})
+
+		It("should skip a disabled subchart", func() {
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart5")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Chart:           chartAccess,
+				Name:            "test",
+				Namespace:       "some-namespace",
+				CreateNamespace: true,
+				Values:          []byte(`{"subchart-enabled": false}`), // subchart disabled
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "myitem").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item); err != nil {
+					return err
+				}
+				if !item.Status.Phase.IsFinal() {
+					return fmt.Errorf("deploy item is unfinished")
+				}
+				return nil
+			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should reach a final phase")
+
+			Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
+
+			helmProviderStatus := &helmv1alpha1.ProviderStatus{}
+			Expect(json.Unmarshal(item.Status.ProviderStatus.Raw, helmProviderStatus)).To(Succeed())
+			// There should be only 1 configmap, the other one in the subchart should not have been deployed
+			Expect(helmProviderStatus.ManagedResources).To(HaveLen(0))
+			cm := &corev1.ConfigMap{}
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-chart-configmap", "some-namespace"), cm)).To(Succeed())
 
 			itemObjectKey := client.ObjectKeyFromObject(item)
 			Expect(testenv.Client.Delete(ctx, item)).To(Succeed())

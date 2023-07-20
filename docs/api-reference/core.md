@@ -32,6 +32,8 @@ Resource Types:
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.LsHealthCheck">LsHealthCheck</a>
 </li><li>
+<a href="#landscaper.gardener.cloud/v1alpha1.SyncObject">SyncObject</a>
+</li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.Target">Target</a>
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSync">TargetSync</a>
@@ -97,7 +99,7 @@ e.g. &ldquo;<a href="https://json-schema.org/draft/2019-09/schema&quot;">https:/
 <code>localTypes</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.JSONSchemaDefinition">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition
+map[string]..JSONSchemaDefinition
 </a>
 </em>
 </td>
@@ -351,7 +353,7 @@ Note that the type information is used to determine the secret key and the type 
 <code>configurations</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -928,6 +930,17 @@ DeployItemTemplateList
 </tr>
 <tr>
 <td>
+<code>deployItemsCompressed</code></br>
+<em>
+[]byte
+</em>
+</td>
+<td>
+<p>DeployItemsCompressed as zipped byte array</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>registryPullSecrets</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
@@ -1095,7 +1108,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1126,7 +1139,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1249,7 +1262,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1280,7 +1293,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1373,6 +1386,140 @@ string
 </td>
 <td>
 <p>Description contains description of the problem(s)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.SyncObject">SyncObject
+</h3>
+<p>
+<p>The SyncObject helps to sync access to deploy items.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+landscaper.gardener.cloud/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>SyncObject</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SyncObjectSpec">
+SyncObjectSpec
+</a>
+</em>
+</td>
+<td>
+<p>Spec contains the specification</p>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>podName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>PodName describes the name of the pod of the responsible deployer</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Kind describes the kind of object that is being locked by this SyncObject</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the object that is being locked by this SyncObject</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastUpdateTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastUpdateTime contains last time the object was updated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>prefix</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Prefix is the prefix of the name of the object.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SyncObjectStatus">
+SyncObjectStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Status contains the status</p>
 </td>
 </tr>
 </tbody>
@@ -2785,8 +2932,8 @@ Error
 <td>
 <code>lastErrors</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.*github.com/gardener/landscaper/apis/core/v1alpha1.Error">
-[]*github.com/gardener/landscaper/apis/core/v1alpha1.Error
+<a href="#landscaper.gardener.cloud/v1alpha1.*..Error">
+[]*..Error
 </a>
 </em>
 </td>
@@ -3168,7 +3315,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -3562,6 +3709,17 @@ DeployItemTemplateList
 </td>
 <td>
 <p>DeployItems defines all execution items that need to be scheduled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deployItemsCompressed</code></br>
+<em>
+[]byte
+</em>
+</td>
+<td>
+<p>DeployItemsCompressed as zipped byte array</p>
 </td>
 </tr>
 <tr>
@@ -4363,7 +4521,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -4394,7 +4552,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -5354,6 +5512,91 @@ Duration
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.SyncObjectSpec">SyncObjectSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SyncObject">SyncObject</a>)
+</p>
+<p>
+<p>SyncObjectSpec contains the specification.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>podName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>PodName describes the name of the pod of the responsible deployer</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Kind describes the kind of object that is being locked by this SyncObject</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the object that is being locked by this SyncObject</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastUpdateTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastUpdateTime contains last time the object was updated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>prefix</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Prefix is the prefix of the name of the object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.SyncObjectStatus">SyncObjectStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SyncObject">SyncObject</a>)
+</p>
+<p>
+<p>SyncObjectStatus contains the status.</p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.TLSClientConfig">TLSClientConfig
 </h3>
 <p>

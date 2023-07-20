@@ -46,7 +46,7 @@ var _ = Describe("MediaType test suite", func() {
 		Expect(mt.IsCompressed("")).To(BeTrue())
 		Expect(mt.IsCompressed(mediatype.GZipCompression)).To(BeTrue())
 
-		mt, err := mediatype.Parse(mt.String())
+		_, err := mediatype.Parse(mt.String())
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()).

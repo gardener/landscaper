@@ -39,7 +39,7 @@ func (dm *DeployerManagement) Delete(ctx context.Context, registration *lsv1alph
 		return fmt.Errorf("unable to delete client: %w", err)
 	}
 	// wait for installation deletion.
-	return wait.PollImmediate(20*time.Second, 5*time.Minute, func() (done bool, err error) {
+	return wait.PollUntilContextTimeout(ctx, 20*time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		if err := read_write_layer.GetInstallation(ctx, dm.client, instKey, inst); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v2
+name: test-chart
+description: helm chart for testing
+type: application
+version: v0.1.0
+appVersion: v0.34.0
+dependencies:
+  - name: test-subchart
+    # repository: test
+    version: 0.1.0
+    condition: subchart-enabled

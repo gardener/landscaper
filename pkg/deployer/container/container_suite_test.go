@@ -78,7 +78,8 @@ var _ = Describe("Template", func() {
 		})
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(containerctlr.AddControllerToManager(logging.Discard(), mgr, mgr, containerv1alpha1.Configuration{})).To(Succeed())
+		Expect(containerctlr.AddControllerToManager(logging.Discard(), mgr, mgr,
+			containerv1alpha1.Configuration{}, "template-"+utils.GetNextCounter())).To(Succeed())
 
 		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())

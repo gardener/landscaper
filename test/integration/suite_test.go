@@ -9,6 +9,11 @@ import (
 	"flag"
 	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/core"
 	"github.com/gardener/landscaper/test/integration/dependencies"
 	"github.com/gardener/landscaper/test/integration/deployers"
@@ -22,12 +27,6 @@ import (
 	"github.com/gardener/landscaper/test/integration/targets"
 	"github.com/gardener/landscaper/test/integration/tutorial"
 	"github.com/gardener/landscaper/test/integration/webhook"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-	"github.com/gardener/landscaper/test/framework"
 )
 
 var opts *framework.Options

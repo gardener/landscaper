@@ -93,7 +93,7 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f c
 func AddServiceAccountAuth(ctx context.Context, kubeClient client.Client, sa *corev1.ServiceAccount, config *rest.Config) error {
 	saKey := ObjectKeyFromObject(sa)
 	// wait for k8s to generate the service account secret
-	err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (done bool, err error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		if err := kubeClient.Get(ctx, saKey, sa); err != nil {
 			return false, nil
 		}
@@ -594,12 +594,12 @@ func DeleteAndWaitForObjectDeleted(ctx context.Context, kubeClient client.Client
 	pollCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	delCondFunc := GenerateDeleteObjectConditionFunc(ctx, kubeClient, obj)
-	return wait.PollImmediateUntil(5*time.Second, delCondFunc, pollCtx.Done())
+	return wait.PollUntilContextCancel(pollCtx, 5*time.Second, true, delCondFunc)
 }
 
 // GenerateDeleteObjectConditionFunc creates a condition function to validate the deletion of objects.
-func GenerateDeleteObjectConditionFunc(ctx context.Context, kubeClient client.Client, obj client.Object) wait.ConditionFunc {
-	return func() (done bool, err error) {
+func GenerateDeleteObjectConditionFunc(ctx context.Context, kubeClient client.Client, obj client.Object) wait.ConditionWithContextFunc {
+	return func(ctx context.Context) (done bool, err error) {
 		key := ObjectKey(obj.GetName(), obj.GetNamespace())
 		if err := kubeClient.Get(ctx, key, obj); err != nil {
 			if apierrors.IsNotFound(err) {
