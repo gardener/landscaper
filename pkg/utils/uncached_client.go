@@ -6,6 +6,8 @@ import (
 )
 
 func NewUncachedClient(config *rest.Config, options client.Options) (client.Client, error) {
+	options.Cache = nil
+
 	c, err := client.New(config, options)
 	if err != nil {
 		return nil, err
