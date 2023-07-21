@@ -167,7 +167,7 @@ github.com/gardener/component-cli/pkg/commands/componentarchive/input
 github.com/gardener/component-cli/pkg/commands/constants
 github.com/gardener/component-cli/pkg/logcontext
 github.com/gardener/component-cli/pkg/utils
-# github.com/gardener/component-spec/bindings-go v0.0.66
+# github.com/gardener/component-spec/bindings-go v0.0.94
 ## explicit; go 1.18
 github.com/gardener/component-spec/bindings-go/apis
 github.com/gardener/component-spec/bindings-go/apis/v2

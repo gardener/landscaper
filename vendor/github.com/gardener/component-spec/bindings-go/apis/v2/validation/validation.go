@@ -160,10 +160,7 @@ func ValidateResource(fldPath *field.Path, res v2.Resource) field.ErrorList {
 
 func validateProvider(fldPath *field.Path, provider v2.ProviderType) *field.Error {
 	if len(provider) == 0 {
-		return field.Required(fldPath, "provider must be set and one of (internal, external)")
-	}
-	if provider != v2.InternalProvider && provider != v2.ExternalProvider {
-		return field.Invalid(fldPath, "unknown provider type", "provider must be one of (internal, external)")
+		return field.Required(fldPath, "provider must be set to a non-empty string")
 	}
 	return nil
 }
@@ -209,7 +206,7 @@ func ValidateComponentReferences(fldPath *field.Path, refs []v2.ComponentReferen
 
 		id := string(ref.GetIdentityDigest())
 		if _, ok := refIDs[id]; ok {
-			allErrs = append(allErrs, field.Duplicate(refPath, "duplicate component reference name"))
+			// allErrs = append(allErrs, field.Duplicate(refPath, "duplicate component reference name"))
 			continue
 		}
 		refIDs[id] = struct{}{}
