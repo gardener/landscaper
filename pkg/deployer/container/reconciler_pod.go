@@ -100,7 +100,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 	}
 
 	if syncObject == nil {
-		return locker.NotLockedResult()
+		return reconcile.Result{}, nil
 	}
 
 	defer func() {

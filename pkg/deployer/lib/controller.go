@@ -192,7 +192,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if syncObject == nil {
-		return locker.NotLockedResult()
+		return reconcile.Result{}, nil
 	}
 
 	defer func() {
