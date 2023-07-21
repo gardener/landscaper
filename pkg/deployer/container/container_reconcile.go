@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
 	"os"
 	"strconv"
 
@@ -36,7 +37,6 @@ import (
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	installationhelper "github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
@@ -584,7 +584,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 			return
 		}
 
-		compRef := installationhelper.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
+		compRef := deployerlegacy.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
 		blueprintName := c.ProviderConfiguration.Blueprint.Reference.ResourceName
 
 		componentVersion, err := registryAccess.GetComponentVersion(ctx, compRef)

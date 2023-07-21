@@ -26,16 +26,17 @@ func init() {
 
 type RepositorySpecV1 struct {
 	runtime.ObjectVersionedType `json:",inline"`
-	CompDescFs                  json.RawMessage `json:"compDescFs,omitempty"`
+	FileSystem                  json.RawMessage `json:"fileSystem,omitempty"`
 	CompDescDirPath             string          `json:"compDescDirPath,omitempty"`
 	BlobFs                      json.RawMessage `json:"blobFs,omitempty"`
+	BlobFsMode                  string          `json:"blobFsMode"`
 	BlobDirPath                 string          `json:"blobDirPath,omitempty"`
 }
 
-func NewRepositorySpecV1(compDescFs vfs.FileSystem, compDescDirPath string, blobFs vfs.FileSystem, blobDirPath string) (*repository.RepositorySpec, error) {
+func NewRepositorySpecV1(fileSystem vfs.FileSystem, compDescDirPath string, blobFs vfs.FileSystem, blobDirPath string) (*repository.RepositorySpec, error) {
 	spec := &repository.RepositorySpec{
 		InternalVersionedTypedObject: runtime.NewInternalVersionedTypedObject[cpi.RepositorySpec](versions, Type),
-		CompDescFs:                   compDescFs,
+		FileSystem:                   fileSystem,
 		CompDescDirPath:              compDescDirPath,
 		BlobFs:                       blobFs,
 		BlobDirPath:                  blobDirPath,
@@ -50,7 +51,7 @@ func (_ converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpec
 	var compdescYaml json.RawMessage
 	var blobYaml json.RawMessage
 
-	if fs, ok := in.CompDescFs.(yamlfs.YamlFileSystem); ok {
+	if fs, ok := in.FileSystem.(yamlfs.YamlFileSystem); ok {
 		compdescYaml, err = fs.Data()
 		if err != nil {
 			return nil, err
@@ -59,20 +60,25 @@ func (_ converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpec
 		return nil, errors.New("cannot serialize non-yaml filesystem")
 	}
 
-	if fs, ok := in.BlobFs.(yamlfs.YamlFileSystem); ok {
-		blobYaml, err = fs.Data()
-		if err != nil {
-			return nil, err
+	if in.BlobFs != nil && in.BlobFs != in.FileSystem {
+		if in.BlobFsMode != repository.CONTEXT {
+			if fs, ok := in.BlobFs.(yamlfs.YamlFileSystem); ok {
+				blobYaml, err = fs.Data()
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, errors.New("cannot serialize non-yaml filesystem")
+			}
 		}
-	} else {
-		return nil, errors.New("cannot serialize non-yaml filesystem")
 	}
 
 	return &RepositorySpecV1{
 		ObjectVersionedType: runtime.NewVersionedObjectType(in.Type),
-		CompDescFs:          compdescYaml,
+		FileSystem:          compdescYaml,
 		CompDescDirPath:     in.CompDescDirPath,
 		BlobFs:              blobYaml,
+		BlobFsMode:          in.BlobFsMode,
 		BlobDirPath:         in.BlobDirPath,
 	}, nil
 }
@@ -82,8 +88,8 @@ func (_ converterV1) ConvertTo(in *RepositorySpecV1) (*repository.RepositorySpec
 	var compfs vfs.FileSystem
 	var blobfs vfs.FileSystem
 
-	if in.CompDescFs != nil {
-		compfs, err = yamlfs.New(in.CompDescFs)
+	if in.FileSystem != nil {
+		compfs, err = yamlfs.New(in.FileSystem)
 		if err != nil {
 			return nil, err
 		}
@@ -98,9 +104,10 @@ func (_ converterV1) ConvertTo(in *RepositorySpecV1) (*repository.RepositorySpec
 
 	return &repository.RepositorySpec{
 		InternalVersionedTypedObject: runtime.NewInternalVersionedTypedObject[cpi.RepositorySpec](versions, in.Type),
-		CompDescFs:                   compfs,
+		FileSystem:                   compfs,
 		CompDescDirPath:              in.CompDescDirPath,
 		BlobFs:                       blobfs,
+		BlobFsMode:                   in.BlobFsMode,
 		BlobDirPath:                  in.BlobDirPath,
 	}, nil
 }

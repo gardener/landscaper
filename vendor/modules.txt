@@ -1113,7 +1113,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b => github.com/fabianburth/ocm v0.0.0-20230719090507-d1cba41d4f05
+# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b => github.com/fabianburth/ocm v0.0.0-20230721125305-12e11c31a233
 ## explicit; go 1.19
 github.com/open-component-model/ocm/pkg/cobrautils/flag
 github.com/open-component-model/ocm/pkg/cobrautils/flagsets
@@ -2515,5 +2515,5 @@ sigs.k8s.io/yaml
 # github.com/gardener/landscaper/apis => ./apis
 # github.com/gardener/landscaper/controller-utils => ./controller-utils
 # github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-# github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230719090507-d1cba41d4f05
+# github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230721125305-12e11c31a233
 # k8s.io/kubectl => k8s.io/kubectl v0.26.1

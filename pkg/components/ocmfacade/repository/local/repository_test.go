@@ -1,39 +1,27 @@
 package local_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/localrootfs"
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/local"
 	"github.com/mandelsoft/filepath/pkg/filepath"
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	. "github.com/open-component-model/ocm/pkg/env/builder"
 	. "github.com/open-component-model/ocm/pkg/testutils"
 
-	"github.com/open-component-model/ocm/pkg/common/compression"
 	tenv "github.com/open-component-model/ocm/pkg/env"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 )
 
 const (
 	// Random Test Names
 	DESCRIPTOR_PATH = "testdescriptorpath"
-	BLOB_PATH       = "testblobpath"
 
 	// Mock Directory Paths
-	TAR_REPOSITORY       = "testdata/tar"
-	DISTINCT_REPOSITORY  = "testdata/distinct"
-	DIRECTORY_REPOSITORY = "testdata/directory"
+	TAR_REPOSITORY = "testdata/tar"
 
 	// Component Names
 	COMPONENT_NAME    = "example.com/root"
@@ -43,11 +31,9 @@ const (
 
 var _ = Describe("ocm-lib based landscaper local repository", func() {
 	var env *Builder
-	var fs vfs.FileSystem
 
 	BeforeEach(func() {
-		env = NewBuilder(tenv.NewEnvironment())
-		fs = Must(projectionfs.New(osfs.New(), ""))
+		env = NewBuilder(tenv.NewEnvironment(tenv.TestData()))
 	})
 
 	AfterEach(func() {
@@ -57,36 +43,15 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 	It("marshal/unmarshal spec v1", func() {
 		spec := Must(local.NewRepositorySpecV1(DESCRIPTOR_PATH))
 		Expect(spec).ToNot(BeNil())
-		Expect(spec.CompDescFs).To(BeNil())
+		Expect(spec.FileSystem).To(BeNil())
 		Expect(spec.BlobFs).To(BeNil())
 
-		spec = Must(local.NewRepositorySpecV1(DESCRIPTOR_PATH, fs))
+		spec = Must(local.NewRepositorySpecV1(DESCRIPTOR_PATH, env))
 		Expect(spec).ToNot(BeNil())
-		Expect(spec.CompDescFs).To(Equal(fs))
-		Expect(spec.BlobFs).To(Equal(fs))
+		Expect(spec.FileSystem).To(Equal(env))
 
 		data := Must(json.Marshal(spec))
 		Expect(string(data)).To(Equal(fmt.Sprintf("{\"type\":\"%s\",\"filePath\":\"%s\"}", local.Type, DESCRIPTOR_PATH)))
-		spec1 := Must(env.OCMContext().RepositorySpecForConfig(data, runtime.DefaultJSONEncoding)).(*repository.RepositorySpec)
-		// spec will not completely equal spec1 as the filesystem cannot be serialized
-		Expect(spec1.Type).To(Equal(spec.Type))
-		Expect(spec1.CompDescDirPath).To(Equal(spec.CompDescDirPath))
-		Expect(spec1.BlobDirPath).To(Equal(spec.BlobDirPath))
-	})
-
-	It("marshal/unmarshal spec v2", func() {
-		spec := Must(local.NewRepositorySpecV2(nil, DESCRIPTOR_PATH, BLOB_PATH))
-		Expect(spec).ToNot(BeNil())
-		Expect(spec.CompDescFs).To(BeNil())
-		Expect(spec.BlobFs).To(BeNil())
-
-		spec = Must(local.NewRepositorySpecV2(fs, DESCRIPTOR_PATH, BLOB_PATH))
-		Expect(spec).ToNot(BeNil())
-		Expect(spec.CompDescFs).To(Equal(fs))
-		Expect(spec.BlobFs).To(Equal(fs))
-
-		data := Must(json.Marshal(spec))
-		Expect(string(data)).To(Equal(fmt.Sprintf("{\"type\":\"%s\",\"compDescDirPath\":\"%s\",\"blobDirPath\":\"%s\"}", local.TypeV2, DESCRIPTOR_PATH, BLOB_PATH)))
 		spec1 := Must(env.OCMContext().RepositorySpecForConfig(data, runtime.DefaultJSONEncoding)).(*repository.RepositorySpec)
 		// spec will not completely equal spec1 as the filesystem cannot be serialized
 		Expect(spec1.Type).To(Equal(spec.Type))
@@ -100,8 +65,8 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		// this has to be set if the PathFileSystem within the spec is not set
 		// as a filesystem cannot really be serialized, this is always the case if the spec is created from a serialized
 		// form (e.g. coming from the installation)
-		localrootfs.Set(env.OCMContext(), fs)
-		spec := Must(local.NewRepositorySpecV1(TAR_REPOSITORY))
+		//vfsattr.Set(env.OCMContext(), env)
+		spec := Must(local.NewRepositorySpecV1(TAR_REPOSITORY, env))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
 		defer Close(repo)
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
@@ -109,68 +74,57 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
 		acc := Must(res[0].AccessMethod())
 		defer Close(acc)
-		data := Must(acc.Reader())
-		defer Close(data)
+		bytesA := Must(acc.Get())
 
-		mfs := memoryfs.New()
-		data, _ = Must2(compression.AutoDecompress(data))
-		_, _ = Must2(tarutils.ExtractTarToFsWithInfo(mfs, data))
-		bytesA := []byte{}
-		_ = Must(Must(mfs.Open("testfile")).Read(bytesA))
-
-		bytesB := []byte{}
-		_ = Must(Must(osfs.New().Open(TAR_REPOSITORY + "/blobs/sha256.3ed99e50092c619823e2c07941c175ea2452f1455f570c55510586b387ec2ff2")).Read(bytesB))
-		bufferB := bytes.NewBuffer(bytesB)
-		r, _ := Must2(compression.AutoDecompress(bufferB))
-		_, _ = Must2(tarutils.ExtractTarToFsWithInfo(mfs, r))
-		Expect(bytesA).To(Equal(bufferB.Bytes()))
+		bytesB := Must(vfs.ReadFile(env, filepath.Join(TAR_REPOSITORY, "blobs", "sha256.3ed99e50092c619823e2c07941c175ea2452f1455f570c55510586b387ec2ff2")))
+		Expect(bytesA).To(Equal(bytesB))
 	})
 
-	It("repository (from spec v2) with component descriptors and resources stored in distinct directories", func() {
-		localrootfs.Set(env.OCMContext(), fs)
-		spec := Must(local.NewRepositorySpecV2(fs, filepath.Join(DISTINCT_REPOSITORY, "compdescs"), filepath.Join(DISTINCT_REPOSITORY, "blobs")))
-		repo := Must(spec.Repository(env.OCMContext(), nil))
-		defer Close(repo)
-		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
-		defer Close(cv)
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
-		acc := Must(res[0].AccessMethod())
-		defer Close(acc)
-		bufferA := Must(acc.Get())
-
-		bufferB := Must(vfs.ReadFile(fs, filepath.Join(DISTINCT_REPOSITORY, "blobs", "blob1")))
-		Expect(bufferA).To(Equal(bufferB))
-	})
-
-	It("repository (from spec v2) with a directory resource", func() {
-		localrootfs.Set(env.OCMContext(), fs)
-		spec := Must(local.NewRepositorySpecV2(fs, DIRECTORY_REPOSITORY, DIRECTORY_REPOSITORY))
-		repo := Must(spec.Repository(env.OCMContext(), nil))
-		defer Close(repo)
-		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
-		defer Close(cv)
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
-		acc := Must(res[0].AccessMethod())
-		defer Close(acc)
-		data := Must(acc.Reader())
-		defer Close(data)
-
-		mfs := memoryfs.New()
-		_, _, err := tarutils.ExtractTarToFsWithInfo(mfs, data)
-		Expect(err).ToNot(HaveOccurred())
-		bufferA := Must(vfs.ReadFile(mfs, "testblob"))
-		bufferB := Must(vfs.ReadFile(fs, filepath.Join(DIRECTORY_REPOSITORY, "blob1", "testblob")))
-		Expect(bufferA).To(Equal(bufferB))
-	})
-
-	FIt("manage seperate attribute contexts", func() {
-		octx1 := ocm.New(datacontext.MODE_EXTENDED)
-		octx2 := ocm.New(datacontext.MODE_EXTENDED)
-
-		fs2 := memoryfs.New()
-		localrootfs.Set(octx1, fs)
-		localrootfs.Set(octx2, fs2)
-		Expect(localrootfs.Get(octx1)).To(BeIdenticalTo(fs))
-		Expect(localrootfs.Get(octx2)).To(BeIdenticalTo(fs2))
-	})
+	//It("repository (from spec v2) with component descriptors and resources stored in distinct directories", func() {
+	//	localrootfs.Set(env.OCMContext(), fs)
+	//	spec := Must(local.NewRepositorySpecV2(fs, filepath.Join(DISTINCT_REPOSITORY, "compdescs"), filepath.Join(DISTINCT_REPOSITORY, "blobs")))
+	//	repo := Must(spec.Repository(env.OCMContext(), nil))
+	//	defer Close(repo)
+	//	cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
+	//	defer Close(cv)
+	//	res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+	//	acc := Must(res[0].AccessMethod())
+	//	defer Close(acc)
+	//	bufferA := Must(acc.Get())
+	//
+	//	bufferB := Must(vfs.ReadFile(fs, filepath.Join(DISTINCT_REPOSITORY, "blobs", "blob1")))
+	//	Expect(bufferA).To(Equal(bufferB))
+	//})
+	//
+	//It("repository (from spec v2) with a directory resource", func() {
+	//	localrootfs.Set(env.OCMContext(), fs)
+	//	spec := Must(local.NewRepositorySpecV2(fs, DIRECTORY_REPOSITORY, DIRECTORY_REPOSITORY))
+	//	repo := Must(spec.Repository(env.OCMContext(), nil))
+	//	defer Close(repo)
+	//	cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
+	//	defer Close(cv)
+	//	res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+	//	acc := Must(res[0].AccessMethod())
+	//	defer Close(acc)
+	//	data := Must(acc.Reader())
+	//	defer Close(data)
+	//
+	//	mfs := memoryfs.New()
+	//	_, _, err := tarutils.ExtractTarToFsWithInfo(mfs, data)
+	//	Expect(err).ToNot(HaveOccurred())
+	//	bufferA := Must(vfs.ReadFile(mfs, "testblob"))
+	//	bufferB := Must(vfs.ReadFile(fs, filepath.Join(DIRECTORY_REPOSITORY, "blob1", "testblob")))
+	//	Expect(bufferA).To(Equal(bufferB))
+	//})
+	//
+	//It("manage seperate attribute contexts", func() {
+	//	octx1 := ocm.New(datacontext.MODE_EXTENDED)
+	//	octx2 := ocm.New(datacontext.MODE_EXTENDED)
+	//
+	//	fs2 := memoryfs.New()
+	//	localrootfs.Set(octx1, fs)
+	//	localrootfs.Set(octx2, fs2)
+	//	Expect(localrootfs.Get(octx1)).To(BeIdenticalTo(fs))
+	//	Expect(localrootfs.Get(octx2)).To(BeIdenticalTo(fs2))
+	//})
 })

@@ -626,8 +626,8 @@ github.com/evanphx/json-patch/v5 v5.6.0 h1:b91NhWfaz02IuVxO9faSllyAtNXHMPkC5J8sJ
 github.com/evanphx/json-patch/v5 v5.6.0/go.mod h1:G79N1coSVB93tBe7j6PhzjmR3/2VvlbKOFpnXhI9Bw4=
 github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d h1:105gxyaGwCFad8crR9dcMQWvV9Hvulu6hwUh4tWPJnM=
 github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d/go.mod h1:ZZMPRZwes7CROmyNKgQzC3XPs6L/G2EJLHddWejkmf4=
-github.com/fabianburth/ocm v0.0.0-20230719090507-d1cba41d4f05 h1:LVsAJ9aFuBmz/v1mykbzswKeUHNkt7lHKU48X7sD+YY=
-github.com/fabianburth/ocm v0.0.0-20230719090507-d1cba41d4f05/go.mod h1:IV/JV9x0LsS43rrENxR4VCg5r61aeQC4NqxNbeBij4E=
+github.com/fabianburth/ocm v0.0.0-20230721125305-12e11c31a233 h1:yMze64z2rbCQF/3f9ADTxNULC2zPio6IaOp1Q0eTY88=
+github.com/fabianburth/ocm v0.0.0-20230721125305-12e11c31a233/go.mod h1:IV/JV9x0LsS43rrENxR4VCg5r61aeQC4NqxNbeBij4E=
 github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a h1:yDWHCSQ40h88yih2JAcL6Ls/kVkSE8GFACTGVnMPruw=
 github.com/facebookgo/limitgroup v0.0.0-20150612190941-6abd8d71ec01 h1:IeaD1VDVBPlx3viJT9Md8if8IxxJnO+x0JCGb054heg=
 github.com/facebookgo/muster v0.0.0-20150708232844-fd3d7953fd52 h1:a4DFiKFJiDRGFD1qIcqGLX/WlUMD9dyLSLDt+9QZgt8=

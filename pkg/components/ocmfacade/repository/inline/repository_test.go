@@ -1,21 +1,21 @@
 package inline_test
 
 import (
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/blobvfs"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/compvfs"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/inline"
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/open-component-model/ocm/pkg/env/builder"
-	. "github.com/open-component-model/ocm/pkg/testutils"
-
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	tenv "github.com/open-component-model/ocm/pkg/env"
+	. "github.com/open-component-model/ocm/pkg/env/builder"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	. "github.com/open-component-model/ocm/pkg/testutils"
+	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 )
 
 const (
@@ -23,13 +23,16 @@ const (
 	COMPONENT_NAME    = "example.com/root"
 	COMPONENT_VERSION = "1.0.0"
 	RESOURCE_NAME     = "test"
+
+	DISTINCT_REPOSITORY  = "testdata/distinct"
+	DIRECTORY_REPOSITORY = "testdata/directory"
 )
 
 var _ = Describe("ocm-lib based landscaper local repository", func() {
 	var env *Builder
 
 	BeforeEach(func() {
-		env = NewBuilder(tenv.NewEnvironment())
+		env = NewBuilder(tenv.NewEnvironment(tenv.TestData()))
 	})
 
 	AfterEach(func() {
@@ -37,10 +40,8 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 	})
 
 	It("repository spec with inline component descriptors and local resources", func() {
-		fs := Must(projectionfs.New(osfs.New(), "../"))
 		specdata := Must(vfs.ReadFile(osfs.New(), filepath.Join("testdata", "spec-with-local-resource.yaml")))
-
-		blobvfs.Set(env.OCMContext(), fs)
+		vfsattr.Set(env.OCMContext(), env)
 		spec := Must(env.OCMContext().RepositorySpecForConfig(specdata, runtime.DefaultYAMLEncoding))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
 		defer Close(repo)
@@ -79,25 +80,16 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		inline2 := Must(vfs.ReadFile(osfs.New(), filepath.Join("testdata", "legacy", "component-descriptor2.yaml")))
 		resource1 := Must(vfs.ReadFile(osfs.New(), filepath.Join("testdata", "legacy", "resource.yaml")))
 
+		var list []*compdesc.ComponentDescriptor
+		list = append(list, Must(compdesc.Decode(inline1)))
+		list = append(list, Must(compdesc.Decode(inline2)))
+
 		memfs := memoryfs.New()
+		r1 := Must(memfs.Create("blob1"))
+		Must(r1.Write(resource1))
+		MustBeSuccessful(r1.Close())
 
-		// you would also do something like this
-		Expect(memfs.MkdirAll("component-descriptors", 0o777)).To(Succeed())
-		Expect(memfs.MkdirAll("artifacts", 0o777)).To(Succeed())
-		f1 := Must(memfs.Create(filepath.Join("component-descriptors", "component-descriptor1.yaml")))
-		Must(f1.Write(inline1))
-		defer Close(f1)
-		f2 := Must(memfs.Create(filepath.Join("component-descriptors", "component-descriptor2.yaml")))
-		Must(f2.Write(inline2))
-		defer Close(f2)
-		f3 := Must(memfs.Create(filepath.Join("artifacts", "blob1")))
-		Must(f3.Write(resource1))
-		defer Close(f3)
-		compvfs.Set(env.OCMContext(), memfs)
-		blobvfs.Set(env.OCMContext(), memfs)
-
-		spec := Must(inline.NewRepositorySpecV1(nil, "component-descriptors", nil, "artifacts"))
-		repo := Must(spec.Repository(env.OCMContext(), nil))
+		repo := Must(repository.NewRepository(env.OCMContext(), repository.NewMemoryCompDescProvider(list), memfs))
 		defer Close(repo)
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
 		defer Close(cv)
@@ -109,6 +101,41 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		defer Close(acc)
 		data := Must(acc.Get())
 		Expect(string(data)).To(Equal("test"))
+	})
+
+	It("repository with component descriptors and resources stored in distinct directories", func() {
+		spec := Must(inline.NewRepositorySpecV1(env, filepath.Join(DISTINCT_REPOSITORY, "compdescs"), nil, filepath.Join(DISTINCT_REPOSITORY, "blobs")))
+		repo := Must(spec.Repository(env.OCMContext(), nil))
+		defer Close(repo)
+		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
+		defer Close(cv)
+		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		acc := Must(res[0].AccessMethod())
+		defer Close(acc)
+		bufferA := Must(acc.Get())
+
+		bufferB := Must(vfs.ReadFile(env, filepath.Join(DISTINCT_REPOSITORY, "blobs", "blob1")))
+		Expect(bufferA).To(Equal(bufferB))
+	})
+
+	It("repository with a directory resource", func() {
+		spec := Must(inline.NewRepositorySpecV1(env, DIRECTORY_REPOSITORY, nil, DIRECTORY_REPOSITORY))
+		repo := Must(spec.Repository(env.OCMContext(), nil))
+		defer Close(repo)
+		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
+		defer Close(cv)
+		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		acc := Must(res[0].AccessMethod())
+		defer Close(acc)
+		data := Must(acc.Reader())
+		defer Close(data)
+
+		mfs := memoryfs.New()
+		_, _, err := tarutils.ExtractTarToFsWithInfo(mfs, data)
+		Expect(err).ToNot(HaveOccurred())
+		bufferA := Must(vfs.ReadFile(mfs, "testblob"))
+		bufferB := Must(vfs.ReadFile(env, filepath.Join(DIRECTORY_REPOSITORY, "blob1", "testblob")))
+		Expect(bufferA).To(Equal(bufferB))
 	})
 
 })

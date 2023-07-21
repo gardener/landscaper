@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
 	"net/http"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -24,7 +25,6 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/components/registries"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
 // NoChartDefinedError is the error that is returned if no Helm chart was provided
@@ -129,7 +129,7 @@ func getChartFromResource(ctx context.Context,
 		return nil, err
 	}
 
-	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(&ref.ComponentDescriptorDefinition)
+	cdRef := deployerlegacy.GetReferenceFromComponentDescriptorDefinition(&ref.ComponentDescriptorDefinition)
 	if cdRef == nil {
 		return nil, fmt.Errorf("no component descriptor reference found for %q", ref.ResourceName)
 	}

@@ -1,5 +1,5 @@
 type: inline
-compDescFs:
+fileSystem:
   component-descriptor1.yaml: |
     meta:
       schemaVersion: v2

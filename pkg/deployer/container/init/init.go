@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
 	"os"
 	"path"
 	"path/filepath"
@@ -33,7 +34,6 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -111,7 +111,7 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 	)
 
 	if providerConfig.ComponentDescriptor != nil {
-		cdReference = installations.GetReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
+		cdReference = deployerlegacy.GetReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
 		if cdReference == nil {
 			return fmt.Errorf("no inline component descriptor or reference found")
 		}

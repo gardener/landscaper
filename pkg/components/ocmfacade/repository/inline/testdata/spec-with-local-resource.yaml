@@ -1,5 +1,5 @@
 type: inline
-compDescFs:
+fileSystem:
     component-descriptor1.yaml: |
         meta:
           schemaVersion: v2
@@ -28,7 +28,7 @@ compDescFs:
               access:
                 type: localFilesystemBlob
                 mediaType: text/plain
-                filename: blob1
+                filename: resource.yaml
 
     component-descriptor2.yaml: |
         meta:
@@ -55,5 +55,6 @@ compDescFs:
               access:
                 type: localFilesystemBlob
                 mediaType: text/plain
-                filename: blob1
-blobDirPath: local/testdata/distinct/blobs
+                filename: resource.yaml
+blobFsMode: context
+blobDirPath: /testdata/legacy

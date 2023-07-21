@@ -118,6 +118,10 @@ func (v *ComponentVersionAccess) GetDescriptor() *compdesc.ComponentDescriptor {
 }
 
 func (v *ComponentVersionAccess) GetBlob(name string) (cpi.DataAccess, error) {
+	if v.access.blobsFs == nil {
+		return nil, vfs.ErrNotExist
+	}
+
 	filepath := path.Join("/", name)
 
 	if ok, err := vfs.IsDir(v.access.blobsFs, filepath); ok {

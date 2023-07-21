@@ -326,6 +326,6 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-	github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230719090507-d1cba41d4f05
+	github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230721125305-12e11c31a233
 	k8s.io/kubectl => k8s.io/kubectl v0.26.1
 )

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
@@ -33,7 +34,7 @@ type Session interface {
 	Finalize(Finalizer)
 	LookupRepository(Context, RepositorySpec) (Repository, error)
 	LookupComponent(ComponentContainer, string) (ComponentAccess, error)
-	LookupComponentVersion(r Repository, comp, vers string) (ComponentVersionAccess, error)
+	LookupComponentVersion(r ComponentVersionResolver, comp, vers string) (ComponentVersionAccess, error)
 	GetComponentVersion(ComponentVersionContainer, string) (ComponentVersionAccess, error)
 	EvaluateRef(ctx Context, ref string) (*EvaluationResult, error)
 	EvaluateComponentRef(ctx Context, ref string) (*EvaluationResult, error)
@@ -143,12 +144,36 @@ func (s *session) LookupComponent(c ComponentContainer, name string) (ComponentA
 	return ns, err
 }
 
-func (s *session) LookupComponentVersion(r Repository, comp, vers string) (ComponentVersionAccess, error) {
-	component, err := s.LookupComponent(r, comp)
+func (s *session) LookupComponentVersion(r ComponentVersionResolver, comp, vers string) (ComponentVersionAccess, error) {
+	if repo, ok := r.(Repository); ok {
+		component, err := s.LookupComponent(repo, comp)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetComponentVersion(component, vers)
+	}
+
+	key := datacontext.ObjectKey{
+		Object: r,
+		Name:   common.NewNameVersion(comp, vers).String(),
+	}
+	s.base.Lock()
+	defer s.base.Unlock()
+	if s.base.IsClosed() {
+		return nil, errors.ErrClosed("session")
+	}
+	if obj := s.versions[key]; obj != nil {
+		return obj, nil
+	}
+
+	obj, err := r.LookupComponentVersion(comp, vers)
 	if err != nil {
 		return nil, err
 	}
-	return s.GetComponentVersion(component, vers)
+
+	s.versions[key] = obj
+	s.base.AddCloser(obj)
+	return obj, err
 }
 
 func (s *session) GetComponentVersion(c ComponentVersionContainer, version string) (ComponentVersionAccess, error) {

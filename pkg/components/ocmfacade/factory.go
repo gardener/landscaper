@@ -2,7 +2,6 @@ package ocmfacade
 
 import (
 	"context"
-	"fmt"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/gardener/landscaper/apis/config"
@@ -11,18 +10,17 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/inlinecompdesc"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/blobvfs"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/compvfs"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/attrs/localrootfs"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/readonlyfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
@@ -53,14 +51,17 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		ociConfigFiles = ociRegistryConfig.ConfigFiles
 	}
 
+	var localfs vfs.FileSystem
 	if localRegistryConfig != nil {
-		pfs, err := projectionfs.New(osfs.New(), localRegistryConfig.RootPath)
+		var err error
+		localfs, err = projectionfs.New(osfs.New(), localRegistryConfig.RootPath)
 		if err != nil {
 			return nil, err
 		}
-		localrootfs.Set(registryAccess.octx, pfs)
-		compvfs.Set(registryAccess.octx, pfs)
-		blobvfs.Set(registryAccess.octx, pfs)
+		vfsattr.Set(registryAccess.octx, localfs)
+	} else {
+		// safe guard that the file system cannot be accessed
+		vfsattr.Set(registryAccess.octx, readonlyfs.New(memoryfs.New()))
 	}
 
 	if inlineCd != nil {
@@ -77,25 +78,29 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 			return nil, err
 		}
 
-		memfs := memoryfs.New()
-
-		for i, cd := range descriptors {
-			data, err := compdesc.Encode(cd)
-			if err != nil {
-				return nil, err
-			}
-			file, err := memfs.Create(fmt.Sprintf("component-descriptor%d.yaml", i))
-			if err != nil {
-				return nil, err
-			}
-			if _, err := file.Write(data); err != nil {
-				return nil, err
-			}
-			if err := file.Close(); err != nil {
-				return nil, err
-			}
+		provider := repository.NewMemoryCompDescProvider(descriptors)
+		registryAccess.inlineRepository, err = repository.NewRepository(registryAccess.octx, provider, localfs)
+		if err != nil {
+			return nil, err
 		}
-		compvfs.Set(registryAccess.octx, memfs)
+		_ = registryAccess.session.AddCloser(registryAccess.inlineRepository)
+		if err != nil {
+			return nil, err
+		}
+		registryAccess.resolver = registryAccess.inlineRepository
+		if len(inlineCd.RepositoryContexts) > 0 {
+			repoCtx := inlineCd.GetEffectiveRepositoryContext()
+			registryAccess.inlineSpec, err = registryAccess.octx.RepositorySpecForConfig(repoCtx.Raw, nil)
+			if err != nil {
+				return nil, err
+			}
+			registryAccess.resolver, err = registryAccess.session.LookupRepository(registryAccess.octx, registryAccess.inlineSpec)
+			if err != nil {
+				return nil, err
+			}
+			registryAccess.resolver = ocm.NewCompoundResolver(registryAccess.inlineRepository, registryAccess.resolver)
+		}
+
 	}
 
 	// set available default credentials from dockerconfig files
