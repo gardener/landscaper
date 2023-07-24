@@ -187,6 +187,11 @@ resources:
   #   cpu: 100m
   #   memory: 128Mi
 
+resourcesMain:
+  requests:
+    cpu: 300m
+    memory: 300Mi
+
 nodeSelector: {}
 
 tolerations: []

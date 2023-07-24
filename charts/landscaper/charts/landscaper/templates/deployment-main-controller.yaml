@@ -75,7 +75,7 @@ spec:
             mountPath: /app/ls/landscaper-cluster-kubeconfig
           {{- end }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.resourcesMain | nindent 12 }}
           env:
             - name: MY_POD_NAME
               valueFrom:
