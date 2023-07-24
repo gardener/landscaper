@@ -97,12 +97,12 @@ func (l *Locker) lock(ctx context.Context, obj *metav1.PartialObjectMetadata,
 		}
 
 		// we have locked the object
-		log.Debug("locker: lock created")
+		log.Info("locker: lock created")
 		return syncObject, nil
 	}
 
 	if syncObject.Spec.PodName == utils.GetCurrentPodName() {
-		log.Debug("locker: object is already locked by this pod")
+		log.Info("locker: object is already locked by this pod")
 		return syncObject, nil
 	}
 
@@ -134,7 +134,7 @@ func (l *Locker) lock(ctx context.Context, obj *metav1.PartialObjectMetadata,
 		return nil, lsError
 	}
 
-	log.Debug("locker: lock taken over")
+	log.Info("locker: lock taken over")
 	return syncObject, nil
 }
 
@@ -155,7 +155,7 @@ func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) 
 		return
 	}
 
-	log.Debug("locker: object unlocked")
+	log.Info("locker: object unlocked")
 }
 
 func (l *Locker) NotLockedResult() (reconcile.Result, error) {
