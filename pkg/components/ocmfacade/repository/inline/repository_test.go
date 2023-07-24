@@ -1,8 +1,6 @@
 package inline_test
 
 import (
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/inline"
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -16,6 +14,9 @@ import (
 	"github.com/open-component-model/ocm/pkg/runtime"
 	. "github.com/open-component-model/ocm/pkg/testutils"
 	"github.com/open-component-model/ocm/pkg/utils/tarutils"
+
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/inline"
 )
 
 const (
@@ -36,7 +37,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 	})
 
 	AfterEach(func() {
-		env.Cleanup()
+		_ = env.Cleanup()
 	})
 
 	It("repository spec with inline component descriptors and local resources", func() {

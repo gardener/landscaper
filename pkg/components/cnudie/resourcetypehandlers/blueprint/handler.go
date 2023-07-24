@@ -5,16 +5,18 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"os"
+
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/open-component-model/ocm/pkg/errors"
+
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"github.com/gardener/landscaper/pkg/components/cnudie/registries"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/tar"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
-	"github.com/open-component-model/ocm/pkg/errors"
-	"io"
-	"os"
 )
 
 func init() {

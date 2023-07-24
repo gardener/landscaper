@@ -9,9 +9,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/deployerlegacy"
 	"os"
 	"strconv"
+
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
 
 	dockerreference "github.com/containerd/containerd/reference/docker"
 	dockerconfig "github.com/docker/cli/cli/config"

@@ -3,14 +3,16 @@ package local_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/local"
+
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/open-component-model/ocm/pkg/env/builder"
 	. "github.com/open-component-model/ocm/pkg/testutils"
+
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/local"
 
 	tenv "github.com/open-component-model/ocm/pkg/env"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -37,7 +39,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 	})
 
 	AfterEach(func() {
-		env.Cleanup()
+		_ = env.Cleanup()
 	})
 
 	It("marshal/unmarshal spec v1", func() {

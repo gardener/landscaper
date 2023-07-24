@@ -1,12 +1,13 @@
 package repository
 
 import (
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/open-component-model/ocm/pkg/mime"
-	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 	"os"
 	"path"
 	"sync"
+
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/open-component-model/ocm/pkg/mime"
+	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 

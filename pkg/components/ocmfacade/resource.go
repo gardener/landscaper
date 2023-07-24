@@ -2,19 +2,21 @@ package ocmfacade
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/registries"
-	_ "github.com/gardener/landscaper/pkg/components/ocmfacade/resourcetypehandlers"
+	"io"
+	"path/filepath"
+
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"io"
-	"path/filepath"
+
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/registries"
+	_ "github.com/gardener/landscaper/pkg/components/ocmfacade/resourcetypehandlers"
 )
 
 type Resource struct {

@@ -70,7 +70,7 @@ var _ = Describe("Simple", func() {
 		}
 	})
 
-	FIt("Should successfully reconcile SimpleTest", func() {
+	It("Should successfully reconcile SimpleTest", func() {
 		ctx := context.Background()
 
 		var err error

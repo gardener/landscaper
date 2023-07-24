@@ -8,11 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
-	"github.com/gardener/landscaper/pkg/deployerlegacy"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
 
 	"github.com/gardener/landscaper/pkg/components/registries"
 

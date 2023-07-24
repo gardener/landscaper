@@ -6,8 +6,9 @@ package model
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 	"io"
+
+	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 type Resource interface {

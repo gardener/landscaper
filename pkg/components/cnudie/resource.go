@@ -6,12 +6,14 @@ package cnudie
 
 import (
 	"context"
+	"io"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
+
 	"github.com/gardener/landscaper/pkg/components/cnudie/registries"
 	_ "github.com/gardener/landscaper/pkg/components/cnudie/resourcetypehandlers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"io"
 )
 
 func NewResource(res *types.Resource, blobResolver ctf.BlobResolver) model.Resource {

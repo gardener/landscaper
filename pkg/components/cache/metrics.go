@@ -105,5 +105,3 @@ func RegisterStoreMetrics(reg prometheus.Registerer) {
 	reg.MustRegister(CacheDiskUsage)
 	reg.MustRegister(CacheMemoryUsage)
 }
-
-

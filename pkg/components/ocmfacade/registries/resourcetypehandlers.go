@@ -2,9 +2,11 @@ package registries
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sync"
+
+	"github.com/mandelsoft/vfs/pkg/vfs"
+
+	"github.com/gardener/landscaper/pkg/components/model"
 )
 
 var Registry = New()

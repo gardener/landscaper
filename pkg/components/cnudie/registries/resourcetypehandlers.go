@@ -2,10 +2,11 @@ package registries
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 	"io"
 	"sync"
+
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 var Registry = New()

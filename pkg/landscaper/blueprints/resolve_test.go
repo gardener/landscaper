@@ -7,8 +7,9 @@ package blueprints_test
 import (
 	"context"
 	"crypto/rand"
-	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"io"
+
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"

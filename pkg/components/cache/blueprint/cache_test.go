@@ -6,10 +6,12 @@ package blueprint_test
 
 import (
 	"context"
+	"os"
+
+	"github.com/mandelsoft/vfs/pkg/osfs"
+
 	. "github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	"os"
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"

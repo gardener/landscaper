@@ -2,18 +2,18 @@ package ocmfacade
 
 import (
 	"context"
+	"reflect"
+
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/open-component-model/ocm/pkg/runtime"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
 	_ "github.com/gardener/landscaper/pkg/components/ocmfacade/repository/inline"
 	_ "github.com/gardener/landscaper/pkg/components/ocmfacade/repository/local"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/runtime"
-	"reflect"
-	"sync"
 )
 
 type RegistryAccess struct {
-	lock             sync.RWMutex
 	octx             ocm.Context
 	session          ocm.Session
 	inlineSpec       ocm.RepositorySpec

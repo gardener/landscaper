@@ -9,13 +9,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/components/cache"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/gardener/landscaper/pkg/components/cache"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/readonlyfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
@@ -23,11 +30,6 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils"
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
-	"github.com/mandelsoft/vfs/pkg/readonlyfs"
-	"github.com/mandelsoft/vfs/pkg/vfs"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 var storeSingleton *Store

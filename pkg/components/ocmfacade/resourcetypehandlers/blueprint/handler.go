@@ -2,11 +2,13 @@ package blueprint
 
 import (
 	"context"
+
+	"github.com/mandelsoft/vfs/pkg/vfs"
+
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/ocmfacade/registries"
-	"github.com/mandelsoft/vfs/pkg/vfs"
 )
 
 func init() {

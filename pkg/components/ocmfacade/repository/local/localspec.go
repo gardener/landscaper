@@ -1,13 +1,14 @@
 package local
 
 import (
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	. "github.com/open-component-model/ocm/pkg/exception"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/utils"
+
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
 )
 
 const (

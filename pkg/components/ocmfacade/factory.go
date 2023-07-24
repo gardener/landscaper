@@ -2,15 +2,9 @@ package ocmfacade
 
 import (
 	"context"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/gardener/landscaper/apis/config"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/inlinecompdesc"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -25,6 +19,14 @@ import (
 	"github.com/open-component-model/ocm/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/inlinecompdesc"
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
 )
 
 type Factory struct{}
@@ -136,8 +138,7 @@ func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context, log logr.
 	octx := ocm.DefaultContext()
 
 	// set available default credentials from dockerconfig files
-	var spec *dockerconfig.RepositorySpec
-	spec = dockerconfig.NewRepositorySpec(registryConfigPath, true)
+	spec := dockerconfig.NewRepositorySpec(registryConfigPath, true)
 	_, err := octx.CredentialsContext().RepositoryForSpec(spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot access %v", registryConfigPath)

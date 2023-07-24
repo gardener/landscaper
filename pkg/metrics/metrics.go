@@ -6,8 +6,9 @@ package metrics
 
 import (
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
-	"github.com/gardener/landscaper/pkg/components/cache"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/gardener/landscaper/pkg/components/cache"
 
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )

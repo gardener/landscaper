@@ -7,8 +7,9 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"os"
+
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"

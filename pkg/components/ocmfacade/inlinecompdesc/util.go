@@ -1,8 +1,9 @@
 package inlinecompdesc
 
 import (
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 type InlineCompDesc struct {

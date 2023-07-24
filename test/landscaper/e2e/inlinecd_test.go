@@ -69,7 +69,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		}
 	})
 
-	FIt("Should successfully reconcile InlineCDTest", func() {
+	It("Should successfully reconcile InlineCDTest", func() {
 		ctx := context.Background()
 
 		var err error

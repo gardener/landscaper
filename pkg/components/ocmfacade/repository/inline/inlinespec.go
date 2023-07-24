@@ -2,13 +2,15 @@ package inline
 
 import (
 	"encoding/json"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
+
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 	. "github.com/open-component-model/ocm/pkg/exception"
 	"github.com/open-component-model/ocm/pkg/runtime"
+
+	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
 )
 
 const (

@@ -10,8 +10,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/deployerlegacy"
 	"net/http"
+
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
