@@ -12,10 +12,10 @@ landscaper:
   controllers:
     # syncPeriod: 10h
     installations:
-      workers: 10
+      workers: 30
       # cacheSyncTimeout: 2m
     executions:
-      workers: 10
+      workers: 30
       # cacheSyncTimeout: 2m
     deployItems:
       workers: 5

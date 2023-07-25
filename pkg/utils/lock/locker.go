@@ -18,11 +18,11 @@ import (
 )
 
 const (
+	LockerEnabled = false
+
 	keyMyPodName      = "myPodName"
 	keyNamespace      = "lockNamespace"
 	keySyncObjectName = "syncObjectName"
-
-	cleanupInterval = 3 * time.Hour
 )
 
 type Locker struct {

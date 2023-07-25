@@ -214,6 +214,10 @@ type ExecutionStatus struct {
 	// PhaseTransitionTime is the time when the phase last changed.
 	// +optional
 	PhaseTransitionTime *metav1.Time `json:"phaseTransitionTime,omitempty"`
+
+	// TransitionTimes contains timestamps of status transitions
+	// +optional
+	TransitionTimes *TransitionTimes `json:"transitionTimes,omitempty"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.

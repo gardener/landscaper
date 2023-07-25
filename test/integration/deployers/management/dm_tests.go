@@ -10,6 +10,10 @@ import (
 	"sync"
 	"time"
 
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+
 	"github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -22,10 +26,8 @@ import (
 
 	"github.com/gardener/landscaper/test/utils/envtest"
 
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"github.com/gardener/landscaper/apis/config"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/agent"
 	"github.com/gardener/landscaper/pkg/api"
 
@@ -119,11 +121,13 @@ func DeployerManagementTests(f *framework.Framework) {
 				mgr, err = manager.New(f.RestConfig, manager.Options{
 					Scheme:             api.LandscaperScheme,
 					MetricsBindAddress: "0",
+					NewClient:          lsutils.NewUncachedClient,
 				})
 				testutil.ExpectNoError(err)
 
 				ginkgo.By("Adding agent with LandscaperNamespace: " + f.LsNamespace)
-				err = agent.AddToManager(ctx, logging.Discard(), mgr, mgr, config.AgentConfiguration{
+				logger := utils.NewLoggerFromTestLogger(f.TestLog()).WithName("dm-test-agent")
+				err = agent.AddToManager(ctx, logger, mgr, mgr, config.AgentConfiguration{
 					Name:                "testenv",
 					Namespace:           state.Namespace,
 					LandscaperNamespace: f.LsNamespace,

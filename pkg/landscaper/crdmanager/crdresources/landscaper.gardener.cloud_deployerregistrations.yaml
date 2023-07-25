@@ -79,6 +79,21 @@ spec:
                                       description: ComponentName describes the remote
                                         name of the referenced object
                                       type: string
+                                    digest:
+                                      description: Digest is the optional digest of
+                                        the referenced component.
+                                      properties:
+                                        hashAlgorithm:
+                                          type: string
+                                        normalisationAlgorithm:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - hashAlgorithm
+                                      - normalisationAlgorithm
+                                      - value
+                                      type: object
                                     extraIdentity:
                                       additionalProperties:
                                         type: string
@@ -171,6 +186,21 @@ spec:
                                         method to access the defined resource.
                                       type: object
                                       x-kubernetes-preserve-unknown-fields: true
+                                    digest:
+                                      description: Digest is the optional digest of
+                                        the referenced resource.
+                                      properties:
+                                        hashAlgorithm:
+                                          type: string
+                                        normalisationAlgorithm:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - hashAlgorithm
+                                      - normalisationAlgorithm
+                                      - value
+                                      type: object
                                     extraIdentity:
                                       additionalProperties:
                                         type: string
@@ -345,6 +375,49 @@ spec:
                             required:
                             - schemaVersion
                             type: object
+                          signatures:
+                            description: Signatures contains a list of signatures
+                              for the ComponentDescriptor
+                            items:
+                              description: Signature defines a digest and corresponding
+                                signature, identifyable by name.
+                              properties:
+                                digest:
+                                  description: DigestSpec defines a digest.
+                                  properties:
+                                    hashAlgorithm:
+                                      type: string
+                                    normalisationAlgorithm:
+                                      type: string
+                                    value:
+                                      type: string
+                                  required:
+                                  - hashAlgorithm
+                                  - normalisationAlgorithm
+                                  - value
+                                  type: object
+                                name:
+                                  type: string
+                                signature:
+                                  description: SignatureSpec defines a signature.
+                                  properties:
+                                    algorithm:
+                                      type: string
+                                    mediaType:
+                                      type: string
+                                    value:
+                                      type: string
+                                  required:
+                                  - algorithm
+                                  - value
+                                  - mediaType
+                                  type: object
+                              required:
+                              - name
+                              - digest
+                              - signature
+                              type: object
+                            type: array
                         required:
                         - meta
                         - component

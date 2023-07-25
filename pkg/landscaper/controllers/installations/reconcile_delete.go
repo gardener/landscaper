@@ -9,17 +9,15 @@ import (
 	"errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -102,6 +100,7 @@ func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, ins
 
 	if exec != nil && exec.Status.JobID != inst.Status.JobID {
 		exec.Status.JobID = inst.Status.JobID
+		exec.Status.TransitionTimes = lsutil.NewTransitionTimes()
 		if err = c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000093, exec); err != nil {
 			return lserrors.NewWrappedError(err, op, "UpdateExecutionStatus", err.Error())
 		}
@@ -115,6 +114,7 @@ func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, ins
 	for _, subInst := range subInsts {
 		if subInst.Status.JobID != inst.Status.JobID {
 			subInst.Status.JobID = inst.Status.JobID
+			subInst.Status.TransitionTimes = lsutil.NewTransitionTimes()
 			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000094, subInst); err != nil {
 				return lserrors.NewWrappedError(err, op, "UpdateInstallationStatus", err.Error())
 			}

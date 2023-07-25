@@ -11,15 +11,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
-	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
-
-	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
@@ -34,8 +28,11 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 // GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
@@ -163,6 +160,7 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 	// if a reconciliation ends in a final phase, the current job is done
 	if deployItem.Status.Phase.IsFinal() {
 		deployItem.Status.JobIDFinished = deployItem.Status.GetJobID()
+		deployItem.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(deployItem.Status.TransitionTimes)
 	}
 
 	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {

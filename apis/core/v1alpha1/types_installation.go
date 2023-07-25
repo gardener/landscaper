@@ -299,6 +299,10 @@ type InstallationStatus struct {
 	// DependentsToTrigger lists dependent installations to be triggered
 	// +optional
 	DependentsToTrigger []DependentToTrigger `json:"dependentsToTrigger,omitempty"`
+
+	// TransitionTimes contains timestamps of status transitions
+	// +optional
+	TransitionTimes *TransitionTimes `json:"transitionTimes,omitempty"`
 }
 
 type DependentToTrigger struct {

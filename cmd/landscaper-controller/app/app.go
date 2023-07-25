@@ -196,11 +196,13 @@ func (o *Options) run(ctx context.Context) error {
 
 	eg, ctx := errgroup.WithContext(ctx)
 
-	eg.Go(func() error {
-		lockCleaner := lock.NewLockCleaner(lsMgr.GetClient(), hostMgr.GetClient())
-		lockCleaner.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
-		return nil
-	})
+	if lock.LockerEnabled {
+		eg.Go(func() error {
+			lockCleaner := lock.NewLockCleaner(lsMgr.GetClient(), hostMgr.GetClient())
+			lockCleaner.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
+			return nil
+		})
+	}
 
 	eg.Go(func() error {
 		monitor := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostMgr.GetClient())
