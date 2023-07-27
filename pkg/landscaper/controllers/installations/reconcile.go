@@ -314,16 +314,16 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 		return nil, nil
 	}
 
-	// all deletions failed
+	// Consider the remaining subinstallations to be deleted. If they are all finished with phase DeleteFailed,
+	// we are stuck and return an error.
 	allFailed := true
 	for _, next := range subInstsToDelete {
 		if next.Status.JobIDFinished != inst.Status.JobID || next.Status.InstallationPhase != lsv1alpha1.InstallationPhases.DeleteFailed {
 			allFailed = false
 		}
 	}
-
 	if allFailed {
-		return lserrors.NewWrappedError(err, currentOperation, "AllOrphanedSubinstallationsFailed", err.Error()), nil
+		return lserrors.NewError(currentOperation, "AllOrphanedSubinstallationsFailed", "all orphaned subinstallations failed"), nil
 	}
 
 	for _, next := range subInstsToDelete {
