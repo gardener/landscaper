@@ -34,14 +34,6 @@ type Factory interface {
 		concourseConfigPath string,
 		predefinedComponentDescriptors ...*types.ComponentDescriptor) (RegistryAccess, error)
 
-	NewRegistryAccessForHelm(ctx context.Context,
-		lsClient client.Client,
-		contextObj *lsv1alpha1.Context,
-		registryPullSecrets []corev1.Secret,
-		ociConfig *config.OCIConfiguration,
-		sharedCache cache.Cache,
-		ref *helmv1alpha1.RemoteChartReference) (RegistryAccess, error)
-
 	NewOCIRegistryAccess(ctx context.Context,
 		config *config.OCIConfiguration,
 		cache cache.Cache,
@@ -63,12 +55,12 @@ type Factory interface {
 	NewHelmRepoResource(ctx context.Context,
 		helmChartRepo *helmv1alpha1.HelmChartRepo,
 		lsClient client.Client,
-		contextObj *lsv1alpha1.Context) (Resource, error)
+		contextObj *lsv1alpha1.Context) (TypedResourceProvider, error)
 
 	// NewHelmOCIResource returns a helm chart resource that is stored in an OCI registry.
 	NewHelmOCIResource(ctx context.Context,
 		ociImageRef string,
 		registryPullSecrets []corev1.Secret,
 		ociConfig *config.OCIConfiguration,
-		sharedCache cache.Cache) (Resource, error)
+		sharedCache cache.Cache) (TypedResourceProvider, error)
 }

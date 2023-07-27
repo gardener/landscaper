@@ -11,8 +11,8 @@ import (
 	. "github.com/open-component-model/ocm/pkg/env/builder"
 	. "github.com/open-component-model/ocm/pkg/testutils"
 
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/local"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/repository/local"
 
 	tenv "github.com/open-component-model/ocm/pkg/env"
 	"github.com/open-component-model/ocm/pkg/runtime"

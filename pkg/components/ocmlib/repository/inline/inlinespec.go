@@ -10,7 +10,7 @@ import (
 	. "github.com/open-component-model/ocm/pkg/exception"
 	"github.com/open-component-model/ocm/pkg/runtime"
 
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 )
 
 const (

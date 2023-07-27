@@ -47,7 +47,7 @@ var _ = Describe("Constructor", func() {
 		fakeInstallations = state.Installations
 		Expect(testutils.CreateExampleDefaultContext(context.TODO(), fakeClient, "test1", "test2", "test3", "test4", "test5", "test6"))
 
-		registryAccess, err := registries.NewFactory().NewLocalRegistryAccess("../testdata/registry")
+		registryAccess, err := registries.GetFactory().NewLocalRegistryAccess("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{

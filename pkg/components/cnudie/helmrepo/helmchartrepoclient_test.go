@@ -7,6 +7,9 @@ package helmrepo
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/common"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -55,7 +58,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 			AuthHeader: testAuthHeader,
 		}
 
-		authHeader, err := helmChartRepoClient.getAuthHeader(ctx, authData)
+		authHeader, err := common.GetAuthHeader(ctx, authData, helmChartRepoClient.lsClient, helmChartRepoClient.contextNamespace)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(authHeader).To(Equal(testAuthHeader))
 	})
@@ -96,7 +99,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 		helmChartRepoClient, err := NewHelmChartRepoClient(contxt, state.Client)
 		Expect(err).NotTo(HaveOccurred())
 
-		authHeader, err := helmChartRepoClient.getAuthHeader(ctx, authData)
+		authHeader, err := common.GetAuthHeader(ctx, authData, helmChartRepoClient.lsClient, helmChartRepoClient.contextNamespace)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(authHeader).To(Equal(testAuthHeader))
 	})
@@ -118,7 +121,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 				Namespace: state.Namespace,
 			},
 			StringData: map[string]string{
-				authHeaderDefaultKey: testAuthHeader,
+				types.AuthHeaderSecretDefaultKey: testAuthHeader,
 			},
 		}
 		Expect(state.Client.Create(ctx, secret)).To(Succeed())
@@ -136,7 +139,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 		helmChartRepoClient, err := NewHelmChartRepoClient(contxt, state.Client)
 		Expect(err).NotTo(HaveOccurred())
 
-		authHeader, err := helmChartRepoClient.getAuthHeader(ctx, authData)
+		authHeader, err := common.GetAuthHeader(ctx, authData, helmChartRepoClient.lsClient, helmChartRepoClient.contextNamespace)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(authHeader).To(Equal(testAuthHeader))
 	})
@@ -178,7 +181,7 @@ var _ = Describe("Helm Chart Repo Client", func() {
 		helmChartRepoClient, err := NewHelmChartRepoClient(contxt, state.Client)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = helmChartRepoClient.getAuthHeader(ctx, authData)
+		_, err = common.GetAuthHeader(ctx, authData, helmChartRepoClient.lsClient, helmChartRepoClient.contextNamespace)
 		Expect(err).To(HaveOccurred())
 	})
 })

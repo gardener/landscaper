@@ -24,7 +24,7 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	registryAccess, err = NewFactory().NewLocalRegistryAccess("./testdata/registry")
+	registryAccess, err = GetFactory().NewLocalRegistryAccess("./testdata/registry")
 	Expect(err).ToNot(HaveOccurred())
 
 	repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")

@@ -8,7 +8,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/utils"
 
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 )
 
 const (

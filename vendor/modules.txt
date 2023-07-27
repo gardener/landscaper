@@ -1172,6 +1172,8 @@ github.com/open-component-model/ocm/pkg/contexts/oci/grammar
 github.com/open-component-model/ocm/pkg/contexts/oci/identity
 github.com/open-component-model/ocm/pkg/contexts/oci/internal
 github.com/open-component-model/ocm/pkg/contexts/oci/ociutils
+github.com/open-component-model/ocm/pkg/contexts/oci/ociutils/helm/ignore
+github.com/open-component-model/ocm/pkg/contexts/oci/ociutils/helm/sympath
 github.com/open-component-model/ocm/pkg/contexts/oci/repositories
 github.com/open-component-model/ocm/pkg/contexts/oci/repositories/artifactset
 github.com/open-component-model/ocm/pkg/contexts/oci/repositories/ctf
@@ -1255,6 +1257,7 @@ github.com/open-component-model/ocm/pkg/finalizer
 github.com/open-component-model/ocm/pkg/generics
 github.com/open-component-model/ocm/pkg/helm
 github.com/open-component-model/ocm/pkg/helm/identity
+github.com/open-component-model/ocm/pkg/helm/loader
 github.com/open-component-model/ocm/pkg/listformat
 github.com/open-component-model/ocm/pkg/logging
 github.com/open-component-model/ocm/pkg/mime

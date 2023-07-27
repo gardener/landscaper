@@ -45,7 +45,7 @@ var _ = Describe("Execution Operation", func() {
 		kClient = testenv.Client
 		testInstallations = state.Installations
 
-		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
+		registryAccess, err = registries.GetFactory().NewLocalRegistryAccess("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")

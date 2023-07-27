@@ -117,7 +117,7 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			return fmt.Errorf("no inline component descriptor or reference found")
 		}
 
-		registryAccess, err = registries.NewFactory().NewOCIRegistryAccessFromDockerAuthConfig(
+		registryAccess, err = registries.GetFactory().NewOCIRegistryAccessFromDockerAuthConfig(
 			ctx,
 			fs,
 			opts.RegistrySecretBasePath,

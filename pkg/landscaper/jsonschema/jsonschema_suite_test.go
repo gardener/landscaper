@@ -499,7 +499,7 @@ var _ = Describe("jsonschema", func() {
 			ociClient, err = ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
 			testutils.ExpectNoError(err)
 
-			registryAccess, err = registries.NewFactory().NewOCITestRegistryAccess(testenv.Addr, testenv.BasicAuth.Username, testenv.BasicAuth.Password)
+			registryAccess, err = registries.GetFactory().NewOCITestRegistryAccess(testenv.Addr, testenv.BasicAuth.Username, testenv.BasicAuth.Password)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -804,7 +804,7 @@ var _ = Describe("jsonschema", func() {
 			var err error
 			ctx := context.Background()
 
-			registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
+			registryAccess, err = registries.GetFactory().NewLocalRegistryAccess("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 
 			repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")

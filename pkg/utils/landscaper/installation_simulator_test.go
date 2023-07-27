@@ -85,7 +85,7 @@ var _ = Describe("Installation Simulator", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess(testDataDir)
+		registryAccess, err = registries.GetFactory().NewLocalRegistryAccess(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
 		repositoryContext, err = componentresolvers.NewLocalRepositoryContext(testDataDir)
 		Expect(err).ToNot(HaveOccurred())

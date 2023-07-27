@@ -1,4 +1,4 @@
-package ocmfacade
+package ocmlib
 
 import (
 	"testing"

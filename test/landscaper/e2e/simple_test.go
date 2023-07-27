@@ -21,7 +21,6 @@ import (
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
@@ -41,10 +40,7 @@ var _ = Describe("Simple", func() {
 	BeforeEach(func() {
 		var err error
 
-		registryAccess, err := registries.NewFactory().NewLocalRegistryAccess(filepath.Join(projectRoot, "examples", "01-simple"))
-		Expect(err).ToNot(HaveOccurred())
-
-		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
+		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
 
 		instActuator = instctlr.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
@@ -72,7 +68,6 @@ var _ = Describe("Simple", func() {
 
 	It("Should successfully reconcile SimpleTest", func() {
 		ctx := context.Background()
-
 		var err error
 		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "01-simple", "cluster"))
 		Expect(err).ToNot(HaveOccurred())

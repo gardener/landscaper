@@ -47,7 +47,7 @@ var _ = Describe("Delete", func() {
 
 		BeforeEach(func() {
 			var err error
-			registryAccess, err := registries.NewFactory().NewLocalRegistryAccess("./testdata")
+			registryAccess, err := registries.GetFactory().NewLocalRegistryAccess("./testdata")
 			Expect(err).ToNot(HaveOccurred())
 			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 

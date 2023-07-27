@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/gardener/landscaper/pkg/components/common"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"helm.sh/helm/v3/pkg/repo"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,7 +57,7 @@ func (h *BlobResolverForHelmRepo) ResolveHelmChart(ctx context.Context, helmChar
 		return nil, errors.New("no helm chart repo url provided")
 	}
 
-	helmChartRepoUrl := normalizeUrl(helmChartRepo.HelmChartRepoUrl) + "/index.yaml"
+	helmChartRepoUrl := common.NormalizeUrl(helmChartRepo.HelmChartRepoUrl) + "/index.yaml"
 
 	repoCatalog, err := h.helmChartRepoClient.fetchRepoCatalog(ctx, helmChartRepoUrl)
 	if err != nil {

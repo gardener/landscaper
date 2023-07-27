@@ -15,8 +15,8 @@ import (
 	. "github.com/open-component-model/ocm/pkg/testutils"
 	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/repository/inline"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/repository/inline"
 )
 
 const (

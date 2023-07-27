@@ -132,33 +132,6 @@ func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
 	}, nil
 }
 
-func (f *Factory) NewRegistryAccessForHelm(ctx context.Context,
-	lsClient client.Client,
-	contextObj *lsv1alpha1.Context,
-	registryPullSecrets []corev1.Secret,
-	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache,
-	ref *helmv1alpha1.RemoteChartReference) (model.RegistryAccess, error) {
-
-	helmChartOCIResolver, err := helmoci.NewBlobResolverForHelmOCI(ctx, registryPullSecrets, ociConfig, sharedCache)
-	if err != nil {
-		return nil, err
-	}
-
-	helmChartRepoResolver, err := helmrepo.NewBlobResolverForHelmRepo(ctx, lsClient, contextObj)
-	if err != nil {
-		return nil, err
-	}
-
-	registryAccess, err := f.NewRegistryAccess(ctx, registryPullSecrets, sharedCache, nil, ociConfig, ref.Inline,
-		helmChartOCIResolver, helmChartRepoResolver)
-	if err != nil {
-		return nil, fmt.Errorf("unable to build registry access for helm charts: %w", err)
-	}
-
-	return registryAccess, nil
-}
-
 func (*Factory) NewOCIRegistryAccess(ctx context.Context,
 	config *config.OCIConfiguration,
 	cache cache.Cache,
@@ -274,7 +247,7 @@ func (*Factory) NewLocalRegistryAccess(rootPath string) (model.RegistryAccess, e
 func (*Factory) NewHelmRepoResource(ctx context.Context,
 	helmChartRepo *helmv1alpha1.HelmChartRepo,
 	lsClient client.Client,
-	contextObj *lsv1alpha1.Context) (model.Resource, error) {
+	contextObj *lsv1alpha1.Context) (model.TypedResourceProvider, error) {
 
 	helmChartRepoResolver, err := helmrepo.NewBlobResolverForHelmRepo(ctx, lsClient, contextObj)
 	if err != nil {
@@ -294,7 +267,7 @@ func (*Factory) NewHelmOCIResource(ctx context.Context,
 	ociImageRef string,
 	registryPullSecrets []corev1.Secret,
 	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache) (model.Resource, error) {
+	sharedCache cache.Cache) (model.TypedResourceProvider, error) {
 
 	blobResolver, err := helmoci.NewBlobResolverForHelmOCI(ctx, registryPullSecrets, ociConfig, sharedCache)
 	if err != nil {

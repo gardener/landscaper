@@ -52,7 +52,7 @@ var _ = Describe("ConditionalImports", func() {
 
 		createDefaultContextsForNamespace(fakeClient)
 
-		registry, err := registries.NewFactory().NewLocalRegistryAccess("../testdata/registry")
+		registry, err := registries.GetFactory().NewLocalRegistryAccess("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{

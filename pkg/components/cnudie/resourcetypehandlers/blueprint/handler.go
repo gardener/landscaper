@@ -24,14 +24,10 @@ func init() {
 	registries.Registry.Register(mediatype.OldBlueprintType, New())
 }
 
-type BlueprintHandler struct {
-	cache *blueprint.Store
-}
+type BlueprintHandler struct{}
 
 func New() *BlueprintHandler {
-	return &BlueprintHandler{
-		cache: blueprint.GetBlueprintStore(),
-	}
+	return &BlueprintHandler{}
 }
 
 func (h *BlueprintHandler) GetResourceContent(ctx context.Context, r model.Resource, blobResolver model.BlobResolver) (*model.TypedResourceContent, error) {
@@ -95,13 +91,13 @@ func (h *BlueprintHandler) Prepare(ctx context.Context, data io.Reader, info *ty
 		return nil, fmt.Errorf("unable to extract blueprint from blob: %w", err)
 	}
 
-	blueprint, err := blueprint.BuildBlueprintFromPath(fs, "/")
+	bp, err := blueprint.BuildBlueprintFromPath(fs, "/")
 	if err != nil {
 		return nil, err
 	}
 
 	return &model.TypedResourceContent{
 		Type:     mediatype.BlueprintType,
-		Resource: blueprint,
+		Resource: bp,
 	}, nil
 }

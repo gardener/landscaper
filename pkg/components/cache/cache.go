@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -76,7 +75,7 @@ func NewCache(log logr.Logger, options ...Option) (*layeredCache, error) {
 
 func initBasePath(opts *Options) error {
 	if len(opts.BasePath) == 0 {
-		path, err := ioutil.TempDir(os.TempDir(), "ocicache")
+		path, err := os.MkdirTemp(os.TempDir(), "ocicache")
 		if err != nil {
 			return err
 		}

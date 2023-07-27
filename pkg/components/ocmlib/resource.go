@@ -1,22 +1,22 @@
-package ocmfacade
+package ocmlib
 
 import (
 	"context"
 	"io"
-	"path/filepath"
 
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/helm"
+	"github.com/open-component-model/ocm/pkg/helm/loader"
 	"github.com/open-component-model/ocm/pkg/runtime"
 
-	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/components/ocmfacade/registries"
-	_ "github.com/gardener/landscaper/pkg/components/ocmfacade/resourcetypehandlers"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/registries"
+	_ "github.com/gardener/landscaper/pkg/components/ocmlib/resourcetypehandlers"
 )
 
 type Resource struct {
@@ -93,34 +93,8 @@ func (r *Resource) GetBlob(ctx context.Context, writer io.Writer) (_ *types.Blob
 }
 
 func (r *Resource) GetBlobNew(ctx context.Context) (*model.TypedResourceContent, error) {
-	res, err := blueprint.GetBlueprintStore().Get(ctx, r.GetCachingIdentity(ctx))
-	if err != nil {
-		return nil, err
-	}
-	if res != nil {
-		return &model.TypedResourceContent{
-			Type:     r.GetType(),
-			Resource: res,
-		}, nil
-	}
-
-	fs := memoryfs.New()
-	_, _, err = download.DefaultRegistry.Download(nil, r.resourceAccess, filepath.Join("/"), fs)
-	if err != nil {
-		return nil, err
-	}
-
-	typedResourceContent, err := r.handlerRegistry.Get(r.GetType()).Prepare(ctx, fs)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = blueprint.GetBlueprintStore().Put(ctx, r.GetCachingIdentity(ctx), typedResourceContent)
-	if err != nil {
-		return nil, err
-	}
-
-	return typedResourceContent, nil
+	handler := r.handlerRegistry.Get(r.GetType())
+	return handler.GetResourceContent(ctx, r, r.resourceAccess)
 }
 
 func (r *Resource) GetCachingIdentity(ctx context.Context) string {
@@ -132,28 +106,35 @@ func (r *Resource) GetCachingIdentity(ctx context.Context) string {
 }
 
 func (r *Resource) GetBlobInfo(ctx context.Context) (*types.BlobInfo, error) {
-	//accessMethod, err := r.resourceAccess.AccessMethod()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer errors.PropagateError(&rerr, accessMethod.Close)
-	//
-	//blobAccess := accessio.BlobAccessForDataAccess(accessio.BLOB_UNKNOWN_DIGEST, accessio.BLOB_UNKNOWN_SIZE, accessMethod.MimeType(), accessMethod)
-	//
-	//return &types.BlobInfo{
-	//	MediaType: accessMethod.MimeType(),
-	//	Digest:    blobAccess.Digest().String(),
-	//	Size:      blobAccess.Size(),
-	//}, nil
-	accessSpec, err := r.resourceAccess.Access()
+	return nil, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type HelmChartProvider struct {
+	ocictx  oci.Context
+	ref     string
+	version string
+	repourl string
+}
+
+func (h *HelmChartProvider) GetBlobNew(ctx context.Context) (_ *model.TypedResourceContent, rerr error) {
+	access, err := helm.DownloadChart(common.NewPrinter(nil), h.ocictx, h.ref, h.version, h.repourl)
 	if err != nil {
 		return nil, err
 	}
-	id := accessSpec.GetInexpensiveContentVersionIdentity(r.resourceAccess.ComponentVersion())
-	return &types.BlobInfo{
-		MediaType: "",
-		Digest:    id,
-		Size:      -1,
-	}, nil
+	defer errors.PropagateError(&rerr, access.Close)
 
+	chartLoader := loader.AccessLoader(access)
+	helmChart, err := chartLoader.Chart()
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.TypedResourceContent{
+		Type:     types.HelmChartResourceType,
+		Resource: helmChart,
+	}, nil
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
