@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/apis/config"
 	"path"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -20,7 +21,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
@@ -85,10 +85,11 @@ var _ = Describe("Installation Simulator", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		registryAccess, err = registries.GetFactory().NewLocalRegistryAccess(testDataDir)
+		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: testDataDir}
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
-		repositoryContext, err = componentresolvers.NewLocalRepositoryContext(testDataDir)
-		Expect(err).ToNot(HaveOccurred())
+
+		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
 		rootComponentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
 			RepositoryContext: &repositoryContext,
@@ -123,7 +124,7 @@ var _ = Describe("Installation Simulator", func() {
 		}
 
 		fs := osfs.New()
-		blueprintsFs, err := projectionfs.New(fs, path.Join(testDataDir, "root/blobs/blueprint"))
+		blueprintsFs, err := projectionfs.New(fs, path.Join(testDataDir, "blobs/root-blueprint"))
 		Expect(err).ToNot(HaveOccurred())
 
 		blueprint, err = blueprints.NewFromFs(blueprintsFs)

@@ -6,24 +6,25 @@ meta:
   schemaVersion: v2
 
 component:
-  name: example.com/external
-  version: 1.0.0
+  name: example.com/componentc
+  version: v0.1.0
 
   provider: internal
 
   repositoryContexts:
     - type: ociRegistry
-      baseUrl: "./testdata/registry"
+      baseUrl: "example.com"
 
-  sources: []
   componentReferences: []
 
   resources:
-    - name: def-1
+    - name: blueprint
       type: blueprint
-      version: 1.0.0
+      version: v0.1.0
       relation: local
       access:
         type: localFilesystemBlob
         mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
-        filename: def-1
+        filename: c-blueprint
+
+  sources: []

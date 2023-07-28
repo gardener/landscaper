@@ -26,4 +26,4 @@ component:
       access:
         type: localFilesystemBlob
         mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
-        filename: schema/schema.json
+        filename: ref1-schema.json

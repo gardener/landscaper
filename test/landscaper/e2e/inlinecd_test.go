@@ -6,8 +6,6 @@ package e2e_test
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -40,7 +38,6 @@ var _ = Describe("Inline Component Descriptor", func() {
 	)
 
 	BeforeEach(func() {
-		fmt.Printf(os.Getenv("LANDSCAPER_LIBRARY_MODE"))
 		var err error
 
 		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))

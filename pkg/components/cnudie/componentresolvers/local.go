@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
@@ -167,7 +168,7 @@ func (c *localClient) searchInFs(ctx context.Context, name, version string) (*cd
 			return nil
 		}
 
-		if info.Name() != ctf.ComponentDescriptorFileName {
+		if !strings.Contains(info.Name(), ctf.ComponentDescriptorFileName) {
 			return nil
 		}
 

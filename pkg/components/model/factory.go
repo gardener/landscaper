@@ -46,11 +46,6 @@ type Factory interface {
 
 	NewOCITestRegistryAccess(address, username, password string) (RegistryAccess, error)
 
-	// NewLocalRegistryAccess returns a RegistryAccess whose component descriptors are stored in the local file system
-	// below the given root path (and its subdirectories), in files with name component-descriptor.yaml
-	// This constructor is intended to create test objects.
-	NewLocalRegistryAccess(rootPath string) (RegistryAccess, error)
-
 	// NewHelmRepoResource returns a helm chart resource that is stored in a helm chart repository.
 	NewHelmRepoResource(ctx context.Context,
 		helmChartRepo *helmv1alpha1.HelmChartRepo,

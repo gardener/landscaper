@@ -6,7 +6,7 @@ meta:
   schemaVersion: v2
 
 component:
-  name: example.com/componentc
+  name: example.com/root
   version: v0.1.0
 
   provider: internal
@@ -15,7 +15,16 @@ component:
     - type: ociRegistry
       baseUrl: "example.com"
 
-  componentReferences: []
+  componentReferences:
+    - componentName: example.com/componenta
+      name: component-a
+      version: v0.1.0
+    - componentName: example.com/componentb
+      name: component-b
+      version: v0.1.0
+    - componentName: example.com/componentc
+      name: component-c
+      version: v0.1.0
 
   resources:
     - name: blueprint
@@ -25,6 +34,6 @@ component:
       access:
         type: localFilesystemBlob
         mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
-        filename: blueprint
+        filename: root-blueprint
 
   sources: []

@@ -6,6 +6,7 @@ package subinstallations_test
 
 import (
 	"context"
+	"github.com/gardener/landscaper/apis/config"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
@@ -116,7 +117,8 @@ var _ = Describe("SubInstallation", func() {
 
 		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12")).To(Succeed())
 
-		registryAccess, err := registries.GetFactory().NewLocalRegistryAccess("./testdata/registry")
+		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		op, err = lsoperation.NewBuilder().

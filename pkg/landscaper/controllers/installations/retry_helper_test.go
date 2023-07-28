@@ -19,7 +19,6 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -38,21 +37,10 @@ var _ = Describe("Retry handler", func() {
 		)
 
 		BeforeEach(func() {
-			var err error
-			registryAccess, err := registries.GetFactory().NewLocalRegistryAccess("./testdata")
-			Expect(err).ToNot(HaveOccurred())
-
-			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
-
+			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
 			clok = &testing.FakePassiveClock{}
 
-			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clok, &config.LandscaperConfiguration{
-				Registry: config.RegistryConfiguration{
-					Local: &config.LocalRegistryConfiguration{
-						RootPath: "./testdata",
-					},
-				},
-			})
+			ctrl = installationsctl.NewTestActuator(*op, logging.Discard(), clok, &config.LandscaperConfiguration{})
 		})
 
 		AfterEach(func() {

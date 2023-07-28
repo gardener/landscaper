@@ -45,8 +45,6 @@ func NewRepository(ctx cpi.Context, provider ComponentDescriptorProvider, blobfs
 }
 
 func (r *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentials) (cpi.Repository, error) {
-	var err error
-
 	descriptorfs := r.FileSystem
 	if descriptorfs == nil {
 		descriptorfs = vfsattr.Get(ctx)
@@ -69,9 +67,15 @@ func (r *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentia
 	}
 
 	if r.BlobDirPath != "" {
-		blobfs, err = projectionfs.New(blobfs, r.BlobDirPath)
+		exists, err := vfs.DirExists(blobfs, r.BlobDirPath)
 		if err != nil {
 			return nil, err
+		}
+		if exists {
+			blobfs, err = projectionfs.New(blobfs, r.BlobDirPath)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return NewRepository(ctx, prov, blobfs)

@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/apis/config"
 	"os"
 	"path/filepath"
 	"testing"
@@ -804,11 +805,11 @@ var _ = Describe("jsonschema", func() {
 			var err error
 			ctx := context.Background()
 
-			registryAccess, err = registries.GetFactory().NewLocalRegistryAccess("./testdata/registry")
+			localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
 			componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
 				RepositoryContext: &repositoryContext,

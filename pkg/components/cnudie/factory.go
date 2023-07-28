@@ -232,17 +232,6 @@ func (*Factory) NewOCITestRegistryAccess(address, username, password string) (mo
 	}, nil
 }
 
-func (*Factory) NewLocalRegistryAccess(rootPath string) (model.RegistryAccess, error) {
-	localComponentResolver, err := componentresolvers.NewLocalClient(rootPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return &RegistryAccess{
-		componentResolver: localComponentResolver,
-	}, nil
-}
-
 // NewHelmRepoResource returns a helm chart resource that is stored in a helm chart repository.
 func (*Factory) NewHelmRepoResource(ctx context.Context,
 	helmChartRepo *helmv1alpha1.HelmChartRepo,

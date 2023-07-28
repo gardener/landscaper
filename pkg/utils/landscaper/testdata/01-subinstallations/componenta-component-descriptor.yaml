@@ -6,7 +6,7 @@ meta:
   schemaVersion: v2
 
 component:
-  name: example.com/componentb
+  name: example.com/componenta
   version: v0.1.0
 
   provider: internal
@@ -25,6 +25,6 @@ component:
       access:
         type: localFilesystemBlob
         mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
-        filename: blueprint
+        filename: a-blueprint
 
   sources: []
