@@ -6,9 +6,10 @@ package deployer_blueprints_test
 
 import (
 	"context"
-	"github.com/gardener/landscaper/apis/config"
 	"path/filepath"
 	"testing"
+
+	"github.com/gardener/landscaper/apis/config"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"

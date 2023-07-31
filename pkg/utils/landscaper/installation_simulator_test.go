@@ -8,8 +8,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/apis/config"
 	"path"
+
+	"github.com/gardener/landscaper/apis/config"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"

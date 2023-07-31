@@ -30,3 +30,7 @@ type Access interface {
 
 	Close() error
 }
+
+type RepositorySpecProvider interface {
+	GetSpecification() cpi.RepositorySpec
+}

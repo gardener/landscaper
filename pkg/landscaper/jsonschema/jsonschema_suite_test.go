@@ -10,11 +10,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/apis/config"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/gardener/landscaper/apis/config"
 
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"

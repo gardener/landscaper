@@ -6,9 +6,11 @@ package registries
 
 import (
 	"context"
-	"github.com/gardener/landscaper/apis/config"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/gardener/landscaper/apis/config"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"

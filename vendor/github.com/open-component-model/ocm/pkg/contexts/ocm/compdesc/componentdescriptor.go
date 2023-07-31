@@ -286,6 +286,7 @@ type ObjectMetaAccessor interface {
 // ElementMetaAccessor provides generic access an elements meta information.
 type ElementMetaAccessor interface {
 	GetMeta() *ElementMeta
+	IsEquivalent(ElementMetaAccessor) bool
 }
 
 // ElementAccessor provides generic access to list of elements.
@@ -369,6 +370,20 @@ type Source struct {
 
 func (s *Source) GetMeta() *ElementMeta {
 	return &s.ElementMeta
+}
+
+func (r *Source) IsEquivalent(e ElementMetaAccessor) bool {
+	if o, ok := e.(*Source); !ok {
+		return false
+	} else {
+		if !reflect.DeepEqual(&r.ElementMeta, &o.ElementMeta) {
+			return false
+		}
+		if !reflect.DeepEqual(&r.Access, &o.Access) {
+			return false
+		}
+		return r.Type == o.Type
+	}
 }
 
 func (s *Source) GetAccess() AccessSpec {
@@ -494,6 +509,22 @@ type Resource struct {
 
 func (r *Resource) GetMeta() *ElementMeta {
 	return &r.ElementMeta
+}
+
+func (r *Resource) IsEquivalent(e ElementMetaAccessor) bool {
+	if o, ok := e.(*Resource); !ok {
+		return false
+	} else {
+		if !reflect.DeepEqual(&r.ElementMeta, &o.ElementMeta) {
+			return false
+		}
+		if !reflect.DeepEqual(&r.Access, &o.Access) {
+			return false
+		}
+		return r.Type == o.Type &&
+			r.Relation == o.Relation &&
+			reflect.DeepEqual(r.SourceRef, o.SourceRef)
+	}
 }
 
 func (r *Resource) GetAccess() AccessSpec {
@@ -649,6 +680,17 @@ func (r ComponentReference) String() string {
 
 func (r *ComponentReference) GetMeta() *ElementMeta {
 	return &r.ElementMeta
+}
+
+func (r *ComponentReference) IsEquivalent(e ElementMetaAccessor) bool {
+	if o, ok := e.(*ComponentReference); !ok {
+		return false
+	} else {
+		if !reflect.DeepEqual(&r.ElementMeta, &o.ElementMeta) {
+			return false
+		}
+		return r.ComponentName == o.ComponentName
+	}
 }
 
 func (r *ComponentReference) GetComponentName() string {

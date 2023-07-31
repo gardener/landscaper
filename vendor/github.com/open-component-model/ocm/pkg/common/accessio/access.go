@@ -260,6 +260,8 @@ const (
 	BLOB_UNKNOWN_DIGEST = digest.Digest("")
 )
 
+// BlobAccessForDataAccess wraps the general access object into a blob access.
+// It closes the wrapped access, if closed.
 func BlobAccessForDataAccess[T DataAccess](digest digest.Digest, size int64, mimeType string, access T) AnnotatedBlobAccess[T] {
 	return &blobAccess[T]{
 		digest:   digest,

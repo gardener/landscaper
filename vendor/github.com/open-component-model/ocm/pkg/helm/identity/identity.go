@@ -54,10 +54,11 @@ func IdentityMatcher(pattern, cur, id cpi.ConsumerIdentity) bool {
 // used credential attributes
 
 const (
-	ATTR_USERNAME    = credentials.ATTR_USERNAME
-	ATTR_PASSWORD    = credentials.ATTR_PASSWORD
-	ATTR_CERTIFICATE = credentials.ATTR_CERTIFICATE
-	ATTR_PRIVATE_KEY = credentials.ATTR_PRIVATE_KEY
+	ATTR_USERNAME              = credentials.ATTR_USERNAME
+	ATTR_PASSWORD              = credentials.ATTR_PASSWORD
+	ATTR_CERTIFICATE_AUTHORITY = credentials.ATTR_CERTIFICATE_AUTHORITY
+	ATTR_CERTIFICATE           = credentials.ATTR_CERTIFICATE
+	ATTR_PRIVATE_KEY           = credentials.ATTR_PRIVATE_KEY
 )
 
 func OCIRepoURL(repourl string, chartname string) string {

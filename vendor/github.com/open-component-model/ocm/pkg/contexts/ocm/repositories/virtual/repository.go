@@ -44,6 +44,9 @@ func (r *RepositoryImpl) Close() error {
 }
 
 func (r *RepositoryImpl) GetSpecification() cpi.RepositorySpec {
+	if p, ok := r.access.(RepositorySpecProvider); ok {
+		return p.GetSpecification()
+	}
 	return NewRepositorySpec(r.access)
 }
 

@@ -29,7 +29,6 @@ type chartDownloader struct {
 	*downloader.ChartDownloader
 	*chartAccess
 	creds   common.Properties
-	cacert  []byte
 	keyring []byte
 }
 
@@ -139,8 +138,8 @@ func (d *chartDownloader) complete(ctx oci.ContextProvider, ref, repourl string)
 		return err
 	}
 
-	if len(d.cacert) != 0 {
-		err = d.writeFile("cacert", config, &entry.CAFile, d.cacert, "CA file")
+	if len(creds[identity.ATTR_CERTIFICATE_AUTHORITY]) != 0 {
+		err = d.writeFile("cacert", config, &entry.CAFile, []byte(creds[identity.ATTR_CERTIFICATE_AUTHORITY]), "CA file")
 		if err != nil {
 			return err
 		}

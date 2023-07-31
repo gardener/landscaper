@@ -3,6 +3,7 @@ package ocmlib
 import (
 	"context"
 	"fmt"
+
 	"github.com/gardener/landscaper/pkg/components/cnudie"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -211,7 +212,7 @@ func (c *CredentialSource) Credentials(ctx credentials.Context, _ ...credentials
 		identity.ATTR_PASSWORD: password,
 	}
 	if c.auth.CustomCAData != "" {
-		//props[identity.ATTR_CERTIFICATE_AUTHORITY] = a.CustomCAData
+		props[identity.ATTR_CERTIFICATE_AUTHORITY] = c.auth.CustomCAData
 	}
 	return credentials.NewCredentials(props), nil
 }

@@ -63,7 +63,7 @@ github.com/Masterminds/semver/v3
 # github.com/Masterminds/sprig/v3 v3.2.3
 ## explicit; go 1.13
 github.com/Masterminds/sprig/v3
-# github.com/Masterminds/squirrel v1.5.3
+# github.com/Masterminds/squirrel v1.5.4
 ## explicit; go 1.14
 github.com/Masterminds/squirrel
 # github.com/Microsoft/go-winio v0.6.1
@@ -851,7 +851,7 @@ github.com/hashicorp/hcl/hcl/token
 github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/huandu/xstrings v1.3.3
+# github.com/huandu/xstrings v1.4.0
 ## explicit; go 1.12
 github.com/huandu/xstrings
 # github.com/imdario/mergo v0.3.15
@@ -973,7 +973,7 @@ github.com/marstr/guid
 # github.com/mattn/go-colorable v0.1.13
 ## explicit; go 1.15
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.16
+# github.com/mattn/go-isatty v0.0.17
 ## explicit; go 1.15
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.13
@@ -1113,7 +1113,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230617083127-70faf42c7d0b => github.com/fabianburth/ocm v0.0.0-20230721125305-12e11c31a233
+# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230728144103-6efa6b7fc47e
 ## explicit; go 1.19
 github.com/open-component-model/ocm/pkg/cobrautils/flag
 github.com/open-component-model/ocm/pkg/cobrautils/flagsets
@@ -1339,7 +1339,7 @@ github.com/rivo/uniseg
 # github.com/robfig/cron/v3 v3.0.1
 ## explicit; go 1.12
 github.com/robfig/cron/v3
-# github.com/rubenv/sql-migrate v1.2.0
+# github.com/rubenv/sql-migrate v1.3.1
 ## explicit; go 1.16
 github.com/rubenv/sql-migrate
 github.com/rubenv/sql-migrate/sqlparse
@@ -1361,7 +1361,7 @@ github.com/segmentio/ksuid
 # github.com/shibumi/go-pathspec v1.3.0
 ## explicit; go 1.17
 github.com/shibumi/go-pathspec
-# github.com/shopspring/decimal v1.2.0
+# github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
 github.com/shopspring/decimal
 # github.com/sigstore/cosign/v2 v2.1.1
@@ -1960,8 +1960,8 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# helm.sh/helm/v3 v3.11.1
-## explicit; go 1.17
+# helm.sh/helm/v3 v3.12.2
+## explicit; go 1.19
 helm.sh/helm/v3/internal/fileutil
 helm.sh/helm/v3/internal/ignore
 helm.sh/helm/v3/internal/resolver
@@ -2127,8 +2127,8 @@ k8s.io/apimachinery/third_party/forked/golang/reflect
 # k8s.io/apiserver v0.27.2
 ## explicit; go 1.20
 k8s.io/apiserver/pkg/endpoints/deprecation
-# k8s.io/cli-runtime v0.26.1
-## explicit; go 1.19
+# k8s.io/cli-runtime v0.27.2
+## explicit; go 1.20
 k8s.io/cli-runtime/pkg/genericclioptions
 k8s.io/cli-runtime/pkg/printers
 k8s.io/cli-runtime/pkg/resource
@@ -2242,6 +2242,7 @@ k8s.io/client-go/kubernetes/typed/storage/v1beta1
 k8s.io/client-go/metadata
 k8s.io/client-go/openapi
 k8s.io/client-go/openapi/cached
+k8s.io/client-go/openapi3
 k8s.io/client-go/pkg/apis/clientauthentication
 k8s.io/client-go/pkg/apis/clientauthentication/install
 k8s.io/client-go/pkg/apis/clientauthentication/v1
@@ -2327,14 +2328,13 @@ k8s.io/kube-openapi/pkg/spec3
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/util/proto/validation
 k8s.io/kube-openapi/pkg/validation/spec
-# k8s.io/kubectl v0.26.0 => k8s.io/kubectl v0.26.1
-## explicit; go 1.19
+# k8s.io/kubectl v0.27.2
+## explicit; go 1.20
 k8s.io/kubectl/pkg/cmd/util
 k8s.io/kubectl/pkg/scheme
 k8s.io/kubectl/pkg/util/i18n
 k8s.io/kubectl/pkg/util/interrupt
 k8s.io/kubectl/pkg/util/openapi
-k8s.io/kubectl/pkg/util/openapi/validation
 k8s.io/kubectl/pkg/util/templates
 k8s.io/kubectl/pkg/util/term
 k8s.io/kubectl/pkg/validation
@@ -2419,8 +2419,8 @@ sigs.k8s.io/controller-runtime/pkg/webhook/internal/metrics
 ## explicit; go 1.18
 sigs.k8s.io/json
 sigs.k8s.io/json/internal/golang/encoding/json
-# sigs.k8s.io/kustomize/api v0.12.1
-## explicit; go 1.18
+# sigs.k8s.io/kustomize/api v0.13.2
+## explicit; go 1.19
 sigs.k8s.io/kustomize/api/filters/annotations
 sigs.k8s.io/kustomize/api/filters/fieldspec
 sigs.k8s.io/kustomize/api/filters/filtersutil
@@ -2465,8 +2465,8 @@ sigs.k8s.io/kustomize/api/provider
 sigs.k8s.io/kustomize/api/resmap
 sigs.k8s.io/kustomize/api/resource
 sigs.k8s.io/kustomize/api/types
-# sigs.k8s.io/kustomize/kyaml v0.13.9
-## explicit; go 1.18
+# sigs.k8s.io/kustomize/kyaml v0.14.1
+## explicit; go 1.19
 sigs.k8s.io/kustomize/kyaml/comments
 sigs.k8s.io/kustomize/kyaml/errors
 sigs.k8s.io/kustomize/kyaml/ext
@@ -2483,7 +2483,7 @@ sigs.k8s.io/kustomize/kyaml/kio/filters
 sigs.k8s.io/kustomize/kyaml/kio/kioutil
 sigs.k8s.io/kustomize/kyaml/openapi
 sigs.k8s.io/kustomize/kyaml/openapi/kubernetesapi
-sigs.k8s.io/kustomize/kyaml/openapi/kubernetesapi/v1212
+sigs.k8s.io/kustomize/kyaml/openapi/kubernetesapi/v1_21_2
 sigs.k8s.io/kustomize/kyaml/openapi/kustomizationapi
 sigs.k8s.io/kustomize/kyaml/order
 sigs.k8s.io/kustomize/kyaml/resid
@@ -2518,5 +2518,3 @@ sigs.k8s.io/yaml
 # github.com/gardener/landscaper/apis => ./apis
 # github.com/gardener/landscaper/controller-utils => ./controller-utils
 # github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-# github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230721125305-12e11c31a233
-# k8s.io/kubectl => k8s.io/kubectl v0.26.1

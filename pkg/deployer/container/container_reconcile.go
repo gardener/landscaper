@@ -579,7 +579,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 	// sync pull secrets for BluePrint
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		registryAccess, err := registries.GetFactory().NewOCIRegistryAccess(ctx, c.Configuration.OCI, c.sharedCache, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, c.sharedCache, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return

@@ -34,11 +34,6 @@ type Factory interface {
 		concourseConfigPath string,
 		predefinedComponentDescriptors ...*types.ComponentDescriptor) (RegistryAccess, error)
 
-	NewOCIRegistryAccess(ctx context.Context,
-		config *config.OCIConfiguration,
-		cache cache.Cache,
-		predefinedComponentDescriptors ...*types.ComponentDescriptor) (RegistryAccess, error)
-
 	NewOCIRegistryAccessFromDockerAuthConfig(ctx context.Context,
 		fs vfs.FileSystem,
 		registrySecretBasePath string,

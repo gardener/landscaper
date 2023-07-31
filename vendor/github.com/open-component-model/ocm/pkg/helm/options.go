@@ -79,7 +79,10 @@ type cacertOption struct {
 
 func (c *cacertOption) apply(dl *chartDownloader) error {
 	if len(c.data) > 0 {
-		dl.cacert = c.data
+		if dl.creds == nil {
+			dl.creds = common.Properties{}
+		}
+		dl.creds[identity.ATTR_CERTIFICATE_AUTHORITY] = string(c.data)
 	}
 	return nil
 }
