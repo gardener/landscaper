@@ -2,15 +2,14 @@ package utils
 
 import (
 	"fmt"
-	"time"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/go-logr/logr"
-
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/go-logr/logr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
+// NewLoggerFromTestLogger returns a logging.Logger which wraps the test framework logger defined in this package.
+// It is intended for tests which must provide a logging.Logger, for example when they start an agent.
 func NewLoggerFromTestLogger(internalLogger Logger) logging.Logger {
 	s := &sink{
 		internalLogger: internalLogger,

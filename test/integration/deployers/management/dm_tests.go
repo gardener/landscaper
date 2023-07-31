@@ -10,36 +10,30 @@ import (
 	"sync"
 	"time"
 
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-
-	"github.com/gardener/landscaper/pkg/utils/landscaper"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/onsi/ginkgo/v2"
-	g "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/test/utils/envtest"
-
 	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 	"github.com/gardener/landscaper/pkg/agent"
 	"github.com/gardener/landscaper/pkg/api"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/mock"
-
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	testutil "github.com/gardener/landscaper/test/utils"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 func DeployerManagementTests(f *framework.Framework) {
-	ginkgo.Describe("Deployer Management", func() {
+	Describe("Deployer Management", func() {
 		var (
 			state                         = f.Register()
 			ctx                           context.Context
@@ -47,7 +41,7 @@ func DeployerManagementTests(f *framework.Framework) {
 			previousEnvironments          sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 		)
 
-		ginkgo.BeforeEach(func() {
+		BeforeEach(func() {
 			ctx = context.Background()
 			drList := &lsv1alpha1.DeployerRegistrationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, drList))
@@ -65,9 +59,9 @@ func DeployerManagementTests(f *framework.Framework) {
 
 		})
 
-		ginkgo.AfterEach(func() {
-			if ginkgo.CurrentSpecReport().Failed() {
-				ginkgo.By("Do not cleanup environments (outer loop)")
+		AfterEach(func() {
+			if CurrentSpecReport().Failed() {
+				By("Do not cleanup environments (outer loop)")
 				return
 			}
 
@@ -99,7 +93,7 @@ func DeployerManagementTests(f *framework.Framework) {
 
 		})
 
-		ginkgo.Context("Agent", func() {
+		Context("Agent", func() {
 
 			var (
 				wg     sync.WaitGroup
@@ -110,7 +104,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				numOfInstallations int
 			)
 
-			ginkgo.BeforeEach(func() {
+			BeforeEach(func() {
 				mgrCtx, cancel = context.WithCancel(context.Background())
 
 				instList := &lsv1alpha1.InstallationList{}
@@ -125,7 +119,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				})
 				testutil.ExpectNoError(err)
 
-				ginkgo.By("Adding agent with LandscaperNamespace: " + f.LsNamespace)
+				By("Adding agent with LandscaperNamespace: " + f.LsNamespace)
 				logger := utils.NewLoggerFromTestLogger(f.TestLog()).WithName("dm-test-agent")
 				err = agent.AddToManager(ctx, logger, mgr, mgr, config.AgentConfiguration{
 					Name:                "testenv",
@@ -138,14 +132,14 @@ func DeployerManagementTests(f *framework.Framework) {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					defer ginkgo.GinkgoRecover()
+					defer GinkgoRecover()
 					testutil.ExpectNoError(mgr.Start(mgrCtx))
 				}()
 			})
 
-			ginkgo.AfterEach(func() {
-				if ginkgo.CurrentSpecReport().Failed() {
-					ginkgo.By("Do not cleanup environments (inner loop)")
+			AfterEach(func() {
+				if CurrentSpecReport().Failed() {
+					By("Do not cleanup environments (inner loop)")
 					return
 				}
 
@@ -159,7 +153,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				testutil.ExpectNoError(envtest.CleanupForObject(ctx, f.Client, env, 5*time.Second))
 			})
 
-			ginkgo.It("should create and delete new installations for a new environment", func() {
+			It("should create and delete new installations for a new environment", func() {
 				numOfDeployerRegistrations := previousDeployerRegistrations.Len()
 
 				// the running agent should have created a new environment
@@ -167,7 +161,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				envKey := kutil.ObjectKey("testenv", "")
 				testutil.ExpectNoError(f.Client.Get(ctx, envKey, env))
 
-				g.Eventually(func() error {
+				Eventually(func() error {
 					instList := &lsv1alpha1.InstallationList{}
 					testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
 					newInstallations := len(instList.Items) - numOfInstallations
@@ -192,12 +186,12 @@ func DeployerManagementTests(f *framework.Framework) {
 						return err
 					}
 					return nil
-				}, 10*time.Minute, 10*time.Second).Should(g.Succeed())
+				}, 10*time.Minute, 10*time.Second).Should(Succeed())
 
-				ginkgo.By("should delete the deployer when the Environment is removed")
+				By("should delete the deployer when the Environment is removed")
 				testutil.ExpectNoError(f.Client.Delete(ctx, env))
 
-				g.Eventually(func() error {
+				Eventually(func() error {
 					instList := &lsv1alpha1.InstallationList{}
 					testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
 					if len(instList.Items) != numOfInstallations {
@@ -207,9 +201,9 @@ func DeployerManagementTests(f *framework.Framework) {
 					}
 					f.TestLog().Logfln("found %d installations", len(instList.Items))
 					return nil
-				}, 3*time.Minute, 10*time.Second).Should(g.Succeed())
+				}, 3*time.Minute, 10*time.Second).Should(Succeed())
 
-				g.Eventually(func() error {
+				Eventually(func() error {
 					if err := f.Client.Get(ctx, envKey, env); err != nil {
 						return err
 					}
@@ -217,11 +211,11 @@ func DeployerManagementTests(f *framework.Framework) {
 						return fmt.Errorf("expected that the environment still has one finalizer but found %d", len(env.Finalizers))
 					}
 					return nil
-				}, 30*time.Second, 1*time.Second).Should(g.Succeed())
+				}, 30*time.Second, 1*time.Second).Should(Succeed())
 			})
 		})
 
-		ginkgo.It("should manage a deployer's lifecycle for a new deployer registration", func() {
+		It("should manage a deployer's lifecycle for a new deployer registration", func() {
 			instList := &lsv1alpha1.InstallationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
 			numOfInstallations := len(instList.Items)
@@ -252,7 +246,7 @@ func DeployerManagementTests(f *framework.Framework) {
 
 			testutil.ExpectNoError(state.Create(ctx, reg))
 
-			g.Eventually(func() error {
+			Eventually(func() error {
 				instList = &lsv1alpha1.InstallationList{}
 				testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
 				newInstallations := []lsv1alpha1.Installation{}
@@ -283,14 +277,14 @@ func DeployerManagementTests(f *framework.Framework) {
 					return err
 				}
 				return nil
-			}, 3*time.Minute, 10*time.Second).Should(g.Succeed())
+			}, 3*time.Minute, 10*time.Second).Should(Succeed())
 
-			ginkgo.By("should delete the deployer when the DeployerRegistration is removed")
+			By("should delete the deployer when the DeployerRegistration is removed")
 			testutil.ExpectNoError(testutil.DeleteObject(ctx, f.Client, reg, 3*time.Minute))
 
 			instList = &lsv1alpha1.InstallationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
-			g.Expect(instList.Items).To(g.HaveLen(numOfInstallations), fmt.Sprintf("expected %d installations total but found %d", numOfInstallations, len(instList.Items)))
+			Expect(instList.Items).To(HaveLen(numOfInstallations), fmt.Sprintf("expected %d installations total but found %d", numOfInstallations, len(instList.Items)))
 		})
 	})
 }
