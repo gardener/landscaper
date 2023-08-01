@@ -26,8 +26,7 @@ import (
 )
 
 func getAndCheckReconcile(ctx context.Context, lsClient client.Client, config containerv1alpha1.Configuration, key client.ObjectKey) (*lsv1alpha1.DeployItem, error) {
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, key.String()})
-	// beginning of reconciliation is already logged by the calling method, not required here
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyResource, key.String())
 
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, lsClient, key, deployItem); err != nil {
