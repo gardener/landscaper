@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
@@ -26,13 +25,13 @@ import (
 	lsversion "github.com/gardener/landscaper/pkg/version"
 )
 
-func GetAndCheckReconcile(lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, error) {
-	return func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, error) {
-		logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, req.NamespacedName.String()})
+func GetAndCheckReconcile(lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, key client.ObjectKey) (*lsv1alpha1.DeployItem, error) {
+	return func(ctx context.Context, key client.ObjectKey) (*lsv1alpha1.DeployItem, error) {
+		logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, key.String()})
 		// beginning of reconciliation is already logged by the calling method, not required here
 
 		deployItem := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, lsClient, req.NamespacedName, deployItem); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, lsClient, key, deployItem); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger.Debug(err.Error())
 				return nil, nil
