@@ -92,7 +92,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, nil
 	}
 
-	deployItem, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, key)
+	deployItem, err := getAndCheckReconcile(ctx, r.lsClient, r.config, key)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

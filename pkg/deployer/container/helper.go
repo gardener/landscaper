@@ -25,44 +25,42 @@ import (
 	lsversion "github.com/gardener/landscaper/pkg/version"
 )
 
-func GetAndCheckReconcile(lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, key client.ObjectKey) (*lsv1alpha1.DeployItem, error) {
-	return func(ctx context.Context, key client.ObjectKey) (*lsv1alpha1.DeployItem, error) {
-		logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, key.String()})
-		// beginning of reconciliation is already logged by the calling method, not required here
+func getAndCheckReconcile(ctx context.Context, lsClient client.Client, config containerv1alpha1.Configuration, key client.ObjectKey) (*lsv1alpha1.DeployItem, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, key.String()})
+	// beginning of reconciliation is already logged by the calling method, not required here
 
-		deployItem := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, lsClient, key, deployItem); err != nil {
-			if apierrors.IsNotFound(err) {
-				logger.Debug(err.Error())
-				return nil, nil
-			}
-			return nil, err
-		}
-
-		if deployItem.Spec.Type != Type {
-			logger.Debug("DeployItem is of wrong type", lc.KeyDeployItemType, deployItem.Spec.Type)
+	deployItem := &lsv1alpha1.DeployItem{}
+	if err := read_write_layer.GetDeployItem(ctx, lsClient, key, deployItem); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Debug(err.Error())
 			return nil, nil
 		}
+		return nil, err
+	}
 
-		if deployItem.Spec.Target != nil {
-			target := &lsv1alpha1.Target{}
-			if err := lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
-				return nil, fmt.Errorf("unable to get target for deploy item: %w", err)
+	if deployItem.Spec.Type != Type {
+		logger.Debug("DeployItem is of wrong type", lc.KeyDeployItemType, deployItem.Spec.Type)
+		return nil, nil
+	}
+
+	if deployItem.Spec.Target != nil {
+		target := &lsv1alpha1.Target{}
+		if err := lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
+			return nil, fmt.Errorf("unable to get target for deploy item: %w", err)
+		}
+		if len(config.TargetSelector) != 0 {
+			matched, err := targetselector.MatchOne(target, config.TargetSelector)
+			if err != nil {
+				return nil, fmt.Errorf("unable to match target selector: %w", err)
 			}
-			if len(config.TargetSelector) != 0 {
-				matched, err := targetselector.MatchOne(target, config.TargetSelector)
-				if err != nil {
-					return nil, fmt.Errorf("unable to match target selector: %w", err)
-				}
-				if !matched {
-					logger.Debug("The deploy item's target does not match the given target selector")
-					return nil, nil
-				}
+			if !matched {
+				logger.Debug("The deploy item's target does not match the given target selector")
+				return nil, nil
 			}
 		}
-
-		return deployItem, nil
 	}
+
+	return deployItem, nil
 }
 
 // DefaultConfiguration sets the defaults for the container deployer configuration.
