@@ -74,8 +74,12 @@ func NewPodReconciler(
 func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := r.log.StartReconcileAndAddToContext(ctx, req)
 
-	metadata := lsutil.EmptyDeployItemMetadata()
-	if err := r.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
+	if lsutil.GetCurrentPodNamespace() != lsutil.NoPodnamespace && req.Namespace != lsutil.GetCurrentPodNamespace() {
+		return reconcile.Result{}, nil
+	}
+
+	podMetadata := lsutil.EmptyPodMetadata()
+	if err := r.lsClient.Get(ctx, req.NamespacedName, podMetadata); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
@@ -83,19 +87,25 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, err
 	}
 
-	// this check is only for compatibility reasons
-	_, reponsible, lsErr := deployerlib.CheckResponsibility(ctx, r.lsClient, metadata, r.deployerType, r.targetSelectors)
-	if lsErr != nil {
-		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, lsErr)
+	key, ok := r.getReconcileDeployItemRequest(podMetadata)
+	if !ok {
+		return reconcile.Result{}, nil
 	}
 
-	if !reponsible {
+	deployItem, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, req)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if deployItem == nil {
 		return reconcile.Result{}, nil
 	}
 
 	if lock.LockerEnabled {
+		diMetaData := lsutil.EmptyDeployItemMetadata()
+		diMetaData.ObjectMeta = deployItem.ObjectMeta
+
 		locker := lock.NewLocker(r.lsClient, r.hostClient, r.callerName)
-		syncObject, lsErr := locker.LockDI(ctx, metadata)
+		syncObject, lsErr := locker.LockDI(ctx, diMetaData)
 		if lsErr != nil {
 			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, lsErr)
 		}
@@ -109,19 +119,27 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 		}()
 	}
 
-	deployItem, _, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, req)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if deployItem == nil {
-		return reconcile.Result{}, nil
-	}
-
 	lsv1alpha1helper.Touch(&deployItem.ObjectMeta)
 	if err = read_write_layer.NewWriter(r.lsClient).UpdateDeployItem(ctx, read_write_layer.W000030, deployItem); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
+}
+
+func (p *PodReconciler) getReconcileDeployItemRequest(object metav1.Object) (client.ObjectKey, bool) {
+
+	key := client.ObjectKey{}
+	ok := false
+
+	key.Name, ok = object.GetLabels()[container.ContainerDeployerDeployItemNameLabel]
+	if !ok {
+		return key, false
+	}
+	key.Namespace, ok = object.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]
+	if !ok {
+		return key, false
+	}
+	return key, true
 }
 
 // PodEventHandler implements the controller runtime handler interface
