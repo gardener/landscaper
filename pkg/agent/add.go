@@ -72,6 +72,7 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 	helmConfig := helmv1alpha1.Configuration{}
 	helmConfig.Identity = fmt.Sprintf("agent-helm-deployer-%s", config.Name)
 	helmConfig.OCI = config.OCI
+	helmConfig.Controller.Workers = 4
 	helmConfig.TargetSelector = []lsv1alpha1.TargetSelector{
 		{
 			Annotations: []lsv1alpha1.Requirement{

@@ -124,6 +124,10 @@ type DeployItemStatus struct {
 
 	// DeployerPhase is DEPRECATED and will soon be removed.
 	DeployerPhase *string `json:"deployItemPhase,omitempty"`
+
+	// TransitionTimes contains timestamps of status transitions
+	// +optional
+	TransitionTimes *TransitionTimes `json:"transitionTimes,omitempty"`
 }
 
 // DeployerInformation holds additional information about the deployer that

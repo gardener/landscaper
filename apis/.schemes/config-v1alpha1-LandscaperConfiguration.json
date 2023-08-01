@@ -3,24 +3,7 @@
   "definitions": {
     "apis-v2-UnstructuredTypedObject": {
       "description": "UnstructuredTypedObject describes a generic typed object.",
-      "type": "object",
-      "required": [
-        "type",
-        "object"
-      ],
-      "properties": {
-        "object": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object"
-          }
-        },
-        "type": {
-          "description": "Type describes the type of the object.",
-          "type": "string",
-          "default": ""
-        }
-      }
+      "type": "object"
     },
     "config-v1alpha1-BlueprintStore": {
       "description": "BlueprintStore contains the configuration for the blueprint store.",

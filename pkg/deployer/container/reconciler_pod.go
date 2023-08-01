@@ -93,19 +93,21 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, nil
 	}
 
-	locker := lock.NewLocker(r.lsClient, r.hostClient, r.callerName)
-	syncObject, lsErr := locker.LockDI(ctx, metadata)
-	if lsErr != nil {
-		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, lsErr)
-	}
+	if lock.LockerEnabled {
+		locker := lock.NewLocker(r.lsClient, r.hostClient, r.callerName)
+		syncObject, lsErr := locker.LockDI(ctx, metadata)
+		if lsErr != nil {
+			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, lsErr)
+		}
 
-	if syncObject == nil {
-		return locker.NotLockedResult()
-	}
+		if syncObject == nil {
+			return locker.NotLockedResult()
+		}
 
-	defer func() {
-		locker.Unlock(ctx, syncObject)
-	}()
+		defer func() {
+			locker.Unlock(ctx, syncObject)
+		}()
+	}
 
 	deployItem, _, err := GetAndCheckReconcile(r.lsClient, r.config)(ctx, req)
 	if err != nil {

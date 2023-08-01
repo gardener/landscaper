@@ -107,6 +107,8 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 		now := metav1.Now()
 		exec.Status.PhaseTransitionTime = &now
 
+		exec.Status.TransitionTimes = lsutil.SetInitTransitionTime(exec.Status.TransitionTimes)
+
 		// do not use setExecutionPhaseAndUpdate because jobIDFinished should not be set here
 		if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000105, exec); err != nil {
 			return lserrors.NewWrappedError(err, op, "UpdateExecutionStatus", err.Error())
@@ -120,6 +122,8 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 			}
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000131)
 		}
+
+		exec.Status.TransitionTimes = lsutil.SetWaitTransitionTime(exec.Status.TransitionTimes)
 
 		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Progressing, nil, read_write_layer.W000132); err != nil {
 			return err
@@ -292,6 +296,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 		if item.Status.JobIDFinished != exec.Status.JobID {
 			item.Status.SetJobID(exec.Status.JobID)
 			item.Status.JobIDFinished = exec.Status.JobID
+			item.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(item.Status.TransitionTimes)
 			lsv1alpha1helper.SetDeployItemToFailed(item)
 			lsutil.SetLastError(&item.Status, lserrors.UpdatedError(item.Status.GetLastError(),
 				"InterruptOperation",
@@ -321,8 +326,8 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 	exec.Status.ExecutionPhase = phase
 
 	if exec.Status.ExecutionPhase.IsFinal() {
-
 		exec.Status.JobIDFinished = exec.Status.JobID
+		exec.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(exec.Status.TransitionTimes)
 	}
 
 	if err := c.Writer().UpdateExecutionStatus(ctx, writeID, exec); err != nil {

@@ -18,6 +18,10 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
+const (
+	cleanupInterval = 3 * time.Hour
+)
+
 type LockCleaner struct {
 	lsClient   client.Client
 	hostClient client.Client

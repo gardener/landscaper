@@ -189,6 +189,8 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 		inst.Status.JobID == inst.Status.JobIDFinished {
 
 		inst.Status.JobID = uuid.New().String()
+		inst.Status.TransitionTimes = utils.NewTransitionTimes()
+
 		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000082, inst); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -322,6 +324,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	inst.Status.InstallationPhase = phase
 	if phase.IsFinal() {
 		inst.Status.JobIDFinished = inst.Status.JobID
+		inst.Status.TransitionTimes = utils.SetFinishedTransitionTime(inst.Status.TransitionTimes)
 	}
 
 	if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {

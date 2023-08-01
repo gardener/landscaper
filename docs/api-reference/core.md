@@ -99,7 +99,7 @@ e.g. &ldquo;<a href="https://json-schema.org/draft/2019-09/schema&quot;">https:/
 <code>localTypes</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.JSONSchemaDefinition">
-map[string]..JSONSchemaDefinition
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition
 </a>
 </em>
 </td>
@@ -353,7 +353,7 @@ Note that the type information is used to determine the secret key and the type 
 <code>configurations</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -1108,7 +1108,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -1139,7 +1139,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -1262,7 +1262,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -1293,7 +1293,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -2932,8 +2932,8 @@ Error
 <td>
 <code>lastErrors</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.*..Error">
-[]*..Error
+<a href="#landscaper.gardener.cloud/v1alpha1.*github.com/gardener/landscaper/apis/core/v1alpha1.Error">
+[]*github.com/gardener/landscaper/apis/core/v1alpha1.Error
 </a>
 </em>
 </td>
@@ -3054,6 +3054,20 @@ string
 </td>
 <td>
 <p>DeployerPhase is DEPRECATED and will soon be removed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>transitionTimes</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TransitionTimes">
+TransitionTimes
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TransitionTimes contains timestamps of status transitions</p>
 </td>
 </tr>
 </tbody>
@@ -3315,7 +3329,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -3890,6 +3904,20 @@ Kubernetes meta/v1.Time
 <td>
 <em>(Optional)</em>
 <p>PhaseTransitionTime is the time when the phase last changed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>transitionTimes</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TransitionTimes">
+TransitionTimes
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TransitionTimes contains timestamps of status transitions</p>
 </td>
 </tr>
 </tbody>
@@ -4521,7 +4549,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -4552,7 +4580,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -4772,6 +4800,20 @@ AutomaticReconcileStatus
 <td>
 <em>(Optional)</em>
 <p>DependentsToTrigger lists dependent installations to be triggered</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>transitionTimes</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TransitionTimes">
+TransitionTimes
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TransitionTimes contains timestamps of status transitions</p>
 </td>
 </tr>
 </tbody>
@@ -6323,6 +6365,82 @@ bool
 </td>
 <td>
 <p>Enabled defines if automatic token is executed</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.TransitionTimes">TransitionTimes
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>triggerTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TriggerTime is the time when the jobID is set.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>initTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>InitTime is the time when the Init phase starts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>waitTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WaitTime is the time when the work is done.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>finishedTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>FinishedTime is the time when the finished phase is set.</p>
 </td>
 </tr>
 </tbody>

@@ -118,6 +118,7 @@ func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1a
 	logger.Info("pickup timeout occurred")
 
 	di.Status.JobIDFinished = di.Status.GetJobID()
+	di.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(di.Status.TransitionTimes)
 	di.Status.ObservedGeneration = di.Generation
 	lsv1alpha1helper.SetDeployItemToFailed(di)
 	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
@@ -167,6 +168,7 @@ func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, di *
 	logger.Info("deploy item progressing timed out, setting to failed")
 
 	di.Status.JobIDFinished = di.Status.GetJobID()
+	di.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(di.Status.TransitionTimes)
 	di.Status.ObservedGeneration = di.Generation
 	lsv1alpha1helper.SetDeployItemToFailed(di)
 
