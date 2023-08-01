@@ -8,28 +8,22 @@ import (
 	"context"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsutil "github.com/gardener/landscaper/pkg/utils"
-	"github.com/gardener/landscaper/pkg/utils/lock"
-
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // PodReconciler implements the reconciler.Reconcile interface that is expected to be called on
@@ -74,7 +68,7 @@ func NewPodReconciler(
 func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := r.log.StartReconcileAndAddToContext(ctx, req)
 
-	if lsutil.GetCurrentPodNamespace() != lsutil.NoPodnamespace && req.Namespace != lsutil.GetCurrentPodNamespace() {
+	if req.Namespace != lsutil.GetCurrentPodNamespace() {
 		return reconcile.Result{}, nil
 	}
 
@@ -142,70 +136,46 @@ func (p *PodReconciler) getReconcileDeployItemRequest(object metav1.Object) (cli
 	return key, true
 }
 
-// PodEventHandler implements the controller runtime handler interface
-// that reconciles only pods that are created by this controller
-type PodEventHandler struct{}
-
-var _ handler.EventHandler = &PodEventHandler{}
-
-func (p *PodEventHandler) getReconcileDeployItemRequest(object metav1.Object) (reconcile.Request, bool) {
-	var (
-		req = reconcile.Request{}
-		ok  bool
-	)
-	req.Name, ok = object.GetLabels()[container.ContainerDeployerDeployItemNameLabel]
-	if !ok {
-		return req, false
-	}
-	req.Namespace, ok = object.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]
-	if !ok {
-		return req, false
-	}
-	return req, true
+type namespaceAndAnnotationPredicate struct {
+	namespace string
 }
 
-func (p *PodEventHandler) Create(ctx context.Context, event event.CreateEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
+var _ predicate.Predicate = &namespaceAndAnnotationPredicate{}
+
+func newNamespaceAndAnnotationPredicate() *namespaceAndAnnotationPredicate {
+	return &namespaceAndAnnotationPredicate{
+		namespace: lsutil.GetCurrentPodNamespace(),
 	}
 }
 
-func (p *PodEventHandler) Update(ctx context.Context, event event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.ObjectNew); ok {
-		q.Add(req)
+func (n *namespaceAndAnnotationPredicate) Create(event event.CreateEvent) bool {
+	return n.handleObject(event.Object)
+}
+
+func (n *namespaceAndAnnotationPredicate) Delete(event event.DeleteEvent) bool {
+	return n.handleObject(event.Object)
+}
+
+func (n *namespaceAndAnnotationPredicate) Update(event event.UpdateEvent) bool {
+	return n.handleObject(event.ObjectNew)
+}
+
+func (n *namespaceAndAnnotationPredicate) Generic(event event.GenericEvent) bool {
+	return n.handleObject(event.Object)
+}
+
+func (n *namespaceAndAnnotationPredicate) handleObject(obj client.Object) bool {
+	if obj.GetNamespace() != n.namespace {
+		return false
 	}
-}
 
-func (p *PodEventHandler) Delete(ctx context.Context, event event.DeleteEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
+	if _, ok := obj.GetLabels()[container.ContainerDeployerDeployItemNameLabel]; !ok {
+		return false
 	}
-}
 
-func (p *PodEventHandler) Generic(ctx context.Context, event event.GenericEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
+	if _, ok := obj.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]; !ok {
+		return false
 	}
+
+	return true
 }
-
-// noopPredicate is a predicate definition that does not react on any event.
-// its used for the pod reconciler that should only be triggered upon pod events not deploy item events
-type noopPredicate struct{}
-
-func (n noopPredicate) Create(createEvent event.CreateEvent) bool {
-	return false
-}
-
-func (n noopPredicate) Delete(deleteEvent event.DeleteEvent) bool {
-	return false
-}
-
-func (n noopPredicate) Update(updateEvent event.UpdateEvent) bool {
-	return false
-}
-
-func (n noopPredicate) Generic(genericEvent event.GenericEvent) bool {
-	return false
-}
-
-var _ predicate.Predicate = noopPredicate{}

@@ -7,23 +7,20 @@ package container
 import (
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/utils"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
-	"github.com/gardener/landscaper/pkg/version"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/version"
 )
 
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
@@ -82,7 +79,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 	}
 
 	if err := ctrl.NewControllerManagedBy(hostMgr).
-		For(&corev1.Pod{}, builder.OnlyMetadata).
+		For(&corev1.Pod{}, builder.WithPredicates(newNamespaceAndAnnotationPredicate()), builder.OnlyMetadata).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(podRec); err != nil {
 		return err
