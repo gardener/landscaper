@@ -5,6 +5,7 @@
 package logging
 
 import (
+	"github.com/gardener/landscaper/controller-utils/pkg/logging/zapconfig"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
@@ -42,35 +43,35 @@ func InitFlags(flagset *flag.FlagSet) {
 }
 
 // SetLogLevel sets the logging verbosity according to the provided flag if the flag was provided
-func (c *Config) SetLogLevel(zapCfg *zap.Config) {
+func (c *Config) SetLogLevel(zapCfg *zapconfig.ZapConfig) {
 	if !c.Level.IsUnset() {
 		zapCfg.Level = zap.NewAtomicLevelAt(toZapLevel(c.Level.Value()))
 	}
 }
 
 // SetLogFormat sets the logging format according to the provided flag if the flag was provided
-func (c *Config) SetLogFormat(zapCfg *zap.Config) {
+func (c *Config) SetLogFormat(zapCfg *zapconfig.ZapConfig) {
 	if !c.Format.IsUnset() {
 		zapCfg.Encoding = toZapFormat(c.Format.Value())
 	}
 }
 
 // SetDisableStacktrace dis- or enables the stackstrace according to the provided flag if the flag was provided
-func (c *Config) SetDisableStacktrace(zapCfg *zap.Config) {
+func (c *Config) SetDisableStacktrace(zapCfg *zapconfig.ZapConfig) {
 	if c.flagset != nil && c.flagset.Changed("disable-stacktrace") {
 		zapCfg.DisableStacktrace = c.DisableStacktrace
 	}
 }
 
 // SetDisableCaller dis- or enables the caller according to the provided flag if the flag was provided
-func (c *Config) SetDisableCaller(zapCfg *zap.Config) {
+func (c *Config) SetDisableCaller(zapCfg *zapconfig.ZapConfig) {
 	if c.flagset != nil && c.flagset.Changed("disable-caller") {
 		zapCfg.DisableCaller = c.DisableCaller
 	}
 }
 
 // SetTimestamp dis- or enables the logging of timestamps according to the provided flag if the flag was provided
-func (c *Config) SetTimestamp(zapCfg *zap.Config) {
+func (c *Config) SetTimestamp(zapCfg *zapconfig.ZapConfig) {
 	if c.flagset != nil && c.flagset.Changed("disable-timestamp") {
 		if c.DisableTimestamp {
 			zapCfg.EncoderConfig.TimeKey = ""

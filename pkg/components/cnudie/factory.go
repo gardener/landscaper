@@ -35,6 +35,8 @@ type Factory struct{}
 
 var _ model.Factory = &Factory{}
 
+func (*Factory) SetApplicationLogger(logger logging.Logger) {}
+
 func (*Factory) NewRegistryAccess(ctx context.Context,
 	secrets []corev1.Secret,
 	sharedCache cache.Cache,
@@ -73,6 +75,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		FromConfigFiles(ociConfigFiles...).
 		FromPullSecrets(secrets...).
 		Build()
+
 	if err != nil {
 		return nil, err
 	}
@@ -129,29 +132,6 @@ func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
 
 	return &RegistryAccess{
 		componentResolver: compResolver,
-	}, nil
-}
-
-func (*Factory) NewOCIRegistryAccess(ctx context.Context,
-	config *config.OCIConfiguration,
-	cache cache.Cache,
-	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
-
-	log, _ := logging.FromContextOrNew(ctx, nil)
-
-	ociClient, err := ociclient.NewClient(log.Logr(), cnudieutils.WithConfiguration(config), ociclient.WithCache(cache))
-	if err != nil {
-		return nil, err
-	}
-
-	componentResolver, err := componentresolvers.NewOCIRegistryWithOCIClient(log, ociClient, predefinedComponentDescriptors...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &RegistryAccess{
-		componentResolver:       componentResolver,
-		additionalBlobResolvers: nil,
 	}, nil
 }
 

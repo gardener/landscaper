@@ -2,6 +2,7 @@ package registries
 
 import (
 	"fmt"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"os"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
@@ -38,6 +39,7 @@ func SetFactory(mode string) error {
 	default:
 		return fmt.Errorf("invalid factory LANDSCAPER_LIBRARY_MODE %q", mode)
 	}
+	logging.SetLogConsumer(factory.SetApplicationLogger)
 	return nil
 }
 

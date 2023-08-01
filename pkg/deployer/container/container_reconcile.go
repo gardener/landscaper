@@ -253,7 +253,7 @@ func (c *Container) shouldRunNewPod(ctx context.Context, pod *corev1.Pod) bool {
 		if c.ProviderStatus != nil && c.ProviderStatus.PodStatus != nil {
 			lsji = c.ProviderStatus.PodStatus.LastSuccessfulJobID
 		}
-		logger.Debug("New pod required", "podExists", pod != nil, "podGenerationLabel", genString, lc.KeyDeployItemPhase, c.DeployItem.Status.Phase, "podStatusLastSuccessfulJobID", lsji)
+		logger.Debug("newRootLogger pod required", "podExists", pod != nil, "podGenerationLabel", genString, lc.KeyDeployItemPhase, c.DeployItem.Status.Phase, "podStatusLastSuccessfulJobID", lsji)
 		return true
 	}
 	return false

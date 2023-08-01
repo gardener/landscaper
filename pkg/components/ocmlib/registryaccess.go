@@ -21,6 +21,8 @@ type RegistryAccess struct {
 	resolver         ocm.ComponentVersionResolver
 }
 
+var _ model.RegistryAccess = (*RegistryAccess)(nil)
+
 func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) model.ComponentVersion {
 	return &ComponentVersion{
 		registryAccess:         r,

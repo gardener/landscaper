@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -17,6 +18,7 @@ import (
 )
 
 type Factory interface {
+	SetApplicationLogger(logger logging.Logger)
 	NewRegistryAccess(ctx context.Context,
 		secrets []corev1.Secret,
 		sharedCache cache.Cache,
