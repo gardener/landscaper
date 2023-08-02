@@ -6,7 +6,6 @@ import (
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,15 +25,6 @@ type Factory interface {
 		ociRegistryConfig *config.OCIConfiguration,
 		inlineCd *types.ComponentDescriptor,
 		additionalBlobResolvers ...ctf.TypedBlobResolver) (RegistryAccess, error)
-
-	NewRegistryAccessFromOciOptions(ctx context.Context,
-		log logr.Logger,
-		fs vfs.FileSystem,
-		allowPlainHttp bool,
-		skipTLSVerify bool,
-		registryConfigPath string,
-		concourseConfigPath string,
-		predefinedComponentDescriptors ...*types.ComponentDescriptor) (RegistryAccess, error)
 
 	NewOCIRegistryAccessFromDockerAuthConfig(ctx context.Context,
 		fs vfs.FileSystem,

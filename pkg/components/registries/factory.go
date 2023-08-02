@@ -28,6 +28,7 @@ func init() {
 	if err := SetFactory(m); err != nil {
 		panic(fmt.Sprintf("LANDSCAPER_LIBRARY_MODE: %s", m))
 	}
+	logging.SetLogConsumer(ocmlib.Factory{}.SetApplicationLogger)
 }
 
 func SetFactory(mode string) error {
@@ -39,7 +40,6 @@ func SetFactory(mode string) error {
 	default:
 		return fmt.Errorf("invalid factory LANDSCAPER_LIBRARY_MODE %q", mode)
 	}
-	logging.SetLogConsumer(factory.SetApplicationLogger)
 	return nil
 }
 
