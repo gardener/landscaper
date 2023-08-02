@@ -2,10 +2,12 @@ package utils
 
 import (
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"time"
+
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // NewLoggerFromTestLogger returns a logging.Logger which wraps the test framework logger defined in this package.
