@@ -76,7 +76,7 @@ func (p *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 	}
 
 	podMetadata := lsutil.EmptyPodMetadata()
-	if err := p.lsClient.Get(ctx, req.NamespacedName, podMetadata); err != nil {
+	if err := p.hostClient.Get(ctx, req.NamespacedName, podMetadata); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
