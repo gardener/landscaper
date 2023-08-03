@@ -73,7 +73,7 @@ resources:
   #   memory: 128Mi
 
 hpa:
-  maxReplicas: 10
+  maxReplicas: 1
 
 nodeSelector: {}
 

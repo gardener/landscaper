@@ -71,19 +71,21 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
-	syncObject, err := locker.LockExecution(ctx, metadata)
-	if err != nil {
-		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
-	}
+	if lock.LockerEnabled {
+		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
+		syncObject, err := locker.LockExecution(ctx, metadata)
+		if err != nil {
+			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
+		}
 
-	if syncObject == nil {
-		return locker.NotLockedResult()
-	}
+		if syncObject == nil {
+			return locker.NotLockedResult()
+		}
 
-	defer func() {
-		locker.Unlock(ctx, syncObject)
-	}()
+		defer func() {
+			locker.Unlock(ctx, syncObject)
+		}()
+	}
 
 	exec := &lsv1alpha1.Execution{}
 	if err := read_write_layer.GetExecution(ctx, c.lsClient, req.NamespacedName, exec); err != nil {

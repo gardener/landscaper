@@ -196,7 +196,7 @@ resourcesMain:
     memory: 300Mi
 
 hpaMain:
-  maxReplicas: 10
+  maxReplicas: 1
 
 nodeSelector: {}
 

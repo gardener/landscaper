@@ -119,19 +119,21 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	locker := lock.NewLocker(c.Client(), c.hostClient, c.callerName)
-	syncObject, err := locker.LockInstallation(ctx, metadata)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
+	if lock.LockerEnabled {
+		locker := lock.NewLocker(c.Client(), c.hostClient, c.callerName)
+		syncObject, err := locker.LockInstallation(ctx, metadata)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 
-	if syncObject == nil {
-		return locker.NotLockedResult()
-	}
+		if syncObject == nil {
+			return locker.NotLockedResult()
+		}
 
-	defer func() {
-		locker.Unlock(ctx, syncObject)
-	}()
+		defer func() {
+			locker.Unlock(ctx, syncObject)
+		}()
+	}
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
