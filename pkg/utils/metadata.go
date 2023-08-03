@@ -32,6 +32,12 @@ var InstallationGVK = schema.GroupVersionKind{
 	Kind:    InstallationKind,
 }
 
+var podGVK = schema.GroupVersionKind{
+	Group:   "",
+	Version: "v1",
+	Kind:    "Pod",
+}
+
 func EmptyDeployItemMetadata() *metav1.PartialObjectMetadata {
 	metadata := &metav1.PartialObjectMetadata{}
 	metadata.SetGroupVersionKind(DeployItemGVK)
@@ -47,5 +53,11 @@ func EmptyExecutionMetadata() *metav1.PartialObjectMetadata {
 func EmptyInstallationMetadata() *metav1.PartialObjectMetadata {
 	metadata := &metav1.PartialObjectMetadata{}
 	metadata.SetGroupVersionKind(InstallationGVK)
+	return metadata
+}
+
+func EmptyPodMetadata() *metav1.PartialObjectMetadata {
+	metadata := &metav1.PartialObjectMetadata{}
+	metadata.SetGroupVersionKind(podGVK)
 	return metadata
 }
