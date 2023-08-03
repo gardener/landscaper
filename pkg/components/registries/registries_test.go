@@ -26,7 +26,7 @@ var (
 
 var _ = BeforeSuite(func() {
 	localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-	registryAccess, err = GetFactory().NewRegistryAccess(context.Background(), nil, nil, localregistryconfig, nil, nil)
+	registryAccess, err = GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 	Expect(err).ToNot(HaveOccurred())
 
 	Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())

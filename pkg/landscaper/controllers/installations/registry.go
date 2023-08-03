@@ -30,7 +30,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}
 
-	registry, err := registries.GetFactory().NewRegistryAccess(ctx, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
+	registry, err := registries.GetFactory().NewRegistryAccess(ctx, nil, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
 	if err != nil {
 		return err
 	}

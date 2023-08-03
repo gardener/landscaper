@@ -2,11 +2,13 @@ package blueprint
 
 import (
 	"context"
+	"fmt"
+	"github.com/open-component-model/ocm/pkg/common"
 
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
+	bpdownload "github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/blueprint"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
@@ -31,7 +33,7 @@ func New() *BlueprintHandler {
 	}
 }
 func (h *BlueprintHandler) GetResourceContent(ctx context.Context, r model.Resource, access ocm.ResourceAccess) (*model.TypedResourceContent, error) {
-	res, err := h.cache.Get(ctx, r.GetCachingIdentity(ctx))
+	res, err := blueprint.GetBlueprintStore().Get(ctx, r.GetCachingIdentity(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +45,11 @@ func (h *BlueprintHandler) GetResourceContent(ctx context.Context, r model.Resou
 	}
 
 	fs := memoryfs.New()
-	_, _, err = download.DefaultRegistry.Download(nil, access, filepath.Join("/"), fs)
+	pr := common.NewPrinter(nil)
+	ok, _, err := bpdownload.New().Download(pr, access, filepath.Join("/"), fs)
+	if !ok {
+		return nil, fmt.Errorf("artifact does not match downloader (check config media type)")
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +59,7 @@ func (h *BlueprintHandler) GetResourceContent(ctx context.Context, r model.Resou
 		return nil, err
 	}
 
-	_, err = h.cache.Put(ctx, r.GetCachingIdentity(ctx), typedResourceContent)
+	_, err = blueprint.GetBlueprintStore().Put(ctx, r.GetCachingIdentity(ctx), typedResourceContent)
 	if err != nil {
 		return nil, err
 	}

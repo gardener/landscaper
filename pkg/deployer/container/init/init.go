@@ -12,6 +12,10 @@ import (
 	"path"
 	"path/filepath"
 
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/gardener/landscaper/apis/config"
+
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	"github.com/gardener/landscaper/pkg/deployerlegacy"
 
@@ -117,11 +121,29 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			return fmt.Errorf("no inline component descriptor or reference found")
 		}
 
-		registryAccess, err = registries.GetFactory().NewOCIRegistryAccessFromDockerAuthConfig(
-			ctx,
-			fs,
-			opts.RegistrySecretBasePath,
-			providerConfig.ComponentDescriptor.Inline)
+		var secrets []string
+		err := vfs.Walk(fs, opts.RegistrySecretBasePath, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() || info.Name() != corev1.DockerConfigJsonKey {
+				return nil
+			}
+
+			secrets = append(secrets, path)
+
+			return nil
+		})
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("unable to add local registry pull secrets: %w", err)
+		}
+		ociconfig := &config.OCIConfiguration{
+			ConfigFiles:        secrets,
+			Cache:              nil,
+			AllowPlainHttp:     false,
+			InsecureSkipVerify: false,
+		}
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, nil, nil, nil, ociconfig, providerConfig.ComponentDescriptor.Inline)
 		if err != nil {
 			return err
 		}

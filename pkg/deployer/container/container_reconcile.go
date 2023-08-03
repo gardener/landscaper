@@ -9,7 +9,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"strconv"
 
 	"github.com/gardener/landscaper/pkg/deployerlegacy"
@@ -485,12 +486,13 @@ func (c *Container) syncSecrets(ctx context.Context,
 // parseAndSyncSecrets parses and synchronizes relevant pull secrets for container image, blueprint & component descriptor secrets from the landscaper and host cluster.
 func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[string]string) (imagePullSecret, blueprintSecret, componentDescriptorSecret string, erro error) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
+	fs := osfs.New()
 	// find the secrets that match our image, our blueprint and our componentdescriptor
 	ociKeyring := credentials.New()
 
 	if c.Configuration.OCI != nil {
 		for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
-			secretFileContent, err := os.ReadFile(secretFileName)
+			secretFileContent, err := vfs.ReadFile(fs, secretFileName)
 			if err != nil {
 				log.Debug("Unable to read auth config from file, skipping", lc.KeyFileName, secretFileName, lc.KeyError, err.Error())
 				continue
@@ -579,7 +581,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 	// sync pull secrets for BluePrint
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, c.sharedCache, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, fs, nil, c.sharedCache, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return

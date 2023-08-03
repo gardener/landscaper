@@ -2,8 +2,9 @@ package registries
 
 import (
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"os"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
 
@@ -28,7 +29,7 @@ func init() {
 	if err := SetFactory(m); err != nil {
 		panic(fmt.Sprintf("LANDSCAPER_LIBRARY_MODE: %s", m))
 	}
-	logging.SetLogConsumer(ocmlib.Factory{}.SetApplicationLogger)
+	logging.SetLogConsumer((&ocmlib.Factory{}).SetApplicationLogger)
 }
 
 func SetFactory(mode string) error {

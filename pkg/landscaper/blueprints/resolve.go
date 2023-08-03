@@ -131,7 +131,6 @@ func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *ls
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
-
 	resource, err := componentVersion.GetResource(bpDef.Reference.ResourceName, nil)
 	if err != nil {
 		return nil, err

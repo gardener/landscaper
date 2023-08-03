@@ -5,10 +5,11 @@
 package logging
 
 import (
-	"github.com/gardener/landscaper/controller-utils/pkg/logging/zapconfig"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging/zapconfig"
 )
 
 var (

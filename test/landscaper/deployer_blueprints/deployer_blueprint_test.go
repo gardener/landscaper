@@ -56,7 +56,7 @@ func RenderBlueprint(deployer, componentName, version string) *lsutils.RenderedD
 
 	registryPath := filepath.Join(projectRoot, ".landscaper", deployer, "example", "component")
 	localregistryconfig := &config.LocalRegistryConfiguration{RootPath: registryPath}
-	registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, localregistryconfig, nil, nil)
+	registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 	Expect(err).ToNot(HaveOccurred())
 
 	repositoryContext := cdv2.UnstructuredTypedObject{}

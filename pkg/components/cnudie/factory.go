@@ -3,8 +3,6 @@ package cnudie
 import (
 	"context"
 	"fmt"
-	"os"
-
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
@@ -13,7 +11,6 @@ import (
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -36,6 +33,7 @@ var _ model.Factory = &Factory{}
 func (*Factory) SetApplicationLogger(logger logging.Logger) {}
 
 func (*Factory) NewRegistryAccess(ctx context.Context,
+	fs vfs.FileSystem,
 	secrets []corev1.Secret,
 	sharedCache cache.Cache,
 	localRegistryConfig *config.LocalRegistryConfiguration,
@@ -44,6 +42,10 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 
 	logger, _ := logging.FromContextOrNew(ctx, nil)
+
+	if fs == nil {
+		fs = osfs.New()
+	}
 
 	compResolver, err := componentresolvers.New(sharedCache)
 	if err != nil {
@@ -69,7 +71,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		ociConfigFiles = ociRegistryConfig.ConfigFiles
 	}
 	ociKeyring, err := credentials.NewBuilder(logger.Logr()).DisableDefaultConfig().
-		WithFS(osfs.New()).
+		WithFS(fs).
 		FromConfigFiles(ociConfigFiles...).
 		FromPullSecrets(secrets...).
 		Build()
@@ -99,61 +101,6 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		componentResolver:       compResolver,
 		additionalBlobResolvers: additionalBlobResolvers,
 	}, nil
-}
-
-func (*Factory) NewOCIRegistryAccessFromDockerAuthConfig(ctx context.Context,
-	fs vfs.FileSystem,
-	registrySecretBasePath string,
-	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
-
-	log, ctx := logging.FromContextOrNew(ctx, nil)
-
-	ociClient, err := createOciClientFromDockerAuthConfig(ctx, fs, registrySecretBasePath)
-	if err != nil {
-		return nil, err
-	}
-
-	componentResolver, err := componentresolvers.NewOCIRegistryWithOCIClient(log, ociClient, predefinedComponentDescriptors...)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to setup components registry")
-	}
-
-	return &RegistryAccess{
-		componentResolver:       componentResolver,
-		additionalBlobResolvers: nil,
-	}, nil
-}
-
-func createOciClientFromDockerAuthConfig(ctx context.Context, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
-	log, _ := logging.FromContextOrNew(ctx, nil)
-	var secrets []string
-	err := vfs.Walk(fs, registryPullSecretsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() || info.Name() != corev1.DockerConfigJsonKey {
-			return nil
-		}
-
-		secrets = append(secrets, path)
-
-		return nil
-	})
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("unable to add local registry pull secrets: %w", err)
-	}
-
-	keyring, err := credentials.CreateOCIRegistryKeyringFromFilesystem(nil, secrets, fs)
-	if err != nil {
-		return nil, err
-	}
-
-	ociClient, err := ociclient.NewClient(log.Logr(), ociclient.WithKeyring(keyring))
-	if err != nil {
-		return nil, err
-	}
-
-	return ociClient, err
 }
 
 func (*Factory) NewOCITestRegistryAccess(address, username, password string) (model.RegistryAccess, error) {

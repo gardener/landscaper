@@ -4,19 +4,22 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/gardener/landscaper/apis/config"
-	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"os"
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"os"
-	"path/filepath"
+
+	"github.com/gardener/landscaper/apis/config"
+
+	. "github.com/open-component-model/ocm/pkg/testutils"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
-	. "github.com/open-component-model/ocm/pkg/testutils"
 )
 
 const (
@@ -36,9 +39,10 @@ var (
 
 var _ = Describe("ocm-lib facade implementation", func() {
 	ctx := context.Background()
+	fs := memoryfs.New()
 
 	BeforeEach(func() {
-		fs := osfs.New()
+		Expect(fs.MkdirAll("testdata", 0o777)).To(Succeed())
 		for name, config := range dockerconfigs {
 			f := Must(fs.OpenFile(filepath.Join("testdata", name), os.O_CREATE|os.O_RDWR, 0o777))
 			_ = Must(f.Write(config))
@@ -77,7 +81,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 	})
 	FIt("credentials", func() {
 		f := Factory{}
-		r := Must(f.NewRegistryAccess(ctx, nil, nil, nil, &config.OCIConfiguration{
+		r := Must(f.NewRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
 			ConfigFiles: []string{"testdata/dockerconfig1.json", "testdata/dockerconfig2.json"},
 		}, nil)).(*RegistryAccess)
 		creds := Must(identity.GetCredentials(r.octx, "ghcr.io", "/test/repo"))

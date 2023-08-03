@@ -807,7 +807,7 @@ var _ = Describe("jsonschema", func() {
 			ctx := context.Background()
 
 			localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-			registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, localregistryconfig, nil, nil)
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())

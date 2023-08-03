@@ -3,10 +3,10 @@ package model
 import (
 	"context"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -19,17 +19,13 @@ import (
 type Factory interface {
 	SetApplicationLogger(logger logging.Logger)
 	NewRegistryAccess(ctx context.Context,
+		fs vfs.FileSystem,
 		secrets []corev1.Secret,
 		sharedCache cache.Cache,
 		localRegistryConfig *config.LocalRegistryConfiguration,
 		ociRegistryConfig *config.OCIConfiguration,
 		inlineCd *types.ComponentDescriptor,
 		additionalBlobResolvers ...ctf.TypedBlobResolver) (RegistryAccess, error)
-
-	NewOCIRegistryAccessFromDockerAuthConfig(ctx context.Context,
-		fs vfs.FileSystem,
-		registrySecretBasePath string,
-		predefinedComponentDescriptors ...*types.ComponentDescriptor) (RegistryAccess, error)
 
 	NewOCITestRegistryAccess(address, username, password string) (RegistryAccess, error)
 

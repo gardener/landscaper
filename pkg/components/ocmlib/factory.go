@@ -3,9 +3,11 @@ package ocmlib
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	mandellog "github.com/mandelsoft/logging"
 	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/components/cnudie"
 
@@ -52,6 +54,7 @@ func (*Factory) SetApplicationLogger(logger logging.Logger) {
 }
 
 func (*Factory) NewRegistryAccess(ctx context.Context,
+	fs vfs.FileSystem,
 	secrets []corev1.Secret,
 	sharedCache cache.Cache,
 	localRegistryConfig *config.LocalRegistryConfiguration,
@@ -60,6 +63,10 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 
 	logger, _ := logging.FromContextOrNew(ctx, nil)
+
+	if fs == nil {
+		fs = osfs.New()
+	}
 
 	registryAccess := &RegistryAccess{}
 	registryAccess.octx = ocm.New(datacontext.MODE_EXTENDED)
@@ -124,15 +131,26 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 
 	}
 
-	// set available default credentials from dockerconfig files
-	var spec *dockerconfig.RepositorySpec
 	for _, path := range ociConfigFiles {
-		spec = dockerconfig.NewRepositorySpec(path, true)
-		_, err := registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
+		dockerConfigBytes, err := vfs.ReadFile(fs, path)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot access %v", path)
+			return nil, err
+		}
+		spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes, true)
+		_, err = registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
+		if err != nil {
+			return nil, err
 		}
 	}
+	//// set available default credentials from dockerconfig files
+	//var spec *dockerconfig.RepositorySpec
+	//for _, path := range ociConfigFiles {
+	//	spec = dockerconfig.NewRepositorySpec(path, true)
+	//	_, err := registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
+	//	if err != nil {
+	//		return nil, errors.Wrapf(err, "cannot access %v", path)
+	//	}
+	//}
 	// set credentials from pull secrets
 	for _, secret := range secrets {
 		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]

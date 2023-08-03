@@ -87,7 +87,7 @@ var _ = Describe("Installation Simulator", func() {
 		defer ctx.Done()
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: testDataDir}
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())

@@ -47,7 +47,7 @@ var _ = Describe("Execution Operation", func() {
 		testInstallations = state.Installations
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry/root"}
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
