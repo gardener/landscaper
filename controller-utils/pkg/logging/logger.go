@@ -278,3 +278,17 @@ func MustStartReconcileFromContext(ctx context.Context, req reconcile.Request, k
 	log, ctx := FromContextOrNew(ctx, keysAndValuesFallback, keysAndValues...)
 	return log.StartReconcileAndAddToContext(ctx, req)
 }
+
+// WithValuesAndContext works like WithValues, but also adds the logger directly to a context and returns the new context.
+func (l Logger) WithValuesAndContext(ctx context.Context, keysAndValues ...interface{}) (Logger, context.Context) {
+	log := l.WithValues(keysAndValues...)
+	ctx = NewContext(ctx, log)
+	return log, ctx
+}
+
+// WithNameAndContext works like WithName, but also adds the logger directly to a context and returns the new context.
+func (l Logger) WithNameAndContext(ctx context.Context, name string) (Logger, context.Context) {
+	log := l.WithName(name)
+	ctx = NewContext(ctx, log)
+	return log, ctx
+}

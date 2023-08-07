@@ -152,11 +152,12 @@ func registerWebhooks(ctx context.Context,
 		secretNamespace = o.webhook.webhookServiceNamespace
 	}
 
-	wo.CABundle, err = webhookcert.GenerateCertificates(ctx, kubeClient, certDir,
+	caCert, _, err := webhookcert.GenerateCertificates(ctx, kubeClient, certDir,
 		secretNamespace, "landscaper-webhook", certSecretName, dnsNames)
 	if err != nil {
 		return fmt.Errorf("unable to generate webhook certificates: %w", err)
 	}
+	wo.CABundle = caCert.CertificatePEM
 
 	// log which resources are being watched
 	webhookedResourcesLog := []string{}
