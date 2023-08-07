@@ -247,12 +247,14 @@ func (l Logger) Logr() logr.Logger {
 
 // StartReconcileFromContext fetches the logger from the context and adds the reconciled resource.
 // It also logs a 'start reconcile' message.
-func StartReconcileFromContext(ctx context.Context, req reconcile.Request) (Logger, error) {
+// The returned context contains the enriched logger.
+func StartReconcileFromContext(ctx context.Context, req reconcile.Request) (Logger, context.Context, error) {
 	log, err := FromContext(ctx)
 	if err != nil {
-		return Logger{}, fmt.Errorf("unable to get logger from context: %w", err)
+		return Logger{}, ctx, fmt.Errorf("unable to get logger from context: %w", err)
 	}
-	return log.StartReconcile(req), nil
+	log, ctx = log.StartReconcileAndAddToContext(ctx, req)
+	return log, ctx, nil
 }
 
 // StartReconcile works like StartReconcileFromContext, but it is called on an existing logger instead of fetching one from the context.
