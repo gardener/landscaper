@@ -2,6 +2,8 @@ package read_write_layer
 
 import (
 	"context"
+	"fmt"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,9 +41,16 @@ func ListDeployItems(ctx context.Context, c client.Reader, deployItems *lsv1alph
 
 // basic functions
 func get(ctx context.Context, c client.Reader, key client.ObjectKey, object client.Object) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil, keyFetchedResource, fmt.Sprintf("%s/%s", key.Namespace, key.Name))
+	log.Debug("ReadLayer get")
+
 	return c.Get(ctx, key, object)
 }
 
 func list(ctx context.Context, c client.Reader, objects client.ObjectList, opts ...client.ListOption) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+	log.Debug("ReadLayer list")
+
 	return c.List(ctx, objects, opts...)
 }
+

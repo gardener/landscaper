@@ -16,6 +16,7 @@ const (
 	historyLogLevel logging.LogLevel = logging.INFO
 
 	keyUpdatedResource = "updatedResource"
+	keyFetchedResource = "fetchedResource"
 )
 
 // getLogger tries to fetch the most up-to-date logger from the context
