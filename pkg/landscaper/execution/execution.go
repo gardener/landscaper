@@ -8,8 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/utils"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -22,7 +20,9 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
+	lspatch "github.com/gardener/landscaper/pkg/utils/patch"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -176,11 +176,18 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 	}
 
-	di.Status.SetJobID(o.exec.Status.JobID)
-	di.Status.TransitionTimes = utils.NewTransitionTimes()
-	now := metav1.Now()
-	di.Status.JobIDGenerationTime = &now
-	if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
+	patch := lspatch.NewPatch(map[string]any{
+		"metadata": map[string]any{
+			"resourceVersion": di.GetResourceVersion(), // optimistic locking
+		},
+		"status": map[string]any{
+			"jobID":               o.exec.Status.JobID,
+			"jobIDGenerationTime": metav1.Now(),
+			"transitionTimes":     utils.NewTransitionTimes(),
+			"observedGeneration":  di.Status.ObservedGeneration, // ensure required field in new status
+		},
+	})
+	if err := o.Writer().PatchDeployItemStatus(ctx, read_write_layer.W000090, di, patch); err != nil {
 		return lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
 	}
 

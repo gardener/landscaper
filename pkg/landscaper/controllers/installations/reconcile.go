@@ -24,6 +24,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsutil "github.com/gardener/landscaper/pkg/utils"
+	lspatch "github.com/gardener/landscaper/pkg/utils/patch"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -373,9 +374,18 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 	// trigger subinstallations
 	for _, next := range subInsts {
 		if next.Status.JobID != inst.Status.JobID {
-			next.Status.JobID = inst.Status.JobID
-			next.Status.TransitionTimes = lsutil.NewTransitionTimes()
-			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000083, next); err != nil {
+			patch := lspatch.NewPatch(map[string]any{
+				"metadata": map[string]any{
+					"resourceVersion": next.GetResourceVersion(), // optimistic locking
+				},
+				"status": map[string]any{
+					"jobID":              inst.Status.JobID,
+					"transitionTimes":    lsutil.NewTransitionTimes(),
+					"configGeneration":   next.Status.ConfigGeneration,   // ensure required field in new status
+					"observedGeneration": next.Status.ObservedGeneration, // ensure required field in new status
+				},
+			})
+			if err = c.Writer().PatchInstallationStatus(ctx, read_write_layer.W000083, next, patch); err != nil {
 				return lserrors.NewWrappedError(err, currentOperation, "UpdateInstallationStatus", err.Error())
 			}
 		}
@@ -389,9 +399,17 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 		}
 
 		if exec.Status.JobID != inst.Status.JobID {
-			exec.Status.JobID = inst.Status.JobID
-			exec.Status.TransitionTimes = lsutil.NewTransitionTimes()
-			if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000084, exec); err != nil {
+			patch := lspatch.NewPatch(map[string]any{
+				"metadata": map[string]any{
+					"resourceVersion": exec.GetResourceVersion(), // optimistic locking
+				},
+				"status": map[string]any{
+					"jobID":              inst.Status.JobID,
+					"transitionTimes":    lsutil.NewTransitionTimes(),
+					"observedGeneration": exec.Status.ObservedGeneration, // ensure required field in new status
+				},
+			})
+			if err := c.Writer().PatchExecutionStatus(ctx, read_write_layer.W000084, exec, patch); err != nil {
 				return lserrors.NewWrappedError(err, currentOperation, "UpdateExecutionStatus", err.Error())
 			}
 		}
