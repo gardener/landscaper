@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
+	utilerrors "github.com/gardener/landscaper/controller-utils/pkg/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
@@ -94,11 +95,16 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 			logger.Info("GenerateCertificates: new secret generated")
 			return writeCertificates(certDir, caCert, serverCert)
 		} else {
+			errs := utilerrors.NewErrorList(err)
 			// try to refetch secret if it was created by another replica
 			logger.Info("GenerateCertificates: new secret generation failed")
 			if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, errors.Wrapf(errs.Aggregate(), "error writing certificates into secret")
+				}
+				errs.Append(err)
 				logger.Info("GenerateCertificates: fetching new secret failed")
-				return nil, errors.Wrapf(err, "could not fetch secret for webhook")
+				return nil, errors.Wrapf(errs.Aggregate(), "unable to write certificates into secret and check for existing secret")
 			}
 		}
 	}
@@ -135,7 +141,7 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 func loadAndUpdateSecret(ctx context.Context, kubeClient client.Client, secret *corev1.Secret, name string, dnsNames []string,
 	caConfig *certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, bool, error) {
 
-	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "GenerateCertificates")
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	logger.Info("loadAndUpdateSecret: load existing cert")
 
