@@ -23,8 +23,13 @@ spec:
   type: landscaper.gardener.cloud/kubernetes-manifest
 
   target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
-    name: my-cluster
-    namespace: test
+    import: my-cluster
+
+  # Defines the global timeout value. When the deployment (including readiness-checks and exports) takes
+  # longer than this specified time, the deployment will be considered failed. Default: 10 minutes
+  # This timeout value shall be greater than the longest deployer specific timeout specified for this deploy item.
+  # If, for example, the readiness-checks timeout is set to "15m" and the export timeout is set to "10m", set the global timeout to "20m".
+  timeout: 20m
 
   config:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
