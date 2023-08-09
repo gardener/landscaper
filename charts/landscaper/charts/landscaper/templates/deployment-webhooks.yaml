@@ -50,7 +50,7 @@ spec:
           {{- else }}
           - --webhook-url=https://{{ include "landscaper.webhooks.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.webhooksServer.servicePort }}
           {{- end }}
-          - --certificates-namespace={{ .Values.webhooksServer.certificatesNamespace }}
+          - --cert-ns={{ .Values.webhooksServer.certificatesNamespace }}
           {{- else }}
           - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.webhooks.fullname" . }}
           - --webhook-service-port={{ .Values.webhooksServer.servicePort }}
