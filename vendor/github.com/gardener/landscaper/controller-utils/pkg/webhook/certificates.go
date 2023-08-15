@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
+	utilerrors "github.com/gardener/landscaper/controller-utils/pkg/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
@@ -55,10 +56,11 @@ func GetDNSNamesFromURL(rawurl string) ([]string, error) {
 	}
 }
 
-// GenerateCertificates generates the certificates that are required for a webhook. It returns the ca bundle, and it
-// stores the server certificate and key locally on the file system.
+// GenerateCertificates generates the certificates that are required for a webhook. It returns the generated certificates,
+// and it stores the server certificate and key locally on the file system.
+// The first return value is the CA certificate, the second one the server certificate.
 func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir, namespace, name, certSecretName string,
-	dnsNames []string) ([]byte, error) {
+	dnsNames []string) (*certificates.Certificate, *certificates.Certificate, error) {
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "GenerateCertificates")
 
@@ -79,26 +81,31 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 
 		if !apierrors.IsNotFound(err) {
 			logger.Info("GenerateCertificates: fetch failed hard")
-			return nil, errors.Wrapf(err, "error fetching secret for webhook server")
+			return nil, nil, errors.Wrapf(err, "error fetching secret for webhook server")
 		}
 
 		logger.Info("GenerateCertificates: generate new cert")
 		caCert, serverCert, err := generateNewCAAndServerCert(name, dnsNames, *caConfig)
 		if err != nil {
 			logger.Info("GenerateCertificates: generate new cert failed")
-			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
+			return nil, nil, errors.Wrapf(err, "error generating new certificates for webhook server")
 		}
 
 		err = createOrUpdateSecret(ctx, kubeClient, caCert, serverCert, namespace, certSecretName, true)
 		if err == nil {
 			logger.Info("GenerateCertificates: new secret generated")
-			return writeCertificates(certDir, caCert, serverCert)
+			return caCert, serverCert, writeCertificate(certDir, serverCert)
 		} else {
+			errs := utilerrors.NewErrorList(err)
 			// try to refetch secret if it was created by another replica
 			logger.Info("GenerateCertificates: new secret generation failed")
 			if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, nil, errors.Wrapf(errs.Aggregate(), "error writing certificates into secret")
+				}
+				errs.Append(err)
 				logger.Info("GenerateCertificates: fetching new secret failed")
-				return nil, errors.Wrapf(err, "could not fetch secret for webhook")
+				return nil, nil, errors.Wrapf(errs.Aggregate(), "unable to write certificates into secret and check for existing secret")
 			}
 		}
 	}
@@ -114,28 +121,28 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 			secret = &corev1.Secret{}
 			if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
 				logger.Info("GenerateCertificates: fetch updated secret failed")
-				return nil, err
+				return nil, nil, err
 			}
 			caCert, serverCert, _, err = loadAndUpdateSecret(ctx, kubeClient, secret, name, dnsNames, caConfig)
 			if err != nil {
 				logger.Info("GenerateCertificates: loadAndUpdateSecret retry failed")
-				return nil, err
+				return nil, nil, err
 			}
 		} else {
 			logger.Info("GenerateCertificates: loadAndUpdateSecret failed")
-			return nil, err
+			return nil, nil, err
 		}
 
 	}
 
 	logger.Info("GenerateCertificates: cert returned")
-	return writeCertificates(certDir, caCert, serverCert)
+	return caCert, serverCert, writeCertificate(certDir, serverCert)
 }
 
 func loadAndUpdateSecret(ctx context.Context, kubeClient client.Client, secret *corev1.Secret, name string, dnsNames []string,
 	caConfig *certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, bool, error) {
 
-	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "GenerateCertificates")
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	logger.Info("loadAndUpdateSecret: load existing cert")
 
@@ -243,24 +250,46 @@ func loadExistingCAAndServerCert(data map[string][]byte, pkcs int) (*certificate
 	return caCert, serverCert, nil
 }
 
-func writeCertificates(certDir string, caCert, serverCert *certificates.Certificate) ([]byte, error) {
+// writeCertificate writes the given certificates to the local filesystem.
+func writeCertificate(certDir string, cert *certificates.Certificate) error {
 	var (
 		serverKeyPath  = filepath.Join(certDir, certificates.DataKeyPrivateKey)
 		serverCertPath = filepath.Join(certDir, certificates.DataKeyCertificate)
 	)
 
 	if err := os.MkdirAll(certDir, 0755); err != nil {
-		return nil, err
+		return nil
 	}
-	if err := os.WriteFile(serverKeyPath, serverCert.PrivateKeyPEM, 0666); err != nil {
-		return nil, err
+	if err := os.WriteFile(serverKeyPath, cert.PrivateKeyPEM, 0666); err != nil {
+		return nil
 	}
-	if err := os.WriteFile(serverCertPath, serverCert.CertificatePEM, 0666); err != nil {
-		return nil, err
+	if err := os.WriteFile(serverCertPath, cert.CertificatePEM, 0666); err != nil {
+		return nil
 	}
 
-	return caCert.CertificatePEM, nil
+	return nil
 }
+
+// readCertificate is the sibling function to writeCertificates and reads a certificate including its CA from the local filesystem.
+// Uses PKCS8 by default.
+// name is the name which will be given to the certificate, not the filename.
+// func readCertificate(certDir string, name string) (*certificates.Certificate, error) {
+// 	var (
+// 		keyPath  = filepath.Join(certDir, certificates.DataKeyPrivateKey)
+// 		certPath = filepath.Join(certDir, certificates.DataKeyCertificate)
+// 	)
+
+// 	keyBytes, err := os.ReadFile(keyPath)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	certBytes, err := os.ReadFile(certPath)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return certificates.LoadCertificate(name, keyBytes, certBytes, certificates.PKCS8)
+// }
 
 func StringArrayIncludes(list []string, expects ...string) bool {
 	actual := sets.NewString(list...)
