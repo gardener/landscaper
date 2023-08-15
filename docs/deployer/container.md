@@ -34,8 +34,7 @@ spec:
   target:
     # only used to determine which instance of the container deployer is responsible,
     # unless it is used explicitly in the custom code
-    name: my-cluster
-    namespace: test
+    import: my-cluster
 
   config:
     apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
