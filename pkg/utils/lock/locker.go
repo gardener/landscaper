@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	LockerEnabled = false
+	LockerEnabled = true
 
 	keyMyPodName      = "myPodName"
 	keyNamespace      = "lockNamespace"
