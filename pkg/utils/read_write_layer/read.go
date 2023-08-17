@@ -3,6 +3,7 @@ package read_write_layer
 import (
 	"context"
 	"fmt"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -11,6 +12,15 @@ import (
 )
 
 // read methods get, list
+
+// read methods for sync objects
+func GetSyncObject(ctx context.Context, c client.Reader, key client.ObjectKey, syncObject *lsv1alpha1.SyncObject) error {
+	return get(ctx, c, key, syncObject)
+}
+
+func ListSyncObjects(ctx context.Context, c client.Reader, syncObjects *lsv1alpha1.SyncObjectList, opts ...client.ListOption) error {
+	return list(ctx, c, syncObjects, opts...)
+}
 
 // read methods for installations
 func GetInstallation(ctx context.Context, c client.Reader, key client.ObjectKey, installation *lsv1alpha1.Installation) error {

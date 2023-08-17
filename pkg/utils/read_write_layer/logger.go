@@ -86,6 +86,36 @@ func (w *Writer) logTargetUpdate(ctx context.Context, writeID WriteID, msg strin
 	}
 }
 
+func (w *Writer) logSyncObjectUpdate(ctx context.Context, writeID WriteID, msg string, syncObject *lsv1alpha1.SyncObject,
+	generationOld int64, resourceVersionOld string, err error) {
+
+	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", syncObject.Namespace, syncObject.Name))
+
+	if err == nil {
+		generationNew, resourceVersionNew := getGenerationAndResourceVersion(syncObject)
+		logger.Log(historyLogLevel, msg,
+			lc.KeyWriteID, writeID,
+			lc.KeyGenerationOld, generationOld,
+			lc.KeyGenerationNew, generationNew,
+			lc.KeyResourceVersionOld, resourceVersionOld,
+			lc.KeyResourceVersionNew, resourceVersionNew,
+		)
+	} else if apierrors.IsConflict(err) {
+		message := msg + ": " + err.Error()
+		logger.Info(message,
+			lc.KeyWriteID, writeID,
+			lc.KeyGenerationOld, generationOld,
+			lc.KeyResourceVersionOld, resourceVersionOld,
+		)
+	} else {
+		logger.Error(err, msg,
+			lc.KeyWriteID, writeID,
+			lc.KeyGenerationOld, generationOld,
+			lc.KeyResourceVersionOld, resourceVersionOld,
+		)
+	}
+}
+
 func (w *Writer) logDataObjectUpdate(ctx context.Context, writeID WriteID, msg string, do *lsv1alpha1.DataObject,
 	generationOld int64, resourceVersionOld string, err error) {
 

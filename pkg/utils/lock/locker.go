@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,16 +28,19 @@ const (
 )
 
 type Locker struct {
-	lsClient   client.Client
-	hostClient client.Client
-	prefix     string
+	writer       *read_write_layer.Writer
+	lsReadClient client.Client
+	hostClient   client.Client
+	prefix       string
 }
 
 func NewLocker(lsClient, hostClient client.Client, prefix string) *Locker {
+	writer := read_write_layer.NewWriter(lsClient)
 	return &Locker{
-		lsClient:   lsClient,
-		hostClient: hostClient,
-		prefix:     prefix,
+		writer:       writer,
+		lsReadClient: lsClient,
+		hostClient:   hostClient,
+		prefix:       prefix,
 	}
 }
 
@@ -83,7 +88,7 @@ func (l *Locker) lock(ctx context.Context, obj *metav1.PartialObjectMetadata,
 	if syncObject == nil {
 		// the object is not yet locked; try to lock it
 		syncObject = l.newSyncObject(obj, kind)
-		err = l.lsClient.Create(ctx, syncObject)
+		err = l.writer.CreateSyncObject(ctx, read_write_layer.W000035, syncObject)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// someone else was faster
@@ -122,7 +127,7 @@ func (l *Locker) lock(ctx context.Context, obj *metav1.PartialObjectMetadata,
 	// now we can try to take over the lock
 	syncObject.Spec.PodName = utils.GetCurrentPodName()
 	syncObject.Spec.LastUpdateTime = metav1.Now()
-	if err := l.lsClient.Update(ctx, syncObject); err != nil {
+	if err := l.writer.UpdateSyncObject(ctx, read_write_layer.W000041, syncObject); err != nil {
 		if apierrors.IsConflict(err) {
 			// another pod has taken over the lock faster
 			return nil, nil
@@ -150,7 +155,7 @@ func (l *Locker) Unlock(ctx context.Context, syncObject *lsv1alpha1.SyncObject) 
 
 	syncObject.Spec.PodName = ""
 	syncObject.Spec.LastUpdateTime = metav1.Now()
-	if err := l.lsClient.Update(ctx, syncObject); err != nil {
+	if err := l.writer.UpdateSyncObject(ctx, read_write_layer.W000043, syncObject); err != nil {
 		log.Error(err, "locker: unable to unlock syncobject")
 		return
 	}
@@ -186,7 +191,7 @@ func (l *Locker) getSyncObject(ctx context.Context, namespace, name string) (*ls
 		Name:      name,
 	}
 	syncObject := &lsv1alpha1.SyncObject{}
-	if err := l.lsClient.Get(ctx, syncObjectKey, syncObject); err != nil {
+	if err := read_write_layer.GetSyncObject(ctx, l.lsReadClient, syncObjectKey, syncObject); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
