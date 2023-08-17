@@ -42,15 +42,14 @@ func ListDeployItems(ctx context.Context, c client.Reader, deployItems *lsv1alph
 // basic functions
 func get(ctx context.Context, c client.Reader, key client.ObjectKey, object client.Object) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil, keyFetchedResource, fmt.Sprintf("%s/%s", key.Namespace, key.Name))
-	log.Debug("ReadLayer get")
+	log.Info("ReadLayer get")
 
 	return c.Get(ctx, key, object)
 }
 
 func list(ctx context.Context, c client.Reader, objects client.ObjectList, opts ...client.ListOption) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
-	log.Debug("ReadLayer list")
+	log.Info("ReadLayer list")
 
 	return c.List(ctx, objects, opts...)
 }
-
