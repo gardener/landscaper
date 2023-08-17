@@ -14,6 +14,10 @@ import (
 func NewUncachedClient(config *rest.Config, options client.Options) (client.Client, error) {
 	log, err := logging.GetLogger()
 
+	if err != nil {
+		return nil, err
+	}
+
 	if config.RateLimiter != nil {
 		log.Info("NewUncachedClient-RateLimiter: " + reflect.TypeOf(config.RateLimiter).String())
 	}
