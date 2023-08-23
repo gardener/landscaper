@@ -93,6 +93,14 @@ Create the name of the service account to use
 {{- default "landscaper-webhooks" .Values.global.serviceAccount.webhooksServer.name }}
 {{- end }}
 
+{{- define "landscaper.lsHealthCheckName" -}}
+{{- if .Values.landscaper.healthCheck }}
+{{- default .Release.Name .Values.landscaper.healthCheck.name }}
+{{- else }}
+{{- .Release.Name }}
+{{- end }}
+{{- end }}
+
 {{- define "landscaper-config" -}}
 apiVersion: config.landscaper.gardener.cloud/v1alpha1
 kind: LandscaperConfiguration
@@ -155,6 +163,15 @@ deployItemTimeouts:
 lsDeployments:
   lsController: "{{- include "landscaper.fullname" . }}"
   webHook: "{{- include "landscaper.webhooks.fullname" . }}"
+  deploymentsNamespace: "{{ .Release.Namespace }}"
+  lsHealthCheckName: "{{- include "landscaper.lsHealthCheckName" . }}"
+
+{{- if .Values.landscaper.healthCheck }}
+{{- if .Values.landscaper.healthCheck.additionalDeployments }}
+  additionalDeployments:
+{{ toYaml .Values.landscaper.healthCheck.additionalDeployments | indent 4 }}
+{{- end }}
+{{- end }}
 
 {{- end }}
 
