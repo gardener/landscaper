@@ -72,7 +72,7 @@ spec:
             value: {{ .Values.deployer.k8sClientSettings.hostClient.qps | quote }}
           - name: LS_RESOURCE_CLIENT_BURST
             value: {{ .Values.deployer.k8sClientSettings.resourceClient.burst | quote }}
-          - name: LS_RECOURCE_CLIENT_QPS
+          - name: LS_RESOURCE_CLIENT_QPS
             value: {{ .Values.deployer.k8sClientSettings.resourceClient.qps | quote }}
           {{- end }}
 

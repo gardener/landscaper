@@ -15,7 +15,7 @@ const (
 	LsHostClientBurstVar     = "LS_HOST_CLIENT_BURST"
 	LsHostClientQpsVar       = "LS_HOST_CLIENT_QPS"
 	LsResourceClientBurstVar = "LS_RESOURCE_CLIENT_BURST"
-	LsResourceClientQpsVar   = "LS_RECOURCE_CLIENT_QPS"
+	LsResourceClientQpsVar   = "LS_RESOURCE_CLIENT_QPS"
 
 	LsHostClientBurstDefault     = 30
 	LsHostClientQpsDefault       = 20
