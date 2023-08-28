@@ -306,7 +306,7 @@ func (c *Constructor) RenderImportExecutions() error {
 	if err != nil {
 		c.Operation.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
-		return fmt.Errorf("unable to template executions: %w", err)
+		return fmt.Errorf("RenderImportExecutions - unable to template executions: %w", err)
 	}
 
 	for k, v := range bindings {

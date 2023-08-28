@@ -74,7 +74,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
-		return nil, fmt.Errorf("unable to template executions: %w", err)
+		return nil, fmt.Errorf("RenderDeployItemTemplates - unable to template executions: %w", err)
 	}
 
 	if len(executions) == 0 {
