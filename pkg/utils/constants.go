@@ -71,7 +71,7 @@ func GetHostClientRequestRestrictions(log logging.Logger, hostAndResourceCluster
 		qps = getClientRestriction(LsHostClientQpsVar, LsHostClientQpsDefault)
 	}
 
-	log.Info("HostClientRequestRestrictions", LsResourceClientBurstVar, burst, LsResourceClientQpsVar, qps)
+	log.Info("HostClientRequestRestrictions", LsHostClientBurstVar, burst, LsHostClientQpsVar, qps)
 
 	return burst, qps
 }
