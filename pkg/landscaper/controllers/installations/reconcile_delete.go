@@ -7,6 +7,7 @@ package installations
 import (
 	"context"
 	"errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,6 +127,7 @@ func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, ins
 
 func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1alpha1.Installation) (allFinished bool, allDeleted bool, lsErr lserrors.LsError) {
 	op := "handleDeletionPhaseDeleting"
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
 	if err != nil {
@@ -154,7 +156,13 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 			if !nextSibling.DeletionTimestamp.IsZero() {
 				lsv1alpha1helper.Touch(&nextSibling.ObjectMeta)
 				if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000147, nextSibling); err != nil {
-					return false, false, lserrors.NewWrappedError(err, op, "TouchSibling", err.Error())
+					if apierrors.IsConflict(err) {
+						logger.Info(op + " - conflict touching sibling inst")
+					} else if apierrors.IsNotFound(err) {
+						logger.Info(op + " - not found touching sibling inst")
+					} else {
+						return false, false, lserrors.NewWrappedError(err, op, "TouchSibling", err.Error())
+					}
 				}
 			}
 		}
