@@ -28,6 +28,10 @@ If release name contains chart name it will be used as a full name.
 {{- include "landscaper.fullname" . }}-webhooks
 {{- end }}
 
+{{- define "landscaper.main.fullname" -}}
+{{- include "landscaper.fullname" . }}-main
+{{- end }}
+
 {{- define "landscaper.agent.fullname" -}}
 {{- include "landscaper.fullname" . }}-agent
 {{- end }}
@@ -72,6 +76,12 @@ Selector labels
 */}}
 {{- define "landscaper.selectorLabels" -}}
 landscaper.gardener.cloud/component: controller
+app.kubernetes.io/name: {{ include "landscaper.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{- define "landscaper.main.selectorLabels" -}}
+landscaper.gardener.cloud/component: controller-main
 app.kubernetes.io/name: {{ include "landscaper.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

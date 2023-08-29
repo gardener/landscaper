@@ -64,10 +64,14 @@ func (o *DefaultOptions) Complete() error {
 	o.Log = log
 	ctrl.SetLogger(log.Logr())
 
+	hostAndResourceClusterDifferent := len(o.LsKubeconfig) != 0
+
+	burst, qps := lsutils.GetHostClientRequestRestrictions(log, hostAndResourceClusterDifferent)
+
 	opts := manager.Options{
 		LeaderElection:     false,
 		MetricsBindAddress: "0", // disable the metrics serving by default
-		NewClient:          lsutils.NewUncachedClient,
+		NewClient:          lsutils.NewUncachedClient(burst, qps),
 	}
 
 	restConfig, err := ctrl.GetConfig()
@@ -80,7 +84,7 @@ func (o *DefaultOptions) Complete() error {
 	}
 	o.LsMgr = o.HostMgr
 
-	if len(o.LsKubeconfig) != 0 {
+	if hostAndResourceClusterDifferent {
 		data, err := os.ReadFile(o.LsKubeconfig)
 		if err != nil {
 			return fmt.Errorf("unable to read landscaper kubeconfig from %s: %w", o.LsKubeconfig, err)
@@ -93,6 +97,9 @@ func (o *DefaultOptions) Complete() error {
 		if err != nil {
 			return fmt.Errorf("unable to build landscaper cluster rest client from %s: %w", o.LsKubeconfig, err)
 		}
+
+		burst, qps = lsutils.GetResourceClientRequestRestrictions(log)
+		opts.NewClient = lsutils.NewUncachedClient(burst, qps)
 
 		o.LsMgr, err = ctrl.NewManager(restConfig, opts)
 		if err != nil {

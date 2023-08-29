@@ -1,13 +1,27 @@
 package utils
 
 import (
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"os"
+	"strconv"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-const NoPodname = "noPodname"
-const NoPodnamespace = "noPodnamespace"
+const (
+	NoPodname      = "noPodname"
+	NoPodnamespace = "noPodnamespace"
+
+	LsHostClientBurstVar     = "LS_HOST_CLIENT_BURST"
+	LsHostClientQpsVar       = "LS_HOST_CLIENT_QPS"
+	LsResourceClientBurstVar = "LS_RESOURCE_CLIENT_BURST"
+	LsResourceClientQpsVar   = "LS_RESOURCE_CLIENT_QPS"
+
+	LsHostClientBurstDefault     = 30
+	LsHostClientQpsDefault       = 20
+	LsResourceClientBurstDefault = 60
+	LsResourceClientQpsDefault   = 40
+)
 
 func GetCurrentPodName() string {
 	result := os.Getenv("MY_POD_NAME")
@@ -47,4 +61,38 @@ func IsInstallationJobIDsIdentical(inst *lsv1alpha1.Installation) bool {
 
 func IsExecutionJobIDsIdentical(exec *lsv1alpha1.Execution) bool {
 	return exec.Status.JobID == exec.Status.JobIDFinished
+}
+
+func GetHostClientRequestRestrictions(log logging.Logger, hostAndResourceClusterDifferent bool) (int, int) {
+	burst, qps := GetResourceClientRequestRestrictions(log)
+
+	if hostAndResourceClusterDifferent {
+		burst = getClientRestriction(LsHostClientBurstVar, LsHostClientBurstDefault)
+		qps = getClientRestriction(LsHostClientQpsVar, LsHostClientQpsDefault)
+	}
+
+	log.Info("HostClientRequestRestrictions", LsHostClientBurstVar, burst, LsHostClientQpsVar, qps)
+
+	return burst, qps
+}
+
+func GetResourceClientRequestRestrictions(log logging.Logger) (int, int) {
+	burst := getClientRestriction(LsResourceClientBurstVar, LsResourceClientBurstDefault)
+	qps := getClientRestriction(LsResourceClientQpsVar, LsResourceClientQpsDefault)
+
+	log.Info("ResourceClientRequestRestrictions", LsResourceClientBurstVar, burst, LsResourceClientQpsVar, qps)
+	return burst, qps
+}
+
+func getClientRestriction(envName string, defaultVal int) int {
+	tmpStr := os.Getenv(envName)
+
+	if len(tmpStr) > 0 {
+		tmpInt, err := strconv.Atoi(tmpStr)
+		if err == nil && tmpInt > 0 {
+			return tmpInt
+		}
+	}
+
+	return defaultVal
 }

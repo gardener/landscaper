@@ -3,25 +3,28 @@
 ## Horizontal Pod Autoscaling
 
 The horizontal scaling behavior of the Landscaper pods is defined in [HorizontalPodAutoscaler][1] (HPA) objects.
-Each HPA specifies a minimum and maximum number of pods. Within these limits, a new pod will be started if the
-average cpu or memory consumption exceeds 80% of the value specified in the corresponding Deployment.
+Each HPA specifies a minimum and maximum number of pods. Within these limits, a new pod will be started 
+if the average cpu or memory consumption exceeds 80% of the value specified in the corresponding Deployment.
 The pods are distributed evenly across nodes and zones.
 
-- [Landscaper HPA](../../charts/landscaper/charts/landscaper/templates/hpa-landscaper.yaml):  
-  Currently, we start exactly 1 landscaper pod, because the controllers are not yet prepared to run with multiple 
-  replicas in parallel.  
-- [Webhok HPA](../../charts/landscaper/charts/landscaper/templates/hpa-webhook.yaml):  
-  We run at least 2 webhook pods, because users would directly notice if the webhook were unavailable.
-- [Container deployer HPA](../../charts/container-deployer/templates/hpa.yaml)
-- [Helm deployer HPA](../../charts/helm-deployer/templates/hpa.yaml)
-- [Manifest deployer HPA](../../charts/manifest-deployer/templates/hpa.yaml)
-- [Mock deployer HPA](../../charts/mock-deployer/templates/hpa.yaml)
+| Pod / HPA                                                                                                                                | Minimum  | Maximum                   | Comment                                                                                                            | 
+|------------------------------------------------------------------------------------------------------------------------------------------|----------|---------------------------|--------------------------------------------------------------------------------------------------------------------|
+| [Central Landscaper](../../charts/landscaper/charts/landscaper/templates/hpa-central-landscaper.yaml)                                    | 1        | 1                         | The pod executes one time tasks like the creation of CRDs or the deployer management. Therefore, the maximum is 1. |
+| [Main Controllers](../../charts/landscaper/charts/landscaper/templates/hpa-main-controller.yaml) (Installation and Execution controller) | 1        | configurable, default: 1  |                                                                                                                    |
+| [Webhook](../../charts/landscaper/charts/landscaper/templates/hpa-webhook.yaml)                                                          | 2        | configurable, default: 10 | We run at least 2 webhook pods, because users would directly notice if the webhook were unavailable.               |
+| [Container deployer](../../charts/container-deployer/templates/hpa.yaml)                                                                 | 1        | configurable, default: 1  |                                                                                                                    |
+| [Helm deployer](../../charts/helm-deployer/templates/hpa.yaml)                                                                           | 1        | configurable, default: 1  |                                                                                                                    |
+| [Manifest deployer](../../charts/manifest-deployer/templates/hpa.yaml)                                                                   | 1        | configurable, default: 1  |                                                                                                                    |
+| [Mock deployer](../../charts/mock-deployer/templates/hpa.yaml)                                                                           | 1        | configurable, default: 1  |                                                                                                                    |
+
+The maximum can be configured in the values of the corresponding helm chart (except for the central Landscaper pod).
+
+**Prerequisite for parallelization:** The [locking](#locking) mechanism must be enabled before you can set 
+a maximum > 1 for one of the controller pods (i.e. for the main controllers pod or for one of the deployer pods).
+This is done by setting `LockerEnabled = true` in [locker.go](../../pkg/utils/lock/locker.go).
 
 
-
-## Statistics
-
-### Memory and CPU
+## Memory and CPU Statistics
 
 The Landscaper logs periodically cpu and memory data from the status of the HPA objects:
 
@@ -41,7 +44,8 @@ The Landscaper logs periodically cpu and memory data from the status of the HPA 
 }
 ```
 
-### Worker Count
+
+## Worker Count
 
 Each controller has a certain number of worker threads per pod. These numbers can be configured in the values of the 
 corresponding helm chart. Each controller pod counts how many of these worker threads are currently in use.

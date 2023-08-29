@@ -6,24 +6,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "landscaper.fullname" . }}
+  name: {{ include "landscaper.main.fullname" . }}
   labels:
     {{- include "landscaper.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.controller.replicaCount }}
   selector:
     matchLabels:
-      {{- include "landscaper.selectorLabels" . | nindent 6 }}
+      {{- include "landscaper.main.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
         checksum/config: {{ include "landscaper-config" . |  sha256sum }}
         checksum/registrysecrets: {{ toJson .Values.landscaper.registryConfig |  sha256sum }}
+        {{- if .Values.landscaper.deployersConfig }}
+        checksum/deployerconfig: {{ toYaml .Values.landscaper.deployersConfig |  sha256sum }}
+        {{- end }}
+
         {{ range $key, $value := .Values.podAnnotations }}
         {{ $key }}: {{ $value}}
         {{- end }}
       labels:
-        {{- include "landscaper.selectorLabels" . | nindent 8 }}
+        {{- include "landscaper.main.selectorLabels" . | nindent 8 }}
+        landscaper.gardener.cloud/topology: main-controller
+        landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -33,7 +39,7 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ include "landscaper.controller.containerName" . }}
+        - name: {{ include "landscaper.main.fullname" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ include "landscaper-image" . }}"
@@ -73,7 +79,7 @@ spec:
             mountPath: /app/ls/landscaper-cluster-kubeconfig
           {{- end }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.resourcesMain | nindent 12 }}
           env:
             - name: MY_POD_NAME
               valueFrom:
@@ -83,6 +89,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            {{- if .Values.landscaper.k8sClientSettings }}
+            - name: LS_HOST_CLIENT_BURST
+              value: {{ .Values.landscaper.k8sClientSettings.hostClient.burst | quote }}
+            - name: LS_HOST_CLIENT_QPS
+              value: {{ .Values.landscaper.k8sClientSettings.hostClient.qps | quote }}
+            - name: LS_RESOURCE_CLIENT_BURST
+              value: {{ .Values.landscaper.k8sClientSettings.resourceClient.burst | quote }}
+            - name: LS_RESOURCE_CLIENT_QPS
+              value: {{ .Values.landscaper.k8sClientSettings.resourceClient.qps | quote }}
+            {{- end }}
       volumes:
       - name: oci-cache
         emptyDir: {}
@@ -120,3 +136,18 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              landscaper.gardener.cloud/topology: main-controller
+              landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              landscaper.gardener.cloud/topology: main-controller
+              landscaper.gardener.cloud/topology-ns: {{ .Release.Namespace }}

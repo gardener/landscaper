@@ -26,6 +26,29 @@ func NewWriter(c client.Client) *Writer {
 	}
 }
 
+// methods for sync objects
+
+func (w *Writer) CreateSyncObject(ctx context.Context, writeID WriteID, syncObject *lsv1alpha1.SyncObject) error {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(syncObject)
+	err := create(ctx, w.client, syncObject)
+	w.logSyncObjectUpdate(ctx, writeID, opSyncObjectCreate, syncObject, generationOld, resourceVersionOld, err)
+	return errorWithWriteID(err, writeID)
+}
+
+func (w *Writer) UpdateSyncObject(ctx context.Context, writeID WriteID, syncObject *lsv1alpha1.SyncObject) error {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(syncObject)
+	err := update(ctx, w.client, syncObject)
+	w.logSyncObjectUpdate(ctx, writeID, opSyncObjectSpec, syncObject, generationOld, resourceVersionOld, err)
+	return errorWithWriteID(err, writeID)
+}
+
+func (w *Writer) DeleteSyncObject(ctx context.Context, writeID WriteID, syncObject *lsv1alpha1.SyncObject) error {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(syncObject)
+	err := delete(ctx, w.client, syncObject)
+	w.logSyncObjectUpdate(ctx, writeID, opSyncObjectDelete, syncObject, generationOld, resourceVersionOld, err)
+	return errorWithWriteID(err, writeID)
+}
+
 // methods for contexts
 
 func (w *Writer) CreateOrPatchCoreContext(ctx context.Context, writeID WriteID, lsContext *lsv1alpha1.Context,
@@ -49,7 +72,7 @@ func (w *Writer) CreateOrUpdateCoreTarget(ctx context.Context, writeID WriteID, 
 func (w *Writer) DeleteTarget(ctx context.Context, writeID WriteID, target *lsv1alpha1.Target) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(target)
 	err := delete(ctx, w.client, target)
-	w.logTargetUpdate(ctx, writeID, opInstDelete, target, generationOld, resourceVersionOld, err)
+	w.logTargetUpdate(ctx, writeID, opTargetDelete, target, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
@@ -180,6 +203,10 @@ func (w *Writer) DeleteDeployItem(ctx context.Context, writeID WriteID, deployIt
 }
 
 // base methods
+
+func create(ctx context.Context, c client.Client, object client.Object) error {
+	return c.Create(ctx, object)
+}
 
 func createOrPatchCore(ctx context.Context, c client.Client, object client.Object,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {

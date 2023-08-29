@@ -115,7 +115,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				mgr, err = manager.New(f.RestConfig, manager.Options{
 					Scheme:             api.LandscaperScheme,
 					MetricsBindAddress: "0",
-					NewClient:          lsutils.NewUncachedClient,
+					NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 				})
 				testutil.ExpectNoError(err)
 

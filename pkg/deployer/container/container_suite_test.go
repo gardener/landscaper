@@ -74,7 +74,7 @@ var _ = Describe("Template", func() {
 		mgr, err = manager.New(testenv.Env.Config, manager.Options{
 			Scheme:             api.LandscaperScheme,
 			MetricsBindAddress: "0",
-			NewClient:          lsutils.NewUncachedClient,
+			NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 		})
 		Expect(err).ToNot(HaveOccurred())
 

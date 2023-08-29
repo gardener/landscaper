@@ -44,6 +44,18 @@ deployer:
     workers: 30
     # cacheSyncTimeout: 2m
 
+  # burst and max queries per second settings for k8s client used in reconciliation
+  k8sClientSettings:
+    # settings of client for host cluster; are overwritten by settings for resourceClient if host and resource cluster are identical
+    hostClient:
+      burst: 30
+      qps: 20
+
+    # settings of client for resource cluster
+    resourceClient:
+      burst: 60
+      qps: 40
+
 replicaCount: 1
 
 image:
@@ -85,6 +97,9 @@ resources:
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
+
+hpa:
+  maxReplicas: 1
 
 nodeSelector: {}
 

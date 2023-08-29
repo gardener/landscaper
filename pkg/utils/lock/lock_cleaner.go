@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,14 +25,18 @@ const (
 )
 
 type LockCleaner struct {
-	lsClient   client.Client
-	hostClient client.Client
+	writer       *read_write_layer.Writer
+	lsReadClient client.Client
+	hostClient   client.Client
 }
 
 func NewLockCleaner(lsClient, hostClient client.Client) *LockCleaner {
+	writer := read_write_layer.NewWriter(lsClient)
+
 	return &LockCleaner{
-		lsClient:   lsClient,
-		hostClient: hostClient,
+		writer:       writer,
+		lsReadClient: lsClient,
+		hostClient:   hostClient,
 	}
 }
 
@@ -51,14 +57,14 @@ func (l *LockCleaner) cleanupSyncObjects(ctx context.Context) {
 	log.Info("locker: starting syncobject cleanup")
 
 	namespaces := &v1.NamespaceList{}
-	if err := l.lsClient.List(ctx, namespaces); err != nil {
+	if err := l.lsReadClient.List(ctx, namespaces); err != nil {
 		log.Error(err, "locker: failed to list namespaces")
 		return
 	}
 
 	for _, namespace := range namespaces.Items {
 		syncObjects := &lsv1alpha1.SyncObjectList{}
-		if err := l.lsClient.List(ctx, syncObjects, client.InNamespace(namespace.Name)); err != nil {
+		if err := read_write_layer.ListSyncObjects(ctx, l.lsReadClient, syncObjects, client.InNamespace(namespace.Name)); err != nil {
 			log.Error(err, "locker: failed to list syncobjects in namespace", keyNamespace, namespace.Name)
 			continue
 		}
@@ -83,7 +89,7 @@ func (l *LockCleaner) cleanupSyncObject(ctx context.Context, syncObject *lsv1alp
 		return
 	}
 
-	if err := l.lsClient.Delete(ctx, syncObject); err != nil {
+	if err := l.writer.DeleteSyncObject(ctx, read_write_layer.W000046, syncObject); err != nil {
 		log.Error(err, "locker: cleanup of syncobject failed")
 		return
 	}
@@ -97,6 +103,10 @@ func (l *LockCleaner) existsResource(ctx context.Context, syncObject *lsv1alpha1
 	var resource *metav1.PartialObjectMetadata
 
 	switch syncObject.Spec.Kind {
+	case utils.InstallationKind:
+		resource = utils.EmptyInstallationMetadata()
+	case utils.ExecutionKind:
+		resource = utils.EmptyExecutionMetadata()
 	case utils.DeployItemKind:
 		resource = utils.EmptyDeployItemMetadata()
 	default:

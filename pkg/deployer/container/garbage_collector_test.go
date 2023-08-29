@@ -57,7 +57,7 @@ var _ = Describe("GarbageCollector", func() {
 			Scheme:             api.LandscaperScheme,
 			MetricsBindAddress: "0",
 			Logger:             logger.WithName("lsManager").Logr(),
-			NewClient:          lsutils.NewUncachedClient,
+			NewClient:          lsutils.NewUncachedClient(10, 5),
 		})
 		Expect(err).ToNot(HaveOccurred())
 
@@ -65,7 +65,7 @@ var _ = Describe("GarbageCollector", func() {
 			Scheme:             scheme.Scheme,
 			MetricsBindAddress: "0",
 			Logger:             logger.WithName("hostManager").Logr(),
-			NewClient:          lsutils.NewUncachedClient,
+			NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 		})
 		Expect(err).ToNot(HaveOccurred())
 
