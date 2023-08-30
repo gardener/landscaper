@@ -11,13 +11,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/landscaper/jsonschema/testreg"
-	corev1 "k8s.io/api/core/v1"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/gardener/landscaper/pkg/landscaper/jsonschema/testreg"
 
 	"github.com/gardener/landscaper/apis/config"
 
@@ -921,7 +923,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, n
 		ObjectType: cdv2.ObjectType{
 			Type: cdv2.OCIRegistryType,
 		},
-		BaseURL:              fmt.Sprintf("%s", host),
+		BaseURL:              host,
 		ComponentNameMapping: cdv2.OCIRegistryURLPathMapping,
 	}
 	testutils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))

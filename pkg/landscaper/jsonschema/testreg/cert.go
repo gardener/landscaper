@@ -125,7 +125,7 @@ func GenerateCertificates() (*Certificate, error) {
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func init() {
-	mathrand.Seed(time.Now().Unix())
+	mathrand.New(mathrand.NewSource(time.Now().Unix()))
 }
 
 // RandString creates a random string with n characters.

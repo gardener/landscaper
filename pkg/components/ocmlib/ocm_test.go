@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"os"
 	"path/filepath"
+
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
