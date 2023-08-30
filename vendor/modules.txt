@@ -586,11 +586,8 @@ github.com/gardener/landscaper/controller-utils/pkg/kubernetes
 github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock
 github.com/gardener/landscaper/controller-utils/pkg/logging
 github.com/gardener/landscaper/controller-utils/pkg/logging/constants
-<<<<<<< HEAD
 github.com/gardener/landscaper/controller-utils/pkg/logging/zapconfig
-=======
 github.com/gardener/landscaper/controller-utils/pkg/utils
->>>>>>> master
 github.com/gardener/landscaper/controller-utils/pkg/webhook
 github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates
 # github.com/ghodss/yaml v1.0.0
