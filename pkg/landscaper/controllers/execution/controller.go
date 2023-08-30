@@ -219,10 +219,10 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 		}
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
-			err = lserrors.NewError(op, "handlePhaseDeleting", "has failed items")
+			err = lserrors.NewError(op, "handlePhaseDeleting", "has failed items", lsv1alpha1.ErrorForInfoOnly)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000143)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
-			err = lserrors.NewError(op, "handlePhaseDeleting", "has pending items")
+			err = lserrors.NewError(op, "handlePhaseDeleting", "has pending items", lsv1alpha1.ErrorForInfoOnly)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000144)
 		}
 
