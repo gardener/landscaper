@@ -336,7 +336,9 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 }
 
 func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
-	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
+	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID,
+	reduceLogLevelForConflicts bool) lserrors.LsError {
+
 	op := "setInstallationPhaseAndUpdate"
 
 	logger, ctx := logging.FromContextOrNew(ctx,
@@ -386,7 +388,13 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 			}
 		}
 
-		logger.Error(err, "unable to update installation status")
+		// reduceLogLevelForConflicts is set on true, if conflicts might occur, e.g.
+		// - when deleting an item a touch operation might be triggered for all siblings to speed up the operation
+		if reduceLogLevelForConflicts && apierrors.IsConflict(err) {
+			logger.Info("unable to update installation status", err, err.Error())
+		} else {
+			logger.Error(err, "unable to update installation status")
+		}
 		if lsError == nil {
 			return lserrors.NewWrappedError(err, op, "UpdateInstallationStatus", err.Error())
 		}
