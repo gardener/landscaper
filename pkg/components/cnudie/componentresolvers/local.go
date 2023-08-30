@@ -18,7 +18,6 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
@@ -102,8 +101,8 @@ type localClient struct {
 }
 
 // NewLocalClient creates a new local registry from a root.
-func NewLocalClient(rootPath string) (TypedRegistry, error) {
-	fs, err := projectionfs.New(osfs.New(), rootPath)
+func NewLocalClient(fs vfs.FileSystem, rootPath string) (TypedRegistry, error) {
+	fs, err := projectionfs.New(fs, rootPath)
 	if err != nil {
 		return nil, err
 	}

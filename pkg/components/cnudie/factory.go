@@ -54,7 +54,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	}
 
 	if localRegistryConfig != nil {
-		localRegistry, err := componentresolvers.NewLocalClient(localRegistryConfig.RootPath)
+		localRegistry, err := componentresolvers.NewLocalClient(fs, localRegistryConfig.RootPath)
 		if err != nil {
 			return nil, err
 		}

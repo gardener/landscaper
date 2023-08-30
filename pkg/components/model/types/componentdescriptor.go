@@ -12,4 +12,6 @@ type ComponentReference = cdv2.ComponentReference
 
 type Resource = cdv2.Resource
 
+type Source = cdv2.Source
+
 type UnstructuredTypedObject = cdv2.UnstructuredTypedObject

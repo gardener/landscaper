@@ -6,8 +6,6 @@ import (
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 
-	"github.com/mandelsoft/vfs/pkg/vfs"
-
 	"github.com/gardener/landscaper/pkg/components/model"
 )
 
@@ -15,7 +13,7 @@ var Registry = New()
 
 type ResourceHandler interface {
 	GetResourceContent(ctx context.Context, r model.Resource, access ocm.ResourceAccess) (*model.TypedResourceContent, error)
-	Prepare(ctx context.Context, fs vfs.FileSystem) (*model.TypedResourceContent, error)
+	// Prepare(ctx context.Context, fs vfs.FileSystem) (*model.TypedResourceContent, error)
 }
 
 type ResourceHandlerRegistry struct {

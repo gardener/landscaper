@@ -82,7 +82,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	var localfs vfs.FileSystem
 	if localRegistryConfig != nil {
 		var err error
-		localfs, err = projectionfs.New(osfs.New(), localRegistryConfig.RootPath)
+		localfs, err = projectionfs.New(fs, localRegistryConfig.RootPath)
 		if err != nil {
 			return nil, err
 		}

@@ -2,18 +2,16 @@ package registries
 
 import (
 	"context"
-	"io"
 	"sync"
 
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 var Registry = New()
 
 type ResourceHandler interface {
 	GetResourceContent(ctx context.Context, resource model.Resource, blobResolver model.BlobResolver) (*model.TypedResourceContent, error)
-	Prepare(ctx context.Context, data io.Reader, info *types.BlobInfo) (*model.TypedResourceContent, error)
+	// Prepare(ctx context.Context, data io.Reader, info *types.BlobInfo) (*model.TypedResourceContent, error)
 }
 
 type ResourceHandlerRegistry struct {
