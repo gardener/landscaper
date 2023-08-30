@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"fmt"
+
 	"github.com/open-component-model/ocm/pkg/common"
 
 	"github.com/mandelsoft/filepath/pkg/filepath"

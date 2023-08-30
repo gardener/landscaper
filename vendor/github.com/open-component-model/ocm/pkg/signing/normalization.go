@@ -63,6 +63,9 @@ func PrepareNormalization(n Normalization, v interface{}, excludes ExcludeRules)
 }
 
 func Prepare(n Normalization, v interface{}, ex ExcludeRules) (r Normalized, err error) {
+	if m, ok := ex.(ValueMappingRule); ok {
+		v = m.MapValue(v)
+	}
 	switch e := v.(type) {
 	case map[string]interface{}:
 		r, err = prepareStruct(n, e, ex)

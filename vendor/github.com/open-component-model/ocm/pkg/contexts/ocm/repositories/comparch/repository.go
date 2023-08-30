@@ -5,7 +5,6 @@
 package comparch
 
 import (
-	"io"
 	"strings"
 	"sync"
 
@@ -34,10 +33,10 @@ func NewRepository(ctx cpi.Context, s *RepositorySpec) (cpi.Repository, error) {
 	if err != nil {
 		return nil, err
 	}
-	return a.Repository(), nil
+	return a.AsRepository(), nil
 }
 
-func newRepository(a *ComponentArchive) (io.Closer, cpi.Repository) {
+func newRepository(a *ComponentArchive) (main cpi.Repository, nonref cpi.Repository) {
 	base := cpi.NewRepositoryImplBase(a.GetContext(), a.ComponentVersionAccess)
 	impl := &RepositoryImpl{
 		_RepositoryImplBase: *base,

@@ -93,7 +93,7 @@ func MarshalVersionedTypedObject[T VersionedTypedObject](obj T, toe ...TypedObje
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// VersionedType is the interface of a type object for a versioned type.
+// VersionedTypedObjectType is the interface of a type object for a versioned type.
 type VersionedTypedObjectType[T VersionedTypedObject] interface {
 	VersionedTypeInfo
 	TypedObjectDecoder[T]

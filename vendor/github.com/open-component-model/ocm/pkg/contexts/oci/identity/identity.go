@@ -23,9 +23,10 @@ const (
 
 // used credential properties.
 const (
-	ATTR_USERNAME       = cpi.ATTR_USERNAME
-	ATTR_PASSWORD       = cpi.ATTR_PASSWORD
-	ATTR_IDENTITY_TOKEN = cpi.ATTR_IDENTITY_TOKEN
+	ATTR_USERNAME              = cpi.ATTR_USERNAME
+	ATTR_PASSWORD              = cpi.ATTR_PASSWORD
+	ATTR_IDENTITY_TOKEN        = cpi.ATTR_IDENTITY_TOKEN
+	ATTR_CERTIFICATE_AUTHORITY = cpi.ATTR_CERTIFICATE_AUTHORITY
 )
 
 func init() {
@@ -33,6 +34,7 @@ func init() {
 		ATTR_USERNAME, "the basic auth user name",
 		ATTR_PASSWORD, "the basic auth password",
 		ATTR_IDENTITY_TOKEN, "the bearer token used for non-basic auth authorization",
+		ATTR_CERTIFICATE_AUTHORITY, "the certificate authority certificate used to verify certificates",
 	})
 
 	cpi.RegisterStandardIdentity(CONSUMER_TYPE, IdentityMatcher, `OCI registry credential matcher

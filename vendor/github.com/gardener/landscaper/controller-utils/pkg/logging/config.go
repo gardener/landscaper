@@ -5,9 +5,10 @@
 package logging
 
 import (
-	"github.com/gardener/landscaper/controller-utils/pkg/logging/zapconfig"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging/zapconfig"
 )
 
 type Config struct {

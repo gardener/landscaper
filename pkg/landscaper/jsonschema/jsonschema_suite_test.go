@@ -8,10 +8,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/landscaper/jsonschema/testreg"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,7 +24,6 @@ import (
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	testcred "github.com/gardener/component-cli/ociclient/credentials"
-	testreg "github.com/gardener/component-cli/ociclient/test/envtest"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
@@ -501,7 +504,48 @@ var _ = Describe("jsonschema", func() {
 			ociClient, err = ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
 			testutils.ExpectNoError(err)
 
-			registryAccess, err = registries.GetFactory().NewOCITestRegistryAccess(testenv.Addr, testenv.BasicAuth.Username, testenv.BasicAuth.Password)
+			fs := memoryfs.New()
+
+			Expect(fs.MkdirAll("testdata", 0o777)).To(Succeed())
+			base64creds := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`%s:%s`, testenv.BasicAuth.Username, testenv.BasicAuth.Password)))
+			dockerconfig := []byte(fmt.Sprintf(`{"auths": {"%s": {"auth": "%s"}}}`, testenv.Addr, base64creds))
+			f, err := fs.OpenFile(filepath.Join("testdata", "dockerconfig.json"), os.O_CREATE|os.O_RDWR, 0o777)
+			Expect(err).ToNot(HaveOccurred())
+			cnt, err := f.Write(dockerconfig)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cnt).ToNot(Equal(0))
+			f.Close()
+
+			ociconfig := &config.OCIConfiguration{
+				ConfigFiles: []string{"testdata/dockerconfig.json"},
+			}
+
+			config := []byte(fmt.Sprintf(`{
+	"type": "credentials.config.ocm.software",
+    "consumers": [
+        {
+            "identity": {
+                "type": "OCIRegistry",
+                "hostname": %q,
+                "port": %q
+            },
+            "credentials": [
+                {
+                    "type": "Credentials",
+                    "properties": {
+                        "username": %q,
+                        "password": %q,
+                        "certificateAuthority": %q
+                    }
+                }
+            ]
+        }
+    ]
+}
+`, strings.Split(testenv.Addr, ":")[0], strings.Split(testenv.Addr, ":")[1], testenv.BasicAuth.Username, testenv.BasicAuth.Password, testenv.Certificate.CA))
+			secrets := []corev1.Secret{{
+				Data: map[string][]byte{`.ocmcredentialconfig`: config}}}
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, secrets, nil, nil, ociconfig, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -877,7 +921,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, n
 		ObjectType: cdv2.ObjectType{
 			Type: cdv2.OCIRegistryType,
 		},
-		BaseURL:              fmt.Sprintf("%s/components/", host),
+		BaseURL:              fmt.Sprintf("%s", host),
 		ComponentNameMapping: cdv2.OCIRegistryURLPathMapping,
 	}
 	testutils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))

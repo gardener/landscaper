@@ -4,7 +4,13 @@
 
 package consts
 
+import (
+	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+)
+
 const (
+	SystemIdentityName        = metav1.SystemIdentityName
+	SystemIdentityVersion     = metav1.SystemIdentityVersion
 	ExecutableOperatingSystem = "os"
 	ExecutableArchitecture    = "architecture"
 )

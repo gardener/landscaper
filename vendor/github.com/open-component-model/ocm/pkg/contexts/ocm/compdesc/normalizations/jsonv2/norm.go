@@ -38,37 +38,28 @@ var CDExcludes = signing.MapExcludes{
 	"meta": nil,
 	"component": signing.MapExcludes{
 		"repositoryContexts": nil,
-		"labels": signing.ExcludeEmpty{signing.DynamicArrayExcludes{
-			ValueChecker: signing.IgnoreLabelsWithoutSignature,
-			Continue:     signing.NoExcludes{},
-		}},
+		"provider": signing.MapExcludes{
+			"labels": signing.LabelExcludes,
+		},
+		"labels": signing.LabelExcludes,
 		"resources": signing.DynamicArrayExcludes{
 			ValueChecker: signing.IgnoreResourcesWithNoneAccess,
 			Continue: signing.MapExcludes{
 				"access": nil,
 				"srcRef": nil,
-				"labels": signing.ExcludeEmpty{signing.DynamicArrayExcludes{
-					ValueChecker: signing.IgnoreLabelsWithoutSignature,
-					Continue:     signing.NoExcludes{},
-				}},
+				"labels": signing.LabelExcludes,
 			},
 		},
 		"sources": signing.DynamicArrayExcludes{
 			ValueChecker: signing.IgnoreResourcesWithNoneAccess,
 			Continue: signing.MapExcludes{
 				"access": nil,
-				"labels": signing.ExcludeEmpty{signing.DynamicArrayExcludes{
-					ValueChecker: signing.IgnoreLabelsWithoutSignature,
-					Continue:     signing.NoExcludes{},
-				}},
+				"labels": signing.LabelExcludes,
 			},
 		},
 		"references": signing.ArrayExcludes{
 			signing.MapExcludes{
-				"labels": signing.ExcludeEmpty{signing.DynamicArrayExcludes{
-					ValueChecker: signing.IgnoreLabelsWithoutSignature,
-					Continue:     signing.NoExcludes{},
-				}},
+				"labels": signing.LabelExcludes,
 			},
 		},
 	},

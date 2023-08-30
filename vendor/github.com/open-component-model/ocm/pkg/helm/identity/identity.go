@@ -14,6 +14,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/identity/hostpath"
 	ociidentity "github.com/open-component-model/ocm/pkg/contexts/oci/identity"
+	"github.com/open-component-model/ocm/pkg/listformat"
 )
 
 // CONSUMER_TYPE is the Helm chart repository type.
@@ -35,14 +36,19 @@ const ID_PORT = hostpath.ID_PORT
 const ID_PATHPREFIX = hostpath.ID_PATHPREFIX
 
 func init() {
+	attrs := listformat.FormatListElements("", listformat.StringElementDescriptionList{
+		ATTR_USERNAME, "the basic auth user name",
+		ATTR_PASSWORD, "the basic auth password",
+		ATTR_CERTIFICATE, "TLS client certificate",
+		ATTR_PRIVATE_KEY, "TLS private key",
+		ATTR_CERTIFICATE_AUTHORITY, "TLS certificate authority",
+	})
+
 	cpi.RegisterStandardIdentity(CONSUMER_TYPE, IdentityMatcher, `Helm chart repository
 
 It matches the <code>`+CONSUMER_TYPE+`</code> consumer type and additionally acts like 
 the <code>`+hostpath.IDENTITY_TYPE+`</code> type.`,
-		`- **<code>`+ATTR_USERNAME+`</code>**: basic auth user name.
-- **<code>`+ATTR_PASSWORD+`</code>**: basic auth password.
-- **<code>`+ATTR_CERTIFICATE+`</code>**: TLS client certificate.
-- **<code>`+ATTR_PRIVATE_KEY+`</code>**: TLS private key.`)
+		attrs)
 }
 
 var identityMatcher = hostpath.IdentityMatcher(CONSUMER_TYPE)

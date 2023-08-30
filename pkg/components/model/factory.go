@@ -2,8 +2,10 @@ package model
 
 import (
 	"context"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/mandelsoft/vfs/pkg/vfs"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package envtest
+package testreg
 
 import (
 	"bytes"
@@ -32,6 +32,7 @@ type Environment struct {
 	Stdout                io.Writer
 	Stderr                io.Writer
 
+	Certificate *Certificate
 	// Contains the host information as soon as the registry is started.
 	// The host is of the format "ip:port"
 	Addr string
@@ -169,22 +170,22 @@ func (e *Environment) setup() error {
 
 	if e.RegistryConfiguration.HTTPConfig.TLS == nil {
 		// create certificates
-		cert, err := GenerateCertificates()
+		e.Certificate, err = GenerateCertificates()
 		if err != nil {
 			return err
 		}
 		var (
 			caPath   = filepath.Join(e.configDir, "ca.pem")
-			certPath = filepath.Join(e.configDir, "cert.pem")
+			certPath = filepath.Join(e.configDir, "e.Certificate.pem")
 			keyPath  = filepath.Join(e.configDir, "key.pem")
 		)
-		if err := ioutil.WriteFile(caPath, cert.CA, os.ModePerm); err != nil {
+		if err := ioutil.WriteFile(caPath, e.Certificate.CA, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write ca to %q: %w", caPath, err)
 		}
-		if err := ioutil.WriteFile(certPath, cert.Cert, os.ModePerm); err != nil {
+		if err := ioutil.WriteFile(certPath, e.Certificate.Cert, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write ca to %q: %w", certPath, err)
 		}
-		if err := ioutil.WriteFile(keyPath, cert.Key, os.ModePerm); err != nil {
+		if err := ioutil.WriteFile(keyPath, e.Certificate.Key, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write ca to %q: %w", keyPath, err)
 		}
 
@@ -192,7 +193,7 @@ func (e *Environment) setup() error {
 		if err != nil {
 			caCertPool = x509.NewCertPool()
 		}
-		caCertPool.AppendCertsFromPEM(cert.CA)
+		caCertPool.AppendCertsFromPEM(e.Certificate.CA)
 		e.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{
 				RootCAs: caCertPool,

@@ -23,6 +23,9 @@ var CDExcludes = signing.MapExcludes{
 		"labels": signing.LabelExcludes,
 	},
 	"spec": signing.MapExcludes{
+		"provider": signing.MapExcludes{
+			"labels": signing.LabelExcludes,
+		},
 		"resources": signing.ArrayExcludes{
 			Continue: signing.MapExcludes{
 				"access": nil,

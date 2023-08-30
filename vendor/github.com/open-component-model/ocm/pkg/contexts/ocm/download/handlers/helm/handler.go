@@ -48,12 +48,12 @@ func (h Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string
 	if err != nil {
 		return true, "", err
 	}
-	finalize.Close(rd)
+	finalize.Close(rd, "access method reader")
 	set, err := artifactset.Open(accessobj.ACC_READONLY, "", 0, accessio.Reader(rd))
 	if err != nil {
 		return true, "", err
 	}
-	finalize.Close(set)
+	finalize.Close(set, "artifact set")
 	art, err := set.GetArtifact(set.GetMain().String())
 	if err != nil {
 		return true, "", err
@@ -62,11 +62,11 @@ func (h Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string
 	if path == "" {
 		path = racc.Meta().GetName()
 	}
-	_, _, err = download(p, art, path, fs)
+	chart, _, err := download(p, art, path, fs)
 	if err != nil {
 		return true, "", err
 	}
-	return true, "", nil
+	return true, chart, nil
 }
 
 func download(p common.Printer, art oci.ArtifactAccess, path string, fs vfs.FileSystem) (chart, prov string, err error) {

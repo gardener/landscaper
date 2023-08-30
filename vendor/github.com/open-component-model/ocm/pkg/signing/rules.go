@@ -31,8 +31,47 @@ type ExcludeRules interface {
 	Element(v interface{}) (bool, interface{}, ExcludeRules)
 }
 
+// ValueMappingRule is an optional interface to implement
+// to map a value before it is applied to the actual rule.
+type ValueMappingRule interface {
+	MapValue(v interface{}) interface{}
+}
+
 type NormalizationFilter interface {
 	Filter(Normalized) (Normalized, error)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+var (
+	_ ExcludeRules     = MapValue{}
+	_ ValueMappingRule = MapValue{}
+)
+
+type MapValue struct {
+	Mapping  ValueMapper
+	Continue ExcludeRules
+}
+
+func (m MapValue) MapValue(value interface{}) interface{} {
+	if m.Mapping != nil {
+		return m.Mapping(value)
+	}
+	return value
+}
+
+func (m MapValue) Field(name string, value interface{}) (string, interface{}, ExcludeRules) {
+	if m.Continue != nil {
+		return m.Continue.Field(name, value)
+	}
+	return name, value, NoExcludes{}
+}
+
+func (m MapValue) Element(value interface{}) (bool, interface{}, ExcludeRules) {
+	if m.Continue != nil {
+		return m.Continue.Element(value)
+	}
+	return true, value, NoExcludes{}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

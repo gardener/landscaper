@@ -5,8 +5,6 @@
 package comparch
 
 import (
-	"io"
-
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	"github.com/open-component-model/ocm/pkg/common"
@@ -28,7 +26,7 @@ import (
 type ComponentArchive struct {
 	spec      *RepositorySpec
 	container *componentArchiveContainer
-	main      io.Closer
+	main      cpi.Repository
 	nonref    cpi.Repository
 	cpi.ComponentVersionAccess
 }
@@ -74,8 +72,15 @@ func (c *ComponentArchive) Close() error {
 	return c.main.Close()
 }
 
+// Repository returns a non referencing repository which does not
+// close the archive.
 func (c *ComponentArchive) Repository() cpi.Repository {
 	return c.nonref
+}
+
+// AsRepository returns a repository view closing the archive.
+func (c *ComponentArchive) AsRepository() cpi.Repository {
+	return c.main
 }
 
 func (c *ComponentArchive) SetName(n string) {

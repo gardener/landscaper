@@ -5,6 +5,7 @@
 package v2
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -14,11 +15,26 @@ import (
 	"github.com/open-component-model/ocm/pkg/signing/norm/entry"
 )
 
+func providerMapper(v interface{}) interface{} {
+	var provider map[string]interface{}
+	err := json.Unmarshal([]byte(v.(string)), &provider)
+	if err == nil {
+		return provider
+	}
+	return v
+}
+
 // CDExcludes describes the fields relevant for Signing
 // ATTENTION: if changed, please adapt the HashEqual Functions
 // in the generic part, accordingly.
 var CDExcludes = signing.MapExcludes{
 	"component": signing.MapExcludes{
+		"provider": signing.MapValue{
+			Mapping: providerMapper,
+			Continue: signing.MapExcludes{
+				"labels": signing.LabelExcludes,
+			},
+		},
 		"labels":             signing.LabelExcludes,
 		"repositoryContexts": nil,
 		"resources": signing.DefaultedMapFields{

@@ -33,8 +33,8 @@ func (a AttributeType) Name() string {
 func (a AttributeType) Description() string {
 	return `
 *logconfig* Logging config structure used for config forwarding
-THis attribute is used to specify a logging configuration intended
-to be forwarded to other tool.
+This attribute is used to specify a logging configuration intended
+to be forwarded to other tools.
 (For example: TOI passes this config to the executor)
 `
 }

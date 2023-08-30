@@ -19,7 +19,7 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker/schema1"
 	"github.com/containerd/containerd/version"
-	digest "github.com/opencontainers/go-digest"
+	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -536,7 +536,7 @@ func (r *request) do(ctx context.Context) (*http.Response, error) {
 	}
 
 	ctx = log.WithLogger(ctx, log.G(ctx).WithField("url", u))
-	log.G(ctx).WithFields(requestFields(req)).Debug("do request")
+	log.G(ctx).WithFields(sanitizedRequestFields(req)).Debug("do request")
 	if err := r.authorize(ctx, req); err != nil {
 		return nil, errors.Wrap(err, "failed to authorize")
 	}
@@ -617,7 +617,7 @@ func (r *request) String() string {
 	return r.host.Scheme + "://" + r.host.Host + r.path
 }
 
-func requestFields(req *http.Request) logrus.Fields {
+func sanitizedRequestFields(req *http.Request) logrus.Fields {
 	fields := map[string]interface{}{
 		"request.method": req.Method,
 	}

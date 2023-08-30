@@ -9,9 +9,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	"strconv"
 
 	"github.com/gardener/landscaper/pkg/deployerlegacy"
 

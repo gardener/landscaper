@@ -11,12 +11,13 @@ import (
 const (
 	ID_TYPE = internal.ID_TYPE
 
-	ATTR_TYPE           = internal.ATTR_TYPE
-	ATTR_USERNAME       = internal.ATTR_USERNAME
-	ATTR_PASSWORD       = internal.ATTR_PASSWORD
-	ATTR_SERVER_ADDRESS = internal.ATTR_SERVER_ADDRESS
-	ATTR_TOKEN          = internal.ATTR_TOKEN
-	ATTR_IDENTITY_TOKEN = internal.ATTR_IDENTITY_TOKEN
-	ATTR_REGISTRY_TOKEN = internal.ATTR_REGISTRY_TOKEN
-	ATTR_KEY            = internal.ATTR_KEY
+	ATTR_TYPE                  = internal.ATTR_TYPE
+	ATTR_USERNAME              = internal.ATTR_USERNAME
+	ATTR_PASSWORD              = internal.ATTR_PASSWORD
+	ATTR_SERVER_ADDRESS        = internal.ATTR_SERVER_ADDRESS
+	ATTR_TOKEN                 = internal.ATTR_TOKEN
+	ATTR_IDENTITY_TOKEN        = internal.ATTR_IDENTITY_TOKEN
+	ATTR_REGISTRY_TOKEN        = internal.ATTR_REGISTRY_TOKEN
+	ATTR_KEY                   = internal.ATTR_KEY
+	ATTR_CERTIFICATE_AUTHORITY = internal.ATTR_CERTIFICATE_AUTHORITY
 )

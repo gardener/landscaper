@@ -10,6 +10,7 @@ import (
 
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/identity"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const PROVIDER = "ocm.software/credentialprovider/" + Type
@@ -44,11 +45,15 @@ func (p *ConsumerProvider) get(req cpi.ConsumerIdentity, cur cpi.ConsumerIdentit
 	var creds cpi.CredentialsSource
 
 	for h, a := range all {
-		hostname := dockercred.ConvertToHostname(h)
+		hostname, port, _ := utils.SplitLocator(dockercred.ConvertToHostname(h))
 		if hostname == "index.docker.io" {
 			hostname = "docker.io"
 		}
-		id := cpi.NewConsumerIdentity(identity.CONSUMER_TYPE, identity.ID_HOSTNAME, hostname)
+		attrs := []string{identity.ID_HOSTNAME, hostname}
+		if port != "" {
+			attrs = append(attrs, identity.ID_PORT, port)
+		}
+		id := cpi.NewConsumerIdentity(identity.CONSUMER_TYPE, attrs...)
 		if m(req, cur, id) {
 			if IsEmptyAuthConfig(a) {
 				store := store

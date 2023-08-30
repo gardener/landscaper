@@ -79,6 +79,27 @@ func (l Labels) Get(name string) ([]byte, bool) {
 	return nil, false
 }
 
+// GetIndex returns the index of the label with the given name,
+// or -1 if not found.
+func (l Labels) GetIndex(name string) int {
+	for i, label := range l {
+		if label.Name == name {
+			return i
+		}
+	}
+	return -1
+}
+
+// GetDef returns the label object with the given name.
+func (l Labels) GetDef(name string) *Label {
+	for _, label := range l {
+		if label.Name == name {
+			return &label
+		}
+	}
+	return nil
+}
+
 // GetValue returns the label value with the given name as parsed object.
 func (l Labels) GetValue(name string, dest interface{}) (bool, error) {
 	for _, label := range l {
@@ -89,14 +110,32 @@ func (l Labels) GetValue(name string, dest interface{}) (bool, error) {
 	return false, nil
 }
 
+// Set sets or modifies a label including its meta data.
 func (l *Labels) Set(name string, value interface{}, opts ...LabelOption) error {
 	newLabel, err := NewLabel(name, value, opts...)
 	if err != nil {
 		return err
 	}
-	for _, label := range *l {
+	for i, label := range *l {
 		if label.Name == name {
-			label.Value = newLabel.Value
+			(*l)[i] = *newLabel
+			return nil
+		}
+	}
+	*l = append(*l, *newLabel)
+	return nil
+}
+
+// SetValue sets or modifies the value of a label, the label meta data
+// is not touched.
+func (l *Labels) SetValue(name string, value interface{}) error {
+	newLabel, err := NewLabel(name, value)
+	if err != nil {
+		return err
+	}
+	for i, label := range *l {
+		if label.Name == name {
+			(*l)[i].Value = newLabel.Value
 			return nil
 		}
 	}

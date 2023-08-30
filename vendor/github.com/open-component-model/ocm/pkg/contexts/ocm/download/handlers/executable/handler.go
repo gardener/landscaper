@@ -50,6 +50,12 @@ func (_ Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string
 	if path == "" {
 		path = racc.Meta().GetName()
 	}
+
+	t := ""
+	if ok, err := vfs.Exists(fs, path); err == nil && ok {
+		t = path
+		path += ".new"
+	}
 	file, err := fs.OpenFile(path, vfs.O_TRUNC|vfs.O_CREATE|vfs.O_WRONLY, 0o660)
 	if err != nil {
 		return true, "", wrapErr(errors.Wrapf(err, "creating target file %q", path), racc)
@@ -57,6 +63,20 @@ func (_ Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string
 	n, err := io.Copy(file, r)
 	file.Close()
 	if err == nil {
+		if t != "" {
+			err = fs.Remove(t)
+			if err == nil {
+				err = vfs.CopyFile(fs, path, fs, t)
+			}
+			if err == nil {
+				err = fs.Remove(path)
+			}
+			if err == nil {
+				path = t
+			} else {
+				p.Printf("cannot replace existing target file %s -> downloaded to %s\n", t, path)
+			}
+		}
 		p.Printf("%s: %d byte(s) written\n", path, n)
 		fs.Chmod(path, 0o755)
 	} else {

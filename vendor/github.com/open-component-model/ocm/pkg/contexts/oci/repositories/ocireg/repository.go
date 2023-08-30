@@ -6,6 +6,8 @@ package ocireg
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"path"
 	"strings"
 
@@ -141,6 +143,23 @@ func (r *RepositoryImpl) getResolver(comp string) (resolve.Resolver, error) {
 				return "", "", nil
 			},
 			DefaultScheme: r.info.Scheme,
+			DefaultTLS: &tls.Config{
+				MinVersion: tls.VersionTLS13,
+				RootCAs: func() *x509.CertPool {
+					var rootCAs *x509.CertPool
+					if creds != nil {
+						c := creds.GetProperty(credentials.ATTR_CERTIFICATE_AUTHORITY)
+						if c != "" {
+							rootCAs, _ = x509.SystemCertPool()
+							if rootCAs == nil {
+								rootCAs = x509.NewCertPool()
+							}
+							rootCAs.AppendCertsFromPEM([]byte(c))
+						}
+					}
+					return rootCAs
+				}(),
+			},
 		})),
 	}
 

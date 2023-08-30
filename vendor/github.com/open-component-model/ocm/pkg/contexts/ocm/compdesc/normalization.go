@@ -65,5 +65,6 @@ func (n *NormalizationAlgorithms) Normalize(cd *ComponentDescriptor, algo string
 var Normalizations = NormalizationAlgorithms{algos: map[string]Normalization{}}
 
 func Normalize(cd *ComponentDescriptor, normAlgo string) ([]byte, error) {
+	DefaultComponent(cd)
 	return Normalizations.Normalize(cd, normAlgo)
 }
