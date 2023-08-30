@@ -30,29 +30,31 @@ import (
 
 // NewController creates a new execution controller that reconcile Execution resources.
 func NewController(logger logging.Logger, lsClient, hostClient client.Client, scheme *runtime.Scheme,
-	eventRecorder record.EventRecorder, maxNumberOfWorker int, callerName string) (reconcile.Reconciler, error) {
+	eventRecorder record.EventRecorder, maxNumberOfWorker int, lockingEnabled bool, callerName string) (reconcile.Reconciler, error) {
 
 	wc := lsutil.NewWorkerCounter(maxNumberOfWorker)
 
 	return &controller{
-		log:           logger,
-		lsClient:      lsClient,
-		hostClient:    hostClient,
-		scheme:        scheme,
-		eventRecorder: eventRecorder,
-		workerCounter: wc,
-		callerName:    callerName,
+		log:            logger,
+		lsClient:       lsClient,
+		hostClient:     hostClient,
+		scheme:         scheme,
+		eventRecorder:  eventRecorder,
+		workerCounter:  wc,
+		lockingEnabled: lockingEnabled,
+		callerName:     callerName,
 	}, nil
 }
 
 type controller struct {
-	log           logging.Logger
-	lsClient      client.Client
-	hostClient    client.Client
-	eventRecorder record.EventRecorder
-	scheme        *runtime.Scheme
-	workerCounter *lsutil.WorkerCounter
-	callerName    string
+	log            logging.Logger
+	lsClient       client.Client
+	hostClient     client.Client
+	eventRecorder  record.EventRecorder
+	scheme         *runtime.Scheme
+	workerCounter  *lsutil.WorkerCounter
+	lockingEnabled bool
+	callerName     string
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -71,7 +73,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	if lock.LockerEnabled {
+	if c.lockingEnabled {
 		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
 		syncObject, err := locker.LockExecution(ctx, metadata)
 		if err != nil {

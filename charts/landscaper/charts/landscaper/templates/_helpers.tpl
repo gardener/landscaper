@@ -183,6 +183,11 @@ lsDeployments:
 {{- end }}
 {{- end }}
 
+{{- if .Values.hpaMain }}
+hpaMain:
+{{ .Values.hpaMain | toYaml | indent 2 }}
+{{- end }}
+
 {{- end }}
 
 {{- define "landscaper-image" -}}

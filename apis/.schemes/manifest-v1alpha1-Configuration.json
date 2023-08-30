@@ -123,6 +123,16 @@
         }
       }
     },
+    "manifest-v1alpha1-HPAConfiguration": {
+      "description": "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+      "type": "object",
+      "properties": {
+        "maxReplicas": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "meta-v1-Duration": {
       "description": "Duration is a wrapper around time.Duration which supports correct marshaling to YAML and JSON. In particular, it marshals into strings, which can be used as map keys in json.",
       "type": "string"
@@ -143,6 +153,10 @@
       "$ref": "#/definitions/manifest-v1alpha1-ExportConfiguration",
       "default": {},
       "description": "Export defines the export configuration."
+    },
+    "hpa": {
+      "$ref": "#/definitions/manifest-v1alpha1-HPAConfiguration",
+      "description": "HPAConfiguration contains the configuration for horizontal pod autoscaling."
     },
     "identity": {
       "description": "Identity identity describes the unique identity of the deployer.",

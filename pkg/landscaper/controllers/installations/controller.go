@@ -50,17 +50,19 @@ func NewController(hostClient client.Client, logger logging.Logger,
 	eventRecorder record.EventRecorder,
 	lsConfig *config.LandscaperConfiguration,
 	maxNumberOfWorkers int,
+	lockingEnabled bool,
 	callerName string) (reconcile.Reconciler, error) {
 
 	ws := utils.NewWorkerCounter(maxNumberOfWorkers)
 
 	ctrl := &Controller{
-		hostClient:    hostClient,
-		log:           logger,
-		clock:         clock.RealClock{},
-		LsConfig:      lsConfig,
-		workerCounter: ws,
-		callerName:    callerName,
+		hostClient:     hostClient,
+		log:            logger,
+		clock:          clock.RealClock{},
+		LsConfig:       lsConfig,
+		workerCounter:  ws,
+		lockingEnabled: lockingEnabled,
+		callerName:     callerName,
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -82,26 +84,28 @@ func NewTestActuator(op operation.Operation, hostClient client.Client, logger lo
 	configuration *config.LandscaperConfiguration, callerName string) *Controller {
 
 	return &Controller{
-		log:           logger,
-		clock:         passiveClock,
-		Operation:     op,
-		LsConfig:      configuration,
-		workerCounter: utils.NewWorkerCounter(1000),
-		hostClient:    hostClient,
-		callerName:    callerName,
+		log:            logger,
+		clock:          passiveClock,
+		Operation:      op,
+		LsConfig:       configuration,
+		workerCounter:  utils.NewWorkerCounter(1000),
+		hostClient:     hostClient,
+		lockingEnabled: lock.IsLockingEnabledForMainControllers(configuration),
+		callerName:     callerName,
 	}
 }
 
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
-	hostClient    client.Client
-	log           logging.Logger
-	clock         clock.PassiveClock
-	LsConfig      *config.LandscaperConfiguration
-	SharedCache   cache.Cache
-	workerCounter *utils.WorkerCounter
-	callerName    string
+	hostClient     client.Client
+	log            logging.Logger
+	clock          clock.PassiveClock
+	LsConfig       *config.LandscaperConfiguration
+	SharedCache    cache.Cache
+	workerCounter  *utils.WorkerCounter
+	lockingEnabled bool
+	callerName     string
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -119,7 +123,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	if lock.LockerEnabled {
+	if c.lockingEnabled {
 		locker := lock.NewLocker(c.Client(), c.hostClient, c.callerName)
 		syncObject, err := locker.LockInstallation(ctx, metadata)
 		if err != nil {

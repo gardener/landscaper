@@ -51,6 +51,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration":                           schema_gardener_landscaper_apis_config_DeployerManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.ExecutionsController":                                      schema_gardener_landscaper_apis_config_ExecutionsController(ref),
 		"github.com/gardener/landscaper/apis/config.GarbageCollectionConfiguration":                            schema_gardener_landscaper_apis_config_GarbageCollectionConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config.HPAMainConfiguration":                                      schema_gardener_landscaper_apis_config_HPAMainConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.InstallationsController":                                   schema_gardener_landscaper_apis_config_InstallationsController(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperAgentConfiguration":                              schema_gardener_landscaper_apis_config_LandscaperAgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperConfiguration":                                   schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref),
@@ -74,6 +75,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration":                  schema_landscaper_apis_config_v1alpha1_DeployerManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.ExecutionsController":                             schema_landscaper_apis_config_v1alpha1_ExecutionsController(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.GarbageCollectionConfiguration":                   schema_landscaper_apis_config_v1alpha1_GarbageCollectionConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.HPAMainConfiguration":                             schema_landscaper_apis_config_v1alpha1_HPAMainConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.InstallationsController":                          schema_landscaper_apis_config_v1alpha1_InstallationsController(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperAgentConfiguration":                     schema_landscaper_apis_config_v1alpha1_LandscaperAgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperConfiguration":                          schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref),
@@ -190,6 +192,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Controller":                           schema_apis_deployer_container_v1alpha1_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions":                         schema_apis_deployer_container_v1alpha1_DebugOptions(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection":                    schema_apis_deployer_container_v1alpha1_GarbageCollection(ref),
+		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.HPAConfiguration":                     schema_apis_deployer_container_v1alpha1_HPAConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus":                            schema_apis_deployer_container_v1alpha1_PodStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderConfiguration":                schema_apis_deployer_container_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderStatus":                       schema_apis_deployer_container_v1alpha1_ProviderStatus(ref),
@@ -203,6 +206,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Configuration":                             schema_apis_deployer_helm_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Controller":                                schema_apis_deployer_helm_v1alpha1_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration":                       schema_apis_deployer_helm_v1alpha1_ExportConfiguration(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HPAConfiguration":                          schema_apis_deployer_helm_v1alpha1_HPAConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo":                             schema_apis_deployer_helm_v1alpha1_HelmChartRepo(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepoCredentials":                  schema_apis_deployer_helm_v1alpha1_HelmChartRepoCredentials(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration":               schema_apis_deployer_helm_v1alpha1_HelmDeploymentConfiguration(ref),
@@ -215,11 +219,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Configuration":                         schema_apis_deployer_manifest_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Controller":                            schema_apis_deployer_manifest_v1alpha1_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration":                   schema_apis_deployer_manifest_v1alpha1_ExportConfiguration(ref),
+		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HPAConfiguration":                      schema_apis_deployer_manifest_v1alpha1_HPAConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ProviderConfiguration":                 schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ProviderStatus":                        schema_apis_deployer_manifest_v1alpha1_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Configuration":                         schema_apis_deployer_manifest_v1alpha2_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Controller":                            schema_apis_deployer_manifest_v1alpha2_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ExportConfiguration":                   schema_apis_deployer_manifest_v1alpha2_ExportConfiguration(ref),
+		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HPAConfiguration":                      schema_apis_deployer_manifest_v1alpha2_HPAConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ProviderConfiguration":                 schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ProviderStatus":                        schema_apis_deployer_manifest_v1alpha2_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.Configuration":                             schema_apis_deployer_mock_v1alpha1_Configuration(ref),
@@ -1722,6 +1728,25 @@ func schema_gardener_landscaper_apis_config_GarbageCollectionConfiguration(ref c
 	}
 }
 
+func schema_gardener_landscaper_apis_config_HPAMainConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller).",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"maxReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_gardener_landscaper_apis_config_InstallationsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1896,12 +1921,18 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.LsDeployments"),
 						},
 					},
+					"hpaMain": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller).",
+							Ref:         ref("github.com/gardener/landscaper/apis/config.HPAMainConfiguration"),
+						},
+					},
 				},
 				Required: []string{"TypeMeta", "Controllers", "Registry", "BlueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.LsDeployments", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.HPAMainConfiguration", "github.com/gardener/landscaper/apis/config.LsDeployments", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
 	}
 }
 
@@ -2634,6 +2665,25 @@ func schema_landscaper_apis_config_v1alpha1_GarbageCollectionConfiguration(ref c
 	}
 }
 
+func schema_landscaper_apis_config_v1alpha1_HPAMainConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller).",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"maxReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_config_v1alpha1_InstallationsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2816,12 +2866,18 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.LsDeployments"),
 						},
 					},
+					"hpaMain": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller).",
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.HPAMainConfiguration"),
+						},
+					},
 				},
 				Required: []string{"controllers", "registry", "blueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.Controllers", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.LsDeployments", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.Controllers", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.HPAMainConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.LsDeployments", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
 	}
 }
 
@@ -7870,6 +7926,12 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions"),
 						},
 					},
+					"hpa": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.HPAConfiguration"),
+						},
+					},
 					"controller": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Controller contains configuration concerning the controller framework.",
@@ -7882,7 +7944,7 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection"},
+			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.HPAConfiguration"},
 	}
 }
 
@@ -8079,6 +8141,25 @@ func schema_apis_deployer_container_v1alpha1_GarbageCollection(ref common.Refere
 					},
 				},
 				Required: []string{"disable", "worker", "requeueTimeSeconds"},
+			},
+		},
+	}
+}
+
+func schema_apis_deployer_container_v1alpha1_HPAConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"maxReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -8630,6 +8711,12 @@ func schema_apis_deployer_helm_v1alpha1_Configuration(ref common.ReferenceCallba
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration"),
 						},
 					},
+					"hpa": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HPAConfiguration"),
+						},
+					},
 					"controller": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Controller contains configuration concerning the controller framework.",
@@ -8641,7 +8728,7 @@ func schema_apis_deployer_helm_v1alpha1_Configuration(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration"},
+			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HPAConfiguration"},
 	}
 }
 
@@ -8685,6 +8772,25 @@ func schema_apis_deployer_helm_v1alpha1_ExportConfiguration(ref common.Reference
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
+	}
+}
+
+func schema_apis_deployer_helm_v1alpha1_HPAConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"maxReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -9132,6 +9238,12 @@ func schema_apis_deployer_manifest_v1alpha1_Configuration(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration"),
 						},
 					},
+					"hpa": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HPAConfiguration"),
+						},
+					},
 					"controller": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Controller contains configuration concerning the controller framework.",
@@ -9143,7 +9255,7 @@ func schema_apis_deployer_manifest_v1alpha1_Configuration(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HPAConfiguration"},
 	}
 }
 
@@ -9187,6 +9299,25 @@ func schema_apis_deployer_manifest_v1alpha1_ExportConfiguration(ref common.Refer
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
+	}
+}
+
+func schema_apis_deployer_manifest_v1alpha1_HPAConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"maxReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -9358,6 +9489,12 @@ func schema_apis_deployer_manifest_v1alpha2_Configuration(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ExportConfiguration"),
 						},
 					},
+					"hpa": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HPAConfiguration"),
+						},
+					},
 					"controller": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Controller contains configuration concerning the controller framework.",
@@ -9369,7 +9506,7 @@ func schema_apis_deployer_manifest_v1alpha2_Configuration(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Controller", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ExportConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Controller", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ExportConfiguration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HPAConfiguration"},
 	}
 }
 
@@ -9413,6 +9550,25 @@ func schema_apis_deployer_manifest_v1alpha2_ExportConfiguration(ref common.Refer
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
+	}
+}
+
+func schema_apis_deployer_manifest_v1alpha2_HPAConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"maxReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

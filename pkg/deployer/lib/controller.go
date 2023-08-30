@@ -87,7 +87,7 @@ func (args DeployerArgs) Validate() error {
 }
 
 // Add adds a deployer to the given managers using the given args.
-func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, callerName string) error {
+func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, lockingEnabled bool, callerName string) error {
 	args.Default()
 	if err := args.Validate(); err != nil {
 		return err
@@ -99,6 +99,7 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, 
 		hostMgr.GetScheme(),
 		args,
 		maxNumberOfWorkers,
+		lockingEnabled,
 		callerName)
 
 	log = log.Reconciles("", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
@@ -124,8 +125,9 @@ type controller struct {
 	hostClient      client.Client
 	hostScheme      *runtime.Scheme
 
-	workerCounter *lsutil.WorkerCounter
-	callerName    string
+	workerCounter  *lsutil.WorkerCounter
+	lockingEnabled bool
+	callerName     string
 }
 
 // NewController creates a new generic deployitem controller.
@@ -136,6 +138,7 @@ func NewController(lsClient client.Client,
 	hostScheme *runtime.Scheme,
 	args DeployerArgs,
 	maxNumberOfWorkers int,
+	lockingEnabled bool,
 	callerName string) *controller {
 
 	wc := lsutil.NewWorkerCounter(maxNumberOfWorkers)
@@ -155,6 +158,7 @@ func NewController(lsClient client.Client,
 		hostClient:      hostClient,
 		hostScheme:      hostScheme,
 		workerCounter:   wc,
+		lockingEnabled:  lockingEnabled,
 		callerName:      callerName,
 	}
 }
@@ -184,7 +188,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if lock.LockerEnabled {
+	if c.lockingEnabled {
 		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
 		syncObject, err := locker.LockDI(ctx, metadata)
 		if err != nil {
