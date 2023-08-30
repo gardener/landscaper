@@ -166,7 +166,7 @@ func (r *retryHelper) updateRetryStatus(ctx context.Context, inst *lsv1alpha1.In
 	return nil
 }
 
-func (r *retryHelper) resetRetryStatus(ctx context.Context, inst *lsv1alpha1.Installation, writeID WriteID) error {
+func (r *retryHelper) resetRetryStatus(ctx context.Context, inst *lsv1alpha1.Installation, writeID read_write_layer.WriteID) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	logger.Info("reset retry status")
