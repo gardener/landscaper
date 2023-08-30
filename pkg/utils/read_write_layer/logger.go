@@ -14,19 +14,22 @@ import (
 
 const (
 	historyLogLevel logging.LogLevel = logging.INFO
+
+	keyUpdatedResource = "updatedResource"
+	keyFetchedResource = "fetchedResource"
 )
 
 // getLogger tries to fetch the most up-to-date logger from the context
 // and falls back to creating a new one if that fails.
 // The keys and values are only added in case of the fallback.
 func (w *Writer) getLogger(ctx context.Context, keysAndValues ...interface{}) logging.Logger {
-	log, _ := logging.FromContextOrNew(ctx, nil, keysAndValues)
+	log, _ := logging.FromContextOrNew(ctx, nil, keysAndValues...)
 	return log
 }
 
 func (w *Writer) logContextUpdate(ctx context.Context, writeID WriteID, msg string, con *lsv1alpha1.Context,
 	generationOld int64, resourceVersionOld string, err error) {
-	logger := w.getLogger(ctx, lc.KeyResource, fmt.Sprintf("%s/%s", con.Namespace, con.Name))
+	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", con.Namespace, con.Name))
 
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(con)
@@ -56,7 +59,7 @@ func (w *Writer) logContextUpdate(ctx context.Context, writeID WriteID, msg stri
 func (w *Writer) logTargetUpdate(ctx context.Context, writeID WriteID, msg string, target *lsv1alpha1.Target,
 	generationOld int64, resourceVersionOld string, err error) {
 
-	logger := w.getLogger(ctx, lc.KeyResource, fmt.Sprintf("%s/%s", target.Namespace, target.Name))
+	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", target.Namespace, target.Name))
 
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(target)
@@ -83,10 +86,40 @@ func (w *Writer) logTargetUpdate(ctx context.Context, writeID WriteID, msg strin
 	}
 }
 
+func (w *Writer) logSyncObjectUpdate(ctx context.Context, writeID WriteID, msg string, syncObject *lsv1alpha1.SyncObject,
+	generationOld int64, resourceVersionOld string, err error) {
+
+	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", syncObject.Namespace, syncObject.Name))
+
+	if err == nil {
+		generationNew, resourceVersionNew := getGenerationAndResourceVersion(syncObject)
+		logger.Log(historyLogLevel, msg,
+			lc.KeyWriteID, writeID,
+			lc.KeyGenerationOld, generationOld,
+			lc.KeyGenerationNew, generationNew,
+			lc.KeyResourceVersionOld, resourceVersionOld,
+			lc.KeyResourceVersionNew, resourceVersionNew,
+		)
+	} else if apierrors.IsConflict(err) {
+		message := msg + ": " + err.Error()
+		logger.Info(message,
+			lc.KeyWriteID, writeID,
+			lc.KeyGenerationOld, generationOld,
+			lc.KeyResourceVersionOld, resourceVersionOld,
+		)
+	} else {
+		logger.Error(err, msg,
+			lc.KeyWriteID, writeID,
+			lc.KeyGenerationOld, generationOld,
+			lc.KeyResourceVersionOld, resourceVersionOld,
+		)
+	}
+}
+
 func (w *Writer) logDataObjectUpdate(ctx context.Context, writeID WriteID, msg string, do *lsv1alpha1.DataObject,
 	generationOld int64, resourceVersionOld string, err error) {
 
-	logger := w.getLogger(ctx, lc.KeyResource, fmt.Sprintf("%s/%s", do.Namespace, do.Name))
+	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", do.Namespace, do.Name))
 
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(do)
@@ -116,7 +149,7 @@ func (w *Writer) logDataObjectUpdate(ctx context.Context, writeID WriteID, msg s
 func (w *Writer) logInstallationUpdate(ctx context.Context, writeID WriteID, msg string, installation *lsv1alpha1.Installation,
 	generationOld int64, resourceVersionOld string, err error) {
 
-	logger := w.getLogger(ctx, lc.KeyResource, fmt.Sprintf("%s/%s", installation.Namespace, installation.Name))
+	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", installation.Namespace, installation.Name))
 
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(installation)
@@ -157,7 +190,7 @@ func (w *Writer) logInstallationUpdate(ctx context.Context, writeID WriteID, msg
 func (w *Writer) logExecutionUpdate(ctx context.Context, writeID WriteID, msg string, execution *lsv1alpha1.Execution,
 	generationOld int64, resourceVersionOld string, err error) {
 
-	logger := w.getLogger(ctx, lc.KeyResource, fmt.Sprintf("%s/%s", execution.Namespace, execution.Name))
+	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", execution.Namespace, execution.Name))
 
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(execution)
@@ -198,7 +231,7 @@ func (w *Writer) logExecutionUpdate(ctx context.Context, writeID WriteID, msg st
 func (w *Writer) logDeployItemUpdate(ctx context.Context, writeID WriteID, msg string, deployItem *lsv1alpha1.DeployItem,
 	generationOld int64, resourceVersionOld string, err error) {
 
-	logger := w.getLogger(ctx, lc.KeyResource, fmt.Sprintf("%s/%s", deployItem.Namespace, deployItem.Name))
+	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", deployItem.Namespace, deployItem.Name))
 
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(deployItem)

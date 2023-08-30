@@ -24,30 +24,35 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	lsutil "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // NewController creates a new execution controller that reconcile Execution resources.
-func NewController(logger logging.Logger, kubeClient client.Client, scheme *runtime.Scheme,
-	eventRecorder record.EventRecorder, maxNumberOfWorker int) (reconcile.Reconciler, error) {
+func NewController(logger logging.Logger, lsClient, hostClient client.Client, scheme *runtime.Scheme,
+	eventRecorder record.EventRecorder, maxNumberOfWorker int, callerName string) (reconcile.Reconciler, error) {
 
 	wc := lsutil.NewWorkerCounter(maxNumberOfWorker)
 
 	return &controller{
 		log:           logger,
-		client:        kubeClient,
+		lsClient:      lsClient,
+		hostClient:    hostClient,
 		scheme:        scheme,
 		eventRecorder: eventRecorder,
 		workerCounter: wc,
+		callerName:    callerName,
 	}, nil
 }
 
 type controller struct {
 	log           logging.Logger
-	client        client.Client
+	lsClient      client.Client
+	hostClient    client.Client
 	eventRecorder record.EventRecorder
 	scheme        *runtime.Scheme
 	workerCounter *lsutil.WorkerCounter
+	callerName    string
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -57,8 +62,33 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, "executions")
 	defer c.workerCounter.Exit()
 
+	metadata := lsutil.EmptyExecutionMetadata()
+	if err := c.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Debug(err.Error())
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	if lock.LockerEnabled {
+		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
+		syncObject, err := locker.LockExecution(ctx, metadata)
+		if err != nil {
+			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
+		}
+
+		if syncObject == nil {
+			return locker.NotLockedResult()
+		}
+
+		defer func() {
+			locker.Unlock(ctx, syncObject)
+		}()
+	}
+
 	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, c.client, req.NamespacedName, exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, c.lsClient, req.NamespacedName, exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -107,6 +137,8 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 		now := metav1.Now()
 		exec.Status.PhaseTransitionTime = &now
 
+		exec.Status.TransitionTimes = lsutil.SetInitTransitionTime(exec.Status.TransitionTimes)
+
 		// do not use setExecutionPhaseAndUpdate because jobIDFinished should not be set here
 		if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000105, exec); err != nil {
 			return lserrors.NewWrappedError(err, op, "UpdateExecutionStatus", err.Error())
@@ -120,6 +152,8 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 			}
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000131)
 		}
+
+		exec.Status.TransitionTimes = lsutil.SetWaitTransitionTime(exec.Status.TransitionTimes)
 
 		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Progressing, nil, read_write_layer.W000132); err != nil {
 			return err
@@ -204,7 +238,7 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 func (c *controller) handlePhaseInit(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.UpdateDeployItems(ctx)
 }
@@ -212,14 +246,14 @@ func (c *controller) handlePhaseInit(ctx context.Context, exec *lsv1alpha1.Execu
 func (c *controller) handlePhaseProgressing(ctx context.Context, exec *lsv1alpha1.Execution) (
 	*execution.DeployItemClassification, lserrors.LsError) {
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.TriggerDeployItems(ctx)
 }
 
 func (c *controller) handlePhaseCompleting(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.CollectAndUpdateExportsNew(ctx)
 }
@@ -228,7 +262,7 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1
 	op := "handlePhaseInitDelete"
 
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	managedItems, err := o.ListManagedDeployItems(ctx)
 	if err != nil {
@@ -261,13 +295,13 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1
 func (c *controller) handlePhaseDeleting(ctx context.Context, exec *lsv1alpha1.Execution) (
 	*execution.DeployItemClassification, lserrors.LsError) {
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.TriggerDeployItemsForDelete(ctx)
 }
 
 func (c *controller) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(c.client)
+	return read_write_layer.NewWriter(c.lsClient)
 }
 
 func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alpha1.Execution) error {
@@ -279,7 +313,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 	op := "handleInterruptOperation"
 
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	managedItems, err := o.ListManagedDeployItems(ctx)
 	if err != nil {
@@ -292,6 +326,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 		if item.Status.JobIDFinished != exec.Status.JobID {
 			item.Status.SetJobID(exec.Status.JobID)
 			item.Status.JobIDFinished = exec.Status.JobID
+			item.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(item.Status.TransitionTimes)
 			lsv1alpha1helper.SetDeployItemToFailed(item)
 			lsutil.SetLastError(&item.Status, lserrors.UpdatedError(item.Status.GetLastError(),
 				"InterruptOperation",
@@ -321,8 +356,8 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 	exec.Status.ExecutionPhase = phase
 
 	if exec.Status.ExecutionPhase.IsFinal() {
-
 		exec.Status.JobIDFinished = exec.Status.JobID
+		exec.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(exec.Status.TransitionTimes)
 	}
 
 	if err := c.Writer().UpdateExecutionStatus(ctx, writeID, exec); err != nil {
@@ -330,7 +365,7 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 		if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Deleting {
 			// recheck if already deleted
 			execRecheck := &lsv1alpha1.Execution{}
-			errRecheck := read_write_layer.GetExecution(ctx, c.client, kutil.ObjectKey(exec.Name, exec.Namespace), execRecheck)
+			errRecheck := read_write_layer.GetExecution(ctx, c.lsClient, kutil.ObjectKey(exec.Name, exec.Namespace), execRecheck)
 			if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
 				return nil
 			}

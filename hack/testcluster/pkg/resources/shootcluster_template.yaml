@@ -26,7 +26,7 @@ spec:
           type: n1-standard-4
           image:
             name: gardenlinux
-            version: 934.8.0
+            version: 934.9.0
           architecture: amd64
         zones:
           - europe-west1-b

@@ -277,7 +277,7 @@ func LoadCAFromSecret(k8sClient client.Client, namespace, name string, pkcs int)
 // generateCertificateTemplate creates a X509 Certificate object based on the provided information regarding
 // common name, organization, SANs (DNS names and IP addresses). It can create a server or a client certificate
 // or both, depending on the <certType> value. If <isCACert> is true, then a CA certificate is being created.
-// The certificates a valid for 10 years.
+// The certificates are valid for 10 years.
 func (s *CertificateSecretConfig) generateCertificateTemplate() *x509.Certificate {
 	now := time.Now()
 	expiration := now.AddDate(10, 0, 0) // + 10 years

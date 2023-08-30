@@ -35,6 +35,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -43,20 +44,23 @@ const (
 )
 
 // NewController creates a new Controller that reconciles Installation resources.
-func NewController(logger logging.Logger,
+func NewController(hostClient client.Client, logger logging.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
 	lsConfig *config.LandscaperConfiguration,
-	maxNumberOfWorkers int) (reconcile.Reconciler, error) {
+	maxNumberOfWorkers int,
+	callerName string) (reconcile.Reconciler, error) {
 
 	ws := utils.NewWorkerCounter(maxNumberOfWorkers)
 
 	ctrl := &Controller{
+		hostClient:    hostClient,
 		log:           logger,
 		clock:         clock.RealClock{},
 		LsConfig:      lsConfig,
 		workerCounter: ws,
+		callerName:    callerName,
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -74,8 +78,8 @@ func NewController(logger logging.Logger,
 }
 
 // NewTestActuator creates a new Controller that is only meant for testing.
-func NewTestActuator(op operation.Operation, logger logging.Logger, passiveClock clock.PassiveClock,
-	configuration *config.LandscaperConfiguration) *Controller {
+func NewTestActuator(op operation.Operation, hostClient client.Client, logger logging.Logger, passiveClock clock.PassiveClock,
+	configuration *config.LandscaperConfiguration, callerName string) *Controller {
 
 	return &Controller{
 		log:           logger,
@@ -83,17 +87,21 @@ func NewTestActuator(op operation.Operation, logger logging.Logger, passiveClock
 		Operation:     op,
 		LsConfig:      configuration,
 		workerCounter: utils.NewWorkerCounter(1000),
+		hostClient:    hostClient,
+		callerName:    callerName,
 	}
 }
 
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
+	hostClient    client.Client
 	log           logging.Logger
 	clock         clock.PassiveClock
 	LsConfig      *config.LandscaperConfiguration
 	SharedCache   cache.Cache
 	workerCounter *utils.WorkerCounter
+	callerName    string
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -101,6 +109,31 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	c.workerCounter.EnterWithLog(logger, 70, "installations")
 	defer c.workerCounter.Exit()
+
+	metadata := utils.EmptyInstallationMetadata()
+	if err := c.Client().Get(ctx, req.NamespacedName, metadata); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Debug(err.Error())
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	if lock.LockerEnabled {
+		locker := lock.NewLocker(c.Client(), c.hostClient, c.callerName)
+		syncObject, err := locker.LockInstallation(ctx, metadata)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		if syncObject == nil {
+			return locker.NotLockedResult()
+		}
+
+		defer func() {
+			locker.Unlock(ctx, syncObject)
+		}()
+	}
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
@@ -189,6 +222,8 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 		inst.Status.JobID == inst.Status.JobIDFinished {
 
 		inst.Status.JobID = uuid.New().String()
+		inst.Status.TransitionTimes = utils.NewTransitionTimes()
+
 		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000082, inst); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -322,6 +357,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	inst.Status.InstallationPhase = phase
 	if phase.IsFinal() {
 		inst.Status.JobIDFinished = inst.Status.JobID
+		inst.Status.TransitionTimes = utils.SetFinishedTransitionTime(inst.Status.TransitionTimes)
 	}
 
 	if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {

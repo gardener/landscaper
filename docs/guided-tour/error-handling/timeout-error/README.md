@@ -182,3 +182,6 @@ For more details, see [DeployItem Timeouts](../../../usage/DeployItemTimeouts.md
 There are further timeouts for readiness checks, for collecting export values, and for helm operations. These timeouts
 are deployer specific, see [Manifest Deployer](../../../deployer/manifest.md) and 
 [Helm Deployer](../../../deployer/helm.md).
+
+Note: Set the DeployItem timeout to a value that is greater than the greatest deployer specific timeout.
+If, for example, the readiness-checks timeout is set to "15m" and the export timeout is set to "10m", set the global timeout to "20m".

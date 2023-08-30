@@ -110,6 +110,21 @@ spec:
                                   description: ComponentName describes the remote
                                     name of the referenced object
                                   type: string
+                                digest:
+                                  description: Digest is the optional digest of the
+                                    referenced component.
+                                  properties:
+                                    hashAlgorithm:
+                                      type: string
+                                    normalisationAlgorithm:
+                                      type: string
+                                    value:
+                                      type: string
+                                  required:
+                                  - hashAlgorithm
+                                  - normalisationAlgorithm
+                                  - value
+                                  type: object
                                 extraIdentity:
                                   additionalProperties:
                                     type: string
@@ -199,6 +214,21 @@ spec:
                                     method to access the defined resource.
                                   type: object
                                   x-kubernetes-preserve-unknown-fields: true
+                                digest:
+                                  description: Digest is the optional digest of the
+                                    referenced resource.
+                                  properties:
+                                    hashAlgorithm:
+                                      type: string
+                                    normalisationAlgorithm:
+                                      type: string
+                                    value:
+                                      type: string
+                                  required:
+                                  - hashAlgorithm
+                                  - normalisationAlgorithm
+                                  - value
+                                  type: object
                                 extraIdentity:
                                   additionalProperties:
                                     type: string
@@ -368,6 +398,49 @@ spec:
                         required:
                         - schemaVersion
                         type: object
+                      signatures:
+                        description: Signatures contains a list of signatures for
+                          the ComponentDescriptor
+                        items:
+                          description: Signature defines a digest and corresponding
+                            signature, identifyable by name.
+                          properties:
+                            digest:
+                              description: DigestSpec defines a digest.
+                              properties:
+                                hashAlgorithm:
+                                  type: string
+                                normalisationAlgorithm:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - hashAlgorithm
+                              - normalisationAlgorithm
+                              - value
+                              type: object
+                            name:
+                              type: string
+                            signature:
+                              description: SignatureSpec defines a signature.
+                              properties:
+                                algorithm:
+                                  type: string
+                                mediaType:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - algorithm
+                              - value
+                              - mediaType
+                              type: object
+                          required:
+                          - name
+                          - digest
+                          - signature
+                          type: object
+                        type: array
                     required:
                     - meta
                     - component
@@ -822,6 +895,27 @@ spec:
                 description: PhaseTransitionTime is the time when the phase last changed.
                 format: date-time
                 type: string
+              transitionTimes:
+                description: TransitionTimes contains timestamps of status transitions
+                properties:
+                  finishedTime:
+                    description: FinishedTime is the time when the finished phase
+                      is set.
+                    format: date-time
+                    type: string
+                  initTime:
+                    description: InitTime is the time when the Init phase starts.
+                    format: date-time
+                    type: string
+                  triggerTime:
+                    description: TriggerTime is the time when the jobID is set.
+                    format: date-time
+                    type: string
+                  waitTime:
+                    description: WaitTime is the time when the work is done.
+                    format: date-time
+                    type: string
+                type: object
             required:
             - observedGeneration
             - configGeneration

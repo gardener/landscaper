@@ -28,6 +28,10 @@ If release name contains chart name it will be used as a full name.
 {{- include "landscaper.fullname" . }}-webhooks
 {{- end }}
 
+{{- define "landscaper.main.fullname" -}}
+{{- include "landscaper.fullname" . }}-main
+{{- end }}
+
 {{- define "landscaper.agent.fullname" -}}
 {{- include "landscaper.fullname" . }}-agent
 {{- end }}
@@ -76,6 +80,12 @@ app.kubernetes.io/name: {{ include "landscaper.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{- define "landscaper.main.selectorLabels" -}}
+landscaper.gardener.cloud/component: controller-main
+app.kubernetes.io/name: {{ include "landscaper.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
 {{- define "landscaper.webhooks.selectorLabels" -}}
 landscaper.gardener.cloud/component: webhook-server
 app.kubernetes.io/name: {{ include "landscaper.name" . }}
@@ -91,6 +101,14 @@ Create the name of the service account to use
 
 {{- define "landscaper.webhooks.serviceAccountName" -}}
 {{- default "landscaper-webhooks" .Values.global.serviceAccount.webhooksServer.name }}
+{{- end }}
+
+{{- define "landscaper.lsHealthCheckName" -}}
+{{- if .Values.landscaper.healthCheck }}
+{{- default .Release.Name .Values.landscaper.healthCheck.name }}
+{{- else }}
+{{- .Release.Name }}
+{{- end }}
 {{- end }}
 
 {{- define "landscaper-config" -}}
@@ -155,6 +173,15 @@ deployItemTimeouts:
 lsDeployments:
   lsController: "{{- include "landscaper.fullname" . }}"
   webHook: "{{- include "landscaper.webhooks.fullname" . }}"
+  deploymentsNamespace: "{{ .Release.Namespace }}"
+  lsHealthCheckName: "{{- include "landscaper.lsHealthCheckName" . }}"
+
+{{- if .Values.landscaper.healthCheck }}
+{{- if .Values.landscaper.healthCheck.additionalDeployments }}
+  additionalDeployments:
+{{ toYaml .Values.landscaper.healthCheck.additionalDeployments | indent 4 }}
+{{- end }}
+{{- end }}
 
 {{- end }}
 

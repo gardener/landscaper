@@ -18,6 +18,14 @@
           "description": "Metadata specifies the schema version of the component.",
           "default": {},
           "$ref": "#/definitions/apis-v2-Metadata"
+        },
+        "signatures": {
+          "description": "Signatures contains a list of signatures for the ComponentDescriptor",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Signature"
+          }
         }
       }
     },
@@ -34,6 +42,10 @@
           "description": "ComponentName describes the remote name of the referenced object",
           "type": "string",
           "default": ""
+        },
+        "digest": {
+          "description": "Digest is the optional digest of the referenced component.",
+          "$ref": "#/definitions/apis-v2-DigestSpec"
         },
         "extraIdentity": {
           "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
@@ -132,6 +144,29 @@
         }
       }
     },
+    "apis-v2-DigestSpec": {
+      "description": "DigestSpec defines a digest.",
+      "type": "object",
+      "required": [
+        "hashAlgorithm",
+        "normalisationAlgorithm",
+        "value"
+      ],
+      "properties": {
+        "hashAlgorithm": {
+          "type": "string",
+          "default": ""
+        },
+        "normalisationAlgorithm": {
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
     "apis-v2-Label": {
       "description": "Label is a label that can be set on objects.",
       "type": "object",
@@ -180,6 +215,10 @@
           "description": "Access describes the type specific method to access the defined resource.",
           "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
         },
+        "digest": {
+          "description": "Digest is the optional digest of the referenced resource.",
+          "$ref": "#/definitions/apis-v2-DigestSpec"
+        },
         "extraIdentity": {
           "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
           "type": "object",
@@ -220,6 +259,52 @@
         },
         "version": {
           "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Signature": {
+      "description": "Signature defines a digest and corresponding signature, identifyable by name.",
+      "type": "object",
+      "required": [
+        "name",
+        "digest",
+        "signature"
+      ],
+      "properties": {
+        "digest": {
+          "default": {},
+          "$ref": "#/definitions/apis-v2-DigestSpec"
+        },
+        "name": {
+          "type": "string",
+          "default": ""
+        },
+        "signature": {
+          "default": {},
+          "$ref": "#/definitions/apis-v2-SignatureSpec"
+        }
+      }
+    },
+    "apis-v2-SignatureSpec": {
+      "description": "SignatureSpec defines a signature.",
+      "type": "object",
+      "required": [
+        "algorithm",
+        "value",
+        "mediaType"
+      ],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "default": ""
+        },
+        "mediaType": {
+          "type": "string",
+          "default": ""
+        },
+        "value": {
           "type": "string",
           "default": ""
         }
@@ -295,24 +380,7 @@
     },
     "apis-v2-UnstructuredTypedObject": {
       "description": "UnstructuredTypedObject describes a generic typed object.",
-      "type": "object",
-      "required": [
-        "type",
-        "object"
-      ],
-      "properties": {
-        "object": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object"
-          }
-        },
-        "type": {
-          "description": "Type describes the type of the object.",
-          "type": "string",
-          "default": ""
-        }
-      }
+      "type": "object"
     },
     "core-v1alpha1-AnyJSON": {
       "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",

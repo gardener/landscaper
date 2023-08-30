@@ -65,6 +65,17 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          {{- if .Values.deployer.k8sClientSettings }}
+          - name: LS_HOST_CLIENT_BURST
+            value: {{ .Values.deployer.k8sClientSettings.hostClient.burst | quote }}
+          - name: LS_HOST_CLIENT_QPS
+            value: {{ .Values.deployer.k8sClientSettings.hostClient.qps | quote }}
+          - name: LS_RESOURCE_CLIENT_BURST
+            value: {{ .Values.deployer.k8sClientSettings.resourceClient.burst | quote }}
+          - name: LS_RESOURCE_CLIENT_QPS
+            value: {{ .Values.deployer.k8sClientSettings.resourceClient.qps | quote }}
+          {{- end }}
+
       volumes:
       - name: config
         secret:

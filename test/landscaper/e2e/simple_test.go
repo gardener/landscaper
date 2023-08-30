@@ -42,14 +42,14 @@ var _ = Describe("Simple", func() {
 
 		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
 
-		instActuator = instctlr.NewTestActuator(*op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
+		instActuator = instctlr.NewTestActuator(*op, testenv.Client, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
 				Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
 			},
-		})
+		}, "test-inst4-"+testutils.GetNextCounter())
 
-		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,
-			record.NewFakeRecorder(1024), 1000)
+		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, testenv.Client, api.LandscaperScheme,
+			record.NewFakeRecorder(1024), 1000, "exec-test-"+testutils.GetNextCounter())
 		Expect(err).ToNot(HaveOccurred())
 
 		mockActuator, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,

@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils/lock"
-
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,6 +33,7 @@ import (
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 	lsutil "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"github.com/gardener/landscaper/pkg/version"
 )
@@ -185,19 +184,21 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
-	syncObject, err := locker.LockDI(ctx, metadata)
-	if err != nil {
-		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
-	}
+	if lock.LockerEnabled {
+		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
+		syncObject, err := locker.LockDI(ctx, metadata)
+		if err != nil {
+			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
+		}
 
-	if syncObject == nil {
-		return locker.NotLockedResult()
-	}
+		if syncObject == nil {
+			return locker.NotLockedResult()
+		}
 
-	defer func() {
-		locker.Unlock(ctx, syncObject)
-	}()
+		defer func() {
+			locker.Unlock(ctx, syncObject)
+		}()
+	}
 
 	return c.reconcilePrivate(ctx, metadata, rt)
 }
@@ -244,7 +245,8 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 		}
 
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
-		di.Status.JobID = uuid.New().String()
+		di.Status.SetJobID(uuid.New().String())
+		di.Status.TransitionTimes = lsutil.NewTransitionTimes()
 	}
 
 	if di.Status.Phase.IsFinal() || di.Status.Phase.IsEmpty() {
@@ -256,20 +258,20 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 				!hasTestReconcileAnnotation {
 
 				// deployitem is unchanged and succeeded, and no reconcile desired in this case
-				c.updateDiValuesForNewReconcile(ctx, di)
+				c.initStatus(ctx, di)
 				return reconcile.Result{}, c.handleReconcileResult(ctx, nil, old, di)
 			}
 
 			// initialize deployitem for reconcile
 			logger.Debug("Setting deployitem to phase 'Init'", "updateOnChangeOnly", di.Spec.UpdateOnChangeOnly, lc.KeyGeneration, di.GetGeneration(), lc.KeyObservedGeneration, di.Status.ObservedGeneration, lc.KeyDeployItemPhase, di.Status.Phase)
 			di.Status.Phase = lsv1alpha1.DeployItemPhases.Init
-			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
+			if err := c.initAndUpdateStatus(ctx, di); err != nil {
 				return reconcile.Result{}, err
 			}
 		} else {
 			// initialize deployitem for delete
 			di.Status.Phase = lsv1alpha1.DeployItemPhases.InitDelete
-			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
+			if err := c.initAndUpdateStatus(ctx, di); err != nil {
 				return reconcile.Result{}, err
 			}
 		}
@@ -341,8 +343,8 @@ func (c *controller) Writer() *read_write_layer.Writer {
 	return read_write_layer.NewWriter(c.lsClient)
 }
 
-func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1.DeployItem) error {
-	c.updateDiValuesForNewReconcile(ctx, di)
+func (c *controller) initAndUpdateStatus(ctx context.Context, di *lsv1alpha1.DeployItem) error {
+	c.initStatus(ctx, di)
 
 	if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000004, di); err != nil {
 		return err
@@ -351,8 +353,9 @@ func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1
 	return nil
 }
 
-func (c *controller) updateDiValuesForNewReconcile(ctx context.Context, di *lsv1alpha1.DeployItem) {
+func (c *controller) initStatus(ctx context.Context, di *lsv1alpha1.DeployItem) {
 	di.Status.ObservedGeneration = di.Generation
+	di.Status.TransitionTimes = lsutil.SetInitTransitionTime(di.Status.TransitionTimes)
 	now := metav1.Now()
 	di.Status.LastReconcileTime = &now
 	di.Status.Deployer = c.info

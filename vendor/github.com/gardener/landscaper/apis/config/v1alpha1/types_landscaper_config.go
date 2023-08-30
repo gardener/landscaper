@@ -45,8 +45,23 @@ type LandscaperConfiguration struct {
 
 // LsDeployments contains the names of the landscaper deployments.
 type LsDeployments struct {
+	// LsController is the name of the Landscaper controller deployment.
 	LsController string `json:"lsController"`
-	WebHook      string `json:"webHook"`
+	// LsController is the name of the Landscaper webhook server deployment.
+	WebHook string `json:"webHook"`
+	// DeploymentsNamespace is the namespace in which the deployments are located.
+	DeploymentsNamespace string `json:"deploymentsNamespace"`
+	// LsHealthCheckName is the name of the LsHealthCheck object.
+	LsHealthCheckName string `json:"lsHealthCheckName"`
+	// AdditionalDeployments is the definition of additional deployments that shall be watched.
+	// +optional
+	AdditionalDeployments *AdditionalDeployments `json:"additionalDeployments,omitempty"`
+}
+
+// AdditionalDeployments is the definition of additional deployments that shall be watched.
+type AdditionalDeployments struct {
+	// Deployments is the list of deployments that shall be watched.
+	Deployments []string `json:"deployments"`
 }
 
 // CommonControllerConfig describes common controller configuration that can be included in

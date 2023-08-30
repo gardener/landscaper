@@ -171,4 +171,8 @@ const (
 	opDIStatus              = "history: deployitem status update"
 	opDIDelete              = "history: deployitem delete"
 	opTargetCreateOrUpdate  = "history: target create or update"
+	opTargetDelete          = "history: target delete"
+	opSyncObjectCreate      = "history: syncobject create"
+	opSyncObjectSpec        = "history: syncobject update"
+	opSyncObjectDelete      = "history: syncobject delete"
 )

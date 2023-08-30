@@ -67,7 +67,7 @@ var _ = Describe("Landscaper Controller", func() {
 			defer ctx.Done()
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
 				MetricsBindAddress: "0",
-				NewClient:          lsutils.NewUncachedClient,
+				NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			lsinstall.Install(mgr.GetScheme())

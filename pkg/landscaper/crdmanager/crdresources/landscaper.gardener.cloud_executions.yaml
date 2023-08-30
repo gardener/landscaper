@@ -303,6 +303,27 @@ spec:
                 description: PhaseTransitionTime is the time when the phase last changed.
                 format: date-time
                 type: string
+              transitionTimes:
+                description: TransitionTimes contains timestamps of status transitions
+                properties:
+                  finishedTime:
+                    description: FinishedTime is the time when the finished phase
+                      is set.
+                    format: date-time
+                    type: string
+                  initTime:
+                    description: InitTime is the time when the Init phase starts.
+                    format: date-time
+                    type: string
+                  triggerTime:
+                    description: TriggerTime is the time when the jobID is set.
+                    format: date-time
+                    type: string
+                  waitTime:
+                    description: WaitTime is the time when the work is done.
+                    format: date-time
+                    type: string
+                type: object
             type: object
         required:
         - spec

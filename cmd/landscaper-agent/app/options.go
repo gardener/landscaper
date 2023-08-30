@@ -69,7 +69,7 @@ func (o *options) Complete() error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		NewClient:          lsutils.NewUncachedClient,
+		NewClient:          lsutils.NewUncachedClient(lsutils.LsHostClientBurstDefault, lsutils.LsHostClientQpsDefault),
 	}
 	hostRestConfig, err := ctrl.GetConfig()
 	if err != nil {
@@ -92,6 +92,8 @@ func (o *options) Complete() error {
 	if err != nil {
 		return fmt.Errorf("unable to build landscaper cluster rest client from %s: %w", o.landscaperKubeconfigPath, err)
 	}
+
+	opts.NewClient = lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault)
 	o.LsMgr, err = ctrl.NewManager(lsRestConfig, opts)
 	if err != nil {
 		return fmt.Errorf("unable to setup manager")

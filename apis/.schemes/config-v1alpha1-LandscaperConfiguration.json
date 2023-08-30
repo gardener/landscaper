@@ -3,22 +3,22 @@
   "definitions": {
     "apis-v2-UnstructuredTypedObject": {
       "description": "UnstructuredTypedObject describes a generic typed object.",
+      "type": "object"
+    },
+    "config-v1alpha1-AdditionalDeployments": {
+      "description": "AdditionalDeployments is the definition of additional deployments that shall be watched.",
       "type": "object",
       "required": [
-        "type",
-        "object"
+        "deployments"
       ],
       "properties": {
-        "object": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object"
+        "deployments": {
+          "description": "Deployments is the list of deployments that shall be watched.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
           }
-        },
-        "type": {
-          "description": "Type describes the type of the object.",
-          "type": "string",
-          "default": ""
         }
       }
     },
@@ -370,14 +370,32 @@
       "type": "object",
       "required": [
         "lsController",
-        "webHook"
+        "webHook",
+        "deploymentsNamespace",
+        "lsHealthCheckName"
       ],
       "properties": {
+        "additionalDeployments": {
+          "description": "AdditionalDeployments is the definition of additional deployments that shall be watched.",
+          "$ref": "#/definitions/config-v1alpha1-AdditionalDeployments"
+        },
+        "deploymentsNamespace": {
+          "description": "DeploymentsNamespace is the namespace in which the deployments are located.",
+          "type": "string",
+          "default": ""
+        },
         "lsController": {
+          "description": "LsController is the name of the Landscaper controller deployment.",
+          "type": "string",
+          "default": ""
+        },
+        "lsHealthCheckName": {
+          "description": "LsHealthCheckName is the name of the LsHealthCheck object.",
           "type": "string",
           "default": ""
         },
         "webHook": {
+          "description": "LsController is the name of the Landscaper webhook server deployment.",
           "type": "string",
           "default": ""
         }

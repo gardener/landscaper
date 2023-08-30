@@ -5,72 +5,15 @@
 package container
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	lsversion "github.com/gardener/landscaper/pkg/version"
 )
-
-func GetAndCheckReconcile(lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
-	return func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
-		logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, req.NamespacedName.String()})
-		// beginning of reconciliation is already logged by the calling method, not required here
-
-		deployItem := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, lsClient, req.NamespacedName, deployItem); err != nil {
-			if apierrors.IsNotFound(err) {
-				logger.Debug(err.Error())
-				return nil, nil, nil
-			}
-			return nil, nil, err
-		}
-
-		if deployItem.Spec.Type != Type {
-			logger.Debug("DeployItem is of wrong type", lc.KeyDeployItemType, deployItem.Spec.Type)
-			return nil, nil, nil
-		}
-
-		if deployItem.Spec.Target != nil {
-			target := &lsv1alpha1.Target{}
-			if err := lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
-				return nil, nil, fmt.Errorf("unable to get target for deploy item: %w", err)
-			}
-			if len(config.TargetSelector) != 0 {
-				matched, err := targetselector.MatchOne(target, config.TargetSelector)
-				if err != nil {
-					return nil, nil, fmt.Errorf("unable to match target selector: %w", err)
-				}
-				if !matched {
-					logger.Debug("The deploy item's target does not match the given target selector")
-					return nil, nil, nil
-				}
-			}
-		}
-
-		lsCtx := &lsv1alpha1.Context{}
-		if err := lsClient.Get(ctx, kutil.ObjectKey(deployItem.Spec.Context, deployItem.Namespace), lsCtx); err != nil {
-			return nil, nil, fmt.Errorf("unable to get landscaper context: %w", err)
-		}
-
-		return deployItem, lsCtx, nil
-	}
-}
 
 // DefaultConfiguration sets the defaults for the container deployer configuration.
 func DefaultConfiguration(obj *containerv1alpha1.Configuration) {

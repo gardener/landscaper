@@ -41,6 +41,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		inst.Status.InstallationPhase = nextPhase
 		now := metav1.Now()
 		inst.Status.PhaseTransitionTime = &now
+		inst.Status.TransitionTimes = lsutil.SetInitTransitionTime(inst.Status.TransitionTimes)
 		inst.Status.ObservedGeneration = inst.GetGeneration()
 
 		// do not use setInstallationPhaseAndUpdate because jobIDFinished should not be set here
@@ -87,6 +88,8 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		if err := c.handlePhaseObjectsCreated(ctx, inst); err != nil {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err, read_write_layer.W000116)
 		}
+
+		inst.Status.TransitionTimes = lsutil.SetWaitTransitionTime(inst.Status.TransitionTimes)
 
 		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhases.Progressing, nil, read_write_layer.W000117); err != nil {
 			return err
@@ -154,6 +157,8 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		if err := c.handleDeletionPhaseTriggerDeleting(ctx, inst); err != nil {
 			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err, read_write_layer.W000126)
 		}
+
+		inst.Status.TransitionTimes = lsutil.SetWaitTransitionTime(inst.Status.TransitionTimes)
 
 		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhases.Deleting, nil, read_write_layer.W000127); err != nil {
 			return err
@@ -314,21 +319,22 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 		return nil, nil
 	}
 
-	// all deletions failed
+	// Consider the remaining subinstallations to be deleted. If they are all finished with phase DeleteFailed,
+	// we are stuck and return an error.
 	allFailed := true
 	for _, next := range subInstsToDelete {
 		if next.Status.JobIDFinished != inst.Status.JobID || next.Status.InstallationPhase != lsv1alpha1.InstallationPhases.DeleteFailed {
 			allFailed = false
 		}
 	}
-
 	if allFailed {
-		return lserrors.NewWrappedError(err, currentOperation, "AllOrphanedSubinstallationsFailed", err.Error()), nil
+		return lserrors.NewError(currentOperation, "AllOrphanedSubinstallationsFailed", "all orphaned subinstallations failed"), nil
 	}
 
 	for _, next := range subInstsToDelete {
 		if next.Status.JobID != inst.Status.JobID {
 			next.Status.JobID = inst.Status.JobID
+			inst.Status.TransitionTimes = lsutil.NewTransitionTimes()
 			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000076, next); err != nil {
 				return nil, lserrors.NewWrappedError(err, currentOperation, "UpdateInstallationStatus", err.Error())
 			}
@@ -368,6 +374,7 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 	for _, next := range subInsts {
 		if next.Status.JobID != inst.Status.JobID {
 			next.Status.JobID = inst.Status.JobID
+			next.Status.TransitionTimes = lsutil.NewTransitionTimes()
 			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000083, next); err != nil {
 				return lserrors.NewWrappedError(err, currentOperation, "UpdateInstallationStatus", err.Error())
 			}
@@ -383,6 +390,7 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 
 		if exec.Status.JobID != inst.Status.JobID {
 			exec.Status.JobID = inst.Status.JobID
+			exec.Status.TransitionTimes = lsutil.NewTransitionTimes()
 			if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000084, exec); err != nil {
 				return lserrors.NewWrappedError(err, currentOperation, "UpdateExecutionStatus", err.Error())
 			}
