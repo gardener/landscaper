@@ -6,13 +6,15 @@ package cdutils_test
 
 import (
 	"context"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/open-component-model/ocm/pkg/runtime"
+
+	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/pkg/components/registries"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
@@ -28,72 +30,77 @@ var _ = Describe("URI", func() {
 		repositorySpec     *types.UnstructuredTypedObject
 		repositoryContext  = testutils.ExampleRepositoryContext()
 		repositoryContexts = []*types.UnstructuredTypedObject{repositoryContext}
+		cd                 types.ComponentDescriptor
+		cd2                types.ComponentDescriptor
+		resource1          types.Resource
+		resource2          types.Resource
 	)
 
-	access := &cdv2.UnstructuredTypedObject{}
-	access.UnmarshalJSON([]byte(`{"type":"localFilesystemBlob","fileName":"r1","mediaType":"example"}`))
-	resource1 := types.Resource{
-		IdentityObjectMeta: cdv2.IdentityObjectMeta{
-			Type:    "example",
-			Name:    "r1",
-			Version: "v1.0.0",
-		},
-		Relation: cdv2.LocalRelation,
-		Access:   access,
-	}
-
-	access.UnmarshalJSON([]byte(`{"type":"localFilesystemBlob","fileName":"r2","mediaType":"example"}`))
-	resource2 := types.Resource{
-		IdentityObjectMeta: cdv2.IdentityObjectMeta{
-			Type:    "example",
-			Name:    "r2",
-			Version: "v0.0.0",
-		},
-		Relation: cdv2.ExternalRelation,
-		Access:   access,
-	}
-
-	cd := types.ComponentDescriptor{
-		Metadata: cdv2.Metadata{
-			Version: "v2",
-		},
-		ComponentSpec: cdv2.ComponentSpec{
-			ObjectMeta: cdv2.ObjectMeta{
-				Name:    "example.com/comp",
+	BeforeEach(func() {
+		access := &cdv2.UnstructuredTypedObject{}
+		err := access.UnmarshalJSON([]byte(`{"type":"localFilesystemBlob","fileName":"r1","mediaType":"example"}`))
+		Expect(err).ToNot(HaveOccurred())
+		resource1 = types.Resource{
+			IdentityObjectMeta: cdv2.IdentityObjectMeta{
+				Type:    "example",
+				Name:    "r1",
 				Version: "v1.0.0",
 			},
-			RepositoryContexts: repositoryContexts,
-			Provider:           cdv2.ExternalProvider,
-			ComponentReferences: []types.ComponentReference{
-				{
-					Name:          "comp1",
-					ComponentName: "example.com/mycomp1",
-					Version:       "v0.0.0",
-				},
-			},
-			Resources: []types.Resource{resource1},
-			Sources:   []types.Source{},
-		},
-	}
-
-	cd2 := types.ComponentDescriptor{
-		Metadata: cdv2.Metadata{
-			Version: "v2",
-		},
-		ComponentSpec: cdv2.ComponentSpec{
-			ObjectMeta: cdv2.ObjectMeta{
-				Name:    "example.com/mycomp1",
+			Relation: cdv2.LocalRelation,
+			Access:   access,
+		}
+		err = access.UnmarshalJSON([]byte(`{"type":"localFilesystemBlob","fileName":"r2","mediaType":"example"}`))
+		Expect(err).ToNot(HaveOccurred())
+		resource2 = types.Resource{
+			IdentityObjectMeta: cdv2.IdentityObjectMeta{
+				Type:    "example",
+				Name:    "r2",
 				Version: "v0.0.0",
 			},
-			RepositoryContexts:  repositoryContexts,
-			Provider:            cdv2.ExternalProvider,
-			Resources:           []types.Resource{resource2},
-			Sources:             []types.Source{},
-			ComponentReferences: []types.ComponentReference{},
-		},
-	}
+			Relation: cdv2.ExternalRelation,
+			Access:   access,
+		}
 
-	BeforeEach(func() {
+		cd = types.ComponentDescriptor{
+			Metadata: cdv2.Metadata{
+				Version: "v2",
+			},
+			ComponentSpec: cdv2.ComponentSpec{
+				ObjectMeta: cdv2.ObjectMeta{
+					Name:    "example.com/comp",
+					Version: "v1.0.0",
+				},
+				RepositoryContexts: repositoryContexts,
+				Provider:           cdv2.ExternalProvider,
+				ComponentReferences: []types.ComponentReference{
+					{
+						Name:          "comp1",
+						ComponentName: "example.com/mycomp1",
+						Version:       "v0.0.0",
+					},
+				},
+				Resources: []types.Resource{resource1},
+				Sources:   []types.Source{},
+			},
+		}
+
+		cd2 = types.ComponentDescriptor{
+			Metadata: cdv2.Metadata{
+				Version: "v2",
+			},
+			ComponentSpec: cdv2.ComponentSpec{
+				ObjectMeta: cdv2.ObjectMeta{
+					Name:    "example.com/mycomp1",
+					Version: "v0.0.0",
+				},
+				RepositoryContexts:  repositoryContexts,
+				Provider:            cdv2.ExternalProvider,
+				Resources:           []types.Resource{resource2},
+				Sources:             []types.Source{},
+				ComponentReferences: []types.ComponentReference{},
+			},
+		}
+
 		ctx := context.Background()
 
 		// Prepare in memory test repository

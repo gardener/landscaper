@@ -6,14 +6,12 @@ package blueprints_test
 
 import (
 	"context"
-	"crypto/rand"
+
 	"github.com/gardener/landscaper/pkg/components/registries"
-	"io"
 
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -29,42 +27,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
-
-type dummyBlobResolver struct {
-	mediaType string
-}
-
-func newDummyBlobResolver(mediaType string) ctf.BlobResolver {
-	return dummyBlobResolver{
-		mediaType: mediaType,
-	}
-}
-
-func (r dummyBlobResolver) Info(_ context.Context, _ types.Resource) (*ctf.BlobInfo, error) {
-	return &ctf.BlobInfo{
-		MediaType: r.mediaType,
-	}, nil
-}
-
-func (r dummyBlobResolver) Resolve(_ context.Context, _ types.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
-	data := make([]byte, 256)
-	if _, err := rand.Read(data); err != nil {
-		return nil, err
-	}
-
-	for i := 0; i < 20; i++ {
-		if _, err := writer.Write(data); err != nil {
-			return nil, err
-		}
-	}
-	return &ctf.BlobInfo{
-		MediaType: r.mediaType,
-	}, nil
-}
-
-func (r dummyBlobResolver) CanResolve(resource types.Resource) bool {
-	return true
-}
 
 var _ = Describe("Resolve", func() {
 

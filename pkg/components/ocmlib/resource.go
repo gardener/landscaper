@@ -2,6 +2,7 @@ package ocmlib
 
 import (
 	"context"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	"github.com/open-component-model/ocm/pkg/common"
