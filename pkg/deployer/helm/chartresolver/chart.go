@@ -94,7 +94,7 @@ func getChartFromOCIRef(ctx context.Context,
 		return nil, err
 	}
 
-	resourceContent, err := resource.GetBlobNew(ctx)
+	resourceContent, err := resource.GetTypedContent(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +112,6 @@ func getChartFromHelmChartRepo(ctx context.Context,
 			repo.HelmChartName, repo.HelmChartVersion, repo.HelmChartRepoUrl, err)
 	}
 
-	resourceContent, err := resource.GetBlobNew(ctx)
+	resourceContent, err := resource.GetTypedContent(ctx)
 	return resourceContent.Resource.(*chart.Chart), err
 }

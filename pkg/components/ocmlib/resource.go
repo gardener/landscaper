@@ -2,10 +2,8 @@ package ocmlib
 
 import (
 	"context"
-	"io"
 
 	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/errors"
@@ -67,32 +65,7 @@ func (r *Resource) GetResource() (*types.Resource, error) {
 	return &lsspec, err
 }
 
-func (r *Resource) GetBlob(ctx context.Context, writer io.Writer) (_ *types.BlobInfo, rerr error) {
-	accessMethod, err := r.resourceAccess.AccessMethod()
-	if err != nil {
-		return nil, err
-	}
-	defer errors.PropagateError(&rerr, accessMethod.Close)
-
-	blob, err := accessMethod.Get()
-	if err != nil {
-		return nil, err
-	}
-	_, err = writer.Write(blob)
-	if err != nil {
-		return nil, err
-	}
-
-	blobAccess := accessio.BlobAccessForDataAccess(accessio.BLOB_UNKNOWN_DIGEST, accessio.BLOB_UNKNOWN_SIZE, accessMethod.MimeType(), accessMethod)
-
-	return &types.BlobInfo{
-		MediaType: accessMethod.MimeType(),
-		Digest:    blobAccess.Digest().String(),
-		Size:      blobAccess.Size(),
-	}, nil
-}
-
-func (r *Resource) GetBlobNew(ctx context.Context) (*model.TypedResourceContent, error) {
+func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
 	handler := r.handlerRegistry.Get(r.GetType())
 	return handler.GetResourceContent(ctx, r, r.resourceAccess)
 }
@@ -105,10 +78,6 @@ func (r *Resource) GetCachingIdentity(ctx context.Context) string {
 	return spec.GetInexpensiveContentVersionIdentity(r.resourceAccess.ComponentVersion())
 }
 
-func (r *Resource) GetBlobInfo(ctx context.Context) (*types.BlobInfo, error) {
-	return nil, nil
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type HelmChartProvider struct {
@@ -118,7 +87,7 @@ type HelmChartProvider struct {
 	repourl string
 }
 
-func (h *HelmChartProvider) GetBlobNew(ctx context.Context) (_ *model.TypedResourceContent, rerr error) {
+func (h *HelmChartProvider) GetTypedContent(ctx context.Context) (_ *model.TypedResourceContent, rerr error) {
 	access, err := helm.DownloadChart(common.NewPrinter(nil), h.ocictx, h.ref, h.version, h.repourl)
 	if err != nil {
 		return nil, err

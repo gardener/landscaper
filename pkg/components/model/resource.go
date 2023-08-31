@@ -6,7 +6,6 @@ package model
 
 import (
 	"context"
-	"io"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
@@ -30,20 +29,11 @@ type Resource interface {
 	// GetResource returns the entry in the component descriptor that corresponds to the present resource.
 	GetResource() (*types.Resource, error)
 
-	// GetBlob returns the content of the resource, written to the given Writer.
-	GetBlob(ctx context.Context, writer io.Writer) (*types.BlobInfo, error)
-
-	//// GetBlob returns the content of the resource, written to the given Writer.
-	//GetBlobNew(ctx context.Context) (*TypedResourceContent, error)
-
 	GetCachingIdentity(ctx context.Context) string
-
-	// GetBlobInfo returns information like mediatype and digest of the resource.
-	GetBlobInfo(ctx context.Context) (*types.BlobInfo, error)
 }
 
 type TypedResourceProvider interface {
-	GetBlobNew(ctx context.Context) (*TypedResourceContent, error)
+	GetTypedContent(ctx context.Context) (*TypedResourceContent, error)
 }
 
 type TypedResourceContent struct {

@@ -127,7 +127,7 @@ var _ = Describe("Resolve", func() {
 
 			resource, err := componentVersion.GetResource("my-bp", nil)
 			Expect(err).NotTo(HaveOccurred())
-			content, err := resource.GetBlobNew(ctx)
+			content, err := resource.GetTypedContent(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			bp, ok := content.Resource.(*blueprints.Blueprint)
 			Expect(ok).To(BeTrue())
@@ -183,7 +183,7 @@ var _ = Describe("Resolve", func() {
 
 			resource, err := componentVersion.GetResource("my-bp", nil)
 			Expect(err).NotTo(HaveOccurred())
-			content, err := resource.GetBlobNew(ctx)
+			content, err := resource.GetTypedContent(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			bp, ok := content.Resource.(*blueprints.Blueprint)
 			Expect(ok).To(BeTrue())
@@ -240,7 +240,7 @@ var _ = Describe("Resolve", func() {
 			resource, err := componentVersion.GetResource("my-bp", nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = resource.GetBlobNew(ctx)
+			_, err = resource.GetTypedContent(ctx)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -285,7 +285,7 @@ var _ = Describe("Resolve", func() {
 			resource, err := componentVersion.GetResource("my-bp", nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = resource.GetBlobNew(ctx)
+			_, err = resource.GetTypedContent(ctx)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -330,7 +330,7 @@ var _ = Describe("Resolve", func() {
 			resource, err := componentVersion.GetResource("my-bp", nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = resource.GetBlobNew(ctx)
+			_, err = resource.GetTypedContent(ctx)
 			Expect(err).To(HaveOccurred())
 		})
 

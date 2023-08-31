@@ -5,11 +5,11 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/pkg/components/cnudie/registries"
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/open-component-model/ocm/pkg/finalizer"
-	"io"
 )
 
 func init() {
@@ -23,9 +23,6 @@ func New() *SchemaHandler {
 }
 
 func (h *SchemaHandler) GetResourceContent(ctx context.Context, r model.Resource, blobResolver model.BlobResolver) (_ *model.TypedResourceContent, rerr error) {
-	var finalize finalizer.Finalizer
-	defer finalize.FinalizeWithErrorPropagationf(&rerr, "accessing (and decompressing) json schema")
-
 	var JSONSchemaBuf bytes.Buffer
 	resource, err := r.GetResource()
 	if err != nil {

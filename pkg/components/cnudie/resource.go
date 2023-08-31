@@ -6,7 +6,6 @@ package cnudie
 
 import (
 	"context"
-	"io"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
@@ -52,17 +51,9 @@ func (r *Resource) GetResource() (*types.Resource, error) {
 	return r.resource, nil
 }
 
-func (r *Resource) GetBlobNew(ctx context.Context) (*model.TypedResourceContent, error) {
+func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
 	handler := r.handlerRegistry.Get(r.GetType())
 	return handler.GetResourceContent(ctx, r, r.blobResolver)
-}
-
-func (r *Resource) GetBlob(ctx context.Context, writer io.Writer) (*types.BlobInfo, error) {
-	return r.blobResolver.Resolve(ctx, *r.resource, writer)
-}
-
-func (r *Resource) GetBlobInfo(ctx context.Context) (*types.BlobInfo, error) {
-	return r.blobResolver.Info(ctx, *r.resource)
 }
 
 func (r *Resource) GetCachingIdentity(ctx context.Context) string {

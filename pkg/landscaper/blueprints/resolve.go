@@ -77,7 +77,7 @@ func ResolveBlueprint(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	content, err := resource.GetBlobNew(ctx)
+	content, err := resource.GetTypedContent(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *ls
 	if err != nil {
 		return nil, err
 	}
-	content, err := resource.GetBlobNew(ctx)
+	content, err := resource.GetTypedContent(ctx)
 	if err != nil {
 		return nil, err
 	}

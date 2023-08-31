@@ -223,7 +223,7 @@ func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, cu
 	ctx := context.Background()
 	defer ctx.Done()
 
-	resourceContent, err := resource.GetBlobNew(ctx)
+	resourceContent, err := resource.GetTypedContent(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch jsonschema for '%s': %w", uri.String(), err)
 	}
