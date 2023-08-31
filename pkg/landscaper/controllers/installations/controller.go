@@ -116,14 +116,14 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	if lock.LockerEnabled {
 		locker := lock.NewLocker(c.Client(), c.hostClient, c.callerName)
 		syncObject, err := locker.LockInstallation(ctx, metadata)
 		if err != nil {
-			return reconcile.Result{}, err
+			return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 
 		if syncObject == nil {
@@ -141,12 +141,12 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	// default the installation as it not done by the Controller runtime
 	if err := c.updateInstallationWithDefaults(ctx, inst); err != nil {
-		return reconcile.Result{}, err
+		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	return c.handleAutomaticReconcile(ctx, inst)
@@ -170,15 +170,20 @@ func (c *Controller) updateInstallationWithDefaults(ctx context.Context, inst *l
 }
 
 func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "handleAutomaticReconcile")
+
 	retryHelper := newRetryHelper(c.Client(), c.clock)
 
 	if err := retryHelper.preProcessRetry(ctx, inst); err != nil {
-		return reconcile.Result{}, err
+		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	result, err := c.reconcileInstallation(ctx, inst)
 
 	result, err = retryHelper.recomputeRetry(ctx, inst, result, err)
+	if err != nil {
+		logger.Error(err, "recomputeRetry failed")
+	}
 
 	return result, err
 }

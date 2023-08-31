@@ -68,7 +68,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	if lock.LockerEnabled {
@@ -93,19 +93,19 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	if exec.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000086, exec); err != nil {
-			return reconcile.Result{}, err
+			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 	}
 
 	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.InterruptOperation) {
 		if err := c.handleInterruptOperation(ctx, exec); err != nil {
-			return reconcile.Result{}, err
+			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 		return reconcile.Result{}, nil
 	}

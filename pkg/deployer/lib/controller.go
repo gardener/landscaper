@@ -171,7 +171,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	// this check is only for compatibility reasons
@@ -213,13 +213,13 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	// do we really need to check if metadata and di have the same guid?
 	if metadata.UID != di.UID {
 		err := lserrors.NewError("Reconcile", "differentUIDs", "different UIDs")
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
 
 	c.lsScheme.Default(di)
@@ -229,7 +229,7 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 	lsCtx := &lsv1alpha1.Context{}
 	// todo: check for real repository context. Maybe overwritten by installation.
 	if err := c.lsClient.Get(ctx, kutil.ObjectKey(di.Spec.Context, di.Namespace), lsCtx); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, fmt.Errorf("unable to get landscaper context: %w", err))
 	}
 
 	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
@@ -241,7 +241,7 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 
 	if hasTestReconcileAnnotation {
 		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
-			return reconcile.Result{}, err
+			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
@@ -259,20 +259,21 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 
 				// deployitem is unchanged and succeeded, and no reconcile desired in this case
 				c.initStatus(ctx, di)
-				return reconcile.Result{}, c.handleReconcileResult(ctx, nil, old, di)
+				err := c.handleReconcileResult(ctx, nil, old, di)
+				return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 			}
 
 			// initialize deployitem for reconcile
 			logger.Debug("Setting deployitem to phase 'Init'", "updateOnChangeOnly", di.Spec.UpdateOnChangeOnly, lc.KeyGeneration, di.GetGeneration(), lc.KeyObservedGeneration, di.Status.ObservedGeneration, lc.KeyDeployItemPhase, di.Status.Phase)
 			di.Status.Phase = lsv1alpha1.DeployItemPhases.Init
 			if err := c.initAndUpdateStatus(ctx, di); err != nil {
-				return reconcile.Result{}, err
+				return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 			}
 		} else {
 			// initialize deployitem for delete
 			di.Status.Phase = lsv1alpha1.DeployItemPhases.InitDelete
 			if err := c.initAndUpdateStatus(ctx, di); err != nil {
-				return reconcile.Result{}, err
+				return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 			}
 		}
 	}

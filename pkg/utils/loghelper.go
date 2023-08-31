@@ -29,6 +29,17 @@ func (LogHelper) LogErrorAndGetReconcileResult(ctx context.Context, lsError lser
 	}
 }
 
+func (LogHelper) LogStandardErrorAndGetReconcileResult(ctx context.Context, err error) (reconcile.Result, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "LogErrorAndGetReconcileResult")
+
+	if err == nil {
+		return reconcile.Result{}, nil
+	}
+
+	logger.Error(err, err.Error())
+	return reconcile.Result{Requeue: true}, nil
+}
+
 func (LogHelper) LogErrorButNotFoundAsInfo(ctx context.Context, err error, message string) {
 	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "LogErrorButNotFoundAsInfo")
 
