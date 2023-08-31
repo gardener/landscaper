@@ -2,6 +2,7 @@ package ocmlib
 
 import (
 	"context"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
@@ -56,8 +57,22 @@ func (r *Resource) GetResource() (*types.Resource, error) {
 		return nil, err
 	}
 
+	accessSpec, err := r.resourceAccess.Access()
+	if err != nil {
+		return nil, err
+	}
+	accessData, err := runtime.DefaultJSONEncoding.Marshal(accessSpec)
+	if err != nil {
+		return nil, err
+	}
 	lsspec := types.Resource{}
 	err = runtime.DefaultYAMLEncoding.Unmarshal(data, &lsspec)
+	if err != nil {
+		return nil, err
+	}
+
+	lsspec.Access = &cdv2.UnstructuredTypedObject{}
+	err = lsspec.Access.UnmarshalJSON(accessData)
 	if err != nil {
 		return nil, err
 	}
