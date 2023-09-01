@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	storeSubsystemName = "blueprintCache"
+	storeSubsystemName = "blueprintCacheStore"
 
 	ociClientNamespaceName = "ociclient"
-	cacheSubsystemName     = "cache"
+	cacheSubsystemName     = "blueprintCache"
 )
 
 var (
