@@ -77,8 +77,15 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 		}
 		return nil
 	}); err != nil {
-		return reconcile.Result{}, err
+		if apierrors.IsNotFound(err) {
+			logger.Info("default context not found", "err", err.Error())
+		} else {
+			logger.Error(err, "default context not created of patched")
+		}
+
+		return reconcile.Result{Requeue: true}, nil
 	}
+
 	return reconcile.Result{}, nil
 }
 

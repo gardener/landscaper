@@ -216,7 +216,11 @@ func (m *Manifest) Delete(ctx context.Context) error {
 			currObj.SetAnnotations(objAnnotations)
 
 			if err := kubeClient.Update(ctx, &currObj); err != nil {
-				logger.Error(err, "unable to update resource with before delete annotations", lc.KeyResource, key.String())
+				if apierrors.IsConflict(err) {
+					logger.Info("unable to update resource with before delete annotations", lc.KeyResource, key.String(), lc.KeyError, err.Error())
+				} else {
+					logger.Error(err, "unable to update resource with before delete annotations", lc.KeyResource, key.String())
+				}
 			}
 		}
 
