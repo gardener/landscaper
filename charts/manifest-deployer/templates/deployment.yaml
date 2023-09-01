@@ -10,17 +10,20 @@ metadata:
     {{- include "deployer.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  {{- if .Values.hpa.maxReplicas | int | eq 1 }}
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "deployer.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- if .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include "deployer-config" . |  sha256sum }}
         {{- range $key, $value := .Values.podAnnotations }}
         {{ $key }}: {{ $value}}
         {{- end }}
-      {{- end }}
       labels:
         {{- include "deployer.selectorLabels" . | nindent 8 }}
         landscaper.gardener.cloud/topology: manifest-deployer
