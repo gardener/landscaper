@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	"github.com/gardener/landscaper/pkg/utils"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,6 +67,8 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 }
 
 func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassification, lserrors.LsError) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "TriggerDeployItems")
+
 	items, orphaned, lsErr := o.getDeployItems(ctx)
 	if lsErr != nil {
 		return nil, lsErr
@@ -87,6 +91,7 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 				}
 
 				if skip {
+					logger.Info("Deleting deployitem %s without uninstall", item.DeployItem.Name)
 					if err := o.removeFinalizerFromDeployItem(ctx, item.DeployItem); err != nil {
 						return nil, err
 					}
@@ -121,6 +126,8 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 }
 
 func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployItemClassification, lserrors.LsError) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "TriggerDeployItemsForDelete")
+
 	op := "TriggerDeployItemsForDelete"
 
 	items, _, lsErr := o.getDeployItems(ctx)
@@ -153,6 +160,7 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 			}
 
 			if skip {
+				logger.Info("Deleting deployitem %s without uninstall", item.DeployItem.Name)
 				if err := o.removeFinalizerFromDeployItem(ctx, item.DeployItem); err != nil {
 					return nil, err
 				}
@@ -188,6 +196,10 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 }
 func (o *Operation) skipUninstall(ctx context.Context, di *lsv1alpha1.DeployItem) (bool, lserrors.LsError) {
 	op := "skipUninstall"
+
+	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(di.ObjectMeta) {
+		return true, nil
+	}
 
 	if di.Spec.OnDelete == nil || !di.Spec.OnDelete.SkipUninstallIfClusterRemoved || di.Spec.Target == nil {
 		return false, nil
