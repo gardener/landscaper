@@ -48,6 +48,9 @@ func GetChart(ctx context.Context,
 		return getChartFromHelmChartRepo(ctx, lsClient, contextObj, chartConfig.HelmChartRepo)
 	}
 
+	if chartConfig.FromResource != nil {
+		return nil, errors.New("chart.fromResource is no longer supported")
+	}
 	return nil, NoChartDefinedError
 }
 
