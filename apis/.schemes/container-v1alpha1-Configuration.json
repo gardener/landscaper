@@ -154,6 +154,16 @@
         }
       }
     },
+    "container-v1alpha1-HPAConfiguration": {
+      "description": "HPAConfiguration contains the configuration for horizontal pod autoscaling.",
+      "type": "object",
+      "properties": {
+        "maxReplicas": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "core-v1alpha1-ObjectReference": {
       "description": "ObjectReference is the reference to a kubernetes object.",
       "type": "object",
@@ -258,6 +268,10 @@
       "$ref": "#/definitions/container-v1alpha1-GarbageCollection",
       "default": {},
       "description": "GarbageCollection configures the container deployer garbage collector."
+    },
+    "hpa": {
+      "$ref": "#/definitions/container-v1alpha1-HPAConfiguration",
+      "description": "HPAConfiguration contains the configuration for horizontal pod autoscaling."
     },
     "identity": {
       "description": "Identity identity describes the unique identity of the deployer.",

@@ -53,7 +53,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 			}, "test-inst3-"+testutils.GetNextCounter())
 
 		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, testenv.Client, api.LandscaperScheme,
-			record.NewFakeRecorder(1024), 1000, "exec-test-"+testutils.GetNextCounter())
+			record.NewFakeRecorder(1024), 1000, false, "exec-test-"+testutils.GetNextCounter())
 		Expect(err).ToNot(HaveOccurred())
 
 		mockActuator, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,

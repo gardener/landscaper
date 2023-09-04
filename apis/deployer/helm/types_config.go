@@ -27,6 +27,8 @@ type Configuration struct {
 	TargetSelector []lsv1alpha1.TargetSelector `json:"targetSelector,omitempty"`
 	// Export defines the export configuration.
 	Export ExportConfiguration `json:"export,omitempty"`
+	// HPAConfiguration contains the configuration for horizontal pod autoscaling.
+	HPAConfiguration *HPAConfiguration `json:"hpa,omitempty"`
 	// Controller contains configuration concerning the controller framework.
 	Controller Controller `json:"controller,omitempty"`
 }
@@ -36,6 +38,11 @@ type ExportConfiguration struct {
 	// DefaultTimeout configures the default timeout for all exports without a explicit export timeout defined.
 	// +optional
 	DefaultTimeout *lsv1alpha1.Duration `json:"defaultTimeout,omitempty"`
+}
+
+// HPAConfiguration contains the configuration for horizontal pod autoscaling.
+type HPAConfiguration struct {
+	MaxReplicas int32 `json:"maxReplicas,omitempty"`
 }
 
 // Controller contains configuration concerning the controller framework.

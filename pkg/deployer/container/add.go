@@ -28,8 +28,11 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 	callerName string) error {
 	log := logger.WithName("container")
 
+	lockingEnabled := config.HPAConfiguration != nil && config.HPAConfiguration.MaxReplicas > 1
+
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.Controller.Workers)
+		"numberOfWorkerThreads", config.Controller.Workers,
+		"lockingEnabled", lockingEnabled)
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
 		Scheme: hostMgr.GetScheme(),
@@ -37,7 +40,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 	if err != nil {
 		return fmt.Errorf("unable to create direct client for the host cluster: %w", err)
 	}
-	deployer, err := NewDeployer(
+	containerDeployer, err := NewDeployer(
 		log,
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
@@ -53,8 +56,9 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		hostMgr.GetClient(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
 		config,
-		deployer,
+		containerDeployer,
 		Type,
+		lockingEnabled,
 		callerName+"pod",
 		config.TargetSelector)
 
@@ -70,10 +74,10 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		Version:         version.Get().String(),
 		Identity:        config.Identity,
 		Type:            Type,
-		Deployer:        deployer,
+		Deployer:        containerDeployer,
 		TargetSelectors: config.TargetSelector,
 		Options:         options,
-	}, config.Controller.Workers, callerName)
+	}, config.Controller.Workers, lockingEnabled, callerName)
 	if err != nil {
 		return err
 	}

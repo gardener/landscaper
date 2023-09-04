@@ -290,6 +290,16 @@
         }
       }
     },
+    "config-v1alpha1-HPAMainConfiguration": {
+      "description": "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller).",
+      "type": "object",
+      "properties": {
+        "maxReplicas": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "config-v1alpha1-InstallationsController": {
       "description": "InstallationsController contains the controller config that reconciles installations.",
       "type": "object",
@@ -590,6 +600,10 @@
       "$ref": "#/definitions/config-v1alpha1-DeployerManagementConfiguration",
       "default": {},
       "description": "DeployerManagement configures the deployer management of the landscaper."
+    },
+    "hpaMain": {
+      "$ref": "#/definitions/config-v1alpha1-HPAMainConfiguration",
+      "description": "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller)."
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
