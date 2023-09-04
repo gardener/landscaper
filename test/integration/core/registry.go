@@ -509,7 +509,7 @@ func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f 
 	)
 	cd.Name = name
 	cd.Version = version
-	cd.Provider = cdv2.InternalProvider
+	cd.Provider = "internal"
 	repoCtx := cdv2.OCIRegistryRepository{
 		ObjectType: cdv2.ObjectType{
 			Type: cdv2.OCIRegistryType,
@@ -592,7 +592,7 @@ func buildAndUploadComponentDescriptorsWithBlueprints(ctx context.Context, f *fr
 		cd := &cdv2.ComponentDescriptor{}
 		cd.Name = cdd.name
 		cd.Version = cdd.version
-		cd.Provider = cdv2.InternalProvider
+		cd.Provider = "internal"
 		utils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))
 
 		// add blueprint

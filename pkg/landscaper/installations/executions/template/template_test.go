@@ -198,7 +198,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 						Version: "1.0.0",
 					},
 					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           cdv2.InternalProvider,
+					Provider:           "internal",
 					Resources: []types.Resource{
 						{
 							IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -250,7 +250,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 						Version: "1.0.0",
 					},
 					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           cdv2.InternalProvider,
+					Provider:           "internal",
 					ComponentReferences: []types.ComponentReference{
 						{
 							Name:          "my-referenced-component",
@@ -271,7 +271,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 						Version: "1.0.0",
 					},
 					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           cdv2.InternalProvider,
+					Provider:           "internal",
 					Resources: []types.Resource{
 						{
 							IdentityObjectMeta: cdv2.IdentityObjectMeta{

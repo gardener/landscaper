@@ -868,7 +868,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, n
 
 	cd.Name = name
 	cd.Version = version
-	cd.Provider = cdv2.InternalProvider
+	cd.Provider = "internal"
 	cd.ComponentReferences = cdRefs
 	cd.Resources = cdRes
 	repoCtx := cdv2.OCIRegistryRepository{
