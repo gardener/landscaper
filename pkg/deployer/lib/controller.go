@@ -327,6 +327,8 @@ func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, depl
 	rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItem.ObjectMeta) {
+		// this case is not required anymore because those items are removed by the execution controller
+		// but for security reasons not removed
 		logger.Info("Deleting deployitem %s without uninstall", deployItem.Name)
 	} else {
 		if err := c.deployer.Delete(ctx, lsCtx, deployItem, rt); err != nil {
