@@ -29,7 +29,7 @@ deployExecutions:
         kind: ProviderConfiguration
 
         chart:
-          {{ $resource := getResource .cd "name" "imageReference" }}
+          {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
           ref: {{ $resource.access.imageReference }}
 
         helmDeployment: true
