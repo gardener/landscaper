@@ -8,11 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/gardener/landscaper/pkg/components/model/types"
 
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -550,6 +551,7 @@ func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f 
 	"imageReference": "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17"
 }
 `))
+	utils.ExpectNoError(err)
 
 	cd.Resources = append(cd.Resources, resource)
 
