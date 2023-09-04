@@ -361,6 +361,29 @@ func HasLabelWithValue(obj metav1.Object, lab string, value string) bool {
 	return val == value
 }
 
+// HasAnnotation checks if the objects has a annotation
+func HasAnnotation(obj metav1.Object, ann string) bool {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+	_, ok := annotations[ann]
+	return ok
+}
+
+// HasAnnotationWithValue checks if the objects has a annotation with a value
+func HasAnnotationWithValue(obj metav1.Object, ann string, value string) bool {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+	val, ok := annotations[ann]
+	if !ok {
+		return false
+	}
+	return val == value
+}
+
 // ConvertToRawExtension converts a object to a raw extension.
 // The type of the object is automatically set given the scheme.
 func ConvertToRawExtension(from runtime.Object, scheme *runtime.Scheme) (*runtime.RawExtension, error) {
