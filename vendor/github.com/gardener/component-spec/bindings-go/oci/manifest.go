@@ -41,8 +41,8 @@ type BlobStore interface {
 // ManifestBuilder converts a component descriptor with local defined blobs
 // into a oci component descriptor with blobs as layers of the component descriptor.
 type ManifestBuilder struct {
-	store   BlobStore
-	archive *ctf.ComponentArchive
+	store                          BlobStore
+	archive                        *ctf.ComponentArchive
 	componentDescriptorStorageType string
 }
 
@@ -122,15 +122,15 @@ func (b *ManifestBuilder) addComponentDescriptorDesc() (ocispecv1.Descriptor, er
 			return ocispecv1.Descriptor{}, fmt.Errorf("unable to add component descriptor layer to internal store: %w", err)
 		}
 		return componentDescriptorDesc, nil
-	} else if b.componentDescriptorStorageType == ComponentDescriptorTarMimeType {
+	} else if b.componentDescriptorStorageType == ComponentDescriptorTarMimeType || b.componentDescriptorStorageType == ComponentDescriptorTarMimeTypeOCM {
 		// create tar with component descriptor
 		var buf bytes.Buffer
 		tw := tar.NewWriter(&buf)
 		if err := tw.WriteHeader(&tar.Header{
-			Typeflag:   tar.TypeReg,
-			Name:       ctf.ComponentDescriptorFileName,
-			Size:       int64(len(data)),
-			ModTime:    time.Now(),
+			Typeflag: tar.TypeReg,
+			Name:     ctf.ComponentDescriptorFileName,
+			Size:     int64(len(data)),
+			ModTime:  time.Now(),
 		}); err != nil {
 			return ocispecv1.Descriptor{}, fmt.Errorf("unable to add component descriptor header: %w", err)
 		}
