@@ -26,7 +26,7 @@ func init() {
 	if m == "" {
 		m = LEGACY
 	}
-	if err := SetFactory(m); err != nil {
+	if err := SetFactory("ocm"); err != nil {
 		panic(fmt.Sprintf("LANDSCAPER_LIBRARY_MODE: %s", m))
 	}
 	logging.SetLogConsumer((&ocmlib.Factory{}).SetApplicationLogger)
