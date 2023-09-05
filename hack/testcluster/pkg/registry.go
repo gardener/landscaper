@@ -357,7 +357,9 @@ func generateCertificate(svc *corev1.Service) (*corev1.Secret, error) {
 	ipAddresses := []net.IP{
 		net.ParseIP(svc.Spec.ClusterIP),
 	}
-
+	for _, ingress := range svc.Status.LoadBalancer.Ingress {
+		ipAddresses = append(ipAddresses, net.ParseIP(ingress.IP))
+	}
 	serverConfig := &certificates.CertificateSecretConfig{
 		CommonName:  svc.Name,
 		DNSNames:    dnsNames,
