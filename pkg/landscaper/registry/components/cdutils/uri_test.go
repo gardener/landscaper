@@ -49,7 +49,7 @@ var _ = Describe("URI", func() {
 					Version: "1.0.0",
 				},
 				RepositoryContexts: repositoryContexts,
-				Provider:           cdv2.ExternalProvider,
+				Provider:           "external",
 				ComponentReferences: []types.ComponentReference{
 					{
 						Name:          "comp1",
