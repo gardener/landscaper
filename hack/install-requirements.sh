@@ -21,7 +21,7 @@ chmod +x ${PROJECT_ROOT}/tmp/test/registry/registry
 
 GO111MODULE=off go get golang.org/x/tools/cmd/goimports
 
-curl -sfL "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" | sh -s -- -b $(go env GOPATH)/bin v1.53.3
+curl -sfL "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" | sh -s -- -b $(go env GOPATH)/bin v1.54.2
 
 # install jq (needed for documentation index generation)
 if ! jq --version &>/dev/null; then
