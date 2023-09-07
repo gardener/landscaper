@@ -55,7 +55,7 @@ landscaper:
     customCAs:
       secrets:
         certs: |
-          $(cat "$TMP/cacerts.crt")
+          $(cat "$TMP/cacerts.crt" | sed "s/^/          /")
     registryConfig:
       allowPlainHttpRegistries: false
       insecureSkipVerify: true
