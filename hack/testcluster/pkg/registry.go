@@ -182,6 +182,15 @@ func CreateRegistry(ctx context.Context,
 	}
 	logger.Logln("Successfully created registry certificates")
 
+	dir := filepath.Dir(exportRegistryCreds)
+	cacertpath := filepath.Join(dir, "cacerts.crt")
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return fmt.Errorf("unable to create export directory %q: %w", filepath.Dir(exportRegistryCreds), err)
+	}
+	if err := os.WriteFile(cacertpath, certSecret.Data[certificates.DataKeyCertificateCA], os.ModePerm); err != nil {
+		return fmt.Errorf("unable to write certificate to %q: %w", cacertpath, err)
+	}
+
 	username := "test"
 	htpasswd := CreateHtpasswd(username, password)
 
@@ -313,10 +322,6 @@ func CreateRegistry(ctx context.Context,
 	if len(exportRegistryCreds) == 0 {
 		logger.Logfln("password: \n%q", string(dockerconfigBytes))
 		return nil
-	}
-
-	if err := os.MkdirAll(filepath.Dir(exportRegistryCreds), os.ModePerm); err != nil {
-		return fmt.Errorf("unable to create export directory %q: %w", filepath.Dir(exportRegistryCreds), err)
 	}
 	if err := os.WriteFile(exportRegistryCreds, dockerconfigBytes, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to write docker auth config to %q: %w", exportRegistryCreds, err)

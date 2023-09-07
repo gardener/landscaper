@@ -52,6 +52,9 @@ if [[ -f "$TMP/docker.config" ]]; then
   printf "
 landscaper:
   landscaper:
+    customCAs:
+      secrets:
+        certs: $(cat "$TMP/cacerts.crt")
     registryConfig:
       allowPlainHttpRegistries: false
       insecureSkipVerify: true

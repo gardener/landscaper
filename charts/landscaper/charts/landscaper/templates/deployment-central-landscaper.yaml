@@ -64,6 +64,11 @@ spec:
             mountPath: /app/ls/oci-cache
           - name: config
             mountPath: /app/ls/config
+          {{- if .Values.landscaper.customCAs.secrets }}
+          - name: cacerts
+            mountPath: /etc/ssl/certs/custom-cacerts.pem
+            subPath: custom-cacerts.crt
+          {{- end }}
           {{- if .Values.landscaper.registryConfig.secrets }}
           - name: registrypullsecrets
             mountPath: /app/ls/registry/secrets
@@ -105,6 +110,11 @@ spec:
       - name: config
         secret:
           secretName: {{ include "landscaper.fullname" . }}-config
+      {{- if .Values.landscaper.customCAs.secrets }}
+      - name: cacerts
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-cacerts
+      {{- end }}
       {{- if .Values.landscaper.registryConfig.secrets }}
       - name: registrypullsecrets
         secret:
