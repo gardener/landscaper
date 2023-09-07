@@ -12,7 +12,6 @@ metadata:
     {{- include "landscaper.labels" . | nindent 4 }}
 data:
   {{- range $key, $value := .Values.landscaper.customCAs.secrets }}
-  {{ $key }}: |
-    {{ $value | nindent 4 }}
+  {{ $key }}: {{ $value | b64enc }}
   {{- end }}
 {{- end }}
