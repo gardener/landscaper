@@ -54,7 +54,8 @@ landscaper:
   landscaper:
     customCAs:
       secrets:
-        certs: $(cat "$TMP/cacerts.crt")
+        certs: |
+          $(cat "$TMP/cacerts.crt")
     registryConfig:
       allowPlainHttpRegistries: false
       insecureSkipVerify: true
