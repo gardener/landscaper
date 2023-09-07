@@ -1,0 +1,17 @@
+{{/* SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+
+ SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.landscaper.customCAs.secrets }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "landscaper.fullname" . }}-cacerts
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.landscaper.customCAs.secrets }}
+  {{ $key }}: {{ $value }}
+  {{- end }}
+{{- end }}
