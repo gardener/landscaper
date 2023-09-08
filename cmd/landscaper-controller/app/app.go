@@ -7,7 +7,10 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/mandelsoft/vfs/pkg/vfs"
+	"io/fs"
 	"os"
+	"path/filepath"
 
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 
@@ -73,6 +76,36 @@ func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
 func (o *Options) run(ctx context.Context) error {
 	setupLogger := o.Log.WithName("setup")
 	setupLogger.Info("Starting Landscaper Controller", lc.KeyVersion, version.Get().String())
+
+	sslpath := filepath.Join("/etc", "ssl")
+	exists, err := vfs.DirExists(osfs.New(), sslpath)
+	if err != nil {
+		setupLogger.Error(err, "error while looking for ssl directory")
+	} else {
+		setupLogger.Info("ssl directory", "exists", exists)
+		if exists {
+			err = vfs.Walk(osfs.New(), sslpath, func(path string, info fs.FileInfo, err error) error {
+				if err != nil {
+					setupLogger.Error(err, "error walking", "path", path)
+				} else {
+					if !info.IsDir() {
+						content, err := vfs.ReadFile(osfs.New(), path)
+						if err != nil {
+							setupLogger.Error(err, "error reading file", "path", path)
+						} else {
+							setupLogger.Info("filecontent", "path", path, "content", string(content))
+						}
+					} else {
+						setupLogger.Info("walking directory", "path", path)
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				setupLogger.Error(err, "error walking path")
+			}
+		}
+	}
 
 	configBytes, err := yaml.Marshal(o.Config)
 	if err != nil {
