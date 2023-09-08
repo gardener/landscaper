@@ -68,7 +68,7 @@ spec:
             mountPath: /app/ls/config
           {{- if .Values.landscaper.customCAs.secrets }}
           - name: cacerts
-            mountPath: /etc/ssl/certs/custom-cacerts.pem
+            mountPath: /etc/ssl/certs/custom-cacerts.crt
             subPath: custom-cacerts.crt
           {{- end }}
           {{- if .Values.landscaper.registryConfig.secrets }}
