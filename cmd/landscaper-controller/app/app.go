@@ -7,10 +7,11 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/mandelsoft/vfs/pkg/vfs"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 

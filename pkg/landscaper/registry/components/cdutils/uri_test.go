@@ -94,7 +94,7 @@ var _ = Describe("URI", func() {
 					Version: "v0.0.0",
 				},
 				RepositoryContexts:  repositoryContexts,
-				Provider:            cdv2.ExternalProvider,
+				Provider:            "landscaper",
 				Resources:           []types.Resource{resource2},
 				Sources:             []types.Source{},
 				ComponentReferences: []types.ComponentReference{},
