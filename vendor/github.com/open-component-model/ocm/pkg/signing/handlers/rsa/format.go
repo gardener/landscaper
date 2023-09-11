@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"io"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
@@ -31,7 +33,7 @@ func GetPublicKey(key interface{}) (*rsa.PublicKey, []string, error) {
 		return &k.PublicKey, nil, nil
 	case *x509.Certificate:
 		if p, ok := k.PublicKey.(*rsa.PublicKey); ok {
-			names := append(k.DNSNames[:0:0], k.DNSNames...) //nolint: gocritic // yes
+			names := slices.Clone(k.DNSNames)
 			if k.Issuer.CommonName != "" {
 				names = append(names, k.Issuer.CommonName)
 			}

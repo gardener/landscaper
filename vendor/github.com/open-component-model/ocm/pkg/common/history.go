@@ -9,7 +9,10 @@ import (
 	"reflect"
 	"sort"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/generics"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,14 +83,11 @@ func (h *History) Add(kind string, nv NameVersion) error {
 
 // Append provides a new extended history without cycle check.
 func (h History) Append(nv ...NameVersion) History {
-	result := make(History, len(h)+len(nv))
-	copy(result, h)
-	copy(result[len(h):], nv)
-	return result
+	return generics.AppendedSlice(h, nv...)
 }
 
 func (h History) Copy() History {
-	return append(h[:0:0], h...)
+	return slices.Clone(h)
 }
 
 func (h History) RemovePrefix(prefix History) History {

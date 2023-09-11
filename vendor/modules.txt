@@ -339,7 +339,6 @@ github.com/containerd/containerd/remotes/docker/schema1
 github.com/containerd/containerd/remotes/errors
 github.com/containerd/containerd/tracing
 github.com/containerd/containerd/version
-<<<<<<< HEAD
 # github.com/containerd/stargz-snapshotter/estargz v0.14.3
 ## explicit; go 1.19
 github.com/containerd/stargz-snapshotter/estargz
@@ -383,10 +382,7 @@ github.com/coreos/go-oidc/v3/oidc
 # github.com/cyberphone/json-canonicalization v0.0.0-20220623050100-57a0ce2678a7
 ## explicit
 github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer
-# github.com/cyphar/filepath-securejoin v0.2.3
-=======
 # github.com/cyphar/filepath-securejoin v0.2.4
->>>>>>> master
 ## explicit; go 1.13
 github.com/cyphar/filepath-securejoin
 # github.com/davecgh/go-spew v1.1.1
@@ -939,10 +935,13 @@ github.com/mailru/easyjson/jwriter
 # github.com/mandelsoft/filepath v0.0.0-20230412200429-36b1eb66bd27
 ## explicit; go 1.19
 github.com/mandelsoft/filepath/pkg/filepath
-# github.com/mandelsoft/logging v0.0.0-20230331123830-36542ef18f6f
+# github.com/mandelsoft/logging v0.0.0-20230905123808-7042ee3aae45
 ## explicit; go 1.18
 github.com/mandelsoft/logging
 github.com/mandelsoft/logging/config
+github.com/mandelsoft/logging/contract
+github.com/mandelsoft/logging/logrusfmt
+github.com/mandelsoft/logging/logrusl/adapter
 github.com/mandelsoft/logging/logrusr
 github.com/mandelsoft/logging/scheme
 # github.com/mandelsoft/spiff v1.7.0-beta-5
@@ -977,7 +976,7 @@ github.com/marstr/guid
 # github.com/mattn/go-colorable v0.1.13
 ## explicit; go 1.15
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.17
+# github.com/mattn/go-isatty v0.0.19
 ## explicit; go 1.15
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.14
@@ -1117,7 +1116,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230825130646-3200204926d6 => github.com/fabianburth/ocm v0.0.0-20230829151402-ce8bc8396d60
+# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230908075545-b9f08d4a19dd
 ## explicit; go 1.19
 github.com/open-component-model/ocm/pkg/cobrautils/flag
 github.com/open-component-model/ocm/pkg/cobrautils/flagsets
@@ -1578,6 +1577,12 @@ github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
+# github.com/valyala/bytebufferpool v1.0.0
+## explicit
+github.com/valyala/bytebufferpool
+# github.com/valyala/fasttemplate v1.2.2
+## explicit; go 1.12
+github.com/valyala/fasttemplate
 # github.com/vbatts/tar-split v0.11.3
 ## explicit; go 1.15
 github.com/vbatts/tar-split/archive/tar
@@ -2522,4 +2527,3 @@ sigs.k8s.io/yaml
 # github.com/gardener/landscaper/apis => ./apis
 # github.com/gardener/landscaper/controller-utils => ./controller-utils
 # github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-# github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230829151402-ce8bc8396d60

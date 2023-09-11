@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"sync"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/utils"
@@ -131,7 +133,7 @@ func (r *actionRegistry) RegisterAction(name string, description string, usage s
 		name:       name,
 		shortdesc:  description,
 		usage:      usage,
-		attributes: append(attrs[:0:0], attrs...),
+		attributes: slices.Clone(attrs),
 		types:      map[string]ActionType{},
 	}
 	r.actions[name] = ai

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Mandelsoft. All rights reserved.
+ * Copyright 2023 Mandelsoft. All rights reserved.
  *  This file is licensed under the Apache Software License, v. 2 except as noted
  *  otherwise in the LICENSE file
  *
@@ -18,29 +18,13 @@
 
 package logging
 
-type tag string
-
-// DefineTag creates a tag and registers it together with a description.
-func DefineTag(name string, desc string) Tag {
-	defs.DefineTag(name, desc)
-	return NewTag(name)
-}
-
-// NewTag provides a new Tag object to be used as rule condition
-// or message context.
-func NewTag(name string) Tag {
-	return tag(name)
-}
-
-func (r tag) Match(messageContext ...MessageContext) bool {
-	for _, c := range messageContext {
-		if e, ok := c.(Tag); ok && e.Name() == string(r) {
-			return true
-		}
+func sliceAppend[T any](slice []T, elems ...T) []T {
+	if len(elems) == 0 {
+		return slice
 	}
-	return false
+	return append(sliceCopy(slice), elems...)
 }
 
-func (r tag) Name() string {
-	return string(r)
+func sliceCopy[T any](slice []T) []T {
+	return append(slice[:0:0], slice...)
 }

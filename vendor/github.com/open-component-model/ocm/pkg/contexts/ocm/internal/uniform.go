@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -120,7 +121,7 @@ func (s *specHandlers) Copy() RepositorySpecHandlers {
 
 	n := NewRepositorySpecHandlers().(*specHandlers)
 	for typ, hdlrs := range s.handlers {
-		n.handlers[typ] = append(hdlrs[:0:0], hdlrs...)
+		n.handlers[typ] = slices.Clone(hdlrs)
 	}
 	return n
 }

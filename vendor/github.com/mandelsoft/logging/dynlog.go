@@ -106,7 +106,7 @@ func (d *dynamicLogger) Trace(msg string, keypairs ...interface{}) {
 
 func (d *dynamicLogger) WithName(name string) Logger {
 	l := *d
-	l.names = append(l.names, name)
+	l.names = sliceAppend(l.names, name)
 	l.logger = nil
 	return &l
 }
@@ -116,7 +116,17 @@ func (d *dynamicLogger) WithValues(keypairs ...interface{}) Logger {
 		return d
 	}
 	l := *d
-	l.values = append(l.values, keypairs)
+	l.values = sliceAppend(l.values, keypairs[:2*(len(keypairs)/2)]...)
+	l.logger = nil
+	return &l
+}
+
+func (d *dynamicLogger) WithContext(messageContext ...MessageContext) UnboundLogger {
+	if len(messageContext) == 0 {
+		return d
+	}
+	l := *d
+	l.messageContext = sliceAppend(l.messageContext, messageContext...)
 	l.logger = nil
 	return &l
 }

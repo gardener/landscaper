@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
+	"github.com/open-component-model/ocm/pkg/generics"
 	"github.com/open-component-model/ocm/pkg/registrations"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -23,7 +24,7 @@ var TAG_BLOBHANDLER = logging.DefineTag("blobhandler", "execution of blob handle
 
 func BlobHandlerLogger(ctx Context, messageContext ...logging.MessageContext) logging.Logger {
 	if len(messageContext) > 0 {
-		messageContext = append(append(messageContext[:0:0], messageContext...), TAG_BLOBHANDLER)
+		messageContext = generics.AppendedSlice[logging.MessageContext](messageContext, TAG_BLOBHANDLER)
 		return ctx.Logger(messageContext...)
 	} else {
 		return ctx.Logger(TAG_BLOBHANDLER)

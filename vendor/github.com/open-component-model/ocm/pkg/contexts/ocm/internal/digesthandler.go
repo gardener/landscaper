@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"sync"
 
+	"golang.org/x/exp/slices"
+
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 	"github.com/open-component-model/ocm/pkg/signing"
 	"github.com/open-component-model/ocm/pkg/utils"
@@ -167,10 +169,10 @@ func (r *blobDigesterRegistry) Copy() BlobDigesterRegistry {
 
 	n := NewBlobDigesterRegistry(r.base).(*blobDigesterRegistry)
 	for k, v := range r.typehandlers {
-		n.typehandlers[k] = append(v[:0:0], v...)
+		n.typehandlers[k] = slices.Clone(v)
 	}
 	for k, v := range r.normhandlers {
-		n.normhandlers[k] = append(v[:0:0], v...)
+		n.normhandlers[k] = slices.Clone(v)
 	}
 	for k, v := range r.digesters {
 		n.digesters[k] = v

@@ -6,6 +6,8 @@ package internal
 
 import (
 	"github.com/modern-go/reflect2"
+
+	"github.com/open-component-model/ocm/pkg/generics"
 )
 
 // CredentialsSource is a factory for effective credentials.
@@ -27,5 +29,5 @@ func (c CredentialsChain) Credentials(ctx Context, creds ...CredentialsSource) (
 	if len(creds) == 0 {
 		return c[0].Credentials(ctx, c[1:]...)
 	}
-	return c[0].Credentials(ctx, append(append(c[:0:len(c)-1+len(creds)], c[1:]...), creds...))
+	return c[0].Credentials(ctx, generics.AppendedSlice(c[1:], creds...)...)
 }

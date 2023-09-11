@@ -1,6 +1,6 @@
 # Logging for Go with context-specific Log Level Settings
 
-This package provides a wrapper around the [logr](https://ggithub.com/go-logr/logr)
+This package provides a wrapper around the [logr](https://github.com/go-logr/logr)
 logging system supporting a rule based approach to enable log levels
 for dedicated message contexts specified at the logging location.
 
@@ -86,6 +86,16 @@ which is potentially shifted to the level of the base `logr.Logger`
 used to set up the context, when forwarding to the original sink. This means
 they are always directly using the log levels 0..*n*.
 
+It is possible to get a loggings context with a predefined message context
+with
+
+```go
+  ctx.WithContext("my message")
+```
+
+All loggers obtained from such a context will implicitly use the given
+message context.
+
 If no rules are configured, the default logger of the context is used
 independently of the  given arguments. The given message context information is
 optionally passed to the provided logger, depending on the used 
@@ -136,7 +146,7 @@ by
 This way it can be configured, also. It can be used for logging requests
 not related to a dedicated logging context.
 
-There is shortcut to provide a logger for a message context based on
+There is a shortcut to provide a logger for a message context based on
 this default context:
 
 ```go
@@ -235,28 +245,51 @@ for a message context matching all given conditions.
 
 ### Message Contexts and Conditions
 
+The message context is a set of objects describing the context of a
+log message. It can be used
+- to enrich the log message
+- ro enrich the logger (logr.Logger features a name to represent
+  the call hierarchy when passing loggers to functions)
+- to control the effective log condition based of configuration rules.
+  (for example to enable all Info logs for log requests with a dedicated attribute)
+ 
 The base library already provides some ready to use conditions
 and message contexts:
 
-- `Realm`(*string*) the location context of a logging request. This could
-  be some kind of denotation for a functional are or Go package. To obtain the
-  package realm for some coding the function `logging.Package()` can be used.
-
-  Used as message context, the realm name is added to the logger name for
-  the log request.
-
-- `RealmPrefix`(*string*) (only as condition) matches against a complete 
-  realm tree specified by a base realm.
+- `Name`(*string*)  is attached as additional name part to the logr.Logger. 
+  It cannot be used to control the log state.,
 
 - `Tag`(*string*) Just some tag for a log request.
-
   Used as message context, the tag name is not added to the logger name for
   the log request.
 
-- `Attribute`(*string,interface{}*) the name of an arbitrary attribute with some
-  value
+- `Realm`(*string*) the location context of a logging request. This could
+  be some kind of denotation for a functional area or Go package. To obtain the
+  package realm for some coding the function `logging.Package()` can be used. Used as message context, the realm name is added as additional attribute (`realm`) to log message. As condition realms only match the last realm in a message context.
 
-  Used as message context, the key/value pair is added to the log message.
+- `RealmPrefix`(*string*) (only as condition) matches against a complete 
+  realm tree specified by a base realm. It matches the last realm in a message
+  context, only.
+
+- `Attribute`(*string,interface{}*) the name of an arbitrary attribute with some
+  value. Used as message context, the key/value pair is added to the log message.
+
+Meaning of predefined objects in a message context:
+
+| Element     |  Rule Condition  | Message Context | Logger  |  LogMessage Attribute  |
+|-------------|:----------------:|:---------------:|:-------:|:----------------------:|
+| Name        |     &check;      |     &check;     | &check; |        &cross;         |
+| Tag         |     &check;      |     &check;     | &cross; |        &cross;         |
+| Realm       |     &check;      |     &check;     | &cross; |   &check;  (`realm`)   |
+| Attribute   |     &check;      |     &check;     | &cross; |        &check;         |
+| RealmPrefix |     &check;      |     &cross;     | &cross; |        &cross;         |
+
+It is possible to create own objects using the interfaces:
+- `Attacher`: attach information to a logger
+- `Condition`: to be usable as condition in a rule.
+
+Only objects implementing at least one of those interfaces can
+usefully be passed.
 
 ## Bound and Unbound Loggers
 
@@ -290,3 +323,43 @@ They can be used, for example for permanent worker Go routines, to
 statically define the log name or standard values used for all subsequent log
 requests according to the identity of the worker.
 
+## Support for special logging systems
+
+The general *logr* logging framework acts as a wrapper for
+any other logging framework to provide a uniform frontend,
+which can be based on any supported base.
+
+To support this, an adapter must be provided, for example,
+the adapter for *github.com/sirupsen.logrus* is provided
+by *github.com/bombsimon/logrusr*.
+
+Because this logging framework is based on *logr* 
+it can be based on any such supported logging framework.
+
+This library contains some additional special mappings of *logr*, also.
+
+### `logrus`
+
+The support includes three new logrus 
+entry formatters in package `logrusfmt`, able to be configurable to best match the features of this library.
+
+- `TextFormatter` an extended logrus.TextFormatter with
+  extended capabilities to render an entry.
+  This is used by the adapter to generate more human-readable
+  logging output supporting the special fields provided by
+  this logging system.
+
+- `TextFmtFormatter` an extended `TextFormatter` able
+  to render more human-readable log messages by 
+  composing a log entry's log message incorporating selected 
+  log fields into a readable log message.
+
+- `JSONFormatter` an extended logrus.JSONFormatter with
+  extended capabilities to render an entry.
+  This is used by the adapter to generate more readable
+  logging output with a dedicated ordering of the special fields 
+  provided by this logging system.
+
+The package `logrusl` provides configuration methods to 
+achieve a `logging.LogContext` based on *logrus* with special 
+preconfigured configurations.

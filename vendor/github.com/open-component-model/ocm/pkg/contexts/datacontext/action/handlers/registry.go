@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/action/api"
 	"github.com/open-component-model/ocm/pkg/errors"
@@ -142,7 +144,7 @@ func (r *registry) Register(h ActionHandler, olist ...Option) error {
 	if versions == nil {
 		versions = r.types.SupportedActionVersions(opts.Action)
 	}
-	versions = append(versions[:0:0], versions...)
+	versions = slices.Clone(versions)
 	if err := runtime.SortVersions(versions); err != nil {
 		return errors.Wrapf(err, "invalid version set")
 	}
@@ -217,8 +219,8 @@ func (r *registry) Get(spec api.ActionSpec, possible ...string) []ActionHandlerM
 }
 
 func MatchVersion(possible []string, avail []string) string {
-	p := append(possible[:0:0], possible...) //nolint: gocritic // yes
-	a := append(avail[:0:0], avail...)       //nolint: gocritic // yes
+	p := slices.Clone(possible)
+	a := slices.Clone(avail)
 
 	runtime.SortVersions(p)
 	runtime.SortVersions(a)

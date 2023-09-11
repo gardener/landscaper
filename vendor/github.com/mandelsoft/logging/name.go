@@ -18,29 +18,18 @@
 
 package logging
 
-type tag string
+type name string
 
-// DefineTag creates a tag and registers it together with a description.
-func DefineTag(name string, desc string) Tag {
-	defs.DefineTag(name, desc)
-	return NewTag(name)
+// NewName provides a new Name object to be used as message context.
+// It will be attached to the name of the logger.
+func NewName(name string) Name {
+	return Name(name)
 }
 
-// NewTag provides a new Tag object to be used as rule condition
-// or message context.
-func NewTag(name string) Tag {
-	return tag(name)
+func (r name) Attach(l Logger) Logger {
+	return l.WithName(string(r))
 }
 
-func (r tag) Match(messageContext ...MessageContext) bool {
-	for _, c := range messageContext {
-		if e, ok := c.(Tag); ok && e.Name() == string(r) {
-			return true
-		}
-	}
-	return false
-}
-
-func (r tag) Name() string {
+func (r name) Name() string {
 	return string(r)
 }

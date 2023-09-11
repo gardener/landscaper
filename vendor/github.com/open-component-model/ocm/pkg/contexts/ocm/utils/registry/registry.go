@@ -7,6 +7,8 @@ package registry
 import (
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/generics"
 	"github.com/open-component-model/ocm/pkg/mime"
 )
@@ -51,7 +53,7 @@ func (p *Registry[H, K]) GetHandler(key K) []H {
 	if r == nil {
 		return nil
 	}
-	return append(r[:0:0], r...)
+	return slices.Clone(r)
 }
 
 func (p *Registry[H, K]) LookupHandler(key K) []H {

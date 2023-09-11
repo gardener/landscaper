@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Mandelsoft. All rights reserved.
+ * Copyright 2023 Mandelsoft. All rights reserved.
  *  This file is licensed under the Apache Software License, v. 2 except as noted
  *  otherwise in the LICENSE file
  *
@@ -16,31 +16,8 @@
  *  limitations under the License.
  */
 
-package logging
+package contract
 
-type tag string
-
-// DefineTag creates a tag and registers it together with a description.
-func DefineTag(name string, desc string) Tag {
-	defs.DefineTag(name, desc)
-	return NewTag(name)
-}
-
-// NewTag provides a new Tag object to be used as rule condition
-// or message context.
-func NewTag(name string) Tag {
-	return tag(name)
-}
-
-func (r tag) Match(messageContext ...MessageContext) bool {
-	for _, c := range messageContext {
-		if e, ok := c.(Tag); ok && e.Name() == string(r) {
-			return true
-		}
-	}
-	return false
-}
-
-func (r tag) Name() string {
-	return string(r)
-}
+// FieldKeyRealm is the name of the logr field set to the realm of a logging
+// message.
+const FieldKeyRealm = "realm"

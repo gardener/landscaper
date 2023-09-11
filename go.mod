@@ -18,13 +18,13 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.15
 	github.com/mandelsoft/filepath v0.0.0-20230412200429-36b1eb66bd27
-	github.com/mandelsoft/logging v0.0.0-20230331123830-36542ef18f6f
+	github.com/mandelsoft/logging v0.0.0-20230905123808-7042ee3aae45
 	github.com/mandelsoft/spiff v1.7.0-beta-5
 	github.com/mandelsoft/vfs v0.0.0-20230713123140-269aa4fb1338
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
-	github.com/open-component-model/ocm v0.3.0-rc.1.0.20230825130646-3200204926d6
+	github.com/open-component-model/ocm v0.3.0-rc.1.0.20230908075545-b9f08d4a19dd
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc3
 	github.com/pkg/errors v0.9.1
@@ -211,7 +211,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/marstr/guid v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
@@ -272,6 +272,8 @@ require (
 	github.com/tonglil/buflogr v1.0.1 // indirect
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/xanzy/go-gitlab v0.86.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -326,5 +328,4 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-	github.com/open-component-model/ocm => github.com/fabianburth/ocm v0.0.0-20230829151402-ce8bc8396d60
 )

@@ -22,8 +22,7 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
-	"github.com/sirupsen/logrus"
-
+	"github.com/mandelsoft/logging/logrusl/adapter"
 	"github.com/mandelsoft/logging/logrusr"
 )
 
@@ -79,8 +78,8 @@ func newWithBase(base Context, baselogger ...logr.Logger) *context {
 		ctx.setBaseLogger(baselogger[0])
 	}
 	if base == nil && len(baselogger) == 0 {
-		l := logrus.New()
-		l.SetLevel(9)
+		l := adapter.NewLogger()
+		l.Formatter = adapter.NewTextFmtFormatter()
 		ctx.setBaseLogger(logrusr.New(l))
 	}
 	ctx.defaultLogger = NewLogger(DynSink(ctx.GetDefaultLevel, 0, ctx.GetSink))
@@ -93,7 +92,7 @@ func (c *context) Tree() ContextSupport {
 }
 
 func (c *context) GetMessageContext() []MessageContext {
-	return append(c.messageContext[:0:0], c.messageContext...)
+	return sliceCopy(c.messageContext)
 }
 
 func (c *context) Updater() *Updater {
@@ -225,7 +224,7 @@ func (c *context) ResetRules() {
 
 func (c *context) WithContext(messageContext ...MessageContext) Context {
 	ctx := newWithBase(c)
-	ctx.messageContext = append(ctx.messageContext, messageContext...)
+	ctx.messageContext = JoinMessageContext(ctx.messageContext, messageContext...)
 	return ctx
 }
 
@@ -234,7 +233,7 @@ func (c *context) Logger(messageContext ...MessageContext) Logger {
 	defer c.lock.RUnlock()
 
 	if len(c.messageContext) > 0 {
-		messageContext = append(c.messageContext, messageContext...)
+		messageContext = JoinMessageContext(c.messageContext, messageContext...)
 	}
 	l := c.evaluate(c.GetSink, messageContext...)
 	if l == nil {
@@ -290,4 +289,8 @@ func getLogrLevel(l logr.Logger) int {
 func shifted(logger logr.Logger) logr.LogSink {
 	level := getLogrLevel(logger)
 	return WrapSink(level+9, level, logger.GetSink())
+}
+
+func JoinMessageContext(base []MessageContext, list ...MessageContext) []MessageContext {
+	return sliceAppend(base, list...)
 }

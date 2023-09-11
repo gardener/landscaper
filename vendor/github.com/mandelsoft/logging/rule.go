@@ -59,5 +59,5 @@ func (r *ConditionRule) Level() int {
 }
 
 func (r *ConditionRule) Conditions() []Condition {
-	return append(r.conditions[:0:0], r.conditions...)
+	return sliceCopy(r.conditions)
 }

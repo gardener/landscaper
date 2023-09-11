@@ -30,6 +30,7 @@ import (
 	storagecontext "github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/generics"
 )
 
 func init() {
@@ -88,7 +89,7 @@ func (b *blobHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, globa
 	}
 	if m, ok := blob.(accessio.AnnotatedBlobAccess[cpi.AccessMethod]); ok {
 		cpi.BlobHandlerLogger(ctx.GetContext()).Debug("oci blob handler with ocm access source",
-			append(values, "sourcetype", m.Source().AccessSpec().GetType())...,
+			generics.AppendedSlice[any](values, "sourcetype", m.Source().AccessSpec().GetType())...,
 		)
 	} else {
 		cpi.BlobHandlerLogger(ctx.GetContext()).Debug("oci blob handler", values...)
@@ -152,7 +153,7 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 	if m, ok := blob.(accessio.AnnotatedBlobAccess[cpi.AccessMethod]); ok {
 		// prepare for optimized point to point implementation
 		log.Debug("oci artifact handler with ocm access source",
-			append(values, "sourcetype", m.Source().AccessSpec().GetType())...,
+			generics.AppendedSlice[any](values, "sourcetype", m.Source().AccessSpec().GetType())...,
 		)
 		if ocimeth, ok := m.Source().(ociartifact.AccessMethod); !keep && ok {
 			art, _, err = ocimeth.GetArtifact(&finalizer)
@@ -198,11 +199,11 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 		name = path.Join(prefix, mapped)
 		if mapped == orig {
 			log.Debug("namespace derived from hint",
-				append(values, "namespace", name),
+				generics.AppendedSlice[any](values, "namespace", name),
 			)
 		} else {
 			log.Debug("mapped namespace derived from hint",
-				append(values, "namespace", name),
+				generics.AppendedSlice[any](values, "namespace", name),
 			)
 		}
 

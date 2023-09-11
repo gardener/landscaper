@@ -5,6 +5,8 @@
 package handlers
 
 import (
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/action/api"
 )
 
@@ -66,7 +68,7 @@ type versions struct {
 }
 
 func WithVersions(vers ...string) Option {
-	return versions{append(vers[:0:0], vers...)}
+	return versions{slices.Clone(vers)}
 }
 
 func (o versions) ApplyActionHandlerOptionTo(opts *Options) {

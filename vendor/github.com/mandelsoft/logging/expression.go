@@ -37,7 +37,7 @@ func (e *AndExpr) Match(messageContext ...MessageContext) bool {
 }
 
 func (e *AndExpr) Conditions() []Condition {
-	return append(e.conditions[:0:0], e.conditions...)
+	return sliceCopy(e.conditions)
 }
 
 // Or provides an OR condition for the given conditions.
@@ -59,7 +59,7 @@ func (e *OrExpr) Match(messageContext ...MessageContext) bool {
 }
 
 func (e *OrExpr) Conditions() []Condition {
-	return append(e.conditions[:0:0], e.conditions...)
+	return sliceCopy(e.conditions)
 }
 
 // Not provides a NOT condition for the given condition.

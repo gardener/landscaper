@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
+
+	"golang.org/x/exp/slices"
 )
 
 // NumberRange can be used as source for successive id numbers to tag
@@ -56,7 +58,7 @@ func (r *RuntimeFinalizationRecoder) Get() []ObjectIdentity {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	return append(r.ids[:0:0], r.ids...)
+	return slices.Clone(r.ids)
 }
 
 func (r *RuntimeFinalizationRecoder) Record(id ObjectIdentity) {

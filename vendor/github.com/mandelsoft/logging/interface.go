@@ -26,6 +26,10 @@ import (
 	"github.com/go-logr/logr"
 )
 
+// FieldKeyRealm is the name of the logr field set to the realm of a logging
+// message.
+const FieldKeyRealm = "realm"
+
 // These are the different logging levels. You can set the logging level to log
 // on your instance of logger.
 const (
@@ -107,10 +111,10 @@ type Logger interface {
 	// Trace logs an trace message.
 	Trace(msg string, keypairs ...interface{})
 
-	// WithName return a new logger with an extended name,
+	// NewName return a new logger with an extended name,
 	// but the same logging activation.
 	WithName(name string) Logger
-	// WithValues return a new logger with more statndard key/value pairs,
+	// WithValues return a new logger with more standard key/value pairs,
 	// but the same logging activation.
 	WithValues(keypairs ...interface{}) Logger
 
@@ -143,6 +147,7 @@ type Logger interface {
 // for a logging context.
 type UnboundLogger interface {
 	Logger
+	WithContext(messageContext ...MessageContext) UnboundLogger
 	BoundLogger() Logger
 }
 
@@ -265,23 +270,19 @@ type Attacher interface {
 // message context or logging condition.
 // If used as message context it will be attached to
 // the logging message as additional logger name.
-type Realm interface {
-	Condition
-	Attacher
+type Realm = realm
 
-	Name() string
-}
+var (
+	_ Condition = Realm("")
+	_ Attacher  = Realm("")
+)
 
 // RealmPrefix is used as logging condition to
 // match a realm of the message context by
 // checking its value to be a path prefix.
-type RealmPrefix interface {
-	Condition
-	Attacher
+type RealmPrefix = realmprefix
 
-	Name() string
-	IsPrefix() bool
-}
+var _ Condition = RealmPrefix("")
 
 // Attribute is a key/value pair usable
 // as logging condition or message context.
@@ -299,8 +300,13 @@ type Attribute interface {
 // message context or logging condition.
 // If used as message context it will not be attached to
 // the logging message at all.
-type Tag interface {
-	Condition
+type Tag = tag
 
-	Name() string
-}
+var _ Condition = Tag("")
+
+// Name is a simple string value, which can be used as
+// message context.
+// It will not be attached to the logger's name.
+type Name = name
+
+var _ Attacher = Name("")

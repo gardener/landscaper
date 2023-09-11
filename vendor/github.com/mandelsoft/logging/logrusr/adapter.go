@@ -17,6 +17,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// FieldKeyLogger is the name of the field used to store the
+// logr logger name.
+const FieldKeyLogger = "logger"
+
 // minlevel is the minimum level passed to logrus.
 // This is ErrorLevel to avoid panics and fatal program exits.
 // This means, V(0) == ErrorLevel
@@ -50,7 +54,7 @@ func WithName(name ...string) Option {
 		l.name = name
 
 		l.logger = l.logger.WithField(
-			"logger", strings.Join(l.name, "."),
+			FieldKeyLogger, strings.Join(l.name, "."),
 		)
 	}
 }

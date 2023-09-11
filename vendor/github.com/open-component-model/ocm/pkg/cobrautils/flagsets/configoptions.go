@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	"golang.org/x/exp/slices"
 )
 
 type Option interface {
@@ -57,7 +58,7 @@ func (o *configOptions) AddTypeSetGroupsToOptions(set ConfigOptionTypeSet) {
 }
 
 func (o *configOptions) Options() []Option {
-	return append(o.options[:0:0], o.options...)
+	return slices.Clone(o.options)
 }
 
 func (o *configOptions) GetValue(name string) (interface{}, bool) {

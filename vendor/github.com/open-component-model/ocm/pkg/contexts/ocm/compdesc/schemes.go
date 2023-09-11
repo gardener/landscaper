@@ -61,6 +61,7 @@ func Decode(data []byte, opts ...DecodeOption) (*ComponentDescriptor, error) {
 		APIVersion string          `json:"apiVersion"`
 	}
 	if err := o.Codec.Decode(data, &schemedef); err != nil {
+		Logger.Debug("decoding of component descriptor failed", "error", err.Error(), "data", string(data))
 		return nil, err
 	}
 
@@ -78,9 +79,14 @@ func Decode(data []byte, opts ...DecodeOption) (*ComponentDescriptor, error) {
 
 	versioned, err := version.Decode(data, o)
 	if err != nil {
+		Logger.Debug("versioned decoding of component descriptor failed", "error", err.Error(), "scheme", scheme, "data", string(data))
 		return nil, err
 	}
-	return version.ConvertTo(versioned)
+	cd, err := version.ConvertTo(versioned)
+	if err != nil {
+		Logger.Debug("conversion of component descriptor failed", "error", err, "scheme", scheme, "data", string(data))
+	}
+	return cd, err
 }
 
 // DecodeOptions defines decode options for the codec.
