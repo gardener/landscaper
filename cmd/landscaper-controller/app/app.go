@@ -28,10 +28,8 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
 	"github.com/gardener/landscaper/pkg/agent"
 	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
@@ -188,7 +186,7 @@ func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manage
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config.Controllers.Executions); err != nil {
+	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
@@ -290,13 +288,11 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 
 	eg, ctx := errgroup.WithContext(ctx)
 
-	if lock.LockerEnabled {
-		eg.Go(func() error {
-			lockCleaner := lock.NewLockCleaner(lsMgr.GetClient(), hostMgr.GetClient())
-			lockCleaner.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
-			return nil
-		})
-	}
+	eg.Go(func() error {
+		lockCleaner := lock.NewLockCleaner(lsMgr.GetClient(), hostMgr.GetClient())
+		lockCleaner.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
+		return nil
+	})
 
 	eg.Go(func() error {
 		monitor := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostMgr.GetClient())

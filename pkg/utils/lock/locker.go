@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,11 +15,10 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 const (
-	LockerEnabled = false
-
 	keyMyPodName      = "myPodName"
 	keyNamespace      = "lockNamespace"
 	keySyncObjectName = "syncObjectName"

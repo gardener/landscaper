@@ -13,11 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/gardener/landscaper/pkg/utils"
-
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/version"
 )
 
@@ -45,7 +44,7 @@ func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
 		Type:            Type,
 		Deployer:        d,
 		TargetSelectors: config.TargetSelector,
-	}, 5, callerName)
+	}, 5, false, callerName)
 }
 
 // NewController creates a new simple controller.
@@ -69,5 +68,5 @@ func NewController(log logging.Logger, kubeClient client.Client, scheme *runtime
 			Type:            Type,
 			Deployer:        d,
 			TargetSelectors: config.TargetSelector,
-		}, 5, callerName), nil
+		}, 5, false, callerName), nil
 }

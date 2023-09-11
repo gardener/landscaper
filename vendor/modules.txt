@@ -339,6 +339,7 @@ github.com/containerd/containerd/remotes/docker/schema1
 github.com/containerd/containerd/remotes/errors
 github.com/containerd/containerd/tracing
 github.com/containerd/containerd/version
+<<<<<<< HEAD
 # github.com/containerd/stargz-snapshotter/estargz v0.14.3
 ## explicit; go 1.19
 github.com/containerd/stargz-snapshotter/estargz
@@ -383,6 +384,9 @@ github.com/coreos/go-oidc/v3/oidc
 ## explicit
 github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer
 # github.com/cyphar/filepath-securejoin v0.2.3
+=======
+# github.com/cyphar/filepath-securejoin v0.2.4
+>>>>>>> master
 ## explicit; go 1.13
 github.com/cyphar/filepath-securejoin
 # github.com/davecgh/go-spew v1.1.1
@@ -526,7 +530,7 @@ github.com/gardener/component-cli/pkg/commands/componentarchive/input
 github.com/gardener/component-cli/pkg/commands/constants
 github.com/gardener/component-cli/pkg/logcontext
 github.com/gardener/component-cli/pkg/utils
-# github.com/gardener/component-spec/bindings-go v0.0.66
+# github.com/gardener/component-spec/bindings-go v0.0.95
 ## explicit; go 1.18
 github.com/gardener/component-spec/bindings-go/apis
 github.com/gardener/component-spec/bindings-go/apis/v2

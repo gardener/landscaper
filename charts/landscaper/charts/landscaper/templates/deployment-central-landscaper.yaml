@@ -11,6 +11,8 @@ metadata:
     {{- include "landscaper.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.controller.replicaCount }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "landscaper.selectorLabels" . | nindent 6 }}

@@ -16,14 +16,18 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/lock"
 )
 
 // AddControllerToManager adds the execution controller to the controller manager
-func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config config.ExecutionsController) error {
+func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config *config.LandscaperConfiguration) error {
 	log := logger.Reconciles("execution", "Execution")
 
+	lockingEnabled := lock.IsLockingEnabledForMainControllers(config)
+
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.CommonControllerConfig.Workers)
+		"numberOfWorkerThreads", config.Controllers.Executions.CommonControllerConfig.Workers,
+		"lockingEnabled", lockingEnabled)
 
 	a, err := NewController(
 		log,
@@ -31,7 +35,8 @@ func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manage
 		hostMgr.GetClient(),
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
-		config.CommonControllerConfig.Workers,
+		config.Controllers.Executions.CommonControllerConfig.Workers,
+		lockingEnabled,
 		"executions",
 	)
 	if err != nil {
@@ -41,7 +46,7 @@ func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manage
 	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.Execution{}, builder.OnlyMetadata).
 		Owns(&lsv1alpha1.DeployItem{}, builder.OnlyMetadata).
-		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
+		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.Controllers.Executions.CommonControllerConfig)).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(a)
 }

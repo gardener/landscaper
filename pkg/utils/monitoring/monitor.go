@@ -62,7 +62,7 @@ func (m *Monitor) monitorHpas(ctx context.Context) {
 		shouldLog := false
 
 		keyValueList := []interface{}{
-			lc.KeyResource, client.ObjectKey{Namespace: m.namespace, Name: hpa.Spec.ScaleTargetRef.Name},
+			lc.KeyResource, client.ObjectKey{Namespace: m.namespace, Name: hpa.Spec.ScaleTargetRef.Name}.String(),
 			keyCurrentReplicas, hpa.Status.CurrentReplicas,
 			keyDesiredReplicas, hpa.Status.DesiredReplicas,
 		}

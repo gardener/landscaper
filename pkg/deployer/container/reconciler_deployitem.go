@@ -9,27 +9,23 @@ import (
 	"time"
 
 	"github.com/gardener/component-cli/ociclient/cache"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
-
-	"github.com/gardener/landscaper/apis/deployer/container"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
+	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
 const (
 	cacheIdentifier = "container-deployer-controller"
 )
 
-// NewDeployer creates a new deployer that reconciles deploy items of type helm.
+// NewDeployer creates a new deployer that reconciles deploy items of type "landscaper.gardener.cloud/container".
 func NewDeployer(log logging.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,

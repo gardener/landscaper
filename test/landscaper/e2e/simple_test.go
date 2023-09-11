@@ -49,7 +49,7 @@ var _ = Describe("Simple", func() {
 		}, "test-inst4-"+testutils.GetNextCounter())
 
 		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, testenv.Client, api.LandscaperScheme,
-			record.NewFakeRecorder(1024), 1000, "exec-test-"+testutils.GetNextCounter())
+			record.NewFakeRecorder(1024), 1000, false, "exec-test-"+testutils.GetNextCounter())
 		Expect(err).ToNot(HaveOccurred())
 
 		mockActuator, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,

@@ -41,6 +41,10 @@ type LandscaperConfiguration struct {
 	// LsDeployments contains the names of the landscaper deployments
 	// +optional
 	LsDeployments *LsDeployments `json:"lsDeployments,omitempty"`
+	// HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling)
+	// for the main controllers (Installation and Execution controller).
+	// +optional
+	HPAMainConfiguration *HPAMainConfiguration `json:"hpaMain,omitempty"`
 }
 
 // LsDeployments contains the names of the landscaper deployments.
@@ -291,4 +295,10 @@ type GarbageCollectionConfiguration struct {
 	ResetInterval *metav1.Duration `json:"resetInterval,omitempty"`
 	// PreservedHitsProportion defines the percent of hits that should be preserved.
 	PreservedHitsProportion float64 `json:"preservedHitsProportion,omitempty"`
+}
+
+// HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling)
+// for the main controllers (Installation and Execution controller).
+type HPAMainConfiguration struct {
+	MaxReplicas int32 `json:"maxReplicas,omitempty"`
 }

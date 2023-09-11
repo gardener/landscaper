@@ -53,6 +53,9 @@ type Configuration struct {
 	// DebugOptions configure additional debug options.
 	DebugOptions *DebugOptions `json:"debug,omitempty"`
 
+	// HPAConfiguration contains the configuration for horizontal pod autoscaling.
+	HPAConfiguration *HPAConfiguration `json:"hpa,omitempty"`
+
 	// Controller contains configuration concerning the controller framework.
 	Controller Controller `json:"controller,omitempty"`
 }
@@ -108,6 +111,11 @@ type GarbageCollection struct {
 type DebugOptions struct {
 	// KeepPod will only remove the finalizer on the pod but will not delete the pod.
 	KeepPod bool `json:"keepPod,omitempty"`
+}
+
+// HPAConfiguration contains the configuration for horizontal pod autoscaling.
+type HPAConfiguration struct {
+	MaxReplicas int32 `json:"maxReplicas,omitempty"`
 }
 
 // Controller contains configuration concerning the controller framework.

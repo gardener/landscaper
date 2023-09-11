@@ -30,29 +30,31 @@ import (
 
 // NewController creates a new execution controller that reconcile Execution resources.
 func NewController(logger logging.Logger, lsClient, hostClient client.Client, scheme *runtime.Scheme,
-	eventRecorder record.EventRecorder, maxNumberOfWorker int, callerName string) (reconcile.Reconciler, error) {
+	eventRecorder record.EventRecorder, maxNumberOfWorker int, lockingEnabled bool, callerName string) (reconcile.Reconciler, error) {
 
 	wc := lsutil.NewWorkerCounter(maxNumberOfWorker)
 
 	return &controller{
-		log:           logger,
-		lsClient:      lsClient,
-		hostClient:    hostClient,
-		scheme:        scheme,
-		eventRecorder: eventRecorder,
-		workerCounter: wc,
-		callerName:    callerName,
+		log:            logger,
+		lsClient:       lsClient,
+		hostClient:     hostClient,
+		scheme:         scheme,
+		eventRecorder:  eventRecorder,
+		workerCounter:  wc,
+		lockingEnabled: lockingEnabled,
+		callerName:     callerName,
 	}, nil
 }
 
 type controller struct {
-	log           logging.Logger
-	lsClient      client.Client
-	hostClient    client.Client
-	eventRecorder record.EventRecorder
-	scheme        *runtime.Scheme
-	workerCounter *lsutil.WorkerCounter
-	callerName    string
+	log            logging.Logger
+	lsClient       client.Client
+	hostClient     client.Client
+	eventRecorder  record.EventRecorder
+	scheme         *runtime.Scheme
+	workerCounter  *lsutil.WorkerCounter
+	lockingEnabled bool
+	callerName     string
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -68,10 +70,10 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
-	if lock.LockerEnabled {
+	if c.lockingEnabled {
 		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
 		syncObject, err := locker.LockExecution(ctx, metadata)
 		if err != nil {
@@ -93,19 +95,19 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	if exec.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000086, exec); err != nil {
-			return reconcile.Result{}, err
+			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 	}
 
 	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.InterruptOperation) {
 		if err := c.handleInterruptOperation(ctx, exec); err != nil {
-			return reconcile.Result{}, err
+			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 		return reconcile.Result{}, nil
 	}
@@ -219,10 +221,10 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 		}
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
-			err = lserrors.NewError(op, "handlePhaseDeleting", "has failed items")
+			err = lserrors.NewError(op, "handlePhaseDeleting", "has failed items", lsv1alpha1.ErrorForInfoOnly)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000143)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
-			err = lserrors.NewError(op, "handlePhaseDeleting", "has pending items")
+			err = lserrors.NewError(op, "handlePhaseDeleting", "has pending items", lsv1alpha1.ErrorForInfoOnly)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000144)
 		}
 

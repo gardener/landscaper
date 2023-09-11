@@ -87,7 +87,7 @@ func (args DeployerArgs) Validate() error {
 }
 
 // Add adds a deployer to the given managers using the given args.
-func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, callerName string) error {
+func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, lockingEnabled bool, callerName string) error {
 	args.Default()
 	if err := args.Validate(); err != nil {
 		return err
@@ -99,6 +99,7 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, 
 		hostMgr.GetScheme(),
 		args,
 		maxNumberOfWorkers,
+		lockingEnabled,
 		callerName)
 
 	log = log.Reconciles("", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
@@ -124,8 +125,9 @@ type controller struct {
 	hostClient      client.Client
 	hostScheme      *runtime.Scheme
 
-	workerCounter *lsutil.WorkerCounter
-	callerName    string
+	workerCounter  *lsutil.WorkerCounter
+	lockingEnabled bool
+	callerName     string
 }
 
 // NewController creates a new generic deployitem controller.
@@ -136,6 +138,7 @@ func NewController(lsClient client.Client,
 	hostScheme *runtime.Scheme,
 	args DeployerArgs,
 	maxNumberOfWorkers int,
+	lockingEnabled bool,
 	callerName string) *controller {
 
 	wc := lsutil.NewWorkerCounter(maxNumberOfWorkers)
@@ -155,6 +158,7 @@ func NewController(lsClient client.Client,
 		hostClient:      hostClient,
 		hostScheme:      hostScheme,
 		workerCounter:   wc,
+		lockingEnabled:  lockingEnabled,
 		callerName:      callerName,
 	}
 }
@@ -171,7 +175,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	// this check is only for compatibility reasons
@@ -184,7 +188,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if lock.LockerEnabled {
+	if c.lockingEnabled {
 		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
 		syncObject, err := locker.LockDI(ctx, metadata)
 		if err != nil {
@@ -213,13 +217,13 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	// do we really need to check if metadata and di have the same guid?
 	if metadata.UID != di.UID {
 		err := lserrors.NewError("Reconcile", "differentUIDs", "different UIDs")
-		return reconcile.Result{}, err
+		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
 
 	c.lsScheme.Default(di)
@@ -229,7 +233,7 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 	lsCtx := &lsv1alpha1.Context{}
 	// todo: check for real repository context. Maybe overwritten by installation.
 	if err := c.lsClient.Get(ctx, kutil.ObjectKey(di.Spec.Context, di.Namespace), lsCtx); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
+		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, fmt.Errorf("unable to get landscaper context: %w", err))
 	}
 
 	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
@@ -241,7 +245,7 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 
 	if hasTestReconcileAnnotation {
 		if err := c.removeTestReconcileAnnotation(ctx, di); err != nil {
-			return reconcile.Result{}, err
+			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
@@ -259,20 +263,21 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 
 				// deployitem is unchanged and succeeded, and no reconcile desired in this case
 				c.initStatus(ctx, di)
-				return reconcile.Result{}, c.handleReconcileResult(ctx, nil, old, di)
+				err := c.handleReconcileResult(ctx, nil, old, di)
+				return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 			}
 
 			// initialize deployitem for reconcile
 			logger.Debug("Setting deployitem to phase 'Init'", "updateOnChangeOnly", di.Spec.UpdateOnChangeOnly, lc.KeyGeneration, di.GetGeneration(), lc.KeyObservedGeneration, di.Status.ObservedGeneration, lc.KeyDeployItemPhase, di.Status.Phase)
 			di.Status.Phase = lsv1alpha1.DeployItemPhases.Init
 			if err := c.initAndUpdateStatus(ctx, di); err != nil {
-				return reconcile.Result{}, err
+				return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 			}
 		} else {
 			// initialize deployitem for delete
 			di.Status.Phase = lsv1alpha1.DeployItemPhases.InitDelete
 			if err := c.initAndUpdateStatus(ctx, di); err != nil {
-				return reconcile.Result{}, err
+				return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 			}
 		}
 	}
@@ -322,6 +327,8 @@ func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, depl
 	rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItem.ObjectMeta) {
+		// this case is not required anymore because those items are removed by the execution controller
+		// but for security reasons not removed
 		logger.Info("Deleting deployitem %s without uninstall", deployItem.Name)
 	} else {
 		if err := c.deployer.Delete(ctx, lsCtx, deployItem, rt); err != nil {

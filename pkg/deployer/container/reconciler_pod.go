@@ -40,6 +40,7 @@ type PodReconciler struct {
 	config          containerv1alpha1.Configuration
 	diRec           deployerlib.Deployer
 	deployerType    lsv1alpha1.DeployItemType
+	lockingEnabled  bool
 	callerName      string
 	targetSelectors []lsv1alpha1.TargetSelector
 }
@@ -52,6 +53,7 @@ func NewPodReconciler(
 	config containerv1alpha1.Configuration,
 	deployer deployerlib.Deployer,
 	deployerType lsv1alpha1.DeployItemType,
+	lockingEnabled bool,
 	callerName string,
 	targetSelectors []lsv1alpha1.TargetSelector) *PodReconciler {
 
@@ -63,6 +65,7 @@ func NewPodReconciler(
 		hostClient:      hostClient,
 		diRec:           deployer,
 		deployerType:    deployerType,
+		lockingEnabled:  lockingEnabled,
 		callerName:      callerName,
 		targetSelectors: targetSelectors,
 	}
@@ -108,7 +111,7 @@ func (p *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, nil
 	}
 
-	if lock.LockerEnabled {
+	if p.lockingEnabled {
 		diMetaData := lsutil.EmptyDeployItemMetadata()
 		diMetaData.ObjectMeta = deployItem.ObjectMeta
 

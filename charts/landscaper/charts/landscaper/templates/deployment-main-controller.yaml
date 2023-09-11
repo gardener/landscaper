@@ -11,6 +11,10 @@ metadata:
     {{- include "landscaper.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.controller.replicaCount }}
+  {{- if .Values.hpaMain.maxReplicas | int | eq 1 }}
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "landscaper.main.selectorLabels" . | nindent 6 }}

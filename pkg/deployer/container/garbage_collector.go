@@ -154,7 +154,7 @@ func (gc *GarbageCollector) cleanupRBACResources(obj client.Object) reconcile.Re
 
 // cleanupSecret deletes secrets that do not have a parent deploy item anymore.
 func (gc *GarbageCollector) cleanupSecret(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := gc.log.WithValues(lc.KeyResourceKind, "Secret", lc.KeyResource, req.NamespacedName)
+	logger := gc.log.WithValues(lc.KeyResourceKind, "Secret", lc.KeyResource, req.NamespacedName.String())
 	obj := &corev1.Secret{}
 	if err := gc.hostClient.Get(ctx, req.NamespacedName, obj); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -179,7 +179,7 @@ func (gc *GarbageCollector) cleanupSecret(ctx context.Context, req reconcile.Req
 
 // cleanupPod deletes pods that do not have a parent deploy item anymore.
 func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := gc.log.WithValues(lc.KeyResourceKind, "Pod", lc.KeyResource, req.NamespacedName)
+	logger := gc.log.WithValues(lc.KeyResourceKind, "Pod", lc.KeyResource, req.NamespacedName.String())
 	obj := &corev1.Pod{}
 	if err := gc.hostClient.Get(ctx, req.NamespacedName, obj); err != nil {
 		if apierrors.IsNotFound(err) {

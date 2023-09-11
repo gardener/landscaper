@@ -48,7 +48,7 @@ func (r *retryHelper) preProcessRetry(ctx context.Context, inst *lsv1alpha1.Inst
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) &&
 		!r.hasReconcileReasonRetry(inst.ObjectMeta) {
 		// reconcile was not triggered by the retry mechanism, therefore we reset the retry status
-		if err := r.resetRetryStatus(ctx, inst); err != nil {
+		if err := r.resetRetryStatus(ctx, inst, read_write_layer.W000051); err != nil {
 			return err
 		}
 	}
@@ -81,7 +81,7 @@ func (r *retryHelper) recomputeRetry(ctx context.Context, inst *lsv1alpha1.Insta
 			(inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Succeeded && inst.Status.AutomaticReconcileStatus.OnFailed) ||
 			(inst.Status.InstallationPhase.IsFailed() && !inst.Status.AutomaticReconcileStatus.OnFailed) {
 
-			if err := r.resetRetryStatus(ctx, inst); err != nil {
+			if err := r.resetRetryStatus(ctx, inst, read_write_layer.W000027); err != nil {
 				return reconcile.Result{}, err
 			}
 		}
@@ -166,12 +166,12 @@ func (r *retryHelper) updateRetryStatus(ctx context.Context, inst *lsv1alpha1.In
 	return nil
 }
 
-func (r *retryHelper) resetRetryStatus(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (r *retryHelper) resetRetryStatus(ctx context.Context, inst *lsv1alpha1.Installation, writeID read_write_layer.WriteID) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	logger.Info("reset retry status")
 	inst.Status.AutomaticReconcileStatus = nil
-	if err := r.writer.UpdateInstallationStatus(ctx, read_write_layer.W000027, inst); err != nil {
+	if err := r.writer.UpdateInstallationStatus(ctx, writeID, inst); err != nil {
 		logger.Error(err, "failed to reset retry status")
 		return err
 	}

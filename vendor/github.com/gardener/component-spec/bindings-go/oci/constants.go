@@ -14,6 +14,10 @@
 
 package oci
 
+// ComponentDescriptorTarMimeTypeOCM is the new OCM mimetype for component-descriptor-blobs
+// that are stored as tar.
+const ComponentDescriptorTarMimeTypeOCM = "application/vnd.ocm.software.component-descriptor.v2+yaml+tar"
+
 // ComponentDescriptorTarMimeType is the old mimetype for component-descriptor-blobs
 // that are stored as tar.
 const ComponentDescriptorTarMimeType = "application/vnd.gardener.cloud.cnudie.component-descriptor.v2+yaml+tar"
@@ -35,7 +39,10 @@ var ComponentDescriptorMimeType = []string{
 	ComponentDescriptorJSONMimeType,
 }
 
-// ComponentDescriptorConfigMimeType is the mimetype for component-descriptor-oci-cfg-blobs.
+// ComponentDescriptorConfigMimeType is the new OCM mimetype for component-descriptor-oci-cfg-blobs.
+const ComponentDescriptorConfigMimeTypeOCM = "application/vnd.ocm.software.component.config.v1+json"
+
+// ComponentDescriptorConfigMimeType is the deprecated mimetype for component-descriptor-oci-cfg-blobs.
 const ComponentDescriptorConfigMimeType = "application/vnd.gardener.cloud.cnudie.component.config.v1+json"
 
 // ComponentDescriptorLegacyConfigMimeType is the mimetype for the legacy component-descriptor-oci-cfg-blobs

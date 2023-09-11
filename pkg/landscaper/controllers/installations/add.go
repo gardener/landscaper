@@ -7,6 +7,8 @@ package installations
 import (
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/lock"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -19,13 +21,14 @@ import (
 )
 
 // AddControllerToManager register the installation Controller in a manager.
-func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
-	config *config.LandscaperConfiguration, callerName string) error {
-
+func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config *config.LandscaperConfiguration, callerName string) error {
 	log := logger.Reconciles("installation", "Installation")
 
+	lockingEnabled := lock.IsLockingEnabledForMainControllers(config)
+
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.Controllers.Installations.CommonControllerConfig.Workers)
+		"numberOfWorkerThreads", config.Controllers.Installations.CommonControllerConfig.Workers,
+		"lockingEnabled", lockingEnabled)
 
 	a, err := NewController(
 		hostMgr.GetClient(),
@@ -35,6 +38,7 @@ func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manage
 		lsMgr.GetEventRecorderFor("Landscaper"),
 		config,
 		config.Controllers.Installations.CommonControllerConfig.Workers,
+		lockingEnabled,
 		callerName,
 	)
 	if err != nil {

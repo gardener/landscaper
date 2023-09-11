@@ -50,17 +50,19 @@ func NewController(hostClient client.Client, logger logging.Logger,
 	eventRecorder record.EventRecorder,
 	lsConfig *config.LandscaperConfiguration,
 	maxNumberOfWorkers int,
+	lockingEnabled bool,
 	callerName string) (reconcile.Reconciler, error) {
 
 	ws := utils.NewWorkerCounter(maxNumberOfWorkers)
 
 	ctrl := &Controller{
-		hostClient:    hostClient,
-		log:           logger,
-		clock:         clock.RealClock{},
-		LsConfig:      lsConfig,
-		workerCounter: ws,
-		callerName:    callerName,
+		hostClient:     hostClient,
+		log:            logger,
+		clock:          clock.RealClock{},
+		LsConfig:       lsConfig,
+		workerCounter:  ws,
+		lockingEnabled: lockingEnabled,
+		callerName:     callerName,
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -82,26 +84,28 @@ func NewTestActuator(op operation.Operation, hostClient client.Client, logger lo
 	configuration *config.LandscaperConfiguration, callerName string) *Controller {
 
 	return &Controller{
-		log:           logger,
-		clock:         passiveClock,
-		Operation:     op,
-		LsConfig:      configuration,
-		workerCounter: utils.NewWorkerCounter(1000),
-		hostClient:    hostClient,
-		callerName:    callerName,
+		log:            logger,
+		clock:          passiveClock,
+		Operation:      op,
+		LsConfig:       configuration,
+		workerCounter:  utils.NewWorkerCounter(1000),
+		hostClient:     hostClient,
+		lockingEnabled: lock.IsLockingEnabledForMainControllers(configuration),
+		callerName:     callerName,
 	}
 }
 
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
-	hostClient    client.Client
-	log           logging.Logger
-	clock         clock.PassiveClock
-	LsConfig      *config.LandscaperConfiguration
-	SharedCache   cache.Cache
-	workerCounter *utils.WorkerCounter
-	callerName    string
+	hostClient     client.Client
+	log            logging.Logger
+	clock          clock.PassiveClock
+	LsConfig       *config.LandscaperConfiguration
+	SharedCache    cache.Cache
+	workerCounter  *utils.WorkerCounter
+	lockingEnabled bool
+	callerName     string
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -116,14 +120,14 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
-	if lock.LockerEnabled {
+	if c.lockingEnabled {
 		locker := lock.NewLocker(c.Client(), c.hostClient, c.callerName)
 		syncObject, err := locker.LockInstallation(ctx, metadata)
 		if err != nil {
-			return reconcile.Result{}, err
+			return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 
 		if syncObject == nil {
@@ -141,12 +145,12 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	// default the installation as it not done by the Controller runtime
 	if err := c.updateInstallationWithDefaults(ctx, inst); err != nil {
-		return reconcile.Result{}, err
+		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	return c.handleAutomaticReconcile(ctx, inst)
@@ -170,15 +174,20 @@ func (c *Controller) updateInstallationWithDefaults(ctx context.Context, inst *l
 }
 
 func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "handleAutomaticReconcile")
+
 	retryHelper := newRetryHelper(c.Client(), c.clock)
 
 	if err := retryHelper.preProcessRetry(ctx, inst); err != nil {
-		return reconcile.Result{}, err
+		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
 	result, err := c.reconcileInstallation(ctx, inst)
 
 	result, err = retryHelper.recomputeRetry(ctx, inst, result, err)
+	if err != nil {
+		logger.Error(err, "recomputeRetry failed")
+	}
 
 	return result, err
 }
@@ -336,7 +345,9 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 }
 
 func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
-	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
+	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID,
+	reduceLogLevelForConflicts bool) lserrors.LsError {
+
 	op := "setInstallationPhaseAndUpdate"
 
 	logger, ctx := logging.FromContextOrNew(ctx,
@@ -386,7 +397,13 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 			}
 		}
 
-		logger.Error(err, "unable to update installation status")
+		// reduceLogLevelForConflicts is set on true, if conflicts might occur, e.g.
+		// - when deleting an item a touch operation might be triggered for all siblings to speed up the operation
+		if reduceLogLevelForConflicts && apierrors.IsConflict(err) {
+			logger.Info("unable to update installation status", err, err.Error())
+		} else {
+			logger.Error(err, "unable to update installation status")
+		}
 		if lsError == nil {
 			return lserrors.NewWrappedError(err, op, "UpdateInstallationStatus", err.Error())
 		}
