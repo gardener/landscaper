@@ -3,15 +3,15 @@
  SPDX-License-Identifier: Apache-2.0
 */}}
 
-{{- if .Values.landscaper.customCAs.secrets }}
+{{- if .Values.landscaper.truststore.secrets }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "landscaper.fullname" . }}-cacerts
+  name: {{ include "landscaper.fullname" . }}-certs
   labels:
     {{- include "landscaper.labels" . | nindent 4 }}
 data:
-  {{- range $key, $value := .Values.landscaper.customCAs.secrets }}
+  {{- range $key, $value := .Values.landscaper.truststore.secrets }}
   {{ $key }}: {{ $value | b64enc }}
   {{- end }}
 {{- end }}

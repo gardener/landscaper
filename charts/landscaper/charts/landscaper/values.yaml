@@ -39,6 +39,8 @@ landscaper:
   crdManagement:
     deployCrd: true
 #   forceUpdate: true
+  truststore:  # can be used to add certificates to the trust store of the landscaper
+    secrets: {} # contains certificates (optionally in a single or multiple secrets)
   registryConfig: # contains optional oci secrets
     cache: {}
 #      useInMemoryOverlay: false
