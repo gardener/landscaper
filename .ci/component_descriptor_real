@@ -41,7 +41,7 @@ COMMIT_SHA="$(git --git-dir ${SOURCE_PATH}/.git rev-parse HEAD)"
 
 printf "> Building components with version ${VERSION} - ${COMMIT_SHA}\n"
 
-REPO_CTX="eu.gcr.io/sap-gcp-cp-k8s-stable-hub/landscaper"
+REPO_CTX="eu.gcr.io/sap-gcp-laas-core-live/landscaper"
 REPO_CTX_DEV="eu.gcr.io/gardener-project/development"
 CTF_PATH="$(mktemp -d)"
 CTF_PATH="${CTF_PATH}/ctf.tar"

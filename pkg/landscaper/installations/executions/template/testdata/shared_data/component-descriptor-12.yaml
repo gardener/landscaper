@@ -3,7 +3,7 @@ component:
   name: github.com/gardener/gardener-extension-provider-aws
   provider: internal
   repositoryContexts:
-  - baseUrl: eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/temp
+  - baseUrl: eu.gcr.io/sap-gcp-laas-core-live/examples/landscaper/temp
     type: ociRegistry
   resources:
   - access:
