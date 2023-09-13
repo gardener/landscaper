@@ -140,8 +140,7 @@ var _ = Describe("URI", func() {
 	It("should resolve a direct local resource", func() {
 		uri, err := cdutils.ParseURI("cd://resources/r1")
 		Expect(err).ToNot(HaveOccurred())
-		repoContext, err := componentVersion.GetRepositoryContext()
-		Expect(err).NotTo(HaveOccurred())
+		repoContext := componentVersion.GetRepositoryContext()
 		kind, res, err := uri.Get(componentVersion, repoContext)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))
@@ -183,8 +182,7 @@ var _ = Describe("URI", func() {
 		Expect(kind).To(Equal(lsv1alpha1.ComponentResourceKind))
 		component, ok := res.(model.ComponentVersion)
 		Expect(ok).To(BeTrue())
-		componentDescriptor, err := component.GetComponentDescriptor()
-		Expect(err).NotTo(HaveOccurred())
+		componentDescriptor := component.GetComponentDescriptor()
 		// ignore the raw part because order of a marshaled map is unpredictable
 		componentDescriptor.RepositoryContexts[0].Raw = []byte{}
 		componentDescriptor.Resources[0].Access.Raw = []byte{}

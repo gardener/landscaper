@@ -155,7 +155,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	for _, secret := range secrets {
 		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
 		if ok {
-			spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes)
+			spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes, true)
 			_, err := registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
 			if err != nil {
 				return nil, errors.Wrapf(err, "cannot create credentials from secret")

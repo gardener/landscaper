@@ -210,10 +210,7 @@ func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, cu
 	}
 	repositoryContext := rr.RepositoryContext
 	if repositoryContext == nil {
-		repositoryContext, err = rr.ComponentVersion.GetRepositoryContext()
-		if err != nil {
-			return nil, fmt.Errorf("unable to get repository context in handleComponentDescriptorReference: %w", err)
-		}
+		repositoryContext = rr.ComponentVersion.GetRepositoryContext()
 	}
 	cd, resource, err := cdUri.GetResource(rr.ComponentVersion, repositoryContext)
 	if err != nil {

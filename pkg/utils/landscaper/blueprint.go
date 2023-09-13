@@ -480,10 +480,7 @@ func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) (*
 	}
 
 	if input.ComponentVersion != nil {
-		repositoryContext, err := input.ComponentVersion.GetRepositoryContext()
-		if err != nil {
-			return nil, fmt.Errorf("unable to get repository context from component version: %w", err)
-		}
+		repositoryContext := input.ComponentVersion.GetRepositoryContext()
 
 		return repositoryContext, nil
 	}

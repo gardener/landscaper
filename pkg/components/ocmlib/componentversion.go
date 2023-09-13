@@ -6,9 +6,6 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
@@ -19,6 +16,7 @@ import (
 type ComponentVersion struct {
 	registryAccess         *RegistryAccess
 	componentVersionAccess ocm.ComponentVersionAccess
+	componentDescriptorV2  cdv2.ComponentDescriptor
 }
 
 func (c *ComponentVersion) GetName() string {
@@ -29,84 +27,29 @@ func (c *ComponentVersion) GetVersion() string {
 	return c.componentVersionAccess.GetVersion()
 }
 
-func (c *ComponentVersion) GetComponentDescriptor() (*types.ComponentDescriptor, error) {
-	// Get ocm-lib Component Descriptor
-	cd := c.componentVersionAccess.GetDescriptor()
-	data, err := compdesc.Encode(cd)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create Landscaper Component Descriptor from the ocm-lib Component Descriptor
-	lscd := types.ComponentDescriptor{}
-	err = runtime.DefaultYAMLEncoding.Unmarshal(data, &lscd)
-	if err != nil {
-		return nil, err
-	}
-
-	return &lscd, nil
+func (c *ComponentVersion) GetComponentDescriptor() *types.ComponentDescriptor {
+	return &c.componentDescriptorV2
 }
 
-func (c *ComponentVersion) GetRepositoryContext() (*types.UnstructuredTypedObject, error) {
-	// Get ocm-lib (effective) Repository Context
-	spec := c.componentVersionAccess.GetDescriptor().GetEffectiveRepositoryContext()
-	data, err := runtime.DefaultYAMLEncoding.Marshal(&spec)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create Landscaper (effective) Repository Context from ocm-lib Repository Context
-	lsspec := types.UnstructuredTypedObject{}
-	err = runtime.DefaultYAMLEncoding.Unmarshal(data, &lsspec)
-	if err != nil {
-		return nil, err
-	}
-
-	return &lsspec, err
+func (c *ComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
+	return c.componentDescriptorV2.GetEffectiveRepositoryContext()
 }
 
-func (c *ComponentVersion) GetComponentReferences() ([]types.ComponentReference, error) {
-	// Get ocm-lib Component References
-	refs := c.componentVersionAccess.GetDescriptor().References
-	data, err := runtime.DefaultYAMLEncoding.Marshal(&refs)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create Landscaper Component References from ocm-lib Component References
-	lsrefs := make([]types.ComponentReference, 0, refs.Len())
-	err = runtime.DefaultYAMLEncoding.Unmarshal(data, &lsrefs)
-	if err != nil {
-		return nil, err
-	}
-
-	return lsrefs, nil
+func (c *ComponentVersion) GetComponentReferences() []types.ComponentReference {
+	return c.componentDescriptorV2.ComponentReferences
 }
 
-func (c *ComponentVersion) GetComponentReference(name string) (*types.ComponentReference, error) {
-	// Get ocm-lib Component Reference by name
-	refs, err := c.componentVersionAccess.GetDescriptor().GetReferencesByName(name)
-	if err != nil {
-		return nil, err
-	}
-	if refs.Len() != 1 {
-		return nil, errors.New("given reference name is not unique within the component descriptor")
-	}
-	ref := refs[0]
+func (c *ComponentVersion) GetComponentReference(name string) *types.ComponentReference {
+	refs := c.GetComponentReferences()
 
-	data, err := runtime.DefaultYAMLEncoding.Marshal(&ref)
-	if err != nil {
-		return nil, err
+	for i := range refs {
+		ref := &refs[i]
+		if ref.GetName() == name {
+			return ref
+		}
 	}
 
-	// Create Landscaper Component Reference from ocm-lib Component Reference
-	lsref := types.ComponentReference{}
-	err = runtime.DefaultYAMLEncoding.Unmarshal(data, &lsref)
-	if err != nil {
-		return nil, err
-	}
-
-	return &lsref, nil
+	return nil
 }
 
 func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (rcompvers model.ComponentVersion, rerr error) {

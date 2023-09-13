@@ -75,8 +75,8 @@ var _ = Describe("ocm-lib facade implementation", func() {
 
 		Expect(cv.GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
 		Expect(cv.GetVersion()).To(Equal("1.0.0"))
-		Expect(Must(cv.GetComponentDescriptor()).GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
-		Expect(Must(cv.GetComponentDescriptor()).GetVersion()).To(Equal("1.0.0"))
+		Expect(cv.GetComponentDescriptor().GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
+		Expect(cv.GetComponentDescriptor().GetVersion()).To(Equal("1.0.0"))
 	})
 	It("credentials", func() {
 		f := Factory{}

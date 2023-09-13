@@ -4,6 +4,11 @@ import (
 	"context"
 	"reflect"
 
+	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
+
+	"github.com/gardener/landscaper/pkg/components/model/types"
+
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/runtime"
 
@@ -23,11 +28,26 @@ type RegistryAccess struct {
 
 var _ model.RegistryAccess = (*RegistryAccess)(nil)
 
-func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) model.ComponentVersion {
+func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) (model.ComponentVersion, error) {
+	// Get ocm-lib Component Descriptor
+	cd := cv.GetDescriptor()
+	data, err := compdesc.Encode(cd, compdesc.SchemaVersion(v2.SchemaVersion))
+	if err != nil {
+		return nil, err
+	}
+
+	// Create Landscaper Component Descriptor from the ocm-lib Component Descriptor
+	lscd := types.ComponentDescriptor{}
+	err = runtime.DefaultYAMLEncoding.Unmarshal(data, &lscd)
+	if err != nil {
+		return nil, err
+	}
+
 	return &ComponentVersion{
 		registryAccess:         r,
 		componentVersionAccess: cv,
-	}
+		componentDescriptorV2:  lscd,
+	}, nil
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
@@ -56,7 +76,7 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	if err != nil {
 		return nil, err
 	}
-	return r.NewComponentVersion(cv), nil
+	return r.NewComponentVersion(cv)
 }
 
 func (r *RegistryAccess) Close() error {
