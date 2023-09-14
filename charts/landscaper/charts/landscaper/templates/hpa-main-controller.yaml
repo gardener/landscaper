@@ -16,15 +16,4 @@ spec:
   minReplicas: 1
   maxReplicas: {{ .Values.hpaMain.maxReplicas }}
   metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 80
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
+  {{- .Values.hpaMain.metrics | toYaml | nindent 4 }}
