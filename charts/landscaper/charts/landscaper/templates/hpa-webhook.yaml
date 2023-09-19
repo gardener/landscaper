@@ -16,4 +16,15 @@ spec:
   minReplicas: 2
   maxReplicas: {{ .Values.webhooksServer.hpa.maxReplicas }}
   metrics:
-  {{- .Values.webhooksServer.hpa.metrics | toYaml | nindent 4 }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.webhooksServer.hpa.averageCpuUtilization }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.webhooksServer.hpa.averageMemoryUtilization }}
