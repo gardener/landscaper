@@ -58,6 +58,8 @@ type ExecutionSpec struct {
 	// +optional
 	Context string `json:"context,omitempty"`
 
+	ComponentLibrary ComponentLibrary `json:"componentLibrary,omitempty"`
+
 	// DeployItems defines all execution items that need to be scheduled.
 	DeployItems DeployItemTemplateList `json:"deployItems,omitempty"`
 

@@ -176,6 +176,8 @@ type InstallationSpec struct {
 	// +optional
 	Context string `json:"context,omitempty"`
 
+	ComponentLibrary ComponentLibrary `json:"componentLibrary,omitempty"`
+
 	//ComponentDescriptor is a reference to the installation's component descriptor
 	// +optional
 	ComponentDescriptor *ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`

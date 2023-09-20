@@ -32,6 +32,8 @@ spec:
           spec:
             description: Spec defines a execution and its items
             properties:
+              componentLibrary:
+                type: string
               context:
                 description: Context defines the current context of the execution.
                 type: string
