@@ -467,6 +467,8 @@ spec:
                     type: object
                 type: object
               componentLibrary:
+                description: ComponentLibrary defines whether the cnudie or ocm component
+                  library should be used during reconciliation.
                 type: string
               context:
                 description: Context defines the current context of the installation.

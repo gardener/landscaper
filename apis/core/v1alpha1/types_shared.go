@@ -371,5 +371,5 @@ type ComponentLibrary string
 const (
 	ComponentLibraryCNUDIE  ComponentLibrary = "cnudie"
 	ComponentLibraryOCM     ComponentLibrary = "ocm"
-	ComponentLibraryDefault ComponentLibrary = ComponentLibraryCNUDIE
+	componentLibraryDefault ComponentLibrary = ComponentLibraryCNUDIE
 )

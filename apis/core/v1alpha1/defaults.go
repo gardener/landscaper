@@ -91,7 +91,7 @@ func SetDefaults_Installation(obj *Installation) {
 	}
 
 	if len(obj.Spec.ComponentLibrary) == 0 {
-		obj.Spec.ComponentLibrary = ComponentLibraryDefault
+		obj.Spec.ComponentLibrary = componentLibraryDefault
 	}
 }
 
@@ -103,7 +103,7 @@ func SetDefaults_Execution(obj *Execution) {
 	}
 
 	if len(obj.Spec.ComponentLibrary) == 0 {
-		obj.Spec.ComponentLibrary = ComponentLibraryDefault
+		obj.Spec.ComponentLibrary = componentLibraryDefault
 	}
 }
 
@@ -115,7 +115,7 @@ func SetDefaults_DeployItem(obj *DeployItem) {
 	}
 
 	if len(obj.Spec.ComponentLibrary) == 0 {
-		obj.Spec.ComponentLibrary = ComponentLibraryDefault
+		obj.Spec.ComponentLibrary = componentLibraryDefault
 	}
 
 	// migration - can be removed, after .Status.DeployerPhase has been removed

@@ -36,6 +36,8 @@ spec:
             description: DeployItemSpec contains the definition of a deploy item.
             properties:
               componentLibrary:
+                description: ComponentLibrary defines whether the cnudie or ocm component
+                  library should be used during reconciliation.
                 type: string
               config:
                 description: Configuration contains the deployer type specific configuration.

@@ -546,6 +546,8 @@ ComponentLibrary
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
@@ -937,6 +939,8 @@ ComponentLibrary
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
@@ -1079,6 +1083,8 @@ ComponentLibrary
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
@@ -2840,6 +2846,8 @@ ComponentLibrary
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
@@ -3780,6 +3788,8 @@ ComponentLibrary
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
@@ -4566,6 +4576,8 @@ ComponentLibrary
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
