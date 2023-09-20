@@ -1,4 +1,4 @@
-package ocmlib
+package ocmlib_test
 
 import (
 	"testing"

@@ -52,7 +52,7 @@ func (c *ComponentVersion) GetComponentReference(name string) *types.ComponentRe
 	return nil
 }
 
-func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (rcompvers model.ComponentVersion, rerr error) {
+func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (model.ComponentVersion, error) {
 	cdRef := &lsv1alpha1.ComponentDescriptorReference{
 		RepositoryContext: repositoryContext,
 		ComponentName:     ref.ComponentName,

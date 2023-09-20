@@ -9,8 +9,6 @@ import (
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
-	"github.com/gardener/landscaper/pkg/components/cnudie"
-
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -43,9 +41,7 @@ import (
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 )
 
-type Factory struct {
-	cnudie.Factory
-}
+type Factory struct{}
 
 var _ model.Factory = &Factory{}
 
@@ -142,15 +138,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 			return nil, err
 		}
 	}
-	//// set available default credentials from dockerconfig files
-	//var spec *dockerconfig.RepositorySpec
-	//for _, path := range ociConfigFiles {
-	//	spec = dockerconfig.NewRepositorySpec(path, true)
-	//	_, err := registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
-	//	if err != nil {
-	//		return nil, errors.Wrapf(err, "cannot access %v", path)
-	//	}
-	//}
+
 	// set credentials from pull secrets
 	for _, secret := range secrets {
 		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
@@ -178,42 +166,6 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 
 	return registryAccess, nil
 }
-
-//func (f *Factory) NewOCITestRegistryAccess(address, username, password string) (model.RegistryAccess, error) {
-//	registryAccess := &RegistryAccess{}
-//	registryAccess.octx = ocm.New(datacontext.MODE_EXTENDED)
-//	registryAccess.session = ocm.NewSession(datacontext.NewSession())
-//
-//	registryAccess.octx.CredentialsContext().SetCredentialsForConsumer(
-//		credentials.NewConsumerIdentity(
-//			ociidentity.CONSUMER_TYPE,
-//			ociidentity.ID_HOSTNAME, address),
-//		credentials.DirectCredentials{
-//			username: username,
-//			password: password,
-//		},
-//	)
-//
-//	//keyring := testcred.newRootLogger()
-//	//if err := keyring.AddAuthConfig(address, testcred.AuthConfig{Username: username, Password: password}); err != nil {
-//	//	return nil, err
-//	//}
-//	//
-//	//ociCache, err := cache.NewCache(logging.Discard().Logr())
-//	//if err != nil {
-//	//	return nil, err
-//	//}
-//	//
-//	//ociClient, err := ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
-//	//if err != nil {
-//	//	return nil, err
-//	//}
-//	//
-//	//return &RegistryAccess{
-//	//	componentResolver:       cdoci.NewResolver(ociClient),
-//	//	additionalBlobResolvers: nil,
-//	//}, nil
-//}
 
 func (f *Factory) NewHelmRepoResource(ctx context.Context, helmChartRepo *helmv1alpha1.HelmChartRepo, lsClient client.Client, contextObj *lsv1alpha1.Context) (model.TypedResourceProvider, error) {
 	provider := &HelmChartProvider{

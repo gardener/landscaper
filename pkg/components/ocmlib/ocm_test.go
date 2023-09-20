@@ -1,19 +1,22 @@
-package ocmlib
+package ocmlib_test
 
 import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 	"path/filepath"
-
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"reflect"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/identity"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/runtime"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -24,68 +27,151 @@ import (
 )
 
 const (
-	USERNAME = "testuser"
-	PASSWORD = "testpassword"
+	LOCALCNUDIEREPOPATH  = "../testdata/localcnudierepo"
+	LOCALOCMREPOPATH     = "../testdata/localocmrepo"
+	COMPDESC_V2_FILENAME = "component-descriptor-v2.yaml"
+	COMPDESC_V3_FILENAME = "component-descriptor-v3.yaml"
+
+	USERNAME  = "testuser1"
+	PASSWORD  = "testpassword1"
+	HOSTNAME1 = "ghcr.io"
+	HOSTNAME2 = "https://index.docker.io/v1/"
 )
 
+// Prepare Test Data
 var (
-	data = `{"repositoryContext":{"baseUrl":"eu.gcr.io/gardener-project/landscaper/examples","type":"ociRegistry"},"componentName":"github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource","version":"1.0.0"}`
+	componentReference = `
+{
+  "repositoryContext": {
+    "type": "local",
+    "filePath": "./"
+  },
+  "componentName": "example.com/landscaper-component",
+  "version": "1.0.0"
+}
+`
 
-	auth1         = base64.StdEncoding.EncodeToString([]byte(`testuser1:testpassword1`))
-	dockerconfig1 = []byte(fmt.Sprintf(`{"auths": {"ghcr.io": {"auth": "%s"},"https://index.docker.io/v1/": {"auth": "%s"}}}`, auth1, auth1))
-	dockerconfigs = map[string][]byte{"dockerconfig1.json": dockerconfig1}
+	auth             = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", USERNAME, PASSWORD)))
+	dockerconfigdata = []byte(fmt.Sprintf(`
+{
+       "auths": {
+               "%s": {"auth": "%s"},
+               "%s": {"auth": "%s"}
+       }
+}
+`, HOSTNAME1, auth, HOSTNAME2, auth))
+
+	ocmconfigdata = []byte(fmt.Sprintf(`
+{
+  "type": "credentials.config.ocm.software",
+  "consumers": [
+    {
+      "identity": {
+        "type": "OCIRegistry",
+        "hostname": "%s"
+      },
+      "credentials": [
+        {
+          "type": "Credentials",
+          "properties": {
+            "username": "%s",
+            "password": "%s"
+          }
+        }
+      ]
+    }
+  ]
+}
+`, HOSTNAME1, USERNAME, PASSWORD))
 )
 
 var _ = Describe("ocm-lib facade implementation", func() {
 	ctx := context.Background()
-	fs := memoryfs.New()
+	factory := ocmlib.Factory{}
 
-	BeforeEach(func() {
+	It("get component version from component descriptor reference (from local repository)", func() {
+		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion
+		// method can deal with the legacy ComponentDescriptorReference type rather than testing ocmlib functionality
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+
+	It("get component descriptor with v2 as input", func() {
+		// check that the component descriptor is not altered by the ocmlib-facade
+		compdesc := &types.ComponentDescriptor{}
+		compdescData := Must(vfs.ReadFile(osfs.New(), filepath.Join(LOCALCNUDIEREPOPATH, COMPDESC_V2_FILENAME)))
+		Expect(runtime.DefaultYAMLEncoding.Unmarshal(compdescData, compdesc)).To(Succeed())
+
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+
+		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
+	})
+
+	It("get component descriptor with v3 as input", func() {
+		// component-descriptor-v2 and component-descriptor-v3 describe identical components with different versions ocm
+		// versions and the ocmlib-facade should decode even the v3 version correctly into the landscapers' internal
+		// v2 representation
+		compdesc := &types.ComponentDescriptor{}
+		compdescData := Must(vfs.ReadFile(osfs.New(), filepath.Join(LOCALCNUDIEREPOPATH, COMPDESC_V2_FILENAME)))
+		Expect(runtime.DefaultYAMLEncoding.Unmarshal(compdescData, compdesc)).To(Succeed())
+
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+
+		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
+	})
+
+	It("dockerconfig credentials from filesystem", func() {
+		// Prepare memory test filesystem with dockerconfig credentials
+		fs := memoryfs.New()
 		Expect(fs.MkdirAll("testdata", 0o777)).To(Succeed())
+		dockerconfigs := map[string][]byte{"dockerconfig.json": dockerconfigdata}
 		for name, config := range dockerconfigs {
 			f := Must(fs.OpenFile(filepath.Join("testdata", name), os.O_CREATE|os.O_RDWR, 0o777))
 			_ = Must(f.Write(config))
-			f.Close()
+			Expect(f.Close()).To(Succeed())
 		}
-	})
-
-	It("get component version from component descriptor reference", func() {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(data), &cdref))
-
-		r := &RegistryAccess{
-			octx:    ocm.DefaultContext(),
-			session: ocm.NewSession(datacontext.NewSession()),
-		}
-
-		cv := Must(r.GetComponentVersion(context.Background(), cdref))
-		Expect(cv).NotTo(BeNil())
-		Expect(cv.GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
-		Expect(cv.GetVersion()).To(Equal("1.0.0"))
-	})
-	It("test component version methods", func() {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(data), &cdref))
-
-		r := &RegistryAccess{
-			octx:    ocm.DefaultContext(),
-			session: ocm.NewSession(datacontext.NewSession()),
-		}
-		cv := Must(r.GetComponentVersion(context.Background(), cdref))
-
-		Expect(cv.GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
-		Expect(cv.GetVersion()).To(Equal("1.0.0"))
-		Expect(cv.GetComponentDescriptor().GetName()).To(Equal("github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"))
-		Expect(cv.GetComponentDescriptor().GetVersion()).To(Equal("1.0.0"))
-	})
-	It("credentials", func() {
-		f := Factory{}
-		r := Must(f.NewRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
-			ConfigFiles: []string{"testdata/dockerconfig1.json"},
-		}, nil)).(*RegistryAccess)
-		creds := Must(identity.GetCredentials(r.octx, "ghcr.io", "/test/repo"))
+		// Create a Registry Access and check whether credentials are properly set and can be found
+		r := Must(factory.NewRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
+			ConfigFiles: []string{"testdata/dockerconfig.json"},
+		}, nil)).(*ocmlib.RegistryAccess)
+		creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
 		props := creds.Properties()
-		Expect(props["username"]).To(Equal("testuser1"))
-		Expect(props["password"]).To(Equal("testpassword1"))
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("dockerconfig credentials from secrets", func() {
+		// Prepare secret with dockerconfig credentials
+		secrets := []corev1.Secret{{
+			Data: map[string][]byte{corev1.DockerConfigJsonKey: dockerconfigdata},
+		}}
+		// Create a Registry Access and check whether credentials are properly set and can be found
+		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
+		creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("ocm credentials from secrets", func() {
+		// Prepare secret with ocmconfig credentials
+		secrets := []corev1.Secret{{
+			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
+		}}
+		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
+		creds := Must(identity.GetCredentials(r.OCMContext(), HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
 	})
 })

@@ -7,9 +7,7 @@ import (
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
-	testcred "github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
@@ -101,28 +99,6 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	return &RegistryAccess{
 		componentResolver:       compResolver,
 		additionalBlobResolvers: additionalBlobResolvers,
-	}, nil
-}
-
-func (*Factory) NewOCITestRegistryAccess(address, username, password string) (model.RegistryAccess, error) {
-	keyring := testcred.New()
-	if err := keyring.AddAuthConfig(address, testcred.AuthConfig{Username: username, Password: password}); err != nil {
-		return nil, err
-	}
-
-	ociCache, err := cache.NewCache(logging.Discard().Logr())
-	if err != nil {
-		return nil, err
-	}
-
-	ociClient, err := ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
-	if err != nil {
-		return nil, err
-	}
-
-	return &RegistryAccess{
-		componentResolver:       cdoci.NewResolver(ociClient),
-		additionalBlobResolvers: nil,
 	}, nil
 }
 

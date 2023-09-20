@@ -29,8 +29,6 @@ type Factory interface {
 		inlineCd *types.ComponentDescriptor,
 		additionalBlobResolvers ...ctf.TypedBlobResolver) (RegistryAccess, error)
 
-	NewOCITestRegistryAccess(address, username, password string) (RegistryAccess, error)
-
 	// NewHelmRepoResource returns a helm chart resource that is stored in a helm chart repository.
 	NewHelmRepoResource(ctx context.Context,
 		helmChartRepo *helmv1alpha1.HelmChartRepo,

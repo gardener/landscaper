@@ -167,7 +167,7 @@ func (c *localClient) searchInFs(ctx context.Context, name, version string) (*cd
 			return nil
 		}
 
-		if !strings.Contains(info.Name(), ctf.ComponentDescriptorFileName) {
+		if !strings.Contains(info.Name(), "component-descriptor") {
 			return nil
 		}
 

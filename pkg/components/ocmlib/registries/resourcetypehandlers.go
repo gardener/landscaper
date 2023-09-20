@@ -13,7 +13,6 @@ var Registry = New()
 
 type ResourceHandler interface {
 	GetResourceContent(ctx context.Context, r model.Resource, access ocm.ResourceAccess) (*model.TypedResourceContent, error)
-	// Prepare(ctx context.Context, fs vfs.FileSystem) (*model.TypedResourceContent, error)
 }
 
 type ResourceHandlerRegistry struct {
