@@ -147,6 +147,9 @@ type DeployItemSpec struct {
 	// Context defines the current context of the deployitem.
 	// +optional
 	Context string `json:"context,omitempty"`
+
+	ComponentLibrary ComponentLibrary `json:"componentLibrary,omitempty"`
+
 	// Configuration contains the deployer type specific configuration.
 	Configuration *runtime.RawExtension `json:"config,omitempty"`
 	// RegistryPullSecrets defines a list of registry credentials that are used to
