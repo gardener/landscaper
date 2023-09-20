@@ -5,16 +5,15 @@
 package gotemplate
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	gotmpl "text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	imagevector "github.com/gardener/image-vector/pkg"
@@ -130,23 +129,7 @@ func getOCIReferenceRepository(ref string) string {
 // resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access
 func resolveArtifactFunc(componentVersion model.ComponentVersion) func(access map[string]interface{}) ([]byte, error) {
 	return func(access map[string]interface{}) ([]byte, error) {
-		ctx := context.Background()
-		defer ctx.Done()
-
-		if componentVersion == nil {
-			return nil, fmt.Errorf("unable to resolve artifact, because no component version is provided")
-		}
-
-		blobResolver, err := componentVersion.GetBlobResolver()
-		if err != nil {
-			return nil, fmt.Errorf("unable to get blob resolver to resolve artifact: %w", err)
-		}
-
-		var data bytes.Buffer
-		if _, err := blobResolver.Resolve(ctx, types.Resource{Access: cdv2.NewUnstructuredType(access["type"].(string), access)}, &data); err != nil {
-			panic(err)
-		}
-		return data.Bytes(), nil
+		return nil, errors.New("this functionality has been deprecated")
 	}
 }
 
