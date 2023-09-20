@@ -5,10 +5,13 @@
 package gotemplate
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"os"
 	"strings"
 	gotmpl "text/template"
@@ -129,7 +132,28 @@ func getOCIReferenceRepository(ref string) string {
 // resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access
 func resolveArtifactFunc(componentVersion model.ComponentVersion) func(access map[string]interface{}) ([]byte, error) {
 	return func(access map[string]interface{}) ([]byte, error) {
-		return nil, errors.New("this functionality has been deprecated")
+		ctx := context.Background()
+		defer ctx.Done()
+
+		cv, ok := componentVersion.(*cnudie.ComponentVersion)
+		if !ok {
+			return nil, errors.New("this functionality has been deprecated for usage with the new library ")
+		}
+
+		if componentVersion == nil {
+			return nil, fmt.Errorf("unable to resolve artifact, because no component version is provided")
+		}
+
+		blobResolver, err := cv.GetBlobResolver()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob resolver to resolve artifact: %w", err)
+		}
+
+		var data bytes.Buffer
+		if _, err := blobResolver.Resolve(ctx, types.Resource{Access: cdv2.NewUnstructuredType(access["type"].(string), access)}, &data); err != nil {
+			panic(err)
+		}
+		return data.Bytes(), nil
 	}
 }
 

@@ -45,8 +45,6 @@ type ComponentVersion interface {
 	// Returns an error if there is no such resource, or more than one.
 	// Currently, the Landscaper does not use the identity argument.
 	GetResource(name string, identity map[string]string) (Resource, error)
-
-	GetBlobResolver() (BlobResolver, error)
 }
 
 // GetComponentDescriptor returns the component descriptor structure.

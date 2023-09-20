@@ -77,8 +77,3 @@ func (c *ComponentVersion) GetResource(name string, identity map[string]string) 
 
 	return NewResource(resources[0]), nil
 }
-
-func (c *ComponentVersion) GetBlobResolver() (model.BlobResolver, error) {
-	//TODO implement me
-	panic("implement me")
-}
