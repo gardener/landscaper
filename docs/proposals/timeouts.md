@@ -108,7 +108,7 @@ and this controller sets the DeployItem on failure.
 ## Open Question
 
 - When does the processing timeout start? When a DeployItem is triggered of when the deployer starts working on it?
-  - Alternative one has the advantage, that a system under load, where it might need some time until a deployer could
+  - Alternative two has the advantage, that a system under load, where it might need some time until a deployer could
     pick up a DeployItem, is not running out of time. It seems also to be much easier for a customer to know how long a 
     deployment for a DeployItems needs, compared to how long a deployer requires to pick up a DeployItem.
   
