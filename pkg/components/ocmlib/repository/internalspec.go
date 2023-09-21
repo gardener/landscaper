@@ -12,8 +12,6 @@ import (
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
-type BlobFsMode int
-
 const (
 	FILESYSTEM = "filesystem"
 	CONTEXT    = "context"
@@ -55,7 +53,7 @@ func (r *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentia
 	if blobfs == nil {
 		switch r.BlobFsMode {
 		case "":
-			r.BlobFsMode = "filesystem"
+			r.BlobFsMode = FILESYSTEM
 			fallthrough
 		case FILESYSTEM:
 			blobfs = descriptorfs

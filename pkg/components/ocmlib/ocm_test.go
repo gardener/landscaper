@@ -4,15 +4,18 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"os"
+	"path/filepath"
+	"reflect"
+
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
-	"os"
-	"path/filepath"
-	"reflect"
+
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -173,5 +176,187 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	FIt("blueprint from inline component descriptor with single inline component and blob file system", func() {
+		inlineComponentReference := `
+repositoryContext:
+  type: inline
+  compDescDirPath: /
+  blobDirPath: /blobs
+  fileSystem: 
+    component-descriptor1.yaml: |
+      meta:
+        schemaVersion: v2
+
+      component:
+        name: example.com/landscaper-component
+        version: 1.0.0
+
+        provider: internal
+
+        repositoryContexts:
+        - type: ociRegistry
+          baseUrl: "/"
+
+        sources: []
+        componentReferences: []
+
+        resources:
+        - name: blueprint
+          type: blueprint
+          version: 1.0.0
+          relation: local
+          access:
+            type: localFilesystemBlob
+            mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+            filename: blueprint
+    blobs:
+      blueprint:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+
+          annotations:
+            local/name: root-a
+            local/version: 1.0.0
+
+          imports:
+          - name: imp-a
+            type: data
+            schema:
+              type: string
+
+          exports:
+          - name: exp-a
+            type: data
+            schema:
+              type: string
+
+          deployExecutions:
+          - type: GoTemplate
+            template: |
+              deployItems:
+              - name: main
+                type: landscaper.gardener.cloud/mock
+                config:
+                apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                  kind: ProviderConfiguration
+                  providerStatus:
+                    apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                    kind: ProviderStatus
+                    imp: {{ index .imports "imp-a" }}
+                  export:
+                    exp-a: exp-mock
+
+          exportExecutions:
+          - type: GoTemplate
+            template: |
+              exports:
+                exp-a: {{ index .values.deployitems.main "exp-a" }}
+
+componentName: example.com/landscaper-component
+version: 1.0.0
+`
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+		res := Must(cv.GetResource("blueprint", nil))
+		content := Must(res.GetTypedContent(ctx))
+		bp, ok := content.Resource.(*blueprints.Blueprint)
+		Expect(ok).To(BeTrue())
+		_ = bp
+	})
+
+	It("blueprint from inline component descriptor with separate inline component and blob file system", func() {
+		inlineComponentReference := `
+repositoryContext:
+  type: inline
+  fileSystem: 
+    component-descriptor1.yaml: |
+      meta:
+        schemaVersion: v2
+
+      component:
+        name: example.com/landscaper-component
+        version: 1.0.0
+
+        provider: internal
+
+        repositoryContexts:
+        - type: ociRegistry
+          baseUrl: "/"
+
+        sources: []
+        componentReferences: []
+
+        resources:
+        - name: blueprint
+          type: blueprint
+          version: 1.0.0
+          relation: local
+          access:
+            type: localFilesystemBlob
+            mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+            filename: blueprint
+  blobFs:
+    blueprint:
+      blueprint.yaml: |
+        apiVersion: landscaper.gardener.cloud/v1alpha1
+        kind: Blueprint
+
+        annotations:
+          local/name: root-a
+          local/version: 1.0.0
+
+        imports:
+        - name: imp-a
+          type: data
+          schema:
+            type: string
+
+        exports:
+        - name: exp-a
+          type: data
+          schema:
+            type: string
+
+        deployExecutions:
+        - type: GoTemplate
+          template: |
+            deployItems:
+            - name: main
+              type: landscaper.gardener.cloud/mock
+              config:
+              apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                kind: ProviderConfiguration
+                providerStatus:
+                  apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                  kind: ProviderStatus
+                  imp: {{ index .imports "imp-a" }}
+                export:
+                  exp-a: exp-mock
+
+        exportExecutions:
+        - type: GoTemplate
+          template: |
+            exports:
+              exp-a: {{ index .values.deployitems.main "exp-a" }}
+
+componentName: example.com/landscaper-component
+version: 1.0.0
+`
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+		res := Must(cv.GetResource("blueprint", nil))
+		content := Must(res.GetTypedContent(ctx))
+		bp, ok := content.Resource.(*blueprints.Blueprint)
+		Expect(ok).To(BeTrue())
+		_ = bp
 	})
 })

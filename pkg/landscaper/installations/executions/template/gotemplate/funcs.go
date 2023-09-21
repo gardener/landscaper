@@ -10,11 +10,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"os"
 	"strings"
 	gotmpl "text/template"
+
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gardener/component-spec/bindings-go/codec"
