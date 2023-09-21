@@ -3853,6 +3853,13 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
+					"useOCM": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 					"registryPullSecrets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.",
