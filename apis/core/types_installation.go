@@ -47,6 +47,10 @@ type InstallationSpec struct {
 	// +optional
 	Context string `json:"context,omitempty"`
 
+	// ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.
+	// +optional
+	ComponentLibrary ComponentLibrary `json:"componentLibrary,omitempty"`
+
 	//ComponentDescriptor is a reference to the installation's component descriptor
 	// +optional
 	ComponentDescriptor *ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`

@@ -365,3 +365,11 @@ func (r VersionedResourceReference) ObjectMeta() cdv2.ObjectMeta {
 		Version: r.Version,
 	}
 }
+
+type ComponentLibrary string
+
+const (
+	ComponentLibraryCNUDIE  ComponentLibrary = "cnudie"
+	ComponentLibraryOCM     ComponentLibrary = "ocm"
+	componentLibraryDefault ComponentLibrary = ComponentLibraryCNUDIE
+)

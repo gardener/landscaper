@@ -159,6 +159,10 @@ type ExecutionSpec struct {
 	// +optional
 	Context string `json:"context,omitempty"`
 
+	// ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.
+	// +optional
+	ComponentLibrary ComponentLibrary `json:"componentLibrary,omitempty"`
+
 	// DeployItems defines all execution items that need to be scheduled.
 	DeployItems DeployItemTemplateList `json:"deployItems,omitempty"`
 

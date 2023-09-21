@@ -4282,6 +4282,13 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"componentLibrary": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"config": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Configuration contains the deployer type specific configuration.",
@@ -5165,6 +5172,13 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref common.ReferenceCall
 							Format:      "",
 						},
 					},
+					"componentLibrary": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"deployItems": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployItems defines all execution items that need to be scheduled.",
@@ -5803,6 +5817,13 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 					"context": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Context defines the current context of the installation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"componentLibrary": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

@@ -1709,6 +1709,7 @@ func autoConvert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSp
 	out.Type = core.DeployItemType(in.Type)
 	out.Target = (*core.ObjectReference)(unsafe.Pointer(in.Target))
 	out.Context = in.Context
+	out.ComponentLibrary = core.ComponentLibrary(in.ComponentLibrary)
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Timeout = (*core.Duration)(unsafe.Pointer(in.Timeout))
@@ -1726,6 +1727,7 @@ func autoConvert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployI
 	out.Type = DeployItemType(in.Type)
 	out.Target = (*ObjectReference)(unsafe.Pointer(in.Target))
 	out.Context = in.Context
+	out.ComponentLibrary = ComponentLibrary(in.ComponentLibrary)
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Timeout = (*Duration)(unsafe.Pointer(in.Timeout))
@@ -2215,6 +2217,7 @@ func Convert_core_ExecutionList_To_v1alpha1_ExecutionList(in *core.ExecutionList
 
 func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec, out *core.ExecutionSpec, s conversion.Scope) error {
 	out.Context = in.Context
+	out.ComponentLibrary = core.ComponentLibrary(in.ComponentLibrary)
 	out.DeployItems = *(*core.DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	out.DeployItemsCompressed = *(*[]byte)(unsafe.Pointer(&in.DeployItemsCompressed))
 	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
@@ -2223,6 +2226,7 @@ func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec,
 
 func autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.ExecutionSpec, out *ExecutionSpec, s conversion.Scope) error {
 	out.Context = in.Context
+	out.ComponentLibrary = ComponentLibrary(in.ComponentLibrary)
 	out.DeployItems = *(*DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	out.DeployItemsCompressed = *(*[]byte)(unsafe.Pointer(&in.DeployItemsCompressed))
 	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
@@ -2537,6 +2541,7 @@ func Convert_core_InstallationList_To_v1alpha1_InstallationList(in *core.Install
 
 func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *InstallationSpec, out *core.InstallationSpec, s conversion.Scope) error {
 	out.Context = in.Context
+	out.ComponentLibrary = core.ComponentLibrary(in.ComponentLibrary)
 	out.ComponentDescriptor = (*core.ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
 	if err := Convert_v1alpha1_BlueprintDefinition_To_core_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
@@ -2561,6 +2566,7 @@ func Convert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installation
 
 func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.InstallationSpec, out *InstallationSpec, s conversion.Scope) error {
 	out.Context = in.Context
+	out.ComponentLibrary = ComponentLibrary(in.ComponentLibrary)
 	out.ComponentDescriptor = (*ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
 	if err := Convert_core_BlueprintDefinition_To_v1alpha1_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err

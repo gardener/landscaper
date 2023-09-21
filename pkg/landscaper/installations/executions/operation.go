@@ -169,6 +169,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 
 	if _, err := o.Writer().CreateOrUpdateExecution(ctx, read_write_layer.W000022, exec, func() error {
 		exec.Spec.Context = inst.GetInstallation().Spec.Context
+		exec.Spec.ComponentLibrary = inst.GetInstallation().Spec.ComponentLibrary
 		exec.Spec.DeployItems = versionedDeployItemTemplateList
 
 		if lsv1alpha1helper.HasOperation(inst.GetInstallation().ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
