@@ -39,7 +39,7 @@ In this tour, you will learn about the different Landscaper features by simple e
 
 [7. Handling a Delete Error](./error-handling/delete-error)
 
-You can find a list of error messages and corresponding solutions [here](./problem_analysis.md).
+You can find a list of error messages and corresponding solutions [here](./error-handling/problem_analysis.md).
 
 ## Blueprints and Components
 
