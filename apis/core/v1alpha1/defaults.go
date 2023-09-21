@@ -89,10 +89,6 @@ func SetDefaults_Installation(obj *Installation) {
 	if len(obj.Spec.Context) == 0 {
 		obj.Spec.Context = DefaultContextName
 	}
-
-	if len(obj.Spec.ComponentLibrary) == 0 {
-		obj.Spec.ComponentLibrary = componentLibraryDefault
-	}
 }
 
 // SetDefaults_Execution sets default values for Execution objects
@@ -100,10 +96,6 @@ func SetDefaults_Execution(obj *Execution) {
 	// default the repository context to "default"
 	if len(obj.Spec.Context) == 0 {
 		obj.Spec.Context = DefaultContextName
-	}
-
-	if len(obj.Spec.ComponentLibrary) == 0 {
-		obj.Spec.ComponentLibrary = componentLibraryDefault
 	}
 }
 
@@ -113,11 +105,6 @@ func SetDefaults_DeployItem(obj *DeployItem) {
 	if len(obj.Spec.Context) == 0 {
 		obj.Spec.Context = DefaultContextName
 	}
-
-	if len(obj.Spec.ComponentLibrary) == 0 {
-		obj.Spec.ComponentLibrary = componentLibraryDefault
-	}
-
 	// migration - can be removed, after .Status.DeployerPhase has been removed
 	obj.Status.DeployerPhase = nil
 }
