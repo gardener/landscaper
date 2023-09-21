@@ -32,6 +32,10 @@ spec:
           spec:
             description: Spec defines a execution and its items
             properties:
+              componentLibrary:
+                description: ComponentLibrary defines whether the cnudie or ocm component
+                  library should be used during reconciliation.
+                type: string
               context:
                 description: Context defines the current context of the execution.
                 type: string
