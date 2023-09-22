@@ -163,10 +163,10 @@ The following additional functions are available:
   The kubeconfig is returned as base64 encoded string.  
 
   Arguments:
-  - `shootName` the name of the shoot cluster  
-  - `shootNamespace` the namespace of the Gardener project to which the Shoot belongs: `garden-<PROJECT NAME>`  
-  - `expirationSeconds` the number of seconds after which the kubeconfig expires.  
-  - `target` a Target that contains a kubeconfig for the Gardener project to which the Shoot belongs.  
+  - `shootName` the name of the shoot cluster
+  - `shootNamespace` the namespace of the Gardener project to which the Shoot belongs: `garden-<PROJECT NAME>`
+  - `expirationSeconds` the number of seconds after which the kubeconfig expires
+  - `target` a Target that contains a kubeconfig for the Gardener project to which the Shoot belongs
 
   Here is an example of an export execution that uses the `getShootAdminKubeconfig` function. 
   ```yaml
@@ -185,16 +185,27 @@ The following additional functions are available:
   returns the kubeconfig wrapped in a Target. You can find the full example 
   [here](https://github.com/gardener/landscaper-examples/tree/master/manifest-deployer/shoot-admin-kubeconfig).  
 
+- **`getShootAdminKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+  works like `getShootAdminKubeconfig`, but instead of only returning the kubeconfig as string, it returns a struct containing the kubeconfig as well as the expiration timestamp of the token used in it. The returned struct looks like this:
+  ```yaml
+  kubeconfig: |
+    apiVersion: v1
+    kind: Config
+    ...
+  expirationTimestamp: 1695369282 # seconds from epoch
+  expirationTimestampReadable: "2023-09-22 09:54:42+02:00" # RFC3339
+  ```
+
 - **`getServiceAccountKubeconfig(serviceAccountName, serviceAccountNamespace string, expirationSeconds int, target Target): string`**
   returns a kubeconfig for a cluster. The kubeconfig will contain a token obtained by a 
   [token request](https://kubernetes.io/docs/reference/kubernetes-api/authentication-resources/token-request-v1/) 
   for the specified ServiceAccount. The kubeconfig is returned as base64 encoded string.
 
   Arguments:
-  - `serviceAccountName` the name of the ServiceAccount  
-  - `serviceAccountNamespace` the namespace of the ServiceAccount  
-  - `expirationSeconds` the number of seconds after which the kubeconfig expires.  
-  - `target` a Target that contains a kubeconfig for the cluster.  
+  - `serviceAccountName` the name of the ServiceAccount
+  - `serviceAccountNamespace` the namespace of the ServiceAccount
+  - `expirationSeconds` the number of seconds after which the kubeconfig expires
+  - `target` a Target that contains a kubeconfig for the cluster
 
   Example:
   ```yaml
@@ -211,6 +222,17 @@ The following additional functions are available:
   ```
   You can find the full example
   [here](https://github.com/gardener/landscaper-examples/tree/master/manifest-deployer/service-account-kubeconfig).
+
+- **`getServiceAccountKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+  works like `getServiceAccountKubeconfig`, but instead of only returning the kubeconfig as string, it returns a struct containing the kubeconfig as well as the expiration timestamp of the token used in it. The returned struct looks like this:
+  ```yaml
+  kubeconfig: |
+    apiVersion: v1
+    kind: Config
+    ...
+  expirationTimestamp: 1695369282 # seconds from epoch
+  expirationTimestampReadable: "2023-09-22 09:54:42+02:00" # RFC3339
+  ```
 
 
 ##### State
@@ -273,6 +295,74 @@ or
 - **`ociRefVersion(ref string): string`**
   parses an oci reference and returns the version.
   e.g. `host:5000/myrepo/myimage:1.0.0` -> `"1.0.0"`
+
+- **`getShootAdminKubeconfig(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+  returns a temporary admin kubeconfig for a Gardener Shoot cluster as described 
+  [here](https://github.com/gardener/gardener/blob/master/docs/usage/shoot_access.md#shootsadminkubeconfig-subresource). 
+  The kubeconfig is returned as base64 encoded string.  
+
+  Arguments:
+  - `shootName` the name of the shoot cluster
+  - `shootNamespace` the namespace of the Gardener project to which the Shoot belongs: `garden-<PROJECT NAME>`
+  - `expirationSeconds` the number of seconds after which the kubeconfig expires
+  - `target` a Target that contains a kubeconfig for the Gardener project to which the Shoot belongs
+
+  Here is an example of an export execution that uses the `getShootAdminKubeconfig` function. 
+  ```yaml
+  export-execution.yaml: |
+    exports:
+      shootAdminKubeconfig: (( base64(getShootAdminKubeconfig(.imports.shootName, .imports.shootNamespace, 86400, .imports.gardenerServiceAccount)) ))
+      shootAdminTarget:
+        type: landscaper.gardener.cloud/kubernetes-cluster
+        config:
+          kubeconfig: (( shootAdminKubeconfig ))
+  ```
+  It constructs two export values: `shootAdminKubeconfig` returns the kubeconfig as string, and `shootAdminTarget` 
+  returns the kubeconfig wrapped in a Target.
+
+- **`getShootAdminKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+  works like `getShootAdminKubeconfig`, but instead of only returning the kubeconfig as string, it returns a struct containing the kubeconfig as well as the expiration timestamp of the token used in it. The returned struct looks like this:
+  ```yaml
+  kubeconfig: |
+    apiVersion: v1
+    kind: Config
+    ...
+  expirationTimestamp: 1695369282 # seconds from epoch
+  expirationTimestampReadable: "2023-09-22 09:54:42+02:00" # RFC3339
+  ```
+
+- **`getServiceAccountKubeconfig(serviceAccountName, serviceAccountNamespace string, expirationSeconds int, target Target): string`**
+  returns a kubeconfig for a cluster. The kubeconfig will contain a token obtained by a 
+  [token request](https://kubernetes.io/docs/reference/kubernetes-api/authentication-resources/token-request-v1/) 
+  for the specified ServiceAccount. The kubeconfig is returned as base64 encoded string.
+
+  Arguments:
+  - `serviceAccountName` the name of the ServiceAccount
+  - `serviceAccountNamespace` the namespace of the ServiceAccount
+  - `expirationSeconds` the number of seconds after which the kubeconfig expires
+  - `target` a Target that contains a kubeconfig for the cluster
+
+  Example:
+  ```yaml
+  export-execution.yaml: |
+    exports:
+      serviceAccountKubeconfig: (( base64(getServiceAccountKubeconfig(.imports.serviceAccountName, .imports.serviceAccountNamespace, 7776000, .imports.cluster) ))
+      serviceAccountTarget:
+        type: landscaper.gardener.cloud/kubernetes-cluster
+        config:
+          kubeconfig: (( serviceAccountKubeconfig ))
+  ```
+
+- **`getServiceAccountKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+  works like `getServiceAccountKubeconfig`, but instead of only returning the kubeconfig as string, it returns a struct containing the kubeconfig as well as the expiration timestamp of the token used in it. The returned struct looks like this:
+  ```yaml
+  kubeconfig: |
+    apiVersion: v1
+    kind: Config
+    ...
+  expirationTimestamp: 1695369282 # seconds from epoch
+  expirationTimestampReadable: "2023-09-22 09:54:42+02:00" # RFC3339
+  ```
 
 ##### State
 

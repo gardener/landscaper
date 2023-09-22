@@ -373,7 +373,7 @@ func (c *TargetSyncController) handleShoot(ctx context.Context, targetSync *lsv1
 		return nil
 	}
 
-	kubeconfig, err := shootClient.GetShootAdminKubeconfig(ctx, shoot.GetName(), shoot.GetNamespace(), kubeconfigExpirationSeconds)
+	kubeconfig, _, err := shootClient.GetShootAdminKubeconfig(ctx, shoot.GetName(), shoot.GetNamespace(), kubeconfigExpirationSeconds)
 	if err != nil {
 		msg := "targetsync for shoot failed to get admin kubeconfig"
 		logger.Error(err, msg)

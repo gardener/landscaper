@@ -195,7 +195,7 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 			Inst:       o.Inst.GetInstallation(),
 		}
 		targetResolver := secretresolver.New(o.Client())
-		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler))
+		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
 				o.Context().External.InjectComponentDescriptorRef(o.Inst.GetInstallation().DeepCopy()),
