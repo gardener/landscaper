@@ -61,7 +61,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 		Inst:       inst.GetInstallation(),
 	}
 	targetResolver := secretresolver.New(o.Client())
-	tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler))
+	tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(

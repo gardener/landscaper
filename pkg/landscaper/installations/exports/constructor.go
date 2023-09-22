@@ -83,7 +83,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 
 	tmpl := template.New(
 		gotemplate.New(stateHdlr, targetResolver),
-		spiff.New(stateHdlr))
+		spiff.New(stateHdlr, targetResolver))
 	exports, err := tmpl.TemplateExportExecutions(
 		template.NewExportExecutionOptions(
 			template.NewBlueprintExecutionOptions(
