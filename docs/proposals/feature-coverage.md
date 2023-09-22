@@ -137,8 +137,7 @@ The blueprint of an installation can be given:
 Subinstallations, deploy executions, export executions can be defined in separate files or in the blueprint.yaml
 
 Pulling a blueprint, component descriptor or jsonschema using a registry pull secret
-- from field `registryPullSecrets` of the installation spec
-- from field `registryPullSecrets` of the `Context` referenced in the `Installation`
+from field `registryPullSecrets` of the `Context` referenced in the `Installation`
 
 
 

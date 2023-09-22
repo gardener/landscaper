@@ -1663,11 +1663,6 @@ func (in *InstallationSpec) DeepCopyInto(out *InstallationSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.Blueprint.DeepCopyInto(&out.Blueprint)
-	if in.RegistryPullSecrets != nil {
-		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
-		*out = make([]ObjectReference, len(*in))
-		copy(*out, *in)
-	}
 	in.Imports.DeepCopyInto(&out.Imports)
 	if in.ImportDataMappings != nil {
 		in, out := &in.ImportDataMappings, &out.ImportDataMappings

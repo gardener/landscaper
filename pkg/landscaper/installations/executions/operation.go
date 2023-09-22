@@ -157,7 +157,6 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec := &lsv1alpha1.Execution{}
 	exec.Name = inst.GetInstallation().Name
 	exec.Namespace = inst.GetInstallation().Namespace
-	exec.Spec.RegistryPullSecrets = inst.GetInstallation().Spec.RegistryPullSecrets
 
 	versionedDeployItemTemplateList := lsv1alpha1.DeployItemTemplateList{}
 	if err := lsv1alpha1.Convert_core_DeployItemTemplateList_To_v1alpha1_DeployItemTemplateList(&execTemplates, &versionedDeployItemTemplateList, nil); err != nil {

@@ -2543,7 +2543,6 @@ func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installa
 	if err := Convert_v1alpha1_BlueprintDefinition_To_core_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
 	}
-	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	if err := Convert_v1alpha1_InstallationImports_To_core_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
 		return err
 	}
@@ -2567,7 +2566,6 @@ func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.Ins
 	if err := Convert_core_BlueprintDefinition_To_v1alpha1_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
 	}
-	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	if err := Convert_core_InstallationImports_To_v1alpha1_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
 		return err
 	}
