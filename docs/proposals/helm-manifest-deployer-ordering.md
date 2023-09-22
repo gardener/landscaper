@@ -278,3 +278,7 @@ Again, objects of the next deletion goup are only deleted if all the objecs of t
 If later required, it is also possible to use the ideas of custom groups here to allow more control 
 about the deletion order during an upgrade.
  
+## Feedback from presentation
+
+- Deletions should not be executed in central namespaces kube-system?
+- Exclude and include lists of namespaces in the selector context.
