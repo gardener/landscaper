@@ -53,7 +53,6 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
 		item.DeployItem.Spec.Context = o.exec.Spec.Context
-		item.DeployItem.Spec.ComponentLibrary = o.exec.Spec.ComponentLibrary
 		if len(clusterName) > 0 {
 			metav1.SetMetaDataAnnotation(&item.DeployItem.ObjectMeta, clusterNameAnnotation, clusterName)
 		}

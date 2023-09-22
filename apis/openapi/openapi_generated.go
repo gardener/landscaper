@@ -1927,6 +1927,13 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.HPAMainConfiguration"),
 						},
 					},
+					"UseOCMLib": {
+						SchemaProps: spec.SchemaProps{
+							Default: false,
+							Type:    []string{"boolean"},
+							Format:  "",
+						},
+					},
 				},
 				Required: []string{"TypeMeta", "Controllers", "Registry", "BlueprintStore"},
 			},
@@ -2870,6 +2877,13 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 						SchemaProps: spec.SchemaProps{
 							Description: "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller).",
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.HPAMainConfiguration"),
+						},
+					},
+					"UseOCMLib": {
+						SchemaProps: spec.SchemaProps{
+							Default: false,
+							Type:    []string{"boolean"},
+							Format:  "",
 						},
 					},
 				},
@@ -3853,6 +3867,13 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
+					"useOCM": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 					"registryPullSecrets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.",
@@ -4278,13 +4299,6 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 					"context": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Context defines the current context of the deployitem.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"componentLibrary": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -5172,13 +5186,6 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref common.ReferenceCall
 							Format:      "",
 						},
 					},
-					"componentLibrary": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"deployItems": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployItems defines all execution items that need to be scheduled.",
@@ -5817,13 +5824,6 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 					"context": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Context defines the current context of the installation.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"componentLibrary": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

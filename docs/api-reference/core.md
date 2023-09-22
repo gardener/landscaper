@@ -333,6 +333,18 @@ github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
 </tr>
 <tr>
 <td>
+<code>useOCM</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UseOCM defines whether OCM is used to process installations that reference this context.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>registryPullSecrets</code></br>
 <em>
 <a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#localobjectreference-v1-core">
@@ -534,20 +546,6 @@ string
 <td>
 <em>(Optional)</em>
 <p>Context defines the current context of the deployitem.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>componentLibrary</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentLibrary">
-ComponentLibrary
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
@@ -931,20 +929,6 @@ string
 </tr>
 <tr>
 <td>
-<code>componentLibrary</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentLibrary">
-ComponentLibrary
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>deployItems</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplateList">
@@ -1071,20 +1055,6 @@ string
 <td>
 <em>(Optional)</em>
 <p>Context defines the current context of the installation.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>componentLibrary</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentLibrary">
-ComponentLibrary
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
@@ -2300,16 +2270,6 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentLibrary">ComponentLibrary
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionSpec">ExecutionSpec</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>)
-</p>
-<p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentVersionOverwrite">ComponentVersionOverwrite
 </h3>
 <p>
@@ -2834,20 +2794,6 @@ string
 <td>
 <em>(Optional)</em>
 <p>Context defines the current context of the deployitem.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>componentLibrary</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentLibrary">
-ComponentLibrary
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
@@ -3780,20 +3726,6 @@ string
 </tr>
 <tr>
 <td>
-<code>componentLibrary</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentLibrary">
-ComponentLibrary
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>deployItems</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplateList">
@@ -4564,20 +4496,6 @@ string
 <td>
 <em>(Optional)</em>
 <p>Context defines the current context of the installation.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>componentLibrary</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentLibrary">
-ComponentLibrary
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentLibrary defines whether the cnudie or ocm component library should be used during reconciliation.</p>
 </td>
 </tr>
 <tr>
