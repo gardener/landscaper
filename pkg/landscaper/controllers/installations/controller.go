@@ -7,6 +7,7 @@ package installations
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"reflect"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -264,6 +265,9 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
+
+	registries.SetOCMLibraryMode(c.LsConfig.UseOCMLib)
+	registries.SetFactory(lsCtx.External.UseOCM)
 
 	if err := c.SetupRegistries(ctx, op, append(lsCtx.External.RegistryPullSecrets(), inst.Spec.RegistryPullSecrets...), inst); err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())

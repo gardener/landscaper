@@ -6,6 +6,7 @@ package helm
 
 import (
 	"context"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"time"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -63,6 +64,9 @@ type deployer struct {
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
+	registries.SetOCMLibraryMode(d.config.UseOCMLib)
+	registries.SetFactory(lsCtx.UseOCM)
+
 	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "newRootLogger", err.Error())
