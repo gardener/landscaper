@@ -47,8 +47,8 @@ import (
 // Reconcile handles the reconcile flow for a container deploy item.
 // todo: do retries on failure: difference between main container failure and init/wait container failure
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
-	registries.SetFactory(c.Configuration.UseOCMLib)
-	registries.SetFactory(c.Context.UseOCM)
+	registries.SetOCMLibraryMode(c.Configuration.UseOCMLib)
+	registries.SetFactory(ctx, c.Context.UseOCM)
 
 	pod, err := c.getPod(ctx)
 	logger := logging.FromContextOrDiscard(ctx)

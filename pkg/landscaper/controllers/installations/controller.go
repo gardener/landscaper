@@ -267,7 +267,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 
 	registries.SetOCMLibraryMode(c.LsConfig.UseOCMLib)
-	registries.SetFactory(lsCtx.External.UseOCM)
+	registries.SetFactory(ctx, lsCtx.External.UseOCM)
 
 	if err := c.SetupRegistries(ctx, op, append(lsCtx.External.RegistryPullSecrets(), inst.Spec.RegistryPullSecrets...), inst); err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
