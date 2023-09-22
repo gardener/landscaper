@@ -1927,6 +1927,13 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.HPAMainConfiguration"),
 						},
 					},
+					"UseOCMLib": {
+						SchemaProps: spec.SchemaProps{
+							Default: false,
+							Type:    []string{"boolean"},
+							Format:  "",
+						},
+					},
 				},
 				Required: []string{"TypeMeta", "Controllers", "Registry", "BlueprintStore"},
 			},
@@ -2870,6 +2877,13 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 						SchemaProps: spec.SchemaProps{
 							Description: "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller).",
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.HPAMainConfiguration"),
+						},
+					},
+					"UseOCMLib": {
+						SchemaProps: spec.SchemaProps{
+							Default: false,
+							Type:    []string{"boolean"},
+							Format:  "",
 						},
 					},
 				},
