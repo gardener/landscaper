@@ -6,8 +6,10 @@ package v1
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/equivalent"
 	"github.com/open-component-model/ocm/pkg/signing"
 )
 
@@ -23,6 +25,22 @@ const (
 
 // Signatures is a list of signatures.
 type Signatures []Signature
+
+func (s Signatures) Equivalent(o Signatures) equivalent.EqualState {
+	if len(s) != len(o) {
+		return equivalent.StateNotEquivalent()
+	}
+outer:
+	for _, a := range s {
+		if b := o.GetByName(a.Name); b != nil {
+			if reflect.DeepEqual(&a, b) {
+				continue outer
+			}
+		}
+		return equivalent.StateNotEquivalent()
+	}
+	return equivalent.StateEquivalent()
+}
 
 func (s Signatures) Len() int {
 	return len(s)
@@ -46,6 +64,30 @@ func (s Signatures) Copy() Signatures {
 	return out
 }
 
+func (s Signatures) GetIndex(name string) int {
+	for i, v := range s {
+		if v.Name == name {
+			return i
+		}
+	}
+	return -1
+}
+
+func (s Signatures) GetByName(name string) *Signature {
+	if idx := s.GetIndex(name); idx >= 0 {
+		return &s[idx]
+	}
+	return nil
+}
+
+func (s *Signatures) Set(sig Signature) {
+	if idx := s.GetIndex(sig.Name); idx < 0 {
+		*s = append(*s, sig)
+	} else {
+		(*s)[idx] = sig
+	}
+}
+
 // DigestSpec defines a digest.
 // +k8s:deepcopy-gen=true
 // +k8s:openapi-gen=true
@@ -59,6 +101,18 @@ func (d *DigestSpec) String() string {
 	return fmt.Sprintf("%s:%s[%s]", d.HashAlgorithm, d.Value, d.NormalisationAlgorithm)
 }
 
+func (d *DigestSpec) IsComplete() bool {
+	return d != nil && d.HashAlgorithm != "" && d.NormalisationAlgorithm != "" && d.Value != ""
+}
+
+func (d *DigestSpec) IsNone() bool {
+	return d == nil || *d == DigestSpec{}
+}
+
+func (d *DigestSpec) IsExcluded() bool {
+	return d != nil && *d == excluded
+}
+
 // Copy provides a copy of the digest spec.
 func (d *DigestSpec) Copy() *DigestSpec {
 	if d == nil {
@@ -66,6 +120,30 @@ func (d *DigestSpec) Copy() *DigestSpec {
 	}
 	r := *d
 	return &r
+}
+
+func (d *DigestSpec) Equal(o *DigestSpec) bool {
+	if d == o {
+		return true
+	}
+	if d == nil || o == nil {
+		return false
+	}
+	return *d == *o
+}
+
+func (d *DigestSpec) Equivalent(o *DigestSpec) equivalent.EqualState {
+	if d == nil {
+		d, o = o, d
+	}
+	if d == nil {
+		return equivalent.StateNotArtifactEqual(false)
+	}
+
+	if (d.IsExcluded() && o == nil) || reflect.DeepEqual(d, o) {
+		return equivalent.StateEquivalent()
+	}
+	return equivalent.StateNotArtifactEqual(d != nil && o != nil)
 }
 
 // SignatureSpec defines a signature.
@@ -106,13 +184,16 @@ func (s *Signature) ConvertToSigning() *signing.Signature {
 	}
 }
 
+var excluded = DigestSpec{
+	HashAlgorithm:          NoDigest,
+	NormalisationAlgorithm: ExcludeFromSignature,
+	Value:                  NoDigest,
+}
+
 // NewExcludeFromSignatureDigest returns the special digest notation to indicate the resource content should not be part of the signature.
 func NewExcludeFromSignatureDigest() *DigestSpec {
-	return &DigestSpec{
-		HashAlgorithm:          NoDigest,
-		NormalisationAlgorithm: ExcludeFromSignature,
-		Value:                  NoDigest,
-	}
+	e := excluded
+	return &e
 }
 
 ////////////////////////////////////////////////////////////////////////////////

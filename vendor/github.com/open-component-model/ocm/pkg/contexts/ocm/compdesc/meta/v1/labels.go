@@ -6,12 +6,48 @@ package v1
 
 import (
 	"encoding/json"
+	"reflect"
 	"regexp"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/equivalent"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/listformat"
+	"github.com/open-component-model/ocm/pkg/runtime"
 )
+
+const (
+	KIND_LABEL                 = "label"
+	KIND_VALUE_MERGE_ALGORITHM = "label merge algorithm"
+)
+
+type MergeAlgorithmSpecification struct {
+	// Algorithm optionally described the Merge algorithm used to
+	// merge the label value during a transfer.
+	Algorithm string `json:"algorithm"`
+	// eConfig contains optional config for the merge algorithm.
+	Config json.RawMessage `json:"config,omitempty"`
+}
+
+var _ listformat.DirectDescriptionSource = (*MergeAlgorithmSpecification)(nil)
+
+func (s *MergeAlgorithmSpecification) Description() string {
+	return s.Algorithm
+}
+
+func NewMergeAlgorithmSpecification(algo string, spec interface{}) (*MergeAlgorithmSpecification, error) {
+	m, err := runtime.AsRawMessage(spec)
+	if err != nil {
+		return nil, err
+	}
+	return &MergeAlgorithmSpecification{
+		Algorithm: algo,
+		Config:    m,
+	}, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 // Label is a label that can be set on objects.
 // +k8s:deepcopy-gen=true
@@ -28,6 +64,10 @@ type Label struct {
 	Version string `json:"version,omitempty"`
 	// Signing describes whether the label should be included into the signature
 	Signing bool `json:"signing,omitempty"`
+
+	// MergeAlgorithm optionally describes the desired merge handling used to
+	// merge the label value during a transfer.
+	Merge *MergeAlgorithmSpecification `json:"merge,omitempty"`
 }
 
 // DeepCopyInto copies labels.
@@ -36,38 +76,75 @@ func (in *Label) DeepCopyInto(out *Label) {
 	out.Value = append(out.Value[:0:0], in.Value...)
 }
 
+// GetValue returns the label value with the given name as parsed object.
+func (in *Label) GetValue(dest interface{}) error {
+	return json.Unmarshal(in.Value, dest)
+}
+
+// SetValue sets the label value by marshalling the given object.
+// A passed byte slice is validated to be valid json.
+func (in *Label) SetValue(value interface{}) error {
+	var v runtime.RawValue
+	err := v.SetValue(value)
+	if err != nil {
+		return err
+	}
+	in.Value = v.RawMessage
+	return nil
+}
+
 var versionRegex = regexp.MustCompile("^v[0-9]+$")
 
 func NewLabel(name string, value interface{}, opts ...LabelOption) (*Label, error) {
-	var data []byte
-	var err error
-	var ok bool
-
-	if data, ok = value.([]byte); ok {
-		var v interface{}
-		err = json.Unmarshal(data, &v)
-		if err != nil {
-			return nil, errors.ErrInvalid("label value", string(data), name)
-		}
-	} else {
-		data, err = json.Marshal(value)
-		if err != nil {
-			return nil, errors.ErrInvalid("label value", "<object>", name)
-		}
+	l := Label{Name: name}
+	err := l.SetValue(value)
+	if err != nil {
+		return nil, err
 	}
-	l := &Label{Name: name, Value: data}
+
 	for _, o := range opts {
-		if err := o.ApplyToLabel(l); err != nil {
+		if err := o.ApplyToLabel(&l); err != nil {
 			return nil, errors.Wrapf(err, "label %q", name)
 		}
 	}
-	return l, nil
+	return &l, nil
 }
 
 // Labels describe a list of labels
 // +k8s:deepcopy-gen=true
 // +k8s:openapi-gen=true
 type Labels []Label
+
+// GetIndex returns the index of the given label or -1 if not found.
+func (l Labels) GetIndex(name string) int {
+	for i, label := range l {
+		if label.Name == name {
+			return i
+		}
+	}
+	return -1
+}
+
+// GetDef returns the label definition of the given label.
+func (l Labels) GetDef(name string) *Label {
+	for i, label := range l {
+		if label.Name == name {
+			return &l[i]
+		}
+	}
+	return nil
+}
+
+// SetDef ets a label definition.
+func (l *Labels) SetDef(name string, value *Label) {
+	for i, label := range *l {
+		if label.Name == name {
+			(*l)[i] = *value
+			return
+		}
+	}
+	*l = append(*l, *value)
+}
 
 // Get returns the label value with the given name as json string.
 func (l Labels) Get(name string) ([]byte, bool) {
@@ -79,32 +156,11 @@ func (l Labels) Get(name string) ([]byte, bool) {
 	return nil, false
 }
 
-// GetIndex returns the index of the label with the given name,
-// or -1 if not found.
-func (l Labels) GetIndex(name string) int {
-	for i, label := range l {
-		if label.Name == name {
-			return i
-		}
-	}
-	return -1
-}
-
-// GetDef returns the label object with the given name.
-func (l Labels) GetDef(name string) *Label {
-	for _, label := range l {
-		if label.Name == name {
-			return &label
-		}
-	}
-	return nil
-}
-
 // GetValue returns the label value with the given name as parsed object.
 func (l Labels) GetValue(name string, dest interface{}) (bool, error) {
 	for _, label := range l {
 		if label.Name == name {
-			return true, json.Unmarshal(label.Value, dest)
+			return true, label.GetValue(dest)
 		}
 	}
 	return false, nil
@@ -126,7 +182,23 @@ func (l *Labels) Set(name string, value interface{}, opts ...LabelOption) error 
 	return nil
 }
 
-// SetValue sets or modifies the value of a label, the label meta data
+// Set sets or modifies the label meta data.
+func (l *Labels) SetOptions(name string, opts ...LabelOption) error {
+	newLabel, err := NewLabel(name, nil, opts...)
+	if err != nil {
+		return err
+	}
+	for i, label := range *l {
+		if label.Name == name {
+			newLabel.Value = label.Value
+			(*l)[i] = *newLabel
+			return nil
+		}
+	}
+	return errors.ErrNotFound(KIND_LABEL, name)
+}
+
+// SetValue sets or modifies the value of a label, the label metadata
 // is not touched.
 func (l *Labels) SetValue(name string, value interface{}) error {
 	newLabel, err := NewLabel(name, value)
@@ -151,6 +223,44 @@ func (l *Labels) Remove(name string) bool {
 		}
 	}
 	return false
+}
+
+func (l *Labels) Clear() {
+	*l = nil
+}
+
+func (l Labels) Equivalent(o Labels) equivalent.EqualState {
+	state := equivalent.StateEquivalent()
+
+	for _, ol := range o {
+		ll := l.GetDef(ol.Name)
+		if ol.Signing {
+			if ll == nil || !reflect.DeepEqual(&ol, ll) {
+				state = state.NotLocalHashEqual()
+			}
+		} else {
+			if ll != nil {
+				if ll.Signing {
+					state = state.NotLocalHashEqual()
+				}
+				if !reflect.DeepEqual(&ol, ll) {
+					state = state.NotEquivalent()
+				}
+			} else {
+				state = state.NotEquivalent()
+			}
+		}
+	}
+	for _, ll := range l {
+		ol := o.GetDef(ll.Name)
+		if ol == nil {
+			if ll.Signing {
+				state = state.NotLocalHashEqual()
+			}
+			state = state.NotEquivalent()
+		}
+	}
+	return state
 }
 
 // AsMap return an unmarshalled map representation.
@@ -222,6 +332,8 @@ func (o labelOptVersion) ApplyToLabel(l *Label) error {
 	return nil
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 type labelOptSigning struct {
 	sign bool
 }
@@ -238,5 +350,45 @@ func WithSigning(b ...bool) LabelOption {
 
 func (o *labelOptSigning) ApplyToLabel(l *Label) error {
 	l.Signing = o.sign
+	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// LabelMergeHandlerConfig must be label merge handler config. but cannot be checked
+// because of cyclic package dependencies.
+type LabelMergeHandlerConfig interface{}
+
+type labelOptMerge struct {
+	cfg  json.RawMessage
+	algo string
+}
+
+var _ LabelOption = (*labelOptMerge)(nil)
+
+func WithMerging(algo string, cfg LabelMergeHandlerConfig) LabelOption {
+	var data []byte
+	if cfg != nil {
+		var err error
+		data, err = json.Marshal(cfg)
+		if err != nil {
+			return nil
+		}
+	}
+	return &labelOptMerge{algo: algo, cfg: data}
+}
+
+func (o *labelOptMerge) ApplyToLabel(l *Label) error {
+	if o.algo != "" || len(o.cfg) > 0 {
+		l.Merge = &MergeAlgorithmSpecification{}
+		if o.algo != "" {
+			l.Merge.Algorithm = o.algo
+		}
+		if len(o.cfg) > 0 {
+			l.Merge.Config = o.cfg
+		}
+	} else {
+		l.Merge = nil
+	}
 	return nil
 }

@@ -5,11 +5,13 @@
 package v1
 
 import (
+	"reflect"
 	"time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/equivalent"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
@@ -83,8 +85,29 @@ type ObjectMeta struct {
 	CreationTime *Timestamp `json:"creationTime,omitempty"`
 }
 
+func (o *ObjectMeta) Equal(obj interface{}) bool {
+	if e, ok := obj.(*ObjectMeta); ok {
+		if o.Name == e.Name &&
+			o.Version == e.Version &&
+			reflect.DeepEqual(o.Provider, e.Provider) &&
+			reflect.DeepEqual(o.Labels, e.Labels) {
+			return true
+		}
+		// check Creation time ?
+	}
+	return false
+}
+
+func (o ObjectMeta) Equivalent(a ObjectMeta) equivalent.EqualState {
+	state := equivalent.StateLocalHashEqual(o.Name == a.Name && o.Version == a.Version)
+	return state.Apply(
+		o.Provider.Equivalent(a.Provider),
+		o.Labels.Equivalent(a.Labels),
+	)
+}
+
 // GetName returns the name of the object.
-func (o ObjectMeta) GetName() string {
+func (o *ObjectMeta) GetName() string {
 	return o.Name
 }
 
@@ -160,6 +183,11 @@ func (o *Provider) Copy() *Provider {
 	}
 }
 
+func (o Provider) Equivalent(a Provider) equivalent.EqualState {
+	state := equivalent.StateLocalHashEqual(o.Name == a.Name)
+	return state.Apply(o.Labels.Equivalent(a.Labels))
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 type _time = v1.Time
@@ -184,6 +212,12 @@ func NewTimestampP() *Timestamp {
 
 func NewTimestampFor(t time.Time) Timestamp {
 	return Timestamp{
+		_time: v1.NewTime(t.Round(time.Second)),
+	}
+}
+
+func NewTimestampPFor(t time.Time) *Timestamp {
+	return &Timestamp{
 		_time: v1.NewTime(t.Round(time.Second)),
 	}
 }

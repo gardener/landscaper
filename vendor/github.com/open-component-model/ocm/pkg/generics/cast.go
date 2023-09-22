@@ -6,9 +6,17 @@ package generics
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/open-component-model/ocm/pkg/errors"
 )
+
+// TypeOf returns the reflect.Type object for a formal Go type
+// given by type parameter.
+func TypeOf[T any]() reflect.Type {
+	var ifce T
+	return reflect.TypeOf(&ifce).Elem()
+}
 
 func As[T any](o interface{}) T {
 	var _nil T

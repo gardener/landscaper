@@ -54,6 +54,9 @@ One of following data fields are possible:
 }
 
 func (a AttributeType) Encode(v interface{}, marshaller runtime.Marshaler) ([]byte, error) {
+	if _, ok := v.(signing.Registry); ok {
+		return nil, nil
+	}
 	return nil, errors.ErrNotSupported("encoding of key registry")
 }
 

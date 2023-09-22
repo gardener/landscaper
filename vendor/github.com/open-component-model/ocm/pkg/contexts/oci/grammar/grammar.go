@@ -79,7 +79,9 @@ var (
 	// DomainComponentRegexp restricts the registry domain component of a
 	// repository name to start with a component as defined by DomainPortRegexp
 	// and followed by an optional port.
-	DomainComponentRegexp = Match(`(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])`)
+	DomainComponentRegexp = Match(`(?:[a-zA-Z0-9]|(?:[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]))`)
+
+	IPRegexp = Sequence(Match("[0-9]+"), Literal(`.`), Match("[0-9]+"), Literal(`.`), Match("[0-9]+"), Literal(`.`), Match("[0-9]+"))
 
 	// DomainRegexp defines the structure of potential domain components
 	// that may be part of image names. This is purposely a subset of what is
@@ -99,7 +101,7 @@ var (
 
 	// HostPortRegexp describes a non-DNS simple hostname like localhost.
 	HostPortRegexp = Sequence(
-		DomainComponentRegexp,
+		Or(DomainComponentRegexp, IPRegexp),
 		Optional(Literal(`:`), Match(`[0-9]+`)))
 
 	PathRegexp = Sequence(

@@ -128,10 +128,14 @@ func (d *Digester) DetermineDigest(reftyp string, acc cpi.AccessMethod, preferre
 					if main == "" {
 						return nil, fmt.Errorf("no main artifact found")
 					}
-					if d.GetType().HashAlgorithm != signing.NormalizeHashAlgorithm(string(digest.Digest(main).Algorithm())) {
+					dig := artifactset.RetrieveDigest(index, main)
+					if dig == "" {
+						return nil, fmt.Errorf("no main artifact digest found for %s", main)
+					}
+					if d.GetType().HashAlgorithm != signing.NormalizeHashAlgorithm(string(dig.Algorithm())) {
 						return nil, nil
 					}
-					desc = cpi.NewDigestDescriptor(digest.Digest(main).Hex(), d.GetType())
+					desc = cpi.NewDigestDescriptor(dig.Hex(), d.GetType())
 					if !oci {
 						return desc, nil
 					}

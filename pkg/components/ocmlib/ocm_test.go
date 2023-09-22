@@ -178,7 +178,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		Expect(props["password"]).To(Equal(PASSWORD))
 	})
 
-	FIt("blueprint from inline component descriptor with single inline component and blob file system", func() {
+	It("blueprint from inline component descriptor with single inline component and blob file system", func() {
 		inlineComponentReference := `
 repositoryContext:
   type: inline

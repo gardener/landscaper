@@ -5,13 +5,13 @@
 package ocm
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type ComponentContainer interface {
@@ -95,13 +95,14 @@ func (s *session) LookupRepository(ctx Context, spec RepositorySpec) (Repository
 	if err != nil {
 		return nil, err
 	}
-	data, err := json.Marshal(spec)
+
+	keyName, err := utils.Key(spec)
 	if err != nil {
 		return nil, err
 	}
 	key := datacontext.ObjectKey{
 		Object: ctx,
-		Name:   string(data),
+		Name:   keyName,
 	}
 
 	s.base.Lock()

@@ -28,10 +28,9 @@ The type specific specification fields are:
 - **`legacyTypes`** (optional) *bool*
 
   OCI repository requires Docker legacy mime types for OCI
-  image manifests. (automatically enabled for docker.io)](OCM component versions can be stored in OCI registries which
+  image manifests. (automatically enabled for docker.io) (OCM component versions can be stored in OCI registries which
 are conforming to the [OCI distribution specification](https://github.com/opencontainers/distribution-spec/blob/main/spec.md).
-Additionally, a registry must support a deep repository structure.
-)
+Additionally, a registry must support a deep repository structure.)
 
 ### Go Bindings
 

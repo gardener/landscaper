@@ -11,6 +11,8 @@ import (
 
 	. "github.com/open-component-model/ocm/pkg/finalizer"
 
+	"github.com/modern-go/reflect2"
+
 	"github.com/open-component-model/ocm/pkg/contexts/config"
 	cfgcpi "github.com/open-component-model/ocm/pkg/contexts/config/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
@@ -58,6 +60,7 @@ type Context interface {
 	RepositorySpecHandlers() RepositorySpecHandlers
 	MapUniformRepositorySpec(u *UniformRepositorySpec) (RepositorySpec, error)
 
+	LabelMergeHandlers() ValueMergeHandlerRegistry
 	BlobHandlers() BlobHandlerRegistry
 	BlobDigesters() BlobDigesterRegistry
 
@@ -132,6 +135,7 @@ type _context struct {
 	specHandlers  RepositorySpecHandlers
 	blobHandlers  BlobHandlerRegistry
 	blobDigesters BlobDigesterRegistry
+	mergeHandlers ValueMergeHandlerRegistry
 	aliases       map[string]RepositorySpec
 	resolver      *resolver
 	finalizer     Finalizer
@@ -139,7 +143,7 @@ type _context struct {
 
 var _ Context = &_context{}
 
-func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme RepositoryTypeScheme, accessscheme AccessTypeScheme, specHandlers RepositorySpecHandlers, blobHandlers BlobHandlerRegistry, blobDigesters BlobDigesterRegistry, repodel RepositoryDelegationRegistry, delegates datacontext.Delegates) Context {
+func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme RepositoryTypeScheme, accessscheme AccessTypeScheme, specHandlers RepositorySpecHandlers, blobHandlers BlobHandlerRegistry, mergeHandlers ValueMergeHandlerRegistry, blobDigesters BlobDigesterRegistry, repodel RepositoryDelegationRegistry, delegates datacontext.Delegates) Context {
 	c := &_context{
 		sharedattributes:     credctx.AttributesContext(),
 		credctx:              credctx,
@@ -147,6 +151,7 @@ func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme Repo
 		specHandlers:         specHandlers,
 		blobHandlers:         blobHandlers,
 		blobDigesters:        blobDigesters,
+		mergeHandlers:        mergeHandlers,
 		knownAccessTypes:     accessscheme,
 		knownRepositoryTypes: reposcheme,
 		aliases:              map[string]RepositorySpec{},
@@ -210,10 +215,17 @@ func (c *_context) MapUniformRepositorySpec(u *UniformRepositorySpec) (Repositor
 }
 
 func (c *_context) BlobHandlers() BlobHandlerRegistry {
+	c.Update()
 	return c.blobHandlers
 }
 
+func (c *_context) LabelMergeHandlers() ValueMergeHandlerRegistry {
+	c.Update()
+	return c.mergeHandlers
+}
+
 func (c *_context) BlobDigesters() BlobDigesterRegistry {
+	c.Update()
 	return c.blobDigesters
 }
 
@@ -248,7 +260,7 @@ func (c *_context) AccessSpecForConfig(data []byte, unmarshaler runtime.Unmarsha
 // AccessSpecForSpec takes an anonymous access specification and tries to map
 // it to an effective implementation.
 func (c *_context) AccessSpecForSpec(spec compdesc.AccessSpec) (AccessSpec, error) {
-	if spec == nil {
+	if reflect2.IsNil(spec) {
 		return nil, nil
 	}
 	if n, ok := spec.(AccessSpec); ok {

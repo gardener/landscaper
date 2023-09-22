@@ -10,6 +10,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/signingattr"
 	"github.com/open-component-model/ocm/pkg/signing"
 	"github.com/open-component-model/ocm/pkg/signing/handlers/rsa"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 // TODO: switch to context local setting.
@@ -26,6 +27,7 @@ func (b *Builder) RSAKeyPair(name ...string) {
 func (b *Builder) ReadRSAKeyPair(name, path string) {
 	reg := signingattr.Get(b.OCMContext())
 	pubfound := false
+	path, _ = utils.ResolvePath(path)
 	if ok, _ := b.Exists(filepath.Join(path, "rsa.pub")); ok {
 		pubbytes, err := b.ReadFile(filepath.Join(path, "rsa.pub"))
 		b.failOn(err)

@@ -38,10 +38,32 @@ type Matcher func(err error) bool
 // at TOP level defer function to recover the panic.
 func PropagateException(errp *error, matchers ...Matcher) {
 	if r := recover(); r != nil {
-		if e, ok := r.(*exception); ok && match(e.err, matchers...) {
-			*errp = e.err
-		} else {
-			panic(r)
+		*errp = FilterException(r, matchers...)
+	}
+}
+
+// FilterException can be used in a own defer function
+// to handle exceptions.
+// In Go it is not possible to provide the complete catch in
+// a function, because recover works on top-level functions, only.
+// Therefore. the recover call has to be placed directly in the
+// deferred wrapper function, which can then use this function to catch
+// an exception and convert it to an error code.
+func FilterException(r interface{}, matchers ...Matcher) error {
+	if e, ok := r.(*exception); ok && match(e.err, matchers...) {
+		return e.err
+	} else {
+		panic(r)
+	}
+}
+
+// CatchError calls the given function with the error of
+// a catched exception, if it is deferred.
+func CatchError(f func(err error), matchers ...Matcher) {
+	if r := recover(); r != nil {
+		err := FilterException(r, matchers...)
+		if err != nil {
+			f(err)
 		}
 	}
 }
@@ -106,6 +128,14 @@ func And(matchers ...Matcher) Matcher {
 func Exception(r interface{}) error {
 	if e, ok := r.(*exception); ok {
 		return e.err
+	}
+	return nil
+}
+
+func Catch(funcs ...func()) (err error) {
+	PropagateException(&err)
+	for _, f := range funcs {
+		f()
 	}
 	return nil
 }

@@ -7,12 +7,12 @@ package cacheattr
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const (
@@ -48,12 +48,9 @@ func (a AttributeType) Decode(data []byte, unmarshaller runtime.Unmarshaler) (in
 	var value string
 	err := unmarshaller.Unmarshal(data, &value)
 	if value != "" {
-		if strings.HasPrefix(value, "~"+string(os.PathSeparator)) {
-			home := os.Getenv("HOME")
-			if home == "" {
-				return nil, fmt.Errorf("HOME not set")
-			}
-			value = home + value[1:]
+		value, err = utils.ResolvePath(value)
+		if err != nil {
+			return nil, err
 		}
 		// TODO: This should use the virtual filesystem.
 		err = os.MkdirAll(value, 0o700)

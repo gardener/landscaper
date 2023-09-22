@@ -6,7 +6,6 @@ package support
 
 import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
@@ -15,13 +14,14 @@ type _ComponentVersionAccessImplBase = cpi.ComponentVersionAccessImplBase
 
 type ComponentVersionAccessImpl interface {
 	cpi.ComponentVersionAccessImpl
-	EnablePersistence()
+	EnablePersistence() bool
 	Update(final bool) error
 }
 
 type componentVersionAccessImpl struct {
 	*_ComponentVersionAccessImplBase
 	lazy           bool
+	persistent     bool
 	discardChanges bool
 	base           ComponentVersionContainer
 }
@@ -47,15 +47,23 @@ func NewComponentVersionAccessImpl(name, version string, container ComponentVers
 	impl := &componentVersionAccessImpl{
 		_ComponentVersionAccessImplBase: base,
 		lazy:                            lazy,
-		discardChanges:                  !persistent,
+		persistent:                      persistent,
 		base:                            container,
 	}
 	container.SetImplementation(impl)
 	return impl, nil
 }
 
-func (a *componentVersionAccessImpl) EnablePersistence() {
-	a.discardChanges = false
+func (a *componentVersionAccessImpl) EnablePersistence() bool {
+	if a.discardChanges {
+		return false
+	}
+	a.persistent = true
+	return true
+}
+
+func (a *componentVersionAccessImpl) IsPersistent() bool {
+	return a.persistent
 }
 
 func (a *componentVersionAccessImpl) DiscardChanges() {
@@ -97,60 +105,8 @@ func (a *componentVersionAccessImpl) AddBlobFor(storagectx cpi.StorageContext, b
 	return a.base.AddBlobFor(storagectx, blob, refName, global)
 }
 
-func (a *componentVersionAccessImpl) SetResource(meta *cpi.ResourceMeta, acc compdesc.AccessSpec) error {
-	res := &compdesc.Resource{
-		ResourceMeta: *meta.Copy(),
-		Access:       acc,
-	}
-
-	if res.Relation == metav1.LocalRelation {
-		if res.Version == "" {
-			res.Version = a.GetVersion()
-		}
-	}
-
-	cd := a.GetDescriptor()
-	if idx := cd.GetResourceIndex(meta); idx == -1 {
-		cd.Resources = append(cd.Resources, *res)
-		cd.Signatures = nil
-	} else {
-		if !cd.Resources[idx].ResourceMeta.HashEqual(&res.ResourceMeta) {
-			cd.Signatures = nil
-		}
-		cd.Resources[idx] = *res
-	}
-	return a.Update(false)
-}
-
-func (a *componentVersionAccessImpl) SetSource(meta *cpi.SourceMeta, acc compdesc.AccessSpec) error {
-	res := &compdesc.Source{
-		SourceMeta: *meta.Copy(),
-		Access:     acc,
-	}
-
-	if res.Version == "" {
-		res.Version = a.GetVersion()
-	}
-
-	if idx := a.GetDescriptor().GetSourceIndex(meta); idx == -1 {
-		a.GetDescriptor().Sources = append(a.GetDescriptor().Sources, *res)
-	} else {
-		a.GetDescriptor().Sources[idx] = *res
-	}
-	return a.Update(false)
-}
-
-func (a *componentVersionAccessImpl) SetReference(ref *cpi.ComponentReference) error {
-	if idx := a.GetDescriptor().GetComponentReferenceIndex(*ref); idx == -1 {
-		a.GetDescriptor().References = append(a.GetDescriptor().References, *ref)
-	} else {
-		a.GetDescriptor().References[idx] = *ref
-	}
-	return a.Update(false)
-}
-
 func (a *componentVersionAccessImpl) Update(final bool) error {
-	if (final || !a.lazy) && !a.discardChanges {
+	if (final || !a.lazy) && !a.discardChanges && a.persistent {
 		return a.base.Update()
 	}
 	return nil

@@ -19,6 +19,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/finalizer"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type Repository struct {
@@ -89,12 +90,10 @@ func (r *Repository) Read(force bool) error {
 		id   finalizer.ObjectIdentity
 	)
 	if r.path != "" {
-		path := r.path
-		if strings.HasPrefix(path, "~/") {
-			home := os.Getenv("HOME")
-			path = home + path[1:]
+		path, err := utils.ResolvePath(r.path)
+		if err != nil {
+			return errors.Wrapf(err, "cannot resolve path %q", r.path)
 		}
-
 		data, err = os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("failed to read file '%s': %w", path, err)

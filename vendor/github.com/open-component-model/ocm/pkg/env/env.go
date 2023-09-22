@@ -5,8 +5,12 @@
 package env
 
 import (
+	"bytes"
 	"fmt"
+	"runtime/debug"
+	"strings"
 
+	"github.com/DataDog/gostackparse"
 	"github.com/mandelsoft/vfs/pkg/composefs"
 	"github.com/mandelsoft/vfs/pkg/layerfs"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -21,6 +25,8 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/open-component-model/ocm/pkg/exception"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +34,8 @@ import (
 type Option interface {
 	Mount(fs *composefs.ComposedFileSystem) error
 	GetFilesystem() vfs.FileSystem
+	GetFailHandler() FailHandler
+	GetEnvironment() *Environment
 }
 
 type dummyOption struct{}
@@ -38,9 +46,39 @@ func (o dummyOption) GetFilesystem() vfs.FileSystem {
 	return nil
 }
 
+func (o dummyOption) GetFailHandler() FailHandler {
+	return nil
+}
+
+func (o dummyOption) GetEnvironment() *Environment {
+	return nil
+}
+
 func (dummyOption) Mount(*composefs.ComposedFileSystem) error {
 	return nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+type FailHandler func(msg string, callerSkip ...int)
+
+func (f FailHandler) GetFailHandler() FailHandler {
+	return f
+}
+
+func (FailHandler) GetFilesystem() vfs.FileSystem {
+	return nil
+}
+
+func (FailHandler) GetEnvironment() *Environment {
+	return nil
+}
+
+func (FailHandler) Mount(*composefs.ComposedFileSystem) error {
+	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 type fsOpt struct {
 	dummyOption
@@ -68,6 +106,8 @@ func (o fsOpt) Mount(cfs *composefs.ComposedFileSystem) error {
 	}
 	return cfs.Mount(o.path, o.fs)
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 type tdOpt struct {
 	dummyOption
@@ -144,19 +184,33 @@ func (o tdOpt) Mount(cfs *composefs.ComposedFileSystem) error {
 
 type Environment struct {
 	vfs.VFS
-	ctx        ocm.Context
-	filesystem *composefs.ComposedFileSystem
+	ctx         ocm.Context
+	failhandler FailHandler
 }
+
+var (
+	_ Option          = (*Environment)(nil)
+	_ accessio.Option = (*Environment)(nil)
+)
 
 func NewEnvironment(opts ...Option) *Environment {
 	var basefs vfs.FileSystem
+	var basefh FailHandler
 
 	for _, o := range opts {
+		if o == nil {
+			continue
+		}
 		fs := o.GetFilesystem()
 		if fs != nil {
 			basefs = fs
 		}
+		fh := o.GetFailHandler()
+		if fh != nil {
+			basefh = fh
+		}
 	}
+
 	if basefs == nil {
 		tmpfs, err := osfs.NewTempFileSystem()
 		if err != nil {
@@ -167,28 +221,49 @@ func NewEnvironment(opts ...Option) *Environment {
 			vfs.Cleanup(basefs)
 		}()
 	}
-	err := basefs.Mkdir("/tmp", vfs.ModePerm)
-	if err != nil {
-		panic(err)
+	if ok, err := vfs.DirExists(basefs, "/tmp"); err != nil || !ok {
+		err := basefs.Mkdir("/tmp", vfs.ModePerm)
+		if err != nil {
+			panic(err)
+		}
 	}
+
 	fs := composefs.New(basefs, "/tmp")
 	for _, o := range opts {
+		if o == nil {
+			continue
+		}
 		err := o.Mount(fs)
 		if err != nil {
 			panic(err)
 		}
 	}
+
 	ctx := ocm.WithCredentials(credentials.WithConfigs(config.New()).New()).New()
 	vfsattr.Set(ctx.AttributesContext(), fs)
 	basefs = nil
 	return &Environment{
-		VFS:        vfs.New(fs),
-		ctx:        ctx,
-		filesystem: fs,
+		VFS:         vfs.New(fs),
+		ctx:         ctx,
+		failhandler: basefh,
 	}
 }
 
-var _ accessio.Option = (*Environment)(nil)
+func (e *Environment) Mount(fs *composefs.ComposedFileSystem) error {
+	return nil
+}
+
+func (e *Environment) GetFilesystem() vfs.FileSystem {
+	return e.FileSystem()
+}
+
+func (e *Environment) GetFailHandler() FailHandler {
+	return e.failhandler
+}
+
+func (e *Environment) GetEnvironment() *Environment {
+	return e
+}
 
 func (e *Environment) ApplyOption(options accessio.Options) error {
 	options.SetPathFileSystem(e.FileSystem())
@@ -213,4 +288,49 @@ func (e *Environment) ConfigContext() config.Context {
 
 func (e *Environment) FileSystem() vfs.FileSystem {
 	return vfsattr.Get(e.ctx)
+}
+
+func ExceptionFailHandler(msg string, callerSkip ...int) {
+	skip := utils.Optional(callerSkip...) + 1
+	st, _ := gostackparse.Parse(bytes.NewReader(debug.Stack()))
+	if st == nil {
+		exception.Throw(fmt.Errorf("%s", msg))
+	}
+	f := strings.Split(st[0].Stack[skip].Func, "/")
+
+	exception.Throw(fmt.Errorf("%s(%d): %s", f[len(f)-1], st[0].Stack[skip+1].Line, msg))
+}
+
+// SetFailHandler sets an explicit fail handler or
+// by default a fail handler throwing an exception
+// is set.
+func (e *Environment) SetFailHandler(h ...FailHandler) *Environment {
+	e.failhandler = utils.OptionalDefaulted(FailHandler(ExceptionFailHandler), h...)
+	return e
+}
+
+func (e *Environment) Fail(msg string, callerSkip ...int) {
+	e.fail(msg, callerSkip...)
+}
+
+func (e *Environment) FailOnErr(err error, msg string, callerSkip ...int) {
+	if msg != "" && err != nil {
+		err = fmt.Errorf("%s: %w", msg, err)
+	}
+	e.failOn(err, callerSkip...)
+}
+
+func (e *Environment) fail(msg string, callerSkip ...int) {
+	fh := e.failhandler
+	if fh == nil {
+		ExceptionFailHandler(msg, utils.Optional(callerSkip...)+2)
+	} else {
+		fh(msg, utils.Optional(callerSkip...)+2)
+	}
+}
+
+func (e *Environment) failOn(err error, callerSkip ...int) {
+	if err != nil {
+		e.fail(err.Error(), utils.Optional(callerSkip...)+1)
+	}
 }

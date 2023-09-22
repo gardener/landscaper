@@ -22,6 +22,7 @@ func (r *ocmReference) Type() string {
 
 func (r *ocmReference) Set() {
 	r.Builder.ocm_meta = &r.meta.ElementMeta
+	r.Builder.ocm_labels = &r.meta.ElementMeta.Labels
 }
 
 func (r *ocmReference) Close() error {

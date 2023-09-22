@@ -95,17 +95,10 @@ type ComponentVersionAccessImpl interface {
 	common.VersionedElement
 
 	Repository() Repository
-
 	GetContext() Context
-
 	GetDescriptor() *compdesc.ComponentDescriptor
-
-	SetResource(*ResourceMeta, compdesc.AccessSpec) error
-	SetSource(*SourceMeta, compdesc.AccessSpec) error
-
-	SetReference(ref *ComponentReference) error
-
 	DiscardChanges()
+	IsPersistent() bool
 
 	io.Closer
 }
@@ -117,27 +110,33 @@ type ComponentVersionAccess interface {
 
 	GetResources() []ResourceAccess
 	GetResource(meta metav1.Identity) (ResourceAccess, error)
+	GetResourceIndex(meta metav1.Identity) int
 	GetResourceByIndex(i int) (ResourceAccess, error)
 	GetResourcesByName(name string, selectors ...compdesc.IdentitySelector) ([]ResourceAccess, error)
 	GetResourcesByIdentitySelectors(selectors ...compdesc.IdentitySelector) ([]ResourceAccess, error)
 	GetResourcesByResourceSelectors(selectors ...compdesc.ResourceSelector) ([]ResourceAccess, error)
+	SetResource(*ResourceMeta, compdesc.AccessSpec, ...ModificationOption) error
 
 	GetSources() []SourceAccess
 	GetSource(meta metav1.Identity) (SourceAccess, error)
+	GetSourceIndex(meta metav1.Identity) int
 	GetSourceByIndex(i int) (SourceAccess, error)
+	SetSource(*SourceMeta, compdesc.AccessSpec) error
 
 	GetReference(meta metav1.Identity) (ComponentReference, error)
+	GetReferenceIndex(meta metav1.Identity) int
 	GetReferenceByIndex(i int) (ComponentReference, error)
 	GetReferencesByName(name string, selectors ...compdesc.IdentitySelector) (compdesc.References, error)
 	GetReferencesByIdentitySelectors(selectors ...compdesc.IdentitySelector) (compdesc.References, error)
 	GetReferencesByReferenceSelectors(selectors ...compdesc.ReferenceSelector) (compdesc.References, error)
+	SetReference(ref *ComponentReference) error
 
 	// AddBlob adds a local blob and returns an appropriate local access spec.
 	AddBlob(blob BlobAccess, artType, refName string, global AccessSpec) (AccessSpec, error)
 
 	// AdjustResourceAccess is used to modify the access spec. The old and new one MUST refer to the same content.
-	AdjustResourceAccess(meta *ResourceMeta, acc compdesc.AccessSpec) error
-	SetResourceBlob(meta *ResourceMeta, blob BlobAccess, refname string, global AccessSpec) error
+	AdjustResourceAccess(meta *ResourceMeta, acc compdesc.AccessSpec, opts ...ModificationOption) error
+	SetResourceBlob(meta *ResourceMeta, blob BlobAccess, refname string, global AccessSpec, opts ...ModificationOption) error
 	AdjustSourceAccess(meta *SourceMeta, acc compdesc.AccessSpec) error
 	SetSourceBlob(meta *SourceMeta, blob BlobAccess, refname string, global AccessSpec) error
 

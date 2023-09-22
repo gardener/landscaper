@@ -101,6 +101,10 @@ func (a *ComponentAccess) GetComponentVersion(comp, version string) (virtual.Ver
 	return &ComponentVersionAccess{a, cd.GetName(), cd.GetVersion(), cd.Copy()}, nil
 }
 
+func (a *ComponentAccess) IsReadOnly() bool {
+	return true
+}
+
 func (a *ComponentAccess) Close() error {
 	return nil
 }

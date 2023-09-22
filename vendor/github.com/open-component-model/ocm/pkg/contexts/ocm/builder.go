@@ -45,6 +45,10 @@ func WithBlobHandlers(reg BlobHandlerRegistry) internal.Builder {
 	return internal.Builder{}.WithBlobHandlers(reg)
 }
 
+func WithLabelMergeHandlers(reg LabelMergeHandlerRegistry) internal.Builder {
+	return internal.Builder{}.WithLabelMergeHandlers(reg)
+}
+
 func WithBlobDigesters(reg BlobDigesterRegistry) internal.Builder {
 	return internal.Builder{}.WithBlobDigesters(reg)
 }

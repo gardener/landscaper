@@ -163,3 +163,9 @@ func (cd *ComponentDescriptor) SelectSignatureByName(signatureName string) *meta
 	}
 	return nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+func (cd *ComponentDescriptor) HasResourceDigests() bool {
+	return cd.Resources.HaveDigests()
+}

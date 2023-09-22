@@ -4,6 +4,8 @@
 
 package builder
 
+const T_OCMMETA = "element with metadata"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func (b *Builder) ExtraIdentity(name string, value string) {

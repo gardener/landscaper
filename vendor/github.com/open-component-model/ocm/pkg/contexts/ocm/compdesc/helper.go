@@ -58,7 +58,7 @@ func (cd *ComponentDescriptor) GetComponentReferences(selectors ...IdentitySelec
 	return refs, nil
 }
 
-// GetResourceByIdentity returns resource that match the given identity.
+// GetResourceByIdentity returns resource that matches the given identity.
 func (cd *ComponentDescriptor) GetResourceByIdentity(id v1.Identity) (Resource, error) {
 	dig := id.Digest()
 	for _, res := range cd.Resources {
@@ -67,6 +67,28 @@ func (cd *ComponentDescriptor) GetResourceByIdentity(id v1.Identity) (Resource, 
 		}
 	}
 	return Resource{}, NotFound
+}
+
+// GetResourceAccessByIdentity returns a pointer to the resource that matches the given identity.
+func (cd *ComponentDescriptor) GetResourceAccessByIdentity(id v1.Identity) *Resource {
+	dig := id.Digest()
+	for i, res := range cd.Resources {
+		if bytes.Equal(res.GetIdentityDigest(cd.Resources), dig) {
+			return &cd.Resources[i]
+		}
+	}
+	return nil
+}
+
+// GetResourceIndexByIdentity returns the index of the resource that matches the given identity.
+func (cd *ComponentDescriptor) GetResourceIndexByIdentity(id v1.Identity) int {
+	dig := id.Digest()
+	for i, res := range cd.Resources {
+		if bytes.Equal(res.GetIdentityDigest(cd.Resources), dig) {
+			return i
+		}
+	}
+	return -1
 }
 
 // GetResourceByJSONScheme returns resources that match the given selectors.
@@ -234,6 +256,28 @@ func (cd *ComponentDescriptor) GetSourceByIdentity(id v1.Identity) (Source, erro
 	return Source{}, NotFound
 }
 
+// GetSourceByIdentity returns a pointer to the source that matches the given identity.
+func (cd *ComponentDescriptor) GetSourceAccessByIdentity(id v1.Identity) *Source {
+	dig := id.Digest()
+	for i, res := range cd.Sources {
+		if bytes.Equal(res.GetIdentityDigest(cd.Sources), dig) {
+			return &cd.Sources[i]
+		}
+	}
+	return nil
+}
+
+// GetSourceIndexByIdentity returns the index of the source that matches the given identity.
+func (cd *ComponentDescriptor) GetSourceIndexByIdentity(id v1.Identity) int {
+	dig := id.Digest()
+	for i, res := range cd.Sources {
+		if bytes.Equal(res.GetIdentityDigest(cd.Sources), dig) {
+			return i
+		}
+	}
+	return -1
+}
+
 // GetSourcesByIdentitySelectors returns references that match the given selector.
 func (cd *ComponentDescriptor) GetSourcesByIdentitySelectors(selectors ...IdentitySelector) (Sources, error) {
 	srcs := make(Sources, 0)
@@ -264,7 +308,7 @@ func (cd *ComponentDescriptor) GetSourceIndex(src *SourceMeta) int {
 	return -1
 }
 
-// GetReferenceByIdentity returns reference that match the given identity.
+// GetReferenceByIdentity returns reference that matches the given identity.
 func (cd *ComponentDescriptor) GetReferenceByIdentity(id v1.Identity) (ComponentReference, error) {
 	dig := id.Digest()
 	for _, ref := range cd.References {
@@ -273,6 +317,28 @@ func (cd *ComponentDescriptor) GetReferenceByIdentity(id v1.Identity) (Component
 		}
 	}
 	return ComponentReference{}, errors.ErrNotFound(KIND_REFERENCE, id.String())
+}
+
+// GetReferenceAccessByIdentity returns a pointer to the reference that matches the given identity.
+func (cd *ComponentDescriptor) GetReferenceAccessByIdentity(id v1.Identity) *ComponentReference {
+	dig := id.Digest()
+	for i, ref := range cd.References {
+		if bytes.Equal(ref.GetIdentityDigest(cd.Resources), dig) {
+			return &cd.References[i]
+		}
+	}
+	return nil
+}
+
+// GetReferenceIndexByIdentity returns the index of the reference that matches the given identity.
+func (cd *ComponentDescriptor) GetReferenceIndexByIdentity(id v1.Identity) int {
+	dig := id.Digest()
+	for i, ref := range cd.References {
+		if bytes.Equal(ref.GetIdentityDigest(cd.Resources), dig) {
+			return i
+		}
+	}
+	return -1
 }
 
 // GetReferencesByName returns references that match the given name.
@@ -336,10 +402,5 @@ func (cd *ComponentDescriptor) GetReferenceIndex(src *ElementMeta) int {
 // GetSignatureIndex returns the index of the signature with the given name
 // If the index is not found -1 is returned.
 func (cd *ComponentDescriptor) GetSignatureIndex(name string) int {
-	for i, cur := range cd.Signatures {
-		if cur.Name == name {
-			return i
-		}
-	}
-	return -1
+	return cd.Signatures.GetIndex(name)
 }

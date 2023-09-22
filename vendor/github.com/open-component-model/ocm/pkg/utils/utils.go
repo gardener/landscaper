@@ -314,15 +314,18 @@ func OptionalDefaulted[T any](def T, list ...T) T {
 	return def
 }
 
-// OptionalDefaultedBool checks all args for true. If no true is given
+// OptionalDefaultedBool checks all args for true. If arg is given
 // the given default is returned.
 func OptionalDefaultedBool(def bool, list ...bool) bool {
+	if len(list) == 0 {
+		return def
+	}
 	for _, e := range list {
 		if e {
 			return e
 		}
 	}
-	return def
+	return false
 }
 
 // GetOptionFlag returns the flag value used to set a bool option
@@ -341,4 +344,16 @@ func Must[T any](o T, err error) T {
 }
 
 func IgnoreError(_ error) {
+}
+
+func BoolP[T ~bool](b T) *bool {
+	v := bool(b)
+	return &v
+}
+
+func AsBool(b *bool, def ...bool) bool {
+	if b == nil && len(def) > 0 {
+		return Optional(def...)
+	}
+	return b != nil && *b
 }

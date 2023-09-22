@@ -50,7 +50,7 @@ func (d DigesterType) IsInitial() bool {
 // of the blob.
 type BlobDigester interface {
 	GetType() DigesterType
-	DetermineDigest(resType string, meth AccessMethod, preferred signing.Hasher) (*DigestDescriptor, error)
+	DetermineDigest(resType string, meth AccessMethod, preferred Hasher) (*DigestDescriptor, error)
 }
 
 // BlobDigesterRegistry registers blob handlers to use in a dedicated ocm context.
@@ -63,7 +63,7 @@ type BlobDigesterRegistry interface {
 	GetDigester(typ DigesterType) BlobDigester
 
 	GetDigesterForType(t string) []BlobDigester
-	DetermineDigests(typ string, preferred signing.Hasher, registry signing.Registry, acc AccessMethod, typs ...DigesterType) ([]DigestDescriptor, error)
+	DetermineDigests(typ string, preferred signing.Hasher, registry HasherProvider, acc AccessMethod, typs ...DigesterType) ([]DigestDescriptor, error)
 
 	Copy() BlobDigesterRegistry
 }
@@ -180,22 +180,31 @@ func (r *blobDigesterRegistry) Copy() BlobDigesterRegistry {
 	return n
 }
 
-func (r *blobDigesterRegistry) handle(list []BlobDigester, typ string, acc AccessMethod, preferred signing.Hasher) ([]DigestDescriptor, error) {
+func (r *blobDigesterRegistry) handle(list []BlobDigester, typ string, acc AccessMethod, preferred signing.Hasher) (*DigestDescriptor, error) {
 	for _, h := range list {
 		d, err := h.DetermineDigest(typ, acc, preferred)
 		if err != nil {
 			return nil, err
 		}
 		if d != nil {
-			return []DigestDescriptor{
-				*d,
-			}, nil
+			return d, nil
 		}
 	}
 	return nil, nil
 }
 
-func (r *blobDigesterRegistry) DetermineDigests(restype string, preferred signing.Hasher, registry signing.Registry, acc AccessMethod, pref ...DigesterType) ([]DigestDescriptor, error) {
+func (r *blobDigesterRegistry) handleTyp(restype string, preferred signing.Hasher, acc AccessMethod) (*DigestDescriptor, error) {
+	d, err := r.handle(r.getDigesterForType(restype), restype, acc, preferred)
+	if d == nil && err == nil {
+		d, err = r.handle(r.getDigesterForType(""), restype, acc, preferred)
+	}
+	if d == nil && err == nil {
+		d, err = defaultDigester.DetermineDigest(restype, acc, preferred)
+	}
+	return d, err
+}
+
+func (r *blobDigesterRegistry) DetermineDigests(restype string, preferred signing.Hasher, registry HasherProvider, acc AccessMethod, pref ...DigesterType) ([]DigestDescriptor, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -207,16 +216,7 @@ func (r *blobDigesterRegistry) DetermineDigests(restype string, preferred signin
 		}
 	}
 	if len(dtyps) == 0 {
-		var err error
-		res, err := r.handle(r.getDigesterForType(restype), restype, acc, preferred)
-		if res != nil || err != nil {
-			return res, err
-		}
-		res, err = r.handle(r.getDigesterForType(""), restype, acc, preferred)
-		if res != nil || err != nil {
-			return res, err
-		}
-		d, err := defaultDigester.DetermineDigest(restype, acc, preferred)
+		d, err := r.handleTyp(restype, preferred, acc)
 		if err != nil {
 			return nil, err
 		}
@@ -239,6 +239,7 @@ func (r *blobDigesterRegistry) DetermineDigests(restype string, preferred signin
 		}
 	}
 	if len(result) == 0 {
+	outer:
 		for _, dtyp := range dtyps {
 			if dtyp.NormalizationAlgorithm != "" {
 				hasher := preferred
@@ -255,7 +256,18 @@ func (r *blobDigesterRegistry) DetermineDigests(restype string, preferred signin
 					}
 					if d != nil {
 						result = append(result, *d)
-						continue
+						continue outer
+					}
+				}
+			} else if dtyp.HashAlgorithm != "" {
+				preferred = registry.GetHasher(dtyp.HashAlgorithm)
+				if preferred != nil {
+					d, err := r.handleTyp(restype, preferred, acc)
+					if err != nil {
+						return nil, err
+					}
+					if d != nil {
+						result = append(result, *d)
 					}
 				}
 			}

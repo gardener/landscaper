@@ -86,6 +86,11 @@ func toVersion(t string) string {
 	return t[:next-len(META_SEPARATOR)] + "+" + t[next:]
 }
 
+func (c *componentAccessImpl) IsReadOnly() bool {
+	// TODO: extend OCI to query ReadOnly mode
+	return false
+}
+
 func (c *componentAccessImpl) ListVersions() ([]string, error) {
 	tags, err := c.namespace.ListTags()
 	if err != nil {
@@ -146,7 +151,10 @@ func (c *componentAccessImpl) AddVersion(access cpi.ComponentVersionAccess) erro
 	if !ok || mine.comp != c {
 		return fmt.Errorf("cannot add component version: component version access %s not created for target", access.GetName()+":"+access.GetVersion())
 	}
-	mine.impl.EnablePersistence()
+	ok = mine.impl.EnablePersistence()
+	if !ok {
+		return fmt.Errorf("version has been discarded")
+	}
 	return mine.impl.Update(false)
 }
 

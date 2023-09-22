@@ -51,6 +51,9 @@ github.com/Azure/go-autorest/tracing
 ## explicit; go 1.16
 github.com/BurntSushi/toml
 github.com/BurntSushi/toml/internal
+# github.com/DataDog/gostackparse v0.6.0
+## explicit; go 1.16
+github.com/DataDog/gostackparse
 # github.com/MakeNowJust/heredoc v1.0.0
 ## explicit; go 1.12
 github.com/MakeNowJust/heredoc
@@ -677,6 +680,9 @@ github.com/go-playground/validator/v10
 # github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572
 ## explicit; go 1.13
 github.com/go-task/slim-sprig
+# github.com/go-test/deep v1.1.0
+## explicit; go 1.16
+github.com/go-test/deep
 # github.com/gobwas/glob v0.2.3
 ## explicit
 github.com/gobwas/glob
@@ -1116,7 +1122,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230908075545-b9f08d4a19dd
+# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230921153454-4fdca213d05a
 ## explicit; go 1.19
 github.com/open-component-model/ocm/pkg/cobrautils/flag
 github.com/open-component-model/ocm/pkg/cobrautils/flagsets
@@ -1202,6 +1208,7 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/relativeocire
 github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/s3
 github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/s3/identity
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/compatattr
+github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/hashattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/keepblobattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/mapocirepoattr
 github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/ociuploadattr
@@ -1215,10 +1222,12 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/oci/oc
 github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/ocm
 github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/ocm/comparch
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc
+github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/equivalent
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/normalizations
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/normalizations/jsonv1
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/normalizations/jsonv2
+github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/normalizations/rules
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1/jsonscheme
@@ -1250,6 +1259,13 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg/
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/virtual
 github.com/open-component-model/ocm/pkg/contexts/ocm/resourcetypes
 github.com/open-component-model/ocm/pkg/contexts/ocm/utils/registry
+github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/handlers
+github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/handlers/defaultmerge
+github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/handlers/maplistmerge
+github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/handlers/simplelistmerge
+github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/handlers/simplemapmerge
+github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/hpi
+github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/internal
 github.com/open-component-model/ocm/pkg/docker
 github.com/open-component-model/ocm/pkg/docker/resolve
 github.com/open-component-model/ocm/pkg/env

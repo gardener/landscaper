@@ -42,6 +42,10 @@ func (c *componentAccessImpl) HasVersion(vers string) (bool, error) {
 	return c.repo.ExistsComponentVersion(c.name, vers)
 }
 
+func (c *componentAccessImpl) IsReadOnly() bool {
+	return c.repo.access.IsReadOnly()
+}
+
 func (c *componentAccessImpl) LookupVersion(version string) (cpi.ComponentVersionAccess, error) {
 	ok, err := c.HasVersion(version)
 	if err != nil {

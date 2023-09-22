@@ -5,31 +5,31 @@
 package builder
 
 import (
-	. "github.com/onsi/gomega"
+	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 )
 
-const T_OCMMETA = "element with metadata"
+const T_OCMLABELS = "element with labels"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func (b *Builder) Label(name string, value interface{}) {
-	b.expect(b.ocm_meta, T_OCMMETA)
+func (b *Builder) Label(name string, value interface{}, opts ...metav1.LabelOption) {
+	b.expect(b.ocm_labels, T_OCMLABELS)
 
-	ExpectWithOffset(1, b.ocm_meta.Labels.Set(name, value)).To(Succeed())
+	b.failOn(b.ocm_labels.Set(name, value, opts...))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 func (b *Builder) RemoveLabel(name string) {
-	b.expect(b.ocm_meta, T_OCMMETA)
+	b.expect(b.ocm_labels, T_OCMLABELS)
 
-	b.ocm_meta.Labels.Remove(name)
+	b.ocm_labels.Remove(name)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 func (b *Builder) ClearLabels() {
-	b.expect(b.ocm_meta, T_OCMMETA)
+	b.expect(b.ocm_labels, T_OCMLABELS)
 
-	b.ocm_meta.Labels = nil
+	*b.ocm_labels = nil
 }

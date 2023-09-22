@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
+	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -57,7 +58,6 @@ type (
 	RepositoryDelegationRegistry     = internal.RepositoryDelegationRegistry
 	AccessTypeScheme                 = internal.AccessTypeScheme
 	ComponentReference               = internal.ComponentReference
-	References                       = compdesc.References
 )
 
 type (
@@ -65,6 +65,8 @@ type (
 	BlobDigester         = internal.BlobDigester
 	BlobDigesterRegistry = internal.BlobDigesterRegistry
 	DigestDescriptor     = internal.DigestDescriptor
+	HasherProvider       = internal.HasherProvider
+	Hasher               = internal.Hasher
 )
 
 type (
@@ -111,6 +113,22 @@ func NewGenericAccessSpec(spec string) (AccessSpec, error) {
 	return internal.NewGenericAccessSpec([]byte(spec))
 }
 
+func ToGenericAccessSpec(spec AccessSpec) (*GenericAccessSpec, error) {
+	return internal.ToGenericAccessSpec(spec)
+}
+
+func ToGenericRepositorySpec(spec RepositorySpec) (*GenericRepositorySpec, error) {
+	return internal.ToGenericRepositorySpec(spec)
+}
+
+func IsNoneAccess(a compdesc.AccessSpec) bool {
+	return compdesc.IsNoneAccess(a)
+}
+
+func IsNoneAccessKind(k string) bool {
+	return compdesc.IsNoneAccessKind(k)
+}
+
 type AccessSpecRef = internal.AccessSpecRef
 
 func NewAccessSpecRef(spec cpi.AccessSpec) *AccessSpecRef {
@@ -119,4 +137,58 @@ func NewAccessSpecRef(spec cpi.AccessSpec) *AccessSpecRef {
 
 func NewRawAccessSpecRef(data []byte, unmarshaler runtime.Unmarshaler) (*AccessSpecRef, error) {
 	return internal.NewRawAccessSpecRef(data, unmarshaler)
+}
+
+func NewResourceMeta(name string, typ string, relation metav1.ResourceRelation) *ResourceMeta {
+	return compdesc.NewResourceMeta(name, typ, relation)
+}
+
+///////////////////////////////////////////////////////
+
+type (
+	ModificationOption  = internal.ModificationOption
+	ModificationOptions = internal.ModificationOptions
+)
+
+func NewModificationOptions(list ...ModificationOption) *ModificationOptions {
+	return internal.NewModificationOptions(list...)
+}
+
+func ModifyResource(flag ...bool) ModificationOption {
+	return internal.ModifyResource(flag...)
+}
+
+func AcceptExistentDigests(flag ...bool) ModificationOption {
+	return internal.AcceptExistentDigests(flag...)
+}
+
+func WithDefaultHashAlgorithm(algo ...string) ModificationOption {
+	return internal.WithDefaultHashAlgorithm(algo...)
+}
+
+func WithHasherProvider(prov HasherProvider) ModificationOption {
+	return internal.WithHasherProvider(prov)
+}
+
+func SkipVerify(flag ...bool) ModificationOption {
+	return internal.SkipVerify(flag...)
+}
+
+// SkipDigest disables digest creation if enabled.
+//
+// Deprecated: for legacy code, only.
+func SkipDigest(flag ...bool) ModificationOption {
+	return internal.SkipDigest(flag...)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type (
+	LabelMergeHandler         = internal.ValueMergeHandler
+	LabelMergeHandlerConfig   = internal.ValueMergeHandlerConfig
+	LabelMergeHandlerRegistry = internal.ValueMergeHandlerRegistry
+)
+
+func DefaultLabelMergeHandlerRegistry() LabelMergeHandlerRegistry {
+	return internal.DefaultValueMergeHandlerRegistry
 }

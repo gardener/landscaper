@@ -28,6 +28,7 @@ func (r *ocmSource) Set() {
 	r.Builder.ocm_src = &r.meta
 	r.Builder.ocm_acc = &r.access
 	r.Builder.ocm_meta = &r.meta.ElementMeta
+	r.Builder.ocm_labels = &r.meta.ElementMeta.Labels
 	r.Builder.blob = &r.blob
 }
 

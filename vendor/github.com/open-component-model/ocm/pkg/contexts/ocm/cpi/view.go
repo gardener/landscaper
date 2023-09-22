@@ -9,6 +9,7 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessio/resource"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
@@ -148,6 +149,7 @@ type ComponentAccessImpl interface {
 	resource.ResourceImplementation[ComponentAccess]
 	internal.ComponentAccessImpl
 
+	IsReadOnly() bool
 	GetName() string
 }
 
@@ -239,6 +241,9 @@ func (c *componentAccessView) AddVersion(acc ComponentVersionAccess) error {
 
 func (c *componentAccessView) NewVersion(version string, overrides ...bool) (acc ComponentVersionAccess, err error) {
 	err = c.Execute(func() error {
+		if c.impl.IsReadOnly() {
+			return accessio.ErrReadOnly
+		}
 		acc, err = c.impl.NewVersion(version, overrides...)
 		return err
 	})
@@ -282,6 +287,9 @@ type ComponentVersionAccessImpl interface {
 	// an access method specification usable in a component descriptor.
 	// This is the direct technical storage, without caring about any handler.
 	AddBlobFor(storagectx StorageContext, blob BlobAccess, refName string, global AccessSpec) (AccessSpec, error)
+
+	IsReadOnly() bool
+	Update(final bool) error
 }
 
 type _ComponentVersionAccessImplBase = resource.ResourceImplBase[ComponentVersionAccess]
@@ -398,6 +406,9 @@ func (c *componentVersionAccessView) AddBlob(blob cpi.BlobAccess, artType, refNa
 	if blob == nil {
 		return nil, errors.New("a resource has to be defined")
 	}
+	if c.impl.IsReadOnly() {
+		return nil, accessio.ErrReadOnly
+	}
 	storagectx := c.impl.GetStorageContext(c)
 	h := c.GetContext().BlobHandlers().LookupHandler(storagectx.GetImplementationRepositoryType(), artType, blob.MimeType())
 	if h != nil {
@@ -415,23 +426,23 @@ func (c *componentVersionAccessView) AddBlob(blob cpi.BlobAccess, artType, refNa
 	return c.impl.AddBlobFor(storagectx, blob, refName, global)
 }
 
-func (c *componentVersionAccessView) AdjustResourceAccess(meta *ResourceMeta, acc compdesc.AccessSpec) error {
+func (c *componentVersionAccessView) AdjustResourceAccess(meta *ResourceMeta, acc compdesc.AccessSpec, opts ...internal.ModificationOption) error {
 	cd := c.GetDescriptor()
 	if idx := cd.GetResourceIndex(meta); idx == -1 {
 		return errors.ErrUnknown(KIND_RESOURCE, meta.GetIdentity(cd.Resources).String())
 	}
-	return c.SetResource(meta, acc)
+	return c.SetResource(meta, acc, opts...)
 }
 
 // SetResourceBlob adds a blob resource to the component version.
-func (c *componentVersionAccessView) SetResourceBlob(meta *ResourceMeta, blob cpi.BlobAccess, refName string, global AccessSpec) error {
+func (c *componentVersionAccessView) SetResourceBlob(meta *ResourceMeta, blob cpi.BlobAccess, refName string, global AccessSpec, opts ...internal.ModificationOption) error {
 	Logger(c).Info("adding resource blob", "resource", meta.Name)
 	acc, err := c.AddBlob(blob, meta.Type, refName, global)
 	if err != nil {
 		return fmt.Errorf("unable to add blob (component %s:%s resource %s): %w", c.GetName(), c.GetVersion(), meta.GetName(), err)
 	}
 
-	if err := c.SetResource(meta, acc); err != nil {
+	if err := c.SetResource(meta, acc, append(opts, internal.ModifyResource())...); err != nil {
 		return fmt.Errorf("unable to set resource: %w", err)
 	}
 
@@ -460,26 +471,184 @@ func (c *componentVersionAccessView) SetSourceBlob(meta *SourceMeta, blob BlobAc
 	return nil
 }
 
-func (c *componentVersionAccessView) SetResource(meta *internal.ResourceMeta, acc compdesc.AccessSpec) error {
+func (c *componentVersionAccessView) SetResource(meta *internal.ResourceMeta, acc compdesc.AccessSpec, modopts ...internal.ModificationOption) error {
+	if c.impl.IsReadOnly() {
+		return accessio.ErrReadOnly
+	}
+
+	res := &compdesc.Resource{
+		ResourceMeta: *meta.Copy(),
+		Access:       acc,
+	}
+
+	ctx := c.impl.GetContext()
+	opts := internal.NewModificationOptions(modopts...)
+	CompleteModificationOptions(ctx, opts)
+
+	spec, err := ctx.AccessSpecForSpec(acc)
+	if err != nil {
+		return err
+	}
+	meth, err := c.AccessMethod(spec)
+	if err != nil {
+		return err
+	}
+	defer meth.Close()
+
 	return c.Execute(func() error {
-		return c.impl.SetResource(meta, acc)
+		var old *compdesc.Resource
+
+		if res.Relation == metav1.LocalRelation {
+			if res.Version == "" {
+				res.Version = c.GetVersion()
+			}
+		}
+
+		cd := c.impl.GetDescriptor()
+		idx := cd.GetResourceIndex(&res.ResourceMeta)
+		if idx >= 0 {
+			old = &cd.Resources[idx]
+		}
+
+		if old == nil {
+			if !opts.IsModifyResource() && c.impl.IsPersistent() {
+				return fmt.Errorf("new resource would invalidate signature")
+			}
+		}
+
+		// evaluate given digesting constraints and settings
+		hashAlgo, digester, digest := c.evaluateResourceDigest(res, old, *opts)
+		hasher := opts.GetHasher(hashAlgo)
+		if digester.HashAlgorithm == "" && hasher == nil {
+			return errors.ErrUnknown(compdesc.KIND_HASH_ALGORITHM, hashAlgo)
+		}
+
+		if !compdesc.IsNoneAccessKind(res.Access.GetKind()) {
+			var calculatedDigest *DigestDescriptor
+			if (!opts.IsSkipVerify() && digest != "") || (!opts.IsSkipDigest() && digest == "") {
+				dig, err := ctx.BlobDigesters().DetermineDigests(res.Type, hasher, opts.HasherProvider, meth, digester)
+				if err != nil {
+					return err
+				}
+				if len(dig) == 0 {
+					return fmt.Errorf("%s: no digester accepts resource", res.Name)
+				}
+				calculatedDigest = &dig[0]
+			}
+
+			if digest != "" && !opts.IsSkipVerify() {
+				if digest != calculatedDigest.Value {
+					return fmt.Errorf("digest mismatch: %s != %s", calculatedDigest.Value, digest)
+				}
+			}
+
+			if !opts.IsSkipDigest() {
+				if digest == "" {
+					res.Digest = calculatedDigest
+				} else {
+					res.Digest = &compdesc.DigestSpec{
+						HashAlgorithm:          digester.HashAlgorithm,
+						NormalisationAlgorithm: digester.NormalizationAlgorithm,
+						Value:                  digest,
+					}
+				}
+			}
+		}
+
+		if old != nil {
+			eq := res.Equivalent(old)
+			if !eq.IsLocalHashEqual() && !opts.IsModifyResource() && c.impl.IsPersistent() {
+				return fmt.Errorf("resource would invalidate signature")
+			}
+			cd.Signatures = nil
+		}
+
+		if old == nil {
+			cd.Resources = append(cd.Resources, *res)
+		} else {
+			cd.Resources[idx] = *res
+		}
+		return c.impl.Update(false)
 	})
 }
 
-func (c *componentVersionAccessView) SetSource(meta *internal.SourceMeta, spec compdesc.AccessSpec) error {
+// evaluateResourceDigest evaluate given potentially partly set digest to determine defaults.
+func (c *componentVersionAccessView) evaluateResourceDigest(res, old *compdesc.Resource, opts internal.ModificationOptions) (string, DigesterType, string) {
+	var digester DigesterType
+
+	hashAlgo := opts.DefaultHashAlgorithm
+	value := ""
+	if !res.Digest.IsNone() {
+		if res.Digest.IsComplete() {
+			value = res.Digest.Value
+		}
+		if res.Digest.HashAlgorithm != "" {
+			hashAlgo = res.Digest.HashAlgorithm
+		}
+		if res.Digest.NormalisationAlgorithm != "" {
+			digester = DigesterType{
+				HashAlgorithm:          hashAlgo,
+				NormalizationAlgorithm: res.Digest.NormalisationAlgorithm,
+			}
+		}
+	}
+	res.Digest = nil
+
+	// keep potential old digest settings
+	if old != nil && old.Type == res.Type {
+		if !old.Digest.IsNone() {
+			digester.HashAlgorithm = old.Digest.HashAlgorithm
+			digester.NormalizationAlgorithm = old.Digest.NormalisationAlgorithm
+			if opts.IsAcceptExistentDigests() && !opts.IsModifyResource() && c.impl.IsPersistent() {
+				res.Digest = old.Digest
+				value = old.Digest.Value
+			}
+		}
+	}
+	return hashAlgo, digester, value
+}
+
+func (c *componentVersionAccessView) SetSource(meta *internal.SourceMeta, acc compdesc.AccessSpec) error {
+	if c.impl.IsReadOnly() {
+		return accessio.ErrReadOnly
+	}
+
+	res := &compdesc.Source{
+		SourceMeta: *meta.Copy(),
+		Access:     acc,
+	}
 	return c.Execute(func() error {
-		return c.impl.SetSource(meta, spec)
+		if res.Version == "" {
+			res.Version = c.impl.GetVersion()
+		}
+		cd := c.impl.GetDescriptor()
+		if idx := cd.GetSourceIndex(&res.SourceMeta); idx == -1 {
+			cd.Sources = append(cd.Sources, *res)
+		} else {
+			cd.Sources[idx] = *res
+		}
+		return c.impl.Update(false)
 	})
 }
 
 func (c *componentVersionAccessView) SetReference(ref *internal.ComponentReference) error {
 	return c.Execute(func() error {
-		return c.impl.SetReference(ref)
+		cd := c.impl.GetDescriptor()
+		if idx := cd.GetComponentReferenceIndex(*ref); idx == -1 {
+			cd.References = append(cd.References, *ref)
+		} else {
+			cd.References[idx] = *ref
+		}
+		return c.impl.Update(false)
 	})
 }
 
 func (c *componentVersionAccessView) DiscardChanges() {
 	c.impl.DiscardChanges()
+}
+
+func (c *componentVersionAccessView) IsPersistent() bool {
+	return c.impl.IsPersistent()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -491,6 +660,10 @@ func (c *componentVersionAccessView) GetResource(id metav1.Identity) (ResourceAc
 		return nil, err
 	}
 	return newResourceAccess(c, r.Access, r.ResourceMeta), nil
+}
+
+func (c *componentVersionAccessView) GetResourceIndex(id metav1.Identity) int {
+	return c.GetDescriptor().GetResourceIndexByIdentity(id)
 }
 
 func (c *componentVersionAccessView) GetResourceByIndex(i int) (ResourceAccess, error) {
@@ -574,6 +747,10 @@ func (c *componentVersionAccessView) GetSource(id metav1.Identity) (SourceAccess
 	return newSourceAccess(c, r.Access, r.SourceMeta), nil
 }
 
+func (c *componentVersionAccessView) GetSourceIndex(id metav1.Identity) int {
+	return c.GetDescriptor().GetSourceIndexByIdentity(id)
+}
+
 func (c *componentVersionAccessView) GetSourceByIndex(i int) (SourceAccess, error) {
 	if i < 0 || i >= len(c.GetDescriptor().Sources) {
 		return nil, errors.ErrInvalid("source index", strconv.Itoa(i))
@@ -596,6 +773,10 @@ func (c *componentVersionAccessView) GetReferences() compdesc.References {
 
 func (c *componentVersionAccessView) GetReference(id metav1.Identity) (ComponentReference, error) {
 	return c.GetDescriptor().GetReferenceByIdentity(id)
+}
+
+func (c *componentVersionAccessView) GetReferenceIndex(id metav1.Identity) int {
+	return c.GetDescriptor().GetReferenceIndexByIdentity(id)
 }
 
 func (c *componentVersionAccessView) GetReferenceByIndex(i int) (ComponentReference, error) {

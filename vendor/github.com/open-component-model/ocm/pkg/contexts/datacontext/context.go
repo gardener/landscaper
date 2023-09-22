@@ -371,6 +371,10 @@ func (c *_attributes) SetAttribute(name string, value interface{}) error {
 			c.Close()
 		}
 	}
+	value, err = DefaultAttributeScheme.Convert(name, value)
+	if err != nil {
+		return err
+	}
 	c.attributes[name] = value
 	return nil
 }

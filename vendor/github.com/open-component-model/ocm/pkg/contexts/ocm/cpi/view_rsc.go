@@ -48,11 +48,8 @@ var _ ResourceAccess = (*ResourceAccessImpl)(nil)
 
 func newResourceAccess(componentVersion ComponentVersionAccess, accessSpec compdesc.AccessSpec, meta ResourceMeta) *ResourceAccessImpl {
 	return &ResourceAccessImpl{
-		baseAccess: &BaseAccess{
-			vers:   componentVersion,
-			access: accessSpec,
-		},
-		meta: meta,
+		baseAccess: NewBaseAccess(componentVersion, accessSpec),
+		meta:       meta,
 	}
 }
 
@@ -71,11 +68,8 @@ var _ SourceAccess = (*SourceAccessImpl)(nil)
 
 func newSourceAccess(componentVersion ComponentVersionAccess, accessSpec compdesc.AccessSpec, meta SourceMeta) *SourceAccessImpl {
 	return &SourceAccessImpl{
-		baseAccess: &BaseAccess{
-			vers:   componentVersion,
-			access: accessSpec,
-		},
-		meta: meta,
+		baseAccess: NewBaseAccess(componentVersion, accessSpec),
+		meta:       meta,
 	}
 }
 
