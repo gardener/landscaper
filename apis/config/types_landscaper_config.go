@@ -46,7 +46,7 @@ type LandscaperConfiguration struct {
 	// +optional
 	HPAMainConfiguration *HPAMainConfiguration `json:"hpaMain,omitempty"`
 	// +optional
-	UseOCMLib bool
+	UseOCMLib bool `json:"useOCMLib,omitempty"`
 }
 
 // LsDeployments contains the names of the landscaper deployments.
