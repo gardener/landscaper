@@ -173,6 +173,9 @@
         "default": {}
       },
       "type": "array"
+    },
+    "useOCMLib": {
+      "type": "boolean"
     }
   },
   "title": "manifest-v1alpha1-Configuration",

@@ -303,6 +303,9 @@
       },
       "type": "array"
     },
+    "useOCMLib": {
+      "type": "boolean"
+    },
     "waitContainer": {
       "$ref": "#/definitions/container-v1alpha1-ContainerSpec",
       "default": {},

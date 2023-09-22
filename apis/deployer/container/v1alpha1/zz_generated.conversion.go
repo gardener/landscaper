@@ -157,6 +157,7 @@ func autoConvert_v1alpha1_Configuration_To_container_Configuration(in *Configura
 	if err := Convert_v1alpha1_Controller_To_container_Controller(&in.Controller, &out.Controller, s); err != nil {
 		return err
 	}
+	out.UseOCMLib = in.UseOCMLib
 	return nil
 }
 
@@ -187,6 +188,7 @@ func autoConvert_container_Configuration_To_v1alpha1_Configuration(in *container
 	if err := Convert_container_Controller_To_v1alpha1_Controller(&in.Controller, &out.Controller, s); err != nil {
 		return err
 	}
+	out.UseOCMLib = in.UseOCMLib
 	return nil
 }
 
