@@ -31,6 +31,8 @@ type Configuration struct {
 	HPAConfiguration *HPAConfiguration `json:"hpa,omitempty"`
 	// Controller contains configuration concerning the controller framework.
 	Controller Controller `json:"controller,omitempty"`
+	// +optional
+	UseOCMLib bool `json:"useOCMLib,omitempty"`
 }
 
 // ExportConfiguration defines the export configuration for the deployer.

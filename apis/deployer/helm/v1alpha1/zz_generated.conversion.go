@@ -280,6 +280,7 @@ func autoConvert_v1alpha1_Configuration_To_helm_Configuration(in *Configuration,
 	if err := Convert_v1alpha1_Controller_To_helm_Controller(&in.Controller, &out.Controller, s); err != nil {
 		return err
 	}
+	out.UseOCMLib = in.UseOCMLib
 	return nil
 }
 
@@ -299,6 +300,7 @@ func autoConvert_helm_Configuration_To_v1alpha1_Configuration(in *helm.Configura
 	if err := Convert_helm_Controller_To_v1alpha1_Controller(&in.Controller, &out.Controller, s); err != nil {
 		return err
 	}
+	out.UseOCMLib = in.UseOCMLib
 	return nil
 }
 
