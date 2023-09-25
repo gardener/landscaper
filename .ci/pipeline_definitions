@@ -70,13 +70,20 @@ landscaper:
               - committers
               - codeowners
       steps:
-        integration_test:
+        integration_test_cnudie:
           execute:
           - integration-test
+          - false
           trait_depends:
           - publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
-          output_dir: 'integration_test'
+        integration_test_ocm:
+          execute:
+          - integration-test
+          - true
+          trait_depends:
+          - publish
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
     pull-request:
       steps:
         integration_test_cnudie:
