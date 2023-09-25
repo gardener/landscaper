@@ -8,7 +8,7 @@
 # In that case, the integration tests are executed by calling ./.ci/int-test. The parameter $PR_ID is integrated in the
 # test cluster name. The cluster name has the format it-pr$PR_ID-<4-digits>.
 
-USE_OCM_LIB="true"
+USE_OCM_LIB=$1
 
 set -o errexit
 set -o nounset
