@@ -37,7 +37,7 @@ func SetOCMLibraryMode(useOCMLib bool) {
 }
 
 func SetFactory(ctx context.Context, useOCM bool) {
-	log := logging.FromContextOrDiscard(ctx)
+	log, ctx := logging.FromContextOrNew(ctx, nil, nil)
 	if useOCM || ocmLibraryMode {
 		factory = &ocmlib.Factory{}
 		log.Info("using ocmlib")
