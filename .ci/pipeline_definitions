@@ -79,13 +79,20 @@ landscaper:
           output_dir: 'integration_test'
     pull-request:
       steps:
-        integration_test:
+        integration_test_cnudie:
           depends:
           - publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
           execute:
           - integration-test-new
-          output_dir: 'integration_test'
+          - false
+        integration_test_ocm:
+          depends:
+          - publish
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
+          execute:
+          - integration-test-new
+          - true
       traits:
         pull-request: ~
         draft_release: ~
