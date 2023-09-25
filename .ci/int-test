@@ -16,6 +16,9 @@ set -o pipefail
 PR_ID=$1
 export PR_ID
 
+USE_OCM_LIB=$2
+export USE_OCM_LIB
+
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
