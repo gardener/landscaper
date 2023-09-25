@@ -59,7 +59,6 @@ deployItems:
               foo: bar
 
       exports:
-        defaultTimeout: 2m
         exports:
           - key: test
             jsonPath: .data

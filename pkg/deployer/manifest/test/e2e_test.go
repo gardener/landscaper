@@ -6,29 +6,36 @@ package test_test
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/wait"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/gardener/landscaper/pkg/utils"
-
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
+	"github.com/gardener/landscaper/pkg/utils"
 	testutil "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -71,7 +78,7 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should create a secret defined by a manifest deployer", func() {
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 		defer ctx.Done()
 
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
@@ -128,7 +135,7 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should cleanup resources that are removed from the list of managed resources", func() {
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 		defer ctx.Done()
 
 		By("create deploy item")
@@ -187,7 +194,7 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should fail if a resource is created in non existing namespace", func() {
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 		defer ctx.Done()
 
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
@@ -230,10 +237,166 @@ var _ = Describe("Manifest Deployer", func() {
 			return err != nil && apierrors.IsNotFound(err), nil
 		})).To(Succeed())
 	})
+
+	It("should time out at checkpoints of the manifest deployer", func() {
+		// This test creates/reconciles/deletes a manifest deploy item. Before these operations,
+		// it replaces the standard timeout checker by test implementations that throw a timeout error at certain
+		// check points. It verifies that the expected timeouts actually occur.
+
+		ctx := logging.NewContextWithDiscard(context.Background())
+		defer ctx.Done()
+
+		Expect(testutil.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+		target, err := testutil.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		managedConfigMap := &corev1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ConfigMap",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-configmap",
+				Namespace: state.Namespace,
+			},
+			Data: map[string]string{
+				"key": "val",
+			},
+		}
+		rawConfigMap, err := kutil.ConvertToRawExtension(managedConfigMap, scheme.Scheme)
+		Expect(err).NotTo(HaveOccurred())
+
+		requirementValue := map[string]string{
+			"value": "val",
+		}
+		requirementValueMarshaled, err := json.Marshal(requirementValue)
+		Expect(err).ToNot(HaveOccurred())
+
+		providerConfig := &manifestv1alpha2.ProviderConfiguration{
+			Manifests: []managedresource.Manifest{
+				{
+					Policy:   managedresource.ManagePolicy,
+					Manifest: rawConfigMap,
+				},
+			},
+			ReadinessChecks: readinesschecks.ReadinessCheckConfiguration{
+				CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
+					{
+						Name: "test-customreadinesscheck",
+						Resource: []lsv1alpha1.TypedObjectReference{
+							{
+								APIVersion: managedConfigMap.APIVersion,
+								Kind:       managedConfigMap.Kind,
+								ObjectReference: lsv1alpha1.ObjectReference{
+									Name:      managedConfigMap.Name,
+									Namespace: managedConfigMap.Namespace,
+								},
+							},
+						},
+						Requirements: []readinesschecks.RequirementSpec{
+							{
+								JsonPath: ".data.key",
+								Operator: selection.Equals,
+								Value: []runtime.RawExtension{
+									{
+										Raw: requirementValueMarshaled,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			Exports: &managedresource.Exports{
+				Exports: []managedresource.Export{
+					{
+						Key:      "test-export",
+						JSONPath: ".data",
+						FromResource: &lsv1alpha1.TypedObjectReference{
+							APIVersion: managedConfigMap.APIVersion,
+							Kind:       managedConfigMap.Kind,
+							ObjectReference: lsv1alpha1.ObjectReference{
+								Name:      managedConfigMap.Name,
+								Namespace: managedConfigMap.Namespace,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		item, err := manifestctlr.NewDeployItemBuilder().
+			Key(state.Namespace, "manifest-timeout-test").
+			ProviderConfig(providerConfig).
+			Target(target.Namespace, target.Name).
+			GenerateJobID().
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+
+		timeout.ActivateCheckpointTimeoutChecker(manifestctlr.TimeoutCheckpointManifestStartReconcile)
+		defer timeout.ActivateStandardTimeoutChecker()
+
+		Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(item.GetName(), item.GetNamespace()))
+
+		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
+		Expect(item.Status.JobIDFinished).To(Equal(item.Status.JobID))
+		Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed))
+		Expect(item.Status.LastError).NotTo(BeNil())
+		Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout))
+		Expect(item.Status.LastError.Message).To(Equal(manifestctlr.TimeoutCheckpointManifestStartReconcile))
+
+		for _, checkpoint := range []string{
+			resourcemanager.TimeoutCheckpointDeployerProcessManagedResourceManifests,
+			resourcemanager.TimeoutCheckpointDeployerProcessManifests,
+			resourcemanager.TimeoutCheckpointDeployerApplyManifests,
+			manifestctlr.TimeoutCheckpointManifestBeforeReadinessCheck,
+			manifestctlr.TimeoutCheckpointManifestDefaultReadinessChecks,
+			manifestctlr.TimeoutCheckpointManifestCustomReadinessChecks,
+			manifestctlr.TimeoutCheckpointManifestBeforeReadingExportValues,
+			"deployer: during export - key: test-export",
+			resourcemanager.TimeoutCheckpointDeployerCleanupOrphaned,
+		} {
+			timeout.ActivateCheckpointTimeoutChecker(checkpoint)
+			item.Status.SetJobID(uuid.New().String())
+			Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
+
+			description := fmt.Sprintf("deploy item should fail with timeout at checkpoint %s", checkpoint)
+			testutil.ShouldReconcile(ctx, ctrl, testutil.Request(item.GetName(), item.GetNamespace()))
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed(), description)
+			Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed), description)
+			Expect(item.Status.LastError).NotTo(BeNil(), description)
+			Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout), description)
+			Expect(item.Status.LastError.Message).To(ContainSubstring(checkpoint), description)
+		}
+
+		Expect(state.Client.Delete(ctx, item)).To(Succeed())
+		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
+
+		for _, checkpoint := range []string{
+			manifestctlr.TimeoutCheckpointManifestStartDelete,
+			manifestctlr.TimeoutCheckpointManifestDeleteResources,
+		} {
+			timeout.ActivateCheckpointTimeoutChecker(checkpoint)
+			item.Status.SetJobID(uuid.New().String())
+			Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
+
+			description := fmt.Sprintf("deploy item should fail with timeout at checkpoint %s", checkpoint)
+			testutil.ShouldReconcile(ctx, ctrl, testutil.Request(item.GetName(), item.GetNamespace()))
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed(), description)
+			Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.DeleteFailed), description)
+			Expect(item.Status.LastError).NotTo(BeNil(), description)
+			Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout), description)
+			Expect(item.Status.LastError.Message).To(ContainSubstring(checkpoint), description)
+		}
+	})
+
 })
 
 func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconcile.Reconciler) {
-	ctx := context.Background()
+	ctx := logging.NewContextWithDiscard(context.Background())
 	defer ctx.Done()
 
 	By("create deploy item")

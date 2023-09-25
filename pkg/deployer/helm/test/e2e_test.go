@@ -16,18 +16,17 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
-	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	testutil "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -82,6 +81,7 @@ var _ = Describe("Helm Deployer", func() {
 			Namespace: state.Namespace,
 		}
 		di.Spec.Type = helmctrl.Type
+		di.Spec.Timeout = &lsv1alpha1.Duration{Duration: 1 * time.Second}
 
 		di.Status.SetJobID("1")
 
@@ -106,45 +106,48 @@ var _ = Describe("Helm Deployer", func() {
 		providerConfig.Chart.Ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 		providerConfig.Name = "ingress-test"
 		providerConfig.Namespace = state.Namespace
-		providerConfig.ReadinessChecks = health.ReadinessCheckConfiguration{
-			Timeout: &lsv1alpha1.Duration{Duration: 1 * time.Second},
-		}
 
 		di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(state.Create(ctx, di, envtest.UpdateStatus(true))).To(Succeed())
 
-		// At this stage, resources are not yet ready
+		// Reconcile. Provoke a timeout before the readiness check. At this point, the helm chart has been deployed,
+		// and the status contains the list of managed resources.
+		timeout.ActivateCheckpointTimeoutChecker(helmctrl.TimeoutCheckpointHelmBeforeReadinessCheck)
+		defer timeout.ActivateStandardTimeoutChecker()
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 
-		// Get the managed objects from Status and set them in Ready status
-		status := &helm.ProviderStatus{}
-		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
-		Expect(di.Status.ProviderStatus).ToNot(BeNil())
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(di), di)).To(Succeed())
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed))
+		Expect(di.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout))
 
+		// Get the managed objects from status and set them in ready status
+		Expect(di.Status.ProviderStatus).ToNot(BeNil())
+		status := &helm.ProviderStatus{}
 		helmDecoder := serializer.NewCodecFactory(helmctrl.HelmScheme).UniversalDecoder()
 		_, _, err = helmDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		Expect(err).ToNot(HaveOccurred())
-
 		for _, ref := range status.ManagedResources {
 			obj := kutil.ObjectFromCoreObjectReference(&ref.Resource)
 			Expect(testenv.Client.Get(ctx, testutil.Request(obj.GetName(), obj.GetNamespace()).NamespacedName, obj)).To(Succeed())
 			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
 		}
+
+		// Reconcile again, now without provoking a timeout.
+		// The readiness check should be successful, because we have prepared the managed objects accordingly.
 		di.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 		di.Status.SetJobID(di.Status.GetJobID() + "-1")
 		Expect(testenv.Client.Status().Update(ctx, di)).To(Succeed())
 
+		timeout.ActivateIgnoreTimeoutChecker()
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
-		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
+		Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(di), di)).To(Succeed())
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
-
 		deploymentList := &appsv1.DeploymentList{}
 		Expect(testenv.Client.List(ctx, deploymentList, client.InNamespace(state.Namespace))).To(Succeed())
 		Expect(deploymentList.Items).To(HaveLen(1))
-
 		deployment := deploymentList.Items[0]
 		Expect(deployment.Name).To(Equal("ingress-test-ingress-nginx-controller"))
 	})

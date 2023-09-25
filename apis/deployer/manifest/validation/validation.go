@@ -19,8 +19,6 @@ import (
 func ValidateProviderConfiguration(config *manifestv1alpha2.ProviderConfiguration) error {
 	var allErrs field.ErrorList
 	allErrs = append(allErrs, validation.ValidateManifestList(field.NewPath(""), config.Manifests)...)
-	allErrs = append(allErrs, ValidateTimeout(field.NewPath("deleteTimeout"), config.DeleteTimeout)...)
-	allErrs = append(allErrs, ValidateTimeout(field.NewPath("readinessChecks", "timeout"), config.ReadinessChecks.Timeout)...)
 	allErrs = append(allErrs, health.ValidateReadinessCheckConfiguration(field.NewPath(""), &config.ReadinessChecks)...)
 	allErrs = append(allErrs, crval.ValidateContinuousReconcileSpec(field.NewPath("continuousReconcile"), config.ContinuousReconcile)...)
 	return allErrs.ToAggregate()

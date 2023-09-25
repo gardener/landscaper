@@ -92,6 +92,7 @@ var _ = Describe("", func() {
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
@@ -144,6 +145,7 @@ var _ = Describe("", func() {
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
@@ -212,6 +214,7 @@ var _ = Describe("", func() {
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
 		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
@@ -270,6 +273,7 @@ var _ = Describe("", func() {
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
@@ -327,6 +331,7 @@ var _ = Describe("", func() {
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
@@ -374,14 +379,8 @@ var _ = Describe("", func() {
 
 		manifestConfig := &manifestv1alpha2.ProviderConfiguration{
 			ReadinessChecks: readinesschecks.ReadinessCheckConfiguration{
-				Timeout: &lsv1alpha1.Duration{
-					Duration: 1 * time.Second,
-				},
 				CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
 					{
-						Timeout: &lsv1alpha1.Duration{
-							Duration: 1 * time.Minute,
-						},
 						Name: "my-check",
 						Resource: []lsv1alpha1.TypedObjectReference{
 							{
@@ -418,16 +417,18 @@ var _ = Describe("", func() {
 			Key(state.Namespace, "myitem").
 			ProviderConfig(manifestConfig).
 			Target(target.Namespace, target.Name).
+			WithTimeout(1 * time.Minute).
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		go func() {
 			defer GinkgoRecover()
-			time.Sleep(2 * time.Second)
+			time.Sleep(1 * time.Second)
 			Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
 			cm.Data["ready"] = "true"
 			Expect(state.Client.Update(ctx, cm)).To(Succeed())
@@ -500,6 +501,7 @@ var _ = Describe("", func() {
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
@@ -564,6 +566,7 @@ var _ = Describe("", func() {
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())

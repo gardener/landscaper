@@ -9,7 +9,6 @@ import (
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 
-	lscore "github.com/gardener/landscaper/apis/core"
 	cr "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
@@ -29,10 +28,6 @@ type ProviderConfiguration struct {
 	// ReadinessChecks configures the readiness checks.
 	// +optional
 	ReadinessChecks health.ReadinessCheckConfiguration `json:"readiness,omitempty"`
-	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
-	// Defaults to 180s.
-	// +optional
-	DeleteTimeout *lscore.Duration `json:"deleteTimeout,omitempty"`
 	// Manifests contains a list of manifests that should be applied in the target cluster
 	Manifests []managedresource.Manifest `json:"manifests,omitempty"`
 	// Exports describe the exports from the templated manifests that should be exported by the helm deployer.

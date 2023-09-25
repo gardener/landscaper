@@ -11,11 +11,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/mandelsoft/vfs/pkg/vfs"
-
-	"github.com/gardener/landscaper/pkg/deployerlegacy"
-
 	dockerreference "github.com/containerd/containerd/reference/docker"
 	dockerconfig "github.com/docker/cli/cli/config"
 	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
@@ -23,6 +18,8 @@ import (
 	"github.com/gardener/component-cli/ociclient/credentials"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/pointer"
@@ -39,6 +36,8 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -47,6 +46,10 @@ import (
 // Reconcile handles the reconcile flow for a container deploy item.
 // todo: do retries on failure: difference between main container failure and init/wait container failure
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
+	if _, err := timeout.TimeoutExceeded(ctx, c.DeployItem, TimeoutCheckpointContainerStartReconcile); err != nil {
+		return err
+	}
+
 	pod, err := c.getPod(ctx)
 	logger := logging.FromContextOrDiscard(ctx)
 	if err != nil && !apierrors.IsNotFound(err) {

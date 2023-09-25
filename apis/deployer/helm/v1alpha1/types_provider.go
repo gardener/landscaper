@@ -38,11 +38,6 @@ type ProviderConfiguration struct {
 	// +optional
 	ReadinessChecks health.ReadinessCheckConfiguration `json:"readinessChecks,omitempty"`
 
-	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
-	// Defaults to 180s.
-	// +optional
-	DeleteTimeout *lsv1alpha1.Duration `json:"deleteTimeout,omitempty"`
-
 	// Chart defines helm chart to be templated and applied.
 	Chart Chart `json:"chart"`
 

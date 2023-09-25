@@ -7,14 +7,18 @@ package container
 import (
 	"context"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 )
 
 // Delete handles the delete flow for container deploy item.
 func (c *Container) Delete(ctx context.Context) error {
+	if _, err := timeout.TimeoutExceeded(ctx, c.DeployItem, TimeoutCheckpointContainerStartDelete); err != nil {
+		return err
+	}
+
 	// skip the deletion container when the force cleanup annotation is set
 	if _, ok := c.DeployItem.Annotations[container.ContainerDeployerOperationForceCleanupAnnotation]; !ok {
 		if c.ProviderStatus.LastOperation != string(container.OperationDelete) || c.DeployItem.Status.Phase != lsv1alpha1.DeployItemPhases.Succeeded {

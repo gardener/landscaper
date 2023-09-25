@@ -35,11 +35,6 @@ type ProviderConfiguration struct {
 	// +optional
 	ReadinessChecks health.ReadinessCheckConfiguration `json:"readinessChecks,omitempty"`
 
-	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
-	// Defaults to 180s.
-	// +optional
-	DeleteTimeout *lscore.Duration `json:"deleteTimeout,omitempty"`
-
 	// UpdateStrategy defines the strategy how the manifests are updated in the cluster.
 	// Defaults to "update".
 	// +optional

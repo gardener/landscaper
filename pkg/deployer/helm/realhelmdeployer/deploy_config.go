@@ -76,32 +76,3 @@ func newUpgradeConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*u
 
 	return upgradeConf, nil
 }
-
-// uninstallConfiguration defines settings for a helm uninstall operation.
-type uninstallConfiguration struct {
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
-}
-
-func newUninstallConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*uninstallConfiguration, error) {
-	currOp := "NewUninstallConfiguration"
-
-	uninstallConf := &uninstallConfiguration{}
-
-	if conf != nil && len(conf.Uninstall) > 0 {
-		rawConf, err := json.Marshal(conf.Uninstall)
-		if err != nil {
-			return nil, lserror.NewWrappedError(err, currOp, "MarshalConfig", err.Error())
-		}
-
-		if err := json.Unmarshal(rawConf, uninstallConf); err != nil {
-			return nil, lserror.NewWrappedError(err, currOp, "UnmarshalConfig", err.Error())
-		}
-	}
-
-	// set defaults
-	if uninstallConf.Timeout == nil {
-		uninstallConf.Timeout = &lsv1alpha1.Duration{Duration: defaultTimeout}
-	}
-
-	return uninstallConf, nil
-}

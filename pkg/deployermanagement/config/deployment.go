@@ -101,7 +101,7 @@ func (o *Options) deployDeployerRegistrations(ctx context.Context, deployerName 
 	log, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "deployDeployerRegistrations")
 	log.Info("Enable Deployer", lc.KeyResourceNonNamespaced, deployerName)
 
-	deployerConfig, _ := o.GetDeployerConfigForDeployer(deployerName)
+	deployerConfig := o.GetDeployerConfigForDeployer(deployerName)
 
 	if deployerConfig.IsRegistrationType() {
 		deployerArg, ok := DefaultDeployerConfiguration[deployerName]

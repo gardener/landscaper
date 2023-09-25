@@ -42,6 +42,7 @@ func createDeployItem(ctx context.Context, state *envtest.State, name string, ta
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(state.Create(ctx, deployItem)).To(Succeed())
+	Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 	return deployItem
 }

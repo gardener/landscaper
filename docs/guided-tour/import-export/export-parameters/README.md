@@ -54,7 +54,6 @@ exports:
         name: test-secret
         namespace: example
       jsonPath: .data.token
-      timeout: 2m
 ```
 
 This section instructs the deployer to read the object from the target cluster which is specified in `fromResource`,
@@ -65,9 +64,7 @@ Therefore, we give it a key as identifier: `key: test-token`.
 
 In this example, we read a field which does not exist right after the deployment. It is added afterwards by the 
 control plane of the target cluster (see: [Manually create a long-lived API token for a ServiceAccount][2]).
-Therefore, the deployer tries the read operation repeatedly, until it finds the value, or a timeout is exceeded.
-You can specify a timeout for every resource individually, or a common timeout for all resources, or you simply use
-the default of 5 minutes.
+Therefore, the deployer tries the read operation repeatedly, until it finds the value, or a [timeout][8] is exceeded.
 
 Note that the mechanism described here is specific for the [helm deployer][6] and [manifest deployer][7].
 
@@ -212,3 +209,4 @@ To deploy the example follow the steps below:
 [5]: ../../../usage/Installations.md#exports
 [6]: ../../../deployer/helm.md
 [7]: ../../../deployer/manifest.md
+[8]: ../../../usage/DeployItemTimeouts.md

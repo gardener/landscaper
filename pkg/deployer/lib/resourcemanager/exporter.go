@@ -17,10 +17,12 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+	"github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 )
@@ -28,26 +30,23 @@ import (
 // ExporterOptions defines the options for the exporter.
 type ExporterOptions struct {
 	KubeClient          client.Client
-	DefaultTimeout      *time.Duration
 	InterruptionChecker *lib.InterruptionChecker
+	DeployItem          *lsv1alpha1.DeployItem
 }
 
 // Exporter defines the export of data from manifests.
 type Exporter struct {
 	kubeClient          client.Client
-	defaultTimeout      time.Duration
 	interruptionChecker *lib.InterruptionChecker
+	deployItem          *lsv1alpha1.DeployItem
 }
 
 // NewExporter creates a new exporter.
 func NewExporter(opts ExporterOptions) *Exporter {
 	exporter := &Exporter{
 		kubeClient:          opts.KubeClient,
-		defaultTimeout:      5 * time.Minute,
 		interruptionChecker: opts.InterruptionChecker,
-	}
-	if opts.DefaultTimeout != nil {
-		exporter.defaultTimeout = *opts.DefaultTimeout
+		deployItem:          opts.DeployItem,
 	}
 
 	return exporter
@@ -64,6 +63,7 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 		wg          sync.WaitGroup
 		resultMutex sync.Mutex
 		result      map[string]interface{}
+		timeoutErr  errors.LsError
 	)
 	for _, export := range exports.Exports {
 		if export.FromResource == nil {
@@ -72,55 +72,58 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			continue
 		}
 
-		if exports.DefaultTimeout != nil {
-			// use default timeout from exports
-			export.Timeout = exports.DefaultTimeout
-		} else if export.Timeout == nil {
-			// use default timeout of deployer
-			export.Timeout = &lsv1alpha1.Duration{
-				Duration: e.defaultTimeout,
-			}
+		checkpoint := fmt.Sprintf("deployer: during export - key: %s", export.Key)
+		timeout, tmpErr := timeout.TimeoutExceeded(ctx, e.deployItem, checkpoint)
+		timeoutErr = tmpErr
+		if timeoutErr != nil {
+			break
+		} else {
+			wg.Add(1)
+			go func(ctx context.Context, export managedresource.Export) {
+				defer wg.Done()
+				ctx, cancel := context.WithTimeout(ctx, timeout)
+				defer cancel()
+				log2 := log.WithValues(lc.KeyExportKey, export.Key)
+
+				backoff := wait.Backoff{
+					Duration: 2 * time.Second,
+					Jitter:   1.15,
+					Steps:    math.MaxInt32,
+				}
+				var lastErr error
+				// The waiting intervals do not increase exponentially, because no backoff factor is set
+				if err := wait.ExponentialBackoffWithContext(ctx, backoff, func(ctx context.Context) (done bool, err error) {
+
+					if err := e.interruptionChecker.Check(ctx); err != nil {
+						return false, err
+					}
+
+					value, err := e.doExport(ctx, export)
+					if err != nil {
+						log2.Debug("error while creating export", lc.KeyError, err.Error())
+						lastErr = err
+						return false, nil
+					}
+					resultMutex.Lock()
+					defer resultMutex.Unlock()
+					result = utils.MergeMaps(result, value)
+					return true, nil
+				}); err != nil {
+					allErrs = append(allErrs, err)
+					if lastErr != nil {
+						allErrs = append(allErrs, lastErr)
+					}
+				}
+
+			}(ctx, export)
 		}
-		wg.Add(1)
-		go func(ctx context.Context, export managedresource.Export) {
-			defer wg.Done()
-			ctx, cancel := context.WithTimeout(ctx, export.Timeout.Duration)
-			defer cancel()
-			log2 := log.WithValues(lc.KeyExportKey, export.Key)
-
-			backoff := wait.Backoff{
-				Duration: 2 * time.Second,
-				Jitter:   1.15,
-				Steps:    math.MaxInt32,
-			}
-			var lastErr error
-			// The waiting intervals do not increase exponentially, because no backoff factor is set
-			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func(ctx context.Context) (done bool, err error) {
-
-				if err := e.interruptionChecker.Check(ctx); err != nil {
-					return false, err
-				}
-
-				value, err := e.doExport(ctx, export)
-				if err != nil {
-					log2.Debug("error while creating export", lc.KeyError, err.Error())
-					lastErr = err
-					return false, nil
-				}
-				resultMutex.Lock()
-				defer resultMutex.Unlock()
-				result = utils.MergeMaps(result, value)
-				return true, nil
-			}); err != nil {
-				allErrs = append(allErrs, err)
-				if lastErr != nil {
-					allErrs = append(allErrs, lastErr)
-				}
-			}
-
-		}(ctx, export)
 	}
 	wg.Wait()
+
+	if timeoutErr != nil {
+		return nil, timeoutErr
+	}
+
 	if len(allErrs) != 0 {
 		// todo: improve so that already retrieved values are persisted and only other ones have to be re-fetched.
 		return nil, apimacherrors.NewAggregate(allErrs)

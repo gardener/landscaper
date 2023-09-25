@@ -150,8 +150,6 @@ const (
 	ErrorConfigurationProblem ErrorCode = "ERR_CONFIGURATION_PROBLEM"
 	// ErrorInternalProblem indicates that the last error occurred due to a servere internal error
 	ErrorInternalProblem ErrorCode = "ERR_INTERNAL_PROBLEM"
-	// ErrorReadinessCheckTimeout indicates that objects failed the readiness check within the given time
-	ErrorReadinessCheckTimeout ErrorCode = "ERR_READINESS_CHECK_TIMEOUT"
 	// ErrorTimeout indicates that an operation timed out.
 	ErrorTimeout ErrorCode = "ERR_TIMEOUT"
 	// ErrorCyclicDependencies indicates that there are cyclic dependencies between multiple installations/deployitems.

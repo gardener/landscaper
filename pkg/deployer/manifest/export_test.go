@@ -69,9 +69,6 @@ var _ = Describe("Export", func() {
 		}
 		exportKey := "my-cm-data"
 		manifestConfig.Exports = &managedresource.Exports{
-			DefaultTimeout: &lsv1alpha1.Duration{
-				Duration: time.Minute * 1,
-			},
 			Exports: []managedresource.Export{
 				{
 					Key:      exportKey,
@@ -92,9 +89,11 @@ var _ = Describe("Export", func() {
 			Key(state.Namespace, "myitem").
 			ProviderConfig(manifestConfig).
 			Target(target.Namespace, target.Name).
+			WithTimeout(1 * time.Minute).
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, lsv1alpha1.NewResolvedTarget(target))
 		Expect(err).ToNot(HaveOccurred())
@@ -140,9 +139,6 @@ var _ = Describe("Export", func() {
 		}
 		exportKey := "my-cm-data"
 		manifestConfig.Exports = &managedresource.Exports{
-			DefaultTimeout: &lsv1alpha1.Duration{
-				Duration: time.Minute * 1,
-			},
 			Exports: []managedresource.Export{
 				{
 					Key:      exportKey,
@@ -168,9 +164,11 @@ var _ = Describe("Export", func() {
 			Key(state.Namespace, "myitem").
 			ProviderConfig(manifestConfig).
 			Target(target.Namespace, target.Name).
+			WithTimeout(1 * time.Minute).
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
 		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, lsv1alpha1.NewResolvedTarget(target))
 		Expect(err).ToNot(HaveOccurred())

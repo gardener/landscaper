@@ -60,7 +60,7 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 	timeout := d.Timeout.Duration
 	if err := WaitForObjectsReady(d.Context, timeout, d.Client, getObjectsFunc, d.CheckObject, d.InterruptionChecker); err != nil {
 		return lserror.NewWrappedError(err,
-			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
+			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorTimeout)
 	}
 
 	return nil

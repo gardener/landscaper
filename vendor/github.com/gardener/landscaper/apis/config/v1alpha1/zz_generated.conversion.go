@@ -520,7 +520,6 @@ func Convert_config_CrdManagementConfiguration_To_v1alpha1_CrdManagementConfigur
 func autoConvert_v1alpha1_DeployItemTimeouts_To_config_DeployItemTimeouts(in *DeployItemTimeouts, out *config.DeployItemTimeouts, s conversion.Scope) error {
 	out.Pickup = (*core.Duration)(unsafe.Pointer(in.Pickup))
 	out.Abort = (*core.Duration)(unsafe.Pointer(in.Abort))
-	out.ProgressingDefault = (*core.Duration)(unsafe.Pointer(in.ProgressingDefault))
 	return nil
 }
 
@@ -532,7 +531,6 @@ func Convert_v1alpha1_DeployItemTimeouts_To_config_DeployItemTimeouts(in *Deploy
 func autoConvert_config_DeployItemTimeouts_To_v1alpha1_DeployItemTimeouts(in *config.DeployItemTimeouts, out *DeployItemTimeouts, s conversion.Scope) error {
 	out.Pickup = (*corev1alpha1.Duration)(unsafe.Pointer(in.Pickup))
 	out.Abort = (*corev1alpha1.Duration)(unsafe.Pointer(in.Abort))
-	out.ProgressingDefault = (*corev1alpha1.Duration)(unsafe.Pointer(in.ProgressingDefault))
 	return nil
 }
 

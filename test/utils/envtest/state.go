@@ -185,6 +185,17 @@ func (s *State) UpdateWithClient(ctx context.Context, cl client.Client, obj clie
 	return cl.Update(ctx, obj, opts...)
 }
 
+// SetInitTime prepares the status of a DeployItem with an init timestamp. It is needed for timeout checks
+// during reconciliation. Normally, the deployers set the init timestamp, but some tests skip this part of the
+// reconciliation and therefore must set the init timestamp by itself.
+func (s *State) SetInitTime(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
+	now := v1.Now()
+	deployItem.Status.TransitionTimes = &lsv1alpha1.TransitionTimes{
+		InitTime: &now,
+	}
+	return s.Client.Status().Update(ctx, deployItem)
+}
+
 // InitResourcesWithClient creates a new isolated environment with its own namespace.
 func (s *State) InitResourcesWithClient(ctx context.Context, c client.Client, resourcesPath string) error {
 	// parse state and create resources in cluster

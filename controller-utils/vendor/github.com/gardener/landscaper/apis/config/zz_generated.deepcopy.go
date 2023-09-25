@@ -238,11 +238,6 @@ func (in *DeployItemTimeouts) DeepCopyInto(out *DeployItemTimeouts) {
 		*out = new(core.Duration)
 		**out = **in
 	}
-	if in.ProgressingDefault != nil {
-		in, out := &in.ProgressingDefault, &out.ProgressingDefault
-		*out = new(core.Duration)
-		**out = **in
-	}
 	return
 }
 

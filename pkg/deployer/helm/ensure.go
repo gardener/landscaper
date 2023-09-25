@@ -33,6 +33,7 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -67,7 +68,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 	if shouldUseRealHelmDeployer {
 		// Apply helm install/upgrade. Afterwards get the list of deployed resources by helm get release.
 		// The list is filtered, i.e. it contains only the resources that are needed for the default readiness check.
-		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, h.TargetRestConfig, targetClientSet)
+		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, h.TargetRestConfig, targetClientSet, h.DeployItem)
 		deployErr = realHelmDeployer.Deploy(ctx)
 		if deployErr == nil {
 			managedResourceStatusList, err := realHelmDeployer.GetManagedResourcesStatus(ctx)
@@ -105,7 +106,15 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return lserrors.NewWrappedError(err, currOp, "UpdateStatus", err.Error())
 	}
 
+	if _, err := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmBeforeReadinessCheck); err != nil {
+		return err
+	}
+
 	if err := h.checkResourcesReady(ctx, targetClient, !shouldUseRealHelmDeployer); err != nil {
+		return err
+	}
+
+	if _, err := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmBeforeReadingExportValues); err != nil {
 		return err
 	}
 
@@ -120,13 +129,18 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 
 func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, targetClientSet kubernetes.Interface,
 	manifests []managedresource.Manifest) error {
+
+	if _, err := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmStartApplyManifests); err != nil {
+		return err
+	}
+
 	applier := resourcemanager.NewManifestApplier(resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
 		KubeClient:       targetClient,
 		Clientset:        targetClientSet,
 		DefaultNamespace: h.ProviderConfiguration.Namespace,
 		DeployItemName:   h.DeployItem.Name,
-		DeleteTimeout:    h.ProviderConfiguration.DeleteTimeout.Duration,
+		DeployItem:       h.DeployItem,
 		UpdateStrategy:   manifestv1alpha2.UpdateStrategy(h.ProviderConfiguration.UpdateStrategy),
 		Manifests:        manifests,
 		ManagedResources: h.ProviderStatus.ManagedResources,
@@ -143,6 +157,10 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 
 func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds map[string]string) ([]managedresource.Manifest, error) {
 	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "createManifests"})
+
+	if _, err := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmStartCreateManifests); err != nil {
+		return nil, err
+	}
 
 	objects, err := kutil.ParseFilesToRawExtension(logger, files)
 	if err != nil {
@@ -200,11 +218,16 @@ func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds m
 func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, failOnMissingObject bool) error {
 
 	if !h.ProviderConfiguration.ReadinessChecks.DisableDefault {
+		timeout, lserr := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmDefaultReadinessChecks)
+		if lserr != nil {
+			return lserr
+		}
+
 		defaultReadinessCheck := health.DefaultReadinessCheck{
 			Context:             ctx,
 			Client:              client,
 			CurrentOp:           "DefaultCheckResourcesReadinessHelm",
-			Timeout:             h.ProviderConfiguration.ReadinessChecks.Timeout,
+			Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 			ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 			FailOnMissingObject: failOnMissingObject,
 			InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
@@ -217,15 +240,15 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 
 	if h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
-			timeout := customReadinessCheckConfig.Timeout
-			if timeout == nil {
-				timeout = h.ProviderConfiguration.ReadinessChecks.Timeout
+			timeout, lserr := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmCustomReadinessChecks)
+			if lserr != nil {
+				return lserr
 			}
 			customReadinessCheck := health.CustomReadinessCheck{
 				Context:             ctx,
 				Client:              client,
 				CurrentOp:           "CustomCheckResourcesReadinessHelm",
-				Timeout:             timeout,
+				Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 				ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:       customReadinessCheckConfig,
 				InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
@@ -252,10 +275,9 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
 			InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
+			DeployItem:          h.DeployItem,
 		}
-		if h.Configuration.Export.DefaultTimeout != nil {
-			opts.DefaultTimeout = &h.Configuration.Export.DefaultTimeout.Duration
-		}
+
 		resourceExports, err := resourcemanager.NewExporter(opts).
 			Export(ctx, exportDefinition)
 		if err != nil {
@@ -277,7 +299,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 	if h.ProviderConfiguration.HelmDeployment != nil && !(*h.ProviderConfiguration.HelmDeployment) {
 		return h.deleteManifests(ctx)
 	} else {
-		return h.deleteManifestsWithRealHelmDeployer(ctx)
+		return h.deleteManifestsWithRealHelmDeployer(ctx, h.DeployItem)
 	}
 }
 
@@ -299,6 +321,10 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 
 	nonCompletedResources := make([]string, 0)
 	for i := len(h.ProviderStatus.ManagedResources) - 1; i >= 0; i-- {
+		if _, err := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmDeleteResources); err != nil {
+			return err
+		}
+
 		ref := h.ProviderStatus.ManagedResources[i]
 		obj := kutil.ObjectFromCoreObjectReference(&ref.Resource)
 		if err := targetClient.Delete(ctx, obj); err != nil {
@@ -322,7 +348,7 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 	return h.Writer().UpdateDeployItem(ctx, read_write_layer.W000049, h.DeployItem)
 }
 
-func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
+func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context, di *lsv1alpha1.DeployItem) error {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "lsHealthCheckController.check"})
 	logger.Info("Deleting files with real helm deployer")
 
@@ -339,7 +365,7 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
 	}
 
 	realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(nil, h.ProviderConfiguration,
-		h.TargetRestConfig, targetClientSet)
+		h.TargetRestConfig, targetClientSet, di)
 
 	err = realHelmDeployer.Undeploy(ctx)
 	if err != nil {

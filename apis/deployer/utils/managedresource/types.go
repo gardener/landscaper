@@ -86,16 +86,11 @@ type ManagedResourceStatus struct {
 
 // Exports describes one export that is read from a resource.
 type Exports struct {
-	// DefaultTimeout defines the default timeout for all exports
-	// that the exporter waits for the value in the jsonpath to occur.
-	DefaultTimeout *lsv1alpha1.Duration `json:"defaultTimeout,omitempty"`
-	Exports        []Export             `json:"exports,omitempty"`
+	Exports []Export `json:"exports,omitempty"`
 }
 
 // Export describes one export that is read from a resource.
 type Export struct {
-	// Timeout defines the timeout that the exporter waits for the value in the jsonpath to occur.
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
 	// Key is the key that the value from JSONPath is exported to.
 	Key string `json:"key"`
 

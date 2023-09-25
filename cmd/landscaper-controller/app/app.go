@@ -244,8 +244,7 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 	if err := deployitemctrl.AddControllerToManager(ctrlLogger,
 		lsMgr,
 		o.Config.Controllers.DeployItems,
-		o.Config.DeployItemTimeouts.Pickup,
-		o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
+		o.Config.DeployItemTimeouts.Pickup); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 

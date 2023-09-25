@@ -301,12 +301,10 @@ func removeDeployItemAndWaitForSuccess(
 
 func getReadinessCheck(namespace string, jsonRawMessage []byte) readinesschecks.ReadinessCheckConfiguration {
 	return readinesschecks.ReadinessCheckConfiguration{
-		Timeout:        &lsv1alpha1.Duration{Duration: time.Second * 5},
 		DisableDefault: true,
 		CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
 			{
-				Name:    "valueIsCorrect",
-				Timeout: &lsv1alpha1.Duration{Duration: time.Second * 5},
+				Name: "valueIsCorrect",
 				Resource: []lsv1alpha1.TypedObjectReference{
 					{
 						APIVersion: "v1",
@@ -370,6 +368,7 @@ func createHelmDeployItem(chartDir string, valuesFile string, name string, targe
 			Namespace: target.Namespace,
 		},
 		Spec: lsv1alpha1.DeployItemSpec{
+			Timeout:       &lsv1alpha1.Duration{Duration: 5 * time.Second},
 			Configuration: rawProviderConfig,
 			Target: &lsv1alpha1.ObjectReference{
 				Name:      target.Name,

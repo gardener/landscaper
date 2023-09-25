@@ -7,13 +7,12 @@ package resourcemanager_test
 import (
 	"context"
 	"fmt"
-	"time"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -21,9 +20,8 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	"github.com/gardener/landscaper/test/utils/envtest"
-
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 var _ = Describe("ObjectApplier", func() {
@@ -38,10 +36,12 @@ var _ = Describe("ObjectApplier", func() {
 		ctx = logging.NewContextWithDiscard(context.TODO())
 		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
+		timeout.ActivateIgnoreTimeoutChecker()
 	})
 
 	AfterEach(func() {
 		Expect(state.CleanupState(ctx))
+		timeout.ActivateStandardTimeoutChecker()
 	})
 
 	It("should apply and update a configmap", func() {
@@ -59,7 +59,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
 			Manifests: []managedresource.Manifest{
 				{
@@ -116,7 +115,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
 			Manifests: []managedresource.Manifest{
 				{
@@ -173,7 +171,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
 			Manifests: []managedresource.Manifest{
 				{
@@ -233,7 +230,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
 			Manifests: []managedresource.Manifest{
 				{
@@ -272,7 +268,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
 			Manifests: []managedresource.Manifest{
 				{
@@ -300,7 +295,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
 			Manifests: []managedresource.Manifest{
 				{
@@ -341,7 +335,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
 			Manifests: []managedresource.Manifest{
 				{
@@ -390,7 +383,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyUpdate,
 			Manifests: []managedresource.Manifest{
 				{
@@ -439,7 +431,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyPatch,
 			Manifests: []managedresource.Manifest{
 				{
@@ -488,7 +479,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyPatch,
 			Manifests: []managedresource.Manifest{
 				{
@@ -537,7 +527,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyMerge,
 			Manifests: []managedresource.Manifest{
 				{
@@ -586,7 +575,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyMerge,
 			Manifests: []managedresource.Manifest{
 				{
@@ -635,7 +623,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyMergeOverwrite,
 			Manifests: []managedresource.Manifest{
 				{
@@ -684,7 +671,6 @@ var _ = Describe("ObjectApplier", func() {
 			KubeClient:       testenv.Client,
 			Clientset:        clientset,
 			DefaultNamespace: state.Namespace,
-			DeleteTimeout:    10 * time.Second,
 			UpdateStrategy:   manifestv1alpha2.UpdateStrategyMergeOverwrite,
 			Manifests: []managedresource.Manifest{
 				{

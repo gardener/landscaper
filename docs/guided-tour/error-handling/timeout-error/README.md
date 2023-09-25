@@ -36,7 +36,7 @@ status:
 
 > Note: Whenever the state of an installation shows a `lastError`, and the phase is `Progressing`, the Landscaper will 
 > try to reconcile the installation again after a certain, steadily increasing amount of time. This is done until a 
-> timeout is reached. When this happens, the phase will change to `failed` and Landscaper stops reconciliation.
+> timeout is reached. When this happens, the phase will change to `Failed` and Landscaper stops reconciliation.
 
 Starting from the Installation, Landscaper creates further custom resources, namely DeployItems. In this concrete case, 
 there will be only one DeployItem, which describes the Helm deployment of the hello-world chart. In the status section 
@@ -53,10 +53,9 @@ hello-world-default-deploy-item-tslq8   landscaper.gardener.cloud/helm   Progres
 ...
 status:
   lastError:
-    message: 'Op: TemplateChart - Reason: GetHelmChart - Message: unable to resolve
-      chart from "eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5":
-      unable to get manifest: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5:
-      not found'
+    message: 'Op: TemplateChart - Reason: GetHelmChart - Message: unable to get manifest:
+      eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5: not
+      found'
   phase: Progressing
 ```
 
@@ -68,8 +67,7 @@ and DeployItems, together with status information:
 [🏗️ Progressing] Installation hello-world
     Last error: execution example / hello-world is not finished yet
     └── [🏗️ Progressing] DeployItem hello-world-default-deploy-item-tslq8
-        Last error: Op: TemplateChart - Reason: GetHelmChart - Message: unable to resolve chart from "eu.gcr.io/gardener-project
-        /landscaper/examples/charts/hello-world:0.0.5": unable to get manifest: 
+        Last error: Op: TemplateChart - Reason: GetHelmChart - Message: unable to get manifest: 
         eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5: not found
 ```
 
@@ -156,9 +154,8 @@ to wait for this, you can **interrupt** the ongoing deployment as described [abo
 
 ## Configuring a Timeout for a DeployItem
 
-In this example we have specified a [progressing timeout](../../../usage/DeployItemTimeouts.md#progressing-timeout) 
-for a DeployItem. This is done in the DeployItem template of the Blueprint (here, inline in the 
-[Installation](./installation/installation.yaml).)
+In this example we have specified a progressing timeout for a DeployItem. This is done in the DeployItem template of the 
+Blueprint (here, inline in the [Installation](./installation/installation.yaml).)
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -178,10 +175,3 @@ deployExecutions:
 If you do not specify a timeout, the default of 10 minutes is used.
 
 For more details, see [DeployItem Timeouts](../../../usage/DeployItemTimeouts.md).
-
-There are further timeouts for readiness checks, for collecting export values, and for helm operations. These timeouts
-are deployer specific, see [Manifest Deployer](../../../deployer/manifest.md) and 
-[Helm Deployer](../../../deployer/helm.md).
-
-Note: Set the DeployItem timeout to a value that is greater than the greatest deployer specific timeout.
-If, for example, the readiness-checks timeout is set to "15m" and the export timeout is set to "10m", set the global timeout to "20m".

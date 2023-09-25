@@ -26,12 +26,17 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 func (m *Manifest) Reconcile(ctx context.Context) error {
 	currOp := "ReconcileManifests"
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, currOp})
+
+	if _, err := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestStartReconcile); err != nil {
+		return err
+	}
 
 	m.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 
@@ -56,7 +61,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		KubeClient:       targetClient,
 		Clientset:        targetClientSet,
 		DeployItemName:   m.DeployItem.Name,
-		DeleteTimeout:    m.ProviderConfiguration.DeleteTimeout.Duration,
+		DeployItem:       m.DeployItem,
 		UpdateStrategy:   m.ProviderConfiguration.UpdateStrategy,
 		Manifests:        m.ProviderConfiguration.Manifests,
 		ManagedResources: m.ProviderStatus.ManagedResources,
@@ -86,18 +91,25 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 			currOp, "UpdateStatus", err.Error())
 	}
 
+	if _, err := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestBeforeReadinessCheck); err != nil {
+		return err
+	}
+
 	if err := m.CheckResourcesReady(ctx, targetClient); err != nil {
 		return err
 	}
 
 	if m.ProviderConfiguration.Exports != nil {
+		if _, err := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestBeforeReadingExportValues); err != nil {
+			return err
+		}
+
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
 			InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
+			DeployItem:          m.DeployItem,
 		}
-		if m.Configuration.Export.DefaultTimeout != nil {
-			opts.DefaultTimeout = &m.Configuration.Export.DefaultTimeout.Duration
-		}
+
 		exporter := resourcemanager.NewExporter(opts)
 		exports, err := exporter.Export(ctx, m.ProviderConfiguration.Exports)
 		if err != nil {
@@ -119,11 +131,16 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 
 	managedresources := m.ProviderStatus.ManagedResources.TypedObjectReferenceList()
 	if !m.ProviderConfiguration.ReadinessChecks.DisableDefault {
+		timeout, lserr := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestDefaultReadinessChecks)
+		if lserr != nil {
+			return lserr
+		}
+
 		defaultReadinessCheck := health.DefaultReadinessCheck{
 			Context:             ctx,
 			Client:              client,
 			CurrentOp:           "DefaultCheckResourcesReadinessManifest",
-			Timeout:             m.ProviderConfiguration.ReadinessChecks.Timeout,
+			Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 			ManagedResources:    managedresources,
 			FailOnMissingObject: true,
 			InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
@@ -136,15 +153,16 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 
 	if m.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range m.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
-			timeout := customReadinessCheckConfig.Timeout
-			if timeout == nil {
-				timeout = m.ProviderConfiguration.ReadinessChecks.Timeout
+			timeout, lserr := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestCustomReadinessChecks)
+			if lserr != nil {
+				return lserr
 			}
+
 			customReadinessCheck := health.CustomReadinessCheck{
 				Context:             ctx,
 				Client:              client,
 				CurrentOp:           "CustomCheckResourcesReadinessManifest",
-				Timeout:             timeout,
+				Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 				ManagedResources:    managedresources,
 				Configuration:       customReadinessCheckConfig,
 				InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
@@ -162,6 +180,10 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 func (m *Manifest) Delete(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "Delete")
 
+	if _, err := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestStartDelete); err != nil {
+		return err
+	}
+
 	currOp := "DeleteManifests"
 	m.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 
@@ -178,6 +200,10 @@ func (m *Manifest) Delete(ctx context.Context) error {
 
 	completed := true
 	for i := len(m.ProviderStatus.ManagedResources) - 1; i >= 0; i-- {
+		if _, err := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestDeleteResources); err != nil {
+			return err
+		}
+
 		mr := m.ProviderStatus.ManagedResources[i]
 		if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
 			continue

@@ -163,7 +163,7 @@ Readiness checks
 Export of values from resources on the target cluster. The resource on the target cluster can be referenced
 in one step (with `fromResource`) or in two steps (with `fromResource` and `fromObjectRef`).
 
-Helm deployment configuration (`atomic`, `timeout`)
+Helm deployment configuration (`atomic`)
 
 Real helm deployment vs. applying manifests
 

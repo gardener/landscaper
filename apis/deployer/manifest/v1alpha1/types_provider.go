@@ -30,10 +30,6 @@ type ProviderConfiguration struct {
 	// ReadinessChecks configures the readiness checks.
 	// +optional
 	ReadinessChecks health.ReadinessCheckConfiguration `json:"readinessChecks,omitempty"`
-	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
-	// Defaults to 180s.
-	// +optional
-	DeleteTimeout *lsv1alpha1.Duration `json:"deleteTimeout,omitempty"`
 	// Manifests contains a list of manifests that should be applied in the target cluster
 	Manifests []*runtime.RawExtension `json:"manifests,omitempty"`
 	// Exports describe the exports from the templated manifests that should be exported by the helm deployer.

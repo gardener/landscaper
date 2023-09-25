@@ -10,22 +10,28 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-
-	"k8s.io/utils/pointer"
-
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
+	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
+	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
+	helmc "helm.sh/helm/v3/pkg/chart"
+	helmr "helm.sh/helm/v3/pkg/release"
+	helmt "helm.sh/helm/v3/pkg/time"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -42,10 +48,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
-
-	helmc "helm.sh/helm/v3/pkg/chart"
-	helmr "helm.sh/helm/v3/pkg/release"
-	helmt "helm.sh/helm/v3/pkg/time"
 )
 
 func TestConfig(t *testing.T) {
@@ -118,7 +120,7 @@ var _ = Describe("Template", func() {
 		)
 
 		BeforeEach(func() {
-			ctx, cancel = context.WithCancel(context.Background())
+			ctx, cancel = context.WithCancel(logging.NewContextWithDiscard(context.Background()))
 			var err error
 			state, err = testenv.InitState(ctx)
 			Expect(err).ToNot(HaveOccurred())
@@ -132,6 +134,8 @@ var _ = Describe("Template", func() {
 			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{},
 				"helmintegration"+utils.GetNextCounter())).To(Succeed())
 
+			timeout.ActivateStandardTimeoutChecker()
+
 			go func() {
 				Expect(mgr.Start(ctx)).To(Succeed())
 			}()
@@ -141,6 +145,13 @@ var _ = Describe("Template", func() {
 			defer cancel()
 			Expect(state.CleanupState(ctx)).To(Succeed())
 		})
+
+		isFinished := func(item *lsv1alpha1.DeployItem) bool {
+			if err := state.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item); err != nil {
+				return false
+			}
+			return item.Status.JobIDFinished == item.Status.JobID
+		}
 
 		It("should create the release namespace if configured", func() {
 			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
@@ -472,14 +483,8 @@ var _ = Describe("Template", func() {
 				Chart:           chartAccess,
 				CreateNamespace: true,
 				ReadinessChecks: readinesschecks.ReadinessCheckConfiguration{
-					Timeout: &lsv1alpha1.Duration{
-						Duration: 1 * time.Second,
-					},
 					CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
 						{
-							Timeout: &lsv1alpha1.Duration{
-								Duration: 1 * time.Minute,
-							},
 							Name: "my-check",
 							Resource: []lsv1alpha1.TypedObjectReference{
 								{
@@ -543,7 +548,10 @@ var _ = Describe("Template", func() {
 			}, 30*time.Second, 1*time.Second).Should(Succeed(), "custom readiness checks fulfilled")
 		})
 
-		It("should fail a readinessCheck for a wrong value on a deployed helm chart with a single config map", func() {
+		It("should fail with a timeout", func() {
+			// This test creates a deploy item that deploys a helm chart with a single config map.
+			// Its reconciliation should fail with a timeout after 1 second. The timeout should occur at the latest
+			// during a custom readiness check that expects a wrong value.
 			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 			Expect(err).ToNot(HaveOccurred())
@@ -570,14 +578,8 @@ var _ = Describe("Template", func() {
 				Chart:           chartAccess,
 				CreateNamespace: true,
 				ReadinessChecks: readinesschecks.ReadinessCheckConfiguration{
-					Timeout: &lsv1alpha1.Duration{
-						Duration: 1 * time.Second,
-					},
 					CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
 						{
-							Timeout: &lsv1alpha1.Duration{
-								Duration: 1 * time.Second,
-							},
 							Name: "my-check",
 							Resource: []lsv1alpha1.TypedObjectReference{
 								{
@@ -609,6 +611,7 @@ var _ = Describe("Template", func() {
 				ProviderConfig(helmConfig).
 				Target(target.Namespace, target.Name).
 				GenerateJobID().
+				WithTimeout(1 * time.Second).
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
@@ -624,6 +627,9 @@ var _ = Describe("Template", func() {
 
 				return nil
 			}, 10*time.Second, 1*time.Second).Should(Succeed(), "custom readiness checks fulfilled")
+
+			Expect(item.Status.LastError).NotTo(BeNil())
+			Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout))
 		})
 
 		It("should unblock a pending helm release and finally install the helm chart", func() {
@@ -728,6 +734,185 @@ var _ = Describe("Template", func() {
 				}
 				return nil
 			}, 10*time.Second, 1*time.Second).Should(Succeed(), "additional namespace should be created")
+		})
+
+		It("should time out at checkpoints of the real helm deployer", func() {
+			// This test creates/reconciles/deletes a real helm deploy item. Before these operations,
+			// it replaces the standard timeout checker by test implementations that throw a timeout error at certain
+			// check points. It verifies that the expected timeouts actually occur.
+
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart3")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Chart:           chartAccess,
+				Name:            "test",
+				Namespace:       "some-namespace",
+				CreateNamespace: true,
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "helm-timeout-test").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+
+			timeout.ActivateCheckpointTimeoutChecker(helm.TimeoutCheckpointHelmStartReconcile)
+			defer timeout.ActivateStandardTimeoutChecker()
+
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			Eventually(isFinished, 10*time.Second, 1*time.Second).WithArguments(item).Should(BeTrue(), "deploy item should eventually have a final phase")
+			Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed())
+			Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed))
+			Expect(item.Status.LastError).NotTo(BeNil())
+			Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout))
+			Expect(item.Status.LastError.Message).To(ContainSubstring(helm.TimeoutCheckpointHelmStartReconcile))
+
+			for _, checkpoint := range []string{
+				helm.TimeoutCheckpointHelmStartProgressing,
+				helm.TimeoutCheckpointHelmStartApplyFiles,
+				realhelmdeployer.TimeoutCheckpointHelmBeforeInstallingRelease,
+				helm.TimeoutCheckpointHelmBeforeReadinessCheck,
+				helm.TimeoutCheckpointHelmDefaultReadinessChecks,
+				helm.TimeoutCheckpointHelmBeforeReadingExportValues,
+			} {
+				timeout.ActivateCheckpointTimeoutChecker(checkpoint)
+				item.Status.SetJobID(uuid.New().String())
+				Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
+
+				description := fmt.Sprintf("deploy item should fail with timeout at checkpoint %s", checkpoint)
+				Eventually(isFinished, 10*time.Second, 1*time.Second).WithArguments(item).Should(BeTrue(), description)
+				Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed(), description)
+				Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed), description)
+				Expect(item.Status.LastError).NotTo(BeNil(), description)
+				Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout), description)
+				Expect(item.Status.LastError.Message).To(ContainSubstring(checkpoint), description)
+			}
+
+			Expect(state.Client.Delete(ctx, item)).To(Succeed())
+			Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed())
+
+			for _, checkpoint := range []string{
+				helm.TimeoutCheckpointHelmStartDelete,
+				helm.TimeoutCheckpointHelmStartDeleting,
+				realhelmdeployer.TimeoutCheckpointHelmBeforeDeletingRelease,
+			} {
+				timeout.ActivateCheckpointTimeoutChecker(checkpoint)
+				item.Status.SetJobID(uuid.New().String())
+				Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
+
+				description := fmt.Sprintf("deploy item should fail with timeout at checkpoint %s", checkpoint)
+				Eventually(isFinished, 10*time.Second, 1*time.Second).WithArguments(item).Should(BeTrue(), description)
+				Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed(), description)
+				Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.DeleteFailed), description)
+				Expect(item.Status.LastError).NotTo(BeNil(), description)
+				Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout), description)
+				Expect(item.Status.LastError.Message).To(ContainSubstring(checkpoint), description)
+			}
+		})
+
+		It("should time out at checkpoints of the manifest helm deployer", func() {
+			// This test creates/reconciles/deletes a manifest helm deploy item. Before these operations,
+			// it replaces the standard timeout checker by test implementations that throw a timeout error at certain
+			// check points. It verifies that the expected timeouts actually occur.
+
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart3")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Chart:           chartAccess,
+				Name:            "test",
+				Namespace:       "some-namespace",
+				CreateNamespace: true,
+				HelmDeployment:  pointer.Bool(false),
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "helm-timeout-test-2").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+
+			timeout.ActivateCheckpointTimeoutChecker(helm.TimeoutCheckpointHelmStartReconcile)
+			defer timeout.ActivateStandardTimeoutChecker()
+
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			Eventually(isFinished, 10*time.Second, 1*time.Second).WithArguments(item).Should(BeTrue(), "deploy item should eventually have a final phase")
+			Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed())
+			Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed))
+			Expect(item.Status.LastError).NotTo(BeNil())
+			Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout))
+			Expect(item.Status.LastError.Message).To(ContainSubstring(helm.TimeoutCheckpointHelmStartReconcile))
+
+			for _, checkpoint := range []string{
+				helm.TimeoutCheckpointHelmStartProgressing,
+				helm.TimeoutCheckpointHelmStartApplyFiles,
+				helm.TimeoutCheckpointHelmStartCreateManifests,
+				helm.TimeoutCheckpointHelmStartApplyManifests,
+				resourcemanager.TimeoutCheckpointDeployerProcessManagedResourceManifests,
+				resourcemanager.TimeoutCheckpointDeployerProcessManifests,
+				resourcemanager.TimeoutCheckpointDeployerApplyManifests,
+				helm.TimeoutCheckpointHelmBeforeReadinessCheck,
+			} {
+				timeout.ActivateCheckpointTimeoutChecker(checkpoint)
+				item.Status.SetJobID(uuid.New().String())
+				Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
+
+				description := fmt.Sprintf("deploy item should fail with timeout at checkpoint %s", checkpoint)
+				Eventually(isFinished, 10*time.Second, 1*time.Second).WithArguments(item).Should(BeTrue(), description)
+				Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed(), description)
+				Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed), description)
+				Expect(item.Status.LastError).NotTo(BeNil(), description)
+				Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout), description)
+				Expect(item.Status.LastError.Message).To(ContainSubstring(checkpoint), description)
+			}
+
+			Expect(state.Client.Delete(ctx, item)).To(Succeed())
+			Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed())
+
+			for _, checkpoint := range []string{
+				helm.TimeoutCheckpointHelmStartDelete,
+				helm.TimeoutCheckpointHelmStartDeleting,
+				helm.TimeoutCheckpointHelmDeleteResources,
+			} {
+				timeout.ActivateCheckpointTimeoutChecker(checkpoint)
+				item.Status.SetJobID(uuid.New().String())
+				Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
+
+				description := fmt.Sprintf("deploy item should fail with timeout at checkpoint %s", checkpoint)
+				Eventually(isFinished, 10*time.Second, 1*time.Second).WithArguments(item).Should(BeTrue(), description)
+				Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed(), description)
+				Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.DeleteFailed), description)
+				Expect(item.Status.LastError).NotTo(BeNil(), description)
+				Expect(item.Status.LastError.Codes).To(ContainElement(lsv1alpha1.ErrorTimeout), description)
+				Expect(item.Status.LastError.Message).To(ContainSubstring(checkpoint), description)
+			}
 		})
 
 	})

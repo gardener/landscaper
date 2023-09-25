@@ -601,10 +601,6 @@
           "description": "Key is the key that the value from JSONPath is exported to.",
           "type": "string",
           "default": ""
-        },
-        "timeout": {
-          "description": "Timeout defines the timeout that the exporter waits for the value in the jsonpath to occur.",
-          "$ref": "#/definitions/core-v1alpha1-Duration"
         }
       }
     },
@@ -612,10 +608,6 @@
       "description": "Exports describes one export that is read from a resource.",
       "type": "object",
       "properties": {
-        "defaultTimeout": {
-          "description": "DefaultTimeout defines the default timeout for all exports that the exporter waits for the value in the jsonpath to occur.",
-          "$ref": "#/definitions/core-v1alpha1-Duration"
-        },
         "exports": {
           "type": "array",
           "items": {
@@ -687,10 +679,6 @@
             "default": {},
             "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
           }
-        },
-        "timeout": {
-          "description": "Timeout is the value after which a readiness check should time out",
-          "$ref": "#/definitions/core-v1alpha1-Duration"
         }
       }
     },
@@ -738,10 +726,6 @@
         "disableDefault": {
           "description": "DisableDefault allows to disable the default readiness checks.",
           "type": "boolean"
-        },
-        "timeout": {
-          "description": "Timeout is the time to wait before giving up on a resource to be ready. Defaults to 180s.",
-          "$ref": "#/definitions/core-v1alpha1-Duration"
         }
       }
     },
@@ -793,10 +777,6 @@
       "default": false,
       "description": "CreateNamespace configures the deployer to create the release namespace if not present. The behavior is similar to the \"helm install --create-namespace\"",
       "type": "boolean"
-    },
-    "deleteTimeout": {
-      "$ref": "#/definitions/core-v1alpha1-Duration",
-      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s."
     },
     "exports": {
       "$ref": "#/definitions/utils-managedresource-Exports",

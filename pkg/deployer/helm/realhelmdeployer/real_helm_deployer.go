@@ -38,6 +38,13 @@ import (
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
+)
+
+const (
+	TimeoutCheckpointHelmBeforeInstallingRelease = "helm deployer: before installing release"
+	TimeoutCheckpointHelmBeforeUpgradingRelease  = "helm deployer: before upgrading release"
+	TimeoutCheckpointHelmBeforeDeletingRelease   = "helm deployer: before deleting release"
 )
 
 type RealHelmDeployer struct {
@@ -51,10 +58,11 @@ type RealHelmDeployer struct {
 	targetRestConfig   *rest.Config
 	apiResourceHandler *resourcemanager.ApiResourceHandler
 	helmSecretManager  *HelmSecretManager
+	di                 *lsv1alpha1.DeployItem
 }
 
 func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration, targetRestConfig *rest.Config,
-	clientset kubernetes.Interface) *RealHelmDeployer {
+	clientset kubernetes.Interface, di *lsv1alpha1.DeployItem) *RealHelmDeployer {
 
 	return &RealHelmDeployer{
 		chart:              ch,
@@ -67,6 +75,7 @@ func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderC
 		targetRestConfig:   targetRestConfig,
 		apiResourceHandler: resourcemanager.CreateApiResourceHandler(clientset),
 		helmSecretManager:  nil,
+		di:                 di,
 	}
 }
 
@@ -140,7 +149,12 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 	install.Namespace = c.defaultNamespace
 	install.CreateNamespace = c.createNamespace
 	install.Atomic = installConfig.Atomic
-	install.Timeout = installConfig.Timeout.Duration
+
+	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeInstallingRelease)
+	if err != nil {
+		return nil, err
+	}
+	install.Timeout = timeout
 
 	logger.Info(fmt.Sprintf("installing helm chart release %s", c.releaseName))
 
@@ -179,7 +193,12 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 	upgrade.Namespace = c.defaultNamespace
 	upgrade.MaxHistory = 10
 	upgrade.Atomic = upgradeConfig.Atomic
-	upgrade.Timeout = upgradeConfig.Timeout.Duration
+
+	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeUpgradingRelease)
+	if err != nil {
+		return nil, err
+	}
+	upgrade.Timeout = timeout
 
 	logger.Info(fmt.Sprintf("upgrading helm chart release %s", c.releaseName))
 
@@ -217,14 +236,14 @@ func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {
 		return err
 	}
 
-	uninstallConfig, err := newUninstallConfiguration(c.helmConfig)
+	uninstall := action.NewUninstall(actionConfig)
+	uninstall.KeepHistory = false
+
+	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeDeletingRelease)
 	if err != nil {
 		return err
 	}
-
-	uninstall := action.NewUninstall(actionConfig)
-	uninstall.KeepHistory = false
-	uninstall.Timeout = uninstallConfig.Timeout.Duration
+	uninstall.Timeout = timeout
 
 	_, err = uninstall.Run(c.releaseName)
 	if err != nil {

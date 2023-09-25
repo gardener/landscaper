@@ -14,13 +14,10 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
-	"github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 )
@@ -71,18 +68,13 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 			By("create test installations")
 			dummy_inst := &lsv1alpha1.Installation{}
 			mock_inst := &lsv1alpha1.Installation{}
-			mock_di_prog := &lsv1alpha1.DeployItem{}
 			// creates deploy item without responsible deployer => pickup timeout
 			utils.ExpectNoError(utils.ReadResourceFromFile(dummy_inst, path.Join(testdataDir, "00-dummy-installation.yaml")))
 			// creates valid mock deploy item => no timeout
 			utils.ExpectNoError(utils.ReadResourceFromFile(mock_inst, path.Join(testdataDir, "01-mock-installation.yaml")))
 			// creates mock deploy item in 'Progressing' phase => first progressing timeout, then aborting timeout
-			utils.ExpectNoError(utils.ReadResourceFromFile(mock_di_prog, path.Join(testdataDir, "02-progressing-mock-di.yaml")))
-			Expect(mock_di_prog.Spec.Timeout).NotTo(BeNil(), "timeout should be specified in the mock deploy item manifest")
-			deployItemProgressingTimeout := mock_di_prog.Spec.Timeout.Duration
 			dummy_inst.SetNamespace(state.Namespace)
 			mock_inst.SetNamespace(state.Namespace)
-			mock_di_prog.SetNamespace(state.Namespace)
 			lsv1alpha1helper.SetOperation(&dummy_inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
 			lsv1alpha1helper.SetOperation(&mock_inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
 			utils.ExpectNoError(state.Create(ctx, dummy_inst))
@@ -124,33 +116,12 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 				// return true if both deploy items could be fetched
 				return true, err
 			}, waitingForDeployItems, resyncTime).Should(BeTrue(), "unable to fetch deploy items")
-			utils.ExpectNoError(state.Create(ctx, mock_di_prog))
-			// Set a new jobID to trigger a reconcile of the deploy item
-			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(mock_di_prog), mock_di_prog)).To(Succeed())
-			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, mock_di_prog, metav1.Now())).To(Succeed())
 
 			By("check pickup")
 			Expect(deployitem.HasBeenPickedUp(dummy_inst_di)).To(BeFalse(), "dummy deploy item should not have been picked up")
 
-			By("wait for progressing timeout to happen")
-			time.Sleep(deployItemProgressingTimeout)
-
-			By("verify progressing timeout")
-			// expected state:
-			// - mock_di_prog should have had a progressing timeout (abort operation annotation and abort timestamp annotation, but not yet failed)
-			Eventually(func() lsv1alpha1.DeployItem { // check mock_di_prog first, because it's the only one that will change again (aborting timeout)
-				utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKeyFromObject(mock_di_prog), mock_di_prog))
-				return *mock_di_prog
-			}, 4*waitingForReconcile, resyncTime).Should(MatchFields(IgnoreExtras, Fields{
-				"Status": MatchFields(IgnoreExtras, Fields{
-					"Phase": Equal(lsv1alpha1.DeployItemPhases.Failed),
-				}),
-			}))
-
 			By("wait for pickup timeout to happen")
-			if deployItemPickupTimeout > deployItemProgressingTimeout {
-				time.Sleep(deployItemPickupTimeout - deployItemProgressingTimeout)
-			}
+			time.Sleep(deployItemPickupTimeout)
 
 			By("verify pickup timeout")
 			// expected state:
@@ -178,7 +149,5 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 				}),
 			}), "deploy item of the mock installation should not have had a pickup timeout")
 		})
-
 	})
-
 }

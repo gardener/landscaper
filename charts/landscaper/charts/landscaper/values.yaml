@@ -90,8 +90,6 @@ landscaper:
   deployItemTimeouts:
     # how long deployers may take to react on changes to deploy items
     pickup: 60m
-    # default for how long deployers may take to process a deploy item before failing, can be overwritten via the deploy item's 'spec.timeout' field
-    progressingDefault: 10m
 
 #  healthCheck:
 #    name: "test"

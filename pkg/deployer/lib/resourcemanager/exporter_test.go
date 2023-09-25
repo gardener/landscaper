@@ -17,16 +17,16 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = Describe("Exporter", func() {
 
 	var (
-		ctx     context.Context
-		cancel  context.CancelFunc
-		state   *envtest.State
-		timeout = 20 * time.Second
+		ctx    context.Context
+		cancel context.CancelFunc
+		state  *envtest.State
 	)
 
 	BeforeEach(func() {
@@ -35,11 +35,13 @@ var _ = Describe("Exporter", func() {
 		var err error
 		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
+		timeout.ActivateIgnoreTimeoutChecker()
 	})
 
 	AfterEach(func() {
 		cancel()
 		Expect(state.CleanupState(context.TODO()))
+		timeout.ActivateStandardTimeoutChecker()
 	})
 
 	It("should export from a existing configmap", func() {
@@ -157,8 +159,7 @@ var _ = Describe("Exporter", func() {
 			},
 		}
 		res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
-			KubeClient:     testenv.Client,
-			DefaultTimeout: &timeout,
+			KubeClient: testenv.Client,
 		}).Export(ctx, exports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(Equal(map[string]interface{}{
@@ -193,8 +194,7 @@ var _ = Describe("Exporter", func() {
 			},
 		}
 		_, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
-			KubeClient:     testenv.Client,
-			DefaultTimeout: &timeout,
+			KubeClient: testenv.Client,
 		}).Export(ctx, exports)
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -240,8 +240,7 @@ var _ = Describe("Exporter", func() {
 				},
 			}
 			res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
-				KubeClient:     testenv.Client,
-				DefaultTimeout: &timeout,
+				KubeClient: testenv.Client,
 			}).Export(ctx, exports)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(Equal(map[string]interface{}{
@@ -292,8 +291,7 @@ var _ = Describe("Exporter", func() {
 				},
 			}
 			res, err := resourcemanager.NewExporter(resourcemanager.ExporterOptions{
-				KubeClient:     testenv.Client,
-				DefaultTimeout: &timeout,
+				KubeClient: testenv.Client,
 			}).Export(ctx, exports)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(Equal(map[string]interface{}{
