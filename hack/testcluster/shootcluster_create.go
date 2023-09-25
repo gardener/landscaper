@@ -43,6 +43,7 @@ type CreateShootClusterOptions struct {
 	NumClustersStartDeleteOldest int
 	DurationForClusterDeletion   string
 	PrID                         string
+	UseOCMLib                    bool
 }
 
 // AddFlags adds flags for the options to a flagset
@@ -58,6 +59,7 @@ func (o *CreateShootClusterOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&o.NumClustersStartDeleteOldest, "num-clusters-start-delete-oldest", 10, "number of clusters to start deletion of the oldest")
 	fs.StringVar(&o.DurationForClusterDeletion, "duration-for-cluster-deletion", "48h", "test cluster existing longer than this will be deleted")
 	fs.StringVar(&o.PrID, "pr-id", "0", "ID number of the PR, 0 if executed locally, 1 if triggered by head update")
+	fs.BoolVar(&o.UseOCMLib, "use-ocm-lib", false, "determine whether ocm-lib or component-cli handles component descriptors")
 }
 
 func (o *CreateShootClusterOptions) Complete() error {
@@ -102,7 +104,8 @@ func (o *CreateShootClusterOptions) Run(ctx context.Context) error {
 	log := utils.NewLogger().WithTimestamp()
 
 	shootClusterManager, err := pkg.NewShootClusterManager(log, o.GardenClusterKubeconfigPath, o.Namespace,
-		o.AuthDirectoryPath, o.MaxNumOfClusters, o.NumClustersStartDeleteOldest, o.DurationForClusterDeletion, o.PrID)
+		o.AuthDirectoryPath, o.MaxNumOfClusters, o.NumClustersStartDeleteOldest, o.DurationForClusterDeletion, o.PrID,
+		o.UseOCMLib)
 
 	if err != nil {
 		return err

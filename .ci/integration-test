@@ -9,6 +9,8 @@
 # is integrated in the test cluster name indicating that the tests were triggered by a head update commit or a new release.
 # The cluster name has the format it-pr1-<4-digits>.
 
+USE_OCM_LIB="true"
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -24,5 +26,5 @@ cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 export SOURCE_PATH
 
-./.ci/int-test "1" | tee $FULL_INTEGRATION_TEST_PATH/ttt.log
+./.ci/int-test "1" $USE_OCM_LIB | tee $FULL_INTEGRATION_TEST_PATH/ttt.log
 
