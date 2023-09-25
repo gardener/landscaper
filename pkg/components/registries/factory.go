@@ -6,6 +6,7 @@ package registries
 
 import (
 	"context"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
