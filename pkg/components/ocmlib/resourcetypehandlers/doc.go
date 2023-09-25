@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Package resourcetypehandlers provides handler for specific resource types. These handlers are responsible for
 // accessing the content of resources of the respective type. This may include caching as well as several other
 // pre- and postprocessing steps necessary to return the downloaded content in a suitable abstract data type.
