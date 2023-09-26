@@ -140,4 +140,5 @@ landscaper:
           trait_depends:
           - release
           depends:
-          - integration_test
+          - integration_test_cnudie
+          - integration_test_ocm
