@@ -25,6 +25,7 @@ SOURCE_PATH="$(pwd)"
 export SOURCE_PATH
 
 echo "Starting Landscaper integration tests in $SOURCE_PATH"
+echo " with use_ocm_lib $USE_OCM_LIB"
 
 # install bash for the get version command
 if ! which bash 1>/dev/null; then

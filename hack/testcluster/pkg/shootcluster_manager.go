@@ -546,8 +546,8 @@ func (o *ShootClusterManager) deleteOutdatedShootCluster(ctx context.Context, ga
 		clusterNamePrefix := clusterName[:len(clusterName)-4]
 		newClusterNamePrefix := newClusterName[:len(newClusterName)-4]
 
-		libID := string(clusterName[3:4])
-		newLibID := string(newClusterName[3:4])
+		libID := clusterName[3:4]
+		newLibID := newClusterName[3:4]
 
 		if hasDeletionTimestamp {
 			continue

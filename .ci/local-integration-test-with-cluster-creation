@@ -64,6 +64,7 @@ echo "Source path: ${SOURCE_PATH}"
 echo "Gardener kubeconfig path: ${GARDENER_KUBECONFIG_PATH}"
 echo "Shoot cluster namespace: ${NAMESPACE}"
 echo "Landscaper version: ${VERSION}"
+echo "Use OCM Lib ${USE_OCM_LIB}"
 
 TMP="${SOURCE_PATH}/tmp-int-test-cluster"
 rm -f -r $TMP

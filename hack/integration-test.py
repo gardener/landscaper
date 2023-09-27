@@ -26,6 +26,7 @@ use_ocm_lib = os.environ["USE_OCM_LIB"]
 
 factory = ctx().cfg_factory()
 print("Starting integration tests with version " + version + " in sourcepath " + source_path)
+print(" with use_ocm_lib ", use_ocm_lib)
 
 landscape_kubeconfig = factory.kubernetes("landscaper-integration-test")
 
