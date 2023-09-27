@@ -1284,11 +1284,6 @@ func (in *ExecutionSpec) DeepCopyInto(out *ExecutionSpec) {
 		*out = make([]byte, len(*in))
 		copy(*out, *in)
 	}
-	if in.RegistryPullSecrets != nil {
-		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
-		*out = make([]ObjectReference, len(*in))
-		copy(*out, *in)
-	}
 	return
 }
 

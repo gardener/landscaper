@@ -47,7 +47,6 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 		item.DeployItem.GenerateName = fmt.Sprintf("%s-%s-", o.exec.Name, item.Info.Name)
 		item.DeployItem.Namespace = o.exec.Namespace
 	}
-	item.DeployItem.Spec.RegistryPullSecrets = o.exec.Spec.RegistryPullSecrets
 
 	if _, err := o.Writer().CreateOrUpdateDeployItem(ctx, read_write_layer.W000036, item.DeployItem, func() error {
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)

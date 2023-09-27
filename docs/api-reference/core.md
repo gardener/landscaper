@@ -951,23 +951,6 @@ DeployItemTemplateList
 <p>DeployItemsCompressed as zipped byte array</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -3731,23 +3714,6 @@ DeployItemTemplateList
 <p>DeployItemsCompressed as zipped byte array</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus
@@ -5024,7 +4990,6 @@ ObjectReference
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionSpec">ExecutionSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>, 
