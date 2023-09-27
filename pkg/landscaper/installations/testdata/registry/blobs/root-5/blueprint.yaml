@@ -10,11 +10,14 @@ annotations:
   local/version: 1.0.0
 
 imports:
-- name: cd-from-registry
-  type: componentDescriptor
-- name: cd-from-configmap
-  type: componentDescriptor
-- name: cd-from-secret
-  type: componentDescriptor
-- name: cdlist
-  type: componentDescriptorList
+- name: defaulted
+  type: data
+  schema:
+    type: object
+    properties:
+      foo:
+        type: string
+  required: false
+  default:
+    value:
+      foo: bar
