@@ -6,6 +6,7 @@ package cnudie
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
@@ -53,6 +54,10 @@ func (r *Resource) GetResource() (*types.Resource, error) {
 
 func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
 	handler := r.handlerRegistry.Get(r.GetType())
+	if handler != nil {
+		return handler.GetResourceContent(ctx, r, r.blobResolver)
+	}
+	return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
 	return handler.GetResourceContent(ctx, r, r.blobResolver)
 }
 

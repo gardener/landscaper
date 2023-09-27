@@ -6,6 +6,7 @@ package ocmlib
 
 import (
 	"context"
+	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
@@ -87,7 +88,10 @@ func (r *Resource) GetResource() (*types.Resource, error) {
 
 func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
 	handler := r.handlerRegistry.Get(r.GetType())
-	return handler.GetResourceContent(ctx, r, r.resourceAccess)
+	if handler != nil {
+		return handler.GetResourceContent(ctx, r, r.resourceAccess)
+	}
+	return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
 }
 
 func (r *Resource) GetCachingIdentity(ctx context.Context) string {

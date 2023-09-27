@@ -41,5 +41,9 @@ func (r *ResourceHandlerRegistry) Get(typ string) ResourceHandler {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	return r.handlers[typ]
+	res, ok := r.handlers[typ]
+	if !ok {
+		return nil
+	}
+	return res
 }

@@ -15,7 +15,6 @@ var Registry = New()
 
 type ResourceHandler interface {
 	GetResourceContent(ctx context.Context, resource model.Resource, blobResolver model.BlobResolver) (*model.TypedResourceContent, error)
-	// Prepare(ctx context.Context, data io.Reader, info *types.BlobInfo) (*model.TypedResourceContent, error)
 }
 
 type ResourceHandlerRegistry struct {
@@ -40,5 +39,9 @@ func (r *ResourceHandlerRegistry) Get(typ string) ResourceHandler {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	return r.handlers[typ]
+	res, ok := r.handlers[typ]
+	if !ok {
+		return nil
+	}
+	return res
 }
