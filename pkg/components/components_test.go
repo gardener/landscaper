@@ -6,6 +6,7 @@ package components_test
 
 import (
 	"context"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"path/filepath"
 	"reflect"
 
@@ -41,6 +42,17 @@ var (
 }
 `
 
+	referencedComponentReference = `
+{
+  "repositoryContext": {
+    "type": "local",
+    "filePath": "./"
+  },
+  "componentName": "example.com/referenced-landscaper-component",
+  "version": "1.0.0"
+}
+`
+
 	repositoryContext = `
 {
     "type": "local",
@@ -51,14 +63,13 @@ var (
 
 var _ = Describe("facade implementation compatibility tests", func() {
 	ctx := context.Background()
-	ocmfactory := ocmlib.Factory{}
-	cnudiefactory := cnudie.Factory{}
+	ocmfactory := &ocmlib.Factory{}
+	cnudiefactory := &cnudie.Factory{}
 
 	It("compatibility of facade implementations and component descriptor versions", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref))
 
-		// localFSAccess := Must(componentresolvers.NewLocalFilesystemBlobAccess("bp.tar", ""))
 		oRaForCnudie := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil))
 		oRaForOcm := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil))
 		cnudieRa := Must(cnudiefactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil))
@@ -128,4 +139,34 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(reflect.DeepEqual(res1, res2))
 		Expect(reflect.DeepEqual(res1, res3))
 	})
+
+	It("handling resources of unknown resource type with ocmlib", func() {
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
+
+		registryAccess := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil))
+		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		res := Must(compvers.GetResource("genericresource", nil))
+
+		typedContent, err := res.GetTypedContent(ctx)
+		Expect(err).To(HaveOccurred())
+		Expect(typedContent).To(BeNil())
+	})
+
+	DescribeTable("handling resources of unknown resource type", func(factory model.Factory, registryRootPath string) {
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
+
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		res := Must(compvers.GetResource("genericresource", nil))
+
+		typedContent, err := res.GetTypedContent(ctx)
+		Expect(err).To(HaveOccurred())
+		Expect(typedContent).To(BeNil())
+	},
+		Entry("with cnudie", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH),
+		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH),
+		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH),
+	)
 })
