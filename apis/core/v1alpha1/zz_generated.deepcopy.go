@@ -747,11 +747,6 @@ func (in *DeployItemSpec) DeepCopyInto(out *DeployItemSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.RegistryPullSecrets != nil {
-		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
-		*out = make([]ObjectReference, len(*in))
-		copy(*out, *in)
-	}
 	if in.Timeout != nil {
 		in, out := &in.Timeout, &out.Timeout
 		*out = new(Duration)

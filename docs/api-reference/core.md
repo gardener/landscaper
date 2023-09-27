@@ -563,23 +563,6 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </tr>
 <tr>
 <td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>timeout</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.Duration">
@@ -2773,23 +2756,6 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </td>
 <td>
 <p>Configuration contains the deployer type specific configuration.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
 <tr>
