@@ -11,6 +11,7 @@ set -o pipefail
 KUBECONFIG_PATH=$1
 VERSION=$2
 TMP=$3
+USE_OCM_LIB=$4
 
 SOURCE_PATH="$(dirname $0)/../.."
 cd "${SOURCE_PATH}"
@@ -45,6 +46,7 @@ landscaper:
     deployItemTimeouts:
       pickup: 30s
       abort: 30s
+    useOCMLib: $USE_OCM_LIB
 " > $TMP/values.yaml
 
 touch $TMP/registry-values.yaml
