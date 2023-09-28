@@ -6,9 +6,10 @@ package components_test
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/model"
 	"path/filepath"
 	"reflect"
+
+	"github.com/gardener/landscaper/pkg/components/model"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/vfs"
