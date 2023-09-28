@@ -176,15 +176,6 @@ Blueprints describe formal imports. A formal import parameter has a name and a *
   This type can be used if, instead of a single target object, an arbitrary number of targets should be imported. All targets imported as part of a targetlist import must have the same `targetType`. For more information on how to work with TargetList imports, see the documentation [here](./TargetLists.md).
 
 
-- **`componentDescriptor`**
-
-  This type refers to an import of a component descriptor.
-
-
-- **`componentDescriptorList`**
-
-  Analogous to `targetList`, this type allows importing an arbitrary number of component descriptors.
-
 The imports are described as a list of import declarations in the blueprint top-level field `imports`. An import declaration has the following fields:
 
 - **`name`** *string*
@@ -205,7 +196,7 @@ The imports are described as a list of import declarations in the blueprint top-
 
 - **`default`** *any*
 
-  If the import is not required and not provided by the installation, this default value will be used for it.
+  If the import is not required and not provided by the installation, this default value will be used for it. 
 
 
 - **`imports`** *list of import declarations*
@@ -239,8 +230,9 @@ imports:
       password:
         type: string
   default:
-    username: foo
-    password: bar
+    value: 
+      username: foo
+      password: bar
 - name: mycluster
   type: target
   targetType: kubernetes-cluster # will be defaulted to 'landscaper.gardener.cloud/kubernetes-cluster'
@@ -894,9 +886,6 @@ before putting it as regular installations into the landscaper data plane:
       target: "" # target name
     - name: ""
       targetListRef: "" # references a targetlist import of the parent
-    componentDescriptors:
-    - name: ""
-      dataRef: "" # references a component descriptor (single or list) import of the parent
   #importMappings: {}
 
   exports:
