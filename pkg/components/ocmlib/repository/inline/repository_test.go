@@ -14,10 +14,13 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	tenv "github.com/open-component-model/ocm/pkg/env"
+	. "github.com/open-component-model/ocm/pkg/env/builder"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	. "github.com/open-component-model/ocm/pkg/testutils"
 	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/repository/inline"
 )
 
 const (
@@ -106,7 +109,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 	})
 
 	It("repository with component descriptors and resources stored in distinct directories", func() {
-		spec := Must(NewRepositorySpecV1(env, filepath.Join(DISTINCT_REPOSITORY, "compdescs"), nil, filepath.Join(DISTINCT_REPOSITORY, "blobs")))
+		spec := Must(inline.NewRepositorySpecV1(env, filepath.Join(DISTINCT_REPOSITORY, "compdescs"), nil, filepath.Join(DISTINCT_REPOSITORY, "blobs")))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
 		defer Close(repo)
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
@@ -121,7 +124,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 	})
 
 	It("repository with a directory resource", func() {
-		spec := Must(NewRepositorySpecV1(env, DIRECTORY_REPOSITORY, nil, DIRECTORY_REPOSITORY))
+		spec := Must(inline.NewRepositorySpecV1(env, DIRECTORY_REPOSITORY, nil, DIRECTORY_REPOSITORY))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
 		defer Close(repo)
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
