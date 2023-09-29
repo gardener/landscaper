@@ -55,3 +55,11 @@ func (r Resource) GetBlob(ctx context.Context, writer io.Writer) (*types.BlobInf
 func (r Resource) GetBlobInfo(ctx context.Context) (*types.BlobInfo, error) {
 	return r.blobResolver.Info(ctx, *r.resource)
 }
+
+func (r *Resource) GetCachingIdentity(ctx context.Context) string {
+	blobInfo, _ := r.blobResolver.Info(ctx, *r.resource)
+	if blobInfo == nil {
+		return ""
+	}
+	return blobInfo.Digest
+}

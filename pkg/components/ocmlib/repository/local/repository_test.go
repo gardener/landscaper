@@ -5,17 +5,14 @@
 package local_test
 
 import (
-	"encoding/json"
 	"fmt"
-
+	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	tenv "github.com/open-component-model/ocm/pkg/env"
 	"github.com/open-component-model/ocm/pkg/runtime"
-
-	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 )
 
 const (
