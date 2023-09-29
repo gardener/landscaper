@@ -126,7 +126,7 @@ func (c *ShootClient) GetShootAdminKubeconfig(ctx context.Context, shootName, sh
 	} else if !found {
 		return "", expirationTimestamp, fmt.Errorf("shoot client: could not find expiration timestamp in result")
 	}
-	err = expirationTimestamp.UnmarshalJSON([]byte(rawExpirationTimestamp))
+	err = expirationTimestamp.UnmarshalJSON([]byte(fmt.Sprintf("\"%s\"", rawExpirationTimestamp)))
 	if err != nil {
 		return "", expirationTimestamp, fmt.Errorf("error converting raw expiration timestamp '%s' to metav1.Time: %w", rawExpirationTimestamp, err)
 	}

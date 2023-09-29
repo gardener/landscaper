@@ -296,13 +296,13 @@ func getShootAdminKubeconfigSpiffFunc(targetResolver targetresolver.TargetResolv
 		}
 
 		targetObj := args[3]
-		targetBytes, err := json.Marshal(targetObj)
+		targetBytes, err := spiffyaml.Marshal(spiffyaml.NewNode(targetObj, ""))
 		if err != nil {
 			return info.Error("templating function getShootAdminKubeconfig expects a target object as 4th argument: error during marshaling: %w", err)
 		}
 
 		target := &lsv1alpha1.Target{}
-		err = json.Unmarshal(targetBytes, target)
+		err = yaml.Unmarshal(targetBytes, target)
 		if err != nil {
 			return info.Error("templating function getShootAdminKubeconfig expects a target object as 4th argument: error during unmarshaling: %w", err)
 		}
@@ -319,7 +319,7 @@ func getShootAdminKubeconfigSpiffFunc(targetResolver targetresolver.TargetResolv
 		}
 
 		if includeExpirationTimestamp {
-			return kubeconfigWithExpirationTimestamp(kcfg, expirationTimestamp), info, true
+			return kubeconfigWithExpirationTimestamp(kcfg, expirationTimestamp, info, binding)
 		}
 		return kcfg, info, true
 	}
@@ -348,13 +348,13 @@ func getServiceAccountKubeconfigSpiffFunc(targetResolver targetresolver.TargetRe
 		}
 
 		targetObj := args[3]
-		targetBytes, err := json.Marshal(targetObj)
+		targetBytes, err := spiffyaml.Marshal(spiffyaml.NewNode(targetObj, ""))
 		if err != nil {
 			return info.Error("templating function getServiceAccountToken expects a target object as 4th argument: error during marshaling: %w", err)
 		}
 
 		target := &lsv1alpha1.Target{}
-		err = json.Unmarshal(targetBytes, target)
+		err = yaml.Unmarshal(targetBytes, target)
 		if err != nil {
 			return info.Error("templating function getServiceAccountToken expects a target object as 4th argument: error during unmarshaling: %w", err)
 		}
@@ -371,7 +371,7 @@ func getServiceAccountKubeconfigSpiffFunc(targetResolver targetresolver.TargetRe
 		}
 
 		if includeExpirationTimestamp {
-			return kubeconfigWithExpirationTimestamp(kcfg, expirationTimestamp), info, true
+			return kubeconfigWithExpirationTimestamp(kcfg, expirationTimestamp, info, binding)
 		}
 		return kcfg, info, true
 	}
@@ -395,13 +395,13 @@ func getOidcKubeconfigSpiffFunc(targetResolver targetresolver.TargetResolver) dy
 		}
 
 		targetObj := args[2]
-		targetBytes, err := json.Marshal(targetObj)
+		targetBytes, err := spiffyaml.Marshal(spiffyaml.NewNode(targetObj, ""))
 		if err != nil {
 			return info.Error("templating function getOidcKubeconfig expects a target object as 3rd argument: error during marshaling: %w", err)
 		}
 
 		target := &lsv1alpha1.Target{}
-		err = json.Unmarshal(targetBytes, target)
+		err = yaml.Unmarshal(targetBytes, target)
 		if err != nil {
 			return info.Error("templating function getOidcKubeconfig expects a target object as 3rd argument: error during unmarshaling: %w", err)
 		}
@@ -437,10 +437,27 @@ func toInt64(value interface{}) (int64, error) {
 	}
 }
 
-func kubeconfigWithExpirationTimestamp(kcfg string, expirationTimestamp metav1.Time) map[string]interface{} {
-	return map[string]interface{}{
+func kubeconfigWithExpirationTimestamp(kcfg string, expirationTimestamp metav1.Time, info dynaml.EvaluationInfo, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	rawData := map[string]interface{}{
 		"kubeconfig":                  kcfg,
 		"expirationTimestamp":         expirationTimestamp.Unix(),
 		"expirationTimestampReadable": expirationTimestamp.Format(time.RFC3339),
 	}
+
+	data, err := yaml.Marshal(rawData)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	node, err := spiffyaml.Parse("", data)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	result, err := binding.Flow(node, false)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	return result.Value(), info, true
 }
