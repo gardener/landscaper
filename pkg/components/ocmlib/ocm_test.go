@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -93,7 +94,7 @@ var (
 
 var _ = Describe("ocm-lib facade implementation", func() {
 	ctx := context.Background()
-	factory := Factory{}
+	factory := ocmlib.Factory{}
 
 	It("get component version from component descriptor reference (from local repository)", func() {
 		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion
@@ -149,7 +150,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		// Create a Registry Access and check whether credentials are properly set and can be found
 		r := Must(factory.NewRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
 			ConfigFiles: []string{"testdata/dockerconfig.json"},
-		}, nil)).(*RegistryAccess)
+		}, nil)).(*ocmlib.RegistryAccess)
 		creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
@@ -162,7 +163,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 			Data: map[string][]byte{corev1.DockerConfigJsonKey: dockerconfigdata},
 		}}
 		// Create a Registry Access and check whether credentials are properly set and can be found
-		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
+		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
 		creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
@@ -174,7 +175,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		secrets := []corev1.Secret{{
 			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
 		}}
-		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
+		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
 		creds := Must(identity.GetCredentials(r.OCMContext(), HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
