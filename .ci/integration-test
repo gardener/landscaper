@@ -9,13 +9,20 @@
 # is integrated in the test cluster name indicating that the tests were triggered by a head update commit or a new release.
 # The cluster name has the format it-pr1-<4-digits>.
 
-USE_OCM_LIB=$1
+USE_OCM_LIB=${1}
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
 CURRENT_PATH="$(pwd)"
+echo $USE_OCM_LIB
+if [ $USE_OCM_LIB = true ]; then
+  INTEGRATION_TEST_PATH=$INTEGRATION_TEST_OCM_PATH
+else
+  INTEGRATION_TEST_PATH=$INTEGRATION_TEST_CNUDIE_PATH
+fi
+
 cd "${INTEGRATION_TEST_PATH}"
 FULL_INTEGRATION_TEST_PATH="$(pwd)"
 export FULL_INTEGRATION_TEST_PATH
