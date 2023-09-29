@@ -77,7 +77,7 @@ landscaper:
           trait_depends:
           - publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
-          output_dir: 'integration_test_ocm'
+          output_dir: 'integration_test_cnudie'
         integration_test_ocm:
           execute:
           - integration-test
