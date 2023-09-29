@@ -12,6 +12,7 @@ import (
 )
 
 type Resource interface {
+	TypedResourceProvider
 
 	// GetName returns the name by which the resource can be identified among all resources of a component version.
 	GetName() string

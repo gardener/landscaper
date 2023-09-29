@@ -118,7 +118,8 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 
-		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
+		cd, _ := cv.GetComponentDescriptor()
+		Expect(reflect.DeepEqual(cd, compdesc)).To(BeTrue())
 	})
 
 	It("get component descriptor with v3 as input", func() {
@@ -134,7 +135,8 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 
-		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
+		cd, _ := cv.GetComponentDescriptor()
+		Expect(reflect.DeepEqual(cd, compdesc)).To(BeTrue())
 	})
 
 	It("dockerconfig credentials from filesystem", func() {
