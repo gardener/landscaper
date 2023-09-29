@@ -16,8 +16,8 @@ set -o nounset
 set -o pipefail
 
 CURRENT_PATH="$(pwd)"
-echo $USE_OCM_LIB
-if [ $USE_OCM_LIB = true ]; then
+echo "USE_OCM_LIB $USE_OCM_LIB"
+if [ $USE_OCM_LIB = True ]; then
   INTEGRATION_TEST_PATH=$INTEGRATION_TEST_OCM_PATH
 else
   INTEGRATION_TEST_PATH=$INTEGRATION_TEST_CNUDIE_PATH
