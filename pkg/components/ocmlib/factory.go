@@ -47,7 +47,8 @@ import (
 
 type Factory struct{}
 
-var _ model.Factory = &Factory{}
+// TODO
+//var _ model.Factory = &Factory{}
 
 func (*Factory) SetApplicationLogger(logger logging.Logger) {
 	mandellog.DefaultContext().SetBaseLogger(logger.Logr())

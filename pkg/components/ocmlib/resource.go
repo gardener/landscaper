@@ -6,8 +6,6 @@ package ocmlib
 
 import (
 	"context"
-	"fmt"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	"github.com/open-component-model/ocm/pkg/common"
@@ -30,10 +28,12 @@ type Resource struct {
 }
 
 func NewResource(access ocm.ResourceAccess) model.Resource {
-	return &Resource{
-		resourceAccess:  access,
-		handlerRegistry: registries.Registry,
-	}
+	// TODO
+	//return &Resource{
+	//	resourceAccess:  access,
+	//	handlerRegistry: registries.Registry,
+	//}
+	return nil
 }
 
 func (r *Resource) GetName() string {
@@ -87,11 +87,13 @@ func (r *Resource) GetResource() (*types.Resource, error) {
 }
 
 func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
-	handler := r.handlerRegistry.Get(r.GetType())
-	if handler != nil {
-		return handler.GetResourceContent(ctx, r, r.resourceAccess)
-	}
-	return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
+	return nil, model.NotImplemented()
+
+	//handler := r.handlerRegistry.Get(r.GetType())
+	//if handler != nil {
+	//	return handler.GetResourceContent(ctx, r, r.resourceAccess)
+	//}
+	//return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
 }
 
 func (r *Resource) GetCachingIdentity(ctx context.Context) string {

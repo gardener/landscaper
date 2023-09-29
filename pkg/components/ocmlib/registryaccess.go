@@ -47,11 +47,12 @@ func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) (mod
 		return nil, err
 	}
 
-	return &ComponentVersion{
-		registryAccess:         r,
-		componentVersionAccess: cv,
-		componentDescriptorV2:  lscd,
-	}, nil
+	//return &ComponentVersion{
+	//	registryAccess:         r,
+	//	componentVersionAccess: cv,
+	//	componentDescriptorV2:  lscd,
+	//}, nil
+	return nil, model.NotImplemented()
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {

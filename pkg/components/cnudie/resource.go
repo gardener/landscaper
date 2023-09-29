@@ -7,8 +7,9 @@ package cnudie
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/ocmlib/registries"
 	"io"
+
+	"github.com/gardener/landscaper/pkg/components/ocmlib/registries"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
