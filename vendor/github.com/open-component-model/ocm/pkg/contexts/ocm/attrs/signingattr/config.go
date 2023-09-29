@@ -16,7 +16,6 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/signing"
-	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const (
@@ -82,8 +81,7 @@ func (k *KeySpec) Get() (interface{}, error) {
 	if fs == nil {
 		fs = osfs.New()
 	}
-
-	return utils.ReadFile(fs, k.Path)
+	return vfs.ReadFile(fs, k.Path)
 }
 
 // New creates a new memory ConfigSpec.

@@ -5,7 +5,6 @@
 package testutils
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -14,52 +13,11 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
-type Substitutions = map[string]string
-
-func SubstList(values ...string) map[string]string {
-	r := map[string]string{}
-	for i := 0; i+1 < len(values); i += 2 {
-		r[values[i]] = values[i+1]
-	}
-	return r
-}
-
-func SubstFrom(v interface{}, prefix ...string) map[string]string {
-	data, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-	var values map[string]string
-	err = json.Unmarshal(data, &values)
-	if err != nil {
-		panic(err)
-	}
-	if len(prefix) > 0 {
-		p := strings.Join(prefix, "")
-		n := map[string]string{}
-		for k, v := range values {
-			n[p+k] = v
-		}
-		values = n
-	}
-	return values
-}
-
-func MergeSubst(subst ...map[string]string) map[string]string {
-	r := map[string]string{}
-	for _, s := range subst {
-		for k, v := range s {
-			r[k] = v
-		}
-	}
-	return r
-}
-
 // StringEqualTrimmedWithContext compares two trimmed strings and provides the complete actual value
 // as error context.
 // If value mappings are given, the expected string is evaluated by envsubst, first.
 // It is an error for actual to be nil.  Use BeNil() instead.
-func StringEqualTrimmedWithContext(expected string, subst ...Substitutions) types.GomegaMatcher {
+func StringEqualTrimmedWithContext(expected string, subst ...map[string]string) types.GomegaMatcher {
 	var err error
 	expected, err = eval(expected, subst...)
 	if err != nil {
@@ -75,7 +33,7 @@ func StringEqualTrimmedWithContext(expected string, subst ...Substitutions) type
 // as error context.
 // If value mappings are given, the expected string is evaluated by envsubst, first.
 // It is an error for actual to be nil.  Use BeNil() instead.
-func StringEqualWithContext(expected string, subst ...Substitutions) types.GomegaMatcher {
+func StringEqualWithContext(expected string, subst ...map[string]string) types.GomegaMatcher {
 	var err error
 	expected, err = eval(expected, subst...)
 	if err != nil {
@@ -96,9 +54,9 @@ func (matcher *StringEqualMatcher) Match(actual interface{}) (success bool, err 
 		return false, fmt.Errorf("Refusing to compare <nil> to <string>.")
 	}
 
-	s, err := AsString(actual)
-	if err != nil {
-		return false, err
+	s, ok := actual.(string)
+	if !ok {
+		return false, fmt.Errorf("Actual value is no string, but a %T.", actual)
 	}
 	if matcher.Trim {
 		return strings.TrimSpace(s) == strings.TrimSpace(matcher.Expected), nil
@@ -107,8 +65,8 @@ func (matcher *StringEqualMatcher) Match(actual interface{}) (success bool, err 
 }
 
 func (matcher *StringEqualMatcher) FailureMessage(actual interface{}) (message string) {
-	actualString, err := AsString(actual)
-	if err == nil {
+	actualString, actualOK := actual.(string)
+	if actualOK {
 		compare, expected := actualString, matcher.Expected
 		if matcher.Trim {
 			compare = strings.TrimSpace(actualString)
@@ -124,21 +82,17 @@ func (matcher *StringEqualMatcher) FailureMessage(actual interface{}) (message s
 }
 
 func (matcher *StringEqualMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	actualString, err := AsString(actual)
-	if err == nil {
-		return format.Message(actualString, "not to equal", matcher.Expected)
-	}
 	return format.Message(actual, "not to equal", matcher.Expected)
 }
 
-func eval(expected string, subst ...Substitutions) (string, error) {
+func eval(expected string, subst ...map[string]string) (string, error) {
 	if len(subst) > 0 {
 		return envsubst.Eval(expected, stringmapping(subst...))
 	}
 	return expected, nil
 }
 
-func stringmapping(values ...Substitutions) func(variable string) string {
+func stringmapping(values ...map[string]string) func(variable string) string {
 	return func(variable string) string {
 		for _, m := range values {
 			if v, ok := m[variable]; ok {

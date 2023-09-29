@@ -14,7 +14,6 @@ package jsonv2
 
 import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/normalizations/rules"
 	"github.com/open-component-model/ocm/pkg/signing"
 	"github.com/open-component-model/ocm/pkg/signing/norm/jcs"
 )
@@ -33,33 +32,34 @@ func (m normalization) Normalize(cd *compdesc.ComponentDescriptor) ([]byte, erro
 }
 
 // CDExcludes describes the fields relevant for Signing
-// ATTENTION: if changed, please adapt the Equivalent Functions
+// ATTENTION: if changed, please adapt the HashEqual Functions
 // in the generic part, accordingly.
 var CDExcludes = signing.MapExcludes{
 	"meta": nil,
 	"component": signing.MapExcludes{
 		"repositoryContexts": nil,
 		"provider": signing.MapExcludes{
-			"labels": rules.LabelExcludes,
+			"labels": signing.LabelExcludes,
 		},
-		"labels": rules.LabelExcludes,
+		"labels": signing.LabelExcludes,
 		"resources": signing.DynamicArrayExcludes{
-			ValueMapper: rules.MapResourcesWithNoneAccess,
+			ValueChecker: signing.IgnoreResourcesWithNoneAccess,
 			Continue: signing.MapExcludes{
 				"access": nil,
 				"srcRef": nil,
-				"labels": rules.LabelExcludes,
+				"labels": signing.LabelExcludes,
 			},
 		},
-		"sources": signing.ArrayExcludes{
+		"sources": signing.DynamicArrayExcludes{
+			ValueChecker: signing.IgnoreResourcesWithNoneAccess,
 			Continue: signing.MapExcludes{
 				"access": nil,
-				"labels": rules.LabelExcludes,
+				"labels": signing.LabelExcludes,
 			},
 		},
 		"references": signing.ArrayExcludes{
 			signing.MapExcludes{
-				"labels": rules.LabelExcludes,
+				"labels": signing.LabelExcludes,
 			},
 		},
 	},

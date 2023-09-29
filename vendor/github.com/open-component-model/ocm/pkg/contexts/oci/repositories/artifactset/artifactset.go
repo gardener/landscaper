@@ -38,16 +38,6 @@ func RetrieveType(m map[string]string) string {
 	return m[TYPE_ANNOTATION]
 }
 
-func RetrieveDigest(idx *artdesc.Index, ref string) digest.Digest {
-	match := matcher(ref)
-	for i, e := range idx.Manifests {
-		if match(&idx.Manifests[i]) {
-			return e.Digest
-		}
-	}
-	return digest.Digest("")
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 type ArtifactSet struct {
@@ -73,10 +63,6 @@ func (a *ArtifactSet) GetIndex() *artdesc.Index {
 
 func (a *ArtifactSet) GetMain() digest.Digest {
 	return a.container.GetMain()
-}
-
-func (a *ArtifactSet) GetDigest(ref string) digest.Digest {
-	return a.container.GetDigest(ref)
 }
 
 func (a *ArtifactSet) GetAnnotation(name string) string {
@@ -251,8 +237,7 @@ func (a *namespaceContainer) GetMain() digest.Digest {
 	if idx.Annotations == nil {
 		return ""
 	}
-	v := RetrieveMainArtifact(idx.Annotations)
-	return a.getDigest(v)
+	return digest.Digest(RetrieveMainArtifact(idx.Annotations))
 }
 
 func (a *namespaceContainer) GetBlobDescriptor(digest digest.Digest) *cpi.Descriptor {
@@ -311,12 +296,6 @@ func (a *namespaceContainer) HasArtifact(ref string) (bool, error) {
 	return a.hasArtifact(ref)
 }
 
-func (a *namespaceContainer) GetDigest(ref string) digest.Digest {
-	a.base.Lock()
-	defer a.base.Unlock()
-	return a.getDigest(ref)
-}
-
 func (a *namespaceContainer) GetArtifact(i support.NamespaceAccessImpl, ref string) (cpi.ArtifactAccess, error) {
 	if a.IsClosed() {
 		return nil, accessio.ErrClosed
@@ -326,7 +305,7 @@ func (a *namespaceContainer) GetArtifact(i support.NamespaceAccessImpl, ref stri
 	return a.getArtifact(i, ref)
 }
 
-func matcher(ref string) func(d *artdesc.Descriptor) bool {
+func (a *namespaceContainer) matcher(ref string) func(d *artdesc.Descriptor) bool {
 	if ok, digest := artdesc.IsDigest(ref); ok {
 		return func(desc *artdesc.Descriptor) bool {
 			return desc.Digest == digest
@@ -347,7 +326,7 @@ func matcher(ref string) func(d *artdesc.Descriptor) bool {
 
 func (a *namespaceContainer) hasArtifact(ref string) (bool, error) {
 	idx := a.GetIndex()
-	match := matcher(ref)
+	match := a.matcher(ref)
 	for i := range idx.Manifests {
 		if match(&idx.Manifests[i]) {
 			return true, nil
@@ -356,14 +335,9 @@ func (a *namespaceContainer) hasArtifact(ref string) (bool, error) {
 	return false, nil
 }
 
-func (a *namespaceContainer) getDigest(ref string) digest.Digest {
-	idx := a.GetIndex()
-	return RetrieveDigest(idx, ref)
-}
-
 func (a *namespaceContainer) getArtifact(impl support.NamespaceAccessImpl, ref string) (cpi.ArtifactAccess, error) {
 	idx := a.GetIndex()
-	match := matcher(ref)
+	match := a.matcher(ref)
 	for i, e := range idx.Manifests {
 		if match(&idx.Manifests[i]) {
 			return a.base.GetArtifact(impl, e.Digest)

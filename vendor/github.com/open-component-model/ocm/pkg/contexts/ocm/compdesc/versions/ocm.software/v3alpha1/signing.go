@@ -7,8 +7,9 @@ package v3alpha1
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/normalizations/rules"
 	"github.com/open-component-model/ocm/pkg/signing"
 	"github.com/open-component-model/ocm/pkg/signing/norm/entry"
 )
@@ -19,29 +20,28 @@ import (
 var CDExcludes = signing.MapExcludes{
 	"repositoryContexts": nil,
 	"metadata": signing.MapExcludes{
-		"labels": rules.LabelExcludes,
+		"labels": signing.LabelExcludes,
 	},
 	"spec": signing.MapExcludes{
 		"provider": signing.MapExcludes{
-			"labels": rules.LabelExcludes,
+			"labels": signing.LabelExcludes,
 		},
-		"resources": signing.DynamicArrayExcludes{
-			ValueMapper: rules.MapResourcesWithNoneAccess,
+		"resources": signing.ArrayExcludes{
 			Continue: signing.MapExcludes{
 				"access": nil,
 				"srcRef": nil,
-				"labels": rules.LabelExcludes,
+				"labels": signing.LabelExcludes,
 			},
 		},
 		"sources": signing.ArrayExcludes{
 			Continue: signing.MapExcludes{
 				"access": nil,
-				"labels": rules.LabelExcludes,
+				"labels": signing.LabelExcludes,
 			},
 		},
 		"references": signing.ArrayExcludes{
 			signing.MapExcludes{
-				"labels": rules.LabelExcludes,
+				"labels": signing.LabelExcludes,
 			},
 		},
 	},
@@ -54,5 +54,6 @@ func (cd *ComponentDescriptor) Normalize(normAlgo string) ([]byte, error) {
 		return nil, fmt.Errorf("unsupported cd normalization %q", normAlgo)
 	}
 	data, err := signing.Normalize(entry.Type, cd, CDExcludes)
+	logrus.Debugf("**** normalized:\n %s\n", string(data))
 	return data, err
 }

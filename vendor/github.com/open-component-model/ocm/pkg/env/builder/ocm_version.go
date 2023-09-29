@@ -27,7 +27,6 @@ func (r *ocmVersion) Type() string {
 
 func (r *ocmVersion) Set() {
 	r.Builder.ocm_vers = r.ComponentVersionAccess
-	r.Builder.ocm_labels = &r.ComponentVersionAccess.GetDescriptor().Labels
 }
 
 func (r *ocmVersion) Close() error {

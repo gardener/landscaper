@@ -155,10 +155,6 @@ func newComponentAccess(r *RepositoryImpl) (cpi.ComponentAccess, error) {
 	return cpi.NewComponentAccess(impl, "component archive"), nil
 }
 
-func (c *ComponentAccessImpl) IsReadOnly() bool {
-	return c.repo.arch.IsReadOnly()
-}
-
 func (c *ComponentAccessImpl) ListVersions() ([]string, error) {
 	return []string{c.repo.arch.GetVersion()}, nil
 }

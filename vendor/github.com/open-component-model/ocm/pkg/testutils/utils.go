@@ -5,7 +5,6 @@
 package testutils
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
@@ -14,12 +13,11 @@ import (
 
 	"github.com/onsi/gomega/types"
 
-	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 func Close(c io.Closer, msg ...interface{}) {
-	DeferWithOffset(1, c.Close, msg...)
+	Defer(c.Close, msg...)
 }
 
 func Defer(f func() error, msg ...interface{}) {
@@ -38,11 +36,6 @@ func DeferWithOffset(o int, f func() error, msg ...interface{}) {
 			Fail(fmt.Sprintf("%s: %s", fmt.Sprintf(msg[0].(string), msg[1:]...), err), 1+o)
 		}
 	}
-}
-
-func NotNil[T any](o T) T {
-	ExpectWithOffset(1, o).NotTo(BeNil())
-	return o
 }
 
 func Must[T any](o T, err error) T {
@@ -83,14 +76,7 @@ func MustBeNonNil[T any](o T) T {
 	return o
 }
 
-func MustBeSuccessful(actual ...interface{}) {
-	if actual[len(actual)-1] == nil {
-		return
-	}
-	err, ok := actual[len(actual)-1].(error)
-	if !ok {
-		Fail("no errors return", 1)
-	}
+func MustBeSuccessful(err error) {
 	ExpectWithOffset(1, err).To(Succeed())
 }
 
@@ -103,54 +89,6 @@ func MustFailWithMessage(err error, msg string) {
 	ExpectWithOffset(1, err.Error()).To(Equal(msg))
 }
 
-func ErrorFrom(args ...interface{}) error {
-	e, ok := args[len(args)-1].(error)
-	if !ok {
-		Fail("no errors return", 1)
-	}
-	return e
-}
-
 func ExpectError(values ...interface{}) types.Assertion {
 	return Expect(values[len(values)-1])
-}
-
-func AsString(actual interface{}) (string, error) {
-	s, ok := actual.(string)
-	if !ok {
-		b, ok := actual.([]byte)
-		if !ok {
-			return "", fmt.Errorf("Actual value is no string (or byte array), but a %T.", actual)
-		}
-		s = string(b)
-	}
-	return s, nil
-}
-
-func AsStructure(actual interface{}, substs ...Substitutions) (interface{}, error) {
-	var err error
-
-	s, ok := actual.(string)
-	if !ok {
-		b, ok := actual.([]byte)
-		if !ok {
-			b, err = json.Marshal(actual)
-			if err != nil {
-				return "", fmt.Errorf("Actual value (%T) is no string, byte array, or serializable object.", actual)
-			}
-		}
-		s = string(b)
-	}
-	if subst := MergeSubst(substs...); len(subst) != 0 {
-		s, err = eval(s, subst)
-		if err != nil {
-			return nil, err
-		}
-	}
-	var value interface{}
-	err = runtime.DefaultYAMLEncoding.Unmarshal([]byte(s), &value)
-	if err != nil {
-		return nil, err
-	}
-	return value, nil
 }

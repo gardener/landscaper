@@ -72,10 +72,6 @@ func (c *ComponentArchive) Close() error {
 	return c.main.Close()
 }
 
-func (c *ComponentArchive) IsReadOnly() bool {
-	return c.container.IsReadOnly()
-}
-
 // Repository returns a non referencing repository which does not
 // close the archive.
 func (c *ComponentArchive) Repository() cpi.Repository {

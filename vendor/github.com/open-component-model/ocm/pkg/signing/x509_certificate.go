@@ -11,8 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-
-	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 // CreateAndVerifyX509CertificateFromFiles creates and verifies a x509 certificate from certificate files.
@@ -22,11 +20,7 @@ func CreateAndVerifyX509CertificateFromFiles(certPath, intermediateCAsCertsPath,
 
 	var rootCACert []byte
 	if rootCACertPath != "" {
-		path, err := utils.ResolvePath(rootCACertPath)
-		if err != nil {
-			return nil, err
-		}
-		rootCACert, err = os.ReadFile(path)
+		rootCACert, err = os.ReadFile(rootCACertPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read root CA certificate file: %w", err)
 		}
@@ -34,21 +28,13 @@ func CreateAndVerifyX509CertificateFromFiles(certPath, intermediateCAsCertsPath,
 
 	var intermediateCAsCerts []byte
 	if intermediateCAsCertsPath != "" {
-		path, err := utils.ResolvePath(intermediateCAsCertsPath)
-		if err != nil {
-			return nil, err
-		}
-		intermediateCAsCerts, err = os.ReadFile(path)
+		intermediateCAsCerts, err = os.ReadFile(intermediateCAsCertsPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read intermediate CAs certificates file: %w", err)
 		}
 	}
 
-	path, err := utils.ResolvePath(certPath)
-	if err != nil {
-		return nil, err
-	}
-	cert, err := os.ReadFile(path)
+	cert, err := os.ReadFile(certPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read certificate file: %w", err)
 	}

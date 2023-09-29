@@ -49,21 +49,7 @@ func FormatMapElements[E any](def string, m map[string]E, desc ...func(E) string
 	})
 }
 
-type DescriptionSource interface {
-	GetDescription() string
-}
-
-type DirectDescriptionSource interface {
-	Description() string
-}
-
 func StringDescription[E any](e E) string {
-	if d, ok := any(e).(DescriptionSource); ok {
-		return d.GetDescription()
-	}
-	if d, ok := any(e).(DirectDescriptionSource); ok {
-		return d.Description()
-	}
 	return fmt.Sprintf("%s", any(e))
 }
 

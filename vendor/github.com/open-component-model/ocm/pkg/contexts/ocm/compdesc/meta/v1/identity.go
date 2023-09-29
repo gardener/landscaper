@@ -9,10 +9,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/equivalent"
-	"github.com/open-component-model/ocm/pkg/logging"
 )
 
 // Identity describes the identity of an object.
@@ -21,11 +19,9 @@ import (
 // +k8s:openapi-gen=true
 type Identity map[string]string
 
-func NewExtraIdentity(extras ...string) Identity {
-	if len(extras) == 0 {
-		return nil
-	}
-	id := Identity{}
+// NewIdentity return a simple name identity.
+func NewIdentity(name string, extras ...string) Identity {
+	id := Identity{SystemIdentityName: name}
 	i := 0
 	for i < len(extras) {
 		if i+1 < len(extras) {
@@ -38,21 +34,11 @@ func NewExtraIdentity(extras ...string) Identity {
 	return id
 }
 
-// NewIdentity return a simple name identity.
-func NewIdentity(name string, extras ...string) Identity {
-	id := NewExtraIdentity(extras...)
-	if id == nil {
-		return Identity{SystemIdentityName: name}
-	}
-	id[SystemIdentityName] = name
-	return id
-}
-
 // Digest returns the object digest of an identity.
 func (i Identity) Digest() []byte {
 	data, err := json.Marshal(i)
 	if err != nil {
-		logging.Logger().LogError(err, "corrupted digest")
+		logrus.Error(err)
 	}
 
 	return data
@@ -70,19 +56,6 @@ func (i Identity) Equals(o Identity) bool {
 		}
 	}
 	return true
-}
-
-func (i Identity) Equivalent(o Identity) equivalent.EqualState {
-	if len(i) != len(o) {
-		return equivalent.StateNotLocalHashEqual()
-	}
-
-	for k, v := range i {
-		if v2, ok := o[k]; !ok || v != v2 {
-			return equivalent.StateNotLocalHashEqual()
-		}
-	}
-	return equivalent.StateEquivalent()
 }
 
 func (i *Identity) Set(name, value string) {
