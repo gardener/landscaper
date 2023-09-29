@@ -27,6 +27,8 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 
+	. "github.com/open-component-model/ocm/pkg/testutils"
+
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
