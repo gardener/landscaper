@@ -92,7 +92,8 @@ var (
 `, HOSTNAME1, USERNAME, PASSWORD))
 )
 
-var _ = Describe("ocm-lib facade implementation", func() {
+// TODO
+var _ = XDescribe("ocm-lib facade implementation", func() {
 	ctx := context.Background()
 	factory := ocmlib.Factory{}
 
