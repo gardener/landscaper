@@ -1,0 +1,61 @@
+type: inline
+fileSystem:
+  component-descriptor1.yaml: |
+    meta:
+      schemaVersion: v2
+    
+    component:
+      name: example.com/root
+      version: 1.0.0
+    
+      provider: internal
+    
+      repositoryContexts:
+        - type: ociRegistry
+          baseUrl: "/"
+    
+      sources: []
+      componentReferences:
+        - name: rootref
+          version: 1.0.0
+          componentName: example.com/rootref
+    
+      resources:
+        - name: test
+          type: PlainText
+          version: 1.0.0
+          relation: local
+          access:
+            type: localFilesystemBlob
+            mediaType: text/plain
+            filename: blob1
+
+  component-descriptor2.yaml: |
+    meta:
+      schemaVersion: v2
+    
+    component:
+      name: example.com/rootref
+      version: 1.0.0
+    
+      provider: internal
+    
+      repositoryContexts:
+        - type: ociRegistry
+          baseUrl: "/"
+    
+      sources: []
+      componentReferences: []
+    
+      resources:
+        - name: test
+          type: PlainText
+          version: 1.0.0
+          relation: local
+          access:
+            type: localFilesystemBlob
+            mediaType: text/plain
+            filename: blob1
+blobFs:
+  blob1: |
+    test
