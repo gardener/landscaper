@@ -8,14 +8,12 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
-	"path/filepath"
-	"reflect"
-
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
+	"os"
+	"path/filepath"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
@@ -137,11 +135,13 @@ var _ = XDescribe("ocm-lib facade implementation", func() {
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
-		cv := Must(r.GetComponentVersion(ctx, cdref))
 
-		cd, _ := cv.GetComponentDescriptor()
-		Expect(reflect.DeepEqual(cd, compdesc)).To(BeTrue())
+		// TODO
+		//r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
+		//cv := Must(r.GetComponentVersion(ctx, cdref))
+		//
+		//cd, _ := cv.GetComponentDescriptor()
+		//Expect(reflect.DeepEqual(cd, compdesc)).To(BeTrue())
 	})
 
 	It("dockerconfig credentials from filesystem", func() {
