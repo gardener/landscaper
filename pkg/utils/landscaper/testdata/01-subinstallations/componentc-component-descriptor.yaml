@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+meta:
+  schemaVersion: v2
+
+component:
+  name: example.com/componentc
+  version: v0.1.0
+
+  provider: internal
+
+  repositoryContexts:
+    - type: ociRegistry
+      baseUrl: "example.com"
+
+  componentReferences: []
+
+  resources:
+    - name: blueprint
+      type: blueprint
+      version: v0.1.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+        filename: c-blueprint
+
+  sources: []

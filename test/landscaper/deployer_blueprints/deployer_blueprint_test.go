@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gardener/landscaper/apis/config"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -18,7 +20,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
@@ -53,12 +54,13 @@ func RenderBlueprint(deployer, componentName, version string) *lsutils.RenderedD
 	err = yaml.Unmarshal(importsData, &imports)
 	Expect(err).ToNot(HaveOccurred())
 
-	registryPath := filepath.Join(projectRoot, ".landscaper", deployer, "example")
-	registryAccess, err := registries.NewFactory().NewLocalRegistryAccess(registryPath)
+	registryPath := filepath.Join(projectRoot, ".landscaper", deployer, "example", "component")
+	localregistryconfig := &config.LocalRegistryConfiguration{RootPath: registryPath}
+	registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 	Expect(err).ToNot(HaveOccurred())
-	repository := componentresolvers.NewLocalRepository(registryPath)
-	repositoryContext, err := cdv2.NewUnstructured(repository)
-	Expect(err).ToNot(HaveOccurred())
+
+	repositoryContext := cdv2.UnstructuredTypedObject{}
+	Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
 	componentVersion, err := registryAccess.GetComponentVersion(context.Background(), &lsv1alpha1.ComponentDescriptorReference{
 		RepositoryContext: &repositoryContext,

@@ -5,19 +5,28 @@
 package ocmlib_test
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-component-model/ocm/pkg/contexts/oci/identity"
 	"github.com/open-component-model/ocm/pkg/runtime"
+
+	"github.com/gardener/landscaper/apis/config"
 
 	. "github.com/open-component-model/ocm/pkg/testutils"
 
@@ -59,48 +68,43 @@ var (
 }
 `, HOSTNAME1, auth, HOSTNAME2, auth))
 
-	// TODO
-	//	ocmconfigdata = []byte(fmt.Sprintf(`
-	//{
-	//  "type": "credentials.config.ocm.software",
-	//  "consumers": [
-	//    {
-	//      "identity": {
-	//        "type": "OCIRegistry",
-	//        "hostname": "%s"
-	//      },
-	//      "credentials": [
-	//        {
-	//          "type": "Credentials",
-	//          "properties": {
-	//            "username": "%s",
-	//            "password": "%s"
-	//          }
-	//        }
-	//      ]
-	//    }
-	//  ]
-	//}
-	//`, HOSTNAME1, USERNAME, PASSWORD))
+	ocmconfigdata = []byte(fmt.Sprintf(`
+{
+  "type": "credentials.config.ocm.software",
+  "consumers": [
+    {
+      "identity": {
+        "type": "OCIRegistry",
+        "hostname": "%s"
+      },
+      "credentials": [
+        {
+          "type": "Credentials",
+          "properties": {
+            "username": "%s",
+            "password": "%s"
+          }
+        }
+      ]
+    }
+  ]
+}
+`, HOSTNAME1, USERNAME, PASSWORD))
 )
 
-// TODO
-var _ = XDescribe("ocm-lib facade implementation", func() {
-	// TODO
-	//ctx := context.Background()
-	//factory := ocmlib.Factory{}
+var _ = Describe("ocm-lib facade implementation", func() {
+	ctx := context.Background()
+	factory := ocmlib.Factory{}
 
 	It("get component version from component descriptor reference (from local repository)", func() {
 		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion
 		// method can deal with the legacy ComponentDescriptorReference type rather than testing ocmlib functionality
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
 
-		// TODO
-		//r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
-		//
-		//cv := Must(r.GetComponentVersion(ctx, cdref))
-		//Expect(cv).NotTo(BeNil())
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
 	})
 
 	It("get component descriptor with v2 as input", func() {
@@ -111,13 +115,10 @@ var _ = XDescribe("ocm-lib facade implementation", func() {
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		cv := Must(r.GetComponentVersion(ctx, cdref))
 
-		// TODO
-		//r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
-		//cv := Must(r.GetComponentVersion(ctx, cdref))
-		//
-		//cd, _ := cv.GetComponentDescriptor()
-		//Expect(reflect.DeepEqual(cd, compdesc)).To(BeTrue())
+		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
 	})
 
 	It("get component descriptor with v3 as input", func() {
@@ -130,13 +131,10 @@ var _ = XDescribe("ocm-lib facade implementation", func() {
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
+		cv := Must(r.GetComponentVersion(ctx, cdref))
 
-		// TODO
-		//r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
-		//cv := Must(r.GetComponentVersion(ctx, cdref))
-		//
-		//cd, _ := cv.GetComponentDescriptor()
-		//Expect(reflect.DeepEqual(cd, compdesc)).To(BeTrue())
+		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
 	})
 
 	It("dockerconfig credentials from filesystem", func() {
@@ -150,41 +148,38 @@ var _ = XDescribe("ocm-lib facade implementation", func() {
 			Expect(f.Close()).To(Succeed())
 		}
 		// Create a Registry Access and check whether credentials are properly set and can be found
-		// TODO
-		//r := Must(factory.NewRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
-		//	ConfigFiles: []string{"testdata/dockerconfig.json"},
-		//}, nil)).(*ocmlib.RegistryAccess)
-		//creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
-		//props := creds.Properties()
-		//Expect(props["username"]).To(Equal(USERNAME))
-		//Expect(props["password"]).To(Equal(PASSWORD))
+		r := Must(factory.NewRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
+			ConfigFiles: []string{"testdata/dockerconfig.json"},
+		}, nil)).(*ocmlib.RegistryAccess)
+		creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
 	})
 
 	It("dockerconfig credentials from secrets", func() {
 		// Prepare secret with dockerconfig credentials
-		// TODO
-		//secrets := []corev1.Secret{{
-		//	Data: map[string][]byte{corev1.DockerConfigJsonKey: dockerconfigdata},
-		//}}
+		secrets := []corev1.Secret{{
+			Data: map[string][]byte{corev1.DockerConfigJsonKey: dockerconfigdata},
+		}}
 		// Create a Registry Access and check whether credentials are properly set and can be found
-		//r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
-		//creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
-		//props := creds.Properties()
-		//Expect(props["username"]).To(Equal(USERNAME))
-		//Expect(props["password"]).To(Equal(PASSWORD))
+		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
+		creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
 	})
 
 	It("ocm credentials from secrets", func() {
 		// Prepare secret with ocmconfig credentials
-		// TODO
-		//secrets := []corev1.Secret{{
-		//	Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
-		//}}
-		//r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
-		//creds := Must(identity.GetCredentials(r.OCMContext(), HOSTNAME1, "/test/repo"))
-		//props := creds.Properties()
-		//Expect(props["username"]).To(Equal(USERNAME))
-		//Expect(props["password"]).To(Equal(PASSWORD))
+		secrets := []corev1.Secret{{
+			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
+		}}
+		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
+		creds := Must(identity.GetCredentials(r.OCMContext(), HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
 	})
 
 	It("blueprint from inline component descriptor with single inline component and blob file system", func() {
@@ -269,15 +264,14 @@ version: 1.0.0
 `
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
-		// TODO
-		//r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
-		//cv := Must(r.GetComponentVersion(ctx, cdref))
-		//Expect(cv).NotTo(BeNil())
-		//res := Must(cv.GetResource("blueprint", nil))
-		//content := Must(res.GetTypedContent(ctx))
-		//bp, ok := content.Resource.(*blueprints.Blueprint)
-		//Expect(ok).To(BeTrue())
-		//_ = bp
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+		res := Must(cv.GetResource("blueprint", nil))
+		content := Must(res.GetTypedContent(ctx))
+		bp, ok := content.Resource.(*blueprints.Blueprint)
+		Expect(ok).To(BeTrue())
+		_ = bp
 	})
 
 	It("blueprint from inline component descriptor with separate inline component and blob file system", func() {
@@ -360,14 +354,13 @@ version: 1.0.0
 `
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
-		// TODO
-		//r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
-		//cv := Must(r.GetComponentVersion(ctx, cdref))
-		//Expect(cv).NotTo(BeNil())
-		//res := Must(cv.GetResource("blueprint", nil))
-		//content := Must(res.GetTypedContent(ctx))
-		//bp, ok := content.Resource.(*blueprints.Blueprint)
-		//Expect(ok).To(BeTrue())
-		//_ = bp
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+		res := Must(cv.GetResource("blueprint", nil))
+		content := Must(res.GetTypedContent(ctx))
+		bp, ok := content.Resource.(*blueprints.Blueprint)
+		Expect(ok).To(BeTrue())
+		_ = bp
 	})
 })

@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/components/registries"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -63,9 +65,12 @@ type deployer struct {
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
+	registries.SetOCMLibraryMode(d.config.UseOCMLib)
+	registries.SetFactory(ctx, lsCtx.UseOCM)
+
 	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
-		err = lserrors.NewWrappedError(err, "Reconcile", "New", err.Error())
+		err = lserrors.NewWrappedError(err, "Reconcile", "newRootLogger", err.Error())
 		return err
 	}
 	di.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing

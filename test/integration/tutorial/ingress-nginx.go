@@ -168,7 +168,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 			// check
 			deploy := &appsv1.Deployment{}
 			utils.ExpectNoError(f.Client.Get(ctx, nginxIngressObjectKey, deploy))
-			Expect(deploy.Spec.Template.Spec.Containers[0].LivenessProbe.FailureThreshold == 4).To(BeTrue())
+			Expect(deploy.Spec.Template.Spec.Containers[0].LivenessProbe.FailureThreshold == 5).To(BeTrue())
 
 			// delete
 			By("Delete installation")

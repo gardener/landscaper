@@ -14,7 +14,7 @@ spec:
         schemaVersion: v2
 
       component:
-        name: dummy-installation
+        name: example.com/dummy-installation
         version: 1.0.0
 
         provider: internal

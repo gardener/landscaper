@@ -20,15 +20,15 @@ type ComponentVersion interface {
 	GetVersion() string
 
 	// GetComponentDescriptor returns the component descriptor structure as *types.ComponentDescriptor.
-	GetComponentDescriptor() (*types.ComponentDescriptor, error)
+	GetComponentDescriptor() *types.ComponentDescriptor
 
 	// GetRepositoryContext return the current repository context,
 	// i.e. the last entry in the list of repository contexts.
-	GetRepositoryContext() (*types.UnstructuredTypedObject, error)
+	GetRepositoryContext() *types.UnstructuredTypedObject
 
 	// GetComponentReferences returns the list of component references of the present component version.
 	// (not transitively; only the references of the present component version)
-	GetComponentReferences() ([]types.ComponentReference, error)
+	GetComponentReferences() []types.ComponentReference
 
 	// GetComponentReference returns the component reference with the given name.
 	// Note:
@@ -36,7 +36,7 @@ type ComponentVersion interface {
 	// - the returned component reference is an entry of the present component descriptor, not the referenced
 	//   component version.
 	// Returns nil if there is no component reference with the given name.
-	GetComponentReference(name string) (*types.ComponentReference, error)
+	GetComponentReference(name string) *types.ComponentReference
 
 	// GetReferencedComponentVersion returns
 	GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (ComponentVersion, error)
@@ -45,8 +45,6 @@ type ComponentVersion interface {
 	// Returns an error if there is no such resource, or more than one.
 	// Currently, the Landscaper does not use the identity argument.
 	GetResource(name string, identity map[string]string) (Resource, error)
-
-	GetBlobResolver() (BlobResolver, error)
 }
 
 // GetComponentDescriptor returns the component descriptor structure.
@@ -56,5 +54,5 @@ func GetComponentDescriptor(componentVersion ComponentVersion) (*types.Component
 	if componentVersion == nil {
 		return nil, nil
 	}
-	return componentVersion.GetComponentDescriptor()
+	return componentVersion.GetComponentDescriptor(), nil
 }

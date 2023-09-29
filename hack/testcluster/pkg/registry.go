@@ -145,6 +145,16 @@ func CreateRegistry(ctx context.Context,
 	if err := kubeClient.Create(ctx, svc); err != nil {
 		return err
 	}
+	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
+		err := kubeClient.Get(ctx, client.ObjectKeyFromObject(svc), svc)
+		if err != nil {
+			return false, err
+		}
+		return len(svc.Status.LoadBalancer.Ingress) != 0, nil
+	})
+	if err != nil {
+		return err
+	}
 	logger.Logln("Successfully created registry service")
 
 	// register cleanup to delete the cluster if something fails
@@ -171,6 +181,15 @@ func CreateRegistry(ctx context.Context,
 		return err
 	}
 	logger.Logln("Successfully created registry certificates")
+
+	dir := filepath.Dir(exportRegistryCreds)
+	cacertpath := filepath.Join(dir, "cacerts.crt")
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return fmt.Errorf("unable to create export directory %q: %w", filepath.Dir(exportRegistryCreds), err)
+	}
+	if err := os.WriteFile(cacertpath, certSecret.Data[certificates.DataKeyCertificateCA], os.ModePerm); err != nil {
+		return fmt.Errorf("unable to write certificate to %q: %w", cacertpath, err)
+	}
 
 	username := "test"
 	htpasswd := CreateHtpasswd(username, password)
@@ -304,10 +323,6 @@ func CreateRegistry(ctx context.Context,
 		logger.Logfln("password: \n%q", string(dockerconfigBytes))
 		return nil
 	}
-
-	if err := os.MkdirAll(filepath.Dir(exportRegistryCreds), os.ModePerm); err != nil {
-		return fmt.Errorf("unable to create export directory %q: %w", filepath.Dir(exportRegistryCreds), err)
-	}
 	if err := os.WriteFile(exportRegistryCreds, dockerconfigBytes, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to write docker auth config to %q: %w", exportRegistryCreds, err)
 	}
@@ -357,7 +372,14 @@ func generateCertificate(svc *corev1.Service) (*corev1.Secret, error) {
 	ipAddresses := []net.IP{
 		net.ParseIP(svc.Spec.ClusterIP),
 	}
-
+	for _, ingress := range svc.Status.LoadBalancer.Ingress {
+		if ingress.IP != "" {
+			ipAddresses = append(ipAddresses, net.ParseIP(ingress.IP))
+		}
+		if ingress.Hostname != "" {
+			ipAddresses = append(ipAddresses, net.ParseIP(ingress.Hostname))
+		}
+	}
 	serverConfig := &certificates.CertificateSecretConfig{
 		CommonName:  svc.Name,
 		DNSNames:    dnsNames,

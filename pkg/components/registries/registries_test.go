@@ -10,8 +10,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/gardener/landscaper/apis/config"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
@@ -24,11 +25,11 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	registryAccess, err = NewFactory().NewLocalRegistryAccess("./testdata/registry")
+	localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
+	registryAccess, err = GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 	Expect(err).ToNot(HaveOccurred())
 
-	repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
-	Expect(err).ToNot(HaveOccurred())
+	Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 })
 
 var _ = Describe("cdutils Tests", func() {

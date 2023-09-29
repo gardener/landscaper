@@ -11,18 +11,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"sigs.k8s.io/yaml"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	utils "github.com/gardener/landscaper/test/utils"
 )
@@ -61,51 +56,51 @@ var _ = Describe("GetChart", func() {
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
 	})
-
-	It("should resolve a chart from a public readable component descriptor", func() {
-		ctx := logging.NewContext(context.Background(), logging.Discard())
-		defer ctx.Done()
-
-		ref := &helmv1alpha1.RemoteChartReference{}
-		ref.Reference = &lsv1alpha1.ComponentDescriptorReference{}
-		repoCtx, err := componentresolvers.NewOCIRepositoryContext("eu.gcr.io/gardener-project/landscaper/tutorials/components")
-		Expect(err).ToNot(HaveOccurred())
-		ref.Reference.RepositoryContext = &repoCtx
-		ref.Reference.ComponentName = "github.com/gardener/landscaper/ingress-nginx"
-		ref.Reference.Version = "v0.2.1"
-		ref.ResourceName = "ingress-nginx-chart"
-		chartAccess := &helmv1alpha1.Chart{
-			FromResource: ref,
-		}
-
-		chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
-	})
-
-	It("should resolve a chart from an inline component descriptor", func() {
-		ctx := logging.NewContext(context.Background(), logging.Discard())
-		defer ctx.Done()
-
-		file, err := os.ReadFile("./testdata/01-component-descriptor.yaml")
-		Expect(err).ToNot(HaveOccurred())
-
-		inline := &types.ComponentDescriptor{}
-		err = yaml.Unmarshal(file, &inline)
-		Expect(err).ToNot(HaveOccurred())
-
-		ref := &helmv1alpha1.RemoteChartReference{}
-		ref.Inline = inline
-		ref.ResourceName = "ingress-nginx-chart"
-
-		chartAccess := &helmv1alpha1.Chart{
-			FromResource: ref,
-		}
-
-		chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
-	})
+	// The team collectively decided that this option to retrieve helm charts is no longer supported
+	//It("should resolve a chart from a public readable component descriptor", func() {
+	//	ctx := logging.NewContext(context.Background(), logging.Discard())
+	//	defer ctx.Done()
+	//
+	//	ref := &helmv1alpha1.RemoteChartReference{}
+	//	ref.Reference = &lsv1alpha1.ComponentDescriptorReference{}
+	//	repoCtx, err := componentresolvers.NewOCIRepositoryContext("eu.gcr.io/gardener-project/landscaper/tutorials/components")
+	//	Expect(err).ToNot(HaveOccurred())
+	//	ref.Reference.RepositoryContext = &repoCtx
+	//	ref.Reference.ComponentName = "github.com/gardener/landscaper/ingress-nginx"
+	//	ref.Reference.Version = "v0.2.1"
+	//	ref.ResourceName = "ingress-nginx-chart"
+	//	chartAccess := &helmv1alpha1.Chart{
+	//		FromResource: ref,
+	//	}
+	//
+	//	chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
+	//	Expect(err).ToNot(HaveOccurred())
+	//	Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
+	//})
+	//
+	//It("should resolve a chart from an inline component descriptor", func() {
+	//	ctx := logging.NewContext(context.Background(), logging.Discard())
+	//	defer ctx.Done()
+	//
+	//	file, err := os.ReadFile("./testdata/01-component-descriptor.yaml")
+	//	Expect(err).ToNot(HaveOccurred())
+	//
+	//	inline := &types.ComponentDescriptor{}
+	//	err = yaml.Unmarshal(file, &inline)
+	//	Expect(err).ToNot(HaveOccurred())
+	//
+	//	ref := &helmv1alpha1.RemoteChartReference{}
+	//	ref.Inline = inline
+	//	ref.ResourceName = "ingress-nginx-chart"
+	//
+	//	chartAccess := &helmv1alpha1.Chart{
+	//		FromResource: ref,
+	//	}
+	//
+	//	chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
+	//	Expect(err).ToNot(HaveOccurred())
+	//	Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
+	//})
 
 	It("should resolve a chart as base64 encoded file", func() {
 		ctx := logging.NewContext(context.Background(), logging.Discard())

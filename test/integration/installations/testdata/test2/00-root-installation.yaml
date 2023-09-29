@@ -10,7 +10,7 @@ spec:
         schemaVersion: v2
 
       component:
-        name: mock-installation
+        name: example.com/mock-installation
         version: 1.0.0
 
         provider: internal

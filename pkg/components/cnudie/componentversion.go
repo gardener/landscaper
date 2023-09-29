@@ -41,36 +41,30 @@ func (c *ComponentVersion) GetVersion() string {
 	return c.componentDescriptor.GetVersion()
 }
 
-func (c *ComponentVersion) GetComponentDescriptor() (*types.ComponentDescriptor, error) {
-	return c.componentDescriptor, nil
+func (c *ComponentVersion) GetComponentDescriptor() *types.ComponentDescriptor {
+	return c.componentDescriptor
 }
 
-func (c *ComponentVersion) GetRepositoryContext() (*types.UnstructuredTypedObject, error) {
+func (c *ComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
 	context := c.componentDescriptor.GetEffectiveRepositoryContext()
-	if context == nil {
-		return nil, nil
-	}
-	return context, nil
+	return context
 }
 
-func (c *ComponentVersion) GetComponentReferences() ([]types.ComponentReference, error) {
-	return c.componentDescriptor.ComponentReferences, nil
+func (c *ComponentVersion) GetComponentReferences() []types.ComponentReference {
+	return c.componentDescriptor.ComponentReferences
 }
 
-func (c *ComponentVersion) GetComponentReference(name string) (*types.ComponentReference, error) {
-	refs, err := c.GetComponentReferences()
-	if err != nil {
-		return nil, err
-	}
+func (c *ComponentVersion) GetComponentReference(name string) *types.ComponentReference {
+	refs := c.GetComponentReferences()
 
 	for i := range refs {
 		ref := &refs[i]
 		if ref.GetName() == name {
-			return ref, nil
+			return ref
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, componentRef *types.ComponentReference,

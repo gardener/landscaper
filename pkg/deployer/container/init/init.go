@@ -12,6 +12,13 @@ import (
 	"path"
 	"path/filepath"
 
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/gardener/landscaper/apis/config"
+
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
+
 	"github.com/gardener/landscaper/pkg/components/registries"
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -32,7 +39,6 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -110,16 +116,34 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 	)
 
 	if providerConfig.ComponentDescriptor != nil {
-		cdReference = installations.GetReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
+		cdReference = deployerlegacy.GetReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
 		if cdReference == nil {
 			return fmt.Errorf("no inline component descriptor or reference found")
 		}
 
-		registryAccess, err = registries.NewFactory().NewOCIRegistryAccessFromDockerAuthConfig(
-			ctx,
-			fs,
-			opts.RegistrySecretBasePath,
-			providerConfig.ComponentDescriptor.Inline)
+		var secrets []string
+		err := vfs.Walk(fs, opts.RegistrySecretBasePath, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() || info.Name() != corev1.DockerConfigJsonKey {
+				return nil
+			}
+
+			secrets = append(secrets, path)
+
+			return nil
+		})
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("unable to add local registry pull secrets: %w", err)
+		}
+		ociconfig := &config.OCIConfiguration{
+			ConfigFiles:        secrets,
+			Cache:              nil,
+			AllowPlainHttp:     false,
+			InsecureSkipVerify: false,
+		}
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, nil, nil, nil, ociconfig, providerConfig.ComponentDescriptor.Inline)
 		if err != nil {
 			return err
 		}
@@ -132,11 +156,11 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 	if providerConfig.Blueprint != nil {
 		log.Info("Getting blueprint content")
 		// setup a temporary blueprint store
-		store, err := blueprints.DefaultStore(memoryfs.New())
+		store, err := blueprint.DefaultStore(memoryfs.New())
 		if err != nil {
 			return fmt.Errorf("unable to setup default blueprint store: %w", err)
 		}
-		blueprints.SetStore(store)
+		blueprint.SetStore(store)
 		contentFS, err := projectionfs.New(fs, opts.ContentDirPath)
 		if err != nil {
 			return fmt.Errorf("unable to create projection filesystem for path %s: %w", opts.ContentDirPath, err)

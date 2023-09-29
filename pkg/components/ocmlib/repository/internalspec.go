@@ -5,7 +5,8 @@
 package repository
 
 import (
-	"github.com/gardener/landscaper/pkg/components/model"
+	"encoding/json"
+	"fmt"
 
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -37,44 +38,42 @@ type RepositorySpec struct {
 }
 
 func (r RepositorySpec) MarshalJSON() ([]byte, error) {
-	return nil, model.NotImplemented()
-	// return runtime.MarshalVersionedTypedObject(&r)
+	return runtime.MarshalVersionedTypedObject(&r)
 }
 
 func (r *RepositorySpec) Key() (string, error) {
-	return "", model.NotImplemented()
-	//var fs string
-	//var blobfs string
-	//
-	//if r.FileSystem != nil {
-	//	fs = fmt.Sprintf("%p", r.FileSystem)
-	//} else {
-	//	fs = "nil"
-	//}
-	//
-	//if r.BlobFs != nil {
-	//	blobfs = fmt.Sprintf("%p", r.FileSystem)
-	//} else {
-	//	blobfs = "nil"
-	//}
-	//
-	//data, err := json.Marshal(&struct {
-	//	Type            string `json:"type"`
-	//	FileSystem      string `json:"fileSystem"`
-	//	CompDescDirPath string `json:"compDescDirPath"`
-	//	BlobFs          string `json:"blobFs"`
-	//	BlobFsMode      string `json:"blobFsMode"`
-	//	BlobDirPath     string `json:"blobDirPath"`
-	//}{
-	//	Type:            r.GetType(),
-	//	FileSystem:      fs,
-	//	CompDescDirPath: r.CompDescDirPath,
-	//	BlobFs:          blobfs,
-	//	BlobFsMode:      r.BlobFsMode,
-	//	BlobDirPath:     r.BlobDirPath,
-	//})
-	//
-	//return string(data), err
+	var fs string
+	var blobfs string
+
+	if r.FileSystem != nil {
+		fs = fmt.Sprintf("%p", r.FileSystem)
+	} else {
+		fs = "nil"
+	}
+
+	if r.BlobFs != nil {
+		blobfs = fmt.Sprintf("%p", r.FileSystem)
+	} else {
+		blobfs = "nil"
+	}
+
+	data, err := json.Marshal(&struct {
+		Type            string `json:"type"`
+		FileSystem      string `json:"fileSystem"`
+		CompDescDirPath string `json:"compDescDirPath"`
+		BlobFs          string `json:"blobFs"`
+		BlobFsMode      string `json:"blobFsMode"`
+		BlobDirPath     string `json:"blobDirPath"`
+	}{
+		Type:            r.GetType(),
+		FileSystem:      fs,
+		CompDescDirPath: r.CompDescDirPath,
+		BlobFs:          blobfs,
+		BlobFsMode:      r.BlobFsMode,
+		BlobDirPath:     r.BlobDirPath,
+	})
+
+	return string(data), err
 }
 
 func NewRepository(ctx cpi.Context, provider ComponentDescriptorProvider, blobfs vfs.FileSystem) (cpi.Repository, error) {

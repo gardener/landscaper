@@ -62,7 +62,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		state, err = testenv.InitResources(ctx, testdataDir)
 		Expect(err).ToNot(HaveOccurred())
 
-		By("Prepare test deploy items")
+		By("Get test deploy items")
 		di := &lsv1alpha1.DeployItem{}
 		diReq := testutils.Request("mock-di-prog", state.Namespace)
 		// do not reconcile with mock deployer
@@ -88,7 +88,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		state, err = testenv.InitResources(ctx, testdataDir)
 		Expect(err).ToNot(HaveOccurred())
 
-		By("Prepare test deploy items")
+		By("Get test deploy items")
 		di := &lsv1alpha1.DeployItem{}
 		diReq := testutils.Request("mock-di-prog", state.Namespace)
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
@@ -134,7 +134,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		state, err = testenv.InitResources(ctx, testdataDir)
 		Expect(err).ToNot(HaveOccurred())
 
-		By("Prepare test deploy items")
+		By("Get test deploy items")
 		diS := &lsv1alpha1.DeployItem{}
 		diF := &lsv1alpha1.DeployItem{}
 		diReqS := testutils.Request("mock-di-succ", state.Namespace)
@@ -191,7 +191,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		state, err = testenv.InitResources(ctx, testdataDir)
 		Expect(err).ToNot(HaveOccurred())
 
-		By("Prepare test deploy items")
+		By("Get test deploy items")
 		di := &lsv1alpha1.DeployItem{}
 		diReq := testutils.Request("mock-di-prog-timeout", state.Namespace)
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))

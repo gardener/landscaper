@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package helmrepo
 
 import (
@@ -14,10 +18,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/components/common"
+
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/google"
 	"helm.sh/helm/v3/pkg/repo"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -30,7 +35,6 @@ import (
 
 const (
 	defaultTimeoutSeconds = 180
-	authHeaderDefaultKey  = "authHeader"
 )
 
 type HelmChartRepoClient struct {
@@ -53,7 +57,7 @@ func NewHelmChartRepoClient(context *lsv1alpha1.Context, lsClient client.Client)
 			auths = repoCredentials.Auths
 
 			for i := range auths {
-				auths[i].URL = normalizeUrl(auths[i].URL)
+				auths[i].URL = common.NormalizeUrl(auths[i].URL)
 			}
 
 			sort.Slice(auths, func(i, j int) bool {
@@ -184,7 +188,7 @@ func (c *HelmChartRepoClient) setAuthHeader(ctx context.Context, authData *helmv
 		return nil
 	}
 
-	authHeader, err := c.getAuthHeader(ctx, authData)
+	authHeader, err := common.GetAuthHeader(ctx, authData, c.lsClient, c.contextNamespace)
 	if err != nil {
 		return err
 	}
@@ -206,38 +210,6 @@ func (c *HelmChartRepoClient) setAuthHeader(ctx context.Context, authData *helmv
 
 	req.Header.Set("Authorization", authHeader)
 	return nil
-}
-
-func (c *HelmChartRepoClient) getAuthHeader(ctx context.Context, authData *helmv1alpha1.Auth) (string, error) {
-	if len(authData.AuthHeader) > 0 && authData.SecretRef != nil {
-		return "", fmt.Errorf("failed to get auth header: auth header and secret ref are both set")
-	}
-
-	if len(authData.AuthHeader) > 0 {
-		return authData.AuthHeader, nil
-	}
-
-	if authData.SecretRef != nil {
-		secretKey := client.ObjectKey{Name: authData.SecretRef.Name, Namespace: c.contextNamespace}
-		secret := &corev1.Secret{}
-		if err := c.lsClient.Get(ctx, secretKey, secret); err != nil {
-			return "", err
-		}
-
-		authHeaderKey := authData.SecretRef.Key
-		if len(authData.SecretRef.Key) == 0 {
-			authHeaderKey = authHeaderDefaultKey
-		}
-
-		authHeader, ok := secret.Data[authHeaderKey]
-		if !ok {
-			return "", fmt.Errorf("failed to get auth header: key %s not found in secret", authHeaderKey)
-		}
-
-		return string(authHeader), nil
-	}
-
-	return "", fmt.Errorf("failed to get auth header: neither auth header nor secret ref is set")
 }
 
 func (c *HelmChartRepoClient) decodeBasicAuthCredentials(base64EncodedBasicAuthCredentials string) (string, string, lserrors.LsError) {

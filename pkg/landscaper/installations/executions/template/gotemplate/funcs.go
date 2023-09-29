@@ -8,13 +8,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	gotmpl "text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
+	"github.com/gardener/landscaper/pkg/components/cnudie"
+
+	"github.com/Masterminds/sprig/v3"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	imagevector "github.com/gardener/image-vector/pkg"
@@ -133,11 +137,16 @@ func resolveArtifactFunc(componentVersion model.ComponentVersion) func(access ma
 		ctx := context.Background()
 		defer ctx.Done()
 
+		cv, ok := componentVersion.(*cnudie.ComponentVersion)
+		if !ok {
+			return nil, errors.New("this functionality has been deprecated for usage with the new library ")
+		}
+
 		if componentVersion == nil {
 			return nil, fmt.Errorf("unable to resolve artifact, because no component version is provided")
 		}
 
-		blobResolver, err := componentVersion.GetBlobResolver()
+		blobResolver, err := cv.GetBlobResolver()
 		if err != nil {
 			return nil, fmt.Errorf("unable to get blob resolver to resolve artifact: %w", err)
 		}

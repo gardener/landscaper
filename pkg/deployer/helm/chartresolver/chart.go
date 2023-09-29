@@ -21,10 +21,7 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/components/registries"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
 // NoChartDefinedError is the error that is returned if no Helm chart was provided
@@ -47,15 +44,13 @@ func GetChart(ctx context.Context,
 		return getChartFromOCIRef(ctx, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
 	}
 
-	// fetch the chart from a component descriptor defined resource
-	if chartConfig.FromResource != nil {
-		return getChartFromResource(ctx, lsClient, contextObj, registryPullSecrets, ociConfig, sharedCache, chartConfig.FromResource)
-	}
-
 	if chartConfig.HelmChartRepo != nil {
 		return getChartFromHelmChartRepo(ctx, lsClient, contextObj, chartConfig.HelmChartRepo)
 	}
 
+	if chartConfig.FromResource != nil {
+		return nil, errors.New("chart.fromResource is no longer supported")
+	}
 	return nil, NoChartDefinedError
 }
 
@@ -97,64 +92,16 @@ func getChartFromOCIRef(ctx context.Context,
 	ociConfig *config.OCIConfiguration,
 	sharedCache cache.Cache) (*chart.Chart, error) {
 
-	resource, err := registries.NewFactory().NewHelmOCIResource(ctx, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
+	resource, err := registries.GetFactory().NewHelmOCIResource(ctx, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
 	if err != nil {
 		return nil, err
 	}
 
-	var buf bytes.Buffer
-	if _, err := resource.GetBlob(ctx, &buf); err != nil {
-		return nil, fmt.Errorf("unable to resolve chart from %q: %w", ociImageRef, err)
-	}
-
-	ch, err := chartloader.LoadArchive(&buf)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load chart from archive: %w", err)
-	}
-	return ch, err
-}
-
-func getChartFromResource(ctx context.Context,
-	lsClient client.Client,
-	contextObj *lsv1alpha1.Context,
-	registryPullSecrets []corev1.Secret,
-	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache,
-	ref *helmv1alpha1.RemoteChartReference) (*chart.Chart, error) {
-
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "getChartFromResource"})
-
-	registryAccess, err := registries.NewFactory().NewRegistryAccessForHelm(ctx, lsClient, contextObj, registryPullSecrets, ociConfig, sharedCache, ref)
+	resourceContent, err := resource.GetTypedContent(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(&ref.ComponentDescriptorDefinition)
-	if cdRef == nil {
-		return nil, fmt.Errorf("no component descriptor reference found for %q", ref.ResourceName)
-	}
-
-	componentVersion, err := registryAccess.GetComponentVersion(ctx, cdRef)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get component descriptor for %q: %w", cdRef.ComponentName, err)
-	}
-
-	resource, err := componentVersion.GetResource(ref.ResourceName, nil)
-	if err != nil {
-		logger.Error(err, "unable to find helm resource")
-		return nil, fmt.Errorf("unable to find resource with name %q in component descriptor", ref.ResourceName)
-	}
-
-	var buf bytes.Buffer
-	if _, err := resource.GetBlob(ctx, &buf); err != nil {
-		return nil, fmt.Errorf("unable to resolve chart from resource %q: %w", ref.ResourceName, err)
-	}
-
-	ch, err := chartloader.LoadArchive(&buf)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load chart from archive: %w", err)
-	}
-	return ch, err
+	return resourceContent.Resource.(*chart.Chart), nil
 }
 
 func getChartFromHelmChartRepo(ctx context.Context,
@@ -162,21 +109,12 @@ func getChartFromHelmChartRepo(ctx context.Context,
 	contextObj *lsv1alpha1.Context,
 	repo *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
 
-	resource, err := registries.NewFactory().NewHelmRepoResource(ctx, repo, lsClient, contextObj)
+	resource, err := registries.GetFactory().NewHelmRepoResource(ctx, repo, lsClient, contextObj)
 	if err != nil {
 		return nil, fmt.Errorf("unable to construct resource for chart %q with version %q from helm chart repo %q: %w",
 			repo.HelmChartName, repo.HelmChartVersion, repo.HelmChartRepoUrl, err)
 	}
 
-	var buf bytes.Buffer
-	if _, err := resource.GetBlob(ctx, &buf); err != nil {
-		return nil, fmt.Errorf("unable to resolve chart %q with version %q from helm chart repo %q: %w",
-			repo.HelmChartName, repo.HelmChartVersion, repo.HelmChartRepoUrl, err)
-	}
-
-	ch, err := chartloader.LoadArchive(&buf)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load chart from archive: %w", err)
-	}
-	return ch, err
+	resourceContent, err := resource.GetTypedContent(ctx)
+	return resourceContent.Resource.(*chart.Chart), err
 }
