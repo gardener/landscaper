@@ -6,6 +6,7 @@ package ocmlib
 
 import (
 	"context"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	"github.com/open-component-model/ocm/pkg/common"
@@ -18,13 +19,13 @@ import (
 
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/components/ocmlib/registries"
 	_ "github.com/gardener/landscaper/pkg/components/ocmlib/resourcetypehandlers"
 )
 
 type Resource struct {
-	resourceAccess  ocm.ResourceAccess
-	handlerRegistry *registries.ResourceHandlerRegistry
+	resourceAccess ocm.ResourceAccess
+	// TODO
+	// handlerRegistry *registries.ResourceHandlerRegistry
 }
 
 func NewResource(access ocm.ResourceAccess) model.Resource {
