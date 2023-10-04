@@ -28,7 +28,6 @@ type Access interface {
 
 	GetComponentVersion(comp, version string) (VersionAccess, error)
 
-	IsReadOnly() bool
 	Close() error
 }
 

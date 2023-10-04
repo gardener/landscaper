@@ -14,10 +14,11 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
-	"github.com/gardener/landscaper/pkg/components/model/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/open-component-model/ocm/pkg/runtime"
+
+	"github.com/gardener/landscaper/pkg/components/model/types"
 
 	. "github.com/open-component-model/ocm/pkg/testutils"
 

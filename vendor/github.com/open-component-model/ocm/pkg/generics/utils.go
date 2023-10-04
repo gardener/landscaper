@@ -4,6 +4,11 @@
 
 package generics
 
+func Nil[T any]() T {
+	var _nil T
+	return _nil
+}
+
 func Pointer[T any](t T) *T {
 	return &t
 }

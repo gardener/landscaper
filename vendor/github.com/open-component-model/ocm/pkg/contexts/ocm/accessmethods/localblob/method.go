@@ -123,9 +123,6 @@ func (a *AccessSpec) IsLocal(cpi.Context) bool {
 }
 
 func (a *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
-	if g, err := ctx.AccessSpecForSpec(a.GlobalAccess); err == nil {
-		return g
-	}
 	return a.GlobalAccess
 }
 
