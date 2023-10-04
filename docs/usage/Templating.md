@@ -185,7 +185,7 @@ The following additional functions are available:
   returns the kubeconfig wrapped in a Target. You can find the full example 
   [here](https://github.com/gardener/landscaper-examples/tree/master/manifest-deployer/shoot-admin-kubeconfig).  
 
-- **`getShootAdminKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+- **`getShootAdminKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): object`**
   works like `getShootAdminKubeconfig`, but instead of only returning the kubeconfig as string, it returns a struct containing the kubeconfig as well as the expiration timestamp of the token used in it. The returned struct looks like this:
   ```yaml
   kubeconfig: |
@@ -223,7 +223,7 @@ The following additional functions are available:
   You can find the full example
   [here](https://github.com/gardener/landscaper-examples/tree/master/manifest-deployer/service-account-kubeconfig).
 
-- **`getServiceAccountKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+- **`getServiceAccountKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): object`**
   works like `getServiceAccountKubeconfig`, but instead of only returning the kubeconfig as string, it returns a struct containing the kubeconfig as well as the expiration timestamp of the token used in it. The returned struct looks like this:
   ```yaml
   kubeconfig: |
@@ -320,7 +320,7 @@ or
   It constructs two export values: `shootAdminKubeconfig` returns the kubeconfig as string, and `shootAdminTarget` 
   returns the kubeconfig wrapped in a Target.
 
-- **`getShootAdminKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+- **`getShootAdminKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): object`**
   works like `getShootAdminKubeconfig`, but instead of only returning the kubeconfig as string, it returns a struct containing the kubeconfig as well as the expiration timestamp of the token used in it. The returned struct looks like this:
   ```yaml
   kubeconfig: |
@@ -353,7 +353,7 @@ or
           kubeconfig: (( serviceAccountKubeconfig ))
   ```
 
-- **`getServiceAccountKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
+- **`getServiceAccountKubeconfigWithExpirationTimestamp(shootName, shootNamespace string, expirationSeconds int, target Target): object`**
   works like `getServiceAccountKubeconfig`, but instead of only returning the kubeconfig as string, it returns a struct containing the kubeconfig as well as the expiration timestamp of the token used in it. The returned struct looks like this:
   ```yaml
   kubeconfig: |
