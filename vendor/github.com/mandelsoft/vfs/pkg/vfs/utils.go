@@ -375,7 +375,7 @@ func SplitPath(fs FileSystem, path string) (string, []string, bool) {
 }
 
 func Exists_(err error) bool {
-	return err == nil || !os.IsNotExist(err)
+	return err == nil || !IsNotExist(err)
 }
 
 // Exists checks if a file or directory exists.
@@ -384,7 +384,7 @@ func Exists(fs FileSystem, path string) (bool, error) {
 	if err == nil {
 		return true, nil
 	}
-	if os.IsNotExist(err) {
+	if IsNotExist(err) {
 		return false, nil
 	}
 	return false, err
@@ -396,7 +396,7 @@ func DirExists(fs FileSystem, path string) (bool, error) {
 	if err == nil && fi.IsDir() {
 		return true, nil
 	}
-	if os.IsNotExist(err) {
+	if IsNotExist(err) {
 		return false, nil
 	}
 	return false, err
@@ -408,7 +408,7 @@ func FileExists(fs FileSystem, path string) (bool, error) {
 	if err == nil && fi.Mode()&os.ModeType == 0 {
 		return true, nil
 	}
-	if os.IsNotExist(err) {
+	if IsNotExist(err) {
 		return false, nil
 	}
 	return false, err

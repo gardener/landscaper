@@ -27,6 +27,10 @@ const (
 	// Optionally the compression can be added as "+gzip"
 	BlueprintArtifactsLayerMediaTypeV1 = "application/vnd.gardener.landscaper.blueprint.layer.v1.tar"
 
+	// JSONSchemaType is the name of json schema type in a component descriptor.
+	// Although it is not a media or MIME type, this currently seems like the best place to put it.
+	JSONSchemaType = "landscaper.gardener.cloud/jsonschema"
+
 	// JSONSchemaArtifactsMediaTypeV0 is the reserved media type for a jsonschema that is stored as layer in an oci artifact.
 	// This is the legacy deprecated artifact media type use JSONSchemaArtifactsMediaTypeV1 instead.
 	// DEPRECATED
