@@ -18,6 +18,7 @@ package kube // import "helm.sh/helm/v3/pkg/kube"
 
 import (
 	"k8s.io/cli-runtime/pkg/resource"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -41,5 +42,7 @@ type Factory interface {
 	NewBuilder() *resource.Builder
 
 	// Returns a schema that can validate objects stored on disk.
-	Validator(validationDirective string) (validation.Schema, error)
+	Validator(validationDirective string, verifier *resource.QueryParamVerifier) (validation.Schema, error)
+	// OpenAPIGetter returns a getter for the openapi schema document
+	OpenAPIGetter() discovery.OpenAPISchemaInterface
 }

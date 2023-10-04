@@ -17,7 +17,6 @@ limitations under the License.
 package action
 
 import (
-	"io"
 	"strings"
 
 	"helm.sh/helm/v3/pkg/cli"
@@ -30,13 +29,8 @@ import (
 //
 // It provides the implementation of 'helm push'.
 type Push struct {
-	Settings              *cli.EnvSettings
-	cfg                   *Configuration
-	certFile              string
-	keyFile               string
-	caFile                string
-	insecureSkipTLSverify bool
-	out                   io.Writer
+	Settings *cli.EnvSettings
+	cfg      *Configuration
 }
 
 // PushOpt is a type of function that sets options for a push action.
@@ -46,29 +40,6 @@ type PushOpt func(*Push)
 func WithPushConfig(cfg *Configuration) PushOpt {
 	return func(p *Push) {
 		p.cfg = cfg
-	}
-}
-
-// WithTLSClientConfig sets the certFile, keyFile, and caFile fields on the push configuration object.
-func WithTLSClientConfig(certFile, keyFile, caFile string) PushOpt {
-	return func(p *Push) {
-		p.certFile = certFile
-		p.keyFile = keyFile
-		p.caFile = caFile
-	}
-}
-
-// WithInsecureSkipTLSVerify determines if a TLS Certificate will be checked
-func WithInsecureSkipTLSVerify(insecureSkipTLSVerify bool) PushOpt {
-	return func(p *Push) {
-		p.insecureSkipTLSverify = insecureSkipTLSVerify
-	}
-}
-
-// WithOptWriter sets the registryOut field on the push configuration object.
-func WithPushOptWriter(out io.Writer) PushOpt {
-	return func(p *Push) {
-		p.out = out
 	}
 }
 
@@ -88,14 +59,10 @@ func (p *Push) Run(chartRef string, remote string) (string, error) {
 	c := uploader.ChartUploader{
 		Out:     &out,
 		Pushers: pusher.All(p.Settings),
-		Options: []pusher.Option{
-			pusher.WithTLSClientConfig(p.certFile, p.keyFile, p.caFile),
-			pusher.WithInsecureSkipTLSVerify(p.insecureSkipTLSverify),
-		},
+		Options: []pusher.Option{},
 	}
 
 	if registry.IsOCI(remote) {
-		// Don't use the default registry client if tls options are set.
 		c.Options = append(c.Options, pusher.WithRegistryClient(p.cfg.RegistryClient))
 	}
 

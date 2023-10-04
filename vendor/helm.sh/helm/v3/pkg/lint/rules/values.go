@@ -17,6 +17,7 @@ limitations under the License.
 package rules
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -75,7 +76,7 @@ func validateValuesFile(valuesPath string, overrides map[string]interface{}) err
 
 	ext := filepath.Ext(valuesPath)
 	schemaPath := valuesPath[:len(valuesPath)-len(ext)] + ".schema.json"
-	schema, err := os.ReadFile(schemaPath)
+	schema, err := ioutil.ReadFile(schemaPath)
 	if len(schema) == 0 {
 		return nil
 	}

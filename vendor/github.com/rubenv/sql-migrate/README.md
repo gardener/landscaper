@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.org/rubenv/sql-migrate.svg?branch=master)](https://travis-ci.org/rubenv/sql-migrate) [![GoDoc](https://godoc.org/github.com/rubenv/sql-migrate?status.svg)](https://godoc.org/github.com/rubenv/sql-migrate)
 
+Using [modl](https://github.com/jmoiron/modl)? Check out [modl-migrate](https://github.com/rubenv/modl-migrate).
+
 ## Features
 
 * Usable as a CLI tool or as a library
@@ -88,13 +90,12 @@ Options:
   -config=dbconfig.yml   Configuration file to use.
   -env="development"     Environment.
   -limit=0               Limit the number of migrations (0 = unlimited).
-  -version               Run migrate up to a specific version, eg: the version number of migration 1_initial.sql is 1.
   -dryrun                Don't apply migrations, just print them.
 ```
 
 The `new` command creates a new empty migration template using the following pattern `<current time>-<name>.sql`.
 
-The `up` command applies all available migrations. By contrast, `down` will only apply one migration by default. This behavior can be changed for both by using the `-limit` parameter, and the `-version` parameter. Note `-version` has higher priority than `-limit` if you try to use them both.
+The `up` command applies all available migrations. By contrast, `down` will only apply one migration by default. This behavior can be changed for both by using the `-limit` parameter.
 
 The `redo` command will unapply the last migration and reapply it. This is useful during development, when you're writing migrations.
 
@@ -397,10 +398,6 @@ if err != nil {
     // Handle errors!
 }
 ```
-
-## Questions or Feedback?
-
-You can use Github Issues for feedback or questions.
 
 ## License
 

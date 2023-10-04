@@ -17,6 +17,7 @@ limitations under the License.
 package repo // import "helm.sh/helm/v3/pkg/repo"
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -46,7 +47,7 @@ func NewFile() *File {
 // LoadFile takes a file at the given path and returns a File object
 func LoadFile(path string) (*File, error) {
 	r := new(File)
-	b, err := os.ReadFile(path)
+	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return r, errors.Wrapf(err, "couldn't load repositories file (%s)", path)
 	}
@@ -121,5 +122,5 @@ func (r *File) WriteFile(path string, perm os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, perm)
+	return ioutil.WriteFile(path, data, perm)
 }

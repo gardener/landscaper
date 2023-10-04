@@ -19,7 +19,7 @@ package chartutil
 import (
 	"fmt"
 	"io"
-	"os"
+	"io/ioutil"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -114,7 +114,7 @@ func ReadValues(data []byte) (vals Values, err error) {
 
 // ReadValuesFile will parse a YAML file into a map of values.
 func ReadValuesFile(filename string) (Values, error) {
-	data, err := os.ReadFile(filename)
+	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}

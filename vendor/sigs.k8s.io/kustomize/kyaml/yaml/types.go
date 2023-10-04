@@ -39,18 +39,9 @@ func IsYNodeEmptyMap(n *yaml.Node) bool {
 	return n != nil && n.Kind == yaml.MappingNode && len(n.Content) == 0
 }
 
-// IsYNodeEmptySeq is true if the Node is a non-nil empty sequence.
+// IsYNodeEmptyMap is true if the Node is a non-nil empty sequence.
 func IsYNodeEmptySeq(n *yaml.Node) bool {
 	return n != nil && n.Kind == yaml.SequenceNode && len(n.Content) == 0
-}
-
-// IsYNodeNilOrEmpty is true if the Node is nil or appears empty.
-func IsYNodeNilOrEmpty(n *yaml.Node) bool {
-	return n == nil ||
-		IsYNodeTaggedNull(n) ||
-		IsYNodeEmptyMap(n) ||
-		IsYNodeEmptySeq(n) ||
-		IsYNodeZero(n)
 }
 
 // IsYNodeEmptyDoc is true if the node is a Document with no content.

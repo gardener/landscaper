@@ -99,8 +99,7 @@ func (f files) Glob(pattern string) files {
 // The output will not be indented, so you will want to pipe this to the
 // 'indent' template function.
 //
-//	data:
-//
+//   data:
 // {{ .Files.Glob("config/**").AsConfig() | indent 4 }}
 func (f files) AsConfig() string {
 	if f == nil {
@@ -129,8 +128,7 @@ func (f files) AsConfig() string {
 // The output will not be indented, so you will want to pipe this to the
 // 'indent' template function.
 //
-//	data:
-//
+//   data:
 // {{ .Files.Glob("secrets/*").AsSecrets() }}
 func (f files) AsSecrets() string {
 	if f == nil {

@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-Package uploader provides a library for uploading charts.
+/*Package uploader provides a library for uploading charts.
 
 This package contains tools for uploading charts to registries.
 */

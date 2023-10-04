@@ -18,6 +18,7 @@ package repo
 
 import (
 	"bytes"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -103,7 +104,7 @@ func NewIndexFile() *IndexFile {
 
 // LoadIndexFile takes a file at the given path and returns an IndexFile object
 func LoadIndexFile(path string) (*IndexFile, error) {
-	b, err := os.ReadFile(path)
+	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
