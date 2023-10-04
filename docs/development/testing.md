@@ -3,8 +3,13 @@
 This document describes how tests in the Landscaper project can be executed, how they can be written and how the execution in the pipelines work.
 
 **Index:**
-- [Unit tests](#unit-tests)
-- [Integration tests](#integration-tests)
+- [Testing](#testing)
+		- [Unit Tests](#unit-tests)
+			- [execute](#execute)
+			- [write tests](#write-tests)
+		- [Integration tests](#integration-tests)
+			- [execution](#execution)
+			- [write tests](#write-tests-1)
 
 ### Unit Tests
 
@@ -72,7 +77,7 @@ The TestMachinery itself works with
 The integration tests can also be executed locally by providing a kubernetes cluster. Then just run the tests with:
 
 ```
-make integration-test KUBECONFIG_PATH=<path to cluster kubeconfig file>
+make integration-test KUBECONFIG_PATH=<path to cluster kubeconfig file> USE_OCM_LIB=false
 ```
 
 The tests set up a local OCI registry, install/upgrade the landscaper and executes the integration tests.
@@ -80,7 +85,7 @@ The tests set up a local OCI registry, install/upgrade the landscaper and execut
 It is also possible to execute the tests with Gardner shoot cluster creation and deletion with:
 
 ```
-make integration-test-with-cluster-creation KUBECONFIG_PATH=<path to Gardener kubeconfig for project laas on the Canary landscape>
+make integration-test-with-cluster-creation KUBECONFIG_PATH=<path to Gardener kubeconfig for project laas on the Canary landscape> USE_OCM_LIB=false
 ```
 
 #### write tests
