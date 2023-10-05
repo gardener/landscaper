@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -38,7 +39,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0",
 			}
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
+			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{UseOCM: false}, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -51,7 +52,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
 			}
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
+			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{UseOCM: false}, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})

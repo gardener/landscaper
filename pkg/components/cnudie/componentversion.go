@@ -70,7 +70,7 @@ func (c *ComponentVersion) GetComponentReference(name string) *types.ComponentRe
 func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, componentRef *types.ComponentReference,
 	repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (model.ComponentVersion, error) {
 
-	if componentRef != nil {
+	if componentRef == nil {
 		return nil, errors.New("component reference cannot be nil")
 	}
 	cdRef := &lsv1alpha1.ComponentDescriptorReference{
