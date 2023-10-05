@@ -71,8 +71,8 @@ rm -f -r $TMP
 mkdir -p $TMP
 echo "Config directory: ${TMP}"
 
-./.ci/int-test-helper/install-missing-software
-./.ci/int-test-helper/create-shoot-cluster $GARDENER_KUBECONFIG_PATH \
+./hack/int-test-helper/install-missing-software
+./hack/int-test-helper/create-shoot-cluster $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
   $TMP \
   $MAX_NUM_CLUSTERS \
@@ -84,6 +84,6 @@ echo "Config directory: ${TMP}"
 KUBECONFIG_PATH=$TMP/kubeconfig.yaml
 echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
 
-./.ci/local-integration-test $KUBECONFIG_PATH $VERSION $USE_OCM_LIB
+./hack/local-integration-test $KUBECONFIG_PATH $VERSION $USE_OCM_LIB
 
-./.ci/int-test-helper/delete-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
+./hack/int-test-helper/delete-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
