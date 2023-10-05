@@ -28,8 +28,6 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 )
 
-var OsFs = &osFileSystem{}
-
 type osFileSystem struct {
 }
 

@@ -91,13 +91,9 @@ resources:
 
 hpa:
   maxReplicas: 1
-  averageCpuUtilization: 80
-  averageMemoryUtilization: 80
 
 nodeSelector: {}
 
 tolerations: []
 
 affinity: {}
-
-useOCMLib: false

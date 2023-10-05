@@ -45,8 +45,6 @@ type LandscaperConfiguration struct {
 	// for the main controllers (Installation and Execution controller).
 	// +optional
 	HPAMainConfiguration *HPAMainConfiguration `json:"hpaMain,omitempty"`
-	// +optional
-	UseOCMLib bool `json:"useOCMLib,omitempty"`
 }
 
 // LsDeployments contains the names of the landscaper deployments.

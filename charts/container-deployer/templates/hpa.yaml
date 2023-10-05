@@ -21,10 +21,10 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.hpa.averageCpuUtilization }}
+          averageUtilization: 80
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.hpa.averageMemoryUtilization }}
+          averageUtilization: 80

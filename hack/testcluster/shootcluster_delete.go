@@ -79,7 +79,7 @@ func (o *DeleteShootClusterOptions) Run(ctx context.Context) error {
 	log := utils.NewLogger().WithTimestamp()
 
 	shootClusterManager, err := pkg.NewShootClusterManager(log, o.GardenClusterKubeconfigPath, o.Namespace, o.AuthDirectoryPath,
-		0, 0, "1h", "0", false)
+		0, 0, "1h", "0")
 
 	if err != nil {
 		return err

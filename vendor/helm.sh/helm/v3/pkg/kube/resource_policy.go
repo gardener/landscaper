@@ -22,6 +22,5 @@ const ResourcePolicyAnno = "helm.sh/resource-policy"
 // KeepPolicy is the resource policy type for keep
 //
 // This resource policy type allows resources to skip being deleted
-//
-//	during an uninstallRelease action.
+//   during an uninstallRelease action.
 const KeepPolicy = "keep"

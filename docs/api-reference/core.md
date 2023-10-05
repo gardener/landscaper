@@ -333,18 +333,6 @@ github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
 </tr>
 <tr>
 <td>
-<code>useOCM</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>UseOCM defines whether OCM is used to process installations that reference this context.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>registryPullSecrets</code></br>
 <em>
 <a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#localobjectreference-v1-core">

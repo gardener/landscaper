@@ -32,25 +32,15 @@ gh_release = github_repo_helper.repository.release_from_tag(version_file_content
 
 
 try:
-    os.environ['INTEGRATION_TEST_CNUDIE_PATH']
-    os.environ['INTEGRATION_TEST_OCM_PATH']
+    os.environ['INTEGRATION_TEST_PATH']
 except KeyError:
     print("No integration test output path found. Output will not be added to release")
 else:
-    integration_test_path = util.check_env('INTEGRATION_TEST_CNUDIE_PATH')
+    integration_test_path = util.check_env('INTEGRATION_TEST_PATH')
     integration_test_path = pathlib.Path(integration_test_path).resolve()
     integration_test_path = integration_test_path / "ttt.log"
     gh_release.upload_asset(
         content_type='text/plain',
-        name=f'integration-test-cnudie-result-{version_file_contents}.txt',
-        asset=integration_test_path.open(mode='rb'),
-    )
-
-    integration_test_path = util.check_env('INTEGRATION_TEST_OCM_PATH')
-    integration_test_path = pathlib.Path(integration_test_path).resolve()
-    integration_test_path = integration_test_path / "ttt.log"
-    gh_release.upload_asset(
-        content_type='text/plain',
-        name=f'integration-test-ocm-result-{version_file_contents}.txt',
+        name=f'integration-test-result-{version_file_contents}.txt',
         asset=integration_test_path.open(mode='rb'),
     )

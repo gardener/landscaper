@@ -20,6 +20,7 @@ import (
 	"crypto"
 	"encoding/hex"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,13 +42,9 @@ var defaultPGPConfig = packet.Config{
 // SumCollection represents a collection of file and image checksums.
 //
 // Files are of the form:
-//
 //	FILENAME: "sha256:SUM"
-//
 // Images are of the form:
-//
 //	"IMAGE:TAG": "sha256:SUM"
-//
 // Docker optionally supports sha512, and if this is the case, the hash marker
 // will be 'sha512' instead of 'sha256'.
 type SumCollection struct {
@@ -296,7 +293,7 @@ func (s *Signatory) Verify(chartpath, sigpath string) (*Verification, error) {
 }
 
 func (s *Signatory) decodeSignature(filename string) (*clearsign.Block, error) {
-	data, err := os.ReadFile(filename)
+	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

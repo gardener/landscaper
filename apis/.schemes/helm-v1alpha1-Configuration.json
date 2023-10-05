@@ -224,9 +224,6 @@
         "default": {}
       },
       "type": "array"
-    },
-    "useOCMLib": {
-      "type": "boolean"
     }
   },
   "title": "helm-v1alpha1-Configuration",

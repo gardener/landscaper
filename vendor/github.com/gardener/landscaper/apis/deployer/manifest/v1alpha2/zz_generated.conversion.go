@@ -103,7 +103,6 @@ func autoConvert_v1alpha2_Configuration_To_manifest_Configuration(in *Configurat
 	if err := Convert_v1alpha2_Controller_To_manifest_Controller(&in.Controller, &out.Controller, s); err != nil {
 		return err
 	}
-	out.UseOCMLib = in.UseOCMLib
 	return nil
 }
 
@@ -122,7 +121,6 @@ func autoConvert_manifest_Configuration_To_v1alpha2_Configuration(in *manifest.C
 	if err := Convert_manifest_Controller_To_v1alpha2_Controller(&in.Controller, &out.Controller, s); err != nil {
 		return err
 	}
-	out.UseOCMLib = in.UseOCMLib
 	return nil
 }
 

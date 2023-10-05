@@ -84,9 +84,6 @@ hpa:
 controller:
 {{ .Values.deployer.controller | toYaml | indent 2 }}
 {{- end }}
-{{- if .Values.useOCMLib }}
-useOCMLib: true
-{{- end }}
 {{- end }}
 
 {{- define "deployer-image" -}}

@@ -12,7 +12,6 @@ import (
 )
 
 type Resource interface {
-	TypedResourceProvider
 
 	// GetName returns the name by which the resource can be identified among all resources of a component version.
 	GetName() string
@@ -35,15 +34,4 @@ type Resource interface {
 
 	// GetBlobInfo returns information like mediatype and digest of the resource.
 	GetBlobInfo(ctx context.Context) (*types.BlobInfo, error)
-
-	GetCachingIdentity(ctx context.Context) string
-}
-
-type TypedResourceProvider interface {
-	GetTypedContent(ctx context.Context) (*TypedResourceContent, error)
-}
-
-type TypedResourceContent struct {
-	Type     string
-	Resource interface{}
 }

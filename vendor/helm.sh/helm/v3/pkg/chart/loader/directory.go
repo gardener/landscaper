@@ -19,6 +19,7 @@ package loader
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,7 +102,7 @@ func LoadDir(dir string) (*chart.Chart, error) {
 			return fmt.Errorf("cannot load irregular file %s as it has file mode type bits set", name)
 		}
 
-		data, err := os.ReadFile(name)
+		data, err := ioutil.ReadFile(name)
 		if err != nil {
 			return errors.Wrapf(err, "error reading %s", n)
 		}

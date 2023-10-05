@@ -70,38 +70,22 @@ landscaper:
               - committers
               - codeowners
       steps:
-        integration_test_cnudie:
+        integration_test:
           execute:
           - integration-test
-          - false
           trait_depends:
           - publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
-          output_dir: 'integration_test_cnudie'
-        integration_test_ocm:
-          execute:
-          - integration-test
-          - true
-          trait_depends:
-          - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
-          output_dir: 'integration_test_ocm'
+          output_dir: 'integration_test'
     pull-request:
       steps:
-        integration_test_cnudie:
+        integration_test:
           depends:
           - publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
           execute:
           - integration-test-new
-          - false
-        integration_test_ocm:
-          depends:
-          - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
-          execute:
-          - integration-test-new
-          - true
+          output_dir: 'integration_test'
       traits:
         pull-request: ~
         draft_release: ~
@@ -120,30 +104,19 @@ landscaper:
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
-        integration_test_cnudie:
+        integration_test:
           execute:
           - integration-test
-          - false
           trait_depends:
           - publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
-          output_dir: 'integration_test_cnudie'
-        integration_test_ocm:
-          execute:
-          - integration-test
-          - true
-          trait_depends:
-          - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
-          output_dir: 'integration_test_ocm'
+          output_dir: 'integration_test'
         update_release:
           inputs:
-            INTEGRATION_TEST_CNUDIE_PATH: integration_test_cnudie_path
-            INTEGRATION_TEST_OCM_PATH: integration_test_ocm_path
+            INTEGRATION_TEST_PATH: integration_test_path
           execute:
           - update_release.py
           trait_depends:
           - release
           depends:
-          - integration_test_cnudie
-          - integration_test_ocm
+          - integration_test

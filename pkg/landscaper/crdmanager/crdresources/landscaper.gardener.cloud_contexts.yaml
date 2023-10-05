@@ -59,10 +59,6 @@ spec:
               to resolve blueprints.
             type: object
             x-kubernetes-preserve-unknown-fields: true
-          useOCM:
-            description: UseOCM defines whether OCM is used to process installations
-              that reference this context.
-            type: boolean
         type: object
     served: true
     storage: true

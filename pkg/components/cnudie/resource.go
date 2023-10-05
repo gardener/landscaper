@@ -6,10 +6,7 @@ package cnudie
 
 import (
 	"context"
-	"fmt"
 	"io"
-
-	"github.com/gardener/landscaper/pkg/components/ocmlib/registries"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
@@ -19,16 +16,14 @@ import (
 
 func NewResource(res *types.Resource, blobResolver ctf.BlobResolver) model.Resource {
 	return &Resource{
-		resource:        res,
-		blobResolver:    blobResolver,
-		handlerRegistry: registries.Registry,
+		resource:     res,
+		blobResolver: blobResolver,
 	}
 }
 
 type Resource struct {
-	resource        *types.Resource
-	blobResolver    ctf.BlobResolver
-	handlerRegistry *registries.ResourceHandlerRegistry
+	resource     *types.Resource
+	blobResolver ctf.BlobResolver
 }
 
 var _ model.Resource = &Resource{}
@@ -59,22 +54,4 @@ func (r Resource) GetBlob(ctx context.Context, writer io.Writer) (*types.BlobInf
 
 func (r Resource) GetBlobInfo(ctx context.Context) (*types.BlobInfo, error) {
 	return r.blobResolver.Info(ctx, *r.resource)
-}
-
-func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
-	handler := r.handlerRegistry.Get(r.GetType())
-	if handler != nil {
-		// TODO
-		// return handler.GetResourceContent(ctx, r, r.blobResolver)
-		return nil, model.NotImplemented()
-	}
-	return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
-}
-
-func (r *Resource) GetCachingIdentity(ctx context.Context) string {
-	blobInfo, _ := r.blobResolver.Info(ctx, *r.resource)
-	if blobInfo == nil {
-		return ""
-	}
-	return blobInfo.Digest
 }

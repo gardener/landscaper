@@ -18,6 +18,7 @@ package fileutil
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -27,7 +28,7 @@ import (
 // AtomicWriteFile atomically (as atomic as os.Rename allows) writes a file to a
 // disk.
 func AtomicWriteFile(filename string, reader io.Reader, mode os.FileMode) error {
-	tempFile, err := os.CreateTemp(filepath.Split(filename))
+	tempFile, err := ioutil.TempFile(filepath.Split(filename))
 	if err != nil {
 		return err
 	}

@@ -19,16 +19,14 @@ package tlsutil
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"os"
+	"io/ioutil"
 
 	"github.com/pkg/errors"
 )
 
 // NewClientTLS returns tls.Config appropriate for client auth.
-func NewClientTLS(certFile, keyFile, caFile string, insecureSkipTLSverify bool) (*tls.Config, error) {
-	config := tls.Config{
-		InsecureSkipVerify: insecureSkipTLSverify,
-	}
+func NewClientTLS(certFile, keyFile, caFile string) (*tls.Config, error) {
+	config := tls.Config{}
 
 	if certFile != "" && keyFile != "" {
 		cert, err := CertFromFilePair(certFile, keyFile)
@@ -54,7 +52,7 @@ func NewClientTLS(certFile, keyFile, caFile string, insecureSkipTLSverify bool) 
 // Returns an error if the file could not be read, a certificate could not
 // be parsed, or if the file does not contain any certificates
 func CertPoolFromFile(filename string) (*x509.CertPool, error) {
-	b, err := os.ReadFile(filename)
+	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, errors.Errorf("can't read CA file: %v", filename)
 	}

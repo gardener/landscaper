@@ -41,9 +41,6 @@ const (
 	// prPrefix is the second part of shoot clusters used for integration tests
 	prPrefix = "pr"
 
-	ocmlibIdentifier = "o"
-	cnudieIdentifier = "c"
-
 	localStartPrefix = namePrefix + prPrefix + "0-"
 	headUpdatePrefix = namePrefix + prPrefix + "1-"
 
@@ -80,12 +77,10 @@ type ShootClusterManager struct {
 	numClustersStartDeleteOldest int
 	durationForClusterDeletion   time.Duration
 	prID                         string
-	useOCMLib                    bool
 }
 
 func NewShootClusterManager(log utils.Logger, gardenClusterKubeconfigPath, namespace,
-	authDirectoryPath string, maxNumOfClusters, numClustersStartDeleteOldest int, durationForClusterDeletion, prID string,
-	useOCMLib bool) (*ShootClusterManager, error) {
+	authDirectoryPath string, maxNumOfClusters, numClustersStartDeleteOldest int, durationForClusterDeletion, prID string) (*ShootClusterManager, error) {
 
 	log.Logfln("Create cluster manager with:")
 	log.Logfln("  GardenClusterKubeconfigPath: " + gardenClusterKubeconfigPath)
@@ -95,7 +90,6 @@ func NewShootClusterManager(log utils.Logger, gardenClusterKubeconfigPath, names
 	log.Logfln("  NumClustersStartDeleteOldest: " + strconv.Itoa(numClustersStartDeleteOldest))
 	log.Logfln("  DurationForClusterDeletion: " + durationForClusterDeletion)
 	log.Logfln("  PrID: " + prID)
-	log.Logfln("  UseOCMLib: " + strconv.FormatBool(useOCMLib))
 
 	duration, err := time.ParseDuration(durationForClusterDeletion)
 	if err != nil {
@@ -111,7 +105,6 @@ func NewShootClusterManager(log utils.Logger, gardenClusterKubeconfigPath, names
 		numClustersStartDeleteOldest: numClustersStartDeleteOldest,
 		durationForClusterDeletion:   duration,
 		prID:                         prID,
-		useOCMLib:                    useOCMLib,
 	}, nil
 }
 
@@ -269,13 +262,7 @@ func (o *ShootClusterManager) checkAndDeleteExistingTestShoots(ctx context.Conte
 }
 
 func (o *ShootClusterManager) generateShootName() string {
-	var libID string
-	if o.useOCMLib {
-		libID = ocmlibIdentifier
-	} else {
-		libID = cnudieIdentifier
-	}
-	return namePrefix + libID + "-" + prPrefix + o.prID + "-" + strconv.Itoa(rng.Intn(9000)+1000)
+	return namePrefix + prPrefix + o.prID + "-" + strconv.Itoa(rng.Intn(9000)+1000)
 }
 
 func (o *ShootClusterManager) matchesNamePattern(name string) bool {
@@ -561,13 +548,10 @@ func (o *ShootClusterManager) deleteOutdatedShootCluster(ctx context.Context, ga
 		clusterNamePrefix := clusterName[:len(clusterName)-4]
 		newClusterNamePrefix := newClusterName[:len(newClusterName)-4]
 
-		libID := clusterName[3:4]
-		newLibID := newClusterName[3:4]
-
 		if hasDeletionTimestamp {
 			continue
 		} else if !strings.HasPrefix(clusterName, localStartPrefix) && !strings.HasPrefix(clusterName, headUpdatePrefix) &&
-			clusterNamePrefix == newClusterNamePrefix && libID == newLibID {
+			clusterNamePrefix == newClusterNamePrefix {
 			o.log.Logfln("test shoot cluster %s will be deleted because a new test for the same PR is triggered", clusterName)
 
 			if err = o.deleteShootCluster(ctx, gardenClientForShoots, gardenClientForSecrets, clusterName); err != nil {
