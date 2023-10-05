@@ -66,8 +66,6 @@ func NewController(hostClient client.Client, logger logging.Logger,
 		callerName:     callerName,
 	}
 
-	registries.SetOCMLibraryMode(lsConfig.UseOCMLib)
-
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
 		var err error
 		ctrl.SharedCache, err = cache.NewCache(logger.Logr(), cnudieutils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
@@ -76,6 +74,8 @@ func NewController(hostClient client.Client, logger logging.Logger,
 		}
 		logger.Debug("setup shared components registry  cache")
 	}
+
+	registries.SetOCMLibraryMode(lsConfig.UseOCMLib)
 
 	op := operation.NewOperation(kubeClient, scheme, eventRecorder)
 	ctrl.Operation = *op

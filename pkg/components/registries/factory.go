@@ -5,8 +5,9 @@
 package registries
 
 import (
-	"github.com/open-component-model/ocm/pkg/utils"
 	"os"
+
+	"github.com/open-component-model/ocm/pkg/utils"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 

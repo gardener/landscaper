@@ -33,8 +33,6 @@ func NewDeployer(log logging.Logger,
 	directHostClient client.Client,
 	config containerv1alpha1.Configuration) (*deployer, error) {
 
-	registries.SetOCMLibraryMode(config.UseOCMLib)
-
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
 		var err error
@@ -43,6 +41,8 @@ func NewDeployer(log logging.Logger,
 			return nil, err
 		}
 	}
+
+	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
 		log:              log,

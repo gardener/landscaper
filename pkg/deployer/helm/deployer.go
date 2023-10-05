@@ -33,8 +33,6 @@ func NewDeployer(log logging.Logger,
 	hostKubeClient client.Client,
 	config helmv1alpha1.Configuration) (deployerlib.Deployer, error) {
 
-	registries.SetOCMLibraryMode(config.UseOCMLib)
-
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
 		var err error
@@ -43,6 +41,8 @@ func NewDeployer(log logging.Logger,
 			return nil, err
 		}
 	}
+
+	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
 		log:         log,
