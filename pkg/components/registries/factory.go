@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	OCM    = "ocm"
-	CNUDIE = "cnudie"
+	OCM    = "true"
+	CNUDIE = "false"
 )
 
 var (
@@ -31,7 +31,7 @@ var (
 )
 
 func init() {
-	m := os.Getenv("LANDSCAPER_LIBRARY_MODE")
+	m := os.Getenv("USE_OCM_LIB")
 	if m == CNUDIE || m == "" {
 		defaultFactory = &cnudie.Factory{}
 	} else if m == OCM {

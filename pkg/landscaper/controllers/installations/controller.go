@@ -7,8 +7,9 @@ package installations
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	"reflect"
+
+	"github.com/gardener/landscaper/pkg/components/registries"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"

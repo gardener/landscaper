@@ -6,8 +6,9 @@ package container
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	"time"
+
+	"github.com/gardener/landscaper/pkg/components/registries"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
