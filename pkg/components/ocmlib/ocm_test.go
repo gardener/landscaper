@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -97,6 +98,9 @@ var _ = Describe("ocm-lib facade implementation", func() {
 	factory := ocmlib.Factory{}
 
 	It("get component version from component descriptor reference (from local repository)", func() {
+		testfactory, ok := registries.GetFactory(true).(*ocmlib.Factory)
+		fmt.Println(ok)
+		_ = testfactory
 		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion
 		// method can deal with the legacy ComponentDescriptorReference type rather than testing ocmlib functionality
 		cdref := &v1alpha1.ComponentDescriptorReference{}

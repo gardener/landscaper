@@ -56,11 +56,18 @@ func SetOCMLibraryMode(useOCMLib bool) {
 func GetFactory(useOCM ...bool) model.Factory {
 	log, _ := logging.GetLogger()
 
+	var ocmLibraryModeBool bool
+	if ocmLibraryMode != nil {
+		ocmLibraryModeBool = *ocmLibraryMode
+	} else {
+		ocmLibraryModeBool = false
+		log.Info("useOCMLib flag not set and therefore defaulted!", "ocmLibraryMode", ocmLibraryModeBool)
+	}
 	useOCMBool := utils.OptionalDefaultedBool(false, useOCM...)
 
 	// Behavior defined as in
 	// https://github.tools.sap/kubernetes/k8s-lifecycle-management/blob/master/docs/ADRs/2023-09-29-Cnudie-OCM-Switch.md
-	if useOCMBool || *ocmLibraryMode {
+	if useOCMBool || ocmLibraryModeBool {
 		log.Info("using cnudie")
 		return ocmFactory
 	} else {
