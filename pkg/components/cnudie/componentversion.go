@@ -6,6 +6,7 @@ package cnudie
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -46,8 +47,7 @@ func (c *ComponentVersion) GetComponentDescriptor() *types.ComponentDescriptor {
 }
 
 func (c *ComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
-	context := c.componentDescriptor.GetEffectiveRepositoryContext()
-	return context
+	return c.componentDescriptor.GetEffectiveRepositoryContext()
 }
 
 func (c *ComponentVersion) GetComponentReferences() []types.ComponentReference {
@@ -70,6 +70,9 @@ func (c *ComponentVersion) GetComponentReference(name string) *types.ComponentRe
 func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, componentRef *types.ComponentReference,
 	repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (model.ComponentVersion, error) {
 
+	if componentRef != nil {
+		return nil, errors.New("component reference cannot be nil")
+	}
 	cdRef := &lsv1alpha1.ComponentDescriptorReference{
 		RepositoryContext: repositoryContext,
 		ComponentName:     componentRef.ComponentName,

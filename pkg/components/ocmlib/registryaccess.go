@@ -6,6 +6,7 @@ package ocmlib
 
 import (
 	"context"
+	"errors"
 	"reflect"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -55,6 +56,13 @@ func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) (mod
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
+	if cdRef == nil {
+		return nil, errors.New("component descriptor reference cannot be nil")
+	}
+	if cdRef.RepositoryContext == nil {
+		return nil, errors.New("repository context cannot be nil")
+	}
+
 	spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
 	if err != nil {
 		return nil, err

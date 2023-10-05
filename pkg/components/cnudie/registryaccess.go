@@ -6,6 +6,7 @@ package cnudie
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -22,6 +23,13 @@ type RegistryAccess struct {
 var _ model.RegistryAccess = &RegistryAccess{}
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (model.ComponentVersion, error) {
+	if cdRef == nil {
+		return nil, errors.New("component descriptor reference cannot be nil")
+	}
+	if cdRef.RepositoryContext == nil {
+		return nil, errors.New("repository context cannot be nil")
+	}
+
 	cd, blobResolver, err := r.componentResolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
