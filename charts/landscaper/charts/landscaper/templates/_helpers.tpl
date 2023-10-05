@@ -188,6 +188,10 @@ hpaMain:
 {{ .Values.hpaMain | toYaml | indent 2 }}
 {{- end }}
 
+{{- if .Values.landscaper.useOCMLib }}
+useOCMLib: true
+{{- end }}
+
 {{- end }}
 
 {{- define "landscaper-image" -}}

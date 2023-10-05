@@ -25,6 +25,20 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 )
 
+// RootPath is the interface for projected filesystems
+// to determine the root folder in the underlying
+// filesystem.
+type RootPath interface {
+	Root() string
+}
+
+func Root(fs vfs.FileSystem) string {
+	if r, ok := fs.(RootPath); ok {
+		return r.Root()
+	}
+	return ""
+}
+
 type ProjectionFileSystem struct {
 	*utils.MappedFileSystem
 	projection string
@@ -50,4 +64,15 @@ func New(base vfs.FileSystem, path string) (vfs.FileSystem, error) {
 
 func (p *ProjectionFileSystem) Name() string {
 	return fmt.Sprintf("ProjectionFilesytem [%s]%s", p.Base().Name(), p.projection)
+}
+
+func (p *ProjectionFileSystem) Projection() string {
+	return p.projection
+}
+
+func (p *ProjectionFileSystem) Root() string {
+	if r, ok := p.Base().(RootPath); ok {
+		return vfs.Join(p, r.Root(), p.projection)
+	}
+	return p.projection
 }

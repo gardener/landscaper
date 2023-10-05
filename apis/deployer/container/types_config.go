@@ -58,6 +58,9 @@ type Configuration struct {
 
 	// Controller contains configuration concerning the controller framework.
 	Controller Controller `json:"controller,omitempty"`
+
+	// +optional
+	UseOCMLib bool `json:"useOCMLib,omitempty"`
 }
 
 // ContainerSpec defines a container specification

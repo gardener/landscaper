@@ -1462,6 +1462,7 @@ func Convert_core_ConfigMapReference_To_v1alpha1_ConfigMapReference(in *core.Con
 func autoConvert_v1alpha1_Context_To_core_Context(in *Context, out *core.Context, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
+	out.UseOCM = in.UseOCM
 	out.RegistryPullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Configurations = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.Configurations))
 	out.ComponentVersionOverwritesReference = in.ComponentVersionOverwritesReference
@@ -1476,6 +1477,7 @@ func Convert_v1alpha1_Context_To_core_Context(in *Context, out *core.Context, s 
 func autoConvert_core_Context_To_v1alpha1_Context(in *core.Context, out *Context, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
+	out.UseOCM = in.UseOCM
 	out.RegistryPullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Configurations = *(*map[string]AnyJSON)(unsafe.Pointer(&in.Configurations))
 	out.ComponentVersionOverwritesReference = in.ComponentVersionOverwritesReference

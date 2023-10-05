@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+meta:
+  schemaVersion: v2
+component:
+  name: example.com/root
+  version: 1.0.0
+
+  provider: internal
+
+  repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+
+  componentReferences: []
+  sources: []
+
+  resources:
+  - name: test
+    relation: local
+    type: PlainText
+    version: 1.0.0
+    access:
+      fileName: sha256.3ed99e50092c619823e2c07941c175ea2452f1455f570c55510586b387ec2ff2
+      mediaType: text/plain
+      type: localFilesystemBlob
