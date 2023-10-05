@@ -81,7 +81,11 @@ func ResolveBlueprint(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return content.Resource.(*Blueprint), nil
+	blueprint, ok := content.Resource.(*Blueprint)
+	if !ok {
+		return nil, fmt.Errorf("received resource of type %T but expected type *Blueprint", blueprint)
+	}
+	return blueprint, nil
 }
 
 // Resolve returns a blueprint from a given reference.
@@ -139,17 +143,12 @@ func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *ls
 	if err != nil {
 		return nil, err
 	}
-	return content.Resource.(*Blueprint), nil
+	blueprint, ok := content.Resource.(*Blueprint)
+	if !ok {
+		return nil, fmt.Errorf("received resource of type %T but expected type *Blueprint", blueprint)
+	}
+	return blueprint, nil
 }
-
-// ResolveBlueprintFromComponentVersion resolves a blueprint defined by a component version.
-//func ResolveBlueprintFromComponentVersion(
-//	ctx context.Context,
-//	componentVersion model.ComponentVersion,
-//	blueprintName string) (*Blueprint, error) {
-//
-//	return GetStore().Fetch(ctx, componentVersion, blueprintName)
-//}
 
 // GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.
 func GetBlueprintResourceFromComponentDescriptor(cd *types.ComponentDescriptor, blueprintName string) (types.Resource, error) {

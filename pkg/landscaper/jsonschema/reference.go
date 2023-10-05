@@ -224,8 +224,10 @@ func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, cu
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch jsonschema for '%s': %w", uri.String(), err)
 	}
-	result := resourceContent.Resource.([]byte)
-
+	result, ok := resourceContent.Resource.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("received resource of type %T but expected type []byte", result)
+	}
 	data, err := decodeJSON(result)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling json into go struct: %w", err)

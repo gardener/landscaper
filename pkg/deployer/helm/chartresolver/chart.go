@@ -102,7 +102,11 @@ func getChartFromOCIRef(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return resourceContent.Resource.(*chart.Chart), nil
+	content, ok := resourceContent.Resource.(*chart.Chart)
+	if !ok {
+		return nil, fmt.Errorf("received resource of type %T but expected type *Chart", content)
+	}
+	return content, nil
 }
 
 func getChartFromHelmChartRepo(ctx context.Context,
@@ -117,5 +121,12 @@ func getChartFromHelmChartRepo(ctx context.Context,
 	}
 
 	resourceContent, err := resource.GetTypedContent(ctx)
-	return resourceContent.Resource.(*chart.Chart), err
+	if err != nil {
+		return nil, err
+	}
+	content, ok := resourceContent.Resource.(*chart.Chart)
+	if !ok {
+		return nil, fmt.Errorf("received resource of type %T but expected type *Chart", content)
+	}
+	return content, err
 }
