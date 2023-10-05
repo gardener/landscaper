@@ -6,9 +6,8 @@ package helm
 
 import (
 	"context"
-	"time"
-
 	"github.com/gardener/landscaper/pkg/components/registries"
+	"time"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +32,8 @@ func NewDeployer(log logging.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	config helmv1alpha1.Configuration) (deployerlib.Deployer, error) {
+
+	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
@@ -65,9 +66,6 @@ type deployer struct {
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
-	registries.SetOCMLibraryMode(d.config.UseOCMLib)
-	registries.SetFactory(ctx, lsCtx.UseOCM)
-
 	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "newRootLogger", err.Error())

@@ -47,9 +47,6 @@ import (
 // Reconcile handles the reconcile flow for a container deploy item.
 // todo: do retries on failure: difference between main container failure and init/wait container failure
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
-	registries.SetOCMLibraryMode(c.Configuration.UseOCMLib)
-	registries.SetFactory(ctx, c.Context.UseOCM)
-
 	pod, err := c.getPod(ctx)
 	logger := logging.FromContextOrDiscard(ctx)
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -133,6 +130,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			ImagePullSecret:               imagePullSecret,
 			BluePrintPullSecret:           blueprintSecret,
 			ComponentDescriptorPullSecret: componentDescriptorSecret,
+
+			UseOCM: c.Context.UseOCM,
 
 			Name:                 c.DeployItem.Name,
 			Namespace:            c.Configuration.Namespace,
@@ -585,7 +584,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 	// sync pull secrets for BluePrint
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, fs, nil, c.sharedCache, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		registryAccess, err := registries.GetFactory(c.Context.UseOCM).NewRegistryAccess(ctx, fs, nil, c.sharedCache, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return

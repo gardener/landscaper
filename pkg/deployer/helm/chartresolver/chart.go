@@ -41,7 +41,7 @@ func GetChart(ctx context.Context,
 	}
 
 	if len(chartConfig.Ref) != 0 {
-		return getChartFromOCIRef(ctx, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
+		return getChartFromOCIRef(ctx, contextObj, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
 	}
 
 	if chartConfig.HelmChartRepo != nil {
@@ -87,12 +87,13 @@ func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Char
 }
 
 func getChartFromOCIRef(ctx context.Context,
+	contextObj *lsv1alpha1.Context,
 	ociImageRef string,
 	registryPullSecrets []corev1.Secret,
 	ociConfig *config.OCIConfiguration,
 	sharedCache cache.Cache) (*chart.Chart, error) {
 
-	resource, err := registries.GetFactory().NewHelmOCIResource(ctx, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
+	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmOCIResource(ctx, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +110,7 @@ func getChartFromHelmChartRepo(ctx context.Context,
 	contextObj *lsv1alpha1.Context,
 	repo *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
 
-	resource, err := registries.GetFactory().NewHelmRepoResource(ctx, repo, lsClient, contextObj)
+	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmRepoResource(ctx, repo, lsClient, contextObj)
 	if err != nil {
 		return nil, fmt.Errorf("unable to construct resource for chart %q with version %q from helm chart repo %q: %w",
 			repo.HelmChartName, repo.HelmChartVersion, repo.HelmChartRepoUrl, err)

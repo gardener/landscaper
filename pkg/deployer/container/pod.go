@@ -118,6 +118,8 @@ type PodOptions struct {
 	BluePrintPullSecret               string
 	ComponentDescriptorPullSecret     string
 
+	UseOCM bool
+
 	Name                 string
 	Namespace            string
 	DeployItemName       string
@@ -230,6 +232,10 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		{
 			Name:  container.RegistrySecretBasePathName,
 			Value: container.RegistrySecretBasePath,
+		},
+		{
+			Name:  container.UseOCMName,
+			Value: fmt.Sprint(opts.UseOCM),
 		},
 	}
 	additionalSidecarEnvVars := []corev1.EnvVar{

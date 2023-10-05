@@ -6,6 +6,7 @@ package container
 
 import (
 	"context"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"time"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -31,6 +32,8 @@ func NewDeployer(log logging.Logger,
 	hostKubeClient client.Client,
 	directHostClient client.Client,
 	config containerv1alpha1.Configuration) (*deployer, error) {
+
+	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {

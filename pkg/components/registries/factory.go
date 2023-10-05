@@ -5,7 +5,8 @@
 package registries
 
 import (
-	"context"
+	"github.com/open-component-model/ocm/pkg/utils"
+	"os"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
@@ -15,38 +16,72 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 )
 
+const (
+	OCM    = "ocm"
+	CNUDIE = "cnudie"
+)
+
 var (
-	factory        model.Factory
-	ocmLibraryMode bool
+	ocmFactory     *ocmlib.Factory
+	cnudieFactory  *cnudie.Factory
+	defaultFactory model.Factory
+
+	ocmLibraryMode *bool
 )
 
 func init() {
-	SetOCMLibraryMode(true)
-	SetFactory(context.Background(), false)
-	log, _ := logging.GetLogger()
-	if _, ok := factory.(*ocmlib.Factory); ok {
-		log.Info("set ocmlib during initialization")
+	m := os.Getenv("LANDSCAPER_LIBRARY_MODE")
+	if m == CNUDIE || m == "" {
+		defaultFactory = &cnudie.Factory{}
+	} else if m == OCM {
+		defaultFactory = &ocmlib.Factory{}
 	} else {
-		log.Info("set cnudie during initialization")
+		defaultFactory = nil
 	}
-	logging.SetLogConsumer((&ocmlib.Factory{}).SetApplicationLogger)
+
+	cnudieFactory = &cnudie.Factory{}
+	ocmFactory = &ocmlib.Factory{}
+
+	// Enable logging from ocm lib
+	logging.SetLogConsumer(ocmFactory.SetApplicationLogger)
 }
 
+// SetOCMLibraryMode can only be set once as it is determined by the landscaper or deployer configuration
 func SetOCMLibraryMode(useOCMLib bool) {
-	ocmLibraryMode = useOCMLib
-}
-
-func SetFactory(ctx context.Context, useOCM bool) {
-	log, _ := logging.FromContextOrNew(ctx, nil, nil)
-	if useOCM || ocmLibraryMode {
-		factory = &ocmlib.Factory{}
-		log.Info("using ocmlib")
+	log, _ := logging.GetLogger()
+	if ocmLibraryMode == nil {
+		*ocmLibraryMode = useOCMLib
 	} else {
-		factory = &cnudie.Factory{}
-		log.Info("using cnudie")
+		log.Info("useOCMLib flag already set to ", "useOCMLib", *ocmLibraryMode)
 	}
 }
 
-func GetFactory() model.Factory {
-	return factory
+func GetFactory(useOCM ...bool) model.Factory {
+	log, _ := logging.GetLogger()
+	// This is to centrally control the facade implementation used by unit tests.
+	// It assumes that if ocmLibraryMode is not set and therefore nil, GetFactory is
+	// not called in an actually running landscaper instance.
+	// If no argument is passed, useOCM is defaulted to false and
+	// the library defined by the environment variable will be used.
+	useOCMBool := utils.OptionalDefaultedBool(false, useOCM...)
+	if ocmLibraryMode == nil {
+		log.Info("useOCMLib flag not set, this should only happen in tests")
+		if useOCMBool {
+			log.Info("using ocm-lib")
+			return ocmFactory
+		} else {
+			log.Info("using cnudie")
+			return defaultFactory
+		}
+	}
+
+	// Behavior defined as in
+	// https://github.tools.sap/kubernetes/k8s-lifecycle-management/blob/master/docs/ADRs/2023-09-29-Cnudie-OCM-Switch.md
+	if useOCMBool || *ocmLibraryMode {
+		log.Info("using cnudie")
+		return cnudieFactory
+	} else {
+		log.Info("using ocm")
+		return ocmFactory
+	}
 }

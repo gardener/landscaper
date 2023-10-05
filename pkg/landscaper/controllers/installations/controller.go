@@ -7,9 +7,8 @@ package installations
 import (
 	"context"
 	"fmt"
-	"reflect"
-
 	"github.com/gardener/landscaper/pkg/components/registries"
+	"reflect"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"
@@ -66,6 +65,8 @@ func NewController(hostClient client.Client, logger logging.Logger,
 		lockingEnabled: lockingEnabled,
 		callerName:     callerName,
 	}
+
+	registries.SetOCMLibraryMode(lsConfig.UseOCMLib)
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
 		var err error
@@ -267,10 +268,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
 
-	registries.SetOCMLibraryMode(c.LsConfig.UseOCMLib)
-	registries.SetFactory(ctx, lsCtx.External.UseOCM)
-
-	if err := c.SetupRegistries(ctx, op, append(lsCtx.External.RegistryPullSecrets(), inst.Spec.RegistryPullSecrets...), inst); err != nil {
+	if err := c.SetupRegistries(ctx, op, lsCtx.External.Context, append(lsCtx.External.RegistryPullSecrets(), inst.Spec.RegistryPullSecrets...), inst); err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 

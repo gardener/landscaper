@@ -6,17 +6,17 @@ package installations
 
 import (
 	"context"
+	"github.com/gardener/landscaper/pkg/components/registries"
 
 	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, pullSecrets []lsv1alpha1.ObjectReference,
+func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, contextObj lsv1alpha1.Context, pullSecrets []lsv1alpha1.ObjectReference,
 	installation *lsv1alpha1.Installation) error {
 
 	// resolve all pull secrets
@@ -30,7 +30,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}
 
-	registry, err := registries.GetFactory().NewRegistryAccess(ctx, nil, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
+	registry, err := registries.GetFactory(contextObj.UseOCM).NewRegistryAccess(ctx, nil, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
 	if err != nil {
 		return err
 	}
