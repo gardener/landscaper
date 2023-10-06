@@ -160,7 +160,7 @@ func (o *ShootClusterManager) CreateShootCluster(ctx context.Context) error {
 	}
 
 	o.log.Logfln("create short-lived kubeconfig for test cluster")
-	shootKubeconfigBase64, err := o.createShootAdminKubeconfig(ctx, gardenClientForSecrets, clusterName, kubeconfigExpirationSeconds)
+	shootKubeconfigBase64, err := o.createShootAdminKubeconfig(ctx, gardenClientForShoots, clusterName, kubeconfigExpirationSeconds)
 	if err != nil {
 		return fmt.Errorf("failed to get kubeconfig: %w", err)
 	}
