@@ -42,7 +42,7 @@ rm -f -r $TMP
 mkdir -p $TMP
 echo "Config directory: ${TMP}"
 
-./.ci/int-test-helper/install-missing-software
-./.ci/int-test-helper/create-registry $KUBECONFIG_PATH $TMP
-./.ci/int-test-helper/install-landscaper $KUBECONFIG_PATH ${VERSION} $TMP $USE_OCM_LIB
-./.ci/int-test-helper/run-tests $KUBECONFIG_PATH $TMP/docker.config ${VERSION}
+./hack/int-test-helper/install-missing-software
+./hack/int-test-helper/create-registry $KUBECONFIG_PATH $TMP
+./hack/int-test-helper/install-landscaper $KUBECONFIG_PATH ${VERSION} $TMP $USE_OCM_LIB
+./hack/int-test-helper/run-tests $KUBECONFIG_PATH $TMP/docker.config ${VERSION}
