@@ -55,9 +55,6 @@ func ValidateInstallationSpec(spec *core.InstallationSpec, fldPath *field.Path) 
 	allErrs = append(allErrs, ValidateInstallationBlueprint(spec.Blueprint, fldPath.Child("blueprint"))...)
 	allErrs = append(allErrs, ValidateInstallationComponentDescriptor(spec.ComponentDescriptor, fldPath.Child("componentDescriptor"))...)
 
-	// check RegistryPullSecrets
-	allErrs = append(allErrs, ValidateObjectReferenceList(spec.RegistryPullSecrets, fldPath.Child("registryPullSecrets"))...)
-
 	return allErrs
 }
 

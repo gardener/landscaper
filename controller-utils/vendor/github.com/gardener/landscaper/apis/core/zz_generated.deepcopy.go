@@ -747,11 +747,6 @@ func (in *DeployItemSpec) DeepCopyInto(out *DeployItemSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.RegistryPullSecrets != nil {
-		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
-		*out = make([]ObjectReference, len(*in))
-		copy(*out, *in)
-	}
 	if in.Timeout != nil {
 		in, out := &in.Timeout, &out.Timeout
 		*out = new(Duration)
@@ -1284,11 +1279,6 @@ func (in *ExecutionSpec) DeepCopyInto(out *ExecutionSpec) {
 		*out = make([]byte, len(*in))
 		copy(*out, *in)
 	}
-	if in.RegistryPullSecrets != nil {
-		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
-		*out = make([]ObjectReference, len(*in))
-		copy(*out, *in)
-	}
 	return
 }
 
@@ -1663,11 +1653,6 @@ func (in *InstallationSpec) DeepCopyInto(out *InstallationSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.Blueprint.DeepCopyInto(&out.Blueprint)
-	if in.RegistryPullSecrets != nil {
-		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
-		*out = make([]ObjectReference, len(*in))
-		copy(*out, *in)
-	}
 	in.Imports.DeepCopyInto(&out.Imports)
 	if in.ImportDataMappings != nil {
 		in, out := &in.ImportDataMappings, &out.ImportDataMappings

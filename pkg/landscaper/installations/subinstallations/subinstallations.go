@@ -287,7 +287,6 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
 			Context:             inst.Spec.Context,
-			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
 			ComponentDescriptor: subCdDef,
 			Blueprint:           *subBlueprint,
 			Imports:             subInstTmpl.Imports,
