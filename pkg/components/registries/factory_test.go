@@ -12,6 +12,9 @@ import (
 )
 
 var _ = Describe("check correct factory instantiation all condition variants", func() {
+	BeforeEach(func() {
+		ocmLibraryMode = nil
+	})
 	// Standard Cases
 	It("useOCMLib: false / useOCM: false", func() {
 		SetOCMLibraryMode(false)
