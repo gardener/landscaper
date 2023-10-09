@@ -50,9 +50,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	var (
 		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.GetInstallation().Name)).Child("internalExports")
 		internalExports = map[string]interface{}{
-			"deployitems": struct{}{},
-			"dataobjects": struct{}{},
-			"targets":     struct{}{},
+			"deployitems": map[string]interface{}{},
+			"dataobjects": map[string]interface{}{},
+			"targets":     map[string]interface{}{},
 		}
 	)
 
