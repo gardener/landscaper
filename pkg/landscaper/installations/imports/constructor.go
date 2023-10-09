@@ -141,9 +141,19 @@ func (c *Constructor) constructImports(
 			}
 			if _, ok := imports[def.Name]; !ok {
 				if def.Required != nil && !*def.Required {
-					continue // don't throw an error if the import is not required
+					if len(def.Default.Value.RawMessage) != 0 {
+						// there is a default defined in the blueprint
+						var defVal interface{}
+						if err := yaml.Unmarshal(def.Default.Value.RawMessage, &defVal); err != nil {
+							return nil, installations.NewErrorf(installations.InvalidDefaultValue, err, "default value defined for import %q of type %s cannot be unmarshalled", def.Name, lsv1alpha1.ImportTypeData)
+						}
+						imports[def.Name] = defVal
+					} else {
+						continue // don't throw an error if the import is not required
+					}
+				} else {
+					return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeData)
 				}
-				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeData)
 			}
 			if def.Schema == nil {
 				return nil, installations.NewErrorf(installations.SchemaValidationFailed, fmt.Errorf("schema is nil"), "%s: no schema defined", defPath.String())
