@@ -42,3 +42,7 @@ func NewUncachedClient(burst, qps int) func(config *rest.Config, options client.
 	}
 
 }
+
+func NewUncached(burst, qps int, config *rest.Config, options client.Options) (client.Client, error) {
+	return NewUncachedClient(burst, qps)(config, options)
+}
