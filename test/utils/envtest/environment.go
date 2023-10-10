@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	utils2 "github.com/gardener/landscaper/pkg/utils"
 	"html/template"
 	"io"
 	"os"
@@ -75,7 +76,8 @@ func (e *Environment) Start() (client.Client, error) {
 		return nil, err
 	}
 
-	fakeClient, err := client.New(restConfig, client.Options{Scheme: api.LandscaperScheme})
+	fakeClient, err := utils2.NewUncached(utils2.LsResourceClientBurstDefault, utils2.LsResourceClientQpsDefault,
+		restConfig, client.Options{Scheme: api.LandscaperScheme})
 	if err != nil {
 		return nil, err
 	}
