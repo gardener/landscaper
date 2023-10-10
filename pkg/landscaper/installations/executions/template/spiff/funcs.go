@@ -19,11 +19,11 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 )
 
 func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.ComponentVersion, componentVersions *model.ComponentVersionList, targetResolver targetresolver.TargetResolver) error {

@@ -17,7 +17,7 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 )
 
 // Templater describes the spiff template implementation for execution templater.
