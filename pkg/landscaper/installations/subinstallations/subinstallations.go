@@ -18,6 +18,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/validation"
+	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -25,7 +26,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/utils/dependencies"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.

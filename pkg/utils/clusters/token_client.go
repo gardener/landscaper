@@ -19,7 +19,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 )
 
 type TokenClient struct {
