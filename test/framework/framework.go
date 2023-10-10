@@ -158,7 +158,7 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 
 	f.Client = envtest.NewRetryingClient(innerClient, logger)
 
-	f.ClientSet, err = kubernetes.NewForConfig(f.RestConfig)
+	f.ClientSet, err = utils3.NewForConfig(utils3.LsResourceClientBurstDefault, utils3.LsResourceClientQpsDefault, f.RestConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes clientset: %w", err)
 	}
