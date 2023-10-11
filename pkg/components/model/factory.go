@@ -24,6 +24,41 @@ import (
 
 type Factory interface {
 	SetApplicationLogger(logger logging.Logger)
+
+	// NewRegistryAccess provides an instance of a RegistryAccess, which is an interface for dealing with ocm
+	// components.Technically, it is a facade either backed by the [component-cli] or by the [ocmlib].
+	//
+	// fs allows to pass a file system that is considered for resolving local components or artifacts as well as other
+	// local resources such as dockerconfig files specified in the ociRegistryConfig. If nil is passed, the hosts
+	// file system is used.
+	//
+	// secrets allows to pass in credentials of specific types (such as dockerconfigjson or
+	// credentials.config.ocm.software although the latter only works with the ocmlib backed implementation and are
+	// ignored otherwise) that will be considered when accessing registries.
+	//
+	// sharedCache is an oci cache. It is only used by the component-cli backed implementation and is ignored otherwise,
+	// as the ocmlib backed implementations uses an ocmlib internal cache for oci artifacts.
+	//
+	// localRegistryConfig allows to pass in a root path. This root path may already point to a local ocm repository (in
+	// which case it is sufficient to specify that the repository context is of type "local" in the component reference
+	// when trying to get a component version) or it may point to a directory above (in which case the repository
+	// context has to be further specified).
+	//
+	// ociRegistryConfig allows to provide configuration for the oci client used to access artifacts in oci registries.
+	// The OCICacheConfiguration only influences the component-cli backed implementation and is ignored otherwise, since
+	// the ocmlib backed implementation uses an ocmlib internal cache for oci artifacts.
+	//
+	// inlineCd allows to pass a component descriptor into the RegistryAccess, so the described component can later be
+	// resolved through it. This is primarily used to pass in the inline component descriptors specified in
+	// installations. Local artifacts described in inline component descriptors can be resolved based on the fs and the
+	// localRegistryConfig. Referenced components in remote repositories can be resolved based on the repository context
+	// of the inline component descriptor itself.
+	//
+	// additionalBlobResolvers allows to pass in additional blob resolvers. These are only used by the component-cli
+	// backed implementation and are ignored otherwise.
+	//
+	// [component-cli]: https://github.com/gardener/component-cli
+	// [ocmlib]: https://github.com/open-component-model/ocm
 	NewRegistryAccess(ctx context.Context,
 		fs vfs.FileSystem,
 		secrets []corev1.Secret,

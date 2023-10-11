@@ -1,0 +1,15 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/landscaper-component-with-invalid-reference
+  provider:
+    name: internal
+  version: 1.0.0
+repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+spec:
+  references:
+    - name: invalid-component-reference
+      version: 1.0.0
+      componentName: example.com/non-existent-component

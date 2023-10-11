@@ -52,11 +52,11 @@ func (h *BlueprintHandler) GetResourceContent(ctx context.Context, r model.Resou
 	fs := memoryfs.New()
 	pr := common.NewPrinter(nil)
 	ok, _, err := bpdownload.New().Download(pr, access, filepath.Join("/"), fs)
-	if !ok {
-		return nil, fmt.Errorf("artifact does not match downloader (check config media type)")
-	}
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, fmt.Errorf("artifact does not match blueprint downloader (check config media type)")
 	}
 
 	typedResourceContent, err := h.Prepare(ctx, fs)
