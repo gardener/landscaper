@@ -590,6 +590,9 @@ github.com/gardener/landscaper/controller-utils/pkg/crdmanager
 github.com/gardener/landscaper/controller-utils/pkg/errors
 github.com/gardener/landscaper/controller-utils/pkg/kubernetes
 github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock
+github.com/gardener/landscaper/controller-utils/pkg/landscaper
+github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver
+github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret
 github.com/gardener/landscaper/controller-utils/pkg/logging
 github.com/gardener/landscaper/controller-utils/pkg/logging/constants
 github.com/gardener/landscaper/controller-utils/pkg/utils

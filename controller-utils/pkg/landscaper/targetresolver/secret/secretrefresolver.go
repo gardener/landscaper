@@ -13,8 +13,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-	. "github.com/gardener/landscaper/pkg/utils/targetresolver"
+	lscutils "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
+	. "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 )
 
 var _ TargetResolver = SecretRefResolver{}
@@ -41,7 +41,7 @@ func (srr SecretRefResolver) Resolve(ctx context.Context, target *lsv1alpha1.Tar
 			Key: target.Spec.SecretRef.Key,
 		}
 
-		_, rawContent, _, err := lsutils.ResolveSecretReference(ctx, srr.Client, sr)
+		_, rawContent, _, err := lscutils.ResolveSecretReference(ctx, srr.Client, sr)
 		if err != nil {
 			return nil, err
 		}

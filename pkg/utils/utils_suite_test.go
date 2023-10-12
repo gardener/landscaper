@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsutils "github.com/gardener/landscaper/pkg/utils"
+	lscutils "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -77,7 +77,7 @@ ref:
 				Key: key,
 			}
 
-			wholeSecret1, value1, gen1, err := lsutils.ResolveSecretReference(ctx, state.Client, sr1)
+			wholeSecret1, value1, gen1, err := lscutils.ResolveSecretReference(ctx, state.Client, sr1)
 			utils.ExpectNoError(err)
 
 			ms1 := &MyStruct{
@@ -93,7 +93,7 @@ ref:
 				},
 			}
 
-			wholeSecret2, value2, gen2, err := lsutils.ResolveSecretReference(ctx, state.Client, sr2)
+			wholeSecret2, value2, gen2, err := lscutils.ResolveSecretReference(ctx, state.Client, sr2)
 			utils.ExpectNoError(err)
 
 			ms2 := &MyStruct{}

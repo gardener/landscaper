@@ -19,13 +19,13 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/validation"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 const (
