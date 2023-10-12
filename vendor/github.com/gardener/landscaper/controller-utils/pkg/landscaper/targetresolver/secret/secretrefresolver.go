@@ -14,10 +14,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	lscutils "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
-	. "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 )
-
-var _ TargetResolver = SecretRefResolver{}
 
 type SecretRefResolver struct {
 	Client client.Client
@@ -30,7 +27,7 @@ func New(c client.Client) *SecretRefResolver {
 }
 
 func (srr SecretRefResolver) Resolve(ctx context.Context, target *lsv1alpha1.Target) (*lsv1alpha1.ResolvedTarget, error) {
-	rt := NewResolvedTarget(target)
+	rt := lsv1alpha1.NewResolvedTarget(target)
 
 	if target.Spec.SecretRef != nil {
 		sr := &lsv1alpha1.SecretReference{

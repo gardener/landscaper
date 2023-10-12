@@ -22,7 +22,6 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/test/utils"
@@ -46,7 +45,7 @@ var _ = Describe("ReadinessCheck", func() {
 		rawTarget, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, rawTarget)).To(Succeed())
-		target = targetresolver.NewResolvedTarget(rawTarget)
+		target = lsv1alpha1.NewResolvedTarget(rawTarget)
 	})
 
 	AfterEach(func() {

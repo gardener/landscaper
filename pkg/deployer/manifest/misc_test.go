@@ -24,7 +24,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
+	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/test/utils"
@@ -74,7 +74,7 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		sr := secretresolver.New(state.Client)
+		sr := genericresolver.New(state.Client)
 		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -123,7 +123,7 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		sr := secretresolver.New(state.Client)
+		sr := genericresolver.New(state.Client)
 		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -188,7 +188,7 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		sr := secretresolver.New(state.Client)
+		sr := genericresolver.New(state.Client)
 		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -249,7 +249,7 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		sr := secretresolver.New(state.Client)
+		sr := genericresolver.New(state.Client)
 		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -306,7 +306,7 @@ var _ = Describe("", func() {
 		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		sr := secretresolver.New(state.Client)
+		sr := genericresolver.New(state.Client)
 		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -368,7 +368,7 @@ var _ = Describe("", func() {
 		requirementValueMarshaled, err := json.Marshal(requirementValue)
 		Expect(err).ToNot(HaveOccurred())
 
-		sr := secretresolver.New(state.Client)
+		sr := genericresolver.New(state.Client)
 		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -479,7 +479,7 @@ var _ = Describe("", func() {
 		rawCMList, err := kutil.ConvertToRawExtension(cmList, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		sr := secretresolver.New(state.Client)
+		sr := genericresolver.New(state.Client)
 		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -543,7 +543,7 @@ var _ = Describe("", func() {
 		rawCMList, err := kutil.ConvertToRawExtension(cmList, scheme.Scheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		sr := secretresolver.New(state.Client)
+		sr := genericresolver.New(state.Client)
 		rt, err := sr.Resolve(ctx, target)
 		Expect(err).ToNot(HaveOccurred())
 

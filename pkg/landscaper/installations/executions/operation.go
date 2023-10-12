@@ -19,7 +19,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/validation"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
+	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -60,7 +60,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 		KubeClient: o.Client(),
 		Inst:       inst.GetInstallation(),
 	}
-	targetResolver := secretresolver.New(o.Client())
+	targetResolver := genericresolver.New(o.Client())
 	tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(

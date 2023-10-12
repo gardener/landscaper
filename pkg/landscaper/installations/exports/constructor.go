@@ -18,7 +18,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
+	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
@@ -79,7 +79,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		KubeClient: c.Client(),
 		Inst:       c.Inst.GetInstallation(),
 	}
-	targetResolver := secretresolver.New(c.Client())
+	targetResolver := genericresolver.New(c.Client())
 
 	tmpl := template.New(
 		gotemplate.New(stateHdlr, targetResolver),

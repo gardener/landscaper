@@ -18,7 +18,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/validation"
-	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
+	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -194,7 +194,7 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 			KubeClient: o.Client(),
 			Inst:       o.Inst.GetInstallation(),
 		}
-		targetResolver := secretresolver.New(o.Client())
+		targetResolver := genericresolver.New(o.Client())
 		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
