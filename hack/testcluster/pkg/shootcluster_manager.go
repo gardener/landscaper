@@ -227,6 +227,9 @@ func (o *ShootClusterManager) createGardenClient() (dynamic.Interface, error) {
 		return nil, fmt.Errorf("unable to read kubeconfig from %s: %w", o.gardenClusterKubeconfigPath, err)
 	}
 
+	restConfig.Burst = 60
+	restConfig.QPS = 40
+
 	gardenClient, err := dynamic.NewForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create kubernetes client from %s: %w", o.gardenClusterKubeconfigPath, err)
