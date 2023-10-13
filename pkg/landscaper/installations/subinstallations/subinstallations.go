@@ -18,6 +18,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/validation"
+	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -25,7 +26,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/utils/dependencies"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.
@@ -195,7 +195,7 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 			Inst:       o.Inst.GetInstallation(),
 		}
 		targetResolver := secretresolver.New(o.Client())
-		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler))
+		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
 				o.Context().External.InjectComponentDescriptorRef(o.Inst.GetInstallation().DeepCopy()),
@@ -287,7 +287,6 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
 			Context:             inst.Spec.Context,
-			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
 			ComponentDescriptor: subCdDef,
 			Blueprint:           *subBlueprint,
 			Imports:             subInstTmpl.Imports,

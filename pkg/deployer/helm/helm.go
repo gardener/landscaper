@@ -126,7 +126,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 	// todo: do caching of charts
 
 	// resolve all registry pull secrets
-	registryPullSecretRefs := append(lib.GetRegistryPullSecretsFromContext(h.Context), h.DeployItem.Spec.RegistryPullSecrets...)
+	registryPullSecretRefs := lib.GetRegistryPullSecretsFromContext(h.Context)
 	registryPullSecrets, err := kutil.ResolveSecrets(ctx, h.lsKubeClient, registryPullSecretRefs)
 	if err != nil {
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "ResolveSecrets", err.Error())

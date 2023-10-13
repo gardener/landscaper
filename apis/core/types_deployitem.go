@@ -55,12 +55,6 @@ type DeployItemSpec struct {
 	Context string `json:"context,omitempty"`
 	// Configuration contains the deployer type specific configuration.
 	Configuration *runtime.RawExtension `json:"config,omitempty"`
-	// RegistryPullSecrets defines a list of registry credentials that are used to
-	// pull blueprints, component descriptors and jsonschemas from the respective registry.
-	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-	// Note that the type information is used to determine the secret key and the type of the secret.
-	// +optional
-	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
 	// Timeout specifies how long the deployer may take to apply the deploy item.
 	// When the time is exceeded, the deploy item fails.
 	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).

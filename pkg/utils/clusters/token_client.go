@@ -19,7 +19,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 )
 
 type TokenClient struct {
@@ -64,7 +64,7 @@ func NewTokenClientFromTarget(ctx context.Context, target *v1alpha1.Target, targ
 }
 
 func (c *TokenClient) GetServiceAccountToken(ctx context.Context, serviceAccountName, serviceAccountNamespace string,
-	expirationSeconds int64) (string, error) {
+	expirationSeconds int64) (string, metav1.Time, error) {
 
 	tokenRequest := &authenticationv1.TokenRequest{
 		Spec: authenticationv1.TokenRequestSpec{
@@ -72,31 +72,32 @@ func (c *TokenClient) GetServiceAccountToken(ctx context.Context, serviceAccount
 		},
 	}
 
+	var expirationTimestamp metav1.Time
 	serviceAccountClient := c.clientset.CoreV1().ServiceAccounts(serviceAccountNamespace)
 	tokenRequest, err := serviceAccountClient.CreateToken(ctx, serviceAccountName, tokenRequest, metav1.CreateOptions{})
 	if err != nil {
-		return "", fmt.Errorf("token client: token request failed: %w", err)
+		return "", expirationTimestamp, fmt.Errorf("token client: token request failed: %w", err)
 	}
 
-	return tokenRequest.Status.Token, nil
+	return tokenRequest.Status.Token, tokenRequest.Status.ExpirationTimestamp, nil
 }
 
 func (c *TokenClient) GetServiceAccountKubeconfig(ctx context.Context, serviceAccountName, serviceAccountNamespace string,
-	expirationSeconds int64) (string, error) {
+	expirationSeconds int64) (string, metav1.Time, error) {
 
-	token, err := c.GetServiceAccountToken(ctx, serviceAccountName, serviceAccountNamespace, expirationSeconds)
+	token, expirationTimestamp, err := c.GetServiceAccountToken(ctx, serviceAccountName, serviceAccountNamespace, expirationSeconds)
 	if err != nil {
-		return "", err
+		return "", expirationTimestamp, err
 	}
 
 	config, err := clientcmd.Load(c.kubeconfig)
 	if err != nil {
-		return "", fmt.Errorf("token client: failed to load config: %w", err)
+		return "", expirationTimestamp, fmt.Errorf("token client: failed to load config: %w", err)
 	}
 
 	context, ok := config.Contexts[config.CurrentContext]
 	if !ok || context == nil {
-		return "", fmt.Errorf("token client: current context not found: %w", err)
+		return "", expirationTimestamp, fmt.Errorf("token client: current context not found: %w", err)
 	}
 
 	context.AuthInfo = serviceAccountName
@@ -112,7 +113,7 @@ func (c *TokenClient) GetServiceAccountKubeconfig(ctx context.Context, serviceAc
 
 	cluster, ok := config.Clusters[context.Cluster]
 	if !ok || context == nil {
-		return "", fmt.Errorf("token client: current cluster not found: %w", err)
+		return "", expirationTimestamp, fmt.Errorf("token client: current cluster not found: %w", err)
 	}
 
 	config.Clusters = map[string]*api.Cluster{
@@ -121,10 +122,10 @@ func (c *TokenClient) GetServiceAccountKubeconfig(ctx context.Context, serviceAc
 
 	serviceAccountKubeconfig, err := clientcmd.Write(*config)
 	if err != nil {
-		return "", fmt.Errorf("token client: failed to write config: %w", err)
+		return "", expirationTimestamp, fmt.Errorf("token client: failed to write config: %w", err)
 	}
 
 	serviceAccountKubeconfig64 := base64.StdEncoding.EncodeToString(serviceAccountKubeconfig)
 
-	return serviceAccountKubeconfig64, nil
+	return serviceAccountKubeconfig64, expirationTimestamp, nil
 }

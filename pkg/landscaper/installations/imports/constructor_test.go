@@ -151,6 +151,26 @@ var _ = Describe("Constructor", func() {
 		Expect(inInstRoot.GetImports()).To(Equal(expectedConfig))
 	})
 
+	It("should use defaults defined in blueprint for missing optional imports", func() {
+		ctx := context.Background()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test13/root"])
+		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstRoot
+		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+
+		expectedConfig := map[string]interface{}{
+			"defaulted": map[string]interface{}{
+				"foo": "bar",
+			},
+		}
+
+		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		c := imports.NewConstructor(op)
+		Expect(c.Construct(ctx, nil)).To(Succeed())
+		Expect(inInstRoot.GetImports()).ToNot(BeNil())
+		Expect(inInstRoot.GetImports()).To(Equal(expectedConfig))
+	})
+
 	Context("schema validation", func() {
 		It("should forbid when the import of a component does not satisfy the schema", func() {
 			ctx := context.Background()

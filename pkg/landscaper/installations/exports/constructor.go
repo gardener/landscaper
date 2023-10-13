@@ -18,6 +18,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
@@ -27,7 +28,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
-	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 // Constructor is a struct that contains all values
@@ -50,9 +50,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	var (
 		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.GetInstallation().Name)).Child("internalExports")
 		internalExports = map[string]interface{}{
-			"deployitems": struct{}{},
-			"dataobjects": struct{}{},
-			"targets":     struct{}{},
+			"deployitems": map[string]interface{}{},
+			"dataobjects": map[string]interface{}{},
+			"targets":     map[string]interface{}{},
 		}
 	)
 
@@ -83,7 +83,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 
 	tmpl := template.New(
 		gotemplate.New(stateHdlr, targetResolver),
-		spiff.New(stateHdlr))
+		spiff.New(stateHdlr, targetResolver))
 	exports, err := tmpl.TemplateExportExecutions(
 		template.NewExportExecutionOptions(
 			template.NewBlueprintExecutionOptions(

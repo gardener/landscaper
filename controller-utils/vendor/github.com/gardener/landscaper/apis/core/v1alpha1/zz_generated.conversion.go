@@ -1712,7 +1712,6 @@ func autoConvert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSp
 	out.Target = (*core.ObjectReference)(unsafe.Pointer(in.Target))
 	out.Context = in.Context
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
-	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Timeout = (*core.Duration)(unsafe.Pointer(in.Timeout))
 	out.UpdateOnChangeOnly = in.UpdateOnChangeOnly
 	out.OnDelete = (*core.OnDeleteConfig)(unsafe.Pointer(in.OnDelete))
@@ -1729,7 +1728,6 @@ func autoConvert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployI
 	out.Target = (*ObjectReference)(unsafe.Pointer(in.Target))
 	out.Context = in.Context
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
-	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Timeout = (*Duration)(unsafe.Pointer(in.Timeout))
 	out.UpdateOnChangeOnly = in.UpdateOnChangeOnly
 	out.OnDelete = (*OnDeleteConfig)(unsafe.Pointer(in.OnDelete))
@@ -2219,7 +2217,6 @@ func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec,
 	out.Context = in.Context
 	out.DeployItems = *(*core.DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	out.DeployItemsCompressed = *(*[]byte)(unsafe.Pointer(&in.DeployItemsCompressed))
-	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	return nil
 }
 
@@ -2227,7 +2224,6 @@ func autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.Execution
 	out.Context = in.Context
 	out.DeployItems = *(*DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	out.DeployItemsCompressed = *(*[]byte)(unsafe.Pointer(&in.DeployItemsCompressed))
-	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	return nil
 }
 
@@ -2543,7 +2539,6 @@ func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installa
 	if err := Convert_v1alpha1_BlueprintDefinition_To_core_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
 	}
-	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	if err := Convert_v1alpha1_InstallationImports_To_core_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
 		return err
 	}
@@ -2567,7 +2562,6 @@ func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.Ins
 	if err := Convert_core_BlueprintDefinition_To_v1alpha1_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
 	}
-	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	if err := Convert_core_InstallationImports_To_v1alpha1_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
 		return err
 	}

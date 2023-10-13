@@ -6,7 +6,7 @@
 
 # Helper script executing the integration tests in the context of a Gardener Concours pipeline job with access to the cc-config.
 # It mainly fetches the access data of the 'laas' project of the Gardener Canary Landscape and stores it in a file. Then it
-# calls the script '/.ci/local-integration-test-with-cluster-creation'.
+# calls the script './local-integration-test-with-cluster-creation'.
 
 import os
 import sys
@@ -34,7 +34,7 @@ with utils.TempFileAuto(prefix="landscape_kubeconfig_") as kubeconfig_temp_file:
     kubeconfig_temp_file.write(yaml.safe_dump(landscape_kubeconfig.kubeconfig()))
     landscape_kubeconfig_path = kubeconfig_temp_file.switch()
 
-    command = [source_path + "/.ci/local-integration-test-with-cluster-creation", landscape_kubeconfig_path, "garden-laas", version, pr_id, use_ocm_lib]
+    command = [source_path + "/hack/local-integration-test-with-cluster-creation", landscape_kubeconfig_path, "garden-laas", version, pr_id, use_ocm_lib]
 
     print("Executing command")
     run = run(command)
