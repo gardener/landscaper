@@ -269,7 +269,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
 
-	if err := c.SetupRegistries(ctx, op, lsCtx.External.Context, append(lsCtx.External.RegistryPullSecrets(), inst.Spec.RegistryPullSecrets...), inst); err != nil {
+	if err := c.SetupRegistries(ctx, op, lsCtx.External.Context, lsCtx.External.RegistryPullSecrets(), inst); err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
