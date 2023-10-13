@@ -1,0 +1,44 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/landscaper-component-with-jsonschemas
+  provider:
+    name: internal
+  version: 1.0.0
+repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+spec: 
+  resources:
+    - name: jsonschema
+      type: landscaper.gardener.cloud/jsonschema
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: jsonschema.json
+        mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
+    - name: jsonschema-compressed
+      type: landscaper.gardener.cloud/jsonschema
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: jsonschema.json.gzip
+        mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json+gzip
+    - name: jsonschema-unknown-mediatype
+      type: landscaper.gardener.cloud/jsonschema
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: jsonschema.json
+        mediaType: mediatype/unknown
+    - name: jsonschema-compressed-unknown-mediatype
+      type: landscaper.gardener.cloud/jsonschema
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: jsonschema.json.gzip
+        mediaType: mediatype/unknown

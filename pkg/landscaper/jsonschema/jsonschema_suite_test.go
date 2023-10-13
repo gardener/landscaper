@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"os"
 	"path/filepath"
 	"strings"
@@ -453,8 +454,12 @@ var _ = Describe("jsonschema", func() {
 			data := []byte(`"valid"`)
 
 			err := jsonschema.ValidateBytes(schemaBytes, data, config)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("unknown media type"))
+			if _, ok := config.RegistryAccess.(*cnudie.RegistryAccess); ok {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("unknown media type"))
+			} else {
+				Expect(err).ToNot(HaveOccurred())
+			}
 		})
 
 	})

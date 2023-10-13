@@ -216,8 +216,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(reflect.DeepEqual(res1, res3))
 	})
 
-	// Tests for Edge Cases
-
 	// Resolve component referenced by an inline component descriptor
 	// Resolving of references cannot really be unit tested as the component descriptors v2 mandate that the
 	// repositoryContext is of type ociRegistry, but this is also the context that is evaluated to resolve the reference
@@ -256,6 +254,21 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), inlineRepoCtxCnudie),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), inlineRepoCtxCnudie),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), inlineRepoCtxOCM),
+	)
+
+	DescribeTable("error when trying to access unknown resource", func(factory model.Factory, registryRootPath string) {
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
+
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		res, err := compvers.GetResource("non-existent-resource", nil)
+		Expect(err).To(HaveOccurred())
+		Expect(res).To(BeNil())
+	},
+		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_VALID),
+		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_VALID),
+		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_VALID),
 	)
 
 	// Unknown resource type is an important test here (in the facade implementation) since the facade actually
@@ -342,7 +355,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	// Component Descriptors v2 and v3 are validated against different json schemas, so inevitably, here is a slight
 	// difference between the facade implementations.
-	// This check shall check the general handling of such a case.
+	// This check shall check the general handling of an invalid component descriptor.
 	DescribeTable("error when component descriptor is invalid (does not adhere to its json schema)", func(factory model.Factory, registryRootPath string) {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(invalidComponentComponentReference), cdref))
