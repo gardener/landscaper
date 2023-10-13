@@ -11,12 +11,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 
 	corev1 "k8s.io/api/core/v1"
 

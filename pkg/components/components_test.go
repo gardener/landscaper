@@ -6,9 +6,10 @@ package components_test
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 	"path/filepath"
 	"reflect"
+
+	"github.com/gardener/landscaper/pkg/components/model/types"
 
 	"github.com/gardener/landscaper/pkg/components/model"
 
@@ -372,30 +373,32 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	// Check nil argument handling of facade methods
 	DescribeTable("prevent null pointer exceptions", func(factory model.Factory, registryRootPath string) {
+		// The linter does not allow to pass a nil context
+		ctx := context.TODO()
 		// Test registry access
-		registryAccess, err := factory.NewRegistryAccess(nil, nil, nil, nil, nil, nil, nil, nil)
+		registryAccess, err := factory.NewRegistryAccess(ctx, nil, nil, nil, nil, nil, nil, nil)
 		Expect(registryAccess).ToNot(BeNil())
 		Expect(err).ToNot(HaveOccurred())
 
-		compvers, err := registryAccess.GetComponentVersion(nil, nil)
+		compvers, err := registryAccess.GetComponentVersion(ctx, nil)
 		Expect(compvers).To(BeNil())
 		Expect(err).To(HaveOccurred())
 
 		// Organize a valid component version
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref))
-		registryAccess, err = factory.NewRegistryAccess(nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil)
+		registryAccess, err = factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil)
 		Expect(registryAccess).ToNot(BeNil())
 		Expect(err).ToNot(HaveOccurred())
 
-		compvers = Must(registryAccess.GetComponentVersion(nil, cdref))
+		compvers = Must(registryAccess.GetComponentVersion(ctx, cdref))
 
 		// Test component version
 		res, err := compvers.GetResource("", nil)
 		Expect(res).To(BeNil())
 		Expect(err).To(HaveOccurred())
 
-		referencedComponent, err := compvers.GetReferencedComponentVersion(nil, nil, nil, nil)
+		referencedComponent, err := compvers.GetReferencedComponentVersion(ctx, nil, nil, nil)
 		Expect(err).To(HaveOccurred())
 		Expect(referencedComponent).To(BeNil())
 
@@ -403,7 +406,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		ref := compvers.GetComponentReference(REFERENCED_COMPONENT_NAME)
 		Expect(ref).ToNot(BeNil())
 
-		referencedComponent, err = compvers.GetReferencedComponentVersion(nil, ref, nil, nil)
+		referencedComponent, err = compvers.GetReferencedComponentVersion(ctx, ref, nil, nil)
 		Expect(err).To(HaveOccurred())
 		Expect(referencedComponent).To(BeNil())
 	},

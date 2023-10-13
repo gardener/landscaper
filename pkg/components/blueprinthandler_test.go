@@ -6,8 +6,10 @@ package components_test
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/model"
+
 	"github.com/mandelsoft/vfs/pkg/osfs"
+
+	"github.com/gardener/landscaper/pkg/components/model"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"

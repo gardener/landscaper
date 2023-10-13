@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	LOCALCNUDIEREPOPATH  = "../testdata/localcnudierepo"
-	LOCALOCMREPOPATH     = "../testdata/localocmrepo"
+	LOCALCNUDIEREPOPATH  = "./testdata/localcnudierepos/valid-components"
+	LOCALOCMREPOPATH     = "./testdata/localocmrepos/valid-components"
 	COMPDESC_V2_FILENAME = "component-descriptor-v2.yaml"
 	COMPDESC_V3_FILENAME = "component-descriptor-v3.yaml"
 
@@ -264,14 +264,14 @@ version: 1.0.0
 `
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
-		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, nil, nil, nil))
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 		Expect(cv).NotTo(BeNil())
 		res := Must(cv.GetResource("blueprint", nil))
 		content := Must(res.GetTypedContent(ctx))
 		bp, ok := content.Resource.(*blueprints.Blueprint)
 		Expect(ok).To(BeTrue())
-		_ = bp
+		Expect(bp.Info.Annotations, map[string]interface{}{"local/name": "root-a", "local/version": "1.0.0"})
 	})
 
 	It("blueprint from inline component descriptor with separate inline component and blob file system", func() {
@@ -354,13 +354,14 @@ version: 1.0.0
 `
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
-		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, nil, nil, nil))
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 		Expect(cv).NotTo(BeNil())
 		res := Must(cv.GetResource("blueprint", nil))
 		content := Must(res.GetTypedContent(ctx))
 		bp, ok := content.Resource.(*blueprints.Blueprint)
 		Expect(ok).To(BeTrue())
-		_ = bp
+		Expect(ok).To(BeTrue())
+		Expect(bp.Info.Annotations, map[string]interface{}{"local/name": "root-a", "local/version": "1.0.0"})
 	})
 })

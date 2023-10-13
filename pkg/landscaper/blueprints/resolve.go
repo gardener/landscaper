@@ -25,6 +25,8 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
+// TODO: investigate if this coding can be removed entirely after component-cli is removed
+
 // ResolveBlueprint returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
 func ResolveBlueprint(ctx context.Context,

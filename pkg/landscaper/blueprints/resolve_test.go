@@ -38,6 +38,7 @@ var _ = Describe("Resolve", func() {
 		Expect(v1alpha1.Convert_v1alpha1_BlueprintStore_To_config_BlueprintStore(&cs, &defaultStoreConfig, nil)).To(Succeed())
 	})
 
+	// TODO: remove with component-cli
 	Context("ResolveBlueprintFromBlobResolver", func() {
 		It("should resolve a blueprint from a blobresolver", func() {
 			ctx := context.Background()
@@ -101,6 +102,7 @@ var _ = Describe("Resolve", func() {
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
 		})
 
+		// TODO: remove with component-cli
 		It("should resolve a blueprint from a blobresolver with a gzipped blueprint", func() {
 			ctx := context.Background()
 
@@ -163,6 +165,7 @@ var _ = Describe("Resolve", func() {
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
 		})
 
+		// TODO: remove with component-cli
 		It("should throw an error if a blueprint is received corrupted", func() {
 			ctx := context.Background()
 
@@ -223,6 +226,7 @@ var _ = Describe("Resolve", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
+		// TODO: remove with component-cli
 		It("should throw an error if a blueprint is received corrupted with gzipped media type", func() {
 			ctx := context.Background()
 

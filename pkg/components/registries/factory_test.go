@@ -5,10 +5,11 @@
 package registries
 
 import (
-	"github.com/gardener/landscaper/pkg/components/cnudie"
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/gardener/landscaper/pkg/components/cnudie"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
 )
 
 var _ = Describe("check correct factory instantiation all condition variants", func() {
