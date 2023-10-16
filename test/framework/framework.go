@@ -11,11 +11,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	utils3 "github.com/gardener/landscaper/pkg/utils"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	utils3 "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/gardener/component-cli/ociclient"

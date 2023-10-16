@@ -16,7 +16,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
+	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -301,7 +301,7 @@ func (c *Constructor) RenderImportExecutions() error {
 		KubeClient: c.Operation.Client(),
 		Inst:       c.Operation.Inst.GetInstallation(),
 	}
-	targetResolver := secretresolver.New(c.Operation.Client())
+	targetResolver := genericresolver.New(c.Operation.Client())
 	tmpl := template.New(
 		gotemplate.New(templateStateHandler, targetResolver),
 		spiff.New(templateStateHandler, targetResolver))

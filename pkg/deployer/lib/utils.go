@@ -26,7 +26,6 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
-	secretresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
@@ -232,17 +231,10 @@ func checkTargetResponsibilityAndResolve(ctx context.Context, lsClient client.Cl
 	var rt *lsv1alpha1.ResolvedTarget
 	var err error
 	if target != nil {
-		if target.Spec.SecretRef != nil {
-			sr := secretresolver.New(lsClient)
-			rt, err = sr.Resolve(ctx, target)
-			if err != nil {
-				msg := fmt.Sprintf("error resolving secret reference (%s/%s#%s) in target '%s/%s'",
-					target.Namespace, target.Spec.SecretRef.Name, target.Spec.SecretRef.Key, target.Namespace, target.Name)
-				lsError = lserrors.NewWrappedError(err, "checkTargetResponsibilityAndResolve", "resolveSecret", msg)
-				return nil, false, lsError
-			}
-		} else {
-			rt = targetresolver.NewResolvedTarget(target)
+		rt, err = targetresolver.Resolve(ctx, target, lsClient)
+		if err != nil {
+			lsError = lserrors.NewWrappedError(err, "checkTargetResponsibilityAndResolve", "resolveTarget", err.Error())
+			return nil, false, lsError
 		}
 	}
 

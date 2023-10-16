@@ -2,9 +2,10 @@ package utils
 
 import (
 	"fmt"
-	"k8s.io/client-go/kubernetes"
 	"reflect"
 	"strconv"
+
+	"k8s.io/client-go/kubernetes"
 
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"

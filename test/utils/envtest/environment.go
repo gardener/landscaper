@@ -9,12 +9,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	utils2 "github.com/gardener/landscaper/pkg/utils"
 	"html/template"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	utils2 "github.com/gardener/landscaper/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 
