@@ -60,10 +60,10 @@ func GetFactory(useOCM ...bool) model.Factory {
 	useOCMBool := utils.OptionalDefaultedBool(false, useOCM...)
 
 	if useOCMBool || ocmLibraryModeBool {
-		log.Info("using cnudie")
+		log.Info("using ocm")
 		return ocmFactory
 	} else {
-		log.Info("using ocm")
+		log.Info("using cnudie")
 		return cnudieFactory
 	}
 }
