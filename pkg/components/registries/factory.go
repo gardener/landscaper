@@ -18,38 +18,32 @@ import (
 )
 
 var (
-	ocmFactory    model.Factory
-	cnudieFactory model.Factory
+	ocmFactory    model.Factory = &ocmlib.Factory{}
+	cnudieFactory model.Factory = &cnudie.Factory{}
 
 	ocmLibraryMode *bool
 )
 
 func init() {
-	cnudieFactory = &cnudie.Factory{}
-	ocmFactory = &ocmlib.Factory{}
+	// Enable logging with our logger from ocm lib
+	// The config of the logger cannot be accessed in the init function, as the logger might not have been
+	// initialized itself yet. Therefore, we pass a function through which the logger can be passed to the ocmlib
+	// after it is fully configured.
+	logging.SetLogConsumer(ocmFactory.SetApplicationLogger)
 
 	// This is for testing purposes only!
-	log, _ := logging.GetLogger()
 	m := os.Getenv("USE_OCM_LIB")
 	if m == "true" {
 		SetOCMLibraryMode(true)
-		log.Info("UseOCMLib set through environment variable, this should only happen in test scenarios!", "value", true)
 	} else if m == "false" {
 		SetOCMLibraryMode(false)
-		log.Info("UseOCMLib set through environment variable, this should only happen in test scenarios!", "value", false)
 	}
-
-	// Enable logging from ocm lib
-	logging.SetLogConsumer(ocmFactory.SetApplicationLogger)
 }
 
 // SetOCMLibraryMode can only be set once as it is determined by the landscaper or deployer configuration
 func SetOCMLibraryMode(useOCMLib bool) {
-	log, _ := logging.GetLogger()
 	if ocmLibraryMode == nil {
 		ocmLibraryMode = &useOCMLib
-	} else {
-		log.Info("useOCMLib flag already set (can only be set once!)", "useOCMLib", *ocmLibraryMode)
 	}
 }
 
@@ -65,8 +59,6 @@ func GetFactory(useOCM ...bool) model.Factory {
 	}
 	useOCMBool := utils.OptionalDefaultedBool(false, useOCM...)
 
-	// Behavior defined as in
-	// https://github.tools.sap/kubernetes/k8s-lifecycle-management/blob/master/docs/ADRs/2023-09-29-Cnudie-OCM-Switch.md
 	if useOCMBool || ocmLibraryModeBool {
 		log.Info("using cnudie")
 		return ocmFactory

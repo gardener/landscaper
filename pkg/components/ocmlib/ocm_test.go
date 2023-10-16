@@ -31,6 +31,8 @@ import (
 	. "github.com/open-component-model/ocm/pkg/testutils"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
+
+	_ "github.com/gardener/landscaper/pkg/components/registries"
 )
 
 const (
@@ -94,7 +96,7 @@ var (
 
 var _ = Describe("ocm-lib facade implementation", func() {
 	ctx := context.Background()
-	factory := ocmlib.Factory{}
+	factory := &ocmlib.Factory{}
 
 	It("get component version from component descriptor reference (from local repository)", func() {
 		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion
@@ -364,4 +366,17 @@ version: 1.0.0
 		Expect(ok).To(BeTrue())
 		Expect(bp.Info.Annotations, map[string]interface{}{"local/name": "root-a", "local/version": "1.0.0"})
 	})
+
+	// This coding allows to easily check whether the logging output of the ocmlib is successfully passed to the
+	// landscaper logging library.
+	// As we currently cannot easily redirect logging output, this cannot be implemented as a proper test, but you may
+	// uncomment this coding and see whether the output has been written to stdout in the proper format.
+	//It("test logging", func() {
+	//	// Initializes the logger and passes it to the ocmlib as base logger
+	//	logging.GetLogger()
+	//
+	//	ocmlog.Context().SetDefaultLevel(mandellog.TraceLevel)
+	//	// Logs logging from the ocm library with the logger initialized before
+	//	ocmlog.Logger().Info("test")
+	//})
 })
