@@ -1,0 +1,19 @@
+meta:
+  schemaVersion: v2
+
+component:
+  name: example.com/invalid-landscaper-component
+  version: 1.0.0
+
+# Invalid, because provider is required by the schema
+#  provider: internal
+
+  repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+
+  sources: []
+
+  resources: []
+
+  componentReferences: []

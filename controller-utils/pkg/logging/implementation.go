@@ -8,12 +8,22 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging/zapconfig"
 )
 
 var (
 	Log             Logger
+	AllLog          Logger
 	configFromFlags = Config{}
+	logConsumer     LogConsumer
 )
+
+type LogConsumer func(Logger)
+
+func SetLogConsumer(c LogConsumer) {
+	logConsumer = c
+}
 
 func encoderConfig() zapcore.EncoderConfig {
 	return zapcore.EncoderConfig{
@@ -37,8 +47,8 @@ func applyCLIEncoding(ecfg zapcore.EncoderConfig) zapcore.EncoderConfig {
 	return ecfg
 }
 
-func defaultConfig() zap.Config {
-	return zap.Config{
+func defaultConfig() zapconfig.ZapConfig {
+	return zapconfig.ZapConfig{
 		Level:             zap.NewAtomicLevelAt(toZapLevel(INFO)),
 		Development:       false,
 		Encoding:          toZapFormat(TEXT),
@@ -50,12 +60,12 @@ func defaultConfig() zap.Config {
 	}
 }
 
-func applyCLIConfig(cfg zap.Config) zap.Config {
+func applyCLIConfig(cfg zapconfig.ZapConfig) zapconfig.ZapConfig {
 	cfg.EncoderConfig = applyCLIEncoding(cfg.EncoderConfig)
 	return cfg
 }
 
-func applyDevConfig(cfg zap.Config) zap.Config {
+func applyDevConfig(cfg zapconfig.ZapConfig) zapconfig.ZapConfig {
 	cfg.DisableCaller = false
 	cfg.DisableStacktrace = false
 	cfg.Development = true
@@ -63,22 +73,22 @@ func applyDevConfig(cfg zap.Config) zap.Config {
 	return cfg
 }
 
-func applyProductionConfig(cfg zap.Config) zap.Config {
+func applyProductionConfig(cfg zapconfig.ZapConfig) zapconfig.ZapConfig {
 	cfg.Encoding = toZapFormat(JSON)
 	return cfg
 }
 
-func New(config *Config) (Logger, error) {
-	if config == nil {
-		config = &configFromFlags
-	}
+func newRootLogger() (Logger, Logger, error) {
+	config := &configFromFlags
+
 	zapCfg := determineZapConfig(config)
 
-	zapLog, err := zapCfg.Build(zap.AddCallerSkip(1))
+	zapLog, zapAll, err := zapCfg.Build(zap.AddCallerSkip(1))
 	if err != nil {
-		return Logger{}, err
+		return Logger{}, Logger{}, err
 	}
-	return Wrap(PreventKeyConflicts(zapr.NewLogger(zapLog))), nil
+	zapLog.Level()
+	return Wrap(PreventKeyConflicts(zapr.NewLogger(zapLog))), Wrap(PreventKeyConflicts(zapr.NewLogger(zapAll))), nil
 }
 
 // GetLogger returns a singleton logger.
@@ -87,30 +97,26 @@ func GetLogger() (Logger, error) {
 	if Log.IsInitialized() {
 		return Log, nil
 	}
-	log, err := New(nil)
+	log, all, err := newRootLogger()
 	if err != nil {
 		return Logger{}, err
 	}
 	SetLogger(log)
+	SetAllLogger(all)
+	if logConsumer != nil {
+		logConsumer(all)
+	}
 	return log, nil
 }
 
 func SetLogger(log Logger) {
 	Log = log
 }
-
-// NewCliLogger creates a new logger for cli usage.
-// CLI usage means that by default:
-// - encoding is console
-// - timestamps are disabled (can be still activated by the cli flag)
-// - level are color encoded
-func NewCliLogger() (Logger, error) {
-	config := &configFromFlags
-	config.Cli = true
-	return New(config)
+func SetAllLogger(log Logger) {
+	AllLog = log
 }
 
-func determineZapConfig(loggerConfig *Config) zap.Config {
+func determineZapConfig(loggerConfig *Config) zapconfig.ZapConfig {
 	zapConfig := defaultConfig()
 	if loggerConfig.Cli || loggerConfig.Development {
 		if loggerConfig.Cli {

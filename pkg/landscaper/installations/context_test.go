@@ -7,6 +7,8 @@ package installations_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/apis/config"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,6 +19,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
+
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -44,7 +47,8 @@ var _ = Describe("Context", func() {
 
 		fakeClient = testenv.Client
 
-		registryAccess, err := registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
+		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 		op = lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess)
 	})
@@ -101,6 +105,7 @@ var _ = Describe("Context", func() {
 		ctx := context.Background()
 
 		defaultRepoContext, err := componentresolvers.NewLocalRepositoryContext("../testdata/registry")
+
 		Expect(err).ToNot(HaveOccurred())
 
 		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root-test40"])

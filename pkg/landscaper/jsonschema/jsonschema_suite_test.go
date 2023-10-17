@@ -8,17 +8,26 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/gardener/landscaper/pkg/components/cnudie"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/gardener/landscaper/pkg/landscaper/jsonschema/testreg"
+
+	apiconfig "github.com/gardener/landscaper/apis/config"
 
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	testcred "github.com/gardener/component-cli/ociclient/credentials"
-	testreg "github.com/gardener/component-cli/ociclient/test/envtest"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
@@ -34,7 +43,6 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
-	componentstestutils "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 	"github.com/gardener/landscaper/test/utils"
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -335,6 +343,7 @@ var _ = Describe("jsonschema", func() {
 			Expect(err).ToNot(HaveOccurred())
 			resource1 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Type:    mediatype.JSONSchemaType,
 					Name:    "default",
 					Version: version,
 				},
@@ -354,6 +363,7 @@ var _ = Describe("jsonschema", func() {
 			Expect(err).ToNot(HaveOccurred())
 			resource2 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Type:    mediatype.JSONSchemaType,
 					Name:    "comp",
 					Version: version,
 				},
@@ -367,6 +377,7 @@ var _ = Describe("jsonschema", func() {
 			Expect(err).ToNot(HaveOccurred())
 			resource3 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Type:    mediatype.JSONSchemaType,
 					Name:    "unknown",
 					Version: version,
 				},
@@ -379,16 +390,23 @@ var _ = Describe("jsonschema", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			cd = &types.ComponentDescriptor{
+				Metadata: cdv2.Metadata{
+					Version: "v2",
+				},
 				ComponentSpec: cdv2.ComponentSpec{
-					ObjectMeta:         cdv2.ObjectMeta{Name: "example.com/test", Version: version},
-					RepositoryContexts: []*types.UnstructuredTypedObject{&repoCtx},
-					Resources:          []types.Resource{resource1, resource2, resource3},
+					ObjectMeta:          cdv2.ObjectMeta{Name: "example.com/test", Version: version},
+					Provider:            "landscaper",
+					RepositoryContexts:  []*types.UnstructuredTypedObject{&repoCtx},
+					Resources:           []types.Resource{resource1, resource2, resource3},
+					Sources:             []types.Source{},
+					ComponentReferences: []types.ComponentReference{},
 				},
 			}
 
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(blobFs)
-
-			registryAccess := componentstestutils.NewTestRegistryAccess(*cd).WithBlobResolver(blobResolver)
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, blobFs, nil, nil,
+				&apiconfig.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, cd, blobResolver)
+			Expect(err).ToNot(HaveOccurred())
 
 			// read component from registry
 			componentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
@@ -437,8 +455,12 @@ var _ = Describe("jsonschema", func() {
 			data := []byte(`"valid"`)
 
 			err := jsonschema.ValidateBytes(schemaBytes, data, config)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("unknown media type"))
+			if _, ok := config.RegistryAccess.(*cnudie.RegistryAccess); ok {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("unknown media type"))
+			} else {
+				Expect(err).ToNot(HaveOccurred())
+			}
 		})
 
 	})
@@ -499,7 +521,48 @@ var _ = Describe("jsonschema", func() {
 			ociClient, err = ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
 			testutils.ExpectNoError(err)
 
-			registryAccess, err = registries.NewFactory().NewOCITestRegistryAccess(testenv.Addr, testenv.BasicAuth.Username, testenv.BasicAuth.Password)
+			fs := memoryfs.New()
+
+			Expect(fs.MkdirAll("testdata", 0o777)).To(Succeed())
+			base64creds := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`%s:%s`, testenv.BasicAuth.Username, testenv.BasicAuth.Password)))
+			dockerconfig := []byte(fmt.Sprintf(`{"auths": {"%s": {"auth": "%s"}}}`, testenv.Addr, base64creds))
+			f, err := fs.OpenFile(filepath.Join("testdata", "dockerconfig.json"), os.O_CREATE|os.O_RDWR, 0o777)
+			Expect(err).ToNot(HaveOccurred())
+			cnt, err := f.Write(dockerconfig)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cnt).ToNot(Equal(0))
+			f.Close()
+
+			ociconfig := &apiconfig.OCIConfiguration{
+				ConfigFiles: []string{"testdata/dockerconfig.json"},
+			}
+
+			config := []byte(fmt.Sprintf(`{
+	"type": "credentials.config.ocm.software",
+    "consumers": [
+        {
+            "identity": {
+                "type": "OCIRegistry",
+                "hostname": %q,
+                "port": %q
+            },
+            "credentials": [
+                {
+                    "type": "Credentials",
+                    "properties": {
+                        "username": %q,
+                        "password": %q,
+                        "certificateAuthority": %q
+                    }
+                }
+            ]
+        }
+    ]
+}
+`, strings.Split(testenv.Addr, ":")[0], strings.Split(testenv.Addr, ":")[1], testenv.BasicAuth.Username, testenv.BasicAuth.Password, testenv.Certificate.CA))
+			secrets := []corev1.Secret{{
+				Data: map[string][]byte{`.ocmcredentialconfig`: config}}}
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, secrets, nil, nil, ociconfig, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -804,11 +867,11 @@ var _ = Describe("jsonschema", func() {
 			var err error
 			ctx := context.Background()
 
-			registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
+			localregistryconfig := &apiconfig.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
 			componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
 				RepositoryContext: &repositoryContext,
@@ -875,7 +938,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, n
 		ObjectType: cdv2.ObjectType{
 			Type: cdv2.OCIRegistryType,
 		},
-		BaseURL:              fmt.Sprintf("%s/components/", host),
+		BaseURL:              host,
 		ComponentNameMapping: cdv2.OCIRegistryURLPathMapping,
 	}
 	testutils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))

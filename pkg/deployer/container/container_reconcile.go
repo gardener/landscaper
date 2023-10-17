@@ -9,8 +9,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
+
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
+
+	"github.com/gardener/landscaper/pkg/deployerlegacy"
 
 	dockerreference "github.com/containerd/containerd/reference/docker"
 	dockerconfig "github.com/docker/cli/cli/config"
@@ -36,7 +40,6 @@ import (
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	installationhelper "github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
@@ -127,6 +130,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			ImagePullSecret:               imagePullSecret,
 			BluePrintPullSecret:           blueprintSecret,
 			ComponentDescriptorPullSecret: componentDescriptorSecret,
+
+			UseOCM: c.Context.UseOCM,
 
 			Name:                 c.DeployItem.Name,
 			Namespace:            c.Configuration.Namespace,
@@ -252,7 +257,7 @@ func (c *Container) shouldRunNewPod(ctx context.Context, pod *corev1.Pod) bool {
 		if c.ProviderStatus != nil && c.ProviderStatus.PodStatus != nil {
 			lsji = c.ProviderStatus.PodStatus.LastSuccessfulJobID
 		}
-		logger.Debug("New pod required", "podExists", pod != nil, "podGenerationLabel", genString, lc.KeyDeployItemPhase, c.DeployItem.Status.Phase, "podStatusLastSuccessfulJobID", lsji)
+		logger.Debug("newRootLogger pod required", "podExists", pod != nil, "podGenerationLabel", genString, lc.KeyDeployItemPhase, c.DeployItem.Status.Phase, "podStatusLastSuccessfulJobID", lsji)
 		return true
 	}
 	return false
@@ -484,12 +489,13 @@ func (c *Container) syncSecrets(ctx context.Context,
 // parseAndSyncSecrets parses and synchronizes relevant pull secrets for container image, blueprint & component descriptor secrets from the landscaper and host cluster.
 func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[string]string) (imagePullSecret, blueprintSecret, componentDescriptorSecret string, erro error) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
+	fs := osfs.New()
 	// find the secrets that match our image, our blueprint and our componentdescriptor
 	ociKeyring := credentials.New()
 
 	if c.Configuration.OCI != nil {
 		for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
-			secretFileContent, err := os.ReadFile(secretFileName)
+			secretFileContent, err := vfs.ReadFile(fs, secretFileName)
 			if err != nil {
 				log.Debug("Unable to read auth config from file, skipping", lc.KeyFileName, secretFileName, lc.KeyError, err.Error())
 				continue
@@ -560,13 +566,13 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 	// sync pull secrets for BluePrint
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		registryAccess, err := registries.NewFactory().NewOCIRegistryAccess(ctx, c.Configuration.OCI, c.sharedCache, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		registryAccess, err := registries.GetFactory(c.Context.UseOCM).NewRegistryAccess(ctx, fs, nil, c.sharedCache, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
 		}
 
-		compRef := installationhelper.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
+		compRef := deployerlegacy.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
 		blueprintName := c.ProviderConfiguration.Blueprint.Reference.ResourceName
 
 		componentVersion, err := registryAccess.GetComponentVersion(ctx, compRef)

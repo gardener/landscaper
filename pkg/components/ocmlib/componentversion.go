@@ -6,6 +6,7 @@ package ocmlib
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -57,6 +58,10 @@ func (c *ComponentVersion) GetComponentReference(name string) *types.ComponentRe
 }
 
 func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (model.ComponentVersion, error) {
+	if ref == nil {
+		return nil, errors.New("component reference cannot be nil")
+	}
+
 	cdRef := &lsv1alpha1.ComponentDescriptorReference{
 		RepositoryContext: repositoryContext,
 		ComponentName:     ref.ComponentName,

@@ -7,6 +7,8 @@ package imports_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/apis/config"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -45,11 +47,14 @@ var _ = Describe("Constructor", func() {
 		createDefaultContextsForNamespace(fakeClient)
 		fakeInstallations = state.Installations
 
-		registryAccess, err := registries.NewFactory().NewLocalRegistryAccess("../testdata/registry")
+		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "../testdata/registry"}
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
+		operation, err := lsoperation.NewBuilder().Client(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(context.Background())
+		Expect(err).ToNot(HaveOccurred())
 		op = &installations.Operation{
-			Operation: lsoperation.NewOperation(fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(registryAccess),
+			Operation: operation,
 		}
 	})
 

@@ -95,14 +95,12 @@ func (u *URI) Get(cd model.ComponentVersion, repositoryContext *types.Unstructur
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
 		case ComponentReferences:
-			ref, err := component.GetComponentReference(elem.Value)
-			if err != nil {
-				return "", nil, fmt.Errorf("unable to get component reference %s in Get: %w", elem.Value, err)
-			}
+			ref := component.GetComponentReference(elem.Value)
 			if ref == nil {
 				return "", nil, fmt.Errorf("component reference %s cannot be found", elem.Value)
 			}
 
+			var err error
 			component, err = component.GetReferencedComponentVersion(ctx, ref, repositoryContext, nil)
 			if err != nil {
 				return "", nil, fmt.Errorf("component %s cannot be found", elem.Value)
@@ -132,10 +130,7 @@ func (u *URI) Get(cd model.ComponentVersion, repositoryContext *types.Unstructur
 func (u *URI) GetComponent(cd model.ComponentVersion, repositoryContext *types.UnstructuredTypedObject,
 	overwriter componentoverwrites.Overwriter) (model.ComponentVersion, *lsv1alpha1.ComponentDescriptorReference, error) {
 
-	cdRepositoryContext, err := cd.GetRepositoryContext()
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get repository context in GetComponent: %w", err)
-	}
+	cdRepositoryContext := cd.GetRepositoryContext()
 
 	var (
 		ctx       = context.Background()
@@ -152,10 +147,7 @@ func (u *URI) GetComponent(cd model.ComponentVersion, repositoryContext *types.U
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
 		case ComponentReferences:
-			ref, err := component.GetComponentReference(elem.Value)
-			if err != nil {
-				return nil, nil, fmt.Errorf("unable to get component reference %s in GetComponent: %w", elem.Value, err)
-			}
+			ref := component.GetComponentReference(elem.Value)
 			if ref == nil {
 				return nil, nil, fmt.Errorf("component reference %s cannot be found", elem.Value)
 			}
@@ -166,6 +158,7 @@ func (u *URI) GetComponent(cd model.ComponentVersion, repositoryContext *types.U
 				Version:           ref.Version,
 			}
 
+			var err error
 			component, err = component.GetReferencedComponentVersion(ctx, ref, repositoryContext, overwriter)
 			if err != nil {
 				return nil, nil, fmt.Errorf("component %s cannot be found", elem.Value)
@@ -197,14 +190,12 @@ func (u *URI) GetResource(cd model.ComponentVersion, repositoryContext *types.Un
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
 		case ComponentReferences:
-			ref, err := component.GetComponentReference(elem.Value)
-			if err != nil {
-				return nil, nil, fmt.Errorf("unable to get component reference %s in GetResource: %w", elem.Value, err)
-			}
+			ref := component.GetComponentReference(elem.Value)
 			if ref == nil {
 				return nil, nil, fmt.Errorf("component reference %s cannot be found", elem.Value)
 			}
 
+			var err error
 			component, err = component.GetReferencedComponentVersion(ctx, ref, repositoryContext, nil)
 			if err != nil {
 				return nil, nil, fmt.Errorf("component %s cannot be found", elem.Value)

@@ -70,6 +70,11 @@ spec:
             mountPath: /app/ls/oci-cache
           - name: config
             mountPath: /app/ls/config
+          {{- range $key, $_ := .Values.landscaper.truststore.secrets }}
+          - name: certs
+            mountPath: /etc/ssl/certs/{{ $key }}.crt
+            subPath: {{ $key }}
+          {{- end }}
           {{- if .Values.landscaper.registryConfig.secrets }}
           - name: registrypullsecrets
             mountPath: /app/ls/registry/secrets
@@ -109,6 +114,11 @@ spec:
       - name: config
         secret:
           secretName: {{ include "landscaper.fullname" . }}-config
+      {{- if .Values.landscaper.truststore.secrets }}
+      - name: certs
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-certs
+      {{- end }}
       {{- if .Values.landscaper.registryConfig.secrets }}
       - name: registrypullsecrets
         secret:

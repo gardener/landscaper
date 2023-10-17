@@ -32,6 +32,8 @@ $ testcluster registry delete --kubeconfig HOST_KUBECONFIG --id [UNIQUE_ID]
 The registry is scheduled as a pod in a kubernetes cluster and is only reachable within the k8s cluster with the service name.
 The registry serves a https endpoint with a self-signed certificate that has included the service name (`<service-name>.<service-namespace>`and `<service-name>.<service-namespace>`).
 
-> Note: the certificates root CA is currently not exported but only stored in a secret in the cluster.
+> Note: The certificates root CA is exported into the same directory as the credentials. During integration test cluster
+> setup, the exported file is used to create a secret which is then mounted into the certificate directory (/etc/ssl) of
+> the landscaper containers.
 
 Corresponding docker auth file can be exported to a file using the `--registry-auth PATH` flag.

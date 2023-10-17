@@ -1,0 +1,12 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/invalid-landscaper-component
+# Invalid, because provider is required by the schema
+#  provider:
+#    name: internal
+  version: 1.0.0
+repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+spec: {}

@@ -7,6 +7,8 @@ package executions_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/apis/config"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -14,7 +16,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
@@ -45,11 +46,11 @@ var _ = Describe("Execution Operation", func() {
 		kClient = testenv.Client
 		testInstallations = state.Installations
 
-		registryAccess, err = registries.NewFactory().NewLocalRegistryAccess("./testdata/registry")
+		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry/root"}
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
-		repositoryContext, err = componentresolvers.NewLocalRepositoryContext("./testdata/registry")
-		Expect(err).ToNot(HaveOccurred())
+		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
 		componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
 			RepositoryContext: &repositoryContext,
@@ -124,8 +125,6 @@ var _ = Describe("Execution Operation", func() {
 		Expect(providerConfig.ComponentDescriptor.Reference.Version).To(Equal("v1.0.0"))
 
 		Expect(providerConfig.ComponentDescriptor.Reference.RepositoryContext.Type).To(Equal(repositoryContext.GetType()))
-		Expect(providerConfig.ComponentDescriptor.Reference.RepositoryContext.Object).To(HaveKey("baseUrl"))
-		Expect(providerConfig.ComponentDescriptor.Reference.RepositoryContext.Object["baseUrl"]).To(Equal("./testdata/registry"))
 
 		Expect(providerConfig.Image).To(Equal("example.com/image:v1.0.0"))
 

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
+
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -27,7 +29,6 @@ import (
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/agent"
 	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	deployitemctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	executionactrl "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
@@ -142,11 +143,11 @@ func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manage
 	ctrlLogger, setupLogger logging.Logger) error {
 	install.Install(lsMgr.GetScheme())
 
-	store, err := blueprints.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
+	store, err := blueprint.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
 	if err != nil {
 		return fmt.Errorf("unable to setup blueprint store: %w", err)
 	}
-	blueprints.SetStore(store)
+	blueprint.SetStore(store)
 
 	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config, "installations"); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)

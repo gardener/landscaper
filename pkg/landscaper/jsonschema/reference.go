@@ -6,12 +6,10 @@ package jsonschema
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -23,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
@@ -213,10 +210,7 @@ func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, cu
 	}
 	repositoryContext := rr.RepositoryContext
 	if repositoryContext == nil {
-		repositoryContext, err = rr.ComponentVersion.GetRepositoryContext()
-		if err != nil {
-			return nil, fmt.Errorf("unable to get repository context in handleComponentDescriptorReference: %w", err)
-		}
+		repositoryContext = rr.ComponentVersion.GetRepositoryContext()
 	}
 	cd, resource, err := cdUri.GetResource(rr.ComponentVersion, repositoryContext)
 	if err != nil {
@@ -226,34 +220,14 @@ func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, cu
 	ctx := context.Background()
 	defer ctx.Done()
 
-	var JSONSchemaBuf bytes.Buffer
-	info, err := resource.GetBlob(ctx, &JSONSchemaBuf)
+	resourceContent, err := resource.GetTypedContent(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch jsonschema for '%s': %w", uri.String(), err)
 	}
-
-	mt, err := mediatype.Parse(info.MediaType)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse media type %q: %w", info.MediaType, err)
+	result, ok := resourceContent.Resource.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("received resource of type %T but expected type []byte", result)
 	}
-	if mt.Type != mediatype.JSONSchemaArtifactsMediaTypeV1 {
-		return nil, fmt.Errorf("unknown media type %s expected %s", info.MediaType, mediatype.JSONSchemaArtifactsMediaTypeV1)
-	}
-
-	result := JSONSchemaBuf.Bytes()
-
-	if mt.IsCompressed(mediatype.GZipCompression) {
-		var decompJSONSchemaBuf bytes.Buffer
-		r, err := gzip.NewReader(&JSONSchemaBuf)
-		if err != nil {
-			return nil, fmt.Errorf("unable to decompress jsonschema: %w", err)
-		}
-		if _, err := io.Copy(&decompJSONSchemaBuf, r); err != nil {
-			return nil, fmt.Errorf("unable to decompress jsonschema: %w", err)
-		}
-		result = decompJSONSchemaBuf.Bytes()
-	}
-
 	data, err := decodeJSON(result)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling json into go struct: %w", err)

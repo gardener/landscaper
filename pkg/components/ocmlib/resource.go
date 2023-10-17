@@ -6,6 +6,7 @@ package ocmlib
 
 import (
 	"context"
+	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
@@ -19,22 +20,20 @@ import (
 
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmlib/registries"
 	_ "github.com/gardener/landscaper/pkg/components/ocmlib/resourcetypehandlers"
 )
 
 type Resource struct {
-	resourceAccess ocm.ResourceAccess
-	// TODO
-	// handlerRegistry *registries.ResourceHandlerRegistry
+	resourceAccess  ocm.ResourceAccess
+	handlerRegistry *registries.ResourceHandlerRegistry
 }
 
 func NewResource(access ocm.ResourceAccess) model.Resource {
-	// TODO
-	//return &Resource{
-	//	resourceAccess:  access,
-	//	handlerRegistry: registries.Registry,
-	//}
-	return nil
+	return &Resource{
+		resourceAccess:  access,
+		handlerRegistry: registries.Registry,
+	}
 }
 
 func (r *Resource) GetName() string {
@@ -88,13 +87,11 @@ func (r *Resource) GetResource() (*types.Resource, error) {
 }
 
 func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
-	return nil, model.NotImplemented()
-
-	//handler := r.handlerRegistry.Get(r.GetType())
-	//if handler != nil {
-	//	return handler.GetResourceContent(ctx, r, r.resourceAccess)
-	//}
-	//return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
+	handler := r.handlerRegistry.Get(r.GetType())
+	if handler != nil {
+		return handler.GetResourceContent(ctx, r, r.resourceAccess)
+	}
+	return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
 }
 
 func (r *Resource) GetCachingIdentity(ctx context.Context) string {

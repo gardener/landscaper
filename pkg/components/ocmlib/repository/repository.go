@@ -5,6 +5,7 @@
 package repository
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"sync"
@@ -57,7 +58,7 @@ func (a *ComponentAccess) Index() error {
 
 	entries, err := a.descriptorProvider.List()
 	if err != nil {
-		return err
+		return fmt.Errorf("error indexing repository: %w", err)
 	}
 	for _, cd := range entries {
 		err = a.index.Add(cd, nil)

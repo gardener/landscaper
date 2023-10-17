@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package testutils
 
 import (
@@ -58,36 +62,33 @@ func (c *TestComponentVersion) GetVersion() string {
 	return c.componentDescriptor.GetVersion()
 }
 
-func (t *TestComponentVersion) GetComponentDescriptor() (*types.ComponentDescriptor, error) {
-	return t.componentDescriptor, nil
+func (t *TestComponentVersion) GetComponentDescriptor() *types.ComponentDescriptor {
+	return t.componentDescriptor
 }
 
-func (t *TestComponentVersion) GetRepositoryContext() (*types.UnstructuredTypedObject, error) {
+func (t *TestComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
 	context := t.componentDescriptor.GetEffectiveRepositoryContext()
 	if context == nil {
-		return nil, nil
+		return nil
 	}
-	return context, nil
+	return context
 }
 
-func (t *TestComponentVersion) GetComponentReferences() ([]types.ComponentReference, error) {
-	return t.componentDescriptor.ComponentReferences, nil
+func (t *TestComponentVersion) GetComponentReferences() []types.ComponentReference {
+	return t.componentDescriptor.ComponentReferences
 }
 
-func (t *TestComponentVersion) GetComponentReference(name string) (*types.ComponentReference, error) {
-	refs, err := t.GetComponentReferences()
-	if err != nil {
-		return nil, err
-	}
+func (t *TestComponentVersion) GetComponentReference(name string) *types.ComponentReference {
+	refs := t.GetComponentReferences()
 
 	for i := range refs {
 		ref := &refs[i]
 		if ref.GetName() == name {
-			return ref, nil
+			return ref
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (t *TestComponentVersion) GetReferencedComponentVersion(ctx context.Context, ref *types.ComponentReference, repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (model.ComponentVersion, error) {

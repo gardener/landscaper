@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/components/model/types"
+
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -535,7 +537,23 @@ func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f 
 	utils.ExpectNoError(file.Close())
 	utils.ExpectNoError(blob.Reader.Close())
 
-	cd.Resources = append(cd.Resources, buildLocalFilesystemResource("ingress-nginx-chart", "helm", input.MediaTypeGZip, "chart"))
+	resource := types.Resource{
+		IdentityObjectMeta: cdv2.IdentityObjectMeta{
+			Name:    "ingress-nginx-chart",
+			Version: "4.0.17",
+			Type:    "helm",
+		},
+		Relation: "external",
+	}
+	resource.Access = &cdv2.UnstructuredTypedObject{}
+	err = resource.Access.UnmarshalJSON([]byte(`{
+	"type": "ociRegistry",
+	"imageReference": "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17"
+}
+`))
+	utils.ExpectNoError(err)
+
+	cd.Resources = append(cd.Resources, resource)
 
 	blueprintInput := input.BlobInput{
 		Type:             input.DirInputType,
