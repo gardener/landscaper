@@ -206,6 +206,9 @@ func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {
 	// Validate that the release actually belongs to the namespace
 	_, err := c.getRelease(ctx)
 	if err != nil {
+		if c.isReleaseNotFoundErr(err) {
+			return nil
+		}
 		return err
 	}
 
