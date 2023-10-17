@@ -51,6 +51,9 @@ const (
 	// name of the file that will be created in the auth directory, containing the name of the shoot cluster
 	filenameForClusterName = "clustername"
 
+	subresourceAdminKubeconfig  = "adminkubeconfig"
+	kubeconfigExpirationSeconds = 24 * 60 * 60
+
 	// name of the file that will be created in the auth directory, containing the kubeconfig of the shoot cluster
 	filenameForKubeconfig = "kubeconfig.yaml"
 )
@@ -151,14 +154,20 @@ func (o *ShootClusterManager) CreateShootCluster(ctx context.Context) error {
 		return err
 	}
 
-	o.log.Logfln("wait for cluster is ready")
+	o.log.Logfln("wait until test cluster is ready")
 	if err := o.waitUntilShootClusterIsReady(ctx, gardenClientForShoots, clusterName); err != nil {
 		return err
 	}
 
-	o.log.Logfln("write kubeconfig")
+	o.log.Logfln("create short-lived kubeconfig for test cluster")
+	shootKubeconfigBase64, err := o.createShootAdminKubeconfig(ctx, gardenClientForShoots, clusterName, kubeconfigExpirationSeconds)
+	if err != nil {
+		return fmt.Errorf("failed to get kubeconfig: %w", err)
+	}
+
+	o.log.Logfln("write kubeconfig for test cluster")
 	filePath := path.Join(o.authDirectoryPath, filenameForKubeconfig)
-	if err := o.writeKubeconfig(ctx, gardenClientForSecrets, clusterName, filePath); err != nil {
+	if err := o.writeKubeconfig(ctx, shootKubeconfigBase64, filePath); err != nil {
 		return err
 	}
 
@@ -217,6 +226,9 @@ func (o *ShootClusterManager) createGardenClient() (dynamic.Interface, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to read kubeconfig from %s: %w", o.gardenClusterKubeconfigPath, err)
 	}
+
+	restConfig.Burst = 60
+	restConfig.QPS = 40
 
 	gardenClient, err := dynamic.NewForConfig(restConfig)
 	if err != nil {
@@ -468,43 +480,50 @@ func (o *ShootClusterManager) readClusterName() (string, error) {
 	return string(clusterName), nil
 }
 
-func (o *ShootClusterManager) writeKubeconfig(ctx context.Context, gardenClientForSecrets dynamic.ResourceInterface,
-	clusterName, filePath string) error {
-	secretName := clusterName + ".kubeconfig"
-	secret, err := gardenClientForSecrets.Get(ctx, secretName, metav1.GetOptions{})
+func (o *ShootClusterManager) writeKubeconfig(_ context.Context, shootKubeconfigBase64, filePath string) error {
+	kubeconfig, err := base64.StdEncoding.DecodeString(shootKubeconfigBase64)
 	if err != nil {
-		return fmt.Errorf("failed to get kubeconfig: error reading secret %s: %w", secretName, err)
-	}
-
-	jp := jsonpath.New("kubeconfig")
-	if err := jp.Parse("{.data.kubeconfig}"); err != nil {
-		return fmt.Errorf("failed to get kubeconfig: template parsing failed: %w", err)
-	}
-
-	result, err := jp.FindResults(secret.Object)
-	if err != nil {
-		return fmt.Errorf("failed to get kubeconfig: result not found: %w", err)
-	}
-
-	if len(result) != 1 || len(result[0]) != 1 {
-		return fmt.Errorf("failed to get kubeconfig: unexpected result length")
-	}
-
-	kubeconfig64, ok := result[0][0].Interface().(string)
-	if !ok {
-		return fmt.Errorf("failed to get kubeconfig: unexpected type")
-	}
-
-	kubeconfig, err := base64.StdEncoding.DecodeString(kubeconfig64)
-	if err != nil {
-		return fmt.Errorf("failed to get kubeconfig: base64 decoding failed")
+		return fmt.Errorf("base64 decoding of lubeconfig for test cluster failed")
 	}
 
 	if err := os.WriteFile(filePath, []byte(kubeconfig), os.ModePerm); err != nil {
-		return fmt.Errorf("failed to write kubeconfig to file %s: %w", filePath, err)
+		return fmt.Errorf("failed to write kubeconfig for test cluster to file %s: %w", filePath, err)
 	}
 
 	return nil
+}
+
+// createShootAdminKubeconfig returns a short-lived admin kubeconfig for the specified shoot as base64 encoded string.
+func (o *ShootClusterManager) createShootAdminKubeconfig(ctx context.Context, dynamicGardenClient dynamic.ResourceInterface,
+	shootName string, kubeconfigExpirationSeconds int64) (string, error) {
+
+	adminKubeconfigRequest := unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "authentication.gardener.cloud/v1alpha1",
+			"kind":       "AdminKubeconfigRequest",
+			"metadata": map[string]interface{}{
+				"namespace": o.namespace,
+				"name":      shootName,
+			},
+			"spec": map[string]interface{}{
+				"expirationSeconds": kubeconfigExpirationSeconds,
+			},
+		},
+	}
+
+	result, err := dynamicGardenClient.Create(ctx, &adminKubeconfigRequest, metav1.CreateOptions{}, subresourceAdminKubeconfig)
+	if err != nil {
+		return "", fmt.Errorf("admin kubeconfig request for test cluster failed: %w", err)
+	}
+
+	shootKubeconfigBase64, found, err := unstructured.NestedString(result.Object, "status", "kubeconfig")
+	if err != nil {
+		return "", fmt.Errorf("could not get kubeconfig for test cluster from result: %w", err)
+	} else if !found {
+		return "", fmt.Errorf("could not find kubeconfig for test cluster in result")
+	}
+
+	return shootKubeconfigBase64, nil
 }
 
 func (o *ShootClusterManager) addConfirmAnnotation(shoot *unstructured.Unstructured) {

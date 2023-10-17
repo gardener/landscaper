@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package model
 
 import (
@@ -29,10 +33,7 @@ func GetTransitiveComponentReferences(ctx context.Context,
 		i++
 	}
 
-	componentDescriptor, err := componentVersion.GetComponentDescriptor()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get component descriptor during the computation of transitive component versions")
-	}
+	componentDescriptor := componentVersion.GetComponentDescriptor()
 
 	return &ComponentVersionList{
 		Metadata:   componentDescriptor.Metadata,
@@ -63,18 +64,12 @@ func getTransitiveComponentReferencesRecursively(ctx context.Context,
 	}
 	cds[cid] = cd
 
-	cdRepositoryContext, err := cd.GetRepositoryContext()
-	if err != nil {
-		return fmt.Errorf("unable to get repository context in getTransitiveComponentReferencesRecursively: %w", err)
-	}
+	cdRepositoryContext := cd.GetRepositoryContext()
 	if cdRepositoryContext == nil {
 		return errors.New("component descriptor must at least contain one repository context with a base url")
 	}
 
-	cdComponentReferences, err := cd.GetComponentReferences()
-	if err != nil {
-		return fmt.Errorf("unable to get component references in getTransitiveComponentReferencesRecursively: %w", err)
-	}
+	cdComponentReferences := cd.GetComponentReferences()
 
 	for _, compRef := range cdComponentReferences {
 		referencedComponentVersion, err := cd.GetReferencedComponentVersion(ctx, &compRef, repositoryContext, overwriter)

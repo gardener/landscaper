@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package helmrepo
 
 import (
@@ -8,6 +12,8 @@ import (
 	"io"
 	"net/url"
 	"strings"
+
+	"github.com/gardener/landscaper/pkg/components/common"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"helm.sh/helm/v3/pkg/repo"
@@ -55,7 +61,7 @@ func (h *BlobResolverForHelmRepo) ResolveHelmChart(ctx context.Context, helmChar
 		return nil, errors.New("no helm chart repo url provided")
 	}
 
-	helmChartRepoUrl := normalizeUrl(helmChartRepo.HelmChartRepoUrl) + "/index.yaml"
+	helmChartRepoUrl := common.NormalizeUrl(helmChartRepo.HelmChartRepoUrl) + "/index.yaml"
 
 	repoCatalog, err := h.helmChartRepoClient.fetchRepoCatalog(ctx, helmChartRepoUrl)
 	if err != nil {

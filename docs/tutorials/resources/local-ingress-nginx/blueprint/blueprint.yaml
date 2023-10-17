@@ -29,9 +29,8 @@ deployExecutions:
         kind: ProviderConfiguration
 
         chart:
-          fromResource: # will fetch the helm chart from component descriptor resource of type helm chart
-    {{ toYaml .componentDescriptorDef | indent 8 }}
-            resourceName: ingress-nginx-chart
+          {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
+          ref: {{ $resource.access.imageReference }}
 
         helmDeployment: true
 

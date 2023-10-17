@@ -7,12 +7,11 @@ package cnudie
 import (
 	"context"
 	"fmt"
-	"io"
-
-	"github.com/gardener/landscaper/pkg/components/ocmlib/registries"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
+	"github.com/gardener/landscaper/pkg/components/cnudie/registries"
+	_ "github.com/gardener/landscaper/pkg/components/cnudie/resourcetypehandlers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
@@ -33,40 +32,30 @@ type Resource struct {
 
 var _ model.Resource = &Resource{}
 
-func (r Resource) GetName() string {
+func (r *Resource) GetName() string {
 	return r.resource.GetName()
 }
 
-func (r Resource) GetVersion() string {
+func (r *Resource) GetVersion() string {
 	return r.resource.GetVersion()
 }
 
-func (r Resource) GetType() string {
+func (r *Resource) GetType() string {
 	return r.resource.GetType()
 }
 
-func (r Resource) GetAccessType() string {
+func (r *Resource) GetAccessType() string {
 	return r.resource.Access.GetType()
 }
 
-func (r Resource) GetResource() (*types.Resource, error) {
+func (r *Resource) GetResource() (*types.Resource, error) {
 	return r.resource, nil
-}
-
-func (r Resource) GetBlob(ctx context.Context, writer io.Writer) (*types.BlobInfo, error) {
-	return r.blobResolver.Resolve(ctx, *r.resource, writer)
-}
-
-func (r Resource) GetBlobInfo(ctx context.Context) (*types.BlobInfo, error) {
-	return r.blobResolver.Info(ctx, *r.resource)
 }
 
 func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
 	handler := r.handlerRegistry.Get(r.GetType())
 	if handler != nil {
-		// TODO
-		// return handler.GetResourceContent(ctx, r, r.blobResolver)
-		return nil, model.NotImplemented()
+		return handler.GetResourceContent(ctx, r, r.blobResolver)
 	}
 	return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
 }

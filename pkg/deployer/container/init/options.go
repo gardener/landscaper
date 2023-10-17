@@ -31,6 +31,8 @@ type options struct {
 	StateDirPath                string
 	RegistrySecretBasePath      string
 
+	UseOCM bool
+
 	podNamespace string
 
 	deployItemName      string
@@ -49,6 +51,8 @@ func (o *options) Complete() {
 	o.ContentDirPath = os.Getenv(container.ContentPathName)
 	o.StateDirPath = os.Getenv(container.StatePathName)
 	o.RegistrySecretBasePath = os.Getenv(container.RegistrySecretBasePathName)
+
+	o.UseOCM = os.Getenv(container.UseOCMName) == "true"
 
 	o.podNamespace = os.Getenv(container.PodNamespaceName)
 	o.deployItemName = os.Getenv(container.DeployItemName)

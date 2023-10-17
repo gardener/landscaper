@@ -18,9 +18,9 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-	"github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 const clusterNameAnnotation = "landscaper.gardener.cloud/clustername"
@@ -47,7 +47,6 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 		item.DeployItem.GenerateName = fmt.Sprintf("%s-%s-", o.exec.Name, item.Info.Name)
 		item.DeployItem.Namespace = o.exec.Namespace
 	}
-	item.DeployItem.Spec.RegistryPullSecrets = o.exec.Spec.RegistryPullSecrets
 
 	if _, err := o.Writer().CreateOrUpdateDeployItem(ctx, read_write_layer.W000036, item.DeployItem, func() error {
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)

@@ -1,0 +1,50 @@
+meta:
+  schemaVersion: v2
+
+component:
+  name: example.com/landscaper-component-with-jsonschemas
+  version: 1.0.0
+
+  provider: internal
+
+  repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+
+  sources: []
+
+  resources:
+  - name: jsonschema
+    type: landscaper.gardener.cloud/jsonschema
+    version: 1.0.0
+    relation: local
+    access:
+      type: localFilesystemBlob
+      filename: jsonschema.json
+      mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
+  - name: jsonschema-compressed
+    type: landscaper.gardener.cloud/jsonschema
+    version: 1.0.0
+    relation: local
+    access:
+      type: localFilesystemBlob
+      filename: jsonschema.json.gzip
+      mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json+gzip
+  - name: jsonschema-unknown-mediatype
+    type: landscaper.gardener.cloud/jsonschema
+    version: 1.0.0
+    relation: local
+    access:
+      type: localFilesystemBlob
+      filename: jsonschema.json
+      mediaType: mediatype/unknown
+  - name: jsonschema-compressed-unknown-mediatype
+    type: landscaper.gardener.cloud/jsonschema
+    version: 1.0.0
+    relation: local
+    access:
+      type: localFilesystemBlob
+      filename: jsonschema.json.gzip
+      mediaType: mediatype/unknown
+
+  componentReferences: []

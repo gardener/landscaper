@@ -1,0 +1,18 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/landscaper-component-with-invalid-access-type
+  provider:
+    name: internal
+  version: 1.0.0
+repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+spec:
+  resources:
+    - name: genericresource
+      type: blueprint
+      version: 1.0.0
+      relation: local
+      access:
+        type: invalid-access-type

@@ -99,7 +99,7 @@ e.g. &ldquo;<a href="https://json-schema.org/draft/2019-09/schema&quot;">https:/
 <code>localTypes</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.JSONSchemaDefinition">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition
+map[string]..JSONSchemaDefinition
 </a>
 </em>
 </td>
@@ -365,7 +365,7 @@ Note that the type information is used to determine the secret key and the type 
 <code>configurations</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -559,23 +559,6 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </td>
 <td>
 <p>Configuration contains the deployer type specific configuration.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
 <tr>
@@ -951,23 +934,6 @@ DeployItemTemplateList
 <p>DeployItemsCompressed as zipped byte array</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -1086,23 +1052,6 @@ BlueprintDefinition
 </tr>
 <tr>
 <td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>imports</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationImports">
@@ -1120,7 +1069,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1151,7 +1100,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1274,7 +1223,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1305,7 +1254,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -2811,23 +2760,6 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </tr>
 <tr>
 <td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>timeout</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.Duration">
@@ -2944,8 +2876,8 @@ Error
 <td>
 <code>lastErrors</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.*github.com/gardener/landscaper/apis/core/v1alpha1.Error">
-[]*github.com/gardener/landscaper/apis/core/v1alpha1.Error
+<a href="#landscaper.gardener.cloud/v1alpha1.*..Error">
+[]*..Error
 </a>
 </em>
 </td>
@@ -3341,7 +3273,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -3746,23 +3678,6 @@ DeployItemTemplateList
 </td>
 <td>
 <p>DeployItemsCompressed as zipped byte array</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
 </tbody>
@@ -4527,23 +4442,6 @@ BlueprintDefinition
 </tr>
 <tr>
 <td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>imports</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationImports">
@@ -4561,7 +4459,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -4592,7 +4490,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -5058,10 +4956,8 @@ ObjectReference
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionSpec">ExecutionSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.NamedObjectReference">NamedObjectReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">SecretReference</a>, 

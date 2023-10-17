@@ -288,10 +288,7 @@ func serializeComponentDescriptor(componentVersion model.ComponentVersion) (inte
 		return nil, nil
 	}
 
-	cd, err := componentVersion.GetComponentDescriptor()
-	if err != nil {
-		return nil, err
-	}
+	cd := componentVersion.GetComponentDescriptor()
 
 	data, err := codec.Encode(cd)
 	if err != nil {

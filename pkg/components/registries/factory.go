@@ -1,101 +1,69 @@
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package registries
 
 import (
-	"context"
+	"os"
 
-	"github.com/gardener/component-cli/ociclient/cache"
-	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
-	"github.com/mandelsoft/vfs/pkg/vfs"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/open-component-model/ocm/pkg/utils"
 
-	"github.com/gardener/landscaper/apis/config"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+
 	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
-// Factory implements the model.Factory interface.
-// Its purpose is to select either the cnudie or ocm implementation of the same interface.
-type Factory struct {
-	cnudieFactory *cnudie.Factory
-	// ocmFactory *cnudie.RegistryAccessBuilder
+var (
+	ocmFactory    model.Factory = &ocmlib.Factory{}
+	cnudieFactory model.Factory = &cnudie.Factory{}
+
+	ocmLibraryMode *bool
+)
+
+func init() {
+	// Enable logging with our logger from ocm lib
+	// The config of the logger cannot be accessed in the init function, as the logger might not have been
+	// initialized itself yet. Therefore, we pass a function through which the logger can be passed to the ocmlib
+	// after it is fully configured.
+	logging.SetLogConsumer(ocmFactory.SetApplicationLogger)
+
+	// This is for testing purposes only!
+	m := os.Getenv("USE_OCM_LIB")
+	if m == "true" {
+		SetOCMLibraryMode(true)
+	} else if m == "false" {
+		SetOCMLibraryMode(false)
+	}
 }
 
-var _ model.Factory = &Factory{}
-
-func NewFactory() *Factory {
-	return &Factory{}
+// SetOCMLibraryMode can only be set once as it is determined by the landscaper or deployer configuration
+func SetOCMLibraryMode(useOCMLib bool) {
+	if ocmLibraryMode == nil {
+		ocmLibraryMode = &useOCMLib
+	}
 }
 
-func (f *Factory) NewRegistryAccess(ctx context.Context,
-	secrets []corev1.Secret,
-	sharedCache cache.Cache,
-	localRegistryConfig *config.LocalRegistryConfiguration,
-	ociRegistryConfig *config.OCIConfiguration,
-	inlineCd *types.ComponentDescriptor,
-	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewRegistryAccess(ctx, secrets, sharedCache, localRegistryConfig, ociRegistryConfig, inlineCd, additionalBlobResolvers...)
-}
+func GetFactory(useOCM ...bool) model.Factory {
+	log, _ := logging.GetLogger()
 
-func (f *Factory) NewRegistryAccessFromOciOptions(ctx context.Context,
-	log logr.Logger,
-	fs vfs.FileSystem,
-	allowPlainHttp bool,
-	skipTLSVerify bool,
-	registryConfigPath string,
-	concourseConfigPath string,
-	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewRegistryAccessFromOciOptions(ctx, log, fs, allowPlainHttp, skipTLSVerify, registryConfigPath, concourseConfigPath, predefinedComponentDescriptors...)
-}
+	var ocmLibraryModeBool bool
+	if ocmLibraryMode != nil {
+		ocmLibraryModeBool = *ocmLibraryMode
+	} else {
+		ocmLibraryModeBool = false
+		log.Info("useOCMLib flag not set and therefore defaulted!", "ocmLibraryMode", ocmLibraryModeBool)
+	}
+	useOCMBool := utils.OptionalDefaultedBool(false, useOCM...)
 
-func (f *Factory) NewRegistryAccessForHelm(ctx context.Context,
-	lsClient client.Client,
-	contextObj *lsv1alpha1.Context,
-	registryPullSecrets []corev1.Secret,
-	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache,
-	ref *helmv1alpha1.RemoteChartReference) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewRegistryAccessForHelm(ctx, lsClient, contextObj, registryPullSecrets, ociConfig, sharedCache, ref)
-}
-
-func (f *Factory) NewOCIRegistryAccess(ctx context.Context,
-	config *config.OCIConfiguration,
-	cache cache.Cache,
-	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewOCIRegistryAccess(ctx, config, cache, predefinedComponentDescriptors...)
-}
-
-func (f *Factory) NewOCIRegistryAccessFromDockerAuthConfig(ctx context.Context,
-	fs vfs.FileSystem,
-	registrySecretBasePath string,
-	predefinedComponentDescriptors ...*types.ComponentDescriptor) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewOCIRegistryAccessFromDockerAuthConfig(ctx, fs, registrySecretBasePath, predefinedComponentDescriptors...)
-}
-
-func (f *Factory) NewOCITestRegistryAccess(address, username, password string) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewOCITestRegistryAccess(address, username, password)
-}
-
-func (f *Factory) NewLocalRegistryAccess(rootPath string) (model.RegistryAccess, error) {
-	return f.cnudieFactory.NewLocalRegistryAccess(rootPath)
-}
-
-// NewHelmRepoResource returns a helm chart resource that is stored in a helm chart repository.
-func (f *Factory) NewHelmRepoResource(ctx context.Context,
-	helmChartRepo *helmv1alpha1.HelmChartRepo,
-	lsClient client.Client,
-	contextObj *lsv1alpha1.Context) (model.Resource, error) {
-	return f.cnudieFactory.NewHelmRepoResource(ctx, helmChartRepo, lsClient, contextObj)
-}
-
-func (f *Factory) NewHelmOCIResource(ctx context.Context,
-	ociImageRef string,
-	registryPullSecrets []corev1.Secret,
-	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache) (model.Resource, error) {
-	return f.cnudieFactory.NewHelmOCIResource(ctx, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
+	if useOCMBool || ocmLibraryModeBool {
+		log.Info("using ocm")
+		return ocmFactory
+	} else {
+		log.Info("using cnudie")
+		return cnudieFactory
+	}
 }

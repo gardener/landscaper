@@ -128,7 +128,7 @@ func (r *BlueprintRenderer) RenderImportExecutions(input *ResolvedInstallation, 
 	formatter := template.NewTemplateInputFormatter(true)
 	tmpl := template.New(
 		gotemplate.New(templateStateHandler, nil).WithInputFormatter(formatter),
-		spiff.New(templateStateHandler).WithInputFormatter(formatter))
+		spiff.New(templateStateHandler, nil).WithInputFormatter(formatter))
 	errorList, bindings, err := tmpl.TemplateImportExecutions(
 		template.NewBlueprintExecutionOptions(
 			input.Installation,
@@ -174,7 +174,7 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, 
 	formatter := template.NewTemplateInputFormatter(true)
 	tmpl := template.New(
 		gotemplate.New(templateStateHandler, nil).WithInputFormatter(formatter),
-		spiff.New(templateStateHandler).WithInputFormatter(formatter))
+		spiff.New(templateStateHandler, nil).WithInputFormatter(formatter))
 	exports, err := tmpl.TemplateExportExecutions(
 		template.NewExportExecutionOptions(
 			template.NewBlueprintExecutionOptions(
@@ -200,7 +200,7 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 	formatter := template.NewTemplateInputFormatter(true)
 	tmpl := template.New(
 		gotemplate.New(templateStateHandler, nil).WithInputFormatter(formatter),
-		spiff.New(templateStateHandler).WithInputFormatter(formatter))
+		spiff.New(templateStateHandler, nil).WithInputFormatter(formatter))
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
@@ -333,7 +333,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 	formatter := template.NewTemplateInputFormatter(true)
 	tmpl := template.New(
 		gotemplate.New(templateStateHandler, nil).WithInputFormatter(formatter),
-		spiff.New(templateStateHandler).WithInputFormatter(formatter))
+		spiff.New(templateStateHandler, nil).WithInputFormatter(formatter))
 	subInstallationTemplates, err := tmpl.TemplateSubinstallationExecutions(
 		template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
@@ -480,10 +480,7 @@ func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) (*
 	}
 
 	if input.ComponentVersion != nil {
-		repositoryContext, err := input.ComponentVersion.GetRepositoryContext()
-		if err != nil {
-			return nil, fmt.Errorf("unable to get repository context from component version: %w", err)
-		}
+		repositoryContext := input.ComponentVersion.GetRepositoryContext()
 
 		return repositoryContext, nil
 	}

@@ -6,6 +6,8 @@ package ocmlib
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"reflect"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -33,8 +35,18 @@ type RegistryAccess struct {
 var _ model.RegistryAccess = (*RegistryAccess)(nil)
 
 func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) (model.ComponentVersion, error) {
+	if cv == nil {
+		return nil, errors.New("component version access cannot be nil during facade component version creation")
+	}
 	// Get ocm-lib Component Descriptor
 	cd := cv.GetDescriptor()
+
+	// TODO: Remove this check
+	// this is only included for compatibility reasons as the legacy ocm spec mandated component descriptors to have a
+	// repository context
+	if len(cd.RepositoryContexts) == 0 {
+		return nil, fmt.Errorf("repository context is required")
+	}
 	data, err := compdesc.Encode(cd, compdesc.SchemaVersion(v2.SchemaVersion))
 	if err != nil {
 		return nil, err
@@ -47,15 +59,21 @@ func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) (mod
 		return nil, err
 	}
 
-	//return &ComponentVersion{
-	//	registryAccess:         r,
-	//	componentVersionAccess: cv,
-	//	componentDescriptorV2:  lscd,
-	//}, nil
-	return nil, model.NotImplemented()
+	return &ComponentVersion{
+		registryAccess:         r,
+		componentVersionAccess: cv,
+		componentDescriptorV2:  lscd,
+	}, nil
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
+	if cdRef == nil {
+		return nil, errors.New("component descriptor reference cannot be nil")
+	}
+	if cdRef.RepositoryContext == nil {
+		return nil, errors.New("repository context cannot be nil")
+	}
+
 	spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
 	if err != nil {
 		return nil, err

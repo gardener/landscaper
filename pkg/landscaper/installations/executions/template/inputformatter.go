@@ -104,7 +104,10 @@ func removeValue(val interface{}, depth uint) interface{} {
 			m[k] = removeValue(v, depth+1)
 		}
 	} else {
-		val = fmt.Sprintf("[...] (%s)", reflect.TypeOf(val).String())
+		if val != nil {
+			val = reflect.TypeOf(val).String()
+		}
+		val = fmt.Sprintf("[...] (%s)", val)
 	}
 
 	return val

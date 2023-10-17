@@ -1,0 +1,24 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/landscaper-component
+  provider:
+    name: internal
+  version: 1.0.0
+repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+spec: 
+  resources:
+    - name: blueprint
+      type: blueprint
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: blueprint
+        mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+  references:
+    - name: referenced-landscaper-component
+      version: 1.0.0
+      componentName: example.com/referenced-landscaper-component

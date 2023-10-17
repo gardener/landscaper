@@ -18,7 +18,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 )
 
 const subresourceAdminKubeconfig = "adminkubeconfig"
@@ -91,7 +91,7 @@ func (c *ShootClient) ExistsShoot(ctx context.Context, shootNamespace, shootName
 }
 
 // GetShootAdminKubeconfig returns a short-lived admin kubeconfig for the specified shoot as base64 encoded string.
-func (c *ShootClient) GetShootAdminKubeconfig(ctx context.Context, shootName, shootNamespace string, kubeconfigExpirationSeconds int64) (string, error) {
+func (c *ShootClient) GetShootAdminKubeconfig(ctx context.Context, shootName, shootNamespace string, kubeconfigExpirationSeconds int64) (string, metav1.Time, error) {
 
 	adminKubeconfigRequest := unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -107,18 +107,29 @@ func (c *ShootClient) GetShootAdminKubeconfig(ctx context.Context, shootName, sh
 		},
 	}
 
+	var expirationTimestamp metav1.Time
 	namespacedShootClient := c.unstructuredClient.Namespace(shootNamespace)
 	result, err := namespacedShootClient.Create(ctx, &adminKubeconfigRequest, metav1.CreateOptions{}, subresourceAdminKubeconfig)
 	if err != nil {
-		return "", fmt.Errorf("shoot client: admin kubeconfig request failed: %w", err)
+		return "", expirationTimestamp, fmt.Errorf("shoot client: admin kubeconfig request failed: %w", err)
 	}
 
 	shootKubeconfigBase64, found, err := unstructured.NestedString(result.Object, "status", "kubeconfig")
 	if err != nil {
-		return "", fmt.Errorf("shoot client: could not get kubeconfig from result: %w", err)
+		return "", expirationTimestamp, fmt.Errorf("shoot client: could not get kubeconfig from result: %w", err)
 	} else if !found {
-		return "", fmt.Errorf("shoot client: could not find kubeconfig in result")
+		return "", expirationTimestamp, fmt.Errorf("shoot client: could not find kubeconfig in result")
+	}
+	rawExpirationTimestamp, found, err := unstructured.NestedString(result.Object, "status", "expirationTimestamp")
+	if err != nil {
+		return "", expirationTimestamp, fmt.Errorf("shoot client: could not get expiration timestamp from result: %w", err)
+	} else if !found {
+		return "", expirationTimestamp, fmt.Errorf("shoot client: could not find expiration timestamp in result")
+	}
+	err = expirationTimestamp.UnmarshalJSON([]byte(fmt.Sprintf("\"%s\"", rawExpirationTimestamp)))
+	if err != nil {
+		return "", expirationTimestamp, fmt.Errorf("error converting raw expiration timestamp '%s' to metav1.Time: %w", rawExpirationTimestamp, err)
 	}
 
-	return shootKubeconfigBase64, nil
+	return shootKubeconfigBase64, expirationTimestamp, nil
 }

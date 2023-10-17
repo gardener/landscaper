@@ -16,6 +16,7 @@ type ErrorReason string
 const (
 	ImportNotFound         ErrorReason = "ImportNotFound"
 	ImportNotSatisfied     ErrorReason = "ImportNotSatisfied"
+	InvalidDefaultValue    ErrorReason = "InvalidDefaultValue"
 	NotCompletedDependents ErrorReason = "NotCompletedDependents"
 	SchemaValidationFailed ErrorReason = "SchemaValidationFailed"
 )

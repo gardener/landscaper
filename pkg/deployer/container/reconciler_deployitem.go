@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/components/registries"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -40,6 +42,8 @@ func NewDeployer(log logging.Logger,
 			return nil, err
 		}
 	}
+
+	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
 		log:              log,

@@ -16,13 +16,13 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
-	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 const (
@@ -141,9 +141,19 @@ func (c *Constructor) constructImports(
 			}
 			if _, ok := imports[def.Name]; !ok {
 				if def.Required != nil && !*def.Required {
-					continue // don't throw an error if the import is not required
+					if len(def.Default.Value.RawMessage) != 0 {
+						// there is a default defined in the blueprint
+						var defVal interface{}
+						if err := yaml.Unmarshal(def.Default.Value.RawMessage, &defVal); err != nil {
+							return nil, installations.NewErrorf(installations.InvalidDefaultValue, err, "default value defined for import %q of type %s cannot be unmarshalled", def.Name, lsv1alpha1.ImportTypeData)
+						}
+						imports[def.Name] = defVal
+					} else {
+						continue // don't throw an error if the import is not required
+					}
+				} else {
+					return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeData)
 				}
-				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeData)
 			}
 			if def.Schema == nil {
 				return nil, installations.NewErrorf(installations.SchemaValidationFailed, fmt.Errorf("schema is nil"), "%s: no schema defined", defPath.String())
@@ -291,10 +301,10 @@ func (c *Constructor) RenderImportExecutions() error {
 		KubeClient: c.Operation.Client(),
 		Inst:       c.Operation.Inst.GetInstallation(),
 	}
-	targetResolver := secretresolver.New(c.Operation.Client())
+	targetResolver := genericresolver.New(c.Operation.Client())
 	tmpl := template.New(
 		gotemplate.New(templateStateHandler, targetResolver),
-		spiff.New(templateStateHandler))
+		spiff.New(templateStateHandler, targetResolver))
 	errors, bindings, err := tmpl.TemplateImportExecutions(
 		template.NewBlueprintExecutionOptions(
 			c.Operation.Context().External.InjectComponentDescriptorRef(c.Operation.Inst.GetInstallation()),

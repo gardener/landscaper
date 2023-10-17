@@ -32,8 +32,7 @@ const (
 	BLUEPRINT_EDITED_SUBPATH = "blueprint_edited"
 )
 
-// TODO
-var _ = XDescribe("Put", func() {
+var _ = Describe("Put", func() {
 
 	var defaultStoreConfig config.BlueprintStore
 

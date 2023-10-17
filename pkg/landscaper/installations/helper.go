@@ -20,13 +20,13 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	lscutils "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
 	lscheme "github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	lstypes "github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
-	lsutils "github.com/gardener/landscaper/pkg/utils"
 )
 
 var componentInstallationGVK schema.GroupVersionKind
@@ -96,7 +96,7 @@ func CreateInternalInstallation(ctx context.Context, registry model.RegistryAcce
 		return nil, nil
 	}
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	blue, err := blueprints.ResolveBlueprint(ctx, registry, cdRef, inst.Spec.Blueprint)
+	blue, err := blueprints.Resolve(ctx, registry, cdRef, inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
@@ -115,7 +115,7 @@ func CreateInternalInstallationWithContext(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	blue, err := blueprints.ResolveBlueprint(ctx, registry, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
+	blue, err := blueprints.Resolve(ctx, registry, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
@@ -147,8 +147,8 @@ func GetDataImport(ctx context.Context,
 		}
 	}
 	if dataImport.SecretRef != nil {
-		secretRef := lsutils.SecretRefFromLocalRef(dataImport.SecretRef, inst.GetInstallation().GetNamespace())
-		_, data, gen, err := lsutils.ResolveSecretReference(ctx, kubeClient, secretRef)
+		secretRef := lscutils.SecretRefFromLocalRef(dataImport.SecretRef, inst.GetInstallation().GetNamespace())
+		_, data, gen, err := lscutils.ResolveSecretReference(ctx, kubeClient, secretRef)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -158,8 +158,8 @@ func GetDataImport(ctx context.Context,
 		rawDataObject.SetGeneration(gen)
 	}
 	if dataImport.ConfigMapRef != nil {
-		configMapRef := lsutils.ConfigMapRefFromLocalRef(dataImport.ConfigMapRef, inst.GetInstallation().GetNamespace())
-		_, data, gen, err := lsutils.ResolveConfigMapReference(ctx, kubeClient, configMapRef)
+		configMapRef := lscutils.ConfigMapRefFromLocalRef(dataImport.ConfigMapRef, inst.GetInstallation().GetNamespace())
+		_, data, gen, err := lscutils.ResolveConfigMapReference(ctx, kubeClient, configMapRef)
 		if err != nil {
 			return nil, nil, err
 		}

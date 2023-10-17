@@ -15,7 +15,7 @@ spec:
         schemaVersion: v2
 
       component:
-        name: root
+        name: github.com/root
         version: 1.0.0
 
         provider: internal

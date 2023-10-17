@@ -19,13 +19,13 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/validation"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-	secretresolver "github.com/gardener/landscaper/pkg/utils/targetresolver/secret"
 )
 
 const (
@@ -60,8 +60,8 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 		KubeClient: o.Client(),
 		Inst:       inst.GetInstallation(),
 	}
-	targetResolver := secretresolver.New(o.Client())
-	tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler))
+	targetResolver := genericresolver.New(o.Client())
+	tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
@@ -157,7 +157,6 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec := &lsv1alpha1.Execution{}
 	exec.Name = inst.GetInstallation().Name
 	exec.Namespace = inst.GetInstallation().Namespace
-	exec.Spec.RegistryPullSecrets = inst.GetInstallation().Spec.RegistryPullSecrets
 
 	versionedDeployItemTemplateList := lsv1alpha1.DeployItemTemplateList{}
 	if err := lsv1alpha1.Convert_core_DeployItemTemplateList_To_v1alpha1_DeployItemTemplateList(&execTemplates, &versionedDeployItemTemplateList, nil); err != nil {

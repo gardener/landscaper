@@ -342,7 +342,7 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
 		h.TargetRestConfig, targetClientSet)
 
 	err = realHelmDeployer.Undeploy(ctx)
-	if err == nil {
+	if err != nil {
 		return err
 	}
 

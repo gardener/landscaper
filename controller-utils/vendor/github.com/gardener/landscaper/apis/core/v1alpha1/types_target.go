@@ -125,3 +125,15 @@ type ResolvedTarget struct {
 	// Otherwise, the inline configuration of the target is put here.
 	Content string `json:"content"`
 }
+
+// NewResolvedTarget is a constructor for ResolvedTarget.
+// It puts the target's inline configuration into the Content field, if the target doesn't contain a secret reference.
+func NewResolvedTarget(target *Target) *ResolvedTarget {
+	res := &ResolvedTarget{
+		Target: target,
+	}
+	if target.Spec.SecretRef == nil && target.Spec.Configuration != nil {
+		res.Content = string(target.Spec.Configuration.RawMessage)
+	}
+	return res
+}

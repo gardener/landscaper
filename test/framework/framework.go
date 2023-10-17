@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	utils3 "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -148,14 +150,16 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse kubeconfig: %w", err)
 	}
-	innerClient, err := client.New(f.RestConfig, client.Options{
-		Scheme: lsscheme.LandscaperScheme,
-	})
-	f.Client = envtest.NewRetryingClient(innerClient, logger)
+	innerClient, err := utils3.NewUncached(utils3.LsResourceClientBurstDefault, utils3.LsResourceClientQpsDefault, f.RestConfig,
+		client.Options{Scheme: lsscheme.LandscaperScheme})
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes client: %w", err)
 	}
-	f.ClientSet, err = kubernetes.NewForConfig(f.RestConfig)
+
+	f.Client = envtest.NewRetryingClient(innerClient, logger)
+
+	f.ClientSet, err = utils3.NewForConfig(utils3.LsResourceClientBurstDefault, utils3.LsResourceClientQpsDefault, f.RestConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes clientset: %w", err)
 	}

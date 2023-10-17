@@ -53,7 +53,7 @@ landscaper:
             image: eu.gcr.io/gardener-project/landscaper/mock-deployer-controller
     steps:
       verify:
-        image: 'golang:1.20.6'
+        image: 'golang:1.20.10'
       publish-helm-charts:
         depends:
         - verify
@@ -76,7 +76,7 @@ landscaper:
           - false
           trait_depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.10-alpine3.18'
           output_dir: 'integration_test_cnudie'
         integration_test_ocm:
           execute:
@@ -84,21 +84,21 @@ landscaper:
           - true
           trait_depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.10-alpine3.18'
           output_dir: 'integration_test_ocm'
     pull-request:
       steps:
         integration_test_cnudie:
           depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.10-alpine3.18'
           execute:
           - integration-test-new
           - false
         integration_test_ocm:
           depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.10-alpine3.18'
           execute:
           - integration-test-new
           - true
@@ -126,7 +126,7 @@ landscaper:
           - false
           trait_depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.10-alpine3.18'
           output_dir: 'integration_test_cnudie'
         integration_test_ocm:
           execute:
@@ -134,7 +134,7 @@ landscaper:
           - true
           trait_depends:
           - publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.6-alpine3.18'
+          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.20.10-alpine3.18'
           output_dir: 'integration_test_ocm'
         update_release:
           inputs:

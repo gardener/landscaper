@@ -21,7 +21,6 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
-	"github.com/gardener/landscaper/pkg/utils/targetresolver"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -97,7 +96,7 @@ var _ = Describe("Export", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, targetresolver.NewResolvedTarget(target))
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, lsv1alpha1.NewResolvedTarget(target))
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -173,7 +172,7 @@ var _ = Describe("Export", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, targetresolver.NewResolvedTarget(target))
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, lsv1alpha1.NewResolvedTarget(target))
 		Expect(err).ToNot(HaveOccurred())
 
 		go func() {

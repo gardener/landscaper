@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strconv"
 
+	"k8s.io/client-go/kubernetes"
+
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -41,4 +43,34 @@ func NewUncachedClient(burst, qps int) func(config *rest.Config, options client.
 		return c, nil
 	}
 
+}
+
+func NewUncached(burst, qps int, config *rest.Config, options client.Options) (client.Client, error) {
+	return NewUncachedClient(burst, qps)(config, options)
+}
+
+func NewForConfig(burst, qps int, config *rest.Config) (*kubernetes.Clientset, error) {
+	var configCopy *rest.Config
+	if config != nil {
+		tmp := *config
+		configCopy = &tmp
+
+		log, err := logging.GetLogger()
+		if err != nil {
+			return nil, err
+		}
+
+		if config.RateLimiter != nil {
+			log.Info("NewForConfig-RateLimiter: " + reflect.TypeOf(config.RateLimiter).String())
+		}
+		log.Info("NewForConfig-OldBurst: " + strconv.Itoa(config.Burst))
+		log.Info("NewForConfig-OldQPS: " + fmt.Sprintf("%v", config.QPS))
+
+		configCopy.RateLimiter = nil
+		configCopy.Burst = burst
+		configCopy.QPS = float32(qps)
+
+	}
+
+	return kubernetes.NewForConfig(configCopy)
 }

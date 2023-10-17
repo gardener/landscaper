@@ -25,6 +25,8 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
+// TODO: investigate if this coding can be removed entirely after component-cli is removed
+
 // ResolveBlueprint returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
 func ResolveBlueprint(ctx context.Context,
@@ -73,8 +75,19 @@ func ResolveBlueprint(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
-
-	return ResolveBlueprintFromComponentVersion(ctx, componentVersion, bpDef.Reference.ResourceName)
+	resource, err := componentVersion.GetResource(bpDef.Reference.ResourceName, nil)
+	if err != nil {
+		return nil, err
+	}
+	content, err := resource.GetTypedContent(ctx)
+	if err != nil {
+		return nil, err
+	}
+	blueprint, ok := content.Resource.(*Blueprint)
+	if !ok {
+		return nil, fmt.Errorf("received resource of type %T but expected type *Blueprint", blueprint)
+	}
+	return blueprint, nil
 }
 
 // Resolve returns a blueprint from a given reference.
@@ -124,17 +137,19 @@ func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *ls
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
-
-	return ResolveBlueprintFromComponentVersion(ctx, componentVersion, bpDef.Reference.ResourceName)
-}
-
-// ResolveBlueprintFromComponentVersion resolves a blueprint defined by a component version.
-func ResolveBlueprintFromComponentVersion(
-	ctx context.Context,
-	componentVersion model.ComponentVersion,
-	blueprintName string) (*Blueprint, error) {
-
-	return GetStore().Fetch(ctx, componentVersion, blueprintName)
+	resource, err := componentVersion.GetResource(bpDef.Reference.ResourceName, nil)
+	if err != nil {
+		return nil, err
+	}
+	content, err := resource.GetTypedContent(ctx)
+	if err != nil {
+		return nil, err
+	}
+	blueprint, ok := content.Resource.(*Blueprint)
+	if !ok {
+		return nil, fmt.Errorf("received resource of type %T but expected type *Blueprint", blueprint)
+	}
+	return blueprint, nil
 }
 
 // GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.

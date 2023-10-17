@@ -6,6 +6,7 @@ package cnudie
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -41,41 +42,37 @@ func (c *ComponentVersion) GetVersion() string {
 	return c.componentDescriptor.GetVersion()
 }
 
-func (c *ComponentVersion) GetComponentDescriptor() (*types.ComponentDescriptor, error) {
-	return c.componentDescriptor, nil
+func (c *ComponentVersion) GetComponentDescriptor() *types.ComponentDescriptor {
+	return c.componentDescriptor
 }
 
-func (c *ComponentVersion) GetRepositoryContext() (*types.UnstructuredTypedObject, error) {
-	context := c.componentDescriptor.GetEffectiveRepositoryContext()
-	if context == nil {
-		return nil, nil
-	}
-	return context, nil
+func (c *ComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
+	return c.componentDescriptor.GetEffectiveRepositoryContext()
 }
 
-func (c *ComponentVersion) GetComponentReferences() ([]types.ComponentReference, error) {
-	return c.componentDescriptor.ComponentReferences, nil
+func (c *ComponentVersion) GetComponentReferences() []types.ComponentReference {
+	return c.componentDescriptor.ComponentReferences
 }
 
-func (c *ComponentVersion) GetComponentReference(name string) (*types.ComponentReference, error) {
-	refs, err := c.GetComponentReferences()
-	if err != nil {
-		return nil, err
-	}
+func (c *ComponentVersion) GetComponentReference(name string) *types.ComponentReference {
+	refs := c.GetComponentReferences()
 
 	for i := range refs {
 		ref := &refs[i]
 		if ref.GetName() == name {
-			return ref, nil
+			return ref
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, componentRef *types.ComponentReference,
 	repositoryContext *types.UnstructuredTypedObject, overwriter componentoverwrites.Overwriter) (model.ComponentVersion, error) {
 
+	if componentRef == nil {
+		return nil, errors.New("component reference cannot be nil")
+	}
 	cdRef := &lsv1alpha1.ComponentDescriptorReference{
 		RepositoryContext: repositoryContext,
 		ComponentName:     componentRef.ComponentName,

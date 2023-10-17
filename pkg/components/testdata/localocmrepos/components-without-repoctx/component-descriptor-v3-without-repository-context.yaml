@@ -1,0 +1,10 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/landscaper-component-without-repository-context
+  provider:
+    name: internal
+  version: 1.0.0
+# Missing
+# repositoryContexts: ...
+spec: {}

@@ -47,8 +47,7 @@ import (
 
 type Factory struct{}
 
-// TODO
-//var _ model.Factory = &Factory{}
+var _ model.Factory = &Factory{}
 
 func (*Factory) SetApplicationLogger(logger logging.Logger) {
 	mandellog.DefaultContext().SetBaseLogger(logger.Logr())
@@ -63,8 +62,6 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	inlineCd *types.ComponentDescriptor,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 
-	logger, _ := logging.FromContextOrNew(ctx, nil)
-
 	if fs == nil {
 		fs = osfs.New()
 	}
@@ -72,8 +69,6 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	registryAccess := &RegistryAccess{}
 	registryAccess.octx = ocm.New(datacontext.MODE_EXTENDED)
 	registryAccess.session = ocm.NewSession(datacontext.NewSession())
-
-	registryAccess.octx.LoggingContext().SetBaseLogger(logger.Logr())
 
 	ociConfigFiles := make([]string, 0)
 	if ociRegistryConfig != nil {

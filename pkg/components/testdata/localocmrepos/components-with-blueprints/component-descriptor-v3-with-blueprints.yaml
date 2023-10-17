@@ -1,0 +1,52 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/landscaper-component-with-blueprints
+  provider:
+    name: internal
+  version: 1.0.0
+repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+spec: 
+  resources:
+    - name: blueprint-dir
+      type: landscaper.gardener.cloud/blueprint
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: blueprint-dir
+        mediaType: application/x-tar
+    - name: blueprint-tar
+      type: landscaper.gardener.cloud/blueprint
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: blueprint-tar
+        mediaType: application/x-tar
+    - name: blueprint-tar-gzip
+      type: landscaper.gardener.cloud/blueprint
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: blueprint-tar-gzip
+        mediaType: application/x-tar+gzip
+    - name: corrupted-blueprint
+      type: landscaper.gardener.cloud/blueprint
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: corrupted-blueprint
+        mediaType: application/x-tar
+    - name: corrupted-blueprint-tar
+      type: landscaper.gardener.cloud/blueprint
+      version: 1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        filename: corrupted-blueprint
+        mediaType: application/x-tar

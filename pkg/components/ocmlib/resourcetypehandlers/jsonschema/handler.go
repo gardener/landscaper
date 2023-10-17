@@ -7,7 +7,6 @@ package jsonschema
 import (
 	"bytes"
 	"context"
-	"fmt"
 
 	"github.com/open-component-model/ocm/pkg/common/compression"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
@@ -37,15 +36,6 @@ func (h *SchemaHandler) GetResourceContent(ctx context.Context, r model.Resource
 		return nil, err
 	}
 	finalize.Close(m)
-
-	mimeType := m.MimeType()
-	mt, err := mediatype.Parse(mimeType)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse media type %q: %w", mimeType, err)
-	}
-	if mt.Type != mediatype.JSONSchemaArtifactsMediaTypeV1 {
-		return nil, fmt.Errorf("unknown media type %s expected %s", mimeType, mediatype.JSONSchemaArtifactsMediaTypeV1)
-	}
 
 	schemaRaw, err := m.Reader()
 	if err != nil {

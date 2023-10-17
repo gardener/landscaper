@@ -113,25 +113,6 @@ spec:
                 description: DeployItemsCompressed as zipped byte array
                 format: byte
                 type: string
-              registryPullSecrets:
-                description: 'RegistryPullSecrets defines a list of registry credentials
-                  that are used to pull blueprints, component descriptors and jsonschemas
-                  from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-                  Note that the type information is used to determine the secret key
-                  and the type of the secret.'
-                items:
-                  description: ObjectReference is the reference to a kubernetes object.
-                  properties:
-                    name:
-                      description: Name is the name of the kubernetes object.
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of kubernetes object.
-                      type: string
-                  required:
-                  - name
-                  type: object
-                type: array
             type: object
           status:
             description: Status contains the current status of the execution.

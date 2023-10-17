@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -23,13 +24,15 @@ import (
 type Templater struct {
 	state          template.GenericStateHandler
 	inputFormatter *template.TemplateInputFormatter
+	targetResolver targetresolver.TargetResolver
 }
 
 // New creates a new spiff execution templater.
-func New(state template.GenericStateHandler) *Templater {
+func New(state template.GenericStateHandler, targetResolver targetresolver.TargetResolver) *Templater {
 	return &Templater{
 		state:          state,
 		inputFormatter: template.NewTemplateInputFormatter(false, "imports", "values", "state"),
+		targetResolver: targetResolver,
 	}
 }
 
@@ -61,7 +64,7 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 	}
 
 	functions := spiffing.NewFunctions()
-	if err = LandscaperSpiffFuncs(functions, cd, cdList); err != nil {
+	if err = LandscaperSpiffFuncs(functions, cd, cdList, t.targetResolver); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +109,7 @@ func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	defer ctx.Done()
 
 	functions := spiffing.NewFunctions()
-	if err = LandscaperSpiffFuncs(functions, descriptor, cdList); err != nil {
+	if err = LandscaperSpiffFuncs(functions, descriptor, cdList, t.targetResolver); err != nil {
 		return nil, err
 	}
 
@@ -152,7 +155,7 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	}
 
 	functions := spiffing.NewFunctions()
-	if err = LandscaperSpiffFuncs(functions, descriptor, cdList); err != nil {
+	if err = LandscaperSpiffFuncs(functions, descriptor, cdList, t.targetResolver); err != nil {
 		return nil, err
 	}
 
@@ -201,7 +204,7 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	}
 
 	functions := spiffing.NewFunctions()
-	if err = LandscaperSpiffFuncs(functions, descriptor, cdList); err != nil {
+	if err = LandscaperSpiffFuncs(functions, descriptor, cdList, t.targetResolver); err != nil {
 		return nil, err
 	}
 
