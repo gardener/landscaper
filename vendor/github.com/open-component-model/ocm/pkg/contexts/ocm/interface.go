@@ -46,6 +46,7 @@ type (
 	AccessType                       = internal.AccessType
 	DataAccess                       = internal.DataAccess
 	BlobAccess                       = internal.BlobAccess
+	AccessProvider                   = internal.AccessProvider
 	SourceAccess                     = internal.SourceAccess
 	SourceMeta                       = internal.SourceMeta
 	ResourceAccess                   = internal.ResourceAccess
@@ -179,16 +180,4 @@ func SkipVerify(flag ...bool) ModificationOption {
 // Deprecated: for legacy code, only.
 func SkipDigest(flag ...bool) ModificationOption {
 	return internal.SkipDigest(flag...)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type (
-	LabelMergeHandler         = internal.ValueMergeHandler
-	LabelMergeHandlerConfig   = internal.ValueMergeHandlerConfig
-	LabelMergeHandlerRegistry = internal.ValueMergeHandlerRegistry
-)
-
-func DefaultLabelMergeHandlerRegistry() LabelMergeHandlerRegistry {
-	return internal.DefaultValueMergeHandlerRegistry
 }

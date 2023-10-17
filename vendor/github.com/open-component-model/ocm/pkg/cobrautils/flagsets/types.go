@@ -277,7 +277,7 @@ func (s *ValueMapYAMLOptionType) Equal(optionType ConfigOptionType) bool {
 }
 
 func (s *ValueMapYAMLOptionType) Create() Option {
-	return &YAMLOption{
+	return &ValueMapYAMLOption{
 		OptionBase: NewOptionBase(s),
 	}
 }

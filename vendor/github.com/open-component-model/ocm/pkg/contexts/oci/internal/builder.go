@@ -92,5 +92,5 @@ func (b Builder) New(m ...datacontext.BuilderMode) Context {
 			b.spechandlers = DefaultRepositorySpecHandlers
 		}
 	}
-	return newContext(b.credentials, b.reposcheme, b.spechandlers, b.credentials)
+	return datacontext.SetupContext(mode, newContext(b.credentials, b.reposcheme, b.spechandlers, b.credentials))
 }

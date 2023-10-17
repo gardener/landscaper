@@ -6,6 +6,7 @@ package signingattr
 
 import (
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	ocm "github.com/open-component-model/ocm/pkg/contexts/ocm/context"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/signing"
@@ -14,6 +15,11 @@ import (
 const (
 	ATTR_KEY   = "github.com/mandelsoft/ocm/signing"
 	ATTR_SHORT = "signing"
+)
+
+type (
+	Context         = ocm.Context
+	ContextProvider = ocm.ContextProvider
 )
 
 func init() {
@@ -74,17 +80,26 @@ func (a AttributeType) Decode(data []byte, unmarshaller runtime.Unmarshaler) (in
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func Get(ctx datacontext.Context) signing.Registry {
-	a := ctx.GetAttributes().GetAttribute(ATTR_KEY)
+func Get(ctx ContextProvider) signing.Registry {
+	a := ctx.OCMContext().GetAttributes().GetAttribute(ATTR_KEY)
 	if a == nil {
 		return signing.DefaultRegistry()
 	}
 	return a.(signing.Registry)
 }
 
-func Set(ctx datacontext.Context, registry signing.KeyRegistry) error {
-	if _, ok := registry.(signing.Registry); !ok {
-		registry = signing.NewRegistry(signing.DefaultHandlerRegistry(), registry)
-	}
-	return ctx.GetAttributes().SetAttribute(ATTR_KEY, registry)
+func SetKeyRegistry(ctx ContextProvider, registry signing.KeyRegistry) error {
+	old := Get(ctx)
+	r := signing.NewRegistry(old.HandlerRegistry(), registry)
+	return ctx.OCMContext().GetAttributes().SetAttribute(ATTR_KEY, r)
+}
+
+func SetHandlerRegistry(ctx ContextProvider, registry signing.HandlerRegistry) error {
+	old := Get(ctx)
+	r := signing.NewRegistry(registry, old.KeyRegistry())
+	return ctx.OCMContext().GetAttributes().SetAttribute(ATTR_KEY, r)
+}
+
+func Set(ctx ContextProvider, registry signing.Registry) error {
+	return ctx.OCMContext().GetAttributes().SetAttribute(ATTR_KEY, registry)
 }

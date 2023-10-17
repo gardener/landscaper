@@ -60,7 +60,7 @@ type configOptionTypeSet struct {
 	closed bool
 }
 
-func NewConfigOptionSet(name string, types ...ConfigOptionType) ConfigOptionTypeSet {
+func NewConfigOptionTypeSet(name string, types ...ConfigOptionType) ConfigOptionTypeSet {
 	set := &configOptionTypeSet{
 		name:    name,
 		options: map[string]ConfigOptionType{},
@@ -280,7 +280,7 @@ func (s *configOptionTypeSet) AddAll(o ConfigOptionTypeSet) (duplicates ConfigOp
 	if err := s.check(list); err != nil {
 		return nil, err
 	}
-	duplicates = NewConfigOptionSet("duplicates")
+	duplicates = NewConfigOptionTypeSet("duplicates")
 	for _, t := range list {
 		_, ok := s.options[t.GetName()]
 		if !ok {

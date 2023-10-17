@@ -10,23 +10,15 @@ import (
 
 	"github.com/modern-go/reflect2"
 
-	"github.com/open-component-model/ocm/pkg/cobrautils/flagsets"
+	"github.com/open-component-model/ocm/pkg/cobrautils/flagsets/flagsetscheme"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/generics"
-	"github.com/open-component-model/ocm/pkg/logging"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
-type AccessType interface {
-	runtime.VersionedTypedObjectType[AccessSpec]
-
-	ConfigOptionTypeSetHandler() flagsets.ConfigOptionTypeSetHandler
-
-	Description() string
-	Format() string
-}
+type AccessType flagsetscheme.VersionTypedObjectType[AccessSpec]
 
 type AccessMethodSupport interface {
 	GetContext() Context
@@ -87,54 +79,14 @@ type AccessMethod interface {
 	Close() error
 }
 
-type AccessTypeScheme interface {
-	runtime.TypeScheme[AccessSpec, AccessType]
-
-	CreateConfigTypeSetConfigProvider() flagsets.ConfigTypeOptionSetConfigProvider
-}
-
-type _AccessScheme = runtime.TypeScheme[AccessSpec, AccessType]
-
-type accessTypeScheme struct {
-	_AccessScheme
-}
+type AccessTypeScheme flagsetscheme.TypeScheme[AccessSpec, AccessType]
 
 func NewAccessTypeScheme(base ...AccessTypeScheme) AccessTypeScheme {
-	scheme := runtime.MustNewDefaultTypeScheme[AccessSpec, AccessType](&UnknownAccessSpec{}, true, nil, utils.Optional(base...))
-	return &accessTypeScheme{scheme}
+	return flagsetscheme.NewTypeScheme[AccessSpec, AccessType, AccessTypeScheme]("access", "accessType", "blob access specification", "Access Specification Options", &UnknownAccessSpec{}, true, base...)
 }
 
 func NewStrictAccessTypeScheme(base ...AccessTypeScheme) runtime.VersionedTypeRegistry[AccessSpec, AccessType] {
-	scheme := runtime.MustNewDefaultTypeScheme[AccessSpec, AccessType](nil, false, nil, utils.Optional(base...))
-	return &accessTypeScheme{scheme}
-}
-
-func (t *accessTypeScheme) CreateConfigTypeSetConfigProvider() flagsets.ConfigTypeOptionSetConfigProvider {
-	prov := flagsets.NewTypedConfigProvider("access", "blob access specification")
-	prov.AddGroups("Access Specification Options")
-	for _, p := range t.KnownTypes() {
-		err := prov.AddTypeSet(p.ConfigOptionTypeSetHandler())
-		if err != nil {
-			logging.Logger().LogError(err, "cannot compose access type CLI options")
-		}
-	}
-	if t.BaseScheme() != nil {
-		base := t.BaseScheme().(AccessTypeScheme)
-		for _, s := range base.CreateConfigTypeSetConfigProvider().OptionTypeSets() {
-			if prov.GetTypeSet(s.GetName()) == nil {
-				err := prov.AddTypeSet(s)
-				if err != nil {
-					logging.Logger().LogError(err, "cannot compose access type CLI options")
-				}
-			}
-		}
-	}
-
-	return prov
-}
-
-func (t *accessTypeScheme) KnownTypes() runtime.KnownTypes[AccessSpec, AccessType] {
-	return t._AccessScheme.KnownTypes() // Goland
+	return flagsetscheme.NewTypeScheme[AccessSpec, AccessType, AccessTypeScheme]("access", "accessType", "blob access specification", "Access Specification Options", nil, false, base...)
 }
 
 // DefaultAccessTypeScheme contains all globally known access serializer.

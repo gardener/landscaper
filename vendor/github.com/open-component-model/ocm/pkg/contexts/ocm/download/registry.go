@@ -72,12 +72,22 @@ func (m MultiHandler) Swap(i, j int) {
 }
 
 type Registry interface {
-	registrations.HandlerRegistrationRegistry[Target, HandlerOption]
+	Copy() Registry
+	AsHandlerRegistrationRegistry() registrations.HandlerRegistrationRegistry[Target, HandlerOption]
+
+	registrations.HandlerRegistrationRegistryAccess[Target, HandlerOption]
 
 	Register(hdlr Handler, olist ...HandlerOption)
 	LookupHandler(art, media string) MultiHandler
 	Handler
 	DownloadAsBlob(p common.Printer, racc cpi.ResourceAccess, path string, fs vfs.FileSystem) (bool, string, error)
+}
+
+func AsHandlerRegistrationRegistry(r Registry) registrations.HandlerRegistrationRegistry[Target, HandlerOption] {
+	if r == nil {
+		return nil
+	}
+	return r.AsHandlerRegistrationRegistry()
 }
 
 type _registry struct {
@@ -93,10 +103,20 @@ func NewRegistry(base ...Registry) Registry {
 	b := utils.Optional(base...)
 	return &_registry{
 		id:                          finalizer.NewObjectIdentity("downloader.registry.ocm.software"),
-		HandlerRegistrationRegistry: NewHandlerRegistrationRegistry(b),
 		base:                        b,
+		HandlerRegistrationRegistry: NewHandlerRegistrationRegistry(AsHandlerRegistrationRegistry(b)),
 		handlers:                    registry.NewRegistry[Handler, registry.RegistrationKey](),
 	}
+}
+
+func (r *_registry) AsHandlerRegistrationRegistry() registrations.HandlerRegistrationRegistry[Target, HandlerOption] {
+	return r.HandlerRegistrationRegistry
+}
+
+func (r *_registry) Copy() Registry {
+	n := NewRegistry(r.base).(*_registry)
+	n.handlers = r.handlers.Copy()
+	return n
 }
 
 func (r *_registry) LookupHandler(art, media string) MultiHandler {

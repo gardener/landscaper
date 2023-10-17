@@ -6,7 +6,9 @@ package cpi
 
 import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/hashattr"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/signingattr"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
+	"github.com/open-component-model/ocm/pkg/signing/hasher/sha256"
 )
 
 type (
@@ -52,7 +54,10 @@ func CompleteModificationOptions(ctx ContextProvider, m *ModificationOptions) {
 	if m.DefaultHashAlgorithm == "" {
 		m.DefaultHashAlgorithm = attr.DefaultHasher
 	}
+	if m.DefaultHashAlgorithm == "" {
+		m.DefaultHashAlgorithm = sha256.Algorithm
+	}
 	if m.HasherProvider == nil {
-		m.HasherProvider = attr.GetProvider(ctx.OCMContext())
+		m.HasherProvider = signingattr.Get(ctx.OCMContext())
 	}
 }

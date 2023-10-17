@@ -50,7 +50,7 @@ func IntermediatePool(pemfile string, fss ...vfs.FileSystem) (*x509.CertPool, er
 		return nil, nil
 	}
 	fs := accessio.FileSystem(fss...)
-	pemdata, err := utils.ReadFile(fs, pemfile)
+	pemdata, err := utils.ReadFile(pemfile, fs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot read cert pem file %q", pemfile)
 	}
@@ -77,7 +77,7 @@ func BaseRootPool() (*x509.CertPool, error) {
 
 func RootPool(pemfile string, useOS bool, fss ...vfs.FileSystem) (*x509.CertPool, error) {
 	fs := accessio.FileSystem(fss...)
-	pemdata, err := utils.ReadFile(fs, pemfile)
+	pemdata, err := utils.ReadFile(pemfile, fs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot read cert pem file %q", pemfile)
 	}

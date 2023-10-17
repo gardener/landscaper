@@ -165,16 +165,16 @@ func TypedObjectEqual(a, b TypedObject) bool {
 
 // NewEmptyUnstructured creates a new typed object without additional data.
 func NewEmptyUnstructured(ttype string) *UnstructuredTypedObject {
-	return NewUnstructuredType(ttype, nil)
+	return NewUnstructured(ttype, nil)
 }
 
 // NewEmptyUnstructuredVersioned creates a new typed object without additional data.
 func NewEmptyUnstructuredVersioned(ttype string) *UnstructuredVersionedTypedObject {
-	return &UnstructuredVersionedTypedObject{*NewUnstructuredType(ttype, nil)}
+	return &UnstructuredVersionedTypedObject{*NewUnstructured(ttype, nil)}
 }
 
-// NewUnstructuredType creates a new unstructured typed object.
-func NewUnstructuredType(ttype string, data UnstructuredMap) *UnstructuredTypedObject {
+// NewUnstructured creates a new unstructured typed object.
+func NewUnstructured(ttype string, data UnstructuredMap) *UnstructuredTypedObject {
 	unstr := &UnstructuredTypedObject{}
 	unstr.Object = data
 	unstr.SetType(ttype)
@@ -299,8 +299,8 @@ func (_ UnstructuredTypedObject) OpenAPISchemaFormat() string { return "" }
 // Utils
 ////////////////////////////////////////////////////////////////////////////////
 
-// ToUnstructuredTypedObject converts a typed object to a unstructured object.
-func ToUnstructuredTypedObject(obj TypedObject) (*UnstructuredTypedObject, error) {
+// ToUnstructuredTypedObject converts an object to an unstructured object.
+func ToUnstructuredTypedObject(obj interface{}) (*UnstructuredTypedObject, error) {
 	if reflect2.IsNil(obj) {
 		return nil, nil
 	}

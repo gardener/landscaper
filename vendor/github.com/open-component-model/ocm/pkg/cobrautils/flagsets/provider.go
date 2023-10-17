@@ -6,8 +6,11 @@ package flagsets
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type ConfigProvider interface {
@@ -21,6 +24,8 @@ type ConfigTypeOptionSetConfigProvider interface {
 
 	IsExplicitlySelected(opts ConfigOptions) bool
 }
+
+type _ConfigTypeOptionSetConfigProvider = ConfigTypeOptionSetConfigProvider
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -57,28 +62,96 @@ func (p *plainConfigProvider) GetConfigFor(opts ConfigOptions) (Config, error) {
 ////////////////////////////////////////////////////////////////////////////////
 
 type typedConfigProvider struct {
-	ConfigOptionTypeSet
+	_ConfigTypeOptionSetConfigProvider
+	typeOption string
 }
 
 var _ ConfigTypeOptionSetConfigProvider = (*typedConfigProvider)(nil)
 
-func NewTypedConfigProvider(name string, desc string) ConfigTypeOptionSetConfigProvider {
-	set := NewConfigOptionSet(name, NewValueMapYAMLOptionType(name, desc+" (YAML)"), NewStringOptionType(name+"Type", "type of "+desc))
-	return &typedConfigProvider{
-		ConfigOptionTypeSet: set,
-	}
-}
-
-func (p *typedConfigProvider) GetConfigOptionTypeSet() ConfigOptionTypeSet {
-	return p
+func NewTypedConfigProvider(name string, desc, typeOption string, acceptUnknown ...bool) ConfigTypeOptionSetConfigProvider {
+	return &typedConfigProvider{NewTypedConfigProviderBase(name, desc, TypeNameProviderFromOptions(typeOption), utils.Optional(acceptUnknown...), NewStringOptionType(name+"Type", "type of "+desc)), typeOption}
 }
 
 func (p *typedConfigProvider) IsExplicitlySelected(opts ConfigOptions) bool {
-	return opts.Changed(p.GetName()+"Type", p.GetName())
+	return opts.Changed(p.typeOption, p.GetName())
 }
 
-func (p *typedConfigProvider) GetConfigFor(opts ConfigOptions) (Config, error) {
-	typv, _ := opts.GetValue(p.GetName() + "Type")
+func TypeNameProviderFromOptions(name string) TypeNameProvider {
+	return func(opts ConfigOptions) (string, error) {
+		typv, _ := opts.GetValue(name)
+		typ, ok := typv.(string)
+		if !ok {
+			return "", fmt.Errorf("failed to assert type %T as string", typv)
+		}
+		return typ, nil
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+type ExplicitlyTypedConfigTypeOptionSetConfigProvider interface {
+	ConfigTypeOptionSetConfigProvider
+	SetTypeName(n string)
+}
+
+type explicitlyTypedConfigProvider struct {
+	_ConfigTypeOptionSetConfigProvider
+	typeName string
+}
+
+var _ ConfigTypeOptionSetConfigProvider = (*typedConfigProvider)(nil)
+
+func NewExplicitlyTypedConfigProvider(name string, desc string, acceptUnknown ...bool) ExplicitlyTypedConfigTypeOptionSetConfigProvider {
+	p := &explicitlyTypedConfigProvider{}
+	p._ConfigTypeOptionSetConfigProvider = NewTypedConfigProviderBase(name, desc, p.getTypeName, utils.Optional(acceptUnknown...))
+	return p
+}
+
+func (p *explicitlyTypedConfigProvider) SetTypeName(n string) {
+	p.typeName = n
+}
+
+func (p *explicitlyTypedConfigProvider) getTypeName(opts ConfigOptions) (string, error) {
+	return p.typeName, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type TypeNameProvider func(opts ConfigOptions) (string, error)
+
+type typedConfigProviderBase struct {
+	ConfigOptionTypeSet
+	typeProvider  TypeNameProvider
+	meta          ConfigOptionTypeSet
+	acceptUnknown bool
+}
+
+var _ ConfigTypeOptionSetConfigProvider = (*typedConfigProviderBase)(nil)
+
+func NewTypedConfigProviderBase(name string, desc string, prov TypeNameProvider, acceptUnknown bool, types ...ConfigOptionType) ConfigTypeOptionSetConfigProvider {
+	set := NewConfigOptionTypeSet(name, append(types, NewValueMapYAMLOptionType(name, desc+" (YAML)"))...)
+	return &typedConfigProviderBase{
+		ConfigOptionTypeSet: set,
+		typeProvider:        prov,
+		meta:                NewConfigOptionTypeSet(name, append(types, NewValueMapYAMLOptionType(name, desc+" (YAML)"))...),
+		acceptUnknown:       acceptUnknown,
+	}
+}
+
+func (p *typedConfigProviderBase) GetConfigOptionTypeSet() ConfigOptionTypeSet {
+	return p
+}
+
+func (p *typedConfigProviderBase) IsExplicitlySelected(opts ConfigOptions) bool {
+	t, err := p.typeProvider(opts)
+	return err == nil && t != ""
+}
+
+func (p *typedConfigProviderBase) GetConfigFor(opts ConfigOptions) (Config, error) {
+	typ, err := p.typeProvider(opts)
+	if err != nil {
+		return nil, err
+	}
 	cfgv, _ := opts.GetValue(p.GetName())
 
 	var data Config
@@ -88,10 +161,6 @@ func (p *typedConfigProvider) GetConfigFor(opts ConfigOptions) (Config, error) {
 		if !ok {
 			return nil, fmt.Errorf("failed to assert type %T as Config", cfgv)
 		}
-	}
-	typ, ok := typv.(string)
-	if !ok {
-		return nil, fmt.Errorf("failed to assert type %T as string", typv)
 	}
 
 	opts = opts.FilterBy(p.HasOptionType)
@@ -113,23 +182,41 @@ func (p *typedConfigProvider) GetConfigFor(opts ConfigOptions) (Config, error) {
 		if data == nil {
 			data = Config{}
 		}
-		if typ != "" {
-			data["type"] = typ
-		}
+		data["type"] = typ
 		if err := p.applyConfigForType(typ, opts, data); err != nil {
-			return nil, err
+			if !p.acceptUnknown || !errors.Is(err, errors.ErrUnknown(typ)) {
+				return nil, err
+			}
+			unexpected := opts.FilterBy(And(Changed(opts), Not(p.meta.HasOptionType))).Names()
+			if len(unexpected) > 0 {
+				return nil, fmt.Errorf("unexpected options %s", strings.Join(unexpected, ", "))
+			}
 		}
 	}
 	return data, nil
 }
 
-func (p *typedConfigProvider) applyConfigForType(name string, opts ConfigOptions, config Config) error {
+func (p *typedConfigProviderBase) GetTypeSetForType(name string) ConfigOptionTypeSet {
 	set := p.GetTypeSet(name)
+	if set == nil {
+		k, v := runtime.KindVersion(name)
+		if v == "" {
+			set = p.GetTypeSet(runtime.TypeName(name, "v1"))
+		} else if v == "v1" {
+			set = p.GetTypeSet(k)
+		}
+	}
+	return set
+}
+
+func (p *typedConfigProviderBase) applyConfigForType(name string, opts ConfigOptions, config Config) error {
+	set := p.GetTypeSetForType(name)
 	if set == nil {
 		return errors.ErrUnknown(name)
 	}
 
-	err := opts.FilterBy(p.HasSharedOptionType).Check(set, p.GetName()+" type "+name)
+	opts = opts.FilterBy(Not(p.meta.HasOptionType))
+	err := opts.Check(set, p.GetName()+" type "+name)
 	if err != nil {
 		return err
 	}

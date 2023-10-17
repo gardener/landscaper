@@ -13,7 +13,9 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
+	"github.com/open-component-model/ocm/pkg/common/compression"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 )
 
 const KIND_FILEFORMAT = "file format"
@@ -89,6 +91,32 @@ func TypeForType(t string) string {
 		return ""
 	}
 	return t[:i]
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func CopyFileSystem(format FileFormat, srcfs vfs.FileSystem, src string, dstfs vfs.FileSystem, dst string, perm vfs.FileMode) error {
+	compr := compression.None
+	switch format {
+	case FormatDirectory:
+		return vfs.CopyDir(srcfs, src, dstfs, dst)
+	case FormatTGZ:
+		compr = compression.Gzip
+		fallthrough
+	case FormatTar:
+		file, err := dstfs.OpenFile(dst, vfs.O_CREATE|vfs.O_TRUNC|vfs.O_WRONLY, perm)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		w, err := compr.Compressor(file, nil, nil)
+		if err != nil {
+			return err
+		}
+		return tarutils.PackFsIntoTar(srcfs, src, w, tarutils.TarFileSystemOptions{})
+	default:
+		return errors.ErrUnknown(KIND_FILEFORMAT, format.String())
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

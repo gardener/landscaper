@@ -7,9 +7,10 @@ package targetresolver
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type TargetResolver interface {

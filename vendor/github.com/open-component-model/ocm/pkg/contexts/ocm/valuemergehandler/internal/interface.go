@@ -23,21 +23,15 @@ import (
 
 type (
 	Context       = cpi.Context
-	Handler       = cpi.ValueMergeHandler
-	Config        = cpi.ValueMergeHandlerConfig
-	Registry      = cpi.ValueMergeHandlerRegistry
 	Specification = metav1.MergeAlgorithmSpecification
 	Value         = runtime.RawValue
+	Hint          string
 )
 
 func Register(h Handler) {
-	cpi.RegisterValueMergeHandler(h)
+	DefaultRegistry.RegisterHandler(h)
 }
 
-func Assign(hint string, spec *Specification) {
-	cpi.AssignValueMergeHandler(hint, spec)
-}
-
-func NewRegistry(base ...Registry) Registry {
-	return cpi.NewValueMergeHandlerRegistry(base...)
+func Assign(hint Hint, spec *Specification) {
+	DefaultRegistry.AssignHandler(hint, spec)
 }

@@ -33,6 +33,16 @@ func NewRegistry[H any, K Key[K]]() *Registry[H, K] {
 	}
 }
 
+func (p *Registry[H, K]) Copy() *Registry[H, K] {
+	r := &Registry[H, K]{
+		mappings: map[K][]H{},
+	}
+	for k, v := range p.mappings {
+		r.mappings[k] = slices.Clone(v)
+	}
+	return r
+}
+
 func (p *Registry[H, K]) lookupMedia(key K) []H {
 	lookup := key
 	for {

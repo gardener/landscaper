@@ -69,5 +69,5 @@ func (b Builder) New(m ...datacontext.BuilderMode) Context {
 			b.reposcheme = DefaultConfigTypeScheme
 		}
 	}
-	return newContext(b.shared, b.reposcheme, b.shared)
+	return datacontext.SetupContext(mode, newContext(b.shared, b.reposcheme, b.shared))
 }

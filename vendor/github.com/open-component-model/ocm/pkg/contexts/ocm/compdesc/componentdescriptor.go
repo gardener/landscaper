@@ -379,6 +379,11 @@ func GenericAccessSpec(un *runtime.UnstructuredTypedObject) AccessSpec {
 	}
 }
 
+// AccessProvider provides access to an access specification of elements.
+type AccessProvider interface {
+	GetAccess() AccessSpec
+}
+
 // Sources describes a set of source specifications.
 type Sources []Source
 

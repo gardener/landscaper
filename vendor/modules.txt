@@ -1126,10 +1126,11 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/open-component-model/ocm v0.3.0-rc.1.0.20230921153454-4fdca213d05a
+# github.com/open-component-model/ocm v0.4.1
 ## explicit; go 1.19
 github.com/open-component-model/ocm/pkg/cobrautils/flag
 github.com/open-component-model/ocm/pkg/cobrautils/flagsets
+github.com/open-component-model/ocm/pkg/cobrautils/flagsets/flagsetscheme
 github.com/open-component-model/ocm/pkg/cobrautils/groups
 github.com/open-component-model/ocm/pkg/common
 github.com/open-component-model/ocm/pkg/common/accessio
@@ -1239,7 +1240,9 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2
 github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2/jsonscheme
 github.com/open-component-model/ocm/pkg/contexts/ocm/config
 github.com/open-component-model/ocm/pkg/contexts/ocm/consts
+github.com/open-component-model/ocm/pkg/contexts/ocm/context
 github.com/open-component-model/ocm/pkg/contexts/ocm/cpi
+github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/clitypes
 github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/support
 github.com/open-component-model/ocm/pkg/contexts/ocm/digester/digesters
 github.com/open-component-model/ocm/pkg/contexts/ocm/digester/digesters/artifact
@@ -1260,6 +1263,7 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/comparch
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ctf
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg/componentmapping
+github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ocireg
 github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/virtual
 github.com/open-component-model/ocm/pkg/contexts/ocm/resourcetypes
 github.com/open-component-model/ocm/pkg/contexts/ocm/utils/registry
@@ -1272,6 +1276,7 @@ github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/hpi
 github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/internal
 github.com/open-component-model/ocm/pkg/docker
 github.com/open-component-model/ocm/pkg/docker/resolve
+github.com/open-component-model/ocm/pkg/encrypt
 github.com/open-component-model/ocm/pkg/env
 github.com/open-component-model/ocm/pkg/env/builder
 github.com/open-component-model/ocm/pkg/errors

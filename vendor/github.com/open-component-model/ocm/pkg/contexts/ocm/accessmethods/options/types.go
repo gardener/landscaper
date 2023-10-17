@@ -82,7 +82,7 @@ func NewYAMLOptionType(name, desc string) OptionType {
 func NewValueMapYAMLOptionType(name, desc string) OptionType {
 	return &option{
 		base:      flagsets.NewValueMapYAMLOptionType(name, desc),
-		valueType: TYPE_STRINGMAP,
+		valueType: TYPE_STRINGMAPYAML,
 	}
 }
 

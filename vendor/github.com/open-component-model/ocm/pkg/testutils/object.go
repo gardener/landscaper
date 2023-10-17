@@ -6,7 +6,6 @@ package testutils
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/go-test/deep"
@@ -26,7 +25,7 @@ type DeepEqualMatcher struct {
 }
 
 func (matcher *DeepEqualMatcher) Match(actual interface{}) (success bool, err error) {
-	return reflect.DeepEqual(actual, matcher.Expected), nil
+	return len(deep.Equal(actual, matcher.Expected)) == 0, nil
 }
 
 func (matcher *DeepEqualMatcher) FailureMessage(actual interface{}) (message string) {

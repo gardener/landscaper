@@ -119,6 +119,47 @@ func (d *Artifact) Manifest() *Manifest {
 	return d.manifest
 }
 
+func (d *Artifact) SetAnnotation(name, value string) error {
+	return d.modifyAnnotation(func(annos *map[string]string) {
+		if *annos == nil {
+			*annos = map[string]string{}
+		}
+		(*annos)[name] = value
+	})
+}
+
+func (d *Artifact) DeleteAnnotation(name string) error {
+	return d.modifyAnnotation(func(annos *map[string]string) {
+		if *annos == nil {
+			return
+		}
+		delete(*annos, name)
+		if len(*annos) == 0 {
+			*annos = nil
+		}
+	})
+}
+
+func (d *Artifact) modifyAnnotation(mod func(annos *map[string]string)) error {
+	var annos map[string]string
+
+	switch {
+	case d.manifest != nil:
+		annos = d.manifest.Annotations
+	case d.index != nil:
+		annos = d.index.Annotations
+	default:
+		return errors.Newf("void artifact access")
+	}
+	mod(&annos)
+	if d.manifest != nil {
+		d.manifest.Annotations = annos
+	} else {
+		d.index.Annotations = annos
+	}
+	return nil
+}
+
 func (d *Artifact) ToBlobAccess() (accessio.BlobAccess, error) {
 	if d.IsManifest() {
 		return d.manifest.ToBlobAccess()

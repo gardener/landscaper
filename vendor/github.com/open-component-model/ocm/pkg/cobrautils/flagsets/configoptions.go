@@ -6,6 +6,7 @@ package flagsets
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/spf13/pflag"
 	"golang.org/x/exp/slices"
@@ -22,24 +23,26 @@ type Option interface {
 
 type Filter func(name string) bool
 
+// ConfigOptions is a set of arbitrary command line options.
+// This set can be added to a pflag.FlagSet. After evaluation of
+// the flag set against a set of arguments it provides
+// information about the actual value and the changed state.
 type ConfigOptions interface {
 	AddTypeSetGroupsToOptions(set ConfigOptionTypeSet)
 
 	AddFlags(fs *pflag.FlagSet)
 
 	Options() []Option
+	Names() []string
+
+	Size() int
+	HasOption(name string) bool
 
 	Check(set ConfigOptionTypeSet, desc string) error
 	GetValue(name string) (interface{}, bool)
 	Changed(names ...string) bool
 
 	FilterBy(Filter) ConfigOptions
-}
-
-func Not(f Filter) Filter {
-	return func(name string) bool {
-		return !f(name)
-	}
 }
 
 type configOptions struct {
@@ -59,6 +62,28 @@ func (o *configOptions) AddTypeSetGroupsToOptions(set ConfigOptionTypeSet) {
 
 func (o *configOptions) Options() []Option {
 	return slices.Clone(o.options)
+}
+
+func (o *configOptions) Names() []string {
+	var keys []string
+	for _, e := range o.options {
+		keys = append(keys, e.GetName())
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func (o *configOptions) HasOption(name string) bool {
+	for _, e := range o.options {
+		if e.GetName() == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (o *configOptions) Size() int {
+	return len(o.options)
 }
 
 func (o *configOptions) GetValue(name string) (interface{}, bool) {

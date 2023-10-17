@@ -44,6 +44,23 @@ func (i *Index) MimeType() string {
 	return ArtifactMimeType(i.MediaType, MediaTypeImageIndex, legacy)
 }
 
+func (i *Index) SetAnnotation(name, value string) {
+	if i.Annotations == nil {
+		i.Annotations = map[string]string{}
+	}
+	i.Annotations[name] = value
+}
+
+func (i *Index) DeleteAnnotation(name string) {
+	if i.Annotations == nil {
+		return
+	}
+	delete(i.Annotations, name)
+	if len(i.Annotations) == 0 {
+		i.Annotations = nil
+	}
+}
+
 func (i *Index) ToBlobAccess() (accessio.BlobAccess, error) {
 	i.MediaType = i.MimeType()
 	data, err := json.Marshal(i)

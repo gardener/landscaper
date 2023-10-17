@@ -22,6 +22,12 @@ import (
 	"github.com/open-component-model/ocm/pkg/utils/selector"
 )
 
+// View objects are the user facing generic implementations of the context interfaces.
+// They are responsible to handle the reference counting and use
+// shared implementations objects for th concrete type-specific implementations.
+// Additionally, they are used to implement interface functionality which is
+// common to all implementations and NOT dependent on the backend system technology.
+
 var ErrClosed = resource.ErrClosed
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -4,10 +4,6 @@
 
 package cpi
 
-import (
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
-)
-
 type DefaultStorageContext struct {
 	ComponentRepository          Repository
 	ComponentVersion             ComponentVersionAccess
@@ -24,15 +20,15 @@ func NewDefaultStorageContext(repo Repository, vers ComponentVersionAccess, rept
 	}
 }
 
-func (c *DefaultStorageContext) GetContext() internal.Context {
+func (c *DefaultStorageContext) GetContext() Context {
 	return c.ComponentRepository.GetContext()
 }
 
-func (c *DefaultStorageContext) TargetComponentVersion() internal.ComponentVersionAccess {
+func (c *DefaultStorageContext) TargetComponentVersion() ComponentVersionAccess {
 	return c.ComponentVersion
 }
 
-func (c *DefaultStorageContext) TargetComponentRepository() internal.Repository {
+func (c *DefaultStorageContext) TargetComponentRepository() Repository {
 	return c.ComponentRepository
 }
 

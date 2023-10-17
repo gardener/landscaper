@@ -10,4 +10,4 @@ import (
 
 var REALM = ocmlog.DefineSubRealm("value marge handling", "valuemerge")
 
-var Log = ocmlog.Logger(REALM)
+var Log = ocmlog.DynamicLogger(REALM)

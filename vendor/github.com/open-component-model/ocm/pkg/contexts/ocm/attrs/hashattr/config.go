@@ -42,7 +42,7 @@ func (a *Config) GetType() string {
 }
 
 func (a *Config) ApplyTo(ctx cfgcpi.Context, target interface{}) error {
-	t, ok := target.(cfgcpi.Context)
+	t, ok := target.(Context)
 	if !ok {
 		return cfgcpi.ErrNoContext(ConfigType)
 	}

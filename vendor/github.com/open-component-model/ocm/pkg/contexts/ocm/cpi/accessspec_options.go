@@ -6,59 +6,19 @@ package cpi
 
 import (
 	"github.com/open-component-model/ocm/pkg/cobrautils/flagsets"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/clitypes"
 )
 
-////////////////////////////////////////////////////////////////////////////////
-// Access Type Options
-
-type AccessSpecOptionTarget interface {
-	SetFormat(string)
-	SetDescription(string)
-	SetConfigHandler(flagsets.ConfigOptionTypeSetHandler)
-}
-
-type AccessSpecTypeOption interface {
-	ApplyToAccessSpecOptionTarget(AccessSpecOptionTarget)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type formatOption struct {
-	value string
-}
+type AccessSpecTypeOption = clitypes.CLITypeOption
 
 func WithFormatSpec(value string) AccessSpecTypeOption {
-	return formatOption{value}
-}
-
-func (o formatOption) ApplyToAccessSpecOptionTarget(t AccessSpecOptionTarget) {
-	t.SetFormat(o.value)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type descriptionOption struct {
-	value string
+	return clitypes.WithFormatSpec(value)
 }
 
 func WithDescription(value string) AccessSpecTypeOption {
-	return descriptionOption{value}
-}
-
-func (o descriptionOption) ApplyToAccessSpecOptionTarget(t AccessSpecOptionTarget) {
-	t.SetDescription(o.value)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type configOption struct {
-	value flagsets.ConfigOptionTypeSetHandler
+	return clitypes.WithDescription(value)
 }
 
 func WithConfigHandler(value flagsets.ConfigOptionTypeSetHandler) AccessSpecTypeOption {
-	return configOption{value}
-}
-
-func (o configOption) ApplyToAccessSpecOptionTarget(t AccessSpecOptionTarget) {
-	t.SetConfigHandler(o.value)
+	return clitypes.WithConfigHandler(value)
 }

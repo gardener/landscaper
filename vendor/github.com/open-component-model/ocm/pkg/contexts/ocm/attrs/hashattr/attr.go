@@ -9,7 +9,7 @@ import (
 
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/signingattr"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
+	ocm "github.com/open-component-model/ocm/pkg/contexts/ocm/context"
 	"github.com/open-component-model/ocm/pkg/listformat"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/signing"
@@ -20,6 +20,12 @@ import (
 const (
 	ATTR_KEY   = "github.com/mandelsoft/ocm/hasher"
 	ATTR_SHORT = "hasher"
+)
+
+type (
+	Context         = ocm.Context
+	ContextProvider = ocm.ContextProvider
+	Hasher          = ocm.Hasher
 )
 
 func init() {
@@ -49,7 +55,6 @@ func (a AttributeType) Convert(v interface{}) (interface{}, error) {
 	switch s := v.(type) {
 	case string:
 		return &Attribute{
-			signing.DefaultRegistry(),
 			s,
 		}, nil
 	case *Attribute:
@@ -75,7 +80,6 @@ func (a AttributeType) Decode(data []byte, unmarshaller runtime.Unmarshaler) (in
 		return nil, err
 	}
 	return &Attribute{
-		signing.DefaultRegistry(),
 		value,
 	}, nil
 }
@@ -83,39 +87,27 @@ func (a AttributeType) Decode(data []byte, unmarshaller runtime.Unmarshaler) (in
 ////////////////////////////////////////////////////////////////////////////////
 
 type Attribute struct {
-	Provider      internal.HasherProvider
 	DefaultHasher string
 }
 
-func (a *Attribute) GetProvider(ctx datacontext.Context) internal.HasherProvider {
-	if a.Provider != nil {
-		return a.Provider
-	}
-	return signingattr.Get(ctx)
-}
-
-func (a *Attribute) GetHasher(names ...string) internal.Hasher {
+func (a *Attribute) GetHasher(ctx ContextProvider, names ...string) Hasher {
 	name := utils.Optional(names...)
 	if name != "" {
-		return a.Provider.GetHasher(name)
+		return signingattr.Get(ctx).GetHasher(name)
 	}
-	return a.Provider.GetHasher(a.DefaultHasher)
+	return signingattr.Get(ctx).GetHasher(a.DefaultHasher)
 }
 
-func Get(ctx datacontext.Context) *Attribute {
-	a := ctx.GetAttributes().GetAttribute(ATTR_KEY)
+func Get(ctx ContextProvider) *Attribute {
+	a := ctx.OCMContext().GetAttributes().GetAttribute(ATTR_KEY)
 	if a == nil {
 		return &Attribute{
-			signingattr.Get(ctx),
 			sha256.Algorithm,
 		}
 	}
 	return a.(*Attribute)
 }
 
-func Set(ctx datacontext.Context, registry signing.KeyRegistry) error {
-	if _, ok := registry.(signing.Registry); !ok {
-		registry = signing.NewRegistry(signing.DefaultHandlerRegistry(), registry)
-	}
-	return ctx.GetAttributes().SetAttribute(ATTR_KEY, registry)
+func Set(ctx ContextProvider, hasher string) error {
+	return ctx.OCMContext().GetAttributes().SetAttribute(ATTR_KEY, hasher)
 }
