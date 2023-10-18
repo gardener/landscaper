@@ -3,8 +3,8 @@
 
 # Landscaper
 
-[![CI Build status](https://concourse.ci.gardener.cloud/api/v1/teams/gardener/pipelines/gardener-master/jobs/master-head-update-job/badge)](https://concourse.ci.gardener.cloud/teams/gardener/pipelines/landscaper-master/jobs/master-head-update-job)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gardener/landscaper)](https://goreportcard.com/report/github.com/gardener/landscaper)
+[![CI Build status](https://concourse.ci.gardener.cloud/api/v1/teams/landscaper/pipelines/landscaper-master/jobs/master-head-update-job/badge)](https://concourse.ci.gardener.cloud/teams/landscaper/pipelines/landscaper-master/jobs/master-head-update-job)
+[![Go Report Card](https://goreportcard.com/badge/github.com/landscaper/landscaper)](https://goreportcard.com/report/github.com/landscaper/landscaper)
 [![reuse compliant](https://reuse.software/badge/reuse-compliant.svg)](https://reuse.software/)
 
 <!-- Motivation -->
