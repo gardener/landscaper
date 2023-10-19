@@ -12,6 +12,8 @@ import (
 )
 
 type ComponentVersion interface {
+	// GetSchemaVersion return the used ocm schema version.
+	GetSchemaVersion() string
 
 	// GetName returns the name of the component version.
 	GetName() string

@@ -35,8 +35,15 @@ func NewBlueprintExecutionOptions(installation *lsv1alpha1.Installation, bluepri
 }
 
 func (o *BlueprintExecutionOptions) Values() (map[string]interface{}, error) {
+	compdescVersion := ""
+	if o.ComponentVersion != nil {
+		compdescVersion = o.Blueprint.Info.Annotations["OCMSchemaVersion"]
+		if compdescVersion == "" {
+			compdescVersion = o.ComponentVersion.GetComponentDescriptor().Metadata.Version
+		}
+	}
 	// marshal and unmarshal resolved component descriptor
-	component, err := serializeComponentDescriptor(o.ComponentVersion)
+	component, err := serializeComponentDescriptor(o.ComponentVersion, compdescVersion)
 	if err != nil {
 		return nil, fmt.Errorf("error during serializing of the resolved components: %w", err)
 	}

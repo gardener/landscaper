@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
 	"io"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -52,6 +53,10 @@ func newTestComponentVersionWithRegistryAccess(cd *types.ComponentDescriptor, bl
 		componentDescriptor: cd,
 		blobResolver:        blobResolver,
 	}
+}
+
+func (c *TestComponentVersion) GetSchemaVersion() string {
+	return v2.SchemaVersion
 }
 
 func (c *TestComponentVersion) GetName() string {

@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"os"
 	"strings"
 	gotmpl "text/template"
@@ -45,10 +47,12 @@ func LandscaperSprigFuncMap() gotmpl.FuncMap {
 
 // LandscaperTplFuncMap contains all additional landscaper functions that are
 // available in the executors templates.
-func LandscaperTplFuncMap(fs vfs.FileSystem,
+func LandscaperTplFuncMap(blueprint *blueprints.Blueprint,
 	componentVersion model.ComponentVersion,
 	componentVersions *model.ComponentVersionList,
 	targetResolver targetresolver.TargetResolver) (map[string]interface{}, error) {
+
+	ocmSchemaVersion := common.DetermineOCMSchemaVersion(blueprint, componentVersion)
 
 	cd, err := model.GetComponentDescriptor(componentVersion)
 	if err != nil {
@@ -61,8 +65,8 @@ func LandscaperTplFuncMap(fs vfs.FileSystem,
 	}
 
 	funcs := map[string]interface{}{
-		"readFile": readFileFunc(fs),
-		"readDir":  readDir(fs),
+		"readFile": readFileFunc(blueprint.Fs),
+		"readDir":  readDir(blueprint.Fs),
 
 		"toYaml": toYAML,
 
@@ -73,7 +77,7 @@ func LandscaperTplFuncMap(fs vfs.FileSystem,
 
 		"getResource":          getResourceGoFunc(cd),
 		"getResources":         getResourcesGoFunc(cd),
-		"getComponent":         getComponentGoFunc(cd, cdList),
+		"getComponent":         getComponentGoFunc(cd, cdList, ocmSchemaVersion),
 		"getRepositoryContext": getEffectiveRepositoryContextGoFunc,
 
 		"getShootAdminKubeconfig":                            getShootAdminKubeconfigGoFunc(targetResolver),
@@ -168,6 +172,7 @@ func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []ma
 		if cd == nil {
 			panic("Unable to search for a resource as no ComponentDescriptor is defined.")
 		}
+
 		resources, err := lstmpl.ResolveResources(cd, args)
 		if err != nil {
 			panic(err)
@@ -191,6 +196,7 @@ func getResourceGoFunc(cd *types.ComponentDescriptor) func(args ...interface{}) 
 		if cd == nil {
 			panic("Unable to search for a resource as no ComponentDescriptor is defined.")
 		}
+
 		resources, err := lstmpl.ResolveResources(cd, args)
 		if err != nil {
 			panic(err)
@@ -219,16 +225,12 @@ func getEffectiveRepositoryContextGoFunc(arg interface{}) map[string]interface{}
 	if !ok {
 		panic("invalid component descriptor")
 	}
-	data, err := json.Marshal(cdMap)
+	cd, err := common.ConvertCdMapToCompDescV2(cdMap)
 	if err != nil {
-		panic(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
-	}
-	cd := &types.ComponentDescriptor{}
-	if err := codec.Decode(data, cd); err != nil {
-		panic(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
+		return nil
 	}
 
-	data, err = json.Marshal(cd.GetEffectiveRepositoryContext())
+	data, err := json.Marshal(cd.GetEffectiveRepositoryContext())
 	if err != nil {
 		panic(fmt.Sprintf("unable to serialize repository context: %s", err.Error()))
 	}
@@ -240,12 +242,12 @@ func getEffectiveRepositoryContextGoFunc(arg interface{}) map[string]interface{}
 	return parsedRepoCtx
 }
 
-func getComponentGoFunc(cd *types.ComponentDescriptor, list *types.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
+func getComponentGoFunc(cd *types.ComponentDescriptor, list *types.ComponentDescriptorList, schemaVersion string) func(args ...interface{}) map[string]interface{} {
 	return func(args ...interface{}) map[string]interface{} {
 		if cd == nil {
 			panic("Unable to search for a component as no ComponentDescriptor is defined.")
 		}
-		components, err := lstmpl.ResolveComponents(cd, list, args)
+		components, err := lstmpl.ResolveComponents(cd, list, schemaVersion, args)
 		if err != nil {
 			panic(err)
 		}

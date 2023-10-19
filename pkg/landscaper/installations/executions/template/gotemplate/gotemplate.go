@@ -59,7 +59,7 @@ func NewTemplateExecution(blueprint *blueprints.Blueprint,
 	cdList *model.ComponentVersionList,
 	targetResolver targetresolver.TargetResolver) (*TemplateExecution, error) {
 
-	funcs, err := LandscaperTplFuncMap(blueprint.Fs, cd, cdList, targetResolver)
+	funcs, err := LandscaperTplFuncMap(blueprint, cd, cdList, targetResolver)
 	if err != nil {
 		return nil, err
 	}

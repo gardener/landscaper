@@ -7,8 +7,11 @@ package template
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/gardener/component-spec/bindings-go/codec"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
+	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
+	ocmruntime "github.com/open-component-model/ocm/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/gardener/landscaper/apis/core"
@@ -17,6 +20,8 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/utils"
+	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
+	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
 )
 
 // Templater implements all available template executors.
@@ -283,7 +288,7 @@ func (o *Templater) TemplateExportExecutions(opts ExportExecutionOptions) (map[s
 	return exportData, nil
 }
 
-func serializeComponentDescriptor(componentVersion model.ComponentVersion) (interface{}, error) {
+func serializeComponentDescriptor(componentVersion model.ComponentVersion, ocmSchemaVersion string) (interface{}, error) {
 	if componentVersion == nil {
 		return nil, nil
 	}
@@ -295,8 +300,23 @@ func serializeComponentDescriptor(componentVersion model.ComponentVersion) (inte
 		return nil, err
 	}
 
+	switch ocmSchemaVersion {
+	case v3alpha1.GroupVersion:
+		ocmCd, err := compdesc.Decode(data)
+		if err != nil {
+			return nil, err
+		}
+		data, err = compdesc.Encode(ocmCd, compdesc.SchemaVersion(ocmSchemaVersion))
+		if err != nil {
+			return nil, err
+		}
+	case v2.SchemaVersion:
+	default:
+		return nil, fmt.Errorf("unknown schema version")
+	}
+
 	var val interface{}
-	if err := json.Unmarshal(data, &val); err != nil {
+	if err := ocmruntime.DefaultYAMLEncoding.Unmarshal(data, &val); err != nil {
 		return nil, err
 	}
 	return val, nil
