@@ -4,6 +4,11 @@
 
 package generics
 
+import (
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+)
+
 type Set[K comparable] map[K]struct{}
 
 func NewSet[K comparable](keys ...K) Set[K] {
@@ -46,5 +51,16 @@ func KeySet[K comparable, V any](m map[K]V) Set[K] {
 	for k := range m {
 		s.Add(k)
 	}
+	return s
+}
+
+type Comparable[K any] interface {
+	comparable
+	Compare(o K) int
+}
+
+func KeyList[K Comparable[K], V any](m map[K]V) []K {
+	s := maps.Keys(m)
+	slices.SortFunc(s, func(a, b K) bool { return a.Compare(b) < 0 })
 	return s
 }

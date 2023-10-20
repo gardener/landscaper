@@ -57,6 +57,23 @@ func (m *Manifest) ToBlobAccess() (accessio.BlobAccess, error) {
 	return accessio.BlobAccessForData(m.MediaType, data), nil
 }
 
+func (m *Manifest) SetAnnotation(name, value string) {
+	if m.Annotations == nil {
+		m.Annotations = map[string]string{}
+	}
+	m.Annotations[name] = value
+}
+
+func (m *Manifest) DeleteAnnotation(name string) {
+	if m.Annotations == nil {
+		return
+	}
+	delete(m.Annotations, name)
+	if len(m.Annotations) == 0 {
+		m.Annotations = nil
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func DecodeManifest(data []byte) (*Manifest, error) {

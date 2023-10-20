@@ -88,11 +88,12 @@ func (i *DefaultAccessObjectInfo) SubPath(name string) string {
 // AccessObject provides a basic functionality for descriptor based access objects
 // using a virtual filesystem for the internal representation.
 type AccessObject struct {
-	info   AccessObjectInfo
-	fs     vfs.FileSystem
-	mode   vfs.FileMode
-	state  State
-	closer Closer
+	info    AccessObjectInfo
+	fs      vfs.FileSystem
+	cleanup bool
+	mode    vfs.FileMode
+	state   State
+	closer  Closer
 }
 
 func NewAccessObject(info AccessObjectInfo, acc AccessMode, fs vfs.FileSystem, setup Setup, closer Closer, mode vfs.FileMode) (*AccessObject, error) {
@@ -108,23 +109,18 @@ func NewAccessObject(info AccessObjectInfo, acc AccessMode, fs vfs.FileSystem, s
 	if err := info.SetupFor(fs); err != nil {
 		return nil, err
 	}
-	if defaulted {
-		closer = FSCloser(closer)
-	}
 
 	s, err := NewFileBasedState(acc, fs, info.GetDescriptorFileName(), "", info.SetupDescriptorState(fs), mode)
 	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
 	obj := &AccessObject{
-		info:   info,
-		state:  s,
-		fs:     fs,
-		mode:   mode,
-		closer: closer,
+		info:    info,
+		state:   s,
+		fs:      fs,
+		cleanup: defaulted,
+		mode:    mode,
+		closer:  closer,
 	}
 
 	return obj, nil
@@ -191,10 +187,13 @@ func (a *AccessObject) Close() error {
 	if a.IsClosed() {
 		return accessio.ErrClosed
 	}
-	list := errors.ErrListf("close")
+	list := errors.ErrListf("cannot close %s", a.info.GetObjectTypeName())
 	list.Add(a.Update())
 	if a.closer != nil {
 		list.Add(a.closer.Close(a))
+	}
+	if a.cleanup {
+		list.Add(vfs.Cleanup(a.fs))
 	}
 	a.fs = nil
 	return list.Result()

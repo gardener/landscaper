@@ -41,7 +41,7 @@ type AttributeScheme interface {
 	KnownTypeNames() []string
 }
 
-var DefaultAttributeScheme = NewDefaulAttritutetScheme()
+var DefaultAttributeScheme = NewDefaultAttributeScheme()
 
 // KnownTypes is a set of known type names mapped to appropriate object decoders.
 type KnownTypes map[string]AttributeType
@@ -71,7 +71,7 @@ type defaultScheme struct {
 	short common.Properties
 }
 
-func NewDefaulAttritutetScheme() AttributeScheme {
+func NewDefaultAttributeScheme() AttributeScheme {
 	return &defaultScheme{
 		types: KnownTypes{},
 		short: common.Properties{},
@@ -156,7 +156,7 @@ func (d *defaultScheme) Convert(attr string, value interface{}) (interface{}, er
 	defer d.lock.RUnlock()
 	t := d.getType(attr)
 	if t == nil {
-		return nil, errors.ErrUnknown("attribute", attr)
+		return value, errors.ErrUnknown("attribute", attr)
 	}
 	if c, ok := t.(Converter); ok {
 		return c.Convert(value)

@@ -187,8 +187,19 @@ func newErrInfo(fmt ErrorFormatter, spec ...string) errinfo {
 	return e
 }
 
+func (e *errinfo) Is(o error) bool {
+	if oe, ok := o.(interface{ formatMessage() string }); ok {
+		return oe.formatMessage() == e.formatMessage()
+	}
+	return false
+}
+
+func (e *errinfo) formatMessage() string {
+	return e.format.Format(e.kind, e.elem, e.ctxkind, e.ctx)
+}
+
 func (e *errinfo) Error() string {
-	msg := e.format.Format(e.kind, e.elem, e.ctxkind, e.ctx)
+	msg := e.formatMessage()
 	if e.wrapped != nil {
 		return msg + ": " + e.wrapped.Error()
 	}

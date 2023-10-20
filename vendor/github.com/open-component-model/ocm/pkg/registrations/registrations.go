@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/generics"
 	"github.com/open-component-model/ocm/pkg/utils"
@@ -27,6 +29,13 @@ type HandlerRegistrationHandler[T any, O any] interface {
 }
 
 type HandlerRegistrationRegistry[T any, O any] interface {
+	HandlerRegistrationRegistryAccess[T, O]
+
+	GetAllRegistrationHandlers() []*RegistrationHandlerInfo[T, O]
+	Copy() HandlerRegistrationRegistry[T, O]
+}
+
+type HandlerRegistrationRegistryAccess[T any, O any] interface {
 	HandlerRegistrationHandler[T, O]
 	RegisterRegistrationHandler(path string, handler HandlerRegistrationHandler[T, O])
 	GetRegistrationHandlers(name string) []*RegistrationHandlerInfo[T, O]
@@ -111,6 +120,23 @@ type handlerRegistrationRegistry[T any, O any] struct {
 
 func NewHandlerRegistrationRegistry[T any, O any](base ...HandlerRegistrationRegistry[T, O]) HandlerRegistrationRegistry[T, O] {
 	return &handlerRegistrationRegistry[T, O]{base: utils.Optional(base...)}
+}
+
+func (c *handlerRegistrationRegistry[T, O]) GetAllRegistrationHandlers() []*RegistrationHandlerInfo[T, O] {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	r := slices.Clone(c.handlers)
+	if c.base != nil {
+		r = append(r, c.base.GetAllRegistrationHandlers()...)
+	}
+	return r
+}
+
+func (c *handlerRegistrationRegistry[T, O]) Copy() HandlerRegistrationRegistry[T, O] {
+	return &handlerRegistrationRegistry[T, O]{
+		handlers: c.GetAllRegistrationHandlers(),
+	}
 }
 
 func (c *handlerRegistrationRegistry[T, O]) RegisterRegistrationHandler(path string, handler HandlerRegistrationHandler[T, O]) {

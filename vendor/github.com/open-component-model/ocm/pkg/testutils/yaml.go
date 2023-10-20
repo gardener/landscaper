@@ -19,7 +19,7 @@ import (
 // YAMLEqual compares two yaml structures.
 // If value mappings are given, the expected string is evaluated by envsubst, first.
 // It is an error for actual to be nil.  Use BeNil() instead.
-func YAMLEqual(expected interface{}, subst ...map[string]string) types.GomegaMatcher {
+func YAMLEqual(expected interface{}, subst ...Substitutions) types.GomegaMatcher {
 	data, err := AsStructure(expected, subst...)
 	if err != nil {
 		return &reportError{err}

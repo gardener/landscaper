@@ -25,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context/ctxhttp"
 
+	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/docker/resolve"
 )
 
@@ -270,6 +271,8 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 			if err != nil {
 				if errors.Is(err, ErrInvalidAuthorization) {
 					err = errors.Wrapf(err, "pull access denied, repository does not exist or may require authorization")
+				} else {
+					err = accessio.RetriableError(err)
 				}
 				// Store the error for referencing later
 				if firstErr == nil {
@@ -327,7 +330,7 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 
 				resp, err := req.doWithRetries(ctxWithLogger, nil)
 				if err != nil {
-					return "", ocispec.Descriptor{}, err
+					return "", ocispec.Descriptor{}, accessio.RetriableError(err)
 				}
 				defer resp.Body.Close()
 
@@ -338,18 +341,18 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 					if contentType == images.MediaTypeDockerSchema1Manifest {
 						b, err := schema1.ReadStripSignature(&bodyReader)
 						if err != nil {
-							return "", ocispec.Descriptor{}, err
+							return "", ocispec.Descriptor{}, accessio.RetriableError(err)
 						}
 
 						dgst = digest.FromBytes(b)
 					} else {
 						dgst, err = digest.FromReader(&bodyReader)
 						if err != nil {
-							return "", ocispec.Descriptor{}, err
+							return "", ocispec.Descriptor{}, accessio.RetriableError(err)
 						}
 					}
 				} else if _, err := io.Copy(io.Discard, &bodyReader); err != nil {
-					return "", ocispec.Descriptor{}, err
+					return "", ocispec.Descriptor{}, accessio.RetriableError(err)
 				}
 				size = bodyReader.bytesRead
 			}

@@ -143,8 +143,9 @@ func (r *RepositoryImpl) getResolver(comp string) (resolve.Resolver, error) {
 				return "", "", nil
 			},
 			DefaultScheme: r.info.Scheme,
+			//nolint:gosec // used like the default, there are OCI servers (quay.io) not working with min version.
 			DefaultTLS: &tls.Config{
-				MinVersion: tls.VersionTLS13,
+				// MinVersion: tls.VersionTLS13,
 				RootCAs: func() *x509.CertPool {
 					var rootCAs *x509.CertPool
 					if creds != nil {

@@ -86,7 +86,10 @@ func (h *HandlerSupport[C, L, P]) Merge(ctx Context, local Value, inbound *Value
 	}
 
 	if modified {
-		inbound.SetValue(tv)
+		err := inbound.SetValue(tv)
+		if err != nil {
+			return false, err
+		}
 	}
 	return modified, nil
 }

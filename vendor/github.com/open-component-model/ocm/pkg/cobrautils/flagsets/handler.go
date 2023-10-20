@@ -39,7 +39,7 @@ type configOptionTypeSetHandler struct {
 func NewConfigOptionTypeSetHandler(name string, adder ConfigAdder, types ...ConfigOptionType) ConfigOptionTypeSetHandler {
 	return &configOptionTypeSetHandler{
 		adder:               adder,
-		ConfigOptionTypeSet: NewConfigOptionSet(name, types...),
+		ConfigOptionTypeSet: NewConfigOptionTypeSet(name, types...),
 	}
 }
 

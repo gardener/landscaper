@@ -73,7 +73,7 @@ type (
 	ComponentReference = compdesc.ComponentReference
 )
 
-type BaseAccess interface {
+type AccessProvider interface {
 	ComponentVersion() ComponentVersionAccess
 	Access() (AccessSpec, error)
 	AccessMethod() (AccessMethod, error)
@@ -81,14 +81,14 @@ type BaseAccess interface {
 
 type ResourceAccess interface {
 	Meta() *ResourceMeta
-	BaseAccess
+	AccessProvider
 }
 
 type SourceMeta = compdesc.SourceMeta
 
 type SourceAccess interface {
 	Meta() *SourceMeta
-	BaseAccess
+	AccessProvider
 }
 
 type ComponentVersionAccessImpl interface {

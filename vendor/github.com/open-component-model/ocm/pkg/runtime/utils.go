@@ -58,10 +58,16 @@ func KindNames[T TypedObject, R TypedObjectDecoder[T]](scheme KnownTypesProvider
 	return types
 }
 
-func KindToVersionList(types []string) map[string]string {
+func KindToVersionList(types []string, excludes ...string) map[string]string {
 	tmp := map[string][]string{}
+outer:
 	for _, t := range types {
 		k, v := KindVersion(t)
+		for _, e := range excludes {
+			if k == e {
+				continue outer
+			}
+		}
 		if _, ok := tmp[k]; !ok {
 			tmp[k] = []string{}
 		}

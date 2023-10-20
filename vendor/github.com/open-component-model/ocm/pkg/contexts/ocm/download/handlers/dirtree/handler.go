@@ -19,6 +19,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/common/compression"
+	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/repositories/artifactset"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
@@ -200,6 +201,7 @@ func (h *Handler) GetForResource(racc cpi.ResourceAccess) (fs vfs.FileSystem, re
 func (h *Handler) GetForArtifactSet(set *artifactset.ArtifactSet) (fs vfs.FileSystem, reader io.ReadCloser, err error) {
 	var finalize finalizer.Finalizer
 	defer finalize.FinalizeWithErrorPropagation(&err)
+
 	return h.getForArtifactSet(&finalize, set)
 }
 
@@ -208,10 +210,24 @@ func (h *Handler) getForArtifactSet(finalize *finalizer.Finalizer, set *artifact
 	if err != nil {
 		return nil, nil, err
 	}
+	finalize.Close(m)
+
+	return h.getForArtifact(finalize, m)
+}
+
+// GetForArtifact provides a virtual filesystem for an OCi image manifest.
+// It returns nil without error, if the OCI artifact does not match the requirement.
+func (h *Handler) GetForArtifact(art oci.ArtifactAccess) (fs vfs.FileSystem, reader io.ReadCloser, err error) {
+	var finalize finalizer.Finalizer
+	defer finalize.FinalizeWithErrorPropagation(&err)
+
+	return h.getForArtifact(&finalize, art)
+}
+
+func (h *Handler) getForArtifact(finalize *finalizer.Finalizer, m oci.ArtifactAccess) (fs vfs.FileSystem, reader io.ReadCloser, err error) {
 	if !m.IsManifest() {
 		return nil, nil, fmt.Errorf("oci artifact is no image manifest")
 	}
-	finalize.Close(m)
 	macc := m.ManifestAccess()
 	if !h.ociConfigtypes.Contains(macc.GetDescriptor().Config.MediaType) {
 		return nil, nil, nil

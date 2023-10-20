@@ -7,7 +7,6 @@ package hpi
 import (
 	"strings"
 
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/valuemergehandler/handlers/defaultmerge"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
@@ -24,7 +23,7 @@ func AsValue(v interface{}) (*Value, error) {
 	return &r, nil
 }
 
-func GenericMerge[T any](ctx cpi.Context, m *Specification, hint string, local T, inbound T) (bool, T, error) {
+func GenericMerge[T any](ctx Context, m *Specification, hint string, local T, inbound T) (bool, T, error) {
 	var Nil T
 
 	l, err := AsValue(local)
@@ -53,39 +52,41 @@ func GenericMerge[T any](ctx cpi.Context, m *Specification, hint string, local T
 // The hint describes a merge hint if no algorithm is specified.
 // It used the format <string>[@<version>]. If used the is looks
 // for an assignment for this hint, first with version and the without version.
-func Merge(ctx cpi.Context, m *Specification, hint string, local Value, inbound *Value) (bool, error) {
+func Merge(ctx Context, m *Specification, hint Hint, local Value, inbound *Value) (bool, error) {
 	var err error
+
+	reg := For(ctx)
 
 	if m == nil {
 		m = &Specification{}
+	} else {
+		t := *m
+		m = &t
 	}
 	if m.Algorithm == "" && hint != "" {
-		spec := ctx.LabelMergeHandlers().GetAssignment(hint)
+		spec := reg.GetAssignment(hint)
 		if spec == nil {
-			idx := strings.LastIndex(hint, "@")
+			idx := strings.LastIndex(string(hint), "@")
 			if idx > 1 {
 				hint = hint[:idx]
 			}
-			spec = ctx.LabelMergeHandlers().GetAssignment(hint)
+			spec = reg.GetAssignment(hint)
 		}
 		if spec != nil {
-			m.Algorithm = spec.Algorithm
-			if len(m.Config) == 0 {
-				m.Config = spec.Config
-			}
+			m = spec
 		}
 	}
 	if m.Algorithm == "" {
 		m.Algorithm = defaultmerge.ALGORITHM
 	}
 
-	h := ctx.LabelMergeHandlers().GetHandler(m.Algorithm)
+	h := reg.GetHandler(m.Algorithm)
 	if h == nil {
 		return false, errors.ErrUnknown(KIND_VALUE_MERGE_ALGORITHM, m.Algorithm)
 	}
 
 	Log.Trace("merge handler", "handler", m.Algorithm, "config", m.Config)
-	var cfg cpi.ValueMergeHandlerConfig
+	var cfg Config
 	if len(m.Config) != 0 {
 		cfg, err = h.DecodeConfig(m.Config)
 		if err == nil {

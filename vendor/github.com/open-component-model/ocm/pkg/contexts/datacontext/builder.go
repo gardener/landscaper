@@ -63,5 +63,5 @@ func (b Builder) New(m ...BuilderMode) Context {
 		}
 	}
 
-	return NewWithActions(nil, b.actions)
+	return newWithActions(mode, nil, b.actions)
 }

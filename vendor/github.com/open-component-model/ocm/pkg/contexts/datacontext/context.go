@@ -248,6 +248,10 @@ func New(parentAttrs Attributes) AttributesContext {
 }
 
 func NewWithActions(parentAttrs Attributes, actions handlers.Registry) AttributesContext {
+	return newWithActions(MODE_DEFAULTED, parentAttrs, actions)
+}
+
+func newWithActions(mode BuilderMode, parentAttrs Attributes, actions handlers.Registry) AttributesContext {
 	c := &_context{}
 
 	recorder := &finalizer.RuntimeFinalizationRecoder{}
@@ -261,7 +265,7 @@ func NewWithActions(parentAttrs Attributes, actions handlers.Registry) Attribute
 		delegates:  ComposeDelegates(logging.NewWithBase(ocmlog.Context()), handlers.NewRegistry(nil, actions)),
 		ref:        finalizer.NewRuntimeFinalizer(id, recorder),
 	}
-	return c
+	return SetupContext(mode, c)
 }
 
 // AssureUpdater is used to assure the existence of an updater in
@@ -357,7 +361,7 @@ func (c *_attributes) SetEncodedAttribute(name string, data []byte, unmarshaller
 	return nil
 }
 
-func (c *_attributes) SetAttribute(name string, value interface{}) error {
+func (c *_attributes) setAttribute(name string, value interface{}) error {
 	c.Lock()
 	defer c.Unlock()
 
@@ -372,14 +376,24 @@ func (c *_attributes) SetAttribute(name string, value interface{}) error {
 		}
 	}
 	value, err = DefaultAttributeScheme.Convert(name, value)
-	if err != nil {
+	if err != nil && !errors.IsErrUnknownKind(err, "attribute") {
 		return err
 	}
 	c.attributes[name] = value
 	return nil
 }
 
-func (c *_attributes) GetOrCreateAttribute(name string, creator AttributeFactory) interface{} {
+func (c *_attributes) SetAttribute(name string, value interface{}) error {
+	err := c.setAttribute(name, value)
+	if err == nil {
+		if *c.updater != nil {
+			(*c.updater).Update()
+		}
+	}
+	return err
+}
+
+func (c *_attributes) getOrCreateAttribute(name string, creator AttributeFactory) interface{} {
 	c.Lock()
 	defer c.Unlock()
 	if v := c.attributes[name]; v != nil {
@@ -393,4 +407,12 @@ func (c *_attributes) GetOrCreateAttribute(name string, creator AttributeFactory
 	v := creator(c.ctx)
 	c.attributes[name] = v
 	return v
+}
+
+func (c *_attributes) GetOrCreateAttribute(name string, creator AttributeFactory) interface{} {
+	r := c.getOrCreateAttribute(name, creator)
+	if *c.updater != nil {
+		(*c.updater).Update()
+	}
+	return r
 }

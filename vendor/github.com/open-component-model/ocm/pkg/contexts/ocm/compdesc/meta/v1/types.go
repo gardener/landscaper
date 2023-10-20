@@ -200,25 +200,25 @@ type Timestamp struct {
 
 func NewTimestamp() Timestamp {
 	return Timestamp{
-		_time: v1.NewTime(time.Now().Round(time.Second)),
+		_time: v1.NewTime(time.Now().UTC().Round(time.Second)),
 	}
 }
 
 func NewTimestampP() *Timestamp {
 	return &Timestamp{
-		_time: v1.NewTime(time.Now().Round(time.Second)),
+		_time: v1.NewTime(time.Now().UTC().Round(time.Second)),
 	}
 }
 
 func NewTimestampFor(t time.Time) Timestamp {
 	return Timestamp{
-		_time: v1.NewTime(t.Round(time.Second)),
+		_time: v1.NewTime(t.UTC().Round(time.Second)),
 	}
 }
 
 func NewTimestampPFor(t time.Time) *Timestamp {
 	return &Timestamp{
-		_time: v1.NewTime(t.Round(time.Second)),
+		_time: v1.NewTime(t.UTC().Round(time.Second)),
 	}
 }
 
@@ -245,10 +245,15 @@ func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		return nil
 	}
+
 	// Fractional seconds are handled implicitly by Parse.
 	tt, err := time.Parse(`"`+time.RFC3339+`"`, string(data))
 	*t = NewTimestampFor(tt)
 	return err
+}
+
+func (t Timestamp) String() string {
+	return t.Format(time.RFC3339)
 }
 
 func (t *Timestamp) Time() time.Time {
@@ -257,10 +262,6 @@ func (t *Timestamp) Time() time.Time {
 
 func (t *Timestamp) Equal(o Timestamp) bool {
 	return t._time.Equal(&o._time)
-}
-
-func (t *Timestamp) UTC() Timestamp {
-	return NewTimestampFor(t._time.UTC())
 }
 
 func (t *Timestamp) Add(d time.Duration) Timestamp {

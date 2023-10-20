@@ -202,8 +202,10 @@ func NewRegistrationHandlerInfo(path string, handler BlobHandlerRegistrationHand
 
 // BlobHandlerRegistry registers blob handlers to use in a dedicated ocm context.
 type BlobHandlerRegistry interface {
+	AsHandlerRegistrationRegistry() registrations.HandlerRegistrationRegistry[Context, BlobHandlerOption]
+
 	// BlobHandlerRegistrationRegistry
-	registrations.HandlerRegistrationRegistry[Context, BlobHandlerOption]
+	registrations.HandlerRegistrationRegistryAccess[Context, BlobHandlerOption]
 
 	IsInitial() bool
 
@@ -227,6 +229,13 @@ type BlobHandlerRegistry interface {
 	// - a handler matching the repo
 	//
 	LookupHandler(repotype ImplementationRepositoryType, artifacttype, mimeType string) BlobHandler
+}
+
+func AsHandlerRegistrationRegistry(r BlobHandlerRegistry) registrations.HandlerRegistrationRegistry[Context, BlobHandlerOption] {
+	if r == nil {
+		return nil
+	}
+	return r.AsHandlerRegistrationRegistry()
 }
 
 const DEFAULT_BLOBHANDLER_PRIO = 100
@@ -276,10 +285,14 @@ func NewBlobHandlerRegistry(base ...BlobHandlerRegistry) BlobHandlerRegistry {
 	r := &blobHandlerRegistry{
 		base:                        b,
 		handlers:                    map[BlobHandlerKey]BlobHandler{},
-		HandlerRegistrationRegistry: NewBlobHandlerRegistrationRegistry(b),
+		HandlerRegistrationRegistry: NewBlobHandlerRegistrationRegistry(AsHandlerRegistrationRegistry(b)),
 		cache:                       newHandlerCache(),
 	}
 	return r
+}
+
+func (r *blobHandlerRegistry) AsHandlerRegistrationRegistry() registrations.HandlerRegistrationRegistry[Context, BlobHandlerOption] {
+	return r.HandlerRegistrationRegistry
 }
 
 func (r *blobHandlerRegistry) Copy() BlobHandlerRegistry {

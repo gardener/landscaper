@@ -93,23 +93,6 @@ func (f SetupFunction) Setup(fs vfs.FileSystem) error {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type fsCloser struct {
-	closer Closer
-}
-
-func FSCloser(closer Closer) Closer {
-	return &fsCloser{closer}
-}
-
-func (f fsCloser) Close(obj *AccessObject) error {
-	err := errors.ErrListf("cannot close %s", obj.info.GetObjectTypeName())
-	if f.closer != nil {
-		err.Add(f.closer.Close(obj))
-	}
-	err.Add(vfs.Cleanup(obj.fs))
-	return err.Result()
-}
-
 type StandardReaderHandler interface {
 	Write(obj *AccessObject, path string, opts accessio.Options, mode vfs.FileMode) error
 	NewFromReader(info AccessObjectInfo, acc AccessMode, in io.Reader, opts accessio.Options, closer Closer) (*AccessObject, error)

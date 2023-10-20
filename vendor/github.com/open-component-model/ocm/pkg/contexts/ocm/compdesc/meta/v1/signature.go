@@ -156,6 +156,16 @@ type SignatureSpec struct {
 	Issuer    string `json:"issuer,omitempty"`
 }
 
+// ConvertToSigning converts a cd signature to a signing signature.
+func (s *SignatureSpec) ConvertToSigning() *signing.Signature {
+	return &signing.Signature{
+		Value:     s.Value,
+		MediaType: s.MediaType,
+		Algorithm: s.Algorithm,
+		Issuer:    s.Issuer,
+	}
+}
+
 // Signature defines a digest and corresponding signature, identifiable by name.
 // +k8s:deepcopy-gen=true
 // +k8s:openapi-gen=true
@@ -176,11 +186,15 @@ func (s *Signature) Copy() *Signature {
 
 // ConvertToSigning converts a cd signature to a signing signature.
 func (s *Signature) ConvertToSigning() *signing.Signature {
-	return &signing.Signature{
-		Value:     s.Signature.Value,
-		MediaType: s.Signature.MediaType,
-		Algorithm: s.Signature.Algorithm,
-		Issuer:    s.Signature.Issuer,
+	return s.Signature.ConvertToSigning()
+}
+
+func SignatureSpecFor(s *signing.Signature) *SignatureSpec {
+	return &SignatureSpec{
+		Value:     s.Value,
+		MediaType: s.MediaType,
+		Algorithm: s.Algorithm,
+		Issuer:    s.Issuer,
 	}
 }
 

@@ -18,8 +18,8 @@ func init() {
 	hpi.Register(New())
 }
 
-// LabelValue is the minimal structure of values usable with the merge algorithm.
-type LabelValue interface{}
+// Value is the minimal structure of values usable with the merge algorithm.
+type Value interface{}
 
 func New() hpi.Handler {
 	return hpi.New(ALGORITHM, desc, merge)
@@ -37,7 +37,7 @@ It supports the following config structure:
   - <code>inbound</code> (default) the inbound value overwrites the local one.
 `
 
-func merge(ctx hpi.Context, c *Config, lv LabelValue, tv *LabelValue) (bool, error) {
+func merge(ctx hpi.Context, c *Config, lv Value, tv *Value) (bool, error) {
 	modified := false
 	if !reflect.DeepEqual(lv, tv) {
 		switch c.Overwrite {

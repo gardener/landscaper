@@ -25,6 +25,8 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/modern-go/reflect2"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"sigs.k8s.io/yaml"
 
 	ocmlog "github.com/open-component-model/ocm/pkg/logging"
@@ -239,16 +241,12 @@ func JoinIndentLines(orig []string, gap string, skipfirst ...bool) string {
 	return s + strings.Join(orig, "\n"+gap)
 }
 
-func StringMapKeys[E any](m map[string]E) []string {
+func StringMapKeys[K ~string, E any](m map[K]E) []K {
 	if m == nil {
 		return nil
 	}
-
-	keys := []string{}
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	keys := maps.Keys(m)
+	slices.Sort(keys)
 	return keys
 }
 

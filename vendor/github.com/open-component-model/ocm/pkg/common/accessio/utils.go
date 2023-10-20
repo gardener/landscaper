@@ -13,6 +13,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/compression"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type closableReader struct {
@@ -88,16 +89,11 @@ func BlobReader(blob DataReader, err error) (io.ReadCloser, error) {
 }
 
 func FileSystem(fss ...vfs.FileSystem) vfs.FileSystem {
-	return DefaultedFileSystem(_osfs, fss...)
+	return utils.FileSystem(fss...)
 }
 
 func DefaultedFileSystem(def vfs.FileSystem, fss ...vfs.FileSystem) vfs.FileSystem {
-	for _, fs := range fss {
-		if fs != nil {
-			return fs
-		}
-	}
-	return def
+	return utils.DefaultedFileSystem(def, fss...)
 }
 
 type once struct {

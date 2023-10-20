@@ -61,15 +61,24 @@ func TransferArtifact(art cpi.ArtifactAccess, set cpi.ArtifactSink, tags ...stri
 	return transfer.TransferArtifact(art, set, tags...)
 }
 
+type ArtifactModifier func(access cpi.ArtifactAccess) error
+
 // SynthesizeArtifactBlob synthesizes an artifact blob incorporating all side artifacts.
 // To support extensions like cosign, we need the namespace access her to find
 // additionally objects associated by tags.
-func SynthesizeArtifactBlob(ns cpi.NamespaceAccess, ref string) (ArtifactBlob, error) {
+func SynthesizeArtifactBlob(ns cpi.NamespaceAccess, ref string, mod ...ArtifactModifier) (ArtifactBlob, error) {
 	art, err := ns.GetArtifact(ref)
 	if err != nil {
 		return nil, GetArtifactError{Original: err, Ref: ref}
 	}
 	defer art.Close()
+
+	for _, m := range mod {
+		err = m(art)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return SynthesizeArtifactBlobForArtifact(art, ref)
 }
 

@@ -18,11 +18,12 @@ import (
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/remotes"
 	remoteserrors "github.com/containerd/containerd/remotes/errors"
-	digest "github.com/opencontainers/go-digest"
+	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/docker/resolve"
 )
 
@@ -138,7 +139,7 @@ func (p dockerPusher) push(ctx context.Context, desc ocispec.Descriptor, src res
 					Debug("unexpected response")
 			}
 
-			return nil, err
+			return nil, accessio.RetriableError(err)
 		}
 	}
 
@@ -163,7 +164,7 @@ func (p dockerPusher) push(ctx context.Context, desc ocispec.Descriptor, src res
 			// query and send the request again.
 			resp, err = preq.doWithRetries(pctx, nil)
 			if err != nil {
-				return nil, err
+				return nil, accessio.RetriableError(err)
 			}
 
 			if resp.StatusCode == http.StatusUnauthorized {
@@ -177,7 +178,7 @@ func (p dockerPusher) push(ctx context.Context, desc ocispec.Descriptor, src res
 		if resp == nil {
 			resp, err = req.doWithRetries(ctx, nil)
 			if err != nil {
-				return nil, err
+				return nil, accessio.RetriableError(err)
 			}
 		}
 		defer resp.Body.Close()
