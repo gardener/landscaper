@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
@@ -27,33 +29,63 @@ func NewRetryingClient(innerClient client.Client, log utils.Logger) client.Clien
 }
 
 func (r *retryingClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	return retrySporadic(r.log, func() error {
+	err := retrySporadic(r.log, func() error {
 		return r.Client.Get(ctx, key, obj, opts...)
 	})
+
+	if err != nil {
+		err = errors.Wrap(err, "retryingClient: "+err.Error())
+	}
+
+	return err
 }
 
 func (r *retryingClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	return retrySporadic(r.log, func() error {
+	err := retrySporadic(r.log, func() error {
 		return r.Client.List(ctx, list, opts...)
 	})
+
+	if err != nil {
+		err = errors.Wrap(err, "retryingClient: "+err.Error())
+	}
+
+	return err
 }
 
 func (r *retryingClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	return retrySporadic(r.log, func() error {
+	err := retrySporadic(r.log, func() error {
 		return r.Client.Create(ctx, obj, opts...)
 	})
+
+	if err != nil {
+		err = errors.Wrap(err, "retryingClient: "+err.Error())
+	}
+
+	return err
 }
 
 func (r *retryingClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	return retrySporadic(r.log, func() error {
+	err := retrySporadic(r.log, func() error {
 		return r.Client.Update(ctx, obj, opts...)
 	})
+
+	if err != nil {
+		err = errors.Wrap(err, "retryingClient: "+err.Error())
+	}
+
+	return err
 }
 
 func (r *retryingClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	return retrySporadic(r.log, func() error {
+	err := retrySporadic(r.log, func() error {
 		return r.Client.Patch(ctx, obj, patch, opts...)
 	})
+
+	if err != nil {
+		err = errors.Wrap(err, "retryingClient: "+err.Error())
+	}
+
+	return err
 }
 
 func (r *retryingClient) Status() client.SubResourceWriter {
@@ -69,9 +101,15 @@ type retryingSubResourceWriter struct {
 }
 
 func (r *retryingSubResourceWriter) Update(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
-	return retrySporadic(r.log, func() error {
+	err := retrySporadic(r.log, func() error {
 		return r.SubResourceWriter.Update(ctx, obj, opts...)
 	})
+
+	if err != nil {
+		err = errors.Wrap(err, "retryingSubResourceWriter: "+err.Error())
+	}
+
+	return err
 }
 
 func retrySporadic(log utils.Logger, fn func() error) error {

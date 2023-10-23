@@ -79,8 +79,8 @@ var _ = Describe("GarbageCollector", func() {
 		gc = containerctlr.NewGarbageCollector(logger, testenv.Client, hostTestEnv.Client, "test", hostState.Namespace, containerv1alpha1.GarbageCollection{
 			Worker:             1,
 			RequeueTimeSeconds: 1,
-		})
-		Expect(gc.Add(hostMgr, false)).To(Succeed())
+		}, false)
+		// Expect(gc.Add(hostMgr, false)).To(Succeed())
 
 		Expect(testutils.AddMimicKCMSecretControllerToManager(hostMgr)).To(Succeed())
 
@@ -112,6 +112,7 @@ var _ = Describe("GarbageCollector", func() {
 			containerctlr.InjectDefaultLabels(sa, containerctlr.DefaultLabels("test", "a", di.Name, di.Namespace))
 			Expect(hostState.Create(ctx, sa)).To(Succeed())
 
+			gc.Cleanup(ctx)
 			Eventually(func() error {
 				err := hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(sa), &corev1.ServiceAccount{})
 				if err != nil {
@@ -182,6 +183,8 @@ var _ = Describe("GarbageCollector", func() {
 				}
 				return fmt.Errorf("deployitem %s still exits", client.ObjectKeyFromObject(di).String())
 			}, 10*time.Second, 1*time.Second).Should(Succeed())
+
+			gc.Cleanup(ctx)
 			Eventually(func() error {
 				var allErrs []error
 				for name, obj := range resources {
@@ -212,7 +215,7 @@ var _ = Describe("GarbageCollector", func() {
 			sa.Namespace = hostState.Namespace
 			Expect(hostState.Create(ctx, sa)).To(Succeed())
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(sa), &corev1.ServiceAccount{})).To(Succeed())
 		})
 
@@ -228,7 +231,7 @@ var _ = Describe("GarbageCollector", func() {
 			containerctlr.InjectDefaultLabels(sa, containerctlr.DefaultLabels("test", "a", di.Name, di.Namespace))
 			Expect(hostState.Create(ctx, sa)).To(Succeed())
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(sa), &corev1.ServiceAccount{})).To(Succeed())
 		})
 	})
@@ -245,6 +248,7 @@ var _ = Describe("GarbageCollector", func() {
 			containerctlr.InjectDefaultLabels(secret, containerctlr.DefaultLabels("test", "a", di.Name, di.Namespace))
 			Expect(hostState.Create(ctx, secret)).To(Succeed())
 
+			gc.Cleanup(ctx)
 			Eventually(func() error {
 				err := hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(secret), &corev1.Secret{})
 				if err != nil {
@@ -263,7 +267,7 @@ var _ = Describe("GarbageCollector", func() {
 			secret.Namespace = hostState.Namespace
 			Expect(hostState.Create(ctx, secret)).To(Succeed())
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(secret), &corev1.Secret{})).To(Succeed())
 		})
 
@@ -279,7 +283,7 @@ var _ = Describe("GarbageCollector", func() {
 			containerctlr.InjectDefaultLabels(secret, containerctlr.DefaultLabels("test", "a", di.Name, di.Namespace))
 			Expect(hostState.Create(ctx, secret)).To(Succeed())
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(secret), &corev1.Secret{})).To(Succeed())
 		})
 	})
@@ -326,6 +330,7 @@ var _ = Describe("GarbageCollector", func() {
 			pod2.Status.Phase = corev1.PodSucceeded
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod2))
 
+			gc.Cleanup(ctx)
 			Eventually(func() error {
 				err := hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(pod), &corev1.Pod{})
 				if err != nil {
@@ -345,7 +350,7 @@ var _ = Describe("GarbageCollector", func() {
 			pod.Status.Phase = corev1.PodSucceeded
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod))
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(pod), &corev1.Pod{})).To(Succeed())
 		})
 
@@ -362,7 +367,7 @@ var _ = Describe("GarbageCollector", func() {
 			pod.Status.Phase = corev1.PodSucceeded
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod))
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(pod), &corev1.Pod{})).To(Succeed())
 		})
 
@@ -372,7 +377,7 @@ var _ = Describe("GarbageCollector", func() {
 			pod.Status.Phase = corev1.PodRunning
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod))
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(pod), &corev1.Pod{})).To(Succeed())
 		})
 
@@ -389,7 +394,7 @@ var _ = Describe("GarbageCollector", func() {
 			pod.Status.Phase = corev1.PodSucceeded
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod))
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(pod), &corev1.Pod{})).To(Succeed())
 		})
 
@@ -405,7 +410,7 @@ var _ = Describe("GarbageCollector", func() {
 			pod.Status.Phase = corev1.PodSucceeded
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod))
 
-			time.Sleep(10 * time.Second)
+			gc.Cleanup(ctx)
 			Expect(hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(pod), &corev1.Pod{})).ToNot(Succeed())
 		})
 	})
