@@ -3,15 +3,17 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
 	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
 	"github.com/open-component-model/ocm/pkg/runtime"
+
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
 const (
@@ -27,7 +29,7 @@ func DetermineOCMSchemaVersion(blueprint *blueprints.Blueprint, componentVersion
 	var ocmSchemaVersion string
 	var ok bool
 
-	if blueprint != nil {
+	if blueprint != nil && blueprint.Info != nil && blueprint.Info.Annotations != nil {
 		ocmSchemaVersion, ok = blueprint.Info.Annotations[OCM_SCHEMA_VERSION]
 		if ok {
 			return ocmSchemaVersion

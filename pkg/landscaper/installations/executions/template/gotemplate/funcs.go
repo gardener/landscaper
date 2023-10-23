@@ -10,12 +10,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"os"
 	"strings"
 	gotmpl "text/template"
 	"time"
+
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
