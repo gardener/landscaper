@@ -8,9 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gardener/component-spec/bindings-go/codec"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
-	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
 	ocmruntime "github.com/open-component-model/ocm/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -301,7 +300,7 @@ func serializeComponentDescriptor(componentVersion model.ComponentVersion, ocmSc
 	}
 
 	switch ocmSchemaVersion {
-	case v3alpha1.GroupVersion:
+	case common.SCHEMA_VERSION_V3ALPHA1:
 		ocmCd, err := compdesc.Decode(data)
 		if err != nil {
 			return nil, err
@@ -310,7 +309,7 @@ func serializeComponentDescriptor(componentVersion model.ComponentVersion, ocmSc
 		if err != nil {
 			return nil, err
 		}
-	case v2.SchemaVersion:
+	case common.SCHEMA_VERSION_V2:
 	default:
 		return nil, fmt.Errorf("unknown schema version")
 	}

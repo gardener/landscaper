@@ -67,12 +67,12 @@ func spiffResolveResources(cd *types.ComponentDescriptor) func(arguments []inter
 		compdescSchemaVersion := ""
 		inCdMap, ok := arguments[0].(map[string]interface{})
 		if ok {
-			compdescSchemaVersion, err = common.GetSchemaVersionFromCdMap(inCdMap)
+			compdescSchemaVersion, err = common.GetSchemaVersionFromMapCd(inCdMap)
 			if err != nil {
 				panic(err)
 			}
 			if compdescSchemaVersion == v3alpha1.GroupVersion {
-				arguments[0], err = common.ConvertCdMapToCompDescV2(inCdMap)
+				arguments[0], err = common.ConvertMapCdToCompDescV2(inCdMap)
 				if err != nil {
 					panic("Unable to convert component descriptor to internal schema version")
 				}

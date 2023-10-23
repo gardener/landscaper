@@ -172,7 +172,6 @@ func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []ma
 		if cd == nil {
 			panic("Unable to search for a resource as no ComponentDescriptor is defined.")
 		}
-
 		resources, err := lstmpl.ResolveResources(cd, args)
 		if err != nil {
 			panic(err)
@@ -196,7 +195,6 @@ func getResourceGoFunc(cd *types.ComponentDescriptor) func(args ...interface{}) 
 		if cd == nil {
 			panic("Unable to search for a resource as no ComponentDescriptor is defined.")
 		}
-
 		resources, err := lstmpl.ResolveResources(cd, args)
 		if err != nil {
 			panic(err)
@@ -225,7 +223,7 @@ func getEffectiveRepositoryContextGoFunc(arg interface{}) map[string]interface{}
 	if !ok {
 		panic("invalid component descriptor")
 	}
-	cd, err := common.ConvertCdMapToCompDescV2(cdMap)
+	cd, err := common.ConvertMapCdToCompDescV2(cdMap)
 	if err != nil {
 		return nil
 	}

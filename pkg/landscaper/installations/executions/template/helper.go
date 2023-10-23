@@ -35,7 +35,7 @@ func ResolveResources(defaultCD *types.ComponentDescriptor, args []interface{}) 
 	// schema version v2 for internal processing
 	var err error
 	if cdMap, ok := args[0].(map[string]interface{}); ok {
-		desc, err = common.ConvertCdMapToCompDescV2(cdMap)
+		desc, err = common.ConvertMapCdToCompDescV2(cdMap)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +87,7 @@ func ResolveComponents(defaultCD *types.ComponentDescriptor, list *types.Compone
 	// schema version v2 for internal processing
 	var err error
 	if cdMap, ok := args[0].(map[string]interface{}); ok {
-		desc, err = common.ConvertCdMapToCompDescV2(cdMap)
+		desc, err = common.ConvertMapCdToCompDescV2(cdMap)
 		if err != nil {
 			return nil, err
 		}
@@ -129,7 +129,7 @@ func ResolveComponents(defaultCD *types.ComponentDescriptor, list *types.Compone
 
 	descriptors := make([]map[string]interface{}, len(components))
 	for i, descriptor := range components {
-		desc, err := common.ConvertCompDescV2ToCdMap(descriptor, ocmSchemaVersion)
+		desc, err := common.ConvertCompDescV2ToMapCd(descriptor, ocmSchemaVersion)
 		if err != nil {
 			return nil, err
 		}
