@@ -175,7 +175,7 @@ func FromContextOrNew(ctx context.Context, keysAndValuesFallback []interface{}, 
 		}
 
 		newLogger = newLogger.WithValues(keysAndValuesFallback...).WithValues(keysAndValues...)
-		newLogger.Error(err2, "unable to fetch logger from context")
+		newLogger.Info("unable to fetch logger from context", "error", err2)
 		ctx = NewContext(ctx, newLogger)
 		return newLogger, ctx
 	}
