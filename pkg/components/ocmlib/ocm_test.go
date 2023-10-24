@@ -366,17 +366,4 @@ version: 1.0.0
 		Expect(ok).To(BeTrue())
 		Expect(bp.Info.Annotations, map[string]interface{}{"local/name": "root-a", "local/version": "1.0.0"})
 	})
-
-	// This coding allows to easily check whether the logging output of the ocmlib is successfully passed to the
-	// landscaper logging library.
-	// As we currently cannot easily redirect logging output, this cannot be implemented as a proper test, but you may
-	// uncomment this coding and see whether the output has been written to stdout in the proper format.
-	//It("test logging", func() {
-	//	// Initializes the logger and passes it to the ocmlib as base logger
-	//	logging.GetLogger()
-	//
-	//	ocmlog.Context().SetDefaultLevel(mandellog.TraceLevel)
-	//	// Logs logging from the ocm library with the logger initialized before
-	//	ocmlog.Logger().Info("test")
-	//})
 })
