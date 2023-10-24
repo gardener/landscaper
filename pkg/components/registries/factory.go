@@ -25,12 +25,6 @@ var (
 )
 
 func init() {
-	// Enable logging with our logger from ocm lib
-	// The config of the logger cannot be accessed in the init function, as the logger might not have been
-	// initialized itself yet. Therefore, we pass a function through which the logger can be passed to the ocmlib
-	// after it is fully configured.
-	logging.SetLogConsumer(ocmFactory.SetApplicationLogger)
-
 	// This is for testing purposes only!
 	m := os.Getenv("USE_OCM_LIB")
 	if m == "true" {

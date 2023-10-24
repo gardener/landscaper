@@ -8,10 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	mandellog "github.com/mandelsoft/logging"
 	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -48,10 +45,6 @@ import (
 type Factory struct{}
 
 var _ model.Factory = &Factory{}
-
-func (*Factory) SetApplicationLogger(logger logging.Logger) {
-	mandellog.DefaultContext().SetBaseLogger(logger.Logr())
-}
 
 func (*Factory) NewRegistryAccess(ctx context.Context,
 	fs vfs.FileSystem,

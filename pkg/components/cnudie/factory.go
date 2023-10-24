@@ -33,8 +33,6 @@ type Factory struct{}
 
 var _ model.Factory = &Factory{}
 
-func (*Factory) SetApplicationLogger(logger logging.Logger) {}
-
 func (*Factory) NewRegistryAccess(ctx context.Context,
 	fs vfs.FileSystem,
 	secrets []corev1.Secret,

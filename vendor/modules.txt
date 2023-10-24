@@ -593,7 +593,6 @@ github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/ge
 github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret
 github.com/gardener/landscaper/controller-utils/pkg/logging
 github.com/gardener/landscaper/controller-utils/pkg/logging/constants
-github.com/gardener/landscaper/controller-utils/pkg/logging/zapconfig
 github.com/gardener/landscaper/controller-utils/pkg/utils
 github.com/gardener/landscaper/controller-utils/pkg/webhook
 github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates

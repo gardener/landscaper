@@ -9,8 +9,6 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	corev1 "k8s.io/api/core/v1"
@@ -23,8 +21,6 @@ import (
 )
 
 type Factory interface {
-	SetApplicationLogger(logger logging.Logger)
-
 	// NewRegistryAccess provides an instance of a RegistryAccess, which is an interface for dealing with ocm
 	// components.Technically, it is a facade either backed by the [component-cli] or by the [ocmlib].
 	//

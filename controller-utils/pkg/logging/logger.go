@@ -167,9 +167,6 @@ func Wrap(log logr.Logger) Logger {
 // A new context, containing the created logger, will be returned.
 // The function panics if the logger cannot be fetched from the context and creating a new one fails.
 func FromContextOrNew(ctx context.Context, keysAndValuesFallback []interface{}, keysAndValues ...interface{}) (Logger, context.Context) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
 	log, err := FromContext(ctx)
 	if err != nil {
 		newLogger, err2 := GetLogger()
