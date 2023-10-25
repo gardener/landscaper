@@ -62,15 +62,14 @@ func NewGarbageCollector(log logging.Logger,
 }
 
 func (gc *GarbageCollector) StartDeployerJob(ctx context.Context) error {
-	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "GarbageCollector.cleanup"}, lc.KeyMethod, "GarbageCollector.cleanup")
-	ctx = logging.NewContext(ctx, logger)
-	logger.Info("locker: starting garbage collection")
+	gc.log.Info("GarbageCollector: starting garbage collection")
 
 	wait.UntilWithContext(ctx, gc.Cleanup, gc.requeueAfter)
 	return nil
 }
 
 func (gc *GarbageCollector) Cleanup(ctx context.Context) {
+	ctx = logging.NewContext(ctx, gc.log)
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	listOptions := []client.ListOption{client.InNamespace(gc.hostNamespace),
@@ -89,7 +88,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	for i := range saList.Items {
 		next := &saList.Items[i]
-		if err := gc.cleanupRBACResourcesNew(ctx, next); err != nil {
+		if err := gc.cleanupRBACResources(ctx, next); err != nil {
 			logger.Error(err, "cleanup service account", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
 		}
 	}
@@ -102,7 +101,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	for i := range roleList.Items {
 		next := &roleList.Items[i]
-		if err := gc.cleanupRBACResourcesNew(ctx, next); err != nil {
+		if err := gc.cleanupRBACResources(ctx, next); err != nil {
 			logger.Error(err, "cleanup role", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
 		}
 	}
@@ -115,7 +114,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	for i := range roleBindingList.Items {
 		next := &roleBindingList.Items[i]
-		if err := gc.cleanupRBACResourcesNew(ctx, next); err != nil {
+		if err := gc.cleanupRBACResources(ctx, next); err != nil {
 			logger.Error(err, "cleanup rolebinding", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
 		}
 	}
@@ -128,7 +127,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	for i := range secretList.Items {
 		next := &secretList.Items[i]
-		if err := gc.cleanupSecretNew(ctx, next); err != nil {
+		if err := gc.cleanupSecret(ctx, next); err != nil {
 			logger.Error(err, "cleanup secret", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
 		}
 	}
@@ -142,14 +141,14 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 		for i := range podList.Items {
 			next := &podList.Items[i]
-			if err := gc.cleanupPodNew(ctx, next); err != nil {
+			if err := gc.cleanupPod(ctx, next); err != nil {
 				logger.Error(err, "cleanup pod", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
 			}
 		}
 	}
 }
 
-func (gc *GarbageCollector) cleanupRBACResourcesNew(ctx context.Context, obj client.Object) error {
+func (gc *GarbageCollector) cleanupRBACResources(ctx context.Context, obj client.Object) error {
 	shouldGC, err := gc.shouldGarbageCollect(ctx, obj)
 	if err != nil {
 		return err
@@ -168,7 +167,7 @@ func (gc *GarbageCollector) cleanupRBACResourcesNew(ctx context.Context, obj cli
 }
 
 // cleanupSecret deletes secrets that do not have a parent deploy item anymore.
-func (gc *GarbageCollector) cleanupSecretNew(ctx context.Context, obj *corev1.Secret) error {
+func (gc *GarbageCollector) cleanupSecret(ctx context.Context, obj *corev1.Secret) error {
 	shouldGC, err := gc.shouldGarbageCollect(ctx, obj)
 	if err != nil {
 		return err
@@ -184,7 +183,7 @@ func (gc *GarbageCollector) cleanupSecretNew(ctx context.Context, obj *corev1.Se
 }
 
 // cleanupPod deletes pods that do not have a parent deploy item anymore.
-func (gc *GarbageCollector) cleanupPodNew(ctx context.Context, obj *corev1.Pod) error {
+func (gc *GarbageCollector) cleanupPod(ctx context.Context, obj *corev1.Pod) error {
 	logger, _ := logging.FromContextOrNew(ctx, nil)
 	if obj.Status.Phase == corev1.PodPending || obj.Status.Phase == corev1.PodRunning || obj.Status.Phase == corev1.PodUnknown {
 		logger.Debug("Not garbage collected", lc.KeyReason, "pod is still running", lc.KeyPhase, obj.Status.Phase)

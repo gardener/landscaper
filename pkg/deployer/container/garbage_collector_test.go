@@ -80,7 +80,6 @@ var _ = Describe("GarbageCollector", func() {
 			Worker:             1,
 			RequeueTimeSeconds: 1,
 		}, false)
-		// Expect(gc.Add(hostMgr, false)).To(Succeed())
 
 		Expect(testutils.AddMimicKCMSecretControllerToManager(hostMgr)).To(Succeed())
 

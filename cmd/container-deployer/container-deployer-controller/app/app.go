@@ -43,7 +43,7 @@ func (o *options) run(ctx context.Context) error {
 		o.Config,
 		"container")
 	if err != nil {
-		return fmt.Errorf("unable to setup helm controller")
+		return fmt.Errorf("unable to setup container controller")
 	}
 
 	if gc == nil {
