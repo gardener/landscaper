@@ -324,23 +324,48 @@ func serializeComponentDescriptor(componentVersion model.ComponentVersion, ocmSc
 	return val, nil
 }
 
-func serializeComponentDescriptorList(componentVersionList *model.ComponentVersionList) (interface{}, error) {
+func serializeComponentDescriptorList(componentVersionList *model.ComponentVersionList, ocmSchemaVersion string) (interface{}, error) {
 	if componentVersionList == nil {
 		return nil, nil
 	}
-	cd, err := model.ConvertComponentVersionList(componentVersionList)
+	cds, err := model.ConvertComponentVersionList(componentVersionList)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := codec.Encode(cd)
-	if err != nil {
-		return nil, err
-	}
+	switch ocmSchemaVersion {
+	case common.SCHEMA_VERSION_V3ALPHA1:
+		val := make([]map[string]interface{}, len(cds.Components))
+		for i, cd := range cds.Components {
+			data, err := codec.Encode(&cd)
+			if err != nil {
+				return nil, err
+			}
+			ocmCd, err := compdesc.Decode(data)
+			if err != nil {
+				return nil, err
+			}
+			data, err = compdesc.Encode(ocmCd, compdesc.SchemaVersion(ocmSchemaVersion))
+			if err != nil {
+				return nil, err
+			}
+			if err := ocmruntime.DefaultYAMLEncoding.Unmarshal(data, &val[i]); err != nil {
+				return nil, err
+			}
+		}
+		return val, nil
+	case common.SCHEMA_VERSION_V2:
+		data, err := codec.Encode(cds)
+		if err != nil {
+			return nil, err
+		}
 
-	var val interface{}
-	if err := json.Unmarshal(data, &val); err != nil {
-		return nil, err
+		var val interface{}
+		if err := json.Unmarshal(data, &val); err != nil {
+			return nil, err
+		}
+		return val, nil
+	default:
+		return nil, fmt.Errorf("unknown schema version")
 	}
-	return val, nil
 }
