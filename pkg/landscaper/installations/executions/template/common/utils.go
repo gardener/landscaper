@@ -26,16 +26,15 @@ const (
 // This can be defined as a OCM_SCHEMA_VERSION blueprint annotation. If the blueprint does not have a respective
 // annotation, the schema version is defaulted to the schema version of the provided component version.
 func DetermineOCMSchemaVersion(blueprint *blueprints.Blueprint, componentVersion model.ComponentVersion) string {
-	var ocmSchemaVersion string
-	var ok bool
+	ocmSchemaVersion := ""
 
 	if blueprint != nil && blueprint.Info != nil && blueprint.Info.Annotations != nil {
-		ocmSchemaVersion, ok = blueprint.Info.Annotations[OCM_SCHEMA_VERSION]
+		schemaVersion, ok := blueprint.Info.Annotations[OCM_SCHEMA_VERSION]
 		if ok {
-			return ocmSchemaVersion
+			ocmSchemaVersion = schemaVersion
 		}
 	}
-	if componentVersion != nil {
+	if ocmSchemaVersion == "" && componentVersion != nil {
 		ocmSchemaVersion = componentVersion.GetSchemaVersion()
 	}
 

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- name: one
+  type: Spiff
+  template:
+    deployItems:
+      - name: test
+        type: landscaper.gardener.cloud/mock
+        config:
+          name: (( cd.component.name ))
+          names: (( map[components.components|c|->{"name"=c.component.name}] ))
