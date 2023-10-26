@@ -7,6 +7,7 @@ package template_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"os"
 	"path/filepath"
 	"testing"
@@ -178,13 +179,14 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
 		})
 
-		It("should use a resource from the component descriptor", func() {
+		DescribeTable("should use a resource from the component descriptor", func(ocmSchemaVersion string) {
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-04.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
 
 			blue := &lsv1alpha1.Blueprint{}
+			blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: ocmSchemaVersion}
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
@@ -228,15 +230,19 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
-		})
+		},
+			Entry("template with component descriptor v2", common.SCHEMA_VERSION_V2),
+			Entry("template with component descriptor v3alpha1", common.SCHEMA_VERSION_V3ALPHA1),
+		)
 
-		It("should use a resource from the component descriptor's referenced component", func() {
+		DescribeTable("should use a resource from the component descriptor's referenced component", func(ocmSchemaVersion string) {
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-10.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
 
 			blue := &lsv1alpha1.Blueprint{}
+			blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: ocmSchemaVersion}
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
@@ -301,7 +307,10 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
-		})
+		},
+			Entry("template with component descriptor v2", common.SCHEMA_VERSION_V2),
+			Entry("template with component descriptor v3alpha1", common.SCHEMA_VERSION_V3ALPHA1),
+		)
 
 		It("should throw an error when the template tries to template a undefined value", func() {
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-08.yaml"))

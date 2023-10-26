@@ -335,7 +335,7 @@ func serializeComponentDescriptorList(componentVersionList *model.ComponentVersi
 
 	switch ocmSchemaVersion {
 	case common.SCHEMA_VERSION_V3ALPHA1:
-		val := make([]map[string]interface{}, len(cds.Components))
+		val := make([]interface{}, len(cds.Components))
 		for i, cd := range cds.Components {
 			data, err := codec.Encode(&cd)
 			if err != nil {
