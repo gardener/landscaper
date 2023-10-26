@@ -51,7 +51,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 	)
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
-	checkpoint := fmt.Sprintf("deployer: during readiness check")
+	checkpoint := "deployer: during readiness check"
 	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		log.Debug("Wait until resources are ready", "try", try)
 		try++
