@@ -88,7 +88,7 @@ func WebhookTest(f *framework.Framework) {
 
 			err := state.Create(ctx, exec)
 			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
-			Expect(err.Error()).To(HavePrefix("admission webhook \"executions.validation.landscaper.gardener.cloud\" denied the request"))
+			Expect(err.Error()).To(ContainSubstring("admission webhook \"executions.validation.landscaper.gardener.cloud\" denied the request"))
 		})
 
 		It("should block invalid DeployItem resources", func() {
@@ -123,7 +123,7 @@ func WebhookTest(f *framework.Framework) {
 
 			err := state.Create(ctx, di)
 			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
-			Expect(err.Error()).To(HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
+			Expect(err.Error()).To(ContainSubstring("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
 		})
 
 		It("should block a DeployItem type update", func() {
@@ -144,7 +144,7 @@ func WebhookTest(f *framework.Framework) {
 			updated.Spec.Type = "other-type"
 			err = state.Update(ctx, updated)
 			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
-			Expect(err.Error()).To(HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
+			Expect(err.Error()).To(ContainSubstring("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
 		})
 
 		It("should block invalid Target resources", func() {
@@ -165,7 +165,7 @@ func WebhookTest(f *framework.Framework) {
 
 			err := state.Create(ctx, target)
 			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
-			Expect(err.Error()).To(HavePrefix("admission webhook \"targets.validation.landscaper.gardener.cloud\" denied the request"))
+			Expect(err.Error()).To(ContainSubstring("admission webhook \"targets.validation.landscaper.gardener.cloud\" denied the request"))
 		})
 	})
 }

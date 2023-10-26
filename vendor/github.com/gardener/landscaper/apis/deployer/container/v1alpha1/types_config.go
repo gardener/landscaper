@@ -108,7 +108,7 @@ type GarbageCollection struct {
 	// Defaults to 5.
 	Worker int `json:"worker"`
 	// RequeueTime specifies the duration after which the object, which is not yet ready to be garbage collected, is requeued.
-	// Defaults to 60.
+	// Defaults to 3600.
 	RequeueTimeSeconds int `json:"requeueTimeSeconds"`
 }
 

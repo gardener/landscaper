@@ -8116,7 +8116,7 @@ func schema_apis_deployer_container_v1alpha1_GarbageCollection(ref common.Refere
 					},
 					"requeueTimeSeconds": {
 						SchemaProps: spec.SchemaProps{
-							Description: "RequeueTime specifies the duration after which the object, which is not yet ready to be garbage collected, is requeued. Defaults to 60.",
+							Description: "RequeueTime specifies the duration after which the object, which is not yet ready to be garbage collected, is requeued. Defaults to 3600.",
 							Default:     0,
 							Type:        []string{"integer"},
 							Format:      "int32",

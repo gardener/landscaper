@@ -296,17 +296,17 @@ func (f *Framework) Register() *State {
 
 		// dump before cleanup if the test failed
 		f.Log().Logln("Check if test failed...")
-		if ginkgo.CurrentSpecReport().Failed() {
-			utils.ExpectNoError(dumper.Dump(ctx))
-		}
+		//if ginkgo.CurrentSpecReport().Failed() {
+		//	utils.ExpectNoError(dumper.Dump(ctx))
+		//}
 
 		if !ginkgo.CurrentSpecReport().Failed() {
 			if err := state.cleanup(ctx); err != nil {
 				{
 					// try to dump
-					if err := dumper.Dump(ctx); err != nil {
-						f.logger.Logln(err.Error())
-					}
+					//if err := dumper.Dump(ctx); err != nil {
+					//	f.logger.Logln(err.Error())
+					//}
 					utils.ExpectNoError(err)
 				}
 			}

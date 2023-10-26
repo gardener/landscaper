@@ -113,7 +113,7 @@ func (o *DefaultOptions) Complete() error {
 }
 
 // StartManagers starts the host and landscaper managers.
-func (o *DefaultOptions) StartManagers(ctx context.Context) error {
+func (o *DefaultOptions) StartManagers(ctx context.Context, deployerJobs ...DeployerJob) error {
 	o.Log.Info("Starting the controllers")
 	eg, ctx := errgroup.WithContext(ctx)
 
@@ -136,6 +136,16 @@ func (o *DefaultOptions) StartManagers(ctx context.Context) error {
 		}
 		return nil
 	})
+
+	for i := range deployerJobs {
+		nextJob := deployerJobs[i]
+		eg.Go(func() error {
+			if err := nextJob.StartDeployerJob(ctx); err != nil {
+				return fmt.Errorf("error while running deployerJob: %w", err)
+			}
+			return nil
+		})
+	}
 	return eg.Wait()
 }
 

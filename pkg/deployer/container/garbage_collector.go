@@ -7,27 +7,18 @@ package container
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
-	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
@@ -47,6 +38,7 @@ type GarbageCollector struct {
 	lsClient      client.Client
 	hostClient    client.Client
 	requeueAfter  time.Duration
+	keepPods      bool
 }
 
 // NewGarbageCollector creates a new Garbage collector that cleanups leaked service accounts, rbac rules and pods.
@@ -55,7 +47,8 @@ func NewGarbageCollector(log logging.Logger,
 	hostClient client.Client,
 	deployerID,
 	hostNamespace string,
-	config containerv1alpha1.GarbageCollection) *GarbageCollector {
+	config containerv1alpha1.GarbageCollection,
+	keepPods bool) *GarbageCollector {
 	return &GarbageCollector{
 		log:           log,
 		deployerID:    deployerID,
@@ -64,169 +57,172 @@ func NewGarbageCollector(log logging.Logger,
 		lsClient:      lsClient,
 		hostClient:    hostClient,
 		requeueAfter:  time.Duration(config.RequeueTimeSeconds) * time.Second,
+		keepPods:      keepPods,
 	}
 }
 
-// Add configures the watches for the resources that should be garbage collected.
-func (gc *GarbageCollector) Add(hostMgr manager.Manager, keepPods bool) error {
-	pred := &ManagedResourcesPredicate{
-		Log:           gc.log,
-		DeployerID:    gc.deployerID,
-		HostNamespace: gc.hostNamespace,
-	}
+func (gc *GarbageCollector) StartDeployerJob(ctx context.Context) error {
+	gc.log.Info("GarbageCollector: starting garbage collection")
 
-	objectsToClean := map[client.Object]string{
-		&corev1.ServiceAccount{}: "serviceAccount",
-		&rbacv1.Role{}:           "role",
-		&rbacv1.RoleBinding{}:    "roleBinding",
-	}
-
-	for obj, objKey := range objectsToClean {
-		err := ctrl.NewControllerManagedBy(hostMgr).
-			For(obj, builder.WithPredicates(pred)).
-			WithOptions(controller.Options{
-				MaxConcurrentReconciles: gc.config.Worker,
-			}).
-			WithLogConstructor(func(r *reconcile.Request) logr.Logger { return gc.log.WithName(objKey).Logr() }).
-			Complete(gc.cleanupRBACResources(obj.DeepCopyObject().(client.Object)))
-		if err != nil {
-			return err
-		}
-		gc.log.Info("Registered container garbage collector", lc.KeyResourceKind, reflect.TypeOf(obj).String())
-	}
-
-	err := ctrl.NewControllerManagedBy(hostMgr).
-		For(&corev1.Secret{}, builder.WithPredicates(pred)).
-		WithOptions(controller.Options{
-			MaxConcurrentReconciles: gc.config.Worker,
-		}).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return gc.log.WithName("secret").Logr() }).
-		Complete(reconcile.Func(gc.cleanupSecret))
-	if err != nil {
-		return err
-	}
-	gc.log.Info("Registered container garbage collector", lc.KeyResource, "Secrets")
-
-	if !keepPods {
-		err = ctrl.NewControllerManagedBy(hostMgr).
-			For(&corev1.Pod{}, builder.WithPredicates(pred)).
-			WithOptions(controller.Options{
-				MaxConcurrentReconciles: gc.config.Worker,
-			}).
-			WithLogConstructor(func(r *reconcile.Request) logr.Logger { return gc.log.WithName("pod").Logr() }).
-			Complete(reconcile.Func(gc.cleanupPod))
-		if err != nil {
-			return err
-		}
-		gc.log.Info("Registered container garbage collector", lc.KeyResource, "Pods")
-	}
-
+	wait.UntilWithContext(ctx, gc.Cleanup, gc.requeueAfter)
 	return nil
 }
 
-func (gc *GarbageCollector) cleanupRBACResources(obj client.Object) reconcile.Reconciler {
-	return reconcile.Func(func(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-		obj := obj.DeepCopyObject().(client.Object)
-		if err := gc.hostClient.Get(ctx, req.NamespacedName, obj); err != nil {
-			if apierrors.IsNotFound(err) {
-				return reconcile.Result{}, nil
-			}
-			gc.log.Error(err, "unable to get resource")
-			return reconcile.Result{}, err
+func (gc *GarbageCollector) Cleanup(ctx context.Context) {
+	ctx = logging.NewContext(ctx, gc.log)
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	listOptions := []client.ListOption{client.InNamespace(gc.hostNamespace),
+		client.HasLabels{container.ContainerDeployerDeployItemNameLabel, container.ContainerDeployerDeployItemNamespaceLabel}}
+	if len(gc.deployerID) != 0 {
+		listOptions = []client.ListOption{client.InNamespace(gc.hostNamespace),
+			client.HasLabels{container.ContainerDeployerDeployItemNameLabel, container.ContainerDeployerDeployItemNamespaceLabel},
+			client.MatchingLabels{container.ContainerDeployerIDLabel: gc.deployerID}}
+	}
+
+	// cleanup service accounts
+	saList := &corev1.ServiceAccountList{}
+	if err := gc.hostClient.List(ctx, saList, listOptions...); err != nil {
+		logger.Error(err, err.Error())
+	}
+
+	for i := range saList.Items {
+		next := &saList.Items[i]
+		if err := gc.cleanupRBACResources(ctx, next); err != nil {
+			logger.Error(err, "cleanup service account", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
 		}
-		shouldGC, err := gc.shouldGarbageCollect(ctx, obj)
-		if err != nil {
-			return reconcile.Result{}, err
+	}
+
+	// cleanup roles
+	roleList := &rbacv1.RoleList{}
+	if err := gc.hostClient.List(ctx, roleList, listOptions...); err != nil {
+		logger.Error(err, err.Error())
+	}
+
+	for i := range roleList.Items {
+		next := &roleList.Items[i]
+		if err := gc.cleanupRBACResources(ctx, next); err != nil {
+			logger.Error(err, "cleanup role", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
 		}
-		if !shouldGC {
-			return reconcile.Result{Requeue: true, RequeueAfter: gc.requeueAfter}, nil
+	}
+
+	// cleanup rolesbidings
+	roleBindingList := &rbacv1.RoleBindingList{}
+	if err := gc.hostClient.List(ctx, roleBindingList, listOptions...); err != nil {
+		logger.Error(err, err.Error())
+	}
+
+	for i := range roleBindingList.Items {
+		next := &roleBindingList.Items[i]
+		if err := gc.cleanupRBACResources(ctx, next); err != nil {
+			logger.Error(err, "cleanup rolebinding", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
+		}
+	}
+
+	// cleanup secrets
+	secretList := &corev1.SecretList{}
+	if err := gc.hostClient.List(ctx, secretList, listOptions...); err != nil {
+		logger.Error(err, err.Error())
+	}
+
+	for i := range secretList.Items {
+		next := &secretList.Items[i]
+		if err := gc.cleanupSecret(ctx, next); err != nil {
+			logger.Error(err, "cleanup secret", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
+		}
+	}
+
+	if !gc.keepPods {
+		// cleanup pods
+		podList := &corev1.PodList{}
+		if err := gc.hostClient.List(ctx, podList, listOptions...); err != nil {
+			logger.Error(err, err.Error())
 		}
 
-		di := &lsv1alpha1.DeployItem{}
-		di.Name = obj.GetLabels()[container.ContainerDeployerDeployItemNameLabel]
-		di.Namespace = obj.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]
-		if err := CleanupRBAC(ctx, di, gc.hostClient, obj.GetNamespace()); err != nil {
-			return reconcile.Result{}, err
+		for i := range podList.Items {
+			next := &podList.Items[i]
+			if err := gc.cleanupPod(ctx, next); err != nil {
+				logger.Error(err, "cleanup pod", lc.KeyResource, kutil.ObjectKeyFromObject(next).String())
+			}
 		}
-		return reconcile.Result{}, nil
-	})
+	}
+}
+
+func (gc *GarbageCollector) cleanupRBACResources(ctx context.Context, obj client.Object) error {
+	shouldGC, err := gc.shouldGarbageCollect(ctx, obj)
+	if err != nil {
+		return err
+	}
+	if !shouldGC {
+		return nil
+	}
+
+	di := &lsv1alpha1.DeployItem{}
+	di.Name = obj.GetLabels()[container.ContainerDeployerDeployItemNameLabel]
+	di.Namespace = obj.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]
+	if err := CleanupRBAC(ctx, di, gc.hostClient, obj.GetNamespace()); err != nil {
+		return err
+	}
+	return nil
 }
 
 // cleanupSecret deletes secrets that do not have a parent deploy item anymore.
-func (gc *GarbageCollector) cleanupSecret(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := gc.log.WithValues(lc.KeyResourceKind, "Secret", lc.KeyResource, req.NamespacedName.String())
-	obj := &corev1.Secret{}
-	if err := gc.hostClient.Get(ctx, req.NamespacedName, obj); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Debug("Secret not found, aborting garbage collection")
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
-	}
+func (gc *GarbageCollector) cleanupSecret(ctx context.Context, obj *corev1.Secret) error {
 	shouldGC, err := gc.shouldGarbageCollect(ctx, obj)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 	if !shouldGC {
-		return reconcile.Result{Requeue: true, RequeueAfter: gc.requeueAfter}, nil
+		return nil
 	}
 
 	if err := gc.hostClient.Delete(ctx, obj); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to garbage collect secret %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
+		return err
 	}
-	return reconcile.Result{}, nil
+	return nil
 }
 
 // cleanupPod deletes pods that do not have a parent deploy item anymore.
-func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := gc.log.WithValues(lc.KeyResourceKind, "Pod", lc.KeyResource, req.NamespacedName.String())
-	obj := &corev1.Pod{}
-	if err := gc.hostClient.Get(ctx, req.NamespacedName, obj); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Debug("Pod not found, aborting garbage collection")
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
-	}
-
+func (gc *GarbageCollector) cleanupPod(ctx context.Context, obj *corev1.Pod) error {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 	if obj.Status.Phase == corev1.PodPending || obj.Status.Phase == corev1.PodRunning || obj.Status.Phase == corev1.PodUnknown {
 		logger.Debug("Not garbage collected", lc.KeyReason, "pod is still running", lc.KeyPhase, obj.Status.Phase)
-		return reconcile.Result{}, nil
+		return nil
 	}
 
 	shouldGC, err := gc.shouldGarbageCollect(ctx, obj)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 	if shouldGC {
 		// always garbage collect pods that do not have a corresponding deployitem anymore
 		logger.Debug("Garbage collected", lc.KeyReason, "deploy item does not exist anymore")
 		if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
-			return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
+			return fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 		}
-		return reconcile.Result{}, nil
+		return nil
 	}
 
 	if !controllerutil.ContainsFinalizer(obj, container.ContainerDeployerFinalizer) {
 		logger.Debug("Garbage collected", lc.KeyReason, "pod has no finalizer")
 		err := gc.hostClient.Delete(ctx, obj)
-		return reconcile.Result{}, err
+		return err
 	}
 
 	isLatest, err := gc.isLatestPod(ctx, obj)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 	if isLatest {
 		logger.Debug("Not garbage collected", lc.KeyReason, "latest pod")
-		return reconcile.Result{Requeue: true, RequeueAfter: gc.requeueAfter}, nil
+		return nil
 	}
 
 	if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
+		return fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 	}
 	logger.Debug("Garbage collected")
-	return reconcile.Result{}, nil
+	return nil
 }
 
 // isLatestPod cleans returns if the current pod is the latest executed pod.
@@ -293,55 +289,4 @@ func (gc *GarbageCollector) shouldGarbageCollect(ctx context.Context, obj client
 	}
 	logger.Debug("DeployItem still exists, resource should not be garbage collected")
 	return false, nil
-}
-
-// ManagedResourcesPredicate implements the controller runtime handler interface
-// that reconciles resources managed by the deployer.
-type ManagedResourcesPredicate struct {
-	Log           logging.Logger
-	DeployerID    string
-	HostNamespace string
-}
-
-var _ predicate.Predicate = &ManagedResourcesPredicate{}
-
-func (h *ManagedResourcesPredicate) shouldReconcile(object metav1.Object) bool {
-	logger := h.Log.WithValues(lc.KeyResource, kutil.ObjectKeyFromObject(object).String())
-	if object.GetNamespace() != h.HostNamespace {
-		logger.Debug("Not garbage collected", lc.KeyReason, "namespace does not match", "hostNamespace", h.HostNamespace, "resourceNamespace", object.GetNamespace())
-		return false
-	}
-	if _, ok := object.GetLabels()[container.ContainerDeployerDeployItemNameLabel]; !ok {
-		logger.Debug("Not garbage collected", lc.KeyReason, "no deploy item name label")
-		return false
-	}
-	if _, ok := object.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]; !ok {
-		logger.Debug("Not garbage collected", lc.KeyReason, "no deploy item namespace label")
-		return false
-	}
-
-	if len(h.DeployerID) != 0 {
-		if id, ok := object.GetLabels()[container.ContainerDeployerIDLabel]; !ok || id != h.DeployerID {
-			logger.Debug("Not garbage collected", lc.KeyReason, "deployer IDs do not match")
-			return false
-		}
-	}
-	logger.Debug("Enqueue for garbage collection")
-	return true
-}
-
-func (h *ManagedResourcesPredicate) Create(event event.CreateEvent) bool {
-	return h.shouldReconcile(event.Object)
-}
-
-func (h *ManagedResourcesPredicate) Update(event event.UpdateEvent) bool {
-	return h.shouldReconcile(event.ObjectNew)
-}
-
-func (h *ManagedResourcesPredicate) Delete(event event.DeleteEvent) bool {
-	return h.shouldReconcile(event.Object)
-}
-
-func (h *ManagedResourcesPredicate) Generic(event event.GenericEvent) bool {
-	return h.shouldReconcile(event.Object)
 }

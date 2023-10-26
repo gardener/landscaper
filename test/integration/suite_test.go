@@ -51,7 +51,7 @@ func TestConfig(t *testing.T) {
 		logger.Logln("Creating framework failed")
 		t.Fatal(err)
 	}
-	d := framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
+	_ = framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
 	if opts.SkipWaitingForSystemComponents {
 		f.Log().Logfln("Skipped waiting for system components")
 	} else {
@@ -59,9 +59,9 @@ func TestConfig(t *testing.T) {
 		err = f.WaitForSystemComponents(ctx)
 		if err != nil {
 			f.Log().Logfln("Waiting for system components failed: %s", err.Error())
-			if derr := d.Dump(ctx); derr != nil {
-				f.Log().Logf("error during dump: %s", derr.Error())
-			}
+			//if derr := d.Dump(ctx); derr != nil {
+			//	f.Log().Logf("error during dump: %s", derr.Error())
+			//}
 			t.Fatal(err)
 		}
 	}
