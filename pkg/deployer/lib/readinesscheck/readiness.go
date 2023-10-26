@@ -7,9 +7,10 @@ package readinesscheck
 import (
 	"context"
 	"fmt"
+	"time"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserror "github.com/gardener/landscaper/apis/errors"
-	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -50,6 +51,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 	)
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
+	checkpoint := fmt.Sprintf("deployer: during readiness check")
 	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		log.Debug("Wait until resources are ready", "try", try)
 		try++
@@ -71,6 +73,9 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 		}
 
 		for _, obj := range objects {
+			checkpoint = fmt.Sprintf("deployer: during readiness check - resource %s/%s of type %s",
+				obj.GetNamespace(), obj.GetName(), obj.GetKind())
+
 			if err = IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
 				if IsRecoverableError(err) {
 					log.Info(fmt.Sprintf("WaitForObjectsReady: resource %s/%s of type %s is not ready",
@@ -88,7 +93,8 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 	})
 
 	if wait.Interrupted(err) {
-		return lserror.NewWrappedError(err, operation, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorTimeout)
+		msg := fmt.Sprintf("timeout at: %q", checkpoint)
+		return lserror.NewWrappedError(err, "WaitForObjectsReady", lsv1alpha1.ProgressingTimeoutReason, msg, lsv1alpha1.ErrorTimeout)
 	}
 
 	return err

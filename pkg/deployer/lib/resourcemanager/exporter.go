@@ -7,11 +7,8 @@ package resourcemanager
 import (
 	"context"
 	"fmt"
-	"math"
-	"sync"
 	"time"
 
-	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -52,19 +49,12 @@ func NewExporter(opts ExporterOptions) *Exporter {
 	return exporter
 }
 
-// Export exports all keys that are defined in the exports definition.
 func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports) (map[string]interface{}, error) {
 	log, _ := logging.FromContextOrNew(ctx, nil)
 	log = log.WithName("export")
 	ctx = logging.NewContext(ctx, log)
-	var allErrs []error
+	var result map[string]interface{}
 
-	var (
-		wg          sync.WaitGroup
-		resultMutex sync.Mutex
-		result      map[string]interface{}
-		timeoutErr  errors.LsError
-	)
 	for _, export := range exports.Exports {
 		if export.FromResource == nil {
 			// ignore exports without from resource
@@ -73,61 +63,37 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 		}
 
 		checkpoint := fmt.Sprintf("deployer: during export - key: %s", export.Key)
-		timeout, tmpErr := timeout.TimeoutExceeded(ctx, e.deployItem, checkpoint)
-		timeoutErr = tmpErr
+		timeout, timeoutErr := timeout.TimeoutExceeded(ctx, e.deployItem, checkpoint)
 		if timeoutErr != nil {
-			break
-		} else {
-			wg.Add(1)
-			go func(ctx context.Context, export managedresource.Export) {
-				defer wg.Done()
-				ctx, cancel := context.WithTimeout(ctx, timeout)
-				defer cancel()
-				log2 := log.WithValues(lc.KeyExportKey, export.Key)
+			return nil, timeoutErr
+		}
 
-				backoff := wait.Backoff{
-					Duration: 2 * time.Second,
-					Jitter:   1.15,
-					Steps:    math.MaxInt32,
-				}
-				var lastErr error
-				// The waiting intervals do not increase exponentially, because no backoff factor is set
-				if err := wait.ExponentialBackoffWithContext(ctx, backoff, func(ctx context.Context) (done bool, err error) {
+		log2 := log.WithValues(lc.KeyExportKey, export.Key)
 
-					if err := e.interruptionChecker.Check(ctx); err != nil {
-						return false, err
-					}
+		err := wait.PollUntilContextTimeout(ctx, 5*time.Second, timeout, true, func(ctx context.Context) (done bool, err error) {
+			if err := e.interruptionChecker.Check(ctx); err != nil {
+				return false, err
+			}
 
-					value, err := e.doExport(ctx, export)
-					if err != nil {
-						log2.Debug("error while creating export", lc.KeyError, err.Error())
-						lastErr = err
-						return false, nil
-					}
-					resultMutex.Lock()
-					defer resultMutex.Unlock()
-					result = utils.MergeMaps(result, value)
-					return true, nil
-				}); err != nil {
-					allErrs = append(allErrs, err)
-					if lastErr != nil {
-						allErrs = append(allErrs, lastErr)
-					}
-				}
+			value, err := e.doExport(ctx, export)
+			if err != nil {
+				log2.Info("error while creating export", lc.KeyError, err.Error())
+				return false, nil
+			}
+			result = utils.MergeMaps(result, value)
+			return true, nil
+		})
 
-			}(ctx, export)
+		if wait.Interrupted(err) {
+			msg := fmt.Sprintf("timeout at: %q", checkpoint)
+			return nil, errors.NewWrappedError(err, "Export", lsv1alpha1.ProgressingTimeoutReason, msg, lsv1alpha1.ErrorTimeout)
+		}
+
+		if err != nil {
+			return nil, err
 		}
 	}
-	wg.Wait()
 
-	if timeoutErr != nil {
-		return nil, timeoutErr
-	}
-
-	if len(allErrs) != 0 {
-		// todo: improve so that already retrieved values are persisted and only other ones have to be re-fetched.
-		return nil, apimacherrors.NewAggregate(allErrs)
-	}
 	return result, nil
 }
 
