@@ -351,6 +351,7 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 	var (
 		allErrs []error
 		wg      sync.WaitGroup
+		errMux  sync.Mutex
 	)
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "cleanupOrphanedResources")
 
@@ -395,7 +396,9 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 				// Delete object and ensure it is actually deleted from the cluster.
 				err := kutil.DeleteAndWaitForObjectDeleted(ctx, a.kubeClient, timeout, obj)
 				if err != nil {
+					errMux.Lock()
 					allErrs = append(allErrs, err)
+					errMux.Unlock()
 				}
 			}(obj)
 		}
