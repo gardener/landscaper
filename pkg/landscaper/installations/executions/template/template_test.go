@@ -7,7 +7,7 @@ package template_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/gardener/landscaper/apis/config"
+	apiconfig "github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"os"
 	"path/filepath"
@@ -320,7 +320,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-" + schemaVersionSuffix, "1.0.0"})
@@ -383,7 +383,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-v2-mixed", "1.0.0"})
@@ -434,12 +434,12 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			}))
 		})
 
-		FIt("templating against v3alpha1 with mixed component descriptor schema versions", func() {
+		It("templating against v3alpha1 with mixed component descriptor schema versions", func() {
 			// Preparation to conveniently be able to access the respective component versions
 			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-v3alpha1-mixed", "1.0.0"})
@@ -487,194 +487,6 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				map[string]interface{}{"name": "example.com/landscaper-component-v3alpha1-mixed"},
 				map[string]interface{}{"name": "example.com/landscaper-component-v2-ref1"},
 				map[string]interface{}{"name": "example.com/landscaper-component-v3alpha1-ref2"},
-			}))
-		})
-
-		It("should get names from component descriptors v2", func() {
-			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-30.yaml"))
-			Expect(err).ToNot(HaveOccurred())
-			exec := make([]lsv1alpha1.TemplateExecutor, 0)
-			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
-
-			blue := &lsv1alpha1.Blueprint{}
-			blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: common.SCHEMA_VERSION_V2}
-			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
-
-			cd := &types.ComponentDescriptor{
-				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
-				ComponentSpec: cdv2.ComponentSpec{
-					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "example.com/mycomp",
-						Version: "1.0.0",
-					},
-					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           "internal",
-					ComponentReferences: []types.ComponentReference{
-						{
-							Name:          "ref1",
-							ComponentName: "example.com/mycomp-ref1",
-							Version:       "1.0.0",
-						},
-						{
-							Name:          "ref2",
-							ComponentName: "example.com/mycomp-ref2",
-							Version:       "1.0.0",
-						},
-					},
-				},
-			}
-
-			cdref1 := &types.ComponentDescriptor{
-				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
-				ComponentSpec: cdv2.ComponentSpec{
-					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "example.com/mycomp-ref1",
-						Version: "1.0.0",
-					},
-					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           "internal",
-				},
-			}
-			cdref2 := &types.ComponentDescriptor{
-				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
-				ComponentSpec: cdv2.ComponentSpec{
-					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "example.com/mycomp-ref2",
-						Version: "1.0.0",
-					},
-					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           "internal",
-				},
-			}
-			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
-			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
-
-			Expect(cdv2.DefaultComponent(cdref1)).To(Succeed())
-			componentVersionRef1 := testutils.NewTestComponentVersionFromReader(cdref1, nil, nil)
-			Expect(cdv2.DefaultComponent(cdref2)).To(Succeed())
-			componentVersionRef2 := testutils.NewTestComponentVersionFromReader(cdref2, nil, nil)
-
-			componentVersionList := &model.ComponentVersionList{
-				Components: []model.ComponentVersion{
-					componentVersion,
-					componentVersionRef1,
-					componentVersionRef2,
-				},
-			}
-
-			res, err := op.TemplateDeployExecutions(
-				template.NewDeployExecutionOptions(
-					template.NewBlueprintExecutionOptions(
-						nil,
-						&blueprints.Blueprint{Info: blue, Fs: nil},
-						componentVersion,
-						componentVersionList,
-						nil)))
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res).To(HaveLen(1))
-			config := make(map[string]interface{})
-			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
-			Expect(config).To(HaveKeyWithValue("name", "example.com/mycomp"))
-			Expect(config).To(HaveKeyWithValue("names", []interface{}{
-				map[string]interface{}{"name": "example.com/mycomp"},
-				map[string]interface{}{"name": "example.com/mycomp-ref1"},
-				map[string]interface{}{"name": "example.com/mycomp-ref2"},
-			}))
-		})
-
-		It("should get names from component descriptors v3alpha1", func() {
-			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-31.yaml"))
-			Expect(err).ToNot(HaveOccurred())
-			exec := make([]lsv1alpha1.TemplateExecutor, 0)
-			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
-
-			blue := &lsv1alpha1.Blueprint{}
-			blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: common.SCHEMA_VERSION_V3ALPHA1}
-			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
-
-			cd := &types.ComponentDescriptor{
-				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
-				ComponentSpec: cdv2.ComponentSpec{
-					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "example.com/mycomp",
-						Version: "1.0.0",
-					},
-					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           "internal",
-					ComponentReferences: []types.ComponentReference{
-						{
-							Name:          "ref1",
-							ComponentName: "example.com/mycomp-ref1",
-							Version:       "1.0.0",
-						},
-						{
-							Name:          "ref2",
-							ComponentName: "example.com/mycomp-ref2",
-							Version:       "1.0.0",
-						},
-					},
-				},
-			}
-
-			cdref1 := &types.ComponentDescriptor{
-				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
-				ComponentSpec: cdv2.ComponentSpec{
-					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "example.com/mycomp-ref1",
-						Version: "1.0.0",
-					},
-					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           "internal",
-				},
-			}
-			cdref2 := &types.ComponentDescriptor{
-				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
-				ComponentSpec: cdv2.ComponentSpec{
-					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "example.com/mycomp-ref2",
-						Version: "1.0.0",
-					},
-					RepositoryContexts: []*types.UnstructuredTypedObject{},
-					Provider:           "internal",
-				},
-			}
-			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
-			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
-
-			Expect(cdv2.DefaultComponent(cdref1)).To(Succeed())
-			componentVersionRef1 := testutils.NewTestComponentVersionFromReader(cdref1, nil, nil)
-			Expect(cdv2.DefaultComponent(cdref2)).To(Succeed())
-			componentVersionRef2 := testutils.NewTestComponentVersionFromReader(cdref2, nil, nil)
-
-			componentVersionList := &model.ComponentVersionList{
-				Components: []model.ComponentVersion{
-					componentVersion,
-					componentVersionRef1,
-					componentVersionRef2,
-				},
-			}
-
-			res, err := op.TemplateDeployExecutions(
-				template.NewDeployExecutionOptions(
-					template.NewBlueprintExecutionOptions(
-						nil,
-						&blueprints.Blueprint{Info: blue, Fs: nil},
-						componentVersion,
-						componentVersionList,
-						nil)))
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res).To(HaveLen(1))
-			config := make(map[string]interface{})
-			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
-			Expect(config).To(HaveKeyWithValue("name", "example.com/mycomp"))
-			Expect(config).To(HaveKeyWithValue("names", []interface{}{
-				map[string]interface{}{"name": "example.com/mycomp"},
-				map[string]interface{}{"name": "example.com/mycomp-ref1"},
-				map[string]interface{}{"name": "example.com/mycomp-ref2"},
 			}))
 		})
 
