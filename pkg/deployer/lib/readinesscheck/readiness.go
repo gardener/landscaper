@@ -7,6 +7,8 @@ package readinesscheck
 import (
 	"context"
 	"fmt"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lserror "github.com/gardener/landscaper/apis/errors"
 	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -40,7 +42,7 @@ type InterruptionChecker interface {
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
-	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker InterruptionChecker) error {
+	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker InterruptionChecker, operation string) error {
 	var (
 		try     int32 = 1
 		err     error
@@ -63,7 +65,8 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 				log.Info("WaitForObjectsReady: failed getObjects: " + err.Error())
 				return false, nil
 			} else {
-				return false, err
+				log.Error(err, "WaitForObjectsReady: failed getObjects: "+err.Error())
+				return false, nil
 			}
 		}
 
@@ -74,13 +77,19 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 						obj.GetNamespace(), obj.GetName(), obj.GetKind()))
 					return false, nil
 				} else {
-					return false, err
+					log.Error(err, fmt.Sprintf("WaitForObjectsReady: resource %s/%s of type %s is not ready",
+						obj.GetNamespace(), obj.GetName(), obj.GetKind()))
+					return false, nil
 				}
 			}
 		}
 
 		return true, nil
 	})
+
+	if wait.Interrupted(err) {
+		return lserror.NewWrappedError(err, operation, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorTimeout)
+	}
 
 	return err
 }
