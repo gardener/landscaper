@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"io"
 	"os"
 	"path/filepath"
@@ -44,6 +45,10 @@ func RegistryTest(f *framework.Framework) {
 		f.Log().Logln("No registry configured skipping the registry tests...")
 		return
 	}
+	log, err := logging.New(nil)
+	if err != nil {
+		return
+	}
 
 	_ = Describe("RegistryTest", func() {
 
@@ -54,6 +59,7 @@ func RegistryTest(f *framework.Framework) {
 
 		BeforeEach(func() {
 			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
 		})
 
 		AfterEach(func() {
