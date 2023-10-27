@@ -22,10 +22,26 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 )
 
 const (
 	cacheIdentifier = "helm-deployer-controller"
+)
+
+const (
+	TimeoutCheckpointHelmStartReconcile            = "helm deployer: start reconcile"
+	TimeoutCheckpointHelmStartProgressing          = "helm deployer: start progressing"
+	TimeoutCheckpointHelmStartApplyFiles           = "helm deployer: start apply files"
+	TimeoutCheckpointHelmStartDelete               = "helm deployer: start delete"
+	TimeoutCheckpointHelmStartDeleting             = "helm deployer: start deleting"
+	TimeoutCheckpointHelmBeforeReadinessCheck      = "helm deployer: before readiness check"
+	TimeoutCheckpointHelmBeforeReadingExportValues = "helm deployer: before reading export values"
+	TimeoutCheckpointHelmStartApplyManifests       = "helm deployer: start apply manifests"
+	TimeoutCheckpointHelmStartCreateManifests      = "helm deployer: start create manifests"
+	TimeoutCheckpointHelmDefaultReadinessChecks    = "helm deployer: default readiness checks"
+	TimeoutCheckpointHelmCustomReadinessChecks     = "helm deployer: custom readiness checks"
+	TimeoutCheckpointHelmDeleteResources           = "helm deployer: delete resources"
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.
@@ -67,11 +83,20 @@ type deployer struct {
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
+	if _, err := timeout.TimeoutExceeded(ctx, di, TimeoutCheckpointHelmStartReconcile); err != nil {
+		return err
+	}
+
 	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "newRootLogger", err.Error())
 		return err
 	}
+
+	if _, err := timeout.TimeoutExceeded(ctx, di, TimeoutCheckpointHelmStartProgressing); err != nil {
+		return err
+	}
+
 	di.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 
 	files, crds, values, ch, err := helm.Template(ctx)
@@ -85,12 +110,25 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 		err = lserrors.NewWrappedError(err, "Reconcile", "ConstructExportFromValues", err.Error())
 		return err
 	}
+
+	if _, err := timeout.TimeoutExceeded(ctx, di, TimeoutCheckpointHelmStartApplyFiles); err != nil {
+		return err
+	}
+
 	return helm.ApplyFiles(ctx, files, crds, exports, ch)
 }
 
 func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
+	if _, err := timeout.TimeoutExceeded(ctx, di, TimeoutCheckpointHelmStartDelete); err != nil {
+		return err
+	}
+
 	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
+		return err
+	}
+
+	if _, err := timeout.TimeoutExceeded(ctx, di, TimeoutCheckpointHelmStartDeleting); err != nil {
 		return err
 	}
 

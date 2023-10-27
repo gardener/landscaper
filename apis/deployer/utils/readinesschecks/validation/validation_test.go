@@ -6,7 +6,6 @@ package validation_test
 
 import (
 	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,10 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks/validation"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 func TestConfig(t *testing.T) {
@@ -50,7 +48,6 @@ var _ = Describe("Validation", func() {
 
 		cc = readinesschecks.CustomReadinessCheckConfiguration{
 			Name:     "customReadinessCheck",
-			Timeout:  nil,
 			Disabled: false,
 			Resource: []lsv1alpha1.TypedObjectReference{
 				{
@@ -74,7 +71,6 @@ var _ = Describe("Validation", func() {
 
 		rc = readinesschecks.ReadinessCheckConfiguration{
 			DisableDefault:        true,
-			Timeout:               &lsv1alpha1.Duration{Duration: 180 * time.Second},
 			CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{cc},
 		}
 

@@ -352,9 +352,6 @@ var _ = Describe("Custom health checks", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
-			Timeout: &lsv1alpha1.Duration{
-				Duration: 1 * time.Minute,
-			},
 			Name: "check-non-managed",
 			Resource: []lsv1alpha1.TypedObjectReference{
 				*configmap1Ref,

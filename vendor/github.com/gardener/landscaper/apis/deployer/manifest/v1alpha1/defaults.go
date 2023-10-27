@@ -5,13 +5,9 @@
 package v1alpha1
 
 import (
-	"time"
-
 	lsconfigv1alpha1 "github.com/gardener/landscaper/apis/config/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
@@ -22,12 +18,6 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 func SetDefaults_ProviderConfiguration(obj *ProviderConfiguration) {
 	if len(obj.UpdateStrategy) == 0 {
 		obj.UpdateStrategy = UpdateStrategyUpdate
-	}
-	if obj.ReadinessChecks.Timeout == nil {
-		obj.ReadinessChecks.Timeout = &lsv1alpha1.Duration{Duration: 3 * time.Minute}
-	}
-	if obj.DeleteTimeout == nil {
-		obj.DeleteTimeout = &lsv1alpha1.Duration{Duration: 3 * time.Minute}
 	}
 }
 

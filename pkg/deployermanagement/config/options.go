@@ -54,12 +54,12 @@ func (o *Options) Complete() error {
 
 // GetDeployerConfigForDeployer returns the optional configuration for a deployer.
 // If no config is defined a NoConfigError is returned
-func (o *Options) GetDeployerConfigForDeployer(deployerName string) (DeployerConfiguration, error) {
+func (o *Options) GetDeployerConfigForDeployer(deployerName string) DeployerConfiguration {
 	data, ok := o.DeployersConfig.Deployers[deployerName]
 	if !ok {
-		return DeployerConfiguration{}, NoConfigError
+		return DeployerConfiguration{}
 	}
-	return data, nil
+	return data
 }
 
 func (o *Options) parseDeployersConfigurationFile() error {

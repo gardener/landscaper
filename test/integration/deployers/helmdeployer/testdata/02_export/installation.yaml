@@ -49,7 +49,6 @@ spec:
                           helmChartName:    configmap2
                           helmChartVersion: 1.0.0
                       exports:
-                        defaultTimeout: 10m
                         exports:
                           - key: exportKey
                             jsonPath: .data.key

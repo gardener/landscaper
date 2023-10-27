@@ -9,6 +9,9 @@ import (
 	"fmt"
 	"time"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lserror "github.com/gardener/landscaper/apis/errors"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +43,7 @@ type InterruptionChecker interface {
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
-	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker InterruptionChecker) error {
+	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker InterruptionChecker, operation string) error {
 	var (
 		try     int32 = 1
 		err     error
@@ -48,6 +51,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 	)
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
+	checkpoint := "deployer: during readiness check"
 	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		log.Debug("Wait until resources are ready", "try", try)
 		try++
@@ -63,24 +67,35 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 				log.Info("WaitForObjectsReady: failed getObjects: " + err.Error())
 				return false, nil
 			} else {
-				return false, err
+				log.Error(err, "WaitForObjectsReady: failed getObjects: "+err.Error())
+				return false, nil
 			}
 		}
 
 		for _, obj := range objects {
+			checkpoint = fmt.Sprintf("deployer: during readiness check - resource %s/%s of type %s",
+				obj.GetNamespace(), obj.GetName(), obj.GetKind())
+
 			if err = IsObjectReady(ctx, kubeClient, obj, fn); err != nil {
 				if IsRecoverableError(err) {
 					log.Info(fmt.Sprintf("WaitForObjectsReady: resource %s/%s of type %s is not ready",
 						obj.GetNamespace(), obj.GetName(), obj.GetKind()))
 					return false, nil
 				} else {
-					return false, err
+					log.Error(err, fmt.Sprintf("WaitForObjectsReady: resource %s/%s of type %s is not ready",
+						obj.GetNamespace(), obj.GetName(), obj.GetKind()))
+					return false, nil
 				}
 			}
 		}
 
 		return true, nil
 	})
+
+	if wait.Interrupted(err) {
+		msg := fmt.Sprintf("timeout at: %q", checkpoint)
+		return lserror.NewWrappedError(err, "WaitForObjectsReady", lsv1alpha1.ProgressingTimeoutReason, msg, lsv1alpha1.ErrorTimeout)
+	}
 
 	return err
 }

@@ -8,8 +8,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/components/registries"
-
 	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -19,12 +17,18 @@ import (
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
 const (
 	cacheIdentifier = "container-deployer-controller"
+)
+
+const (
+	TimeoutCheckpointContainerStartReconcile = "container deployer: start reconcile"
+	TimeoutCheckpointContainerStartDelete    = "container deployer: start delete"
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type "landscaper.gardener.cloud/container".

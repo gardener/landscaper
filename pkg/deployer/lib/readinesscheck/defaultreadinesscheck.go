@@ -17,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 )
@@ -58,9 +57,8 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 	}
 
 	timeout := d.Timeout.Duration
-	if err := WaitForObjectsReady(d.Context, timeout, d.Client, getObjectsFunc, d.CheckObject, d.InterruptionChecker); err != nil {
-		return lserror.NewWrappedError(err,
-			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
+	if err := WaitForObjectsReady(d.Context, timeout, d.Client, getObjectsFunc, d.CheckObject, d.InterruptionChecker, d.CurrentOp); err != nil {
+		return err
 	}
 
 	return nil

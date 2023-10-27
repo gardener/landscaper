@@ -20,6 +20,16 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
+const (
+	TimeoutCheckpointManifestStartReconcile            = "manifest deployer: start reconcile"
+	TimeoutCheckpointManifestBeforeReadinessCheck      = "manifest deployer: before readiness check"
+	TimeoutCheckpointManifestBeforeReadingExportValues = "manifest deployer: before reading export values"
+	TimeoutCheckpointManifestDefaultReadinessChecks    = "manifest deployer: default readiness checks"
+	TimeoutCheckpointManifestCustomReadinessChecks     = "manifest deployer: custom readiness checks"
+	TimeoutCheckpointManifestStartDelete               = "manifest deployer: start delete"
+	TimeoutCheckpointManifestDeleteResources           = "manifest deployer: delete resources"
+)
+
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.
 func NewDeployer(log logging.Logger,
 	lsKubeClient client.Client,

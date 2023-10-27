@@ -27,8 +27,6 @@ spec:
 
   # Defines the global timeout value. When the deployment (including readiness-checks and exports) takes
   # longer than this specified time, the deployment will be considered failed. Default: 10 minutes
-  # This timeout value shall be greater than the longest deployer specific timeout specified for this deploy item.
-  # If, for example, the readiness-checks timeout is set to "15m" and the export timeout is set to "10m", set the global timeout to "20m".
   timeout: 20m
 
   config:
@@ -43,10 +41,6 @@ spec:
       # Allows to disable the default readiness checks.
       # optional; set to false by default.
       disableDefault: true
-      # Defines the time to wait before giving up on a resource
-      # to be ready. Should be changed with long startup time pods.
-      # optional; default to 180 seconds/3 minutes.
-      timeout: 3m
       # Configuration of custom readiness checks which are used
       # to check on custom fields and their values
       # especially useful for resources that came in through CRDs
@@ -54,9 +48,6 @@ spec:
       custom:
       # the name of the custom readiness check, required
       - name: myCustomReadinessCheck
-        # timeout of the custom readiness check
-        # optional, defaults to the timeout stated above
-        timeout: 2m
         # temporarily disable this custom readiness check, useful for test setups
         # optional, defaults to false
         disabled: false
@@ -91,11 +82,6 @@ spec:
           - value: 2
           - value: 3
 
-    # Defines the time to wait before giving up on a resource to be deleted,
-    # for instance when deleting resources that are not anymore managed from this DeployItem.
-    # optional; default to 180 seconds/3 minutes.
-    deleteTimeout: 2m
-
     manifests: # list of kubernetes manifests
     - policy: manage | fallback | ignore | keep | immutable
       # Optional: A map of annotations that are only added to the manifest when it is first created on the target.
@@ -120,12 +106,10 @@ spec:
     
     # Define exports that are read from the kubernetes resources,
     # so they can be used by other deployitems or installations.
-    # The deployer tries to read the export values until either the global or the specific timeout is exceeded.
+    # The deployer tries to read the export values until the timeout of the DeployItem (`spec.timeout`) is exceeded.
     exports:
-      defaultTimeout: 5m # global default timeout that is used when no specific timeout is set
       exports:
       - key: KeyA # value is read from a secret and exported with name "KeyA"
-        timeout: 10m # optional specific timeout
         jsonPath: .data.somekey # points to the value in the resource that is being exported
         fromResource: # required
           apiVersion: v1 # specification of the resource type
@@ -133,7 +117,6 @@ spec:
           name: my-secret # name of the resource
           namespace: a # namespace of the resource
       - key: KeyB # value is read from secret that is referenced by a service account and exported with name "KeyB"
-        timeout: 10m # optional specific timeout
         jsonPath: .secrets[0] # points to an object reference that consists of a name and namespace
         fromResource:
           apiVersion: v1 # specification of the resource type

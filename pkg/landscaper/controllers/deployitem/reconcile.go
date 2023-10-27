@@ -42,53 +42,21 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 		return reconcile.Result{}, nil
 	}
 
-	// check pickup timeout
-	if !HasBeenPickedUp(di) {
-		if con.pickupTimeout != 0 {
-			logger.Debug("check for pickup timeout")
-
-			exceeded, requeue := con.isPickupTimeoutExceeded(di)
-			if exceeded {
-				err := con.writePickupTimeoutExceeded(ctx, di)
-				// if there was a pickup timeout, no need to check for anything else
-				return reconcile.Result{}, err
-			}
-
-			if requeue == nil {
-				return reconcile.Result{}, nil
-			}
-			return reconcile.Result{RequeueAfter: *requeue}, nil
-		}
-
+	if HasBeenPickedUp(di) || con.pickupTimeout == 0 {
+		// deploy item has been picked up, or the pickup check is deactivated
 		return reconcile.Result{}, nil
 	}
 
-	// check progressing timeout
-	// only do something if progressing timeout detection is neither deactivated on the deploy item,
-	// nor defaulted by the deploy item and deactivated by default
-	if !((di.Spec.Timeout != nil && di.Spec.Timeout.Duration == 0) || (di.Spec.Timeout == nil && con.defaultTimeout == 0)) {
-		logger.Debug("check for progressing timeout")
+	logger.Debug("check for pickup timeout")
+	exceeded, requeue := con.isPickupTimeoutExceeded(di)
+	if exceeded {
+		// pickup timeout is exceeded
+		err := con.writePickupTimeoutExceeded(ctx, di)
+		return reconcile.Result{}, err
+	}
 
-		var progressingTimeout time.Duration
-		if di.Spec.Timeout == nil { // timeout not specified in deploy item, use global default
-			progressingTimeout = con.defaultTimeout
-		} else {
-			progressingTimeout = di.Spec.Timeout.Duration
-		}
-
-		exceeded, requeue, err := con.isProgressingTimeoutExceeded(ctx, di, progressingTimeout)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		if exceeded {
-			err = con.writeProgressingTimeoutExceeded(ctx, di, progressingTimeout)
-			return reconcile.Result{}, err
-		}
-
-		if requeue == nil {
-			return reconcile.Result{}, nil
-		}
+	if requeue != nil {
+		// pickup timeout not yet exceeded; check again at the time when it would be exceeded
 		return reconcile.Result{RequeueAfter: *requeue}, nil
 	}
 
@@ -129,60 +97,6 @@ func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1a
 	))
 
 	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000110, di); err != nil {
-		logger.Error(err, "unable to set deployitem status")
-		return err
-	}
-
-	return nil
-}
-
-func (con *controller) isProgressingTimeoutExceeded(ctx context.Context, di *lsv1alpha1.DeployItem, progressingTimeout time.Duration) (bool, *time.Duration, error) {
-	logger, _ := logging.FromContextOrNew(ctx, nil)
-	logger = logger.WithValues(lc.KeyMethod, "isProgressingTimeoutExceeded")
-
-	if di.Status.LastReconcileTime.IsZero() {
-		// should not happen
-		logger.Debug("deploy item is reconciled for the first time, nothing to do")
-		return false, nil, nil
-	}
-
-	progressingDuration := time.Since(di.Status.LastReconcileTime.Time)
-	if progressingDuration >= progressingTimeout {
-		return true, nil, nil
-	}
-
-	// deploy item not yet timed out
-	// => requeue shortly after expected timeout
-	requeue := progressingTimeout - progressingDuration + (5 * time.Second)
-	return false, &requeue, nil
-}
-
-func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, di *lsv1alpha1.DeployItem, progressingTimeout time.Duration) error {
-	// the deployer has not finished processing this deploy item within the timeframe
-	// => set to failed
-
-	operation := "writeProgressingTimeoutExceeded"
-
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-	logger = logger.WithValues(lc.KeyMethod, operation)
-	logger.Info("deploy item progressing timed out, setting to failed")
-
-	di.Status.JobIDFinished = di.Status.GetJobID()
-	di.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(di.Status.TransitionTimes)
-	di.Status.ObservedGeneration = di.Generation
-	lsv1alpha1helper.SetDeployItemToFailed(di)
-
-	message := fmt.Sprintf("deployer has not finished this deploy item within %d seconds - probably some of the "+
-		"installed items (deployments, jobs, daemons etc.) in the target system were not up and running within this time period",
-		progressingTimeout/time.Second)
-	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
-		operation,
-		lsv1alpha1.ProgressingTimeoutReason,
-		message,
-		lsv1alpha1.ErrorTimeout))
-
-	if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000111, di); err != nil {
-		// we might need to expose this as event on the deploy item
 		logger.Error(err, "unable to set deployitem status")
 		return err
 	}

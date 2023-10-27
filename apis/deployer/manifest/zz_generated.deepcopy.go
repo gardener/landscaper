@@ -13,7 +13,6 @@ package manifest
 import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
-	core "github.com/gardener/landscaper/apis/core"
 	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	managedresource "github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -117,11 +116,6 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ReadinessChecks.DeepCopyInto(&out.ReadinessChecks)
-	if in.DeleteTimeout != nil {
-		in, out := &in.DeleteTimeout, &out.DeleteTimeout
-		*out = new(core.Duration)
-		**out = **in
-	}
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]managedresource.Manifest, len(*in))

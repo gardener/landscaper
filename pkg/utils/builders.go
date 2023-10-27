@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -29,6 +29,7 @@ type DeployItemBuilder struct {
 	annotations           map[string]string
 	Context               string
 	generateJobID         bool
+	timeout               *lsv1alpha1.Duration
 }
 
 // NewDeployItemBuilder creates a new deploy item builder
@@ -121,6 +122,11 @@ func (b *DeployItemBuilder) WithContext(name string) *DeployItemBuilder {
 	return b
 }
 
+func (b *DeployItemBuilder) WithTimeout(timeout time.Duration) *DeployItemBuilder {
+	b.timeout = &lsv1alpha1.Duration{Duration: timeout}
+	return b
+}
+
 func (b *DeployItemBuilder) GenerateJobID() *DeployItemBuilder {
 	b.generateJobID = true
 	return b
@@ -143,6 +149,7 @@ func (b *DeployItemBuilder) Build() (*lsv1alpha1.DeployItem, error) {
 	di.Spec.Target = b.target
 	di.Spec.Configuration = ext
 	di.Spec.Context = b.Context
+	di.Spec.Timeout = b.timeout
 
 	if b.ObjectKey != nil {
 		di.Namespace = b.ObjectKey.Namespace

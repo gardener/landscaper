@@ -316,11 +316,6 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ReadinessChecks.DeepCopyInto(&out.ReadinessChecks)
-	if in.DeleteTimeout != nil {
-		in, out := &in.DeleteTimeout, &out.DeleteTimeout
-		*out = new(core.Duration)
-		**out = **in
-	}
 	in.Chart.DeepCopyInto(&out.Chart)
 	if in.Values != nil {
 		in, out := &in.Values, &out.Values

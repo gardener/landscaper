@@ -16,10 +16,6 @@ type ReadinessCheckConfiguration struct {
 	// DisableDefault allows to disable the default readiness checks.
 	// +optional
 	DisableDefault bool `json:"disableDefault,omitempty"`
-	// Timeout is the time to wait before giving up on a resource to be ready.
-	// Defaults to 180s.
-	// +optional
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
 	// CustomReadinessChecks is a set of custom readiness check configurations
 	// +optional
 	CustomReadinessChecks []CustomReadinessCheckConfiguration `json:"custom,omitempty"`
@@ -29,8 +25,6 @@ type ReadinessCheckConfiguration struct {
 type CustomReadinessCheckConfiguration struct {
 	// Name is the name of the ReadinessCheck
 	Name string `json:"name"`
-	// Timeout is the value after which a readiness check should time out
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
 	// Disabled deactivates this custom ReadinessCheck
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`

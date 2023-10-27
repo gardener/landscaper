@@ -1570,12 +1570,6 @@ func schema_gardener_landscaper_apis_config_DeployItemTimeouts(ref common.Refere
 							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
 						},
 					},
-					"ProgressingDefault": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ProgressingDefault specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to ten minutes if not specified.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
-						},
-					},
 				},
 			},
 		},
@@ -2514,12 +2508,6 @@ func schema_landscaper_apis_config_v1alpha1_DeployItemTimeouts(ref common.Refere
 					"abort": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Abort specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
-					"progressingDefault": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ProgressingDefault specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to ten minutes if not specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
@@ -8987,12 +8975,6 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"),
 						},
 					},
-					"deleteTimeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
 					"chart": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Chart defines helm chart to be templated and applied.",
@@ -9075,7 +9057,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
@@ -9359,12 +9341,6 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"),
 						},
 					},
-					"deleteTimeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
 					"manifests": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Manifests contains a list of manifests that should be applied in the target cluster",
@@ -9388,7 +9364,7 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -9616,12 +9592,6 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"),
 						},
 					},
-					"deleteTimeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
 					"manifests": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Manifests contains a list of manifests that should be applied in the target cluster",
@@ -9652,7 +9622,7 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
@@ -9846,12 +9816,6 @@ func schema_apis_deployer_utils_managedresource_Export(ref common.ReferenceCallb
 				Description: "Export describes one export that is read from a resource.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"timeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Timeout defines the timeout that the exporter waits for the value in the jsonpath to occur.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
 					"key": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Key is the key that the value from JSONPath is exported to.",
@@ -9885,7 +9849,7 @@ func schema_apis_deployer_utils_managedresource_Export(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference"},
 	}
 }
 
@@ -9896,12 +9860,6 @@ func schema_apis_deployer_utils_managedresource_Exports(ref common.ReferenceCall
 				Description: "Exports describes one export that is read from a resource.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"defaultTimeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DefaultTimeout defines the default timeout for all exports that the exporter waits for the value in the jsonpath to occur.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
 					"exports": {
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"array"},
@@ -9919,7 +9877,7 @@ func schema_apis_deployer_utils_managedresource_Exports(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export"},
+			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export"},
 	}
 }
 
@@ -10082,12 +10040,6 @@ func schema_apis_deployer_utils_readinesschecks_CustomReadinessCheckConfiguratio
 							Format:      "",
 						},
 					},
-					"timeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Timeout is the value after which a readiness check should time out",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
 					"disabled": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Disabled deactivates this custom ReadinessCheck",
@@ -10134,7 +10086,7 @@ func schema_apis_deployer_utils_readinesschecks_CustomReadinessCheckConfiguratio
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.LabelSelectorSpec", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.RequirementSpec"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.LabelSelectorSpec", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.RequirementSpec"},
 	}
 }
 
@@ -10198,12 +10150,6 @@ func schema_apis_deployer_utils_readinesschecks_ReadinessCheckConfiguration(ref 
 							Format:      "",
 						},
 					},
-					"timeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Timeout is the time to wait before giving up on a resource to be ready. Defaults to 180s.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
 					"custom": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CustomReadinessChecks is a set of custom readiness check configurations",
@@ -10222,7 +10168,7 @@ func schema_apis_deployer_utils_readinesschecks_ReadinessCheckConfiguration(ref 
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.CustomReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.CustomReadinessCheckConfiguration"},
 	}
 }
 

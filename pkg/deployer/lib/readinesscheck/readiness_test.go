@@ -130,7 +130,7 @@ var _ = Describe("WaitForObjectsReady", func() {
 		err := WaitForObjectsReady(ctx, 20*time.Second, fakeClient,
 			getObjectsFunc,
 			checkObjectsFunc,
-			&MockInterruptionChecker{})
+			&MockInterruptionChecker{}, "test")
 
 		Expect(err).ToNot(HaveOccurred())
 	})

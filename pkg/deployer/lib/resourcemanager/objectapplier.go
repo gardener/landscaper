@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/imdario/mergo"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +24,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	lserrors "github.com/gardener/landscaper/apis/errors"
@@ -32,6 +32,14 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
+)
+
+const (
+	TimeoutCheckpointDeployerCleanupOrphaned                 = "deployer: cleanup orphaned"
+	TimeoutCheckpointDeployerProcessManagedResourceManifests = "deployer: process managed resource manifests"
+	TimeoutCheckpointDeployerProcessManifests                = "deployer: process manifests"
+	TimeoutCheckpointDeployerApplyManifests                  = "deployer: apply manifests"
 )
 
 // ApplyManifests creates or updates all configured manifests.
@@ -51,7 +59,7 @@ type ManifestApplierOptions struct {
 	DefaultNamespace string
 
 	DeployItemName   string
-	DeleteTimeout    time.Duration
+	DeployItem       *lsv1alpha1.DeployItem
 	UpdateStrategy   manifestv1alpha2.UpdateStrategy
 	Manifests        []managedresource.Manifest
 	ManagedResources managedresource.ManagedResourceStatusList
@@ -66,7 +74,7 @@ type ManifestApplier struct {
 	defaultNamespace string
 
 	deployItemName   string
-	deleteTimeout    time.Duration
+	deployItem       *lsv1alpha1.DeployItem
 	updateStrategy   manifestv1alpha2.UpdateStrategy
 	manifests        []managedresource.Manifest
 	managedResources managedresource.ManagedResourceStatusList
@@ -108,8 +116,8 @@ func NewManifestApplier(opts ManifestApplierOptions) *ManifestApplier {
 		decoder:            opts.Decoder,
 		kubeClient:         opts.KubeClient,
 		defaultNamespace:   opts.DefaultNamespace,
+		deployItem:         opts.DeployItem,
 		deployItemName:     opts.DeployItemName,
-		deleteTimeout:      opts.DeleteTimeout,
 		updateStrategy:     opts.UpdateStrategy,
 		manifests:          opts.Manifests,
 		managedResources:   opts.ManagedResources,
@@ -125,7 +133,7 @@ func (a *ManifestApplier) GetManagedResourcesStatus() managedresource.ManagedRes
 
 // Apply creates or updates all configured manifests.
 func (a *ManifestApplier) Apply(ctx context.Context) error {
-	if err := a.prepareManifests(); err != nil {
+	if err := a.prepareManifests(ctx); err != nil {
 		return err
 	}
 
@@ -137,6 +145,8 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 	// we can then compare which one need to be cleaned up.
 	oldManagedResources := a.managedResources
 	a.managedResources = make(managedresource.ManagedResourceStatusList, 0)
+
+	var timeoutErr lserrors.LsError
 	for _, list := range a.manifestExecutions {
 		var (
 			wg               = sync.WaitGroup{}
@@ -144,6 +154,11 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 			mux              sync.Mutex
 		)
 		for _, m := range list {
+
+			if _, timeoutErr = timeout.TimeoutExceeded(ctx, a.deployItem, TimeoutCheckpointDeployerApplyManifests); timeoutErr != nil {
+				break
+			}
+
 			wg.Add(1)
 			go func(m *Manifest) {
 				defer wg.Done()
@@ -161,6 +176,11 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 			}(m)
 		}
 		wg.Wait()
+
+		if timeoutErr != nil {
+			return timeoutErr
+		}
+
 		sort.Sort(managesResourceList(managedResources))
 		a.managedResources = append(a.managedResources, managedResources...)
 	}
@@ -331,8 +351,11 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 	var (
 		allErrs []error
 		wg      sync.WaitGroup
+		errMux  sync.Mutex
 	)
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "cleanupOrphanedResources")
+
+	var timeoutErr lserrors.LsError
 
 	for _, mr := range managedResources {
 		logger2 := logger.WithValues(lc.KeyResource, types.NamespacedName{Namespace: mr.Resource.Namespace, Name: mr.Resource.Name}.String(), lc.KeyResourceKind, mr.Resource.Kind)
@@ -359,20 +382,32 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 			continue
 		}
 
+		timeout, tmpErr := timeout.TimeoutExceeded(ctx, a.deployItem, TimeoutCheckpointDeployerCleanupOrphaned)
+		timeoutErr = tmpErr
+		if timeoutErr != nil {
+			break
+		}
+
 		if !containsObjectRef(ref, a.managedResources) {
 			logger2.Debug("Object is orphaned and will be deleted")
 			wg.Add(1)
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
 				// Delete object and ensure it is actually deleted from the cluster.
-				err := kutil.DeleteAndWaitForObjectDeleted(ctx, a.kubeClient, a.deleteTimeout, obj)
+				err := kutil.DeleteAndWaitForObjectDeleted(ctx, a.kubeClient, timeout, obj)
 				if err != nil {
+					errMux.Lock()
 					allErrs = append(allErrs, err)
+					errMux.Unlock()
 				}
 			}(obj)
 		}
 	}
 	wg.Wait()
+
+	if timeoutErr != nil {
+		return timeoutErr
+	}
 
 	if len(allErrs) == 0 {
 		return nil
@@ -388,7 +423,7 @@ func crdIdentifier(gvk apischema.GroupVersionKind) string {
 }
 
 // prepareManifests sorts all manifests.
-func (a *ManifestApplier) prepareManifests() error {
+func (a *ManifestApplier) prepareManifests(ctx context.Context) error {
 	a.manifestExecutions = [3][]*Manifest{}
 	crdNamespacedInfo := map[string]bool{}
 	todo := []*Manifest{}
@@ -399,6 +434,11 @@ func (a *ManifestApplier) prepareManifests() error {
 	}
 
 	for _, obj := range managedResourceManifests {
+
+		if _, err := timeout.TimeoutExceeded(ctx, a.deployItem, TimeoutCheckpointDeployerProcessManagedResourceManifests); err != nil {
+			return err
+		}
+
 		typeMeta := metav1.TypeMeta{}
 		if err := json.Unmarshal(obj.Manifest.Raw, &typeMeta); err != nil {
 			return fmt.Errorf("unable to parse type metadata: %w", err)
@@ -431,6 +471,10 @@ func (a *ManifestApplier) prepareManifests() error {
 		}
 	}
 	for _, manifest := range todo {
+		if _, err := timeout.TimeoutExceeded(ctx, a.deployItem, TimeoutCheckpointDeployerProcessManifests); err != nil {
+			return err
+		}
+
 		// check whether the resource is
 		namespaced := false
 		apiresource, err := a.apiResourceHandler.GetApiResource(manifest)

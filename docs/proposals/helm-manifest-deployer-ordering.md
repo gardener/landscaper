@@ -48,7 +48,7 @@ The basic order of deleting the deployed manifests remains the same as before an
 
 The deletion continues only with the next object/deletion group if all objects from the groups before are gone. This is 
 different to the current approach. The deletion is tried as long until all objects of all 3 deletion groups are gone
-or the specified configurable timeout (default 5 min.) expires and the deletion failed.
+or the specified configurable timeout (default 10 min.) expires and the deletion failed.
 
 ## Custom Deletion Behaviour
 

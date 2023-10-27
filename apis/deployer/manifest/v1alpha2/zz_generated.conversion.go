@@ -16,7 +16,6 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
-	core "github.com/gardener/landscaper/apis/core"
 	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
@@ -195,7 +194,6 @@ func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguratio
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
-	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
@@ -211,7 +209,6 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguratio
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
-	out.DeleteTimeout = (*v1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))

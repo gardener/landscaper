@@ -21,10 +21,6 @@ readinessChecks:
   # Allows to disable the default readiness checks.
   # optional; set to false by default.
   disableDefault: true
-  # Defines the time to wait before giving up on a resource
-  # to be ready. Should be changed with long startup time pods.
-  # optional; default to 180 seconds/3 minutes.
-  timeout: 3m
   # Configuration of custom readiness checks which are used
   # to check on custom fields and their values
   # especially useful for resources that came in through CRDs
@@ -32,9 +28,6 @@ readinessChecks:
   custom:
   # the name of the custom readiness check, required
   - name: myCustomReadinessCheck
-    # timeout of the custom readiness check
-    # optional, defaults to the timeout stated above
-    timeout: 2m
     # temporarily disable this custom readiness check, useful for test setups
     # optional, defaults to false
     disabled: false

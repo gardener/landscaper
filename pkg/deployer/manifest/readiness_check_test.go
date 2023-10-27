@@ -113,6 +113,7 @@ var _ = Describe("ReadinessCheck", func() {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
+			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -186,6 +187,7 @@ var _ = Describe("ReadinessCheck", func() {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
+			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -225,9 +227,6 @@ var _ = Describe("ReadinessCheck", func() {
 			manifestConfig.ReadinessChecks = readinesschecks.ReadinessCheckConfiguration{
 				CustomReadinessChecks: []readinesschecks.CustomReadinessCheckConfiguration{
 					{
-						Timeout: &lsv1alpha1.Duration{
-							Duration: 1 * time.Second,
-						},
 						Name: "secret-selector",
 						Resource: []lsv1alpha1.TypedObjectReference{
 							{
@@ -257,9 +256,11 @@ var _ = Describe("ReadinessCheck", func() {
 				Key(state.Namespace, "my-cm").
 				ProviderConfig(manifestConfig).
 				Target(target.Namespace, target.Name).
+				WithTimeout(1 * time.Second).
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
+			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -327,6 +328,7 @@ var _ = Describe("ReadinessCheck", func() {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
+			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -407,6 +409,7 @@ var _ = Describe("ReadinessCheck", func() {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
+			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -487,6 +490,7 @@ var _ = Describe("ReadinessCheck", func() {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
+			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -558,6 +562,7 @@ var _ = Describe("ReadinessCheck", func() {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
+			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
@@ -629,6 +634,7 @@ var _ = Describe("ReadinessCheck", func() {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
+			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
 			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())

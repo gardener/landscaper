@@ -55,7 +55,6 @@ deployExecutions:
                     name: test-secret
                     namespace: example
                   jsonPath: .data.token
-                  timeout: 2m
 
 exportExecutions:
   - name: default-export-execution

@@ -115,11 +115,6 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ReadinessChecks.DeepCopyInto(&out.ReadinessChecks)
-	if in.DeleteTimeout != nil {
-		in, out := &in.DeleteTimeout, &out.DeleteTimeout
-		*out = new(corev1alpha1.Duration)
-		**out = **in
-	}
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]*runtime.RawExtension, len(*in))
