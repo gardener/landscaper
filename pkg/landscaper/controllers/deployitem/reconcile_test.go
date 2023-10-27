@@ -47,7 +47,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		}
 	})
 
-	It("Should detect pickup timeouts", func() {
+	It("should detect pickup timeouts", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -71,6 +71,41 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed))
 		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
+		Expect(di.Status.LastError).ToNot(BeNil())
+		Expect(di.Status.LastError.Message).ToNot(ContainSubstring("Target"))
+	})
+
+	It("should detect if the reason for a pickup timeout is a missing target", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+
+		var err error
+		state, err = testenv.InitResources(ctx, testdataDir)
+		Expect(err).ToNot(HaveOccurred())
+
+		By("Get test deploy items")
+		di := &lsv1alpha1.DeployItem{}
+		diReq := testutils.Request("mock-di-prog", state.Namespace)
+		// do not reconcile with mock deployer
+
+		By("Set timed out reconcile timestamp annotation")
+		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
+		// add reference to non-existing Target
+		di.Spec.Target = &lsv1alpha1.ObjectReference{
+			Name: "null",
+		}
+		utils.ExpectNoError(testenv.Client.Update(ctx, di))
+		timedOut := metav1.Time{Time: time.Now().Add(-(testPickupTimeoutDuration.Duration + (5 * time.Second)))}
+
+		Expect(testutils.UpdateJobIdForDeployItem(ctx, testenv, di, timedOut)).ToNot(HaveOccurred())
+
+		By("Verify that timed out deploy items are in 'Failed' phase")
+		testutils.ShouldReconcile(ctx, deployItemController, diReq)
+		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed))
+		Expect(utils2.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
+		Expect(di.Status.LastError).ToNot(BeNil())
+		Expect(di.Status.LastError.Message).To(ContainSubstring("Target"))
 	})
 
 })
