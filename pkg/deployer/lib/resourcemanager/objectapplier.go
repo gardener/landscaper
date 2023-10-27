@@ -7,6 +7,7 @@ package resourcemanager
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -21,6 +22,7 @@ import (
 	apischema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -349,9 +351,10 @@ func (a *ManifestApplier) injectLabels(obj client.Object) {
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
 func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedResources []managedresource.ManagedResourceStatus) error {
 	var (
-		allErrs []error
-		wg      sync.WaitGroup
-		errMux  sync.Mutex
+		allErrs              []error
+		containsTimeoutError bool
+		wg                   sync.WaitGroup
+		errMux               sync.Mutex
 	)
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "cleanupOrphanedResources")
 
@@ -396,6 +399,14 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 				// Delete object and ensure it is actually deleted from the cluster.
 				err := kutil.DeleteAndWaitForObjectDeleted(ctx, a.kubeClient, timeout, obj)
 				if err != nil {
+					if wait.Interrupted(err) {
+						msg := fmt.Sprintf("timeout at: %q - resource: %s %s/%s",
+							TimeoutCheckpointDeployerCleanupOrphaned, obj.GroupVersionKind().Kind, obj.GetNamespace(), obj.GetName())
+						err = lserrors.NewWrappedError(err, "ManifestApplier.cleanupOrphanedResources",
+							lsv1alpha1.ProgressingTimeoutReason, msg, lsv1alpha1.ErrorTimeout)
+						containsTimeoutError = true
+					}
+
 					errMux.Lock()
 					allErrs = append(allErrs, err)
 					errMux.Unlock()
@@ -409,10 +420,18 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 		return timeoutErr
 	}
 
-	if len(allErrs) == 0 {
-		return nil
+	if len(allErrs) > 0 {
+		err := errors.Join(allErrs...)
+
+		if containsTimeoutError {
+			err = lserrors.NewWrappedError(err, "ManifestApplier.cleanupOrphanedResources",
+				lsv1alpha1.ProgressingTimeoutReason, TimeoutCheckpointDeployerCleanupOrphaned, lsv1alpha1.ErrorTimeout)
+		}
+
+		return err
 	}
-	return apimacherrors.NewAggregate(allErrs)
+
+	return nil
 }
 
 // crdIdentifier generates an identifier string from a GroupVersionKind object
