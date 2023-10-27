@@ -7,11 +7,12 @@ package template_test
 import (
 	"context"
 	"encoding/json"
-	apiconfig "github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	"os"
 	"path/filepath"
 	"testing"
+
+	apiconfig "github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/pkg/components/registries"
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 
@@ -323,11 +324,11 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-" + schemaVersionSuffix, "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix, Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-" + schemaVersionSuffix + "-ref1", "1.0.0"})
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix + "-ref1", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-" + schemaVersionSuffix + "-ref2", "1.0.0"})
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix + "-ref2", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersionList := &model.ComponentVersionList{
@@ -386,11 +387,11 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-v2-mixed", "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-mixed", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-v2-ref1", "1.0.0"})
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-ref1", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-v3alpha1-ref2", "1.0.0"})
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-ref2", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersionList := &model.ComponentVersionList{
@@ -442,11 +443,11 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-v3alpha1-mixed", "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-mixed", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-v2-ref1", "1.0.0"})
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-ref1", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{repositoryContext, "example.com/landscaper-component-v3alpha1-ref2", "1.0.0"})
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-ref2", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersionList := &model.ComponentVersionList{
