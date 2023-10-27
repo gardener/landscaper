@@ -45,10 +45,6 @@ func RegistryTest(f *framework.Framework) {
 		f.Log().Logln("No registry configured skipping the registry tests...")
 		return
 	}
-	log, err := logging.New(nil)
-	if err != nil {
-		return
-	}
 
 	_ = Describe("RegistryTest", func() {
 
@@ -56,6 +52,12 @@ func RegistryTest(f *framework.Framework) {
 			state = f.Register()
 			ctx   context.Context
 		)
+
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
 
 		BeforeEach(func() {
 			ctx = context.Background()

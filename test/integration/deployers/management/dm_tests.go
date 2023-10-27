@@ -7,6 +7,7 @@ package management
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"sync"
 	"time"
 
@@ -41,8 +42,16 @@ func DeployerManagementTests(f *framework.Framework) {
 			previousEnvironments          sets.String //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 		)
 
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
 		BeforeEach(func() {
 			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
+
 			drList := &lsv1alpha1.DeployerRegistrationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, drList))
 			previousDeployerRegistrations = sets.NewString()

@@ -6,6 +6,7 @@ package tutorial
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path/filepath"
 	"time"
 
@@ -25,7 +26,21 @@ import (
 
 func AggregatedBlueprintForNewReconcile(f *framework.Framework) {
 	_ = Describe("AggregatedBlueprint", func() {
-		state := f.Register()
+		var (
+			state = f.Register()
+			ctx   context.Context
+		)
+
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
+		BeforeEach(func() {
+			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
+		})
 
 		It("should deploy a nginx ingress controller and a echo-server together with an aggregated blueprint", func() {
 			var (
@@ -34,7 +49,7 @@ func AggregatedBlueprintForNewReconcile(f *framework.Framework) {
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				nginxInstResource        = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
 			)
-			ctx := context.Background()
+
 			defer ctx.Done()
 
 			By("Create Target for the installation")

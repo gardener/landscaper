@@ -6,6 +6,7 @@ package webhook
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -34,8 +35,15 @@ func WebhookTest(f *framework.Framework) {
 			state = f.Register()
 		)
 
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
 		BeforeEach(func() {
 			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
 		})
 
 		AfterEach(func() {

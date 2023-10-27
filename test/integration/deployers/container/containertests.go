@@ -6,6 +6,7 @@ package container
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path"
 	"path/filepath"
 	"time"
@@ -70,8 +71,16 @@ func ContainerTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, doData))
 		}
 	)
+
+	log, err := logging.GetLogger()
+	if err != nil {
+		f.Log().Logfln("Error fetching logger: %w", err)
+		return
+	}
+
 	BeforeEach(func() {
 		ctx = context.Background()
+		ctx = logging.NewContext(ctx, log)
 	})
 
 	AfterEach(func() {

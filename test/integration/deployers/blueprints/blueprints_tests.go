@@ -7,6 +7,7 @@ package blueprints
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"time"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -128,8 +129,15 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		blueprintResourceName   = td.BlueprintResourceName
 	)
 
+	log, err := logging.GetLogger()
+	if err != nil {
+		f.Log().Logfln("Error fetching logger: %w", err)
+		return
+	}
+
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
+		ctx = logging.NewContext(ctx, log)
 	})
 
 	ginkgo.AfterEach(func() {

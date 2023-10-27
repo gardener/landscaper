@@ -6,6 +6,7 @@ package tutorial
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path/filepath"
 	"time"
 
@@ -28,7 +29,22 @@ import (
 // ExternalJSONSchemaTest tests the jsonschema tutorial.
 func ExternalJSONSchemaTestForNewReconcile(f *framework.Framework) {
 	_ = Describe("ExternalJSONSchemaTest", func() {
-		state := f.Register()
+
+		var (
+			state = f.Register()
+			ctx   context.Context
+		)
+
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
+		BeforeEach(func() {
+			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
+		})
 
 		It("should deploy an echo server with resources defined by an external jsonschema", func() {
 			var (
@@ -37,7 +53,7 @@ func ExternalJSONSchemaTestForNewReconcile(f *framework.Framework) {
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
 			)
-			ctx := context.Background()
+
 			defer ctx.Done()
 
 			By("Create Target for the installation")

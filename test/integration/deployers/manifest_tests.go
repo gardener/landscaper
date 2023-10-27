@@ -6,6 +6,7 @@ package deployers
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path"
 	"time"
 
@@ -39,12 +40,19 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			ctx context.Context
 		)
 
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
 		const (
 			timeout = 2 * time.Minute
 		)
 
 		BeforeEach(func() {
 			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
 		})
 
 		AfterEach(func() {
