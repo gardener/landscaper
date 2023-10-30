@@ -194,7 +194,8 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
-			imageAccess, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
+			imageAccess1, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
+			imageAccess2, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/yourimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &types.ComponentDescriptor{
 				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
@@ -208,12 +209,23 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 					Resources: []types.Resource{
 						{
 							IdentityObjectMeta: cdv2.IdentityObjectMeta{
-								Name:    "mycustomimage",
-								Version: "1.0.0",
-								Type:    cdv2.OCIImageType,
+								Name:          "mycustomimage",
+								Version:       "1.0.0",
+								Type:          cdv2.OCIImageType,
+								ExtraIdentity: cdv2.Identity{"class": "image"},
 							},
 							Relation: cdv2.ExternalRelation,
-							Access:   &imageAccess,
+							Access:   &imageAccess1,
+						},
+						{
+							IdentityObjectMeta: cdv2.IdentityObjectMeta{
+								Name:          "yourcustomimage",
+								Version:       "1.0.0",
+								Type:          cdv2.OCIImageType,
+								ExtraIdentity: cdv2.Identity{"class": "image"},
+							},
+							Relation: cdv2.ExternalRelation,
+							Access:   &imageAccess2,
 						},
 					},
 				},
@@ -234,6 +246,12 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
+			if blue.DeployExecutions[0].Type == "GoTemplate" {
+				Expect(config).To(HaveKeyWithValue("images", []interface{}{
+					map[string]interface{}{"image": "quay.io/example/myimage:1.0.0"},
+					map[string]interface{}{"image": "quay.io/example/yourimage:1.0.0"},
+				}))
+			}
 		},
 			Entry("template with component descriptor v2", common.SCHEMA_VERSION_V2),
 			Entry("template with component descriptor v3alpha1", common.SCHEMA_VERSION_V3ALPHA1),
