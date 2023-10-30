@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
-
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -28,6 +26,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/agent"
+	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	deployitemctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
@@ -237,10 +236,6 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 		}
 	}
 
-	if err := healthcheck.AddControllersToManager(ctx, ctrlLogger, hostMgr, o.Config.LsDeployments); err != nil {
-		return fmt.Errorf("unable to register health check controller: %w", err)
-	}
-
 	if err := deployitemctrl.AddControllerToManager(ctrlLogger,
 		lsMgr,
 		o.Config.Controllers.DeployItems,
@@ -253,6 +248,14 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		healthChecker := healthcheck.NewHealthChecker(o.Config.LsDeployments, hostMgr.GetClient())
+		if err := healthChecker.StartPeriodicalHealthCheck(ctx, ctrlLogger); err != nil {
+			return err
+		}
+		return nil
+	})
 
 	eg.Go(func() error {
 		lockCleaner := lock.NewLockCleaner(lsMgr.GetClient(), hostMgr.GetClient())
