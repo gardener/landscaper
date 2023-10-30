@@ -1,0 +1,20 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: github.com/gardener/landscaper-examples/guided-tour/external-blueprint
+  provider:
+    name: internal
+  version: v1.0.0
+  repositoryContexts:
+    - type: ociRegistry
+      baseUrl: eu.gcr.io/gardener-project/landscaper/examples
+spec:
+  resources:
+    - name: blueprint
+      type: blueprint
+      version: 1.0.0
+      relation: external
+      access:
+        type: ociRegistry
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0
+

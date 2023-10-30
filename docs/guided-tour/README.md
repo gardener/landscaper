@@ -19,6 +19,13 @@ In this tour, you will learn about the different Landscaper features by simple e
 
   It is possible that some or all of these clusters coincide, e.g. in the most simplistic approach, you have only one cluster. Such a "one-cluster-setup" is the easiest way to start working with the Landscaper.
 
+> **_NOTE:_** **The Landscaper now also supports [OCM (Open Component Model)](https://ocm.software/) Component 
+> Descriptors [Version 3](https://ocm.software/docs/component-descriptors/version-3/) (also known as _OCM Component 
+> Descriptors_) additionally to [Version 2](https://ocm.software/docs/component-descriptors/version-2/) (also known as
+> Cnudie Component Descriptors).**
+>
+> The affected examples were complemented accordingly to consider both variants!
+
 ## A Hello World Example
 
 [1. Hello World Example](./hello-world)

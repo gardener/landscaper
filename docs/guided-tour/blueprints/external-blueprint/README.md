@@ -18,8 +18,9 @@ We have uploaded the blueprint
 
 ## The Component Descriptor
 
-An Installation references its blueprint indirectly via a so-called [component descriptor](../../../concepts/Glossary.md#_component-descriptor_). In general, a component descriptor is used to describe all required resources for the deployment of a component. The [component descriptor for the current example](./component-descriptor.yaml) contains only one resource, namely the 
-blueprint. We will describe component descriptors more detailed in later examples.
+An Installation references its blueprint indirectly via a so-called [component descriptor](../../../concepts/Glossary.md#_component-descriptor_). In general, a component descriptor is used to describe all required resources for the deployment of a component. The [component descriptor for the current example](component-descriptor) contains only one resource, namely the 
+blueprint. As you might have noticed when clicking on the link to the component descriptor for the current example, there currently exist two different versions - v2 and v3. While v3 theoretically has more capabilities than v2, they are functionally identical for the scope of these examples. For more information, refer to https://ocm.software/.   
+We will describe component descriptors more detailed in later examples.
 
 We have uploaded the component descriptor for our example [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/external-blueprint) into an OCI registry, from where the Landscaper can access it. You can find the command which we have used to upload the component descriptor in this script: 
 [commands/push-component-descriptor.sh](./commands/push-component-descriptor.sh).
@@ -46,7 +47,7 @@ blueprint:
 
 - The fields `componentDescriptor.ref.componentName` and `componentDescriptor.ref.version` are then used to locate the component descriptor in that registry.
 
-- The [component descriptor](./component-descriptor.yaml) contains a list of resources, each of which has a name. Field `blueprint.ref.resourceName` in the Installation specifies the name of the blueprint resource in the component descriptor. 
+- The [component descriptor](component-descriptor) contains a list of resources, each of which has a name. Field `blueprint.ref.resourceName` in the Installation specifies the name of the blueprint resource in the component descriptor. 
 
 
 ## Procedure
