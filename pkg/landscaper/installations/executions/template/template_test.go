@@ -195,6 +195,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
 			imageAccess1, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
+			Expect(err).ToNot(HaveOccurred())
 			imageAccess2, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/yourimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &types.ComponentDescriptor{
