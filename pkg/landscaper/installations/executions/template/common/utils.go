@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	OCM_SCHEMA_VERSION      = "OCM_SCHEMA_VERSION"
+	OCM_SCHEMA_VERSION      = "ocmSchemaVersion"
 	SCHEMA_VERSION_V2       = cdv2.SchemaVersion
 	SCHEMA_VERSION_V3ALPHA1 = v3alpha1.GroupVersion
 )
