@@ -56,7 +56,7 @@ provide access to the involved component descriptors:
   To give an example, a list with the names of the involved components can be obtained as follows:
   ```yaml
   componentNames:
-  {{ range $index, $comp := .components }}
+  {{ range $index, $comp := .components.components }}
     - {{ $comp.component.name }}  
   {{ end }}
   ```
