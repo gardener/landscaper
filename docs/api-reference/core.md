@@ -319,74 +319,17 @@ Refer to the Kubernetes API documentation for the fields of the
 </tr>
 <tr>
 <td>
-<code>repositoryContext</code></br>
+<code>ContextConfiguration</code></br>
 <em>
-<a href="https://pkg.go.dev/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
-github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
+<a href="#landscaper.gardener.cloud/v1alpha1.ContextConfiguration">
+ContextConfiguration
 </a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>RepositoryContext defines the context of the component repository to resolve blueprints.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>useOCM</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>UseOCM defines whether OCM is used to process installations that reference this context.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>registryPullSecrets</code></br>
-<em>
-<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#localobjectreference-v1-core">
-[]Kubernetes core/v1.LocalObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RegistryPullSecrets defines a list of registry credentials that are used to
-pull blueprints, component descriptors and jsonschemas from the respective registry.
-For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
-Note that the type information is used to determine the secret key and the type of the secret.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configurations</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
-The key should use a dns-like syntax to express the purpose and avoid conflicts.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>componentVersionOverwrites</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object
-The overwrites object has to be in the same namespace as the context.
-If the string is empty, no overwrites will be used.</p>
+<p>
+(Members of <code>ContextConfiguration</code> are embedded into this type.)
+</p>
 </td>
 </tr>
 </tbody>
@@ -1771,10 +1714,10 @@ TargetSyncStatus
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.Context">Context</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DataObject">DataObject</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplate">InstallationTemplate</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.BlueprintStaticDataSource">BlueprintStaticDataSource</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ContextConfiguration">ContextConfiguration</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.Default">Default</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployerInstallationTemplate">DeployerInstallationTemplate</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InlineBlueprint">InlineBlueprint</a>, 
@@ -2483,6 +2426,96 @@ string
 <td>
 <em>(Optional)</em>
 <p>Key is the name of the key in the configmap that holds the data.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ContextConfiguration">ContextConfiguration
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Context">Context</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>repositoryContext</code></br>
+<em>
+<a href="https://pkg.go.dev/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
+github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RepositoryContext defines the context of the component repository to resolve blueprints.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>useOCM</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UseOCM defines whether OCM is used to process installations that reference this context.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>registryPullSecrets</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RegistryPullSecrets defines a list of registry credentials that are used to
+pull blueprints, component descriptors and jsonschemas from the respective registry.
+For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
+Note that the type information is used to determine the secret key and the type of the secret.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configurations</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
+The key should use a dns-like syntax to express the purpose and avoid conflicts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>componentVersionOverwrites</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object
+The overwrites object has to be in the same namespace as the context.
+If the string is empty, no overwrites will be used.</p>
 </td>
 </tr>
 </tbody>

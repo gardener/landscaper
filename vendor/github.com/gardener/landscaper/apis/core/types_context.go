@@ -29,6 +29,10 @@ type Context struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	ContextConfiguration `json:",inline"`
+}
+
+type ContextConfiguration struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`

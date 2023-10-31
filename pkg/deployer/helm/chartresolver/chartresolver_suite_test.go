@@ -40,7 +40,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0",
 			}
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{UseOCM: false}, nil, nil, nil)
+			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -53,7 +53,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
 			}
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{UseOCM: false}, nil, nil, nil)
+			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})

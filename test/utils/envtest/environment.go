@@ -148,9 +148,8 @@ func (e *Environment) initResources(ctx context.Context, resourcesPath string, c
 // InitDefaultContextFromInst creates a default landsacpe context object from a installation.
 func (e *Environment) InitDefaultContextFromInst(ctx context.Context, state *State, inst *lsv1alpha1.Installation) error {
 	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	lsCtx := &lsv1alpha1.Context{
-		RepositoryContext: cdRef.RepositoryContext,
-	}
+	lsCtx := &lsv1alpha1.Context{}
+	lsCtx.RepositoryContext = cdRef.RepositoryContext
 	lsCtx.Name = lsv1alpha1.DefaultContextName
 	lsCtx.Namespace = inst.Namespace
 	return state.CreateWithClient(ctx, e.Client, lsCtx)
