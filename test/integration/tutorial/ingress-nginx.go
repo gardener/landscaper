@@ -6,6 +6,7 @@ package tutorial
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path/filepath"
 	"time"
 
@@ -27,7 +28,21 @@ import (
 
 func NginxIngressTestForNewReconcile(f *framework.Framework) {
 	_ = Describe("SimpleNginxTest", func() {
-		state := f.Register()
+		var (
+			state = f.Register()
+			ctx   context.Context
+		)
+
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
+		BeforeEach(func() {
+			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
+		})
 
 		It("should deploy a nginx ingress controller", func() {
 			var (
@@ -36,7 +51,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
 			)
-			ctx := context.Background()
+
 			defer ctx.Done()
 
 			By("Create Target for the installation")
@@ -118,7 +133,21 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 	})
 
 	_ = Describe("LocalIngressNginxTest", func() {
-		state := f.Register()
+		var (
+			state = f.Register()
+			ctx   context.Context
+		)
+
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
+		BeforeEach(func() {
+			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
+		})
 
 		It("should deploy a nginx ingress controller with local artifacts", func() {
 			var (
@@ -127,7 +156,6 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
 			)
-			ctx := context.Background()
 			defer ctx.Done()
 
 			By("Create Target for the installation")
