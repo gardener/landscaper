@@ -6,6 +6,7 @@ package rootinstallations
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path"
 	"path/filepath"
 	"time"
@@ -32,8 +33,15 @@ func RootInstallationTests(f *framework.Framework) {
 			ctx   context.Context
 		)
 
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
 		BeforeEach(func() {
 			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
 		})
 
 		AfterEach(func() {

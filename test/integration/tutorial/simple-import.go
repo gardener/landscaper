@@ -6,6 +6,7 @@ package tutorial
 
 import (
 	"context"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path/filepath"
 	"time"
 
@@ -27,7 +28,21 @@ import (
 
 func SimpleImportForNewReconcile(f *framework.Framework) {
 	_ = Describe("SimpleImport", func() {
-		state := f.Register()
+		var (
+			state = f.Register()
+			ctx   context.Context
+		)
+
+		log, err := logging.GetLogger()
+		if err != nil {
+			f.Log().Logfln("Error fetching logger: %w", err)
+			return
+		}
+
+		BeforeEach(func() {
+			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
+		})
 
 		It("should deploy a nginx ingress controller and a echo-server", func() {
 			var (
@@ -38,7 +53,7 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 				nginxInstResource                  = filepath.Join(nginxTutorialResourcesRootDir, "installation.yaml")
 				echoServerInstResource             = filepath.Join(echoServerTutorialResourcesRootDir, "installation.yaml")
 			)
-			ctx := context.Background()
+
 			defer ctx.Done()
 
 			By("Create Target for the installation")
