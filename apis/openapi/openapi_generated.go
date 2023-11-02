@@ -1973,6 +1973,14 @@ func schema_gardener_landscaper_apis_config_LsDeployments(ref common.ReferenceCa
 							Format:      "",
 						},
 					},
+					"LsMainController": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LsMainController is the name of the main Landscaper controller deployment.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"WebHook": {
 						SchemaProps: spec.SchemaProps{
 							Description: "LsController is the name of the Landscaper webhook server deployment.",
@@ -2914,6 +2922,13 @@ func schema_landscaper_apis_config_v1alpha1_LsDeployments(ref common.ReferenceCa
 						SchemaProps: spec.SchemaProps{
 							Description: "LsController is the name of the Landscaper controller deployment.",
 							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lsMainController": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LsMainController is the name of the main Landscaper controller deployment.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

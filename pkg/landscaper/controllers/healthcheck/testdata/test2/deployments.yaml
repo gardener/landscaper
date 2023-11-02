@@ -31,6 +31,36 @@ status:
 ---
 apiVersion: apps/v1
 kind: Deployment
+metadata:
+  name: landscaper-controller-main
+  namespace: {{ .Namespace }}
+  generation: 1
+  labels:
+    app: landscaper-controller
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: landscaper-controller-main
+  template:
+    metadata:
+      labels:
+        app: landscaper-controller-main
+    spec:
+      containers:
+        - name: dummy
+          image: dummy:0.1.0
+
+status:
+  observedGeneration: 1
+  replicas: 5
+  updatedReplicas: 5
+  availableReplicas: 5
+  readyReplicas: 5
+...
+---
+apiVersion: apps/v1
+kind: Deployment
 
 metadata:
   name: landscaper-webhooks

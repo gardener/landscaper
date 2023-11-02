@@ -172,6 +172,7 @@ deployItemTimeouts:
 
 lsDeployments:
   lsController: "{{- include "landscaper.fullname" . }}"
+  lsMainController: "{{- include "landscaper.main.fullname" . }}"
   webHook: "{{- include "landscaper.webhooks.fullname" . }}"
   deploymentsNamespace: "{{ .Release.Namespace }}"
   lsHealthCheckName: "{{- include "landscaper.lsHealthCheckName" . }}"

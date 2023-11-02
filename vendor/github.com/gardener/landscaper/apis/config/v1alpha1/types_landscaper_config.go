@@ -53,6 +53,9 @@ type LandscaperConfiguration struct {
 type LsDeployments struct {
 	// LsController is the name of the Landscaper controller deployment.
 	LsController string `json:"lsController"`
+	// LsMainController is the name of the main Landscaper controller deployment.
+	// +optional
+	LsMainController string `json:"lsMainController,omitempty"`
 	// LsController is the name of the Landscaper webhook server deployment.
 	WebHook string `json:"webHook"`
 	// DeploymentsNamespace is the namespace in which the deployments are located.

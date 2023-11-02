@@ -8,20 +8,16 @@ import (
 	"fmt"
 	"time"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
 	v1 "k8s.io/api/apps/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 // NewLsHealthCheckController creates a new health check controller that reconciles the health  object in the namespaces.
@@ -98,6 +94,11 @@ func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.R
 func (c *lsHealthCheckController) check(ctx context.Context) (lsv1alpha1.LsHealthCheckStatus, string) {
 	if c.lsDeployments != nil {
 		isOk, description := c.checkDeployment(ctx, c.lsDeployments.DeploymentsNamespace, c.lsDeployments.LsController)
+		if !isOk {
+			return lsv1alpha1.LsHealthCheckStatusFailed, description
+		}
+
+		isOk, description = c.checkDeployment(ctx, c.lsDeployments.DeploymentsNamespace, c.lsDeployments.LsMainController)
 		if !isOk {
 			return lsv1alpha1.LsHealthCheckStatusFailed, description
 		}
