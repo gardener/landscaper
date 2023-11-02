@@ -801,6 +801,7 @@ func Convert_config_LocalRegistryConfiguration_To_v1alpha1_LocalRegistryConfigur
 
 func autoConvert_v1alpha1_LsDeployments_To_config_LsDeployments(in *LsDeployments, out *config.LsDeployments, s conversion.Scope) error {
 	out.LsController = in.LsController
+	out.LsMainController = in.LsMainController
 	out.WebHook = in.WebHook
 	out.DeploymentsNamespace = in.DeploymentsNamespace
 	out.LsHealthCheckName = in.LsHealthCheckName
@@ -815,6 +816,7 @@ func Convert_v1alpha1_LsDeployments_To_config_LsDeployments(in *LsDeployments, o
 
 func autoConvert_config_LsDeployments_To_v1alpha1_LsDeployments(in *config.LsDeployments, out *LsDeployments, s conversion.Scope) error {
 	out.LsController = in.LsController
+	out.LsMainController = in.LsMainController
 	out.WebHook = in.WebHook
 	out.DeploymentsNamespace = in.DeploymentsNamespace
 	out.LsHealthCheckName = in.LsHealthCheckName

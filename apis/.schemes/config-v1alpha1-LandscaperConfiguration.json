@@ -400,6 +400,10 @@
           "type": "string",
           "default": ""
         },
+        "lsMainController": {
+          "description": "LsMainController is the name of the main Landscaper controller deployment.",
+          "type": "string"
+        },
         "webHook": {
           "description": "LsController is the name of the Landscaper webhook server deployment.",
           "type": "string",

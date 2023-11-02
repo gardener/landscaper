@@ -43,6 +43,7 @@ var _ = Describe("Reconcile", func() {
 
 		lsDeployments := config.LsDeployments{
 			LsController:         "landscaper-controller",
+			LsMainController:     "landscaper-controller-main",
 			WebHook:              "landscaper-webhooks",
 			DeploymentsNamespace: state.Namespace,
 			LsHealthCheckName:    "landscaper",
@@ -77,6 +78,7 @@ var _ = Describe("Reconcile", func() {
 
 		lsDeployments := config.LsDeployments{
 			LsController:         "landscaper-controller",
+			LsMainController:     "landscaper-controller-main",
 			WebHook:              "landscaper-webhooks",
 			DeploymentsNamespace: state.Namespace,
 			LsHealthCheckName:    "landscaper",
