@@ -23,8 +23,6 @@ In this tour, you will learn about the different Landscaper features by simple e
 > Descriptors [Version 3](https://ocm.software/docs/component-descriptors/version-3/) (also known as _OCM Component 
 > Descriptors_) additionally to [Version 2](https://ocm.software/docs/component-descriptors/version-2/) (also known as
 > Cnudie Component Descriptors).**
->
-> The affected examples were complemented accordingly to consider both variants!
 
 ## A Hello World Example
 
