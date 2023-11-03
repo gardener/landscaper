@@ -303,6 +303,22 @@ func (c *controller) buildResult(phase lsv1alpha1.DeployItemPhase) (reconcile.Re
 	}
 }
 
+func (c *controller) getContext(ctx context.Context, deployItem *lsv1alpha1.DeployItem,
+	operation string) (*lsv1alpha1.Context, lserrors.LsError) {
+
+	contextName := deployItem.Spec.Context
+	if len(contextName) == 0 {
+		contextName = lsv1alpha1.DefaultContextName
+	}
+
+	lsCtx := &lsv1alpha1.Context{}
+	if err := c.lsClient.Get(ctx, kutil.ObjectKey(contextName, deployItem.Namespace), lsCtx); err != nil {
+		return nil, lserrors.NewWrappedError(err, operation, "GetLandscaperContext", err.Error())
+	}
+
+	return lsCtx, nil
+}
+
 func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
 
@@ -315,9 +331,9 @@ func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		}
 	}
 
-	lsCtx := &lsv1alpha1.Context{}
-	if err := c.lsClient.Get(ctx, kutil.ObjectKey(deployItem.Spec.Context, deployItem.Namespace), lsCtx); err != nil {
-		return lserrors.NewWrappedError(err, operation, "GetLandscaperContext", err.Error())
+	lsCtx, lsErr := c.getContext(ctx, deployItem, operation)
+	if lsErr != nil {
+		return lsErr
 	}
 
 	err := c.deployer.Reconcile(ctx, lsCtx, deployItem, rt)
@@ -335,9 +351,9 @@ func (c *controller) delete(ctx context.Context, deployItem *lsv1alpha1.DeployIt
 		// but for security reasons not removed
 		logger.Info("Deleting deployitem %s without uninstall", deployItem.Name)
 	} else {
-		lsCtx := &lsv1alpha1.Context{}
-		if err := c.lsClient.Get(ctx, kutil.ObjectKey(deployItem.Spec.Context, deployItem.Namespace), lsCtx); err != nil {
-			return lserrors.NewWrappedError(err, operation, "GetLandscaperContext", err.Error())
+		lsCtx, lsErr := c.getContext(ctx, deployItem, operation)
+		if lsErr != nil {
+			return lsErr
 		}
 
 		if err := c.deployer.Delete(ctx, lsCtx, deployItem, rt); err != nil {
