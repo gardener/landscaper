@@ -102,6 +102,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Condition":                                          schema_landscaper_apis_core_v1alpha1_Condition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference":                                 schema_landscaper_apis_core_v1alpha1_ConfigMapReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Context":                                            schema_landscaper_apis_core_v1alpha1_Context(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ContextConfiguration":                               schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ContextList":                                        schema_landscaper_apis_core_v1alpha1_ContextList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataExport":                                         schema_landscaper_apis_core_v1alpha1_DataExport(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataImport":                                         schema_landscaper_apis_core_v1alpha1_DataImport(ref),
@@ -3916,6 +3917,69 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 		},
 		Dependencies: []string{
 			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"repositoryContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
+							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+						},
+					},
+					"useOCM": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"registryPullSecrets": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.LocalObjectReference"),
+									},
+								},
+							},
+						},
+					},
+					"configurations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configurations contains arbitrary configuration information for dedicated purposes given by a string key. The key should use a dns-like syntax to express the purpose and avoid conflicts.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"),
+									},
+								},
+							},
+						},
+					},
+					"componentVersionOverwrites": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object The overwrites object has to be in the same namespace as the context. If the string is empty, no overwrites will be used.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 

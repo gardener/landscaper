@@ -73,7 +73,9 @@ var _ = Describe("Execution Operation", func() {
 			Siblings: nil,
 			External: installations.ExternalContext{
 				Context: lsv1alpha1.Context{
-					RepositoryContext: &repositoryContext,
+					ContextConfiguration: lsv1alpha1.ContextConfiguration{
+						RepositoryContext: &repositoryContext,
+					},
 				},
 				ComponentName:    "example.com/root",
 				ComponentVersion: "v1.0.0",
