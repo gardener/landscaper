@@ -1,0 +1,33 @@
+component:
+  componentReferences: []
+  creationTime: "2023-11-03T09:39:54Z"
+  name: github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource
+  provider: internal
+  repositoryContexts: []
+  resources:
+  - access:
+      imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/helm-chart-resource:1.0.0
+      type: ociArtifact
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: ociArtifactDigest/v1
+      value: 52e3c11f792efc6c7695ae7dddaa897ef1a201e2630ee9f387efbfe2061c46b7
+    name: blueprint
+    relation: external
+    type: blueprint
+    version: 1.0.0
+  - access:
+      imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
+      type: ociArtifact
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: ociArtifactDigest/v1
+      value: 2afe14357a10c072e7c4966eba28c78f004a6c492f55cdfbff5dcddb40db4434
+    name: hello-world-chart
+    relation: external
+    type: helmChart
+    version: 1.0.0
+  sources: []
+  version: 1.0.0
+meta:
+  schemaVersion: v2

@@ -1,0 +1,44 @@
+component:
+  componentReferences: []
+  creationTime: "2023-11-03T09:40:20Z"
+  name: github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource
+  provider: internal
+  repositoryContexts: []
+  resources:
+  - access:
+      imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/echo-server:1.0.0
+      type: ociArtifact
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: ociArtifactDigest/v1
+      value: e6b887eaf91005bbd9cf535f9cc482f7375290df0b07e2688b78aa71e530eada
+    name: blueprint
+    relation: external
+    type: blueprint
+    version: 1.0.0
+  - access:
+      imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+      type: ociArtifact
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: ociArtifactDigest/v1
+      value: ad9ff738e8ae00895ab6978cf1754179fd82e470b44602b35a131bf556b55dfc
+    name: echo-server-chart
+    relation: external
+    type: helmChart
+    version: 1.0.0
+  - access:
+      imageReference: hashicorp/http-echo:0.2.3
+      type: ociArtifact
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: ociArtifactDigest/v1
+      value: ba27d460cd1f22a1a4331bdf74f4fccbc025552357e8a3249c40ae216275de96
+    name: echo-server-image
+    relation: external
+    type: ociImage
+    version: 1.0.0
+  sources: []
+  version: 1.0.0
+meta:
+  schemaVersion: v2

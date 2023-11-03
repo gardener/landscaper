@@ -19,8 +19,8 @@ We have uploaded the blueprint
 ## Components and Component Descriptors
 
 An Installation may reference its blueprints via so-called [component-descriptors](../../../concepts/Glossary.md#_component-descriptor_).  
-A component descriptor describes a component, or rather, a specific component version. In general, a component version is a container for all required resources for the deployment of a specific version of a software system.
-In this example, the software system is the hello-world application deployable with the landscaper through an external blueprint. Thereby, the external blueprint is the only resource required for the deployment.  
+A component descriptor describes a component, or rather, a specific component version. In general, a component version is a container for all required resources for the deployment of a specific version of an application or software system.
+In this example, the application is the hello-world application deployable with the landscaper through an external blueprint. Thereby, the external blueprint is the only resource required for the deployment.  
 A component version may either contain a resource through referencing it at an external location or through embedding it as a local blob.
 
 #### Component Version with External Resource
@@ -41,6 +41,7 @@ The commands used to create and upload the above component versions can be found
 To follow this example, you do not have to do this yourself, we have uploaded a corresponding component version [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/external-blueprint).
 If you want to inspect the uploaded component version (e.g. to find out whether we uploaded the one with the external resource or with the local resource), you can do so using the following command:  
 
+For more information about component and the related concepts, refer to the [documentation of the ocm project](https://ocm.software/).
 ```
 ocm download componentversion eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint -O component-archive
 ```
