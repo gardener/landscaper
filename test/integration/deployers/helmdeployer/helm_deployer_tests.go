@@ -8,9 +8,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path/filepath"
 	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"

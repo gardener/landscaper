@@ -6,10 +6,11 @@ package rootinstallations
 
 import (
 	"context"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path"
 	"path/filepath"
 	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	. "github.com/onsi/ginkgo/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

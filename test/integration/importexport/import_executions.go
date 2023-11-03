@@ -6,10 +6,11 @@ package importexport
 
 import (
 	"context"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path"
 	"path/filepath"
 	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

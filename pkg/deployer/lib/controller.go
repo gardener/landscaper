@@ -230,12 +230,6 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 
 	old := di.DeepCopy()
 
-	lsCtx := &lsv1alpha1.Context{}
-	// todo: check for real repository context. Maybe overwritten by installation.
-	if err := c.lsClient.Get(ctx, kutil.ObjectKey(di.Spec.Context, di.Namespace), lsCtx); err != nil {
-		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, fmt.Errorf("unable to get landscaper context: %w", err))
-	}
-
 	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
 
 	if !hasTestReconcileAnnotation && di.Status.GetJobID() == di.Status.JobIDFinished {
@@ -285,14 +279,14 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 	// Deployitem has been initialized, proceed with reconcile/delete
 
 	if di.DeletionTimestamp.IsZero() {
-		lsError := c.reconcile(ctx, lsCtx, di, rt)
-		err := c.handleReconcileResult(ctx, lsError, old, di)
-		return c.buildResult(di.Status.Phase, err)
+		lsError := c.reconcile(ctx, di, rt)
+		_ = c.handleReconcileResult(ctx, lsError, old, di)
+		return c.buildResult(di.Status.Phase)
 
 	} else {
-		lsError := c.delete(ctx, lsCtx, di, rt)
-		err := c.handleReconcileResult(ctx, lsError, old, di)
-		return c.buildResult(di.Status.Phase, err)
+		lsError := c.delete(ctx, di, rt)
+		_ = c.handleReconcileResult(ctx, lsError, old, di)
+		return c.buildResult(di.Status.Phase)
 	}
 }
 
@@ -300,7 +294,7 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsClient, c.lsEventRecorder)
 }
 
-func (c *controller) buildResult(phase lsv1alpha1.DeployItemPhase, err error) (reconcile.Result, error) {
+func (c *controller) buildResult(phase lsv1alpha1.DeployItemPhase) (reconcile.Result, error) {
 	if phase.IsFinal() {
 		return reconcile.Result{}, nil
 	} else {
@@ -309,38 +303,52 @@ func (c *controller) buildResult(phase lsv1alpha1.DeployItemPhase, err error) (r
 	}
 }
 
-func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem,
+func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
+
+	operation := "reconcile"
+
 	if !controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000050, deployItem); err != nil {
-			return lserrors.NewWrappedError(err,
-				"Reconcile", "AddFinalizer", err.Error())
+			return lserrors.NewWrappedError(err, operation, "AddFinalizer", err.Error())
 		}
 	}
 
+	lsCtx := &lsv1alpha1.Context{}
+	if err := c.lsClient.Get(ctx, kutil.ObjectKey(deployItem.Spec.Context, deployItem.Namespace), lsCtx); err != nil {
+		return lserrors.NewWrappedError(err, operation, "GetLandscaperContext", err.Error())
+	}
+
 	err := c.deployer.Reconcile(ctx, lsCtx, deployItem, rt)
-	return lserrors.BuildLsErrorOrNil(err, "reconcile", "Reconcile")
+	return lserrors.BuildLsErrorOrNil(err, operation, "Reconcile")
 }
 
-func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem,
+func (c *controller) delete(ctx context.Context, deployItem *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget) lserrors.LsError {
+
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	operation := "delete"
+
 	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItem.ObjectMeta) {
 		// this case is not required anymore because those items are removed by the execution controller
 		// but for security reasons not removed
 		logger.Info("Deleting deployitem %s without uninstall", deployItem.Name)
 	} else {
+		lsCtx := &lsv1alpha1.Context{}
+		if err := c.lsClient.Get(ctx, kutil.ObjectKey(deployItem.Spec.Context, deployItem.Namespace), lsCtx); err != nil {
+			return lserrors.NewWrappedError(err, operation, "GetLandscaperContext", err.Error())
+		}
+
 		if err := c.deployer.Delete(ctx, lsCtx, deployItem, rt); err != nil {
-			return lserrors.BuildLsError(err, "delete", "DeleteWithUninstall", err.Error())
+			return lserrors.BuildLsError(err, operation, "DeleteWithUninstall", err.Error())
 		}
 	}
 
 	if controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000037, deployItem); err != nil {
-			return lserrors.NewWrappedError(err,
-				"Reconcile", "RemoveFinalizer", err.Error())
+			return lserrors.NewWrappedError(err, operation, "RemoveFinalizer", err.Error())
 		}
 	}
 	return nil
