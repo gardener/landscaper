@@ -34,6 +34,10 @@ func newComponentVersion(registryAccess *RegistryAccess, cd *types.ComponentDesc
 	}
 }
 
+func (c *ComponentVersion) GetSchemaVersion() string {
+	return c.componentDescriptor.Metadata.Version
+}
+
 func (c *ComponentVersion) GetName() string {
 	return c.componentDescriptor.GetName()
 }

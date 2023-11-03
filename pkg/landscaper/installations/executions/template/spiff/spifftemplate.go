@@ -64,7 +64,7 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 	}
 
 	functions := spiffing.NewFunctions()
-	if err = LandscaperSpiffFuncs(functions, cd, cdList, t.targetResolver); err != nil {
+	if err = LandscaperSpiffFuncs(blueprint, functions, cd, cdList, t.targetResolver); err != nil {
 		return nil, err
 	}
 
@@ -109,7 +109,7 @@ func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	defer ctx.Done()
 
 	functions := spiffing.NewFunctions()
-	if err = LandscaperSpiffFuncs(functions, descriptor, cdList, t.targetResolver); err != nil {
+	if err = LandscaperSpiffFuncs(blueprint, functions, descriptor, cdList, t.targetResolver); err != nil {
 		return nil, err
 	}
 
@@ -155,7 +155,7 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	}
 
 	functions := spiffing.NewFunctions()
-	if err = LandscaperSpiffFuncs(functions, descriptor, cdList, t.targetResolver); err != nil {
+	if err = LandscaperSpiffFuncs(blueprint, functions, descriptor, cdList, t.targetResolver); err != nil {
 		return nil, err
 	}
 
@@ -204,7 +204,7 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	}
 
 	functions := spiffing.NewFunctions()
-	if err = LandscaperSpiffFuncs(functions, descriptor, cdList, t.targetResolver); err != nil {
+	if err = LandscaperSpiffFuncs(blueprint, functions, descriptor, cdList, t.targetResolver); err != nil {
 		return nil, err
 	}
 

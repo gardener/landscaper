@@ -5,13 +5,13 @@
 package template
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
+
 	"github.com/gardener/component-cli/ociclient/oci"
-	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
@@ -31,13 +31,13 @@ func ResolveResources(defaultCD *types.ComponentDescriptor, args []interface{}) 
 	// if the first argument is map we use it as the component descriptor
 	// otherwise the default one is used
 	desc := defaultCD
+
+	// if the first input argument is a component descriptor in schema version v3alpha1, convert it to
+	// schema version v2 for internal processing
+	var err error
 	if cdMap, ok := args[0].(map[string]interface{}); ok {
-		data, err := json.Marshal(cdMap)
+		desc, err = common.ConvertMapCdToCompDescV2(cdMap)
 		if err != nil {
-			return nil, fmt.Errorf(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
-		}
-		desc = &types.ComponentDescriptor{}
-		if err := codec.Decode(data, desc); err != nil {
 			return nil, err
 		}
 		// resize the arguments to remove the component descriptor and keep the arguments
@@ -76,20 +76,20 @@ func ResolveResources(defaultCD *types.ComponentDescriptor, args []interface{}) 
 // The arguments are expected to be a set of key value pairs that describe the identity of the resource.
 // e.g. []interface{}{"name", "my-component"}.
 // Optionally the first argument can be a component descriptor provided as map[string]interface{}
-func ResolveComponents(defaultCD *types.ComponentDescriptor, list *types.ComponentDescriptorList, args []interface{}) ([]types.ComponentDescriptor, error) {
+func ResolveComponents(defaultCD *types.ComponentDescriptor, list *types.ComponentDescriptorList, ocmSchemaVersion string, args []interface{}) ([]map[string]interface{}, error) {
 	if len(args) < 2 {
 		panic("at least 2 arguments are expected")
 	}
 	// if the first argument is map we use it as the component descriptor
 	// otherwise the default one is used
 	desc := defaultCD
+
+	// if the first input argument is a component descriptor in schema version v3alpha1, convert it to
+	// schema version v2 for internal processing
+	var err error
 	if cdMap, ok := args[0].(map[string]interface{}); ok {
-		data, err := json.Marshal(cdMap)
+		desc, err = common.ConvertMapCdToCompDescV2(cdMap)
 		if err != nil {
-			return nil, fmt.Errorf(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
-		}
-		desc = &types.ComponentDescriptor{}
-		if err := codec.Decode(data, desc); err != nil {
 			return nil, err
 		}
 		// resize the arguments to remove the component descriptor and keep the arguments
@@ -128,7 +128,16 @@ func ResolveComponents(defaultCD *types.ComponentDescriptor, list *types.Compone
 		components[i] = cd
 	}
 
-	return components, nil
+	descriptors := make([]map[string]interface{}, len(components))
+	for i, descriptor := range components {
+		desc, err := common.ConvertCompDescV2ToMapCd(descriptor, ocmSchemaVersion)
+		if err != nil {
+			return nil, err
+		}
+		descriptors[i] = desc
+	}
+
+	return descriptors, nil
 }
 
 // ParseOCIReference parses a oci reference string into its repository and version.

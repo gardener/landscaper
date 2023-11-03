@@ -1,0 +1,18 @@
+meta:
+  schemaVersion: v2
+
+component:
+  name: example.com/landscaper-component-v2-ref1
+  version: 1.0.0
+
+  provider: internal
+
+  repositoryContexts:
+    - type: ociRegistry
+      baseUrl: "/"
+
+  sources: []
+
+  resources: []
+
+  componentReferences: []

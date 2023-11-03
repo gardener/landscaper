@@ -265,7 +265,7 @@ The execution type to use for spiff templates is `Spiff`. The template can be pr
     deployItems:
     - name: my-first-deploy-item
       type: landscaper.gardener.cloud/mock
-      config: (( .imports.config ))
+      config: (( imports.config ))
 ```
 or
 ```yaml
@@ -275,7 +275,7 @@ or
     deployItems:
     - name: my-first-deploy-item
       type: landscaper.gardener.cloud/mock
-      config: (( .imports.config ))
+      config: (( imports.config ))
 ```
 
 ##### Additional Functions
