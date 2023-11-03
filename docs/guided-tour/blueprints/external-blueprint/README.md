@@ -40,7 +40,10 @@ These file system representations of component versions can then be uploaded to 
 The commands used to create and upload the above component versions can be found [here](./commands/upload-component-version.sh). 
 To follow this example, you do not have to do this yourself, we have uploaded a corresponding component version [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/external-blueprint).
 If you want to inspect the uploaded component version (e.g. to find out whether we uploaded the one with the external resource or with the local resource), you can do so using the following command:  
-`ocm download componentversion eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint -O component-archive`
+
+```
+ocm download componentversion eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint -O component-archive
+```
 
 
 ## Referencing the Blueprint in the Installation
