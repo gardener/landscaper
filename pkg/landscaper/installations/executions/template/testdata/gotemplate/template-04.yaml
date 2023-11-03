@@ -13,3 +13,8 @@
         kind: Configuration
         {{- $res := getResource .cd "name" "mycustomimage" }}
         image: {{ $res.access.imageReference }}
+        images:
+        {{- $resources := getResources .cd "class" "image" }}
+        {{- range $_, $resource := $resources }}
+        - image: {{ $resource.access.imageReference }}
+        {{- end }}

@@ -7,6 +7,8 @@ package template
 import (
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -35,12 +37,13 @@ func NewBlueprintExecutionOptions(installation *lsv1alpha1.Installation, bluepri
 }
 
 func (o *BlueprintExecutionOptions) Values() (map[string]interface{}, error) {
+	ocmSchemaVersion := common.DetermineOCMSchemaVersion(o.Blueprint, o.ComponentVersion)
 	// marshal and unmarshal resolved component descriptor
-	component, err := serializeComponentDescriptor(o.ComponentVersion)
+	component, err := serializeComponentDescriptor(o.ComponentVersion, ocmSchemaVersion)
 	if err != nil {
 		return nil, fmt.Errorf("error during serializing of the resolved components: %w", err)
 	}
-	components, err := serializeComponentDescriptorList(o.ComponentVersions)
+	components, err := serializeComponentDescriptorList(o.ComponentVersions, ocmSchemaVersion)
 	if err != nil {
 		return nil, fmt.Errorf("error during serializing of the component descriptor: %w", err)
 	}

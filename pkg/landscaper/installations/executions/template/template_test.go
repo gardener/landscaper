@@ -11,6 +11,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	apiconfig "github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/pkg/components/registries"
+
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -178,17 +183,20 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
 		})
 
-		It("should use a resource from the component descriptor", func() {
+		DescribeTable("should use a resource from the component descriptor", func(ocmSchemaVersion string) {
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-04.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
 
 			blue := &lsv1alpha1.Blueprint{}
+			blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: ocmSchemaVersion}
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
-			imageAccess, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
+			imageAccess1, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
+			Expect(err).ToNot(HaveOccurred())
+			imageAccess2, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/yourimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &types.ComponentDescriptor{
 				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
@@ -202,12 +210,23 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 					Resources: []types.Resource{
 						{
 							IdentityObjectMeta: cdv2.IdentityObjectMeta{
-								Name:    "mycustomimage",
-								Version: "1.0.0",
-								Type:    cdv2.OCIImageType,
+								Name:          "mycustomimage",
+								Version:       "1.0.0",
+								Type:          cdv2.OCIImageType,
+								ExtraIdentity: cdv2.Identity{"class": "image"},
 							},
 							Relation: cdv2.ExternalRelation,
-							Access:   &imageAccess,
+							Access:   &imageAccess1,
+						},
+						{
+							IdentityObjectMeta: cdv2.IdentityObjectMeta{
+								Name:          "yourcustomimage",
+								Version:       "1.0.0",
+								Type:          cdv2.OCIImageType,
+								ExtraIdentity: cdv2.Identity{"class": "image"},
+							},
+							Relation: cdv2.ExternalRelation,
+							Access:   &imageAccess2,
 						},
 					},
 				},
@@ -228,15 +247,25 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
-		})
+			if blue.DeployExecutions[0].Type == "GoTemplate" {
+				Expect(config).To(HaveKeyWithValue("images", []interface{}{
+					map[string]interface{}{"image": "quay.io/example/myimage:1.0.0"},
+					map[string]interface{}{"image": "quay.io/example/yourimage:1.0.0"},
+				}))
+			}
+		},
+			Entry("template with component descriptor v2", common.SCHEMA_VERSION_V2),
+			Entry("template with component descriptor v3alpha1", common.SCHEMA_VERSION_V3ALPHA1),
+		)
 
-		It("should use a resource from the component descriptor's referenced component", func() {
+		DescribeTable("should use a resource from the component descriptor's referenced component", func(ocmSchemaVersion string) {
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-10.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
 
 			blue := &lsv1alpha1.Blueprint{}
+			blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: ocmSchemaVersion}
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
@@ -301,6 +330,184 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
+		},
+			Entry("template with component descriptor v2", common.SCHEMA_VERSION_V2),
+			Entry("template with component descriptor v3alpha1", common.SCHEMA_VERSION_V3ALPHA1),
+		)
+
+		DescribeTable("templating against specific component descriptor schema versions", func(useOCM bool, schemaVersion string, templateFileName string, schemaVersionSuffix string) {
+			// Preparation to conveniently be able to access the respective component versions
+			ctx := context.Background()
+			repositoryContext := &cdv2.UnstructuredTypedObject{}
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
+			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix, Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix + "-ref1", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix + "-ref2", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersionList := &model.ComponentVersionList{
+				Components: []model.ComponentVersion{
+					componentVersion,
+					componentVersionRef1,
+					componentVersionRef2,
+				},
+			}
+
+			// Actual templating logic
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, templateFileName))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			// Templating schema version will be determined by this annotation
+			blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: schemaVersion}
+			blue.DeployExecutions = exec
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
+
+			res, err := op.TemplateDeployExecutions(
+				template.NewDeployExecutionOptions(
+					template.NewBlueprintExecutionOptions(
+						nil,
+						&blueprints.Blueprint{Info: blue, Fs: nil},
+						componentVersion,
+						componentVersionList,
+						nil)))
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("name", "example.com/landscaper-component-"+schemaVersionSuffix))
+			Expect(config).To(HaveKeyWithValue("names", []interface{}{
+				map[string]interface{}{"name": "example.com/landscaper-component-" + schemaVersionSuffix},
+				map[string]interface{}{"name": "example.com/landscaper-component-" + schemaVersionSuffix + "-ref1"},
+				map[string]interface{}{"name": "example.com/landscaper-component-" + schemaVersionSuffix + "-ref2"},
+			}))
+		},
+			Entry("default to schema version v2 with cnudie facade implementation", false, "", "template-30.yaml", "v2"),
+			Entry("default to schema version v2 with ocmlib facade implementation", true, "", "template-30.yaml", "v2"),
+			Entry("default to schema version v3alpha1 with ocmlib facade implementation", true, "", "template-31.yaml", "v3alpha1"),
+			Entry("set schema version through blueprint to v2 - with cnudie facade implementation", false, common.SCHEMA_VERSION_V2, "template-30.yaml", "v2"),
+			Entry("set schema version through blueprint to v2 - with ocmlib facade implementation", true, common.SCHEMA_VERSION_V2, "template-30.yaml", "v2"),
+			Entry("set schema version through blueprint to v3alpha1 - with ocmlib facade implementation", true, common.SCHEMA_VERSION_V3ALPHA1, "template-31.yaml", "v3alpha1"),
+		)
+
+		It("templating against v2 with mixed component descriptor schema versions", func() {
+			// Preparation to conveniently be able to access the respective component versions
+			ctx := context.Background()
+			repositoryContext := &cdv2.UnstructuredTypedObject{}
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-mixed", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-ref1", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-ref2", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersionList := &model.ComponentVersionList{
+				Components: []model.ComponentVersion{
+					componentVersion,
+					componentVersionRef1,
+					componentVersionRef2,
+				},
+			}
+
+			// Actual templating logic
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-30.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			// Templating schema version will be determined by this annotation
+			// blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: common.SCHEMA_VERSION_V2}
+			blue.DeployExecutions = exec
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
+
+			res, err := op.TemplateDeployExecutions(
+				template.NewDeployExecutionOptions(
+					template.NewBlueprintExecutionOptions(
+						nil,
+						&blueprints.Blueprint{Info: blue, Fs: nil},
+						componentVersion,
+						componentVersionList,
+						nil)))
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("name", "example.com/landscaper-component-v2-mixed"))
+			Expect(config).To(HaveKeyWithValue("names", []interface{}{
+				map[string]interface{}{"name": "example.com/landscaper-component-v2-mixed"},
+				map[string]interface{}{"name": "example.com/landscaper-component-v2-ref1"},
+				map[string]interface{}{"name": "example.com/landscaper-component-v3alpha1-ref2"},
+			}))
+		})
+
+		It("templating against v3alpha1 with mixed component descriptor schema versions", func() {
+			// Preparation to conveniently be able to access the respective component versions
+			ctx := context.Background()
+			repositoryContext := &cdv2.UnstructuredTypedObject{}
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-mixed", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-ref1", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-ref2", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersionList := &model.ComponentVersionList{
+				Components: []model.ComponentVersion{
+					componentVersion,
+					componentVersionRef1,
+					componentVersionRef2,
+				},
+			}
+
+			// Actual templating logic
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-31.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			// Templating schema version will be determined by this annotation
+			// blue.Annotations = map[string]string{common.OCM_SCHEMA_VERSION: common.SCHEMA_VERSION_V2}
+			blue.DeployExecutions = exec
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
+
+			res, err := op.TemplateDeployExecutions(
+				template.NewDeployExecutionOptions(
+					template.NewBlueprintExecutionOptions(
+						nil,
+						&blueprints.Blueprint{Info: blue, Fs: nil},
+						componentVersion,
+						componentVersionList,
+						nil)))
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("name", "example.com/landscaper-component-v3alpha1-mixed"))
+			Expect(config).To(HaveKeyWithValue("names", []interface{}{
+				map[string]interface{}{"name": "example.com/landscaper-component-v3alpha1-mixed"},
+				map[string]interface{}{"name": "example.com/landscaper-component-v2-ref1"},
+				map[string]interface{}{"name": "example.com/landscaper-component-v3alpha1-ref2"},
+			}))
 		})
 
 		It("should throw an error when the template tries to template a undefined value", func() {

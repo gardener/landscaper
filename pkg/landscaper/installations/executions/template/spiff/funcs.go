@@ -10,6 +10,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
+
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	imagevector "github.com/gardener/image-vector/pkg"
 	"github.com/mandelsoft/spiff/dynaml"
@@ -26,7 +31,9 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 
-func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.ComponentVersion, componentVersions *model.ComponentVersionList, targetResolver targetresolver.TargetResolver) error {
+func LandscaperSpiffFuncs(blueprint *blueprints.Blueprint, functions spiffing.Functions, componentVersion model.ComponentVersion, componentVersions *model.ComponentVersionList, targetResolver targetresolver.TargetResolver) error {
+	ocmSchemaVersion := common.DetermineOCMSchemaVersion(blueprint, componentVersion)
+
 	cd, err := model.GetComponentDescriptor(componentVersion)
 	if err != nil {
 		return fmt.Errorf("unable to get component descriptor to register spiff functions: %w", err)
@@ -38,7 +45,7 @@ func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.C
 	}
 
 	functions.RegisterFunction("getResource", spiffResolveResources(cd))
-	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList))
+	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList, ocmSchemaVersion))
 	functions.RegisterFunction("generateImageOverwrite", spiffGenerateImageOverwrite(cd, cdList))
 	functions.RegisterFunction("parseOCIRef", parseOCIReference)
 	functions.RegisterFunction("ociRefRepo", getOCIReferenceRepository)
@@ -55,6 +62,25 @@ func LandscaperSpiffFuncs(functions spiffing.Functions, componentVersion model.C
 func spiffResolveResources(cd *types.ComponentDescriptor) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 		info := dynaml.DefaultInfo()
+
+		// if the first input argument is a component descriptor in schema version v3alpha1, convert it to
+		// schema version v2 for internal processing
+		var err error
+		compdescSchemaVersion := ""
+		inCdMap, ok := arguments[0].(map[string]interface{})
+		if ok {
+			compdescSchemaVersion, err = common.GetSchemaVersionFromMapCd(inCdMap)
+			if err != nil {
+				panic(err)
+			}
+			if compdescSchemaVersion == v3alpha1.GroupVersion {
+				arguments[0], err = common.ConvertMapCdToCompDescV2(inCdMap)
+				if err != nil {
+					panic("Unable to convert component descriptor to internal schema version")
+				}
+			}
+		}
+
 		data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments, ""))
 		if err != nil {
 			return info.Error(err.Error())
@@ -88,7 +114,7 @@ func spiffResolveResources(cd *types.ComponentDescriptor) func(arguments []inter
 	}
 }
 
-func spiffResolveComponent(cd *types.ComponentDescriptor, cdList *types.ComponentDescriptorList) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+func spiffResolveComponent(cd *types.ComponentDescriptor, cdList *types.ComponentDescriptorList, ocmSchemaVersion string) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 		info := dynaml.DefaultInfo()
 		data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments, ""))
@@ -100,7 +126,7 @@ func spiffResolveComponent(cd *types.ComponentDescriptor, cdList *types.Componen
 			return info.Error(err.Error())
 		}
 
-		components, err := template.ResolveComponents(cd, cdList, val)
+		components, err := template.ResolveComponents(cd, cdList, ocmSchemaVersion, val)
 		if err != nil {
 			return info.Error(err.Error())
 		}

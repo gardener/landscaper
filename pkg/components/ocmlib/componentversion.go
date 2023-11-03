@@ -24,6 +24,12 @@ type ComponentVersion struct {
 	componentDescriptorV2  cdv2.ComponentDescriptor
 }
 
+var _ model.ComponentVersion = &ComponentVersion{}
+
+func (c *ComponentVersion) GetSchemaVersion() string {
+	return c.componentVersionAccess.GetDescriptor().SchemaVersion()
+}
+
 func (c *ComponentVersion) GetName() string {
 	return c.componentVersionAccess.GetName()
 }
