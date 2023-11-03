@@ -76,6 +76,7 @@ func (_ Duration) OpenAPISchemaFormat() string { return "" }
 // AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all
 // it is correctly generated
 // +k8s:openapi-gen=true
+// +kubebuilder:validation:Type:=string
 type AnyJSON struct {
 	json.RawMessage `json:",inline"`
 }
