@@ -29,7 +29,7 @@ func NewRetryingClient(innerClient client.Client, log utils.Logger) client.Clien
 }
 
 func (r *retryingClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	err := retrySporadic(r.log, func() error {
+	err := retrySporadic(ctx, r.log, func() error {
 		return r.Client.Get(ctx, key, obj, opts...)
 	})
 
@@ -41,7 +41,7 @@ func (r *retryingClient) Get(ctx context.Context, key client.ObjectKey, obj clie
 }
 
 func (r *retryingClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	err := retrySporadic(r.log, func() error {
+	err := retrySporadic(ctx, r.log, func() error {
 		return r.Client.List(ctx, list, opts...)
 	})
 
@@ -53,7 +53,7 @@ func (r *retryingClient) List(ctx context.Context, list client.ObjectList, opts 
 }
 
 func (r *retryingClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	err := retrySporadic(r.log, func() error {
+	err := retrySporadic(ctx, r.log, func() error {
 		return r.Client.Create(ctx, obj, opts...)
 	})
 
@@ -65,7 +65,7 @@ func (r *retryingClient) Create(ctx context.Context, obj client.Object, opts ...
 }
 
 func (r *retryingClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	err := retrySporadic(r.log, func() error {
+	err := retrySporadic(ctx, r.log, func() error {
 		return r.Client.Update(ctx, obj, opts...)
 	})
 
@@ -77,7 +77,7 @@ func (r *retryingClient) Update(ctx context.Context, obj client.Object, opts ...
 }
 
 func (r *retryingClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	err := retrySporadic(r.log, func() error {
+	err := retrySporadic(ctx, r.log, func() error {
 		return r.Client.Patch(ctx, obj, patch, opts...)
 	})
 
@@ -101,7 +101,7 @@ type retryingSubResourceWriter struct {
 }
 
 func (r *retryingSubResourceWriter) Update(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
-	err := retrySporadic(r.log, func() error {
+	err := retrySporadic(ctx, r.log, func() error {
 		return r.SubResourceWriter.Update(ctx, obj, opts...)
 	})
 
@@ -112,10 +112,15 @@ func (r *retryingSubResourceWriter) Update(ctx context.Context, obj client.Objec
 	return err
 }
 
-func retrySporadic(log utils.Logger, fn func() error) error {
+func retrySporadic(ctx context.Context, log utils.Logger, fn func() error) error {
 	retries := 10
 
 	for i := 0; i < retries; i++ {
+		if err := ctx.Err(); err != nil {
+			log.Logfln("retrying client: context is closed: %w", err)
+			return err
+		}
+
 		err := fn()
 		if err == nil {
 			return nil
@@ -124,6 +129,9 @@ func retrySporadic(log utils.Logger, fn func() error) error {
 			return err
 		} else if !isSporadicError(err) {
 			return err
+		} else if ctxError := ctx.Err(); ctxError != nil {
+			log.Logfln("retrying client: stop retrying because context is closed: %w", ctxError)
+			return ctxError
 		} else {
 			log.Logfln("retrying client: continue retrying after sporadic error: %w", err)
 			time.Sleep(3 * time.Second)
