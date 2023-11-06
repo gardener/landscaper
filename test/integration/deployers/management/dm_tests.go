@@ -7,9 +7,10 @@ package management
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"sync"
 	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"

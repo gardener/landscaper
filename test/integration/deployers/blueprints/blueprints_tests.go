@@ -7,8 +7,9 @@ package blueprints
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/onsi/ginkgo/v2"

@@ -6,10 +6,11 @@ package dependencies
 
 import (
 	"context"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path"
 	"path/filepath"
 	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	. "github.com/onsi/ginkgo/v2"
 

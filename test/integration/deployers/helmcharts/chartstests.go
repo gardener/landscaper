@@ -8,9 +8,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"path/filepath"
 	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
