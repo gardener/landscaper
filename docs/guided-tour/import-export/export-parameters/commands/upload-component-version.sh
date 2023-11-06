@@ -51,7 +51,7 @@ if [ -d "${COMPONENT_DIR}" ]; then
   rm -r "${COMPONENT_DIR}"
 fi
 
-COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/external-blueprint"
+COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/export-token"
 COMPONENT_VERSION="1.0.0"
 COMPONENT_PROVIDER="internal"
 
@@ -59,13 +59,14 @@ COMPONENT_PROVIDER="internal"
 echo "creating component archive at ${COMPONENT_DIR}"
 ocm create componentarchive ${COMPONENT_NAME} ${COMPONENT_VERSION} --provider ${COMPONENT_PROVIDER} --file ${COMPONENT_DIR} --scheme ${SCHEMA_VERSION}
 
+# Add the blueprint as a resource to the component version
 if [[ $LOCAL_BLUEPRINT == "local" ]]; then
     # Add blueprint as local (also known as inline) resource
     ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --inputType dir --inputPath "${BLUEPRINT_DIR}" --inputCompress --mediaType "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
 elif [[  $LOCAL_BLUEPRINT == "external" ]]; then
     # or, if the blueprint is already uploaded to an oci registry, e.g. with the landscaper-cli 
     # Add the image reference to the blueprint
-    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0
+    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/export-token:1.0.0
 fi
 
 # Transfer the Component Version from the file system representation of an OCM Repository to an oci registry representation of an OCM Repository

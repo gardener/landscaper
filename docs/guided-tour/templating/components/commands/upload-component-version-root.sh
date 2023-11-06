@@ -43,7 +43,7 @@ fi
 
 SCRIPT_DIR=$(dirname "$0")
 PARENT_DIR="${SCRIPT_DIR}/.."
-COMPONENT_DIR="$(realpath "${PARENT_DIR}")/component-archive/${PATH_SUFFIX}"
+COMPONENT_DIR="$(realpath "${PARENT_DIR}")/component-root/${PATH_SUFFIX}"
 BLUEPRINT_DIR="$(realpath "${PARENT_DIR}")/blueprint"
 
 if [ -d "${COMPONENT_DIR}" ]; then
@@ -51,7 +51,7 @@ if [ -d "${COMPONENT_DIR}" ]; then
   rm -r "${COMPONENT_DIR}"
 fi
 
-COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/external-blueprint"
+COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/templating-components-root"
 COMPONENT_VERSION="1.0.0"
 COMPONENT_PROVIDER="internal"
 
@@ -65,8 +65,12 @@ if [[ $LOCAL_BLUEPRINT == "local" ]]; then
 elif [[  $LOCAL_BLUEPRINT == "external" ]]; then
     # or, if the blueprint is already uploaded to an oci registry, e.g. with the landscaper-cli 
     # Add the image reference to the blueprint
-    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0
+    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/templating-components:1.0.0
 fi
+
+# Add references
+ocm add reference ${COMPONENT_DIR} --name core --component github.com/gardener/landscaper-examples/guided-tour/templating-components-core --version 1.0.0
+ocm add reference ${COMPONENT_DIR} --name extension --component github.com/gardener/landscaper-examples/guided-tour/templating-components-extension --version 1.0.0
 
 # Transfer the Component Version from the file system representation of an OCM Repository to an oci registry representation of an OCM Repository
 # echo "pushing component version to oci registry"

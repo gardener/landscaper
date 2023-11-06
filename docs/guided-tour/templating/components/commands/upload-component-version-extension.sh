@@ -16,7 +16,6 @@
 
 # Currently either "v2" or "ocm.software/v3alpha1" 
 SCHEMA_VERSION=$1
-LOCAL_BLUEPRINT=$2
 
 PATH_SUFFIX=""
 if [[ $SCHEMA_VERSION == "" ]]; then
@@ -31,19 +30,9 @@ else
     exit 1
 fi
 
-if [[ $LOCAL_BLUEPRINT == "" ]]; then
-    echo "Please specify whether the resource shall be added as reference (external) or as local blob (local) as argument 2"
-    exit 1
-elif [[ $LOCAL_BLUEPRINT == "local" ]] || [[ $LOCAL_BLUEPRINT == "external" ]]; then
-    PATH_SUFFIX="${PATH_SUFFIX}-${LOCAL_BLUEPRINT}"
-else
-    echo "invalid argument value ${LOCAL_BLUEPRINT}, please specify either local or external"
-    exit 1
-fi
-
 SCRIPT_DIR=$(dirname "$0")
 PARENT_DIR="${SCRIPT_DIR}/.."
-COMPONENT_DIR="$(realpath "${PARENT_DIR}")/component-archive/${PATH_SUFFIX}"
+COMPONENT_DIR="$(realpath "${PARENT_DIR}")/component-extension/${PATH_SUFFIX}"
 BLUEPRINT_DIR="$(realpath "${PARENT_DIR}")/blueprint"
 
 if [ -d "${COMPONENT_DIR}" ]; then
@@ -51,7 +40,7 @@ if [ -d "${COMPONENT_DIR}" ]; then
   rm -r "${COMPONENT_DIR}"
 fi
 
-COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/external-blueprint"
+COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/templating-components-extension"
 COMPONENT_VERSION="1.0.0"
 COMPONENT_PROVIDER="internal"
 
@@ -59,14 +48,15 @@ COMPONENT_PROVIDER="internal"
 echo "creating component archive at ${COMPONENT_DIR}"
 ocm create componentarchive ${COMPONENT_NAME} ${COMPONENT_VERSION} --provider ${COMPONENT_PROVIDER} --file ${COMPONENT_DIR} --scheme ${SCHEMA_VERSION}
 
-if [[ $LOCAL_BLUEPRINT == "local" ]]; then
-    # Add blueprint as local (also known as inline) resource
-    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --inputType dir --inputPath "${BLUEPRINT_DIR}" --inputCompress --mediaType "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
-elif [[  $LOCAL_BLUEPRINT == "external" ]]; then
-    # or, if the blueprint is already uploaded to an oci registry, e.g. with the landscaper-cli 
-    # Add the image reference to the blueprint
-    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0
-fi
+# Add an oci image as an external resource to the component version
+# Adding resources besides the blueprint as local blob is currently not supported by the landscaper
+# --skip-digest-generation since the images referenced here do not actually exist and are merely added for templating examples
+ocm add resource ${COMPONENT_DIR} --skip-digest-generation --type ociImage --name image-c --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/images/image-c:1.0.0 --label landscaper.gardener.cloud/guided-tour/auxiliary='aux-c'
+
+# Add another oci image as an external resource to the component version
+# Adding resources besides the blueprint as local blob is currently not supported by the landscaper
+# --skip-digest-generation since the images referenced here do not actually exist and are merely added for templating examples
+ocm add resource ${COMPONENT_DIR} --skip-digest-generation --type ociImage --name image-d --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/images/image-d:1.0.0 --label landscaper.gardener.cloud/guided-tour/type='type-d'
 
 # Transfer the Component Version from the file system representation of an OCM Repository to an oci registry representation of an OCM Repository
 # echo "pushing component version to oci registry"

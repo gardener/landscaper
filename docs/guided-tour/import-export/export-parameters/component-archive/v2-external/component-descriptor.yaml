@@ -1,17 +1,17 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-06T13:12:56Z"
-  name: github.com/gardener/landscaper-examples/guided-tour/external-blueprint
+  creationTime: "2023-11-06T13:15:38Z"
+  name: github.com/gardener/landscaper-examples/guided-tour/export-token
   provider: internal
   repositoryContexts: []
   resources:
   - access:
-      imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/export-token:1.0.0
       type: ociArtifact
     digest:
       hashAlgorithm: SHA-256
       normalisationAlgorithm: ociArtifactDigest/v1
-      value: c9850c4a59a7786d22974bd3b50291ce44538d1d2b73a4c91a117eb05c6ed356
+      value: 18730cd7c7039f8237eb880f454c2d00c754d569e00d4526ac071bd8b8ea318c
     name: blueprint
     relation: external
     type: blueprint

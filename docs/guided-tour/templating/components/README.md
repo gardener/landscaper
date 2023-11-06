@@ -10,9 +10,9 @@ during the templating.
 
 Component descriptors can reference other component descriptors. In this example we consider three component descriptors, 
 which we name as follows:
-- the [root component descriptor](./component-root/component-descriptor.yaml),
-- the [core component descriptor](./component-core/component-descriptor.yaml),
-- the [extension component descriptor](./component-extension/component-descriptor.yaml).  
+- the [root component descriptor](./component-root/v2-external/component-descriptor.yaml),
+- the [core component descriptor](./component-core/v2/component-descriptor.yaml),
+- the [extension component descriptor](./component-extension/v2/component-descriptor.yaml).  
 
 The root component descriptor references the other two in its section `component.componentReferences`:
 
@@ -41,6 +41,29 @@ The [blueprint](./blueprint) of the present example belongs to the root componen
 which is used to generate a DeployItem. 
 The template can be filled with values from a certain data structure. The following fields in this data structure 
 provide access to the involved component descriptors:
+
+> **_NOTE:_** If you are using Component
+> Descriptors [Version 3](https://ocm.software/docs/component-descriptors/version-3/) instead of 
+> [Version 2](https://ocm.software/docs/component-descriptors/version-2/), the data structure of the 
+> component descriptors themselves is slightly different from what is described below (e.g. a component's name is under 
+> `metadata.name` instead of `component.name`).  
+> Per default, the component descriptor version a blueprint is templating against is the version of the component 
+> descriptor referenced in the installation.  
+> Since a blueprint could be used in different installations with different component descriptor versions, it is also
+> possible to specify the component descriptor version (v2 or v3alpha1) to template against in the blueprint itself. So
+> you may decide that you want to template against v2 even though v3alpha1 is the component descriptor version provided
+> in the installation (or vice versa).   
+> Therefore, you may simply add the following annotation to the
+> blueprint:
+> 
+> ```yaml
+> apiVersion: landscaper.gardener.cloud/v1alpha1
+> kind: Blueprint
+> jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+> annotations:
+>   ocmSchemaVersion: v2 #or ocm.software/v3alpha1
+> ...
+> ```
 
 - **cd** : the component descriptor of the Installation. In our case, this is the root component descriptor.  
   Let's consider an example, how this field can be used. The expression below evaluates to the component name. 

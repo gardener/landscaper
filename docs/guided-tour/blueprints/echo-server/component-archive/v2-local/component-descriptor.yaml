@@ -1,7 +1,7 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-03T09:40:11Z"
-  name: github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource
+  creationTime: "2023-11-06T13:14:38Z"
+  name: github.com/gardener/landscaper-examples/guided-tour/echo-server
   provider: internal
   repositoryContexts: []
   resources:
@@ -38,7 +38,7 @@ component:
     name: echo-server-image
     relation: external
     type: ociImage
-    version: 1.0.0
+    version: 0.2.3
   sources: []
   version: 1.0.0
 meta:

@@ -47,32 +47,33 @@ PARENT_DIR="${SCRIPT_DIR}/.."
 COMPONENT_DIR="$(realpath "${PARENT_DIR}")/component-archive/${PATH_SUFFIX}"
 BLUEPRINT_DIR="$(realpath "${PARENT_DIR}")/blueprint"
 
-COMPONENT="github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"
-VERSION="1.0.0"
-PROVIDER="internal"
 
 if [ -d "${COMPONENT_DIR}" ]; then
   echo "removing old component archive"
   rm -r "${COMPONENT_DIR}"
 fi
 
+COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource"
+COMPONENT_VERSION="1.0.0"
+COMPONENT_PROVIDER="internal"
+
 # A Component Archive is a file system representation of a OCM Repository capable of hosting exactly one Component Version
 echo "creating component archive at ${COMPONENT_DIR}"
-ocm create componentarchive ${COMPONENT} ${VERSION} --provider ${PROVIDER} --file ${COMPONENT_DIR} --scheme ${SCHEMA_VERSION}
+ocm create componentarchive ${COMPONENT_NAME} ${COMPONENT_VERSION} --provider ${COMPONENT_PROVIDER} --file ${COMPONENT_DIR} --scheme ${SCHEMA_VERSION}
 
 # Add the blueprint as a resource to the component version
 if [[ $LOCAL_BLUEPRINT == "local" ]]; then
     # Add blueprint as local (also known as inline) resource
-    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version ${VERSION} --inputType dir --inputPath "${BLUEPRINT_DIR}" --inputCompress --mediaType "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --inputType dir --inputPath "${BLUEPRINT_DIR}" --inputCompress --mediaType "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
 elif [[  $LOCAL_BLUEPRINT == "external" ]]; then
     # or, if the blueprint is already uploaded to an oci registry, e.g. with the landscaper-cli 
     # Add the image reference to the blueprint
-    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version ${VERSION} --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/helm-chart-resource:1.0.0
+    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/helm-chart-resource:1.0.0
 fi
 
 # Add the helm chart as a resource to the component version
 # Adding resources besides the blueprint as local blob is currently not supported by the landscaper
-ocm add resource ${COMPONENT_DIR} --type helmChart --name hello-world-chart --version ${VERSION} --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
+ocm add resource ${COMPONENT_DIR} --type helmChart --name hello-world-chart --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
 
 # Transfer the Component Version from the file system representation of an OCM Repository to an oci registry representation of an OCM Repository
 # echo "pushing component version to oci registry"

@@ -51,22 +51,32 @@ if [ -d "${COMPONENT_DIR}" ]; then
   rm -r "${COMPONENT_DIR}"
 fi
 
-COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/external-blueprint"
-COMPONENT_VERSION="1.0.0"
+COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/echo-server"
+COMPONENT_VERSION="1.1.0"
 COMPONENT_PROVIDER="internal"
 
 # A Component Archive is a file system representation of a OCM Repository capable of hosting exactly one Component Version
 echo "creating component archive at ${COMPONENT_DIR}"
 ocm create componentarchive ${COMPONENT_NAME} ${COMPONENT_VERSION} --provider ${COMPONENT_PROVIDER} --file ${COMPONENT_DIR} --scheme ${SCHEMA_VERSION}
 
+# Add the blueprint as a resource to the component version
 if [[ $LOCAL_BLUEPRINT == "local" ]]; then
     # Add blueprint as local (also known as inline) resource
-    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --inputType dir --inputPath "${BLUEPRINT_DIR}" --inputCompress --mediaType "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.1.0 --inputType dir --inputPath "${BLUEPRINT_DIR}" --inputCompress --mediaType "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
 elif [[  $LOCAL_BLUEPRINT == "external" ]]; then
     # or, if the blueprint is already uploaded to an oci registry, e.g. with the landscaper-cli 
     # Add the image reference to the blueprint
-    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0
+    ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.1.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/echo-server:1.1.0
 fi
+
+# Add the helm chart as an external resource to the component version
+# Adding resources besides the blueprint as local blob is currently not supported by the landscaper
+ocm add resource ${COMPONENT_DIR} --type helmChart --name echo-server-chart --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+
+# Add the docker image as an external resource to the component version
+# Adding resources besides the blueprint as local blob is currently not supported by the landscaper
+ocm add resource ${COMPONENT_DIR} --type ociImage --name echo-server-image --version 0.2.3 --accessType ociArtifact --reference hashicorp/http-echo:0.2.3
+
 
 # Transfer the Component Version from the file system representation of an OCM Repository to an oci registry representation of an OCM Repository
 # echo "pushing component version to oci registry"

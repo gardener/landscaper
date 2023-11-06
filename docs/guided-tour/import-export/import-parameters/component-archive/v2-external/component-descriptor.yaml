@@ -1,21 +1,21 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-06T13:14:46Z"
+  creationTime: "2023-11-06T13:16:23Z"
   name: github.com/gardener/landscaper-examples/guided-tour/echo-server
   provider: internal
   repositoryContexts: []
   resources:
   - access:
-      imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/echo-server:1.0.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/echo-server:1.1.0
       type: ociArtifact
     digest:
       hashAlgorithm: SHA-256
       normalisationAlgorithm: ociArtifactDigest/v1
-      value: e6b887eaf91005bbd9cf535f9cc482f7375290df0b07e2688b78aa71e530eada
+      value: d4c3d73605e0d9c5a18c10302a9d02651bc0d434676e2c06d3e5ea9a0685bb5c
     name: blueprint
     relation: external
     type: blueprint
-    version: 1.0.0
+    version: 1.1.0
   - access:
       imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
       type: ociArtifact
@@ -39,6 +39,6 @@ component:
     type: ociImage
     version: 0.2.3
   sources: []
-  version: 1.0.0
+  version: 1.1.0
 meta:
   schemaVersion: v2
