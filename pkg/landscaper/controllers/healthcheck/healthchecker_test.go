@@ -11,21 +11,16 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/healthcheck"
-	testutils "github.com/gardener/landscaper/test/utils"
-
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = Describe("Reconcile", func() {
 	var (
-		ctrl  reconcile.Reconciler
 		state *envtest.State
 	)
 	BeforeEach(func() {
@@ -36,7 +31,7 @@ var _ = Describe("Reconcile", func() {
 
 	It("should set status to ok when all replicas are available", func() {
 		var err error
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 
 		state, err = testenv.InitResources(ctx, "./testdata/test1")
 		Expect(err).ToNot(HaveOccurred())
@@ -54,7 +49,7 @@ var _ = Describe("Reconcile", func() {
 			},
 		}
 
-		ctrl = healthcheck.NewLsHealthCheckController(logging.Discard(), &lsDeployments, state.Client, api.Scheme, 1*time.Second)
+		healthChecker := healthcheck.NewHealthChecker(&lsDeployments, state.Client)
 
 		lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
 		Expect(state.Client.Get(ctx, types.NamespacedName{Name: lsDeployments.LsHealthCheckName, Namespace: lsDeployments.DeploymentsNamespace}, lsHealthCheck)).ToNot(HaveOccurred())
@@ -62,7 +57,7 @@ var _ = Describe("Reconcile", func() {
 		beforeReconcile := time.Now()
 		time.Sleep(time.Second * 1)
 
-		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(lsHealthCheck))
+		healthChecker.ExecuteHealthCheck(ctx)
 
 		Expect(state.Client.Get(ctx, types.NamespacedName{Name: lsDeployments.LsHealthCheckName, Namespace: lsDeployments.DeploymentsNamespace}, lsHealthCheck)).ToNot(HaveOccurred())
 		Expect(lsHealthCheck.Status).To(Equal(lsv1alpha1.LsHealthCheckStatusOk))
@@ -71,7 +66,7 @@ var _ = Describe("Reconcile", func() {
 
 	It("should set status to failed when not all replicas are available", func() {
 		var err error
-		ctx := context.Background()
+		ctx := logging.NewContextWithDiscard(context.Background())
 
 		state, err = testenv.InitResources(ctx, "./testdata/test2")
 		Expect(err).ToNot(HaveOccurred())
@@ -89,19 +84,18 @@ var _ = Describe("Reconcile", func() {
 			},
 		}
 
-		ctrl = healthcheck.NewLsHealthCheckController(logging.Discard(), &lsDeployments, state.Client, api.Scheme, 1*time.Second)
+		healthChecker := healthcheck.NewHealthChecker(&lsDeployments, state.Client)
 
 		lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
 		Expect(state.Client.Get(ctx, types.NamespacedName{Name: lsDeployments.LsHealthCheckName, Namespace: lsDeployments.DeploymentsNamespace}, lsHealthCheck)).ToNot(HaveOccurred())
 
-		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(lsHealthCheck))
+		healthChecker.ExecuteHealthCheck(ctx)
 
 		// The health check only transitions to failed after two consecutive failed checks.
 		Expect(state.Client.Get(ctx, types.NamespacedName{Name: lsDeployments.LsHealthCheckName, Namespace: lsDeployments.DeploymentsNamespace}, lsHealthCheck)).ToNot(HaveOccurred())
 
-		time.Sleep(2 * time.Second)
+		healthChecker.ExecuteHealthCheck(ctx)
 
-		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(lsHealthCheck))
 		Expect(state.Client.Get(ctx, types.NamespacedName{Name: lsDeployments.LsHealthCheckName, Namespace: lsDeployments.DeploymentsNamespace}, lsHealthCheck)).ToNot(HaveOccurred())
 		Expect(lsHealthCheck.Status).To(Equal(lsv1alpha1.LsHealthCheckStatusFailed))
 	})
