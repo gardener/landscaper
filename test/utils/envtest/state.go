@@ -342,53 +342,70 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 	}
 	timeout := options.Timeout
 	if timeout == nil {
-		t := 30 * time.Second
+		t := 60 * time.Second
 		timeout = &t
 	}
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
+
+	s.log.Logln("cleanup deploy items")
 	for _, obj := range s.DeployItems {
 		if err := CleanupForDeployItem(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
+
+	s.log.Logln("cleanup executions")
 	for _, obj := range s.Executions {
 		if err := CleanupForExecution(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
+
+	s.log.Logln("cleanup installations")
 	for _, obj := range s.Installations {
 		if err := s.CleanupForInstallation(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
+
+	s.log.Logln("cleanup data objects")
 	for _, obj := range s.DataObjects {
 		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
+
+	s.log.Logln("cleanup targets")
 	for _, obj := range s.Targets {
 		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
+
+	s.log.Logln("cleanup target syncs")
 	for _, obj := range s.TargetSyncs {
 		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
+
+	s.log.Logln("cleanup secrets")
 	for _, obj := range s.Secrets {
 		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
+
+	s.log.Logln("cleanup config maps")
 	for _, obj := range s.ConfigMaps {
 		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 
+	s.log.Logln("cleanup generic")
 	for _, obj := range s.Generic {
 		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
 			return err
@@ -396,6 +413,7 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 	}
 
 	// also remove all pending pods in the namespace if the container deployer leaves some pods
+	s.log.Logln("cleanup pods")
 	pods := &corev1.PodList{}
 	if err := c.List(ctx, pods, &client.ListOptions{Namespace: s.Namespace}); err != nil {
 		return fmt.Errorf("unable to list pods in %q: %w", s.Namespace, err)
@@ -406,6 +424,7 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 		}
 	}
 
+	s.log.Logln("cleanup namespaces")
 	if err := s.cleanupNamespace(ctx, c, s.Namespace, options, timeout); err != nil {
 		return err
 	}
