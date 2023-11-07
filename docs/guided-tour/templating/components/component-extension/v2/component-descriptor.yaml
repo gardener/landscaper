@@ -1,6 +1,6 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-06T14:42:20Z"
+  creationTime: "2023-11-07T13:01:11Z"
   name: github.com/gardener/landscaper-examples/guided-tour/templating-components-extension
   provider: internal
   repositoryContexts: []
@@ -26,6 +26,6 @@ component:
     type: ociImage
     version: 1.0.0
   sources: []
-  version: 1.0.0
+  version: 2.0.0
 meta:
   schemaVersion: v2

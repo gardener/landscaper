@@ -1,6 +1,6 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-06T13:15:38Z"
+  creationTime: "2023-11-07T12:59:17Z"
   name: github.com/gardener/landscaper-examples/guided-tour/export-token
   provider: internal
   repositoryContexts: []
@@ -17,6 +17,6 @@ component:
     type: blueprint
     version: 1.0.0
   sources: []
-  version: 1.0.0
+  version: 2.0.0
 meta:
   schemaVersion: v2

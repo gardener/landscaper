@@ -6,7 +6,7 @@ component:
   - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-extension
     name: extension
     version: 1.0.0
-  creationTime: "2023-11-06T14:37:09Z"
+  creationTime: "2023-11-07T13:01:30Z"
   name: github.com/gardener/landscaper-examples/guided-tour/templating-components-root
   provider: internal
   repositoryContexts: []
@@ -23,6 +23,6 @@ component:
     type: blueprint
     version: 1.0.0
   sources: []
-  version: 1.0.0
+  version: 2.0.0
 meta:
   schemaVersion: v2

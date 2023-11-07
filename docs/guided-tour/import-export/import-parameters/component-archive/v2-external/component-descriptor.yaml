@@ -1,6 +1,6 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-06T13:16:23Z"
+  creationTime: "2023-11-07T12:57:48Z"
   name: github.com/gardener/landscaper-examples/guided-tour/echo-server
   provider: internal
   repositoryContexts: []
@@ -39,6 +39,6 @@ component:
     type: ociImage
     version: 0.2.3
   sources: []
-  version: 1.1.0
+  version: 2.1.0
 meta:
   schemaVersion: v2

@@ -1,6 +1,6 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-06T13:13:39Z"
+  creationTime: "2023-11-07T12:56:08Z"
   name: github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource
   provider: internal
   repositoryContexts: []
@@ -28,6 +28,6 @@ component:
     type: helmChart
     version: 1.0.0
   sources: []
-  version: 1.0.0
+  version: 2.0.0
 meta:
   schemaVersion: v2

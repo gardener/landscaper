@@ -52,7 +52,8 @@ if [ -d "${COMPONENT_DIR}" ]; then
 fi
 
 COMPONENT_NAME="github.com/gardener/landscaper-examples/guided-tour/external-blueprint"
-COMPONENT_VERSION="1.0.0"
+# version 2.x.x because 1.x.x are reserved for the legacy components created with component-cli and the corresponding examples
+COMPONENT_VERSION="2.0.0"
 COMPONENT_PROVIDER="internal"
 
 # A Component Archive is a file system representation of a OCM Repository capable of hosting exactly one Component Version
@@ -62,7 +63,7 @@ ocm create componentarchive ${COMPONENT_NAME} ${COMPONENT_VERSION} --provider ${
 if [[ $LOCAL_BLUEPRINT == "local" ]]; then
     # Add blueprint as local (also known as inline) resource
     ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --inputType dir --inputPath "${BLUEPRINT_DIR}" --inputCompress --mediaType "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
-elif [[  $LOCAL_BLUEPRINT == "external" ]]; then
+elif [[ $LOCAL_BLUEPRINT == "external" ]]; then
     # or, if the blueprint is already uploaded to an oci registry, e.g. with the landscaper-cli 
     # Add the image reference to the blueprint
     ocm add resource ${COMPONENT_DIR} --type blueprint --name blueprint --version 1.0.0 --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0
@@ -70,5 +71,5 @@ fi
 
 # Transfer the Component Version from the file system representation of an OCM Repository to an oci registry representation of an OCM Repository
 # echo "pushing component version to oci registry"
-# OCM_REPOSITORY="eu.gcr.io/gardener-project/landscaper/examples"
-# ocm transfer componentarchive --overwrite ${COMPONENT_DIR} ${OCM_REPOSITORY}
+OCM_REPOSITORY="eu.gcr.io/gardener-project/landscaper/examples"
+ocm transfer componentarchive --overwrite ${COMPONENT_DIR} ${OCM_REPOSITORY}
