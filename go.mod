@@ -48,6 +48,12 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+replace (
+	github.com/gardener/landscaper/apis => ./apis
+	github.com/gardener/landscaper/controller-utils => ./controller-utils
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
+)
+
 require (
 	cloud.google.com/go/compute v1.19.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
@@ -284,9 +290,9 @@ require (
 	github.com/zeebo/errs v1.3.0 // indirect
 	go.mongodb.org/mongo-driver v1.11.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/otel v1.16.0 // indirect
-	go.opentelemetry.io/otel/metric v1.16.0 // indirect
-	go.opentelemetry.io/otel/trace v1.16.0 // indirect
+	go.opentelemetry.io/otel v1.19.0 // indirect
+	go.opentelemetry.io/otel/metric v1.19.0 // indirect
+	go.opentelemetry.io/otel/trace v1.19.0 // indirect
 	go.starlark.net v0.0.0-20221028183056-acb66ad56dd2 // indirect
 	go.step.sm/crypto v0.32.1 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
@@ -324,10 +330,4 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.14.1 // indirect
 	sigs.k8s.io/release-utils v0.7.4 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-)
-
-replace (
-	github.com/gardener/landscaper/apis => ./apis
-	github.com/gardener/landscaper/controller-utils => ./controller-utils
-	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
 )
