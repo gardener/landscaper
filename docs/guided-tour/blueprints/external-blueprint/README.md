@@ -87,7 +87,7 @@ context: landscaper-examples
 componentDescriptor:
   ref: 
     componentName: github.com/gardener/landscaper-examples/guided-tour/external-blueprint 
-    version: 1.0.0
+    version: 2.0.0
 
 blueprint: 
   ref: 

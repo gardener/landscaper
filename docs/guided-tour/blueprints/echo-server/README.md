@@ -25,8 +25,8 @@ The `Deployment` uses a container image. However, instead of a hard-coded image 
 the [deployment.yaml](./chart/echo-server/templates/deployment.yaml), we rather maintain the image reference in the
 component descriptor. In detail, the connection is the following:
 
-- The [component descriptor](./component-descriptor.yaml) contains a resource with name `echo-server-image` and a
-  reference to the actual image:
+- The [component descriptor](./component-archive/v2-external/component-descriptor.yaml) contains a resource with name 
+  `echo-server-image` and areference to the actual image:
  
   ```yaml
   name: echo-server-image
