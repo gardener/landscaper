@@ -179,7 +179,7 @@ To deploy the example follow the steps below:
    It should contain the same token that was automatically generated into the `Secret` on the target cluster:  
 
    ```shell
-   kubectl get secret -n example my-secret -o json | jq .data.token -r | base64 -D
+   kubectl get secret -n example test-secret -o json | jq .data.token -r | base64 -D
    ```
 
    Note that the token in the `Secret` is base64 encoded. Therefore, we must decode it first before we can compare it 
