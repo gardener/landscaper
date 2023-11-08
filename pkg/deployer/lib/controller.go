@@ -281,12 +281,12 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 	if di.DeletionTimestamp.IsZero() {
 		lsError := c.reconcile(ctx, di, rt)
 		_ = c.handleReconcileResult(ctx, lsError, old, di)
-		return c.buildResult(di.Status.Phase)
+		return c.buildResult(ctx, di.Status.Phase, lsError)
 
 	} else {
 		lsError := c.delete(ctx, di, rt)
 		_ = c.handleReconcileResult(ctx, lsError, old, di)
-		return c.buildResult(di.Status.Phase)
+		return c.buildResult(ctx, di.Status.Phase, lsError)
 	}
 }
 
@@ -294,7 +294,13 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsClient, c.lsEventRecorder)
 }
 
-func (c *controller) buildResult(phase lsv1alpha1.DeployItemPhase) (reconcile.Result, error) {
+func (c *controller) buildResult(ctx context.Context, phase lsv1alpha1.DeployItemPhase, lsError lserrors.LsError) (reconcile.Result, error) {
+
+	if lsError != nil {
+		logger, _ := logging.FromContextOrNew(ctx, nil)
+		logger.Error(lsError, "reconcile deploy item")
+	}
+
 	if phase.IsFinal() {
 		return reconcile.Result{}, nil
 	} else {
