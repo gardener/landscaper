@@ -1,6 +1,6 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-07T12:55:29Z"
+  creationTime: "2023-11-07T13:54:18Z"
   name: github.com/gardener/landscaper-examples/guided-tour/external-blueprint
   provider: internal
   repositoryContexts: []

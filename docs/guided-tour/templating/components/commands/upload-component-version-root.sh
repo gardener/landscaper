@@ -70,8 +70,8 @@ elif [[  $LOCAL_BLUEPRINT == "external" ]]; then
 fi
 
 # Add references
-ocm add reference ${COMPONENT_DIR} --name core --component github.com/gardener/landscaper-examples/guided-tour/templating-components-core --version 1.0.0
-ocm add reference ${COMPONENT_DIR} --name extension --component github.com/gardener/landscaper-examples/guided-tour/templating-components-extension --version 1.0.0
+ocm add reference ${COMPONENT_DIR} --name core --component github.com/gardener/landscaper-examples/guided-tour/templating-components-core --version 2.0.0
+ocm add reference ${COMPONENT_DIR} --name extension --component github.com/gardener/landscaper-examples/guided-tour/templating-components-extension --version 2.0.0
 
 # Transfer the Component Version from the file system representation of an OCM Repository to an oci registry representation of an OCM Repository
 # echo "pushing component version to oci registry"

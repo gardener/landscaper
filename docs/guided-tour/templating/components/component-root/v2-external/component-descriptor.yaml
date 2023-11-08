@@ -2,11 +2,11 @@ component:
   componentReferences:
   - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-core
     name: core
-    version: 1.0.0
+    version: 2.0.0
   - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-extension
     name: extension
-    version: 1.0.0
-  creationTime: "2023-11-07T13:01:30Z"
+    version: 2.0.0
+  creationTime: "2023-11-07T13:52:12Z"
   name: github.com/gardener/landscaper-examples/guided-tour/templating-components-root
   provider: internal
   repositoryContexts: []
