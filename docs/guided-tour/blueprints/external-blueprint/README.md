@@ -33,7 +33,7 @@ component, or rather, a specific component version. In general, a component vers
 resources for the deployment of a specific version of an application or software system. In this example, the
 application is the hello-world application deployable with the landscaper through an external blueprint. Thereby, the
 external blueprint is the only resource required for the deployment.  A component version may either contain a resource
-through referencing it at an external location (such an an oci registry) or through embedding it as a local blob.
+through referencing it at an external location (such as an oci registry) or through embedding it as a local blob.
 
 #### Component Version with External Resource A file system representation of a component version containing the
 resource through an external reference is shown [here](./component-archive/v2-external).  The corresponding
