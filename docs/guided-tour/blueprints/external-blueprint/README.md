@@ -69,8 +69,8 @@ resource or with the local resource), you can do so using the following command:
 
 ```shell 
 ocm download componentversion \
-    eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint \
-    -O component-archive 
+  eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint:2.0.0 \
+  -O component-archive 
 ```
 
 For more information about components and related concepts, refer to the [documentation of the
