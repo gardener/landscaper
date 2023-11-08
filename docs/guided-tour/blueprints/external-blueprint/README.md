@@ -65,9 +65,13 @@ The commands used to create and upload the above component versions can be found
 uploaded a corresponding component version
 [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/external-blueprint).
 If you want to inspect the uploaded component version (e.g. to find out whether we uploaded the one with the external
-resource or with the local resource), you can do so using the following command:  ``` ocm download componentversion
-eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint
--O component-archive ``` For more information about components and related concepts, refer to the [documentation of the
+resource or with the local resource), you can do so using the following command:  
+
+```shell 
+ocm download componentversion eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint -O component-archive 
+```
+
+For more information about components and related concepts, refer to the [documentation of the
 ocm project](https://ocm.software/).
 
 
@@ -75,12 +79,18 @@ ocm project](https://ocm.software/).
 
 The [Installation](./installation/installation.yaml) references the component descriptor and blueprint as follows:  
 
-```yaml context: landscaper-examples
+```yaml 
+context: landscaper-examples
 
-componentDescriptor: ref: componentName: github.com/gardener/landscaper-examples/guided-tour/external-blueprint version:
-1.0.0
+componentDescriptor:
+  ref: 
+    componentName: github.com/gardener/landscaper-examples/guided-tour/external-blueprint 
+    version: 1.0.0
 
-blueprint: ref: resourceName: blueprint ```
+blueprint: 
+    ref: 
+        resourceName: blueprint 
+```
 
 - The field `context` contains the name of a custom resource of kind [Context](../../../usage/Context.md) in the same
   namespace as the Installation on the Landscaper resource cluster. [Our Context resource](./installation/context.yaml)
@@ -105,8 +115,12 @@ The procedure to deploy the helm chart with the Landscaper is:
 [context.yaml](./installation/context.yaml), the [target.yaml](installation/target.yaml), and the
 [installation.yaml](installation/installation.yaml):
 
-   ```shell kubectl create ns example kubectl apply -f <path to context.yaml> kubectl apply -f <path to target.yaml>
-   kubectl apply -f <path to installation.yaml> ```
+```shell
+kubectl create ns example 
+kubectl apply -f <path to context.yaml> 
+kubectl apply -f <path to target.yaml>
+kubectl apply -f <path to installation.yaml> 
+```
 
 
 ## References 
