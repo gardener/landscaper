@@ -68,7 +68,9 @@ If you want to inspect the uploaded component version (e.g. to find out whether 
 resource or with the local resource), you can do so using the following command:  
 
 ```shell 
-ocm download componentversion eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint -O component-archive 
+ocm download componentversion \
+    eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint \
+    -O component-archive 
 ```
 
 For more information about components and related concepts, refer to the [documentation of the
