@@ -35,24 +35,28 @@ application is the hello-world application deployable with the landscaper throug
 external blueprint is the only resource required for the deployment.  A component version may either contain a resource
 through referencing it at an external location (such as an oci registry) or through embedding it as a local blob.
 
-#### Component Version with External Resource A file system representation of a component version containing the
-resource through an external reference is shown [here](./component-archive/v2-external).  The corresponding
-component-descriptor describing that component version is stored as a top-level file. The component descriptor contains
-only a single _resource_ with the `name: blueprint`. This resource has an _access_ of `type: ociArtifact` that contains
-a reference to the previously uploaded image.  Besides the component-descriptor, there is a directory called blobs at
-the top-level. This is where the local blobs of a embedded resource would be located. Since the blueprint is the only
-resource of this component version and it is contained through an external reference, this directory is empty.
+#### Component Version with External Resource
 
-#### Component Version with Local Resource A file system representation of a component version containing the resource
-as a local blob is shown [here](./component-archive/v2-local).  Again, the corresponding component-descriptor describing
-that component version is stored as a top-level file. Exactly as before, the component descriptor contains only a single
-_resource_ with the `name: blueprint`. But now, this resource has an _access_ of `type: localBlob`. Instead of an
-`imageReference`, this _access_ of `type: localBlob` has a `localReference`. This is the sha256 hash value of the
-blueprint. If you open the blob directory here, you will see that it contains a file with exactly that name.
-Furthermore, this _access_ has a field `mediaType`, which provides information about the format in which the blueprint
-is stored, here that it is an archived and compressed (tar+gzip). The _access_ of `type: ociArtifact` did not need to
-provide this information since the `ociArtifact` format is determined through the oci standard and the format of the
-contents of the oci artifact is described within the artifact itself.  
+A file system representation of a component version containing the resource through an external reference is shown
+[here](./component-archive/v2-external).  The corresponding component-descriptor describing that component version is
+stored as a top-level file. The component descriptor contains only a single _resource_ with the `name: blueprint`. This
+resource has an _access_ of `type: ociArtifact` that contains a reference to the previously uploaded image.  Besides the
+component-descriptor, there is a directory called blobs at the top-level. This is where the local blobs of a embedded
+resource would be located. Since the blueprint is the only resource of this component version and it is contained
+through an external reference, this directory is empty.
+
+#### Component Version with Local Resource 
+
+A file system representation of a component version containing the resource as a local blob is shown
+[here](./component-archive/v2-local).  Again, the corresponding component-descriptor describing that component version
+is stored as a top-level file. Exactly as before, the component descriptor contains only a single _resource_ with the
+`name: blueprint`. But now, this resource has an _access_ of `type: localBlob`. Instead of an `imageReference`, this
+_access_ of `type: localBlob` has a `localReference`. This is the sha256 hash value of the blueprint. If you open the
+blob directory here, you will see that it contains a file with exactly that name. Furthermore, this _access_ has a field
+`mediaType`, which provides information about the format in which the blueprint is stored, here that it is an archived
+and compressed (tar+gzip). The _access_ of `type: ociArtifact` did not need to provide this information since the
+`ociArtifact` format is determined through the oci standard and the format of the contents of the oci artifact is
+described within the artifact itself.  
   
 These file system representations of component versions can then be uploaded to an oci registry.  
 
