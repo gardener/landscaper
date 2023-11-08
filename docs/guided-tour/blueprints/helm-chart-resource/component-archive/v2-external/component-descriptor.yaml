@@ -1,6 +1,6 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-07T12:56:08Z"
+  creationTime: "2023-11-08T12:16:25Z"
   name: github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource
   provider: internal
   repositoryContexts: []

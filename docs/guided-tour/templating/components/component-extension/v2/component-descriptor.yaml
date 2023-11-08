@@ -1,6 +1,6 @@
 component:
   componentReferences: []
-  creationTime: "2023-11-07T13:01:11Z"
+  creationTime: "2023-11-08T12:20:58Z"
   name: github.com/gardener/landscaper-examples/guided-tour/templating-components-extension
   provider: internal
   repositoryContexts: []
