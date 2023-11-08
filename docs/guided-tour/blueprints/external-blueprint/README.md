@@ -90,8 +90,8 @@ componentDescriptor:
     version: 1.0.0
 
 blueprint: 
-    ref: 
-        resourceName: blueprint 
+  ref: 
+    resourceName: blueprint 
 ```
 
 - The field `context` contains the name of a custom resource of kind [Context](../../../usage/Context.md) in the same
