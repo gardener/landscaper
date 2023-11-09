@@ -1,3 +1,23 @@
+# v1.9.14 (2023-08-18)
+
+* No change notes available for this release.
+
+# v1.9.13 (2023-08-07)
+
+* No change notes available for this release.
+
+# v1.9.12 (2023-07-31)
+
+* No change notes available for this release.
+
+# v1.9.11 (2022-12-02)
+
+* No change notes available for this release.
+
+# v1.9.10 (2022-10-24)
+
+* No change notes available for this release.
+
 # v1.9.9 (2022-09-14)
 
 * No change notes available for this release.
