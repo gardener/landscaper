@@ -14,6 +14,9 @@ go.work.sum
 gen/
 
 /example/dice/dice
+/example/fib/fib
+/example/fib/traces.txt
+/example/jaeger/jaeger
 /example/namedtracer/namedtracer
 /example/otel-collector/otel-collector
 /example/opencensus/opencensus
