@@ -53,7 +53,7 @@ is stored as a top-level file. Exactly as before, the component descriptor conta
 `name: blueprint`. But now, this resource has an _access_ of `type: localBlob`. Instead of an `imageReference`, this
 _access_ of `type: localBlob` has a `localReference`. This is the sha256 hash value of the blueprint. If you open the
 blob directory here, you will see that it contains a file with exactly that name. Furthermore, this _access_ has a field
-`mediaType`, which provides information about the format in which the blueprint is stored, here that it is an archived
+`mediaType`, which provides information about the format in which the blueprint is stored, here that it is archived
 and compressed (tar+gzip). The _access_ of `type: ociArtifact` did not need to provide this information since the
 `ociArtifact` format is determined through the oci standard and the format of the contents of the oci artifact is
 described within the artifact itself.  
