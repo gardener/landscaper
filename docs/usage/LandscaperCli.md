@@ -17,7 +17,7 @@ landscaper-cli blueprints render [path to blueprint directory] -f values.yaml -c
 
 A component descriptor can be defined by using the `-c` flag that is a path to the component descriptor.
 
-The command renders the resulting DeployItems(with the templating state) and the subinstallations and prints them to stdout.<br>
+The command renders the resulting DeployItems(with the templating state) and the subinstallations and prints them to stdout.
 The output will print the rendered resources in the following structure
 ```shell script
 --------------------------------------
