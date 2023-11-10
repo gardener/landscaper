@@ -7,14 +7,18 @@ package deployers
 import (
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/deployers/blueprints"
+	"github.com/gardener/landscaper/test/integration/deployers/container"
+	"github.com/gardener/landscaper/test/integration/deployers/helmcharts"
+	"github.com/gardener/landscaper/test/integration/deployers/helmdeployer"
+	"github.com/gardener/landscaper/test/integration/deployers/management"
 )
 
 // RegisterTests registers all tests of this package
 func RegisterTests(f *framework.Framework) {
-	//ManifestDeployerTestsForNewReconcile(f)
-	//helmcharts.RegisterTests(f)
-	//container.ContainerTests(f)
+	ManifestDeployerTestsForNewReconcile(f)
+	helmcharts.RegisterTests(f)
+	container.ContainerTests(f)
 	blueprints.RegisterTests(f)
-	//management.RegisterTests(f)
-	//helmdeployer.RegisterTests(f)
+	management.RegisterTests(f)
+	helmdeployer.RegisterTests(f)
 }
