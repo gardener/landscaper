@@ -64,7 +64,7 @@ For detailed documentation of InstallationTemplates see [docs/usage/Blueprints.m
 In the current example, 2 subinstallations are created.
 
 The first subinstallation defines the ingress that is installed using the previously created blueprint.
-The ingress installation imports the same target cluster and namespace that is also imported by aggregated blueprint.<br>
+The ingress installation imports the same target cluster and namespace that is also imported by aggregated blueprint.
 This target and namespace import is only accessible by the subinstallation because it is imported by its parent.
 Otherwise, this would not be possible.
 ```yaml
