@@ -253,7 +253,7 @@ func (f *Factory) NewHelmOCIResource(ctx context.Context, ociImageRef string, re
 		if !ok {
 			continue
 		}
-		credspec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes)
+		credspec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes, true)
 		_, err := provider.ocictx.CredentialsContext().RepositoryForSpec(credspec)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot create credentials from secret")
