@@ -93,7 +93,7 @@ func getChartFromOCIRef(ctx context.Context,
 	ociConfig *config.OCIConfiguration,
 	sharedCache cache.Cache) (*chart.Chart, error) {
 
-	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmOCIResource(ctx, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
+	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmOCIResource(ctx, nil, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
 	if err != nil {
 		return nil, err
 	}
