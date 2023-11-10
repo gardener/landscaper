@@ -50,9 +50,6 @@ The blueprint definition (blueprint.yaml) describes
   - [Nested Installations](#nested-installations)
     - [Static Installations](#static-installations)
     - [Templated Installations](#templated-installations)
-  <!-- - [Remote Access](#remote-access)
-    - [Local](#local)
-    - [OCI](#oci) -->
 
 ## Example
 
@@ -673,35 +670,6 @@ deployExecutions:
           {{ $resource := getResource $component "name" "ubuntu" }}
           usesImage: {{ $resource.access.imageReference }} # resolves to ubuntu:0.18.0
 ```
-
-<!-- TODO
-*Rendered Result*:
-```yaml
-deployExecutions:
-- name: default
-  type: GoTemplate
-  template: |
-    deployItems:
-    - name: deploy
-      type: landscaper.gardener.cloud/helm
-      target:
-        import: cluster
-      config:
-        apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
-        kind: ProviderConfiguration
-        
-        chart:
-          {{ $resource := getResource .cd "name" "nginx-ingress-chart" }}
-          ref: {{ $resource.access.imageReference }} # resolves to nginx:0.30.0
-        
-        values:
-          replicas: {{ .imports.replicas  }} # will resolve to 3
-          
-          {{ $component := getComponent .cd "name" "my-referenced-component" }} # get a component that is referenced
-          {{ $resource := getResource $component "name" "ubuntu" }}
-          usesImage: {{ $resource.access.imageReference }} # resolves to ubuntu:0.18.0
-``` -->
-
 
 ### Export Values
 
