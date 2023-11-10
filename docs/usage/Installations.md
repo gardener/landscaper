@@ -321,7 +321,7 @@ component:
       imageReference: registry.example.com/blueprints/my-application
 ```
 
-After having referenced the component descriptor, the defined blueprint can be resolved via its name as described in the below example in `.spec.blueprint.ref.resourceName`.<br>
+After having referenced the component descriptor, the defined blueprint can be resolved via its name as described in the below example in `.spec.blueprint.ref.resourceName`.
 
 ```yaml
 spec:
