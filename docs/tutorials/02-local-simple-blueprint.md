@@ -13,7 +13,7 @@ __Prerequisites__:
 - [OPTIONAL] OCI compatible oci registry (e.g. GCR or Harbor)
 - Kubernetes Cluster (better use two different clusters: one for the landscaper and one for the installation)
 
-All example resources can be found in [./resources/local-ingress-nginx](./resources/local-ingress-nginx).<br>
+All example resources can be found in [./resources/local-ingress-nginx](./resources/local-ingress-nginx).
 :warning: note that the repository `eu.gcr.io/gardener-project/landscaper/tutorials` is an example repository 
 and has to be replaced with your own registry if you want to upload your own artifacts.
 Although the artifacts are public readable so they can be used out-of-the-box without a need for your own oci registry.
@@ -74,7 +74,7 @@ helm pull ingress-nginx/ingress-nginx --untar --destination /tmp/chart
 
 The helm chart is now downloaded and stored on the machine.
 Then the resource that should be added to component descriptor has to be defined in a `helm-resource.yaml` configuration file.
-This configuration file contains a resource definition which takes the previously created helm char as `input`.<br>
+This configuration file contains a resource definition which takes the previously created helm char as `input`.
 :warning: Note that the paths used in this configuration file are relative to the location of the `helm-resource.yaml`-file.
 :information_source: The `resources.yaml` can be a multidoc yaml see section `9.2` in the [yaml spec](https://yaml.org/spec/1.2/spec.html#id2800132). See the [here](./resources/local-ingress-nginx/resources.yaml) for an example.
 ```yaml
@@ -131,7 +131,7 @@ A CTF is of the following form
 
 </details>
 
-With the command above, the helm resource defined in the `helm-resource.yaml` has been added to the component descriptor as `localFilesystemBlob` and the defined input files/directories are packaged and copied to the blobs directory, which contains now 1 file.<br>
+With the command above, the helm resource defined in the `helm-resource.yaml` has been added to the component descriptor as `localFilesystemBlob` and the defined input files/directories are packaged and copied to the blobs directory, which contains now 1 file.
 
 ```yaml
 meta:
@@ -193,7 +193,7 @@ deployExecutions:
 ```
 
 When the blueprint has been created it is also defined as resource in a `blueprint-resource.yaml` configuration file.
-This configuration file contains the resource definition with the input to the previously created blueprint.<br>
+This configuration file contains the resource definition with the input to the previously created blueprint.
 ```yaml
 ---
 type: blueprint
@@ -213,7 +213,7 @@ landscaper-cli component-cli ca resources add ./docs/tutorials/resources/local-i
   ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
 ```
 
-With his, the blueprint has been added to the component descriptor as `localFilesystemBlob` and the content has been packaged and copied to the blobs directory, which contains now 2 files.<br>
+With his, the blueprint has been added to the component descriptor as `localFilesystemBlob` and the content has been packaged and copied to the blobs directory, which contains now 2 files.
 
 ```yaml
 meta:
