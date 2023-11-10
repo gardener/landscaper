@@ -24,7 +24,7 @@ Although the artifacts are public readable so they can be used out-of-the-box wi
 
 The http echo server consists of a deployment, a service and a ingress object that are istalled using the [kubernetes manifest deployer](/docs/deployer/manifest.md)
 
-First resource that we have to create is the blueprint.<br>
+First resource that we have to create is the blueprint.
 The http echo blueprint imports a cluster to deploy the kubernetes resources, a namespace name and a ingress class.
 The ingress class is imported so that the responsible ingress controller can be set.
 (See the kubernetes [ingress docs](https://kubernetes.io/docs/concepts/services-networking/ingress/) for detailed documentation)
@@ -65,8 +65,8 @@ deployExecutions:
 The external file contains the template to render the deploy items.
 As the kubernetes manifest deployer is used to deploy the kubernetes object, one deploy item of type `landscaper.gardener.cloud/kubernetes-manifest` is defined.
 
-It contains all the 3 resources that are needed for the echo server deployment.<br>
-The imported `ingressClass` is used in the ingress resource to define the class annotation: `kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"`.<br>
+It contains all the 3 resources that are needed for the echo server deployment.
+The imported `ingressClass` is used in the ingress resource to define the class annotation: `kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"`.
 Also the http echo server oci image is taken from the component descriptor as external resource: `image: {{ index .cd.component.resources "echo-server-image" "access" "imageReference" }}`.
 
 *defaultDeployExecution.yaml*:
@@ -157,7 +157,7 @@ The blueprint is now build and uploaded.
 Then the corresponding component descriptor has to be created.
 
 It contains the blueprint as local resource and the http echo server image as external resource.
-The echo server is specified as external image because the image is consumed form the open source.<br>
+The echo server is specified as external image because the image is consumed form the open source.
 For more information about the component descriptor and the usage of the different fields see the [component descriptor docs](https://github.com/gardener/component-spec).
 
 ```yaml
