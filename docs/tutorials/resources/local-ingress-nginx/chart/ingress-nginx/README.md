@@ -369,7 +369,7 @@ Kubernetes: `>=1.19.0-0`
 | controller.proxySetHeaders | object | `{}` | Will add custom headers before sending traffic to backends according to https://github.com/kubernetes/ingress-nginx/tree/main/docs/examples/customization/custom-headers |
 | controller.publishService | object | `{"enabled":true,"pathOverride":""}` | Allows customization of the source of the IP address or FQDN to report in the ingress status field. By default, it reads the information provided by the service. If disable, the status field reports the IP address of the node or nodes where an ingress controller pod is running. |
 | controller.publishService.enabled | bool | `true` | Enable 'publishService' or not |
-| controller.publishService.pathOverride | string | `""` | Allows overriding of the publish service to bind to Must be <namespace>/<service_name> |
+| controller.publishService.pathOverride | string | `""` | Allows overriding of the publish service to bind to Must be `<namespace>/<service_name>` |
 | controller.readinessProbe.failureThreshold | int | `3` |  |
 | controller.readinessProbe.httpGet.path | string | `"/healthz"` |  |
 | controller.readinessProbe.httpGet.port | int | `10254` |  |
