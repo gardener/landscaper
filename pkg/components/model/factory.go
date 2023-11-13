@@ -72,6 +72,7 @@ type Factory interface {
 
 	// NewHelmOCIResource returns a helm chart resource that is stored in an OCI registry.
 	NewHelmOCIResource(ctx context.Context,
+		fs vfs.FileSystem,
 		ociImageRef string,
 		registryPullSecrets []corev1.Secret,
 		ociConfig *config.OCIConfiguration,
