@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -u
+set -e
+
+REPO_ROOT="$(dirname $0)/../.."
+cd "${REPO_ROOT}"
+REPO_ROOT="$(pwd)"
+export REPO_ROOT
+
+TMP_DIR="/tmp"
+EXPORT_DIR="/logs/artifacts"
+BIN_DIR="$TMP_DIR/bin"
+GOBIN="$BIN_DIR"
+mkdir -p "$EXPORT_DIR"
+mkdir -p "$BIN_DIR"
+export PATH="$BIN_DIR:$PATH"
+
+export EFFECTIVE_VERSION=$($REPO_ROOT/hack/get-version.sh)
+export KUBECONFIG="$TMP_DIR/kubeconfig"
+
+export K8S_VERSION="v1.25.3"
+export KIND_VERSION="v0.18.0"
+export CLUSTER_NAME="int-test"
+
+function export_resources() {
+  for res in "$@"; do
+    echo "exporting $res"
+    kubectl get "$res" -A -o yaml > "$EXPORT_DIR/$res.yaml"
+  done
+}
+
+# prow merges the PR with the master branch, which adds a commit and messes up the version logic
+last_commit_message=$(git log -1 --pretty=%B)
+if [[ "$last_commit_message" == "Merge commit '"*"'" ]] && [[ $PULL_PULL_SHA ]]; then
+  echo "Reverting merge with master branch ..."
+  git checkout "$PULL_PULL_SHA"
+  EFFECTIVE_VERSION="$(cat $REPO_ROOT/VERSION)-$PULL_PULL_SHA"
+  echo "Setting EFFECTIVE_VERSION to $EFFECTIVE_VERSION."
+fi
+
+# download kind if not there
+echo ">>> Checking for kind"
+kv=""
+if ! kv=$(kind version 2>/dev/null); then
+  echo "kind not found, downloading version $KIND_VERSION"
+  curl -L -o "$BIN_DIR/kind" "https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+	chmod +x "$BIN_DIR/kind"
+else
+  echo "kind found: $kv"
+fi
+
+# install ginkgo if not there
+echo ">>> Checking for ginkgo"
+gv=""
+if ! gv=$(ginkgo version 2>/dev/null); then
+  echo "ginkgo not found, installing it"
+  go install "github.com/onsi/ginkgo/v2/ginkgo"
+else
+  echo "ginkgo found: $gv"
+fi
+
+# create kind cluster
+echo ">>> Creating kind cluster"
+kind create cluster --image="kindest/node:$K8S_VERSION" --name="$CLUSTER_NAME" --wait=300s
+echo ""
+
+# export logs and remove kind cluster after execution
+trap '{
+  echo ">>> Exporting logs and resources"
+  kind export logs --name="$CLUSTER_NAME" "$EXPORT_DIR"
+  export_resources deployments installations executions deployitems
+  echo ""
+  echo ">>> Deleting kind cluster"
+  kind delete cluster --name="$CLUSTER_NAME"
+  echo ""
+}' EXIT
+
+# install Landscaper
+echo ">>> Installing Landscaper"
+${REPO_ROOT}/hack/install-landscaper-for-integration-test.sh
+echo ""
+
+# run tests
+echo ">>> Running integration tests"
+ginkgo -timeout=60m -v -progress -no-color -seed=17 -fail-fast ${REPO_ROOT}/test/integration  -- \
+  --kubeconfig=$KUBECONFIG  \
+  --ls-namespace=ls-system  \
+  --ls-version=$EFFECTIVE_VERSION
+echo ""

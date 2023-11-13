@@ -90,7 +90,7 @@ for i in "${blueprints[@]}"; do
   landscaper-cli blueprint push ${ref}:${version// /} ${blueprints_path}
 done
 for i in "${component_descriptors[@]}"; do
-  landscaper-cli components-cli ca remote push $i
+  landscaper-cli component-cli ca remote push $i
 done
 
 cleanup_local_nginx_resources

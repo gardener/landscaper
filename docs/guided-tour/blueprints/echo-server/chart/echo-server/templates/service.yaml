@@ -8,5 +8,5 @@ spec:
     app: echo
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 5678
+      port: {{ .Values.port }}
+      targetPort: 80

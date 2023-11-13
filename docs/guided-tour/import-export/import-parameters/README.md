@@ -2,7 +2,7 @@
 
 This example is a modification of the [Echo Server Example](../../blueprints/echo-server). 
 We add import parameters to the blueprint to make some of its settings configurable: the Helm release name and namespace, 
-as well as the text of the echo server. The `Installation` will provide values for these parameters which it reads
+as well as the port of the echo server. The `Installation` will provide values for these parameters which it reads
 from `DataObject` custom resources. 
 
 In some sense, you can view a blueprint as a function that executes a deployment,
@@ -12,7 +12,7 @@ and the `Installation` as a call of this function providing values for its param
 ## Declaring Import Parameters
 
 The [blueprint](./blueprint/blueprint.yaml) of the present example declares three import parameters:
-the target parameter `cluster`, and the data parameters `release` and `text`. 
+the target parameter `cluster`, and the data parameters `release` and `port`. 
 
 ```yaml
 imports:
@@ -25,10 +25,10 @@ imports:
   schema:
     type: object
 
-- name: text
+- name: port
   type: data
   schema:
-    type: string
+    type: number
 ```
 
 In general, we distinguish parameters of type `target`, `targetList`, and `data`.
@@ -52,7 +52,7 @@ A blueprint can use its import parameters in the templating of `DeployItems`.
 The value of an import parameter can be accessed by `.imports.<parameter name>`, for example:
 
 ```yaml
-text: {{ .imports.text }}
+port: {{ .imports.port }}
 ```
 
 If a parameter is of type `object`, you can access a field by appending the path to the field, for example:
@@ -68,7 +68,7 @@ For more details, see [Rendering](../../../usage/Blueprints.md#rendering)
 
 We have stored the values for the two import parameters in `DataObject` custom resources
 [dataobject-release.yaml](./installation/dataobject-release.yaml) and 
-[dataobject-text.yaml](./installation/dataobject-text.yaml).
+[dataobject-port.yaml](./installation/dataobject-port.yaml).
 
 The `imports` section of the `Installation` connects each import parameters of the blueprint 
 with a corresponding `DataObject` or `Target`.  
@@ -96,14 +96,14 @@ The procedure to install the helm chart with Landscaper is as follows:
 2. On the Landscaper resource cluster, create namespace `example` and apply
    the [context.yaml](./installation/context.yaml),
    the [dataobject-release.yaml](./installation/dataobject-release.yaml),
-   the [dataobject-text.yaml](./installation/dataobject-text.yaml),
+   the [dataobject-port.yaml](./installation/dataobject-port.yaml),
    the [target.yaml](installation/target.yaml), and the [installation.yaml](installation/installation.yaml):
 
    ```shell
    kubectl create ns example
    kubectl apply -f <path to context.yaml>
    kubectl apply -f <path to dataobject-release.yaml>
-   kubectl apply -f <path to dataobject-text.yaml>
+   kubectl apply -f <path to dataobject-port.yaml>
    kubectl apply -f <path to target.yaml>
    kubectl apply -f <path to installation.yaml>
    ```
@@ -114,10 +114,9 @@ The procedure to install the helm chart with Landscaper is as follows:
    kubectl port-forward -n example-2 service/echo 8080:80
    ```
 
-   Then open `localhost:8080` in a browser.
+   Then open [`localhost:8080/?echo_body=Hello%20Landscaper!`](localhost:8080/?echo_body=Hello%20Landscaper!) in a browser.
 
-   The response should be "Hello, Landscaper!", which is the text defined
-   in the [dataobject-text.yaml](./installation/dataobject-text.yaml).
+   The response should be "Hello, Landscaper!".
 
 
 ## References

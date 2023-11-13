@@ -1,6 +1,6 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DataObject
 metadata:
-  name: my-text
+  name: my-port
   namespace: example
-data: Hello, Landscaper!
+data: 80

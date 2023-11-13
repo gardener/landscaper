@@ -6,12 +6,11 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
+	"time"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -69,11 +68,7 @@ func (o *CreateRegistryOptions) AddFlags(fs *pflag.FlagSet) {
 func (o *CreateRegistryOptions) Complete() error {
 	// generate id if none is defined
 	if len(o.ID) == 0 {
-		uid, err := uuid.NewUUID()
-		if err != nil {
-			return fmt.Errorf("unable to generate uuid: %w", err)
-		}
-		o.ID = base64.StdEncoding.EncodeToString([]byte(uid.String()))
+		o.ID = fmt.Sprint(time.Now().Unix())
 	}
 	if err := o.Validate(); err != nil {
 		return err

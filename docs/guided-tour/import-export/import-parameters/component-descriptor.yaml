@@ -31,8 +31,8 @@ component:
         imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
     - name: echo-server-image
       type: ociImage
-      version: v0.2.3
+      version: v0.7.0
       relation: external
       access:
         type: ociRegistry
-        imageReference: hashicorp/http-echo:0.2.3
+        imageReference: ealen/echo-server:0.7.0
