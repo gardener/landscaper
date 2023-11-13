@@ -202,7 +202,7 @@ func (f *Factory) NewHelmOCIResource(ctx context.Context,
 	}
 
 	provider := &HelmChartProvider{
-		ocictx:  oci.DefaultContext(),
+		ocictx:  oci.New(datacontext.MODE_EXTENDED),
 		ref:     refspec.Repository,
 		version: refspec.Version(),
 		repourl: fmt.Sprintf("oci://%s", refspec.Host),
