@@ -9,107 +9,133 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/onsi/ginkgo/v2"
-	g "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-
-	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
-	"github.com/gardener/landscaper/pkg/deployer/helm"
-
-	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
-	"github.com/gardener/landscaper/pkg/deployer/container"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/deployer/container"
+	"github.com/gardener/landscaper/pkg/deployer/helm"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/deployer/mock"
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
-
 	commonutils "github.com/gardener/landscaper/pkg/utils"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 func DeployerBlueprintTests(f *framework.Framework) {
-	ginkgo.Describe("Deployer Blueprint", func() {
 
-		phase := lsv1alpha1.DeployItemPhases.Succeeded
-		TestDeployerBlueprint(f, testDefinition{
-			Name:                    "MockDeployer",
-			ComponentDescriptorName: "github.com/gardener/landscaper/mock-deployer",
-			BlueprintResourceName:   "mock-deployer-blueprint",
-			DeployItemBuilder: mock.NewDeployItemBuilder().
-				ProviderConfig(&mockv1alpha1.ProviderConfiguration{
-					Phase: &phase,
-				}),
+	Describe("Deployer Blueprint", func() {
+
+		var (
+			ctx   context.Context
+			state = f.Register()
+		)
+
+		BeforeEach(func() {
+			log, err := logging.GetLogger()
+			if err != nil {
+				f.Log().Logfln("Error fetching logger: %w", err)
+				return
+			}
+			ctx = logging.NewContext(context.Background(), log)
 		})
 
-		TestDeployerBlueprint(f, testDefinition{
-			Name:                    "ManifestDeployer",
-			ComponentDescriptorName: "github.com/gardener/landscaper/mock-deployer",
-			BlueprintResourceName:   "mock-deployer-blueprint",
-			DeployItem: func(state *envtest.State, target *lsv1alpha1.Target) (*lsv1alpha1.DeployItem, error) {
-				secret, _ := kutil.ConvertToRawExtension(&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{Name: "my-secret", Namespace: state.Namespace},
-					Data: map[string][]byte{
-						"key": []byte("val"),
-					},
-				}, scheme.Scheme)
-				return manifest.NewDeployItemBuilder().
-					Key(state.Namespace, "my-di").
-					Target(target.Namespace, target.Name).
-					ProviderConfig(&manifestv1alpha2.ProviderConfiguration{
-						Manifests: []managedresource.Manifest{
-							{
-								Policy:   managedresource.ManagePolicy,
-								Manifest: secret,
+		AfterEach(func() {
+			defer ctx.Done()
+		})
+
+		It("MockDeployer should deploy a deployer with its blueprint", func() {
+			td := &testDefinition{
+				Name:                    "MockDeployer",
+				ComponentDescriptorName: "github.com/gardener/landscaper/mock-deployer",
+				BlueprintResourceName:   "mock-deployer-blueprint",
+				DeployItemBuilder: mock.NewDeployItemBuilder().
+					ProviderConfig(&mockv1alpha1.ProviderConfiguration{
+						Phase: &lsv1alpha1.DeployItemPhases.Succeeded,
+					}),
+			}
+			executeTest(ctx, f, state, td)
+		})
+
+		It("ManifestDeployer should deploy a deployer with its blueprint", func() {
+			td := &testDefinition{
+				Name:                    "ManifestDeployer",
+				ComponentDescriptorName: "github.com/gardener/landscaper/mock-deployer",
+				BlueprintResourceName:   "mock-deployer-blueprint",
+				DeployItem: func(state *envtest.State, target *lsv1alpha1.Target) (*lsv1alpha1.DeployItem, error) {
+					secret, _ := kutil.ConvertToRawExtension(&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{Name: "my-secret", Namespace: state.Namespace},
+						Data: map[string][]byte{
+							"key": []byte("val"),
+						},
+					}, scheme.Scheme)
+					return manifest.NewDeployItemBuilder().
+						Key(state.Namespace, "my-di").
+						Target(target.Namespace, target.Name).
+						ProviderConfig(&manifestv1alpha2.ProviderConfiguration{
+							Manifests: []managedresource.Manifest{
+								{
+									Policy:   managedresource.ManagePolicy,
+									Manifest: secret,
+								},
 							},
-						},
-					}).Build()
-			},
+						}).Build()
+				},
+			}
+			executeTest(ctx, f, state, td)
 		})
 
-		TestDeployerBlueprint(f, testDefinition{
-			Name:                    "ContainerDeployer",
-			ComponentDescriptorName: "github.com/gardener/landscaper/container-deployer",
-			BlueprintResourceName:   "container-deployer-blueprint",
-			DeployItemBuilder: container.NewDeployItemBuilder().
-				ProviderConfig(&containerv1alpha1.ProviderConfiguration{
-					Image:   "alpine:latest",
-					Command: []string{"sh", "-c"},
-					Args:    []string{"echo test"},
-				}),
+		It("ContainerDeployer should deploy a deployer with its blueprint", func() {
+			td := &testDefinition{
+				Name:                    "ContainerDeployer",
+				ComponentDescriptorName: "github.com/gardener/landscaper/container-deployer",
+				BlueprintResourceName:   "container-deployer-blueprint",
+				DeployItemBuilder: container.NewDeployItemBuilder().
+					ProviderConfig(&containerv1alpha1.ProviderConfiguration{
+						Image:   "alpine:latest",
+						Command: []string{"sh", "-c"},
+						Args:    []string{"echo test"},
+					}),
+			}
+			executeTest(ctx, f, state, td)
 		})
 
-		TestDeployerBlueprint(f, testDefinition{
-			Name:                    "HelmDeployer",
-			ComponentDescriptorName: "github.com/gardener/landscaper/helm-deployer",
-			BlueprintResourceName:   "helm-deployer-blueprint",
-			DeployItem: func(state *envtest.State, target *lsv1alpha1.Target) (*lsv1alpha1.DeployItem, error) {
-				ref := "eu.gcr.io/gardener-project/landscaper/integration-tests/charts/hello-world:1.0.0"
-				return helm.NewDeployItemBuilder().
-					Key(state.Namespace, "my-di").
-					Target(target.Namespace, target.Name).
-					ProviderConfig(&helmv1alpha1.ProviderConfiguration{
-						Name:      "my-chart",
-						Namespace: state.Namespace,
-						Chart: helmv1alpha1.Chart{
-							Ref: ref,
-						},
-					}).Build()
-			},
+		It("HelmDeployer should deploy a deployer with its blueprint", func() {
+			td := &testDefinition{
+				Name:                    "HelmDeployer",
+				ComponentDescriptorName: "github.com/gardener/landscaper/helm-deployer",
+				BlueprintResourceName:   "helm-deployer-blueprint",
+				DeployItem: func(state *envtest.State, target *lsv1alpha1.Target) (*lsv1alpha1.DeployItem, error) {
+					ref := "eu.gcr.io/gardener-project/landscaper/integration-tests/charts/hello-world:1.0.0"
+					return helm.NewDeployItemBuilder().
+						Key(state.Namespace, "my-di").
+						Target(target.Namespace, target.Name).
+						ProviderConfig(&helmv1alpha1.ProviderConfiguration{
+							Name:      "my-chart",
+							Namespace: state.Namespace,
+							Chart: helmv1alpha1.Chart{
+								Ref: ref,
+							},
+						}).Build()
+				},
+			}
+			executeTest(ctx, f, state, td)
 		})
 	})
+
 }
 
 type testDefinition struct {
@@ -120,148 +146,131 @@ type testDefinition struct {
 	DeployItemBuilder       *commonutils.DeployItemBuilder
 }
 
-func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
-	var (
-		state = f.Register()
-		ctx   context.Context
+func executeTest(ctx context.Context, f *framework.Framework, state *framework.State, td *testDefinition) {
+	By("Create Target for the installation")
+	target := &lsv1alpha1.Target{}
+	target.Name = "my-cluster-target"
+	target.Namespace = state.Namespace
+	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+	utils.ExpectNoError(err)
+	utils.ExpectNoError(state.Create(ctx, target))
 
-		name                    = td.Name
-		componentDescriptorName = td.ComponentDescriptorName
-		blueprintResourceName   = td.BlueprintResourceName
-	)
+	By("Create Configuration for the installation")
+	cm := &corev1.ConfigMap{}
+	cm.Name = "deployer-config"
+	cm.Namespace = state.Namespace
+	cm.Data = map[string]string{
+		"releaseName":      "my-deployer",
+		"releaseNamespace": state.Namespace,
+		// todo: add own target selector to not interfere with other tests
+		"values": "{}",
+	}
+	utils.ExpectNoError(state.Create(ctx, cm))
 
-	log, err := logging.GetLogger()
-	if err != nil {
-		f.Log().Logfln("Error fetching logger: %w", err)
-		return
+	// build installation
+	repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository(framework.OpenSourceRepositoryContext, ""))
+	utils.ExpectNoError(err)
+	inst := &lsv1alpha1.Installation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "deployer",
+			Namespace: state.Namespace,
+			Annotations: map[string]string{
+				lsv1alpha1.OperationAnnotation: string(lsv1alpha1.ReconcileOperation),
+			},
+		},
+		Spec: lsv1alpha1.InstallationSpec{
+			ComponentDescriptor: &lsv1alpha1.ComponentDescriptorDefinition{
+				Reference: &lsv1alpha1.ComponentDescriptorReference{
+					RepositoryContext: &repoCtx,
+					ComponentName:     td.ComponentDescriptorName,
+					Version:           f.LsVersion,
+				},
+			},
+			Blueprint: lsv1alpha1.BlueprintDefinition{
+				Reference: &lsv1alpha1.RemoteBlueprintReference{
+					ResourceName: td.BlueprintResourceName,
+				},
+			},
+			Imports: lsv1alpha1.InstallationImports{
+				Targets: []lsv1alpha1.TargetImport{
+					{
+						Name:   "cluster",
+						Target: "#" + target.Name,
+					},
+				},
+				Data: []lsv1alpha1.DataImport{
+					{
+						Name: "releaseName",
+						ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+							Name: cm.Name,
+							Key:  "releaseName",
+						},
+					},
+					{
+						Name: "releaseNamespace",
+						ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+							Name: cm.Name,
+							Key:  "releaseNamespace",
+						},
+					},
+					{
+						Name: "values",
+						ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
+							Name: cm.Name,
+							Key:  "values",
+						},
+					},
+				},
+			},
+		},
 	}
 
-	ginkgo.BeforeEach(func() {
-		ctx = context.Background()
-		ctx = logging.NewContext(ctx, log)
-	})
+	utils.ExpectNoError(state.Create(ctx, inst))
+	utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 10*time.Minute))
 
-	ginkgo.AfterEach(func() {
-		defer ctx.Done()
-	})
+	By("Testing the deployer with a simple deployitem")
 
-	ginkgo.It(fmt.Sprintf("[%s] should deploy a deployer with its blueprint", name), func() {
-		ginkgo.By("Create Target for the installation")
-		target := &lsv1alpha1.Target{}
-		target.Name = "my-cluster-target"
-		target.Namespace = state.Namespace
-		target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+	var di *lsv1alpha1.DeployItem
+	if td.DeployItemBuilder != nil {
+		di, err = td.DeployItemBuilder.
+			Key(state.Namespace, "deployer-di-test").
+			Target(target.Namespace, target.Name).
+			Build()
 		utils.ExpectNoError(err)
-		utils.ExpectNoError(state.Create(ctx, target))
-
-		ginkgo.By("Create Configuration for the installation")
-		cm := &corev1.ConfigMap{}
-		cm.Name = "deployer-config"
-		cm.Namespace = state.Namespace
-		cm.Data = map[string]string{
-			"releaseName":      "my-deployer",
-			"releaseNamespace": state.Namespace,
-			// todo: add own target selector to not interfere with other tests
-			"values": "{}",
-		}
-		utils.ExpectNoError(state.Create(ctx, cm))
-
-		// build installation
-		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository(framework.OpenSourceRepositoryContext, ""))
+	} else if td.DeployItem != nil {
+		di, err = td.DeployItem(state.State, target)
 		utils.ExpectNoError(err)
-		inst := &lsv1alpha1.Installation{}
-		inst.Name = "deployer"
-		inst.Namespace = state.Namespace
-		inst.Annotations = map[string]string{
-			lsv1alpha1.OperationAnnotation: string(lsv1alpha1.ReconcileOperation),
-		}
-		inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
-			Reference: &lsv1alpha1.ComponentDescriptorReference{
-				RepositoryContext: &repoCtx,
-				ComponentName:     componentDescriptorName,
-				Version:           f.LsVersion,
-			},
-		}
-		inst.Spec.Blueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{
-			ResourceName: blueprintResourceName,
-		}
-		inst.Spec.Imports.Targets = []lsv1alpha1.TargetImport{
-			{
-				Name:   "cluster",
-				Target: "#" + target.Name,
-			},
-		}
-		inst.Spec.Imports.Data = []lsv1alpha1.DataImport{
-			{
-				Name: "releaseName",
-				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
-					Name: cm.Name,
-					Key:  "releaseName",
-				},
-			},
-			{
-				Name: "releaseNamespace",
-				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
-					Name: cm.Name,
-					Key:  "releaseNamespace",
-				},
-			},
-			{
-				Name: "values",
-				ConfigMapRef: &lsv1alpha1.LocalConfigMapReference{
-					Name: cm.Name,
-					Key:  "values",
-				},
-			},
-		}
+	}
+	Expect(di).ToNot(BeNil())
 
-		utils.ExpectNoError(state.Create(ctx, inst))
-		utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 10*time.Minute))
+	itemStringInit := "Found DI init: " + fmt.Sprintf("%+v\n", *di)
 
-		ginkgo.By("Testing the deployer with a simple deployitem")
+	utils.ExpectNoError(state.Create(ctx, di))
 
-		var di *lsv1alpha1.DeployItem
-		if td.DeployItemBuilder != nil {
-			di, err = td.DeployItemBuilder.
-				Key(state.Namespace, "deployer-di-test").
-				Target(target.Namespace, target.Name).
-				Build()
-			utils.ExpectNoError(err)
-		} else if td.DeployItem != nil {
-			di, err = td.DeployItem(state.State, target)
-			utils.ExpectNoError(err)
-		}
-		g.Expect(di).ToNot(g.BeNil())
+	itemStringCreate := "Found DI create: " + fmt.Sprintf("%+v\n", *di)
 
-		itemStringInit := "Found DI init: " + fmt.Sprintf("%+v\n", *di)
+	// Set a new jobID to trigger a reconcile of the deploy item
+	utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+	itemStringBefore := "Found DI before: " + fmt.Sprintf("%+v\n", *di)
 
-		utils.ExpectNoError(state.Create(ctx, di))
+	err = utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now())
 
-		itemStringCreate := "Found DI create: " + fmt.Sprintf("%+v\n", *di)
-
-		// Set a new jobID to trigger a reconcile of the deploy item
+	if err != nil {
+		f.TestLog().Logfln(itemStringInit)
+		f.TestLog().Logfln(itemStringCreate)
+		f.TestLog().Logfln(itemStringBefore)
 		utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-		itemStringBefore := "Found DI before: " + fmt.Sprintf("%+v\n", *di)
+		f.TestLog().Logfln("Found DI after: " + fmt.Sprintf("%+v\n", *di))
+	}
 
-		err = utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now())
+	utils.ExpectNoError(err)
 
-		if err != nil {
-			f.TestLog().Logfln(itemStringInit)
-			f.TestLog().Logfln(itemStringCreate)
-			f.TestLog().Logfln(itemStringBefore)
-			utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-			f.TestLog().Logfln("Found DI after: " + fmt.Sprintf("%+v\n", *di))
-		}
+	By("Waiting for deploy item " + di.GetName() + " to succeed")
+	utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 3*time.Minute))
 
-		utils.ExpectNoError(err)
+	By("Delete deploy item for new reconcile")
+	utils.ExpectNoError(utils.DeleteDeployItemForNewReconcile(ctx, f.Client, di, 3*time.Minute))
 
-		ginkgo.By("Waiting for deploy item " + di.GetName() + " to succeed")
-		utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 3*time.Minute))
-
-		ginkgo.By("Delete deploy item for new reconcile")
-		utils.ExpectNoError(utils.DeleteDeployItemForNewReconcile(ctx, f.Client, di, 3*time.Minute))
-
-		ginkgo.By("Delete installation")
-		utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 3*time.Minute))
-	})
+	By("Delete installation")
+	utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 3*time.Minute))
 }
