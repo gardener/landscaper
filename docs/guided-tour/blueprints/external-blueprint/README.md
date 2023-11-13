@@ -96,7 +96,7 @@ kubectl apply -f <path to installation.yaml>
 
 ## Remark on Resources contained in a Component Version
 As previously mentioned, a component version may either contain a resource through referencing it at an external 
-location (such as an oci registry) or through embedding it as a local blob. To make this concept more tangible, this
+location (such as an OCI registry) or through embedding it as a local blob. To make this concept more tangible, this
 section compares the file system representations of the component version referencing the blueprint in the OCI registry
 with the component version embedding the blueprint as a local blob.
 
@@ -121,7 +121,7 @@ and compressed (tar+gzip). The _access_ of `type: ociArtifact` did not need to p
 `ociArtifact` format is determined through the oci standard and the format of the contents of the oci artifact is
 described within the artifact itself.
 
-These file system representations of component versions can then be uploaded to an oci registry.
+These file system representations of component versions can then be uploaded to an OCI registry.
 
 Again, the commands used to create and upload the above component versions can be found
 [here](./commands/upload-component-version.sh).  
