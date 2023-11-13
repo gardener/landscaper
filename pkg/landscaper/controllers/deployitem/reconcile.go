@@ -10,6 +10,7 @@ import (
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -51,7 +52,21 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	exceeded, requeue := con.isPickupTimeoutExceeded(di)
 	if exceeded {
 		// pickup timeout is exceeded
-		err := con.writePickupTimeoutExceeded(ctx, di)
+
+		// check if the reason is that the target does not exist
+		targetNotFound := false
+		if di.Spec.Target != nil && di.Spec.Target.Name != "" {
+			target := &lsv1alpha1.Target{}
+			target.SetName(di.Spec.Target.Name)
+			target.SetNamespace(di.Namespace)
+			if err := con.c.Get(ctx, client.ObjectKeyFromObject(target), target); err != nil {
+				if apierrors.IsNotFound(err) {
+					targetNotFound = true
+				}
+			}
+		}
+
+		err := con.writePickupTimeoutExceeded(ctx, di, targetNotFound)
 		return reconcile.Result{}, err
 	}
 
@@ -78,21 +93,25 @@ func (con *controller) isPickupTimeoutExceeded(di *lsv1alpha1.DeployItem) (bool,
 	return false, &requeue
 }
 
-func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1alpha1.DeployItem) error {
+func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1alpha1.DeployItem, reasonTargetNotFound bool) error {
 	// no deployer has picked up the deploy item within the timeframe
 	// => pickup timeout
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	logger = logger.WithValues(lc.KeyMethod, "writePickupTimeoutExceeded")
-	logger.Info("pickup timeout occurred")
+	logger.Info("pickup timeout occurred", "reasonTargetNotFound", reasonTargetNotFound)
 
 	di.Status.JobIDFinished = di.Status.GetJobID()
 	di.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(di.Status.TransitionTimes)
 	di.Status.ObservedGeneration = di.Generation
 	lsv1alpha1helper.SetDeployItemToFailed(di)
+	targetReasonMsg := ""
+	if reasonTargetNotFound {
+		targetReasonMsg = ", probably because the referenced Target does not exist"
+	}
 	lsutil.SetLastError(&di.Status, lserrors.UpdatedError(di.Status.GetLastError(),
 		lsv1alpha1.PickupTimeoutOperation,
 		lsv1alpha1.PickupTimeoutReason,
-		fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", con.pickupTimeout/time.Second),
+		fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds%s", con.pickupTimeout/time.Second, targetReasonMsg),
 		lsv1alpha1.ErrorTimeout,
 	))
 
