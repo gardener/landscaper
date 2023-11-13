@@ -105,8 +105,9 @@ func DeleteObject(
 		return true, nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while waiting for installation to be deleted: %w", err)
+		return fmt.Errorf("error while waiting for %s %s to be deleted: %w", obj.GetObjectKind().GroupVersionKind().Kind, client.ObjectKeyFromObject(obj).String(), err)
 	}
+
 	return WaitForObjectDeletion(ctx, kubeClient, obj, timeout)
 }
 
