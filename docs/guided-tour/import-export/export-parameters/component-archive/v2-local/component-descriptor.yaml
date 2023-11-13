@@ -1,0 +1,23 @@
+component:
+  componentReferences: []
+  creationTime: "2023-11-08T12:19:52Z"
+  name: github.com/gardener/landscaper-examples/guided-tour/export-token
+  provider: internal
+  repositoryContexts: []
+  resources:
+  - access:
+      localReference: sha256.6e18bbf8dd8475e585afe19f790714fc58a292f87d867f2638442ff6b45cb422
+      mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      type: localBlob
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: genericBlobDigest/v1
+      value: 6e18bbf8dd8475e585afe19f790714fc58a292f87d867f2638442ff6b45cb422
+    name: blueprint
+    relation: local
+    type: blueprint
+    version: 1.0.0
+  sources: []
+  version: 2.0.0
+meta:
+  schemaVersion: v2

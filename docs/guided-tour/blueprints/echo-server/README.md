@@ -12,10 +12,10 @@ The example uses the following resources:
   uploaded [in an OCI registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server),
 - the Docker image [hashicorp/http-echo](https://hub.docker.com/r/hashicorp/http-echo) as an external resource.
 
-All these resources are listed in the [component descriptor](./component-descriptor.yaml). 
+You can find the file system representations of the extended component versions [here](./component-archive/). 
 It is an advantage to have them all in one place, in a standard format. 
 Otherwise, you would have to search images spread somewhere in charts, perhaps even mixed with some templating.
-Moreover, the component descriptor can be used by other tools for example for transport or signing. 
+Moreover, the component versions can be used by other tools for example for transport or signing. 
 
 
 ## OCI Image Resource in the Component Descriptor
@@ -25,8 +25,8 @@ The `Deployment` uses a container image. However, instead of a hard-coded image 
 the [deployment.yaml](./chart/echo-server/templates/deployment.yaml), we rather maintain the image reference in the
 component descriptor. In detail, the connection is the following:
 
-- The [component descriptor](./component-descriptor.yaml) contains a resource with name `echo-server-image` and a
-  reference to the actual image:
+- The [component descriptor](./component-archive/v2-external/component-descriptor.yaml) contains a resource with name 
+  `echo-server-image` and areference to the actual image:
  
   ```yaml
   name: echo-server-image

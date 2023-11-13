@@ -12,7 +12,7 @@ spec:
   componentDescriptor:
     ref:
       componentName: github.com/gardener/landscaper-examples/guided-tour/echo-server
-      version: 1.1.0
+      version: 2.1.0
 
   blueprint:
     ref:
