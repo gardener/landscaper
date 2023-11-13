@@ -9,26 +9,33 @@ chart:
   ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
 ```
 
-However, it is recommended to collect all resources of a component in its component descriptor and reference these
+However, it is recommended to collect all resources of an application in its component version and reference these
 resources in the blueprint only by their name in the component descriptor. This has the
 advantages that you have exactly one location, listing all resources required to deploy a component and if you just
-want to update the version of a resource, you only need to update its entry in the component descriptor. No change of
+want to update the version of a resource, you only need to update its component version. No change of
 the blueprint is required.
 
 Therefore, we will now modify the previous example as follows:
 
-- We extend the resource list of the component descriptor by an entry for the Helm chart.
+- We extend the resources contained in our component version by a Helm chart.
 - We also modify the blueprint such that it takes the address of the Helm chart from the new entry of the component 
   descriptor.
 
 
-## The Component Descriptor
+## The Component Version
 
-You can find the extended component descriptor [here](./component-descriptor.yaml), and in the OCI registry
-[here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource).
+You can find the file system representations of the extended component versions [here](./component-archive), and
+in the OCI registry [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource).
 
-Its list of resources has now two entries, one for the blueprint and one for the Helm chart.
-The entry for the Helm chart has the name `hello-world-chart` and contains the address in the OCI registry.
+The list of resources of the component descriptor within the component version has two entries now, one for the 
+blueprint and one for the Helm chart. The entry for the Helm chart has the name `hello-world-chart` and contains the 
+address in the OCI registry.
+
+> **_NOTE:_** Adding resources other than the blueprints as local blobs to the component version is not
+> supported by the landscaper, yet.  
+> This is because the deployers currently fetch the image based on the
+> access information templated into the deploy item (as shown below) without knowledge of a corresponding
+> component version. This information is not sufficient to resolve local blobs.
 
 
 ## Referencing the Helm Chart

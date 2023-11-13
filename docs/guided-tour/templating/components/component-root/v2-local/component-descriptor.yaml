@@ -1,0 +1,29 @@
+component:
+  componentReferences:
+  - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-core
+    name: core
+    version: 2.0.0
+  - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-extension
+    name: extension
+    version: 2.0.0
+  creationTime: "2023-11-08T12:21:25Z"
+  name: github.com/gardener/landscaper-examples/guided-tour/templating-components-root
+  provider: internal
+  repositoryContexts: []
+  resources:
+  - access:
+      localReference: sha256.3e39771fa1553511da32ca8821f525ea7dba328fa1d44f7c062dbdfe6e0b8abb
+      mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      type: localBlob
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: genericBlobDigest/v1
+      value: 3e39771fa1553511da32ca8821f525ea7dba328fa1d44f7c062dbdfe6e0b8abb
+    name: blueprint
+    relation: local
+    type: blueprint
+    version: 1.0.0
+  sources: []
+  version: 2.0.0
+meta:
+  schemaVersion: v2
