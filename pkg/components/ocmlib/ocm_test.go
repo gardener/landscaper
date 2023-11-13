@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package ocmlib_test
+package ocmlib
 
 import (
 	"context"
@@ -18,7 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -31,8 +30,6 @@ import (
 	. "github.com/open-component-model/ocm/pkg/testutils"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
-
-	_ "github.com/gardener/landscaper/pkg/components/registries"
 )
 
 const (
@@ -96,7 +93,7 @@ var (
 
 var _ = Describe("ocm-lib facade implementation", func() {
 	ctx := context.Background()
-	factory := &ocmlib.Factory{}
+	factory := &Factory{}
 
 	It("get component version from component descriptor reference (from local repository)", func() {
 		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion
@@ -152,8 +149,8 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		// Create a Registry Access and check whether credentials are properly set and can be found
 		r := Must(factory.NewRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
 			ConfigFiles: []string{"testdata/dockerconfig.json"},
-		}, nil)).(*ocmlib.RegistryAccess)
-		creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
+		}, nil)).(*RegistryAccess)
+		creds := Must(identity.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
@@ -165,8 +162,8 @@ var _ = Describe("ocm-lib facade implementation", func() {
 			Data: map[string][]byte{corev1.DockerConfigJsonKey: dockerconfigdata},
 		}}
 		// Create a Registry Access and check whether credentials are properly set and can be found
-		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
-		creds := Must(identity.GetCredentials(r.OCMContext(), "ghcr.io", "/test/repo"))
+		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
+		creds := Must(identity.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
@@ -177,8 +174,57 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		secrets := []corev1.Secret{{
 			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
 		}}
-		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*ocmlib.RegistryAccess)
-		creds := Must(identity.GetCredentials(r.OCMContext(), HOSTNAME1, "/test/repo"))
+		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
+		creds := Must(identity.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("oci helm resource - dockerconfig credentials from filesystem", func() {
+		// Prepare memory test filesystem with dockerconfig credentials
+		fs := memoryfs.New()
+		Expect(fs.MkdirAll("testdata", 0o777)).To(Succeed())
+		dockerconfigs := map[string][]byte{"dockerconfig.json": dockerconfigdata}
+		for name, config := range dockerconfigs {
+			f := Must(fs.OpenFile(filepath.Join("testdata", name), os.O_CREATE|os.O_RDWR, 0o777))
+			_ = Must(f.Write(config))
+			Expect(f.Close()).To(Succeed())
+		}
+		// Create a Helm OCI Resource and check whether credentials are properly set and can be found
+		// Type Assertion to *HelmChartProvider to be able to access the ocictx containing the credentials
+		r := Must(factory.NewHelmOCIResource(ctx, fs, "ghcr.io/test/repo/testimage:1.0.0", nil, &config.OCIConfiguration{
+			ConfigFiles: []string{"testdata/dockerconfig.json"},
+		}, nil))
+		creds := Must(identity.GetCredentials(r.(*HelmChartProvider).ocictx, HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("oci helm resource - dockerconfig credentials from secrets", func() {
+		// Prepare secret with dockerconfig credentials
+		secrets := []corev1.Secret{{
+			Type: corev1.SecretTypeDockerConfigJson,
+			Data: map[string][]byte{corev1.DockerConfigJsonKey: dockerconfigdata},
+		}}
+
+		// Create a Helm OCI Resource and check whether credentials are properly set and can be found
+		// Type Assertion to *HelmChartProvider to be able to access the ocictx containing the credentials
+		r := Must(factory.NewHelmOCIResource(ctx, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
+		creds := Must(identity.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("oci helm resource - ocm credentials from secrets", func() {
+		// Prepare secret with ocmconfig credentials
+		secrets := []corev1.Secret{{
+			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
+		}}
+		r := Must(factory.NewHelmOCIResource(ctx, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
+		creds := Must(identity.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))

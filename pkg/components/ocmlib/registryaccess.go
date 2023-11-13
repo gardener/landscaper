@@ -102,10 +102,6 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	return r.NewComponentVersion(cv)
 }
 
-func (r *RegistryAccess) OCMContext() ocm.Context {
-	return r.octx
-}
-
 func (r *RegistryAccess) Close() error {
 	err := r.session.Close()
 	if err != nil {

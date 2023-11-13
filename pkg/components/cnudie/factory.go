@@ -125,6 +125,7 @@ func (*Factory) NewHelmRepoResource(ctx context.Context,
 
 // NewHelmOCIResource returns a helm chart resource that is stored in an OCI registry.
 func (*Factory) NewHelmOCIResource(ctx context.Context,
+	fs vfs.FileSystem,
 	ociImageRef string,
 	registryPullSecrets []corev1.Secret,
 	ociConfig *config.OCIConfiguration,
