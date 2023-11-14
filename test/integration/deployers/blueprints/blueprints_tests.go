@@ -37,6 +37,17 @@ import (
 
 func DeployerBlueprintTests(f *framework.Framework) {
 
+	// Each of the following tests creates a Target ("my-cluster-target") and an Installation to deploy a deployer.
+	// This is done for all deployers: mock, manifest, container, helm. When the deployer has been deployed,
+	// we create another Target ("my-cluster-target-2") and a test DeployItem to check that the deployer works.
+	//
+	// Note that during the test there are two competing deployers: the one deployed by the Installation in this test,
+	// and the corresponding default deployer in namespace ls-system which we use throughout the whole test suite.
+	// We use target selectors to separate their responsibilities. Otherwise, the test DeployItem would be processed by
+	// both of them. The default deployer is responsible for Targets without a "landscaper.gardener.cloud/environment"
+	// annotation (see script hack/int-test-helper/install-landscaper, which installs the default landscaper for the
+	// integration test suite and defines the target selector in the helm values). On the other hand, our new deployer
+	// is only responsible for Targets with the annotation "landscaper.gardener.cloud/environment: my-deployer-env".
 	Describe("Deployer Blueprint", func() {
 
 		var (
@@ -73,8 +84,8 @@ func DeployerBlueprintTests(f *framework.Framework) {
 		It("ManifestDeployer should deploy a deployer with its blueprint", func() {
 			td := &testDefinition{
 				Name:                    "ManifestDeployer",
-				ComponentDescriptorName: "github.com/gardener/landscaper/mock-deployer",
-				BlueprintResourceName:   "mock-deployer-blueprint",
+				ComponentDescriptorName: "github.com/gardener/landscaper/manifest-deployer",
+				BlueprintResourceName:   "manifest-deployer-blueprint",
 				DeployItem: func(state *envtest.State, target *lsv1alpha1.Target) (*lsv1alpha1.DeployItem, error) {
 					secret, _ := kutil.ConvertToRawExtension(&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{Name: "my-secret", Namespace: state.Namespace},
@@ -148,10 +159,9 @@ type testDefinition struct {
 
 func executeTest(ctx context.Context, f *framework.Framework, state *framework.State, td *testDefinition) {
 	By("Create Target for the installation")
-	target := &lsv1alpha1.Target{}
-	target.Name = "my-cluster-target"
-	target.Namespace = state.Namespace
-	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+	// This target has no "landscaper.gardener.cloud/environment" annotation, so that a default deployer is responsible.
+	targetName := "my-cluster-target"
+	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, targetName, f.RestConfig, true)
 	utils.ExpectNoError(err)
 	utils.ExpectNoError(state.Create(ctx, target))
 
@@ -162,8 +172,8 @@ func executeTest(ctx context.Context, f *framework.Framework, state *framework.S
 	cm.Data = map[string]string{
 		"releaseName":      "my-deployer",
 		"releaseNamespace": state.Namespace,
-		// todo: add own target selector to not interfere with other tests
-		"values": "{}",
+		// add target selector to not interfere with default deployer
+		"values": `{"deployer":{"targetSelector":[{"annotations":[{"key":"landscaper.gardener.cloud/environment","operator":"=","values":["my-deployer-env"]}]}]}}`,
 	}
 	utils.ExpectNoError(state.Create(ctx, cm))
 
@@ -229,16 +239,27 @@ func executeTest(ctx context.Context, f *framework.Framework, state *framework.S
 	utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 10*time.Minute))
 
 	By("Testing the deployer with a simple deployitem")
+	// This target has a "landscaper.gardener.cloud/environment" annotation, so that the deployer is responsible which we have just installed.
+	targetName2 := "my-cluster-target-2"
+	target2, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, targetName2, f.RestConfig, true)
+	utils.ExpectNoError(err)
+	annotations := target2.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string, 1)
+	}
+	annotations["landscaper.gardener.cloud/environment"] = "my-deployer-env"
+	target2.SetAnnotations(annotations)
+	utils.ExpectNoError(state.Create(ctx, target2))
 
 	var di *lsv1alpha1.DeployItem
 	if td.DeployItemBuilder != nil {
 		di, err = td.DeployItemBuilder.
 			Key(state.Namespace, "deployer-di-test").
-			Target(target.Namespace, target.Name).
+			Target(target2.Namespace, target2.Name).
 			Build()
 		utils.ExpectNoError(err)
 	} else if td.DeployItem != nil {
-		di, err = td.DeployItem(state.State, target)
+		di, err = td.DeployItem(state.State, target2)
 		utils.ExpectNoError(err)
 	}
 	Expect(di).ToNot(BeNil())
