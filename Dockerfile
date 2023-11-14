@@ -13,7 +13,7 @@ ARG EFFECTIVE_VERSION
 RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 
 #### BASE ####
-FROM gcr.io/distroless/static-debian11:nonroot AS base
+FROM docker.io/debian:11 AS base
 
 #RUN apt install -y --no-cache ca-certificates
 
