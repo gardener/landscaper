@@ -1,0 +1,46 @@
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: TestObject
+metadata:
+  name: test-a
+  namespace: {{ .Release.Namespace }}
+data: foo
+...
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: TestObject
+metadata:
+  name: test-b
+  namespace: {{ .Release.Namespace }}
+data: foo
+...
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: TestObject
+metadata:
+  name: test-c
+  namespace: {{ .Values.namespace2 }}
+data: foo
+...
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: TestObject
+metadata:
+  name: test-d
+  namespace: {{ .Values.namespace2 }}
+data: foo
+...
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ClusterTestObject
+metadata:
+  name: test-a
+data: foo
+...
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ClusterTestObject
+metadata:
+  name: test-b
+data: foo
+...

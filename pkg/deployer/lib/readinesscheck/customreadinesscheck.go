@@ -11,13 +11,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/util/jsonpath"
@@ -26,8 +23,9 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	lserror "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // CustomReadinessCheck contains all the data and methods required to kick off a custom readiness check
@@ -38,7 +36,7 @@ type CustomReadinessCheck struct {
 	Timeout             *lsv1alpha1.Duration
 	ManagedResources    []lsv1alpha1.TypedObjectReference
 	Configuration       health.CustomReadinessCheckConfiguration
-	InterruptionChecker *lib.InterruptionChecker
+	InterruptionChecker interruption.InterruptionChecker
 }
 
 // CheckResourcesReady starts a custom readiness check by checking the readiness of the submitted resources

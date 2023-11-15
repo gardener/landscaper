@@ -197,6 +197,8 @@ func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguratio
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
+	out.DeletionGroups = *(*[]managedresource.DeletionGroupDefinition)(unsafe.Pointer(&in.DeletionGroups))
+	out.DeletionGroupsDuringUpdate = *(*[]managedresource.DeletionGroupDefinition)(unsafe.Pointer(&in.DeletionGroupsDuringUpdate))
 	return nil
 }
 
@@ -212,6 +214,8 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguratio
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
+	out.DeletionGroups = *(*[]managedresource.DeletionGroupDefinition)(unsafe.Pointer(&in.DeletionGroups))
+	out.DeletionGroupsDuringUpdate = *(*[]managedresource.DeletionGroupDefinition)(unsafe.Pointer(&in.DeletionGroupsDuringUpdate))
 	return nil
 }
 

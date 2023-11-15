@@ -10,7 +10,7 @@ It also checks by default the health of the deployed resources. See [healthcheck
 - [Provider Status](#status)
 - [Deployer Configuration](#deployer-configuration)
 
-### Provider Configuration
+## Provider Configuration
 
 This sections describes the provider specific configuration
 
@@ -129,8 +129,14 @@ spec:
           apiVersion: v1
           kind: Secret
           jsonPath: ".data.somekey" # points to the value in the resource that is being exported
+
+    # Optional. Allows to customize the deletion behaviour.
+    deletionGroups: []
+    # Optional. Allows to customize the deletion behaviour during an update.
+    deletionGroupsDuringUpdate: []
 ```
-__Update Strategy__:
+
+### Update Strategy
 
 The update strategy defines the behavior of the manifest deployer when a resource for a rendered manifest already exists on the target cluster.
 
@@ -139,7 +145,7 @@ The update strategy defines the behavior of the manifest deployer when a resourc
 - `merge`: The manifest deployer will merge the results of the rendered manifests into the resources on the cluster. Fields that already exist in the resources on the cluster, will not be overwritten.
 - `mergeOverwrite`: The manifest deployer will merge the results of the rendered manifests into the resources on the cluster. Fields that already exist in the resources on the cluster, will be overwritten when the rendered field is not empty.
 
-__Policy__:
+### Policy
 
 - `manage`: The manifest will be created, updated and deleted (occupies already managed resources).
 - `fallback`: The manifest will be created, updated and deleted (only if not already managed by someone else: check for annotation with landscaper identity, deployitem name + namespace)
@@ -147,7 +153,12 @@ __Policy__:
 - `ignore`: The manifest will be completely ignored.
 - `immutable`: The manifest will be created and deleted, but never updated. 
 
-### Status
+### Deletion Groups
+
+The deletion behaviour is described in
+[Deletion of Manifest and Manifest-Only Helm DeployItems](./manifest_deletion.md).
+
+## Provider Status
 
 This section describes the provider specific status of the resource
 

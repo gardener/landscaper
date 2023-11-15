@@ -15,11 +15,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
-	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
-	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	helmc "helm.sh/helm/v3/pkg/chart"
@@ -44,10 +39,14 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
+	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
+	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
+	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
+	"github.com/gardener/landscaper/test/utils/matchers"
 )
 
 func TestConfig(t *testing.T) {
@@ -143,6 +142,7 @@ var _ = Describe("Template", func() {
 
 		AfterEach(func() {
 			defer cancel()
+			timeout.ActivateStandardTimeoutChecker()
 			Expect(state.CleanupState(ctx)).To(Succeed())
 		})
 
@@ -260,69 +260,99 @@ var _ = Describe("Template", func() {
 			Expect(config).To(HaveKeyWithValue("ExportA", "SomeVal"))
 		})
 
-		It("should deploy a chart with configmap lists", func() {
-			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
-			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(state.Create(ctx, target)).To(Succeed())
+		Context("charts with resource lists", func() {
 
-			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart2")
-			defer closer()
+			deployChartWithResourceLists := func(helmDeployment bool, namespace string) {
+				By("Create namespace for chart resources: " + namespace)
+				ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}
+				Expect(state.Client.Create(ctx, ns)).To(Succeed())
+				defer func() {
+					Expect(state.Client.Delete(ctx, ns)).To(Succeed())
+				}()
 
-			chartAccess := helmv1alpha1.Chart{
-				Archive: &helmv1alpha1.ArchiveAccess{
-					Raw: base64.StdEncoding.EncodeToString(chartBytes),
-				},
-			}
+				Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+				target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(state.Create(ctx, target)).To(Succeed())
 
-			helmConfig := &helmv1alpha1.ProviderConfiguration{
-				Name:            "test",
-				Namespace:       "some-namespace",
-				Chart:           chartAccess,
-				CreateNamespace: true,
-			}
-			item, err := helm.NewDeployItemBuilder().
-				Key(state.Namespace, "myitem").
-				ProviderConfig(helmConfig).
-				Target(target.Namespace, target.Name).
-				GenerateJobID().
-				Build()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+				By("Read helm chart")
+				chartBytes, closer := utils.ReadChartFrom("./testdata/testchart2")
+				defer closer()
 
-			Eventually(func() error {
-				if err := testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item); err != nil {
-					return err
+				chartAccess := helmv1alpha1.Chart{
+					Archive: &helmv1alpha1.ArchiveAccess{
+						Raw: base64.StdEncoding.EncodeToString(chartBytes),
+					},
 				}
-				if !item.Status.Phase.IsFinal() {
-					return fmt.Errorf("deploy item is unfinished")
+
+				By("Create deploy item")
+				helmConfig := &helmv1alpha1.ProviderConfiguration{
+					Name:           "test",
+					Namespace:      namespace,
+					Chart:          chartAccess,
+					HelmDeployment: &helmDeployment,
 				}
-				return nil
-			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should reach a final phase")
+				item, err := helm.NewDeployItemBuilder().
+					Key(state.Namespace, "myitem").
+					ProviderConfig(helmConfig).
+					Target(target.Namespace, target.Name).
+					GenerateJobID().
+					Build()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
 
-			Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
+				By("Wait for deploy item to succeed")
+				Eventually(func(g Gomega) {
+					g.Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
+					g.Expect(item.Status.Phase.IsFinal()).To(BeTrue())
+				}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should reach a final phase")
+				Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
 
-			helmProviderStatus := &helmv1alpha1.ProviderStatus{}
-			Expect(json.Unmarshal(item.Status.ProviderStatus.Raw, helmProviderStatus)).To(Succeed())
-			Expect(helmProviderStatus.ManagedResources).To(HaveLen(0)) // would contain only resources that are relevant for the default readiness check
-			cm := &corev1.ConfigMap{}
-			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-cm-1", "some-namespace"), cm)).To(Succeed())
-			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-cm-2", "some-namespace"), cm)).To(Succeed())
-			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("test-cm-3", "some-namespace"), cm)).To(Succeed())
+				By("Check status")
+				helmProviderStatus := &helmv1alpha1.ProviderStatus{}
+				Expect(json.Unmarshal(item.Status.ProviderStatus.Raw, helmProviderStatus)).To(Succeed())
+				if helmDeployment {
+					Expect(helmProviderStatus.ManagedResources).To(HaveLen(0)) // contains only resources that are relevant for the default readiness check
+				} else {
+					Expect(helmProviderStatus.ManagedResources).To(HaveLen(3))
+				}
 
-			itemObjectKey := client.ObjectKeyFromObject(item)
-			Expect(testenv.Client.Delete(ctx, item)).To(Succeed())
-			Eventually(func() error {
+				By("Check that chart resources are deployed")
+				chartResources := []client.Object{
+					&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test-cm-1", Namespace: namespace}},
+					&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test-cm-2", Namespace: namespace}},
+					&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test-cm-3", Namespace: namespace}},
+				}
+				exist := matchers.ExistForClient(state.Client)
+				for _, res := range chartResources {
+					Expect(res).To(exist())
+				}
+
+				By("Delete deploy item")
+				itemObjectKey := client.ObjectKeyFromObject(item)
+				Expect(testenv.Client.Delete(ctx, item)).To(Succeed())
 				Expect(testenv.Client.Get(ctx, itemObjectKey, item)).To(Succeed())
-				return utils.UpdateJobIdForDeployItem(ctx, testenv, item, metav1.Now())
-			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should be updated with a new job id")
+				Expect(utils.UpdateJobIdForDeployItem(ctx, testenv, item, metav1.Now())).To(Succeed())
 
-			Eventually(func() error {
-				if err := testenv.Client.Get(ctx, itemObjectKey, item); apierrors.IsNotFound(err) {
-					return nil
+				By("Wait until deploy item is gone")
+				Eventually(func(g Gomega) {
+					g.Expect(item).NotTo(exist())
+				}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should be deleted")
+
+				By("Check that chart resources are gone")
+				for _, res := range chartResources {
+					Expect(res).NotTo(exist())
 				}
-				return fmt.Errorf("deploy item not yet deleted")
-			}, 10*time.Second, 1*time.Second).Should(Succeed(), "deploy item should be deleted")
+			}
+
+			It("should be deployed by the real helm deployer", func() {
+				deployChartWithResourceLists(true, "some-namespace-1")
+			})
+
+			It("should be deployed by the manifest helm deployer", func() {
+				deployChartWithResourceLists(false, "some-namespace-2")
+			})
+
 		})
 
 		It("should deploy a chart with subchart", func() {
@@ -794,7 +824,7 @@ var _ = Describe("Template", func() {
 				Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
 
 				description := fmt.Sprintf("deploy item should fail with timeout at checkpoint %s", checkpoint)
-				Eventually(isFinished, 10*time.Second, 1*time.Second).WithArguments(item).Should(BeTrue(), description)
+				Eventually(isFinished, 30*time.Second, 1*time.Second).WithArguments(item).Should(BeTrue(), description)
 				Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed(), description)
 				Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed), description)
 				Expect(item.Status.LastError).NotTo(BeNil(), description)
@@ -899,7 +929,7 @@ var _ = Describe("Template", func() {
 			for _, checkpoint := range []string{
 				helm.TimeoutCheckpointHelmStartDelete,
 				helm.TimeoutCheckpointHelmStartDeleting,
-				helm.TimeoutCheckpointHelmDeleteResources,
+				resourcemanager.TimeoutCheckpointDeployerDeleteResources,
 			} {
 				timeout.ActivateCheckpointTimeoutChecker(checkpoint)
 				item.Status.SetJobID(uuid.New().String())

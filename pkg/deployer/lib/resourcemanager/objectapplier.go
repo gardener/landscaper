@@ -7,12 +7,9 @@ package resourcemanager
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 	"sync"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	"github.com/imdario/mergo"
 	corev1 "k8s.io/api/core/v1"
@@ -24,7 +21,6 @@ import (
 	apischema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -36,7 +32,9 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 const (
@@ -48,6 +46,7 @@ const (
 
 // ApplyManifests creates or updates all configured manifests.
 func ApplyManifests(ctx context.Context, opts ManifestApplierOptions) (managedresource.ManagedResourceStatusList, error) {
+	opts.InterruptionChecker = interruption.NewIgnoreInterruptionChecker()
 	applier := NewManifestApplier(opts)
 	if err := applier.Apply(ctx); err != nil {
 		return nil, err
@@ -68,7 +67,9 @@ type ManifestApplierOptions struct {
 	Manifests        []managedresource.Manifest
 	ManagedResources managedresource.ManagedResourceStatusList
 	// Labels defines additional labels that are automatically injected into all resources.
-	Labels map[string]string
+	Labels                     map[string]string
+	DeletionGroupsDuringUpdate []managedresource.DeletionGroupDefinition
+	InterruptionChecker        interruption.InterruptionChecker
 }
 
 // ManifestApplier creates or updated manifest based on their definition.
@@ -77,12 +78,14 @@ type ManifestApplier struct {
 	kubeClient       client.Client
 	defaultNamespace string
 
-	deployItemName   string
-	deployItem       *lsv1alpha1.DeployItem
-	updateStrategy   manifestv1alpha2.UpdateStrategy
-	manifests        []managedresource.Manifest
-	managedResources managedresource.ManagedResourceStatusList
-	labels           map[string]string
+	deployItemName             string
+	deployItem                 *lsv1alpha1.DeployItem
+	updateStrategy             manifestv1alpha2.UpdateStrategy
+	manifests                  []managedresource.Manifest
+	managedResources           managedresource.ManagedResourceStatusList
+	labels                     map[string]string
+	deletionGroupsDuringUpdate []managedresource.DeletionGroupDefinition
+	interruptionChecker        interruption.InterruptionChecker
 
 	// properties created during runtime
 
@@ -117,16 +120,18 @@ type Manifest struct {
 // NewManifestApplier creates a new manifest deployer
 func NewManifestApplier(opts ManifestApplierOptions) *ManifestApplier {
 	return &ManifestApplier{
-		decoder:            opts.Decoder,
-		kubeClient:         opts.KubeClient,
-		defaultNamespace:   opts.DefaultNamespace,
-		deployItem:         opts.DeployItem,
-		deployItemName:     opts.DeployItemName,
-		updateStrategy:     opts.UpdateStrategy,
-		manifests:          opts.Manifests,
-		managedResources:   opts.ManagedResources,
-		labels:             opts.Labels,
-		apiResourceHandler: CreateApiResourceHandler(opts.Clientset),
+		decoder:                    opts.Decoder,
+		kubeClient:                 opts.KubeClient,
+		defaultNamespace:           opts.DefaultNamespace,
+		deployItem:                 opts.DeployItem,
+		deployItemName:             opts.DeployItemName,
+		updateStrategy:             opts.UpdateStrategy,
+		manifests:                  opts.Manifests,
+		managedResources:           opts.ManagedResources,
+		labels:                     opts.Labels,
+		deletionGroupsDuringUpdate: opts.DeletionGroupsDuringUpdate,
+		interruptionChecker:        opts.InterruptionChecker,
+		apiResourceHandler:         CreateApiResourceHandler(opts.Clientset),
 	}
 }
 
@@ -196,10 +201,10 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 	}
 
 	// remove old objects
-	if err := a.cleanupOrphanedResources(ctx, oldManagedResources); err != nil {
+	if err := a.cleanupOrphanedResourcesInGroups(ctx, oldManagedResources); err != nil {
 		err = fmt.Errorf("unable to cleanup orphaned resources: %w", err)
 		return lserrors.NewWrappedError(err,
-			"ApplyObjects", "CleanupOrphanedObects", err.Error())
+			"ApplyObjects", "cleanupOrphanedResourcesInGroups", err.Error())
 	}
 	return nil
 }
@@ -351,91 +356,84 @@ func (a *ManifestApplier) injectLabels(obj client.Object) {
 	obj.SetLabels(labels)
 }
 
-// cleanupOrphanedResources removes all managed resources that are not rendered anymore.
-func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedResources []managedresource.ManagedResourceStatus) error {
-	var (
-		allErrs              []error
-		containsTimeoutError bool
-		wg                   sync.WaitGroup
-		errMux               sync.Mutex
-	)
-	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "cleanupOrphanedResources")
+func (a *ManifestApplier) cleanupOrphanedResourcesInGroups(ctx context.Context, oldManagedResources []managedresource.ManagedResourceStatus) error {
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "cleanupOrphanedResourcesInGroups")
+	orphanedManagedResources := []managedresource.ManagedResourceStatus{}
 
-	var timeoutErr lserrors.LsError
+	_, err := timeout.TimeoutExceeded(ctx, a.deployItem, TimeoutCheckpointDeployerCleanupOrphaned)
+	if err != nil {
+		return err
+	}
 
-	for _, mr := range managedResources {
-		logger2 := logger.WithValues(lc.KeyResource, types.NamespacedName{Namespace: mr.Resource.Namespace, Name: mr.Resource.Name}.String(), lc.KeyResourceKind, mr.Resource.Kind)
-		logger2.Debug("Checking resource")
-		if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
-			logger2.Debug("Ignoring resource due to policy", lc.KeyManagedResourcePolicy, string(mr.Policy))
+	for i := range oldManagedResources {
+		mr := &oldManagedResources[i]
+
+		mrLogger, mrCtx := logger.WithValuesAndContext(ctx,
+			lc.KeyResource, types.NamespacedName{Namespace: mr.Resource.Namespace, Name: mr.Resource.Name}.String(),
+			lc.KeyResourceKind, mr.Resource.Kind)
+		mrLogger.Debug("Checking resource")
+
+		ok, err := a.filterByPolicy(mrCtx, mr)
+		if err != nil {
+			return err
+		}
+		if !ok {
 			continue
 		}
+
+		ok = a.filterOrphaned(mr)
+		if !ok {
+			continue
+		}
+
+		mrLogger.Debug("Object is orphaned and will be deleted")
+		orphanedManagedResources = append(orphanedManagedResources, *mr)
+	}
+
+	return DeleteManagedResources(
+		ctx,
+		orphanedManagedResources,
+		a.deletionGroupsDuringUpdate,
+		a.kubeClient,
+		a.deployItem,
+		a.interruptionChecker,
+	)
+}
+
+func (a *ManifestApplier) filterByPolicy(ctx context.Context, mr *managedresource.ManagedResourceStatus) (bool, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
+		logger.Debug("Ignoring resource due to policy", lc.KeyManagedResourcePolicy, string(mr.Policy))
+		return false, nil
+	}
+
+	if mr.Policy == managedresource.FallbackPolicy {
+		// if fallback policy is set and the resource is already managed by another deployer
+		// we are not allowed to manage that resource
 		ref := mr.Resource
 		obj := kutil.ObjectFromCoreObjectReference(&ref)
 		key := kutil.ObjectKey(ref.Name, ref.Namespace)
 
 		if err := read_write_layer.GetUnstructured(ctx, a.kubeClient, key, obj, read_write_layer.R000049); err != nil {
 			if apierrors.IsNotFound(err) {
-				logger2.Debug("Object not found")
-				continue
+				logger.Debug("Object not found")
+				return false, nil
 			}
-			return fmt.Errorf("unable to get object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
+			return false, fmt.Errorf("unable to get object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
 		}
-
-		// if fallback policy is set and the resource is already managed by another deployer
-		// we are not allowed to manage that resource
-		if mr.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
-			logger.Info("Resource is already managed, skip cleanup", lc.KeyResource, key.String())
-			continue
-		}
-
-		timeout, tmpErr := timeout.TimeoutExceeded(ctx, a.deployItem, TimeoutCheckpointDeployerCleanupOrphaned)
-		timeoutErr = tmpErr
-		if timeoutErr != nil {
-			break
-		}
-
-		if !containsObjectRef(ref, a.managedResources) {
-			logger2.Debug("Object is orphaned and will be deleted")
-			wg.Add(1)
-			go func(obj *unstructured.Unstructured) {
-				defer wg.Done()
-				// Delete object and ensure it is actually deleted from the cluster.
-				err := kutil.DeleteAndWaitForObjectDeleted(ctx, a.kubeClient, timeout, obj)
-				if err != nil {
-					if wait.Interrupted(err) {
-						msg := fmt.Sprintf("timeout at: %q - resource: %s %s/%s",
-							TimeoutCheckpointDeployerCleanupOrphaned, obj.GroupVersionKind().Kind, obj.GetNamespace(), obj.GetName())
-						err = lserrors.NewWrappedError(err, "ManifestApplier.cleanupOrphanedResources",
-							lsv1alpha1.ProgressingTimeoutReason, msg, lsv1alpha1.ErrorTimeout)
-						containsTimeoutError = true
-					}
-
-					errMux.Lock()
-					allErrs = append(allErrs, err)
-					errMux.Unlock()
-				}
-			}(obj)
+		if !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
+			logger.Info("Resource is already managed, skip cleanup")
+			return false, nil
 		}
 	}
-	wg.Wait()
 
-	if timeoutErr != nil {
-		return timeoutErr
-	}
+	return true, nil
+}
 
-	if len(allErrs) > 0 {
-		err := errors.Join(allErrs...)
-
-		if containsTimeoutError {
-			err = lserrors.NewWrappedError(err, "ManifestApplier.cleanupOrphanedResources",
-				lsv1alpha1.ProgressingTimeoutReason, TimeoutCheckpointDeployerCleanupOrphaned, lsv1alpha1.ErrorTimeout)
-		}
-
-		return err
-	}
-
-	return nil
+// filterOrphaned returns true if the resource is orphaned, i.e. not contained in a.managedResources.
+func (a *ManifestApplier) filterOrphaned(mr *managedresource.ManagedResourceStatus) bool {
+	return !containsObjectRef(mr.Resource, a.managedResources)
 }
 
 // crdIdentifier generates an identifier string from a GroupVersionKind object

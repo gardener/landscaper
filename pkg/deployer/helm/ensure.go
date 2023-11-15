@@ -7,12 +7,9 @@ package helm
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"helm.sh/helm/v3/pkg/chart"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes"
@@ -31,6 +28,7 @@ import (
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
@@ -147,6 +145,8 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 		Labels: map[string]string{
 			helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name,
 		},
+		DeletionGroupsDuringUpdate: h.ProviderConfiguration.DeletionGroupsDuringUpdate,
+		InterruptionChecker:        interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient),
 	})
 
 	err := applier.Apply(ctx)
@@ -218,7 +218,7 @@ func (h *Helm) createManifests(ctx context.Context, currOp string, files, crds m
 func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, failOnMissingObject bool) error {
 
 	if !h.ProviderConfiguration.ReadinessChecks.DisableDefault {
-		timeout, lserr := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmDefaultReadinessChecks)
+		t, lserr := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmDefaultReadinessChecks)
 		if lserr != nil {
 			return lserr
 		}
@@ -227,10 +227,10 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 			Context:             ctx,
 			Client:              client,
 			CurrentOp:           "DefaultCheckResourcesReadinessHelm",
-			Timeout:             &lsv1alpha1.Duration{Duration: timeout},
+			Timeout:             &lsv1alpha1.Duration{Duration: t},
 			ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 			FailOnMissingObject: failOnMissingObject,
-			InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
+			InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient),
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
@@ -240,7 +240,7 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 
 	if h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
 		for _, customReadinessCheckConfig := range h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
-			timeout, lserr := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmCustomReadinessChecks)
+			t, lserr := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmCustomReadinessChecks)
 			if lserr != nil {
 				return lserr
 			}
@@ -248,10 +248,10 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 				Context:             ctx,
 				Client:              client,
 				CurrentOp:           "CustomCheckResourcesReadinessHelm",
-				Timeout:             &lsv1alpha1.Duration{Duration: timeout},
+				Timeout:             &lsv1alpha1.Duration{Duration: t},
 				ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:       customReadinessCheckConfig,
-				InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
+				InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient),
 			}
 			err := customReadinessCheck.CheckResourcesReady()
 			if err != nil {
@@ -274,7 +274,7 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 	if len(exportDefinition.Exports) != 0 {
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
-			InterruptionChecker: deployerlib.NewInterruptionChecker(h.DeployItem, h.lsKubeClient),
+			InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient),
 			DeployItem:          h.DeployItem,
 		}
 
@@ -297,15 +297,15 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 // DeleteFiles deletes the managed resources from the target cluster.
 func (h *Helm) DeleteFiles(ctx context.Context) error {
 	if h.ProviderConfiguration.HelmDeployment != nil && !(*h.ProviderConfiguration.HelmDeployment) {
-		return h.deleteManifests(ctx)
+		return h.deleteManifestsInGroups(ctx)
 	} else {
 		return h.deleteManifestsWithRealHelmDeployer(ctx, h.DeployItem)
 	}
 }
 
-func (h *Helm) deleteManifests(ctx context.Context) error {
+func (h *Helm) deleteManifestsInGroups(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "deleteManifests"})
-	logger.Info("Deleting files")
+	logger.Info("Deleting files in groups")
 
 	h.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 
@@ -319,28 +319,17 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 		return err
 	}
 
-	nonCompletedResources := make([]string, 0)
-	for i := len(h.ProviderStatus.ManagedResources) - 1; i >= 0; i-- {
-		if _, err := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmDeleteResources); err != nil {
-			return err
-		}
+	interruptionChecker := interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient)
 
-		ref := h.ProviderStatus.ManagedResources[i]
-		obj := kutil.ObjectFromCoreObjectReference(&ref.Resource)
-		if err := targetClient.Delete(ctx, obj); err != nil {
-			if apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
-				// This handles two cases:
-				// 1. the resource is already deleted
-				// 2. the resource is a custom resource and its CRD is already deleted (and the resourse itself thus too)
-				continue
-			}
-			return err
-		}
-		nonCompletedResources = append(nonCompletedResources, fmt.Sprintf("%s/%s(%s)", ref.Resource.Namespace, ref.Resource.Name, ref.Resource.Kind))
-	}
-
-	if len(nonCompletedResources) != 0 {
-		return fmt.Errorf("waiting for the deletion of %q to be completed", strings.Join(nonCompletedResources, ","))
+	err = resourcemanager.DeleteManagedResources(
+		ctx,
+		h.ProviderStatus.ManagedResources,
+		h.ProviderConfiguration.DeletionGroups,
+		targetClient,
+		h.DeployItem,
+		interruptionChecker)
+	if err != nil {
+		return fmt.Errorf("failed deleting managed resources: %w", err)
 	}
 
 	// remove finalizer

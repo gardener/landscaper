@@ -7,9 +7,8 @@ package validation
 import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 )
 
 // ValidateManifestList validates a list of manifests.
@@ -80,5 +79,64 @@ func ValidateFromObjectReference(fldPath *field.Path, ref *managedresource.FromO
 	if len(ref.JSONPath) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("jsonPath"), "must not be empty"))
 	}
+	return allErrs
+}
+
+func ValidateDeletionGroups(fldPath *field.Path, groups []managedresource.DeletionGroupDefinition) field.ErrorList {
+	var allErrs field.ErrorList
+	for i, g := range groups {
+		allErrs = append(allErrs, validateDeletionGroup(fldPath.Index(i), &g)...)
+	}
+	return allErrs
+}
+
+func validateDeletionGroup(fldPath *field.Path, g *managedresource.DeletionGroupDefinition) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if g.IsPredefined() && g.IsCustom() {
+		allErrs = append(allErrs, field.Invalid(fldPath, g, "predefinedResourceGroup and customResourceGroup must not both be set"))
+	}
+	if !g.IsPredefined() && !g.IsCustom() {
+		allErrs = append(allErrs, field.Invalid(fldPath, g, "either predefinedResourceGroup or customResourceGroup must be set"))
+	}
+	if g.IsPredefined() {
+		allErrs = append(allErrs, validatePredefinedResourceGroup(fldPath.Child("predefinedResourceGroup"), g.PredefinedResourceGroup)...)
+	}
+	if g.IsCustom() {
+		allErrs = append(allErrs, validateCustomResourceGroup(fldPath.Child("customResourceGroup"), g.CustomResourceGroup)...)
+	}
+
+	return allErrs
+}
+
+func validatePredefinedResourceGroup(fldPath *field.Path, p *managedresource.PredefinedResourceGroup) field.ErrorList {
+	var allErrs field.ErrorList
+
+	switch p.Type {
+	case managedresource.PredefinedResourceGroupNamespacedResources,
+		managedresource.PredefinedResourceGroupClusterScopedResources,
+		managedresource.PredefinedResourceGroupCRDs,
+		managedresource.PredefinedResourceGroupEmpty:
+	case "":
+		allErrs = append(allErrs, field.Required(fldPath.Child("type"), "must not be empty"))
+	default:
+		allErrs = append(allErrs, field.NotSupported(fldPath.Child("type"), p.Type, []string{
+			string(managedresource.PredefinedResourceGroupNamespacedResources),
+			string(managedresource.PredefinedResourceGroupClusterScopedResources),
+			string(managedresource.PredefinedResourceGroupCRDs),
+			string(managedresource.PredefinedResourceGroupEmpty),
+		}))
+	}
+
+	return allErrs
+}
+
+func validateCustomResourceGroup(fldPath *field.Path, c *managedresource.CustomResourceGroup) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if len(c.Resources) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("resources"), "must not be empty"))
+	}
+
 	return allErrs
 }

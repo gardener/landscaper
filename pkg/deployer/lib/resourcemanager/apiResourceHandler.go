@@ -35,8 +35,12 @@ func (a *ApiResourceHandler) getSyncFromCache(gkv string) (metav1.APIResource, b
 }
 
 func (a *ApiResourceHandler) GetApiResource(manifest *Manifest) (metav1.APIResource, error) {
+	return a.GetApiResourceForType(manifest.TypeMeta)
+}
+
+func (a *ApiResourceHandler) GetApiResourceForType(typeMeta metav1.TypeMeta) (metav1.APIResource, error) {
 	currOp := "GetApiResource"
-	gvk := manifest.TypeMeta.GetObjectKind().GroupVersionKind().String()
+	gvk := typeMeta.GetObjectKind().GroupVersionKind().String()
 
 	// check if in cache
 	if res, ok := a.getSyncFromCache(gvk); ok {
@@ -51,8 +55,8 @@ func (a *ApiResourceHandler) GetApiResource(manifest *Manifest) (metav1.APIResou
 		return res, nil
 	}
 
-	groupVersion := manifest.TypeMeta.GetObjectKind().GroupVersionKind().GroupVersion().String()
-	kind := manifest.TypeMeta.GetObjectKind().GroupVersionKind().Kind
+	groupVersion := typeMeta.GetObjectKind().GroupVersionKind().GroupVersion().String()
+	kind := typeMeta.GetObjectKind().GroupVersionKind().Kind
 	apiResourceList, err := a.clientset.Discovery().ServerResourcesForGroupVersion(groupVersion)
 	if err != nil {
 		err2 := fmt.Errorf("unable to get api resources for %s: %w", groupVersion, err)

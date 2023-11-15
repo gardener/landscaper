@@ -54,6 +54,35 @@
         }
       }
     },
+    "utils-managedresource-CustomResourceGroup": {
+      "type": "object",
+      "properties": {
+        "deleteAllResources": {
+          "type": "boolean"
+        },
+        "forceDelete": {
+          "type": "boolean"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-managedresource-ResourceType"
+          }
+        }
+      }
+    },
+    "utils-managedresource-DeletionGroupDefinition": {
+      "type": "object",
+      "properties": {
+        "customResourceGroup": {
+          "$ref": "#/definitions/utils-managedresource-CustomResourceGroup"
+        },
+        "predefinedResourceGroup": {
+          "$ref": "#/definitions/utils-managedresource-PredefinedResourceGroup"
+        }
+      }
+    },
     "utils-managedresource-Export": {
       "description": "Export describes one export that is read from a resource.",
       "type": "object",
@@ -148,6 +177,42 @@
         "policy": {
           "description": "Policy defines the manage policy for that resource.",
           "type": "string"
+        }
+      }
+    },
+    "utils-managedresource-PredefinedResourceGroup": {
+      "type": "object",
+      "properties": {
+        "forceDelete": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "utils-managedresource-ResourceType": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
         }
       }
     },
@@ -275,6 +340,22 @@
     "continuousReconcile": {
       "$ref": "#/definitions/utils-continuousreconcile-ContinuousReconcileSpec",
       "description": "ContinuousReconcile contains the schedule for continuous reconciliation."
+    },
+    "deletionGroups": {
+      "description": "DeletionGroups defines the order in which objects are deleted.",
+      "items": {
+        "$ref": "#/definitions/utils-managedresource-DeletionGroupDefinition",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "deletionGroupsDuringUpdate": {
+      "description": "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+      "items": {
+        "$ref": "#/definitions/utils-managedresource-DeletionGroupDefinition",
+        "default": {}
+      },
+      "type": "array"
     },
     "exports": {
       "$ref": "#/definitions/utils-managedresource-Exports",

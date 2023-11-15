@@ -20,7 +20,7 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -29,14 +29,14 @@ import (
 // ExporterOptions defines the options for the exporter.
 type ExporterOptions struct {
 	KubeClient          client.Client
-	InterruptionChecker *lib.InterruptionChecker
+	InterruptionChecker interruption.InterruptionChecker
 	DeployItem          *lsv1alpha1.DeployItem
 }
 
 // Exporter defines the export of data from manifests.
 type Exporter struct {
 	kubeClient          client.Client
-	interruptionChecker *lib.InterruptionChecker
+	interruptionChecker interruption.InterruptionChecker
 	deployItem          *lsv1alpha1.DeployItem
 }
 
@@ -46,6 +46,10 @@ func NewExporter(opts ExporterOptions) *Exporter {
 		kubeClient:          opts.KubeClient,
 		interruptionChecker: opts.InterruptionChecker,
 		deployItem:          opts.DeployItem,
+	}
+
+	if exporter.interruptionChecker == nil {
+		exporter.interruptionChecker = interruption.NewIgnoreInterruptionChecker()
 	}
 
 	return exporter

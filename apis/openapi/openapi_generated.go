@@ -232,11 +232,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.Configuration":                             schema_apis_deployer_mock_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.ProviderConfiguration":                     schema_apis_deployer_mock_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec":       schema_apis_deployer_utils_continuousreconcile_ContinuousReconcileSpec(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.CustomResourceGroup":               schema_apis_deployer_utils_managedresource_CustomResourceGroup(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition":           schema_apis_deployer_utils_managedresource_DeletionGroupDefinition(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export":                            schema_apis_deployer_utils_managedresource_Export(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports":                           schema_apis_deployer_utils_managedresource_Exports(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference":               schema_apis_deployer_utils_managedresource_FromObjectReference(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.ManagedResourceStatus":             schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest":                          schema_apis_deployer_utils_managedresource_Manifest(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.PredefinedResourceGroup":           schema_apis_deployer_utils_managedresource_PredefinedResourceGroup(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.ResourceType":                      schema_apis_deployer_utils_managedresource_ResourceType(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.CustomReadinessCheckConfiguration": schema_apis_deployer_utils_readinesschecks_CustomReadinessCheckConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.LabelSelectorSpec":                 schema_apis_deployer_utils_readinesschecks_LabelSelectorSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration":       schema_apis_deployer_utils_readinesschecks_ReadinessCheckConfiguration(ref),
@@ -9131,12 +9135,40 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration"),
 						},
 					},
+					"deletionGroups": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroups defines the order in which objects are deleted. Only relevant if HelmDeployment is false.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
+					"deletionGroupsDuringUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"chart", "name", "namespace", "createNamespace"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
@@ -9439,11 +9471,39 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports"),
 						},
 					},
+					"deletionGroups": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroups defines the order in which objects are deleted.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
+					"deletionGroupsDuringUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -9697,11 +9757,39 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec"),
 						},
 					},
+					"deletionGroups": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroups defines the order in which objects are deleted.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
+					"deletionGroupsDuringUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
@@ -9885,6 +9973,69 @@ func schema_apis_deployer_utils_continuousreconcile_ContinuousReconcileSpec(ref 
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_CustomResourceGroup(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.ResourceType"),
+									},
+								},
+							},
+						},
+					},
+					"forceDelete": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"deleteAllResources": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.ResourceType"},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_DeletionGroupDefinition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"predefinedResourceGroup": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.PredefinedResourceGroup"),
+						},
+					},
+					"customResourceGroup": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.CustomResourceGroup"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.CustomResourceGroup", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.PredefinedResourceGroup"},
 	}
 }
 
@@ -10101,6 +10252,82 @@ func schema_apis_deployer_utils_managedresource_Manifest(ref common.ReferenceCal
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_PredefinedResourceGroup(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"forceDelete": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_ResourceType(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"names": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"namespaces": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

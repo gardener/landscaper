@@ -36,6 +36,12 @@ type ProviderConfiguration struct {
 	// ContinuousReconcile contains the schedule for continuous reconciliation.
 	// +optional
 	ContinuousReconcile *cr.ContinuousReconcileSpec `json:"continuousReconcile,omitempty"`
+	// DeletionGroups defines the order in which objects are deleted.
+	// +optional
+	DeletionGroups []managedresource.DeletionGroupDefinition `json:"deletionGroups,omitempty"`
+	// DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.
+	// +optional
+	DeletionGroupsDuringUpdate []managedresource.DeletionGroupDefinition `json:"deletionGroupsDuringUpdate,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.
