@@ -121,7 +121,7 @@ landscaper:
           namespace: ls-system
 ```
 
-The registry secrets have to be provided in a plain Docker auth JSON format at `landscaper.landscaper.registryConfig.secrets`. See [here](../gettingstarted/install-landscaper-controller.md#Private registry access) for more details.
+The registry secrets have to be provided in a plain Docker auth JSON format at `landscaper.landscaper.registryConfig.secrets`. See [here](../installation/install-landscaper-controller.md#Private registry access) for more details.
 
 To install the Landscaper with the credentials for the OCI container registry, use the following command:
 

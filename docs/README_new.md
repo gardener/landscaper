@@ -3,7 +3,7 @@ In this chapter, it is described what the Landscaper is, what it does and why yo
 
 - [What is the Landscaper ?](motivation/motivation.md) 
 - [Installing the Landscaper CLI](https://github.com/gardener/landscapercli/blob/master/docs/installation.md)
-- [Installing the Landscaper Controller in your own cluster](./gettingstarted/install-landscaper-controller.md)
+- [Installing the Landscaper Controller in your own cluster](installation/install-landscaper-controller.md)
 
 # Level 0 (Beginner)
 

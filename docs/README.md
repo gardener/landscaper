@@ -31,13 +31,13 @@
 - [Testing](development/testing.md)
 - [Adding new Tutorials](development/tutorials.md)
 
-## Getting Started
-
-- [Installation and Configuration of Landscaper](gettingstarted/install-landscaper-controller.md)
-
 ## Guided Tour
 
 - [Guided Tour](guided-tour/README.md)
+
+## Installation
+
+- [Installation and Configuration of Landscaper](installation/install-landscaper-controller.md)
 
 ## Motivation
 

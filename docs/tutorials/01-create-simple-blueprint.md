@@ -441,7 +441,7 @@ Once the upload succeeds, the Component Descriptor should be accessible at `eu.g
 
 Now all resources are added to the Component Descriptor, and everything is uploaded to the OCI registry. The nginx-ingress can finally be installed by the Landscaper into the target Kubernetes cluster.
 
-For this, a working Landscaper Installation is needed. For a detailed installation instruction, see the [Landscaper Controller Installation](../gettingstarted/install-landscaper-controller.md) document.
+For this, a working Landscaper Installation is needed. For a detailed installation instruction, see the [Landscaper Controller Installation](../installation/install-landscaper-controller.md) document.
 
 ### Defining the _Target_ that is used as import
 

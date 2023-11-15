@@ -4,7 +4,7 @@ In this example we describe how to deploy your first component with Landscaper. 
 deployment. Note that this example uses an already existing Component Descriptor and its Blueprint, so it is meant to 
 give you a way to quickly deploy something with the Landscaper and look at the deployed resources in your cluster.
 
-To try out this example by yourself, you need to install Landscaper (see [here](../gettingstarted/install-landscaper-controller.md)) in a cluster.
+To try out this example by yourself, you need to install Landscaper (see [here](../installation/install-landscaper-controller.md)) in a cluster.
 
 **Structure**
   - [Step 1 - Create and apply the Target Custom Resource](#step-1---create-and-apply-the-target-custom-resource)
