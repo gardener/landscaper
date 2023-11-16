@@ -27,16 +27,14 @@ const (
 type LockCleaner struct {
 	writer       *read_write_layer.Writer
 	lsReadClient client.Client
-	hostClient   client.Client
 }
 
-func NewLockCleaner(lsClient, hostClient client.Client) *LockCleaner {
+func NewLockCleaner(lsClient client.Client) *LockCleaner {
 	writer := read_write_layer.NewWriter(lsClient)
 
 	return &LockCleaner{
 		writer:       writer,
 		lsReadClient: lsClient,
-		hostClient:   hostClient,
 	}
 }
 
@@ -119,7 +117,7 @@ func (l *LockCleaner) existsResource(ctx context.Context, syncObject *lsv1alpha1
 		Name:      syncObject.Spec.Name,
 	}
 
-	if err := l.hostClient.Get(ctx, resourceKey, resource); err != nil {
+	if err := l.lsReadClient.Get(ctx, resourceKey, resource); err != nil {
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}

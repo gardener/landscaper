@@ -258,7 +258,7 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 	})
 
 	eg.Go(func() error {
-		lockCleaner := lock.NewLockCleaner(lsMgr.GetClient(), hostMgr.GetClient())
+		lockCleaner := lock.NewLockCleaner(lsMgr.GetClient())
 		lockCleaner.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
 		return nil
 	})
