@@ -179,12 +179,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	// this check is only for compatibility reasons
-	rt, reponsible, err := CheckResponsibility(ctx, c.lsClient, metadata, c.deployerType, c.targetSelectors)
+	rt, responsible, targetNotFound, err := CheckResponsibility(ctx, c.lsClient, metadata, c.deployerType, c.targetSelectors)
 	if err != nil {
 		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
 
-	if !reponsible {
+	if !responsible {
 		return reconcile.Result{}, nil
 	}
 
@@ -204,11 +204,13 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}()
 	}
 
-	return c.reconcilePrivate(ctx, metadata, rt)
+	return c.reconcilePrivate(ctx, metadata, rt, targetNotFound)
 }
 
 func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.PartialObjectMetadata,
-	rt *lsv1alpha1.ResolvedTarget) (reconcile.Result, error) {
+	rt *lsv1alpha1.ResolvedTarget, targetNotFound bool) (reconcile.Result, error) {
+
+	op := "reconcilePrivate"
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	di := &lsv1alpha1.DeployItem{}
@@ -233,7 +235,7 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 	hasTestReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.TestReconcileOperation)
 
 	if !hasTestReconcileAnnotation && di.Status.GetJobID() == di.Status.JobIDFinished {
-		logger.Info("deploy item not reconciled because no new job ID or test reconcile annotation")
+		logger.Debug("deploy item not reconciled because no new job ID or test reconcile annotation")
 		return reconcile.Result{}, nil
 	}
 
@@ -245,6 +247,14 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 		logger.Info("generating a new jobID, because of a test-reconcile annotation")
 		di.Status.SetJobID(uuid.New().String())
 		di.Status.TransitionTimes = lsutil.NewTransitionTimes()
+	}
+
+	if targetNotFound {
+		lsError := lserrors.NewError(op, "NoTargetFound", "setting deploy item to failed due to missing target")
+		logger.Info(lsError.Error())
+		lsv1alpha1helper.SetDeployItemToFailed(di)
+		_ = c.handleReconcileResult(ctx, lsError, old, di)
+		return c.buildResult(ctx, di.Status.Phase, nil)
 	}
 
 	if di.Status.Phase.IsFinal() || di.Status.Phase.IsEmpty() {

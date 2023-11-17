@@ -154,6 +154,11 @@ func (w *Writer) logDataObjectUpdate(ctx context.Context, writeID WriteID, msg s
 
 func (w *Writer) logInstallationUpdate(ctx context.Context, writeID WriteID, msg string, installation *lsv1alpha1.Installation,
 	generationOld int64, resourceVersionOld string, err error) {
+	w.logInstallationUpdateExtended(ctx, writeID, msg, installation, generationOld, resourceVersionOld, err, true)
+}
+
+func (w *Writer) logInstallationUpdateExtended(ctx context.Context, writeID WriteID, msg string, installation *lsv1alpha1.Installation,
+	generationOld int64, resourceVersionOld string, err error, tryToUpdate bool) {
 
 	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", installation.Namespace, installation.Name))
 
@@ -170,6 +175,7 @@ func (w *Writer) logInstallationUpdate(ctx context.Context, writeID WriteID, msg
 			lc.KeyOperation, opNew,
 			lc.KeyResourceVersionOld, resourceVersionOld,
 			lc.KeyResourceVersionNew, resourceVersionNew,
+			lc.KeyTryToUpdate, tryToUpdate,
 		)
 	} else if apierrors.IsConflict(err) {
 		message := msg + ": " + err.Error()
@@ -180,6 +186,7 @@ func (w *Writer) logInstallationUpdate(ctx context.Context, writeID WriteID, msg
 			lc.KeyJobIDFinished, installation.Status.JobIDFinished,
 			lc.KeyGenerationOld, generationOld,
 			lc.KeyResourceVersionOld, resourceVersionOld,
+			lc.KeyTryToUpdate, tryToUpdate,
 		)
 	} else {
 		logger.Error(err, msg,
@@ -189,12 +196,18 @@ func (w *Writer) logInstallationUpdate(ctx context.Context, writeID WriteID, msg
 			lc.KeyJobIDFinished, installation.Status.JobIDFinished,
 			lc.KeyGenerationOld, generationOld,
 			lc.KeyResourceVersionOld, resourceVersionOld,
+			lc.KeyTryToUpdate, tryToUpdate,
 		)
 	}
 }
 
 func (w *Writer) logExecutionUpdate(ctx context.Context, writeID WriteID, msg string, execution *lsv1alpha1.Execution,
 	generationOld int64, resourceVersionOld string, err error) {
+	w.logExecutionUpdateExtended(ctx, writeID, msg, execution, generationOld, resourceVersionOld, err, true)
+}
+
+func (w *Writer) logExecutionUpdateExtended(ctx context.Context, writeID WriteID, msg string, execution *lsv1alpha1.Execution,
+	generationOld int64, resourceVersionOld string, err error, tryToUpdate bool) {
 
 	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", execution.Namespace, execution.Name))
 
@@ -211,6 +224,7 @@ func (w *Writer) logExecutionUpdate(ctx context.Context, writeID WriteID, msg st
 			lc.KeyOperation, opNew,
 			lc.KeyResourceVersionOld, resourceVersionOld,
 			lc.KeyResourceVersionNew, resourceVersionNew,
+			lc.KeyTryToUpdate, tryToUpdate,
 		)
 	} else if apierrors.IsConflict(err) {
 		message := msg + ": " + err.Error()
@@ -221,6 +235,7 @@ func (w *Writer) logExecutionUpdate(ctx context.Context, writeID WriteID, msg st
 			lc.KeyJobIDFinished, execution.Status.JobIDFinished,
 			lc.KeyGenerationOld, generationOld,
 			lc.KeyResourceVersionOld, resourceVersionOld,
+			lc.KeyTryToUpdate, tryToUpdate,
 		)
 	} else {
 		logger.Error(err, msg,
@@ -230,6 +245,7 @@ func (w *Writer) logExecutionUpdate(ctx context.Context, writeID WriteID, msg st
 			lc.KeyJobIDFinished, execution.Status.JobIDFinished,
 			lc.KeyGenerationOld, generationOld,
 			lc.KeyResourceVersionOld, resourceVersionOld,
+			lc.KeyTryToUpdate, tryToUpdate,
 		)
 	}
 }

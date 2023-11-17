@@ -77,7 +77,7 @@ func (o *Operation) Ensure(ctx context.Context) error {
 
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		"InstallationsInstalled", "All Installations are successfully installed")
-	return o.UpdateInstallationStatus(ctx, inst, cond)
+	return o.UpdateInstallationStatus(ctx, inst, read_write_layer.W000018, cond)
 }
 
 // isOptionalParentImport returns true if the specified import data reference
@@ -323,7 +323,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, lsv1alpha1helper.NewInstallationReferenceState(subInstTmpl.Name, subInst))
 	}
 
-	if !reflect.DeepEqual(oldStatus, inst.Status) {
+	if !reflect.DeepEqual(oldStatus, &inst.Status) {
 		if err := o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000017, inst); err != nil {
 			return nil, errors.Wrapf(err, "unable to add new installation for %s to state", subInstTmpl.Name)
 		}

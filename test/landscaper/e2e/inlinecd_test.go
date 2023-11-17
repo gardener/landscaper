@@ -106,7 +106,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		Expect(exec.Status.JobIDFinished).To(BeEmpty())
 
 		// reconcile execution
-		testutils.ShouldReconcileButRetry(ctx, execActuator, execReq) // not finished
+		testutils.ShouldReconcile(ctx, execActuator, execReq) // not finished
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).To(Succeed())
 		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Progressing))
