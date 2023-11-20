@@ -50,13 +50,6 @@ spec:
 #        baseUrl: eu.gcr.io/myproj
       componentName: github.com/gardener/gardener
       version: v1.7.2
-#    inline:    # https://gardener.github.io/component-spec/component-descriptor-v2.html
-#      meta:
-#        schemaVersion: v2
-#      component:
-#        name: github.com/gardener/gardener
-#        version: v.1.7.2
-#        ...
 
   blueprint:
     ref:
