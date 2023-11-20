@@ -2,15 +2,15 @@
 
 This document describes the installation of Landscaper.
 
-Landscaper is a Kubernetes controller that reconciles installations of _Components_ and handles the interaction with 
-_Deployers_ through _DeployItems_.
-
 ## Installation
 
-The easiest way to install the landscaper with its default deployer is to use the 
-[landscaper-cli](https://github.com/gardener/landscapercli/blob/master/docs/commands/quickstart/install.md)
+#### Option 1: Installation via the landscaper-cli tool
+The easiest way to install the landscaper with its default deployer is to use the _landscaper-cli_. The corresponding 
+documentation can be found 
+[here](https://github.com/gardener/landscapercli/blob/master/docs/commands/quickstart/install.md).
 
-Landscaper can also be installed via [Helm](https://helm.sh/) using the Helm chart in 
+#### Option 2: Installation via helm
+Alternatively, the landscaper can also be installed via [helm](https://helm.sh/) using the helm chart in 
 [charts/landscaper](../../charts/landscaper).
 
 :warning: Attention: There were some major changes to `helm`'s OCI features with version `v3.7.0`. This guide uses the 
@@ -34,10 +34,12 @@ helm install -n ls-system landscaper ./landscaper
 
 Landscaper's Helm chart can be configured with a values file.
 
-In case of an OCI registry that is not exposed via https, the `allowPlainHttpRegistries` flag can be used.
+In case of an OCI registry that is not exposed via https, the `allowPlainHttpRegistries` flag can be used. In case
+of an OCI registry using certificates signed by a custom certificate authority, the corresponding certificate authority 
+certificate can be added to the landscapers `truststore`. 
 
 > Note: Landscaper offloads all deployment specific functionality like deploying Helm charts to deployers.
-> By default, the Landscaper deployment contains no deployer so you are unable to reconcile any deploy items. 
+> By default, the Landscaper deployment contains no deployer, so you are unable to reconcile any deploy items. 
 > But a subset of internal open-source deployers (`helm`, `manifest` and `container`) can be automatically configured. 
 > See [below](#internal-and-external-deployers) for more details.
 
@@ -59,6 +61,8 @@ landscaper:
     landscaper:
       cache: {} # Landscaper caches pulled OCI artefacts on disk and optionally in-memory
     #     useInMemoryOverly: false
+      truststore:  # can be used to add certificates to the trust store of the landscaper
+        secrets: {} # contains certificates (optionally in a single or multiple secrets)
       registryConfig:
         allowPlainHttpRegistries: false
         secrets: # contains optional oci secrets
