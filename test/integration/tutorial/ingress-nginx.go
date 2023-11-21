@@ -47,7 +47,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 
 		It("should deploy a nginx ingress controller", func() {
 			var (
-				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/ingress-nginx")
+				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/tutorial/resources/ingress-nginx")
 				targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
