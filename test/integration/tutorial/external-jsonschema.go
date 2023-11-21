@@ -49,7 +49,7 @@ func ExternalJSONSchemaTestForNewReconcile(f *framework.Framework) {
 
 		It("should deploy an echo server with resources defined by an external jsonschema", func() {
 			var (
-				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/tutorial/resources/external-jsonschema")
+				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/testdata/tutorial/external-jsonschema")
 				targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")

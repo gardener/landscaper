@@ -47,7 +47,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 
 		It("should deploy a nginx ingress controller", func() {
 			var (
-				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/tutorial/resources/ingress-nginx")
+				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/testdata/tutorial/ingress-nginx")
 				targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
@@ -91,7 +91,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
 
 			// Update the installation to use the next component descriptor version (see
-			// docs/tutorials/resources/ingress-nginx-upgrade/component-descriptor.yaml) with the next nginx version.
+			// /test/integration/testdata/tutorial/ingress-nginx-upgrade/component-descriptor.yaml) with the next nginx version.
 			By("Upgrade installation")
 			instKey := kutil.ObjectKey(inst.Name, inst.Namespace)
 			inst = &lsv1alpha1.Installation{}
@@ -152,7 +152,7 @@ func NginxIngressTestForNewReconcile(f *framework.Framework) {
 
 		It("should deploy a nginx ingress controller with local artifacts", func() {
 			var (
-				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/local-ingress-nginx")
+				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/testdata/tutorial/local-ingress-nginx")
 				targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
