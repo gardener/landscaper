@@ -45,7 +45,7 @@ func AggregatedBlueprintForNewReconcile(f *framework.Framework) {
 
 		It("should deploy a nginx ingress controller and a echo-server together with an aggregated blueprint", func() {
 			var (
-				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/aggregated")
+				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/testdata/tutorial/aggregated")
 				targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")
 				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				nginxInstResource        = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
