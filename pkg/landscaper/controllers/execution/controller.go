@@ -98,8 +98,6 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
-	oldExecStatus := exec.Status.DeepCopy()
-
 	if exec.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000086, exec); err != nil {
@@ -117,7 +115,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if exec.Status.JobID != exec.Status.JobIDFinished {
 		// Execution is unfinished
 
-		err := c.handleReconcilePhase(ctx, exec, oldExecStatus)
+		err := c.handleReconcilePhase(ctx, exec)
 		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	} else {
 		// Execution is finished; nothing to do
@@ -125,8 +123,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 }
 
-func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.Execution,
-	oldExecStatus *lsv1alpha1.ExecutionStatus) lserrors.LsError {
+func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
 
 	op := "handleReconcilePhase"
 
@@ -154,14 +151,14 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Init {
 		if err := c.handlePhaseInit(ctx, exec); err != nil {
 			if lsutil.IsRecoverableError(err) {
-				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000007, oldExecStatus)
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000007)
 			}
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000131, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000131)
 		}
 
 		exec.Status.TransitionTimes = lsutil.SetWaitTransitionTime(exec.Status.TransitionTimes)
 
-		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Progressing, nil, read_write_layer.W000132, oldExecStatus); err != nil {
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Progressing, nil, read_write_layer.W000132); err != nil {
 			return err
 		}
 	}
@@ -169,23 +166,23 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Progressing {
 		deployItemClassification, err := c.handlePhaseProgressing(ctx, exec)
 		if err != nil {
-			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000133, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000133)
 		}
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
 			err = lserrors.NewError(op, "handlePhaseProgressing", "has failed or missing deploy items", lsv1alpha1.ErrorForInfoOnly)
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000134, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000134)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
 			err = lserrors.NewError(op, "handlePhaseProgressing", "items could not be started", lsv1alpha1.ErrorForInfoOnly)
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000135, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000135)
 		} else if !deployItemClassification.AllSucceeded() {
 			// remain in progressing in all other cases
 			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items", lsv1alpha1.ErrorUnfinished,
 				lsv1alpha1.ErrorForInfoOnly, lsv1alpha1.ErrorNoRetry)
-			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000136, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000136)
 		} else {
 			// all succeeded; go to next phase
-			if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Completing, nil, read_write_layer.W000137, oldExecStatus); err != nil {
+			if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Completing, nil, read_write_layer.W000137); err != nil {
 				return err
 			}
 		}
@@ -194,12 +191,12 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Completing {
 		if err := c.handlePhaseCompleting(ctx, exec); err != nil {
 			if lsutil.IsRecoverableError(err) {
-				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000008, oldExecStatus)
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000008)
 			}
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000138, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000138)
 		}
 
-		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Succeeded, nil, read_write_layer.W000139, oldExecStatus); err != nil {
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Succeeded, nil, read_write_layer.W000139); err != nil {
 			return err
 		}
 	}
@@ -209,12 +206,12 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.InitDelete {
 		if err := c.handlePhaseInitDelete(ctx, exec); err != nil {
 			if lsutil.IsRecoverableError(err) {
-				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000010, oldExecStatus)
+				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000010)
 			}
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000140, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000140)
 		}
 
-		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Deleting, nil, read_write_layer.W000141, oldExecStatus); err != nil {
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Deleting, nil, read_write_layer.W000141); err != nil {
 			return err
 		}
 	}
@@ -222,20 +219,20 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Deleting {
 		deployItemClassification, err := c.handlePhaseDeleting(ctx, exec)
 		if err != nil {
-			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000142, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000142)
 		}
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
 			err = lserrors.NewError(op, "handlePhaseDeleting", "has failed items", lsv1alpha1.ErrorForInfoOnly)
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000143, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000143)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
 			err = lserrors.NewError(op, "handlePhaseDeleting", "has pending items", lsv1alpha1.ErrorForInfoOnly)
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000144, oldExecStatus)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.DeleteFailed, err, read_write_layer.W000144)
 		}
 
 		// remain in deleting in all other cases,
 		// in particular if all deploy items are gone and the finalizer of the execution has been removed.
-		if err := c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, nil, read_write_layer.W000145, oldExecStatus); err != nil {
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, nil, read_write_layer.W000145); err != nil {
 			return err
 		}
 	}
@@ -351,8 +348,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 }
 
 func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1alpha1.Execution,
-	phase lsv1alpha1.ExecutionPhase, lsErr lserrors.LsError, writeID read_write_layer.WriteID,
-	oldExecStatus *lsv1alpha1.ExecutionStatus) lserrors.LsError {
+	phase lsv1alpha1.ExecutionPhase, lsErr lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
@@ -369,7 +365,7 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 		exec.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(exec.Status.TransitionTimes)
 	}
 
-	if err := c.Writer().UpdateExecutionStatusIfChanged(ctx, writeID, exec, oldExecStatus); err != nil {
+	if err := c.Writer().UpdateExecutionStatus(ctx, writeID, exec); err != nil {
 
 		if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Deleting {
 			// recheck if already deleted

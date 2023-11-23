@@ -152,14 +152,12 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
-	oldInstStatus := inst.Status.DeepCopy()
-
 	// default the installation as it not done by the Controller runtime
 	if err := c.updateInstallationWithDefaults(ctx, inst); err != nil {
 		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
-	return c.handleAutomaticReconcile(ctx, inst, oldInstStatus)
+	return c.handleAutomaticReconcile(ctx, inst)
 }
 
 func (c *Controller) updateInstallationWithDefaults(ctx context.Context, inst *lsv1alpha1.Installation) error {
@@ -179,8 +177,7 @@ func (c *Controller) updateInstallationWithDefaults(ctx context.Context, inst *l
 	return nil
 }
 
-func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alpha1.Installation,
-	oldInstStatus *lsv1alpha1.InstallationStatus) (reconcile.Result, error) {
+func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
 
 	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "handleAutomaticReconcile")
 
@@ -190,7 +187,7 @@ func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alp
 		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 	}
 
-	result, err := c.reconcileInstallation(ctx, inst, oldInstStatus)
+	result, err := c.reconcileInstallation(ctx, inst)
 
 	result, err = retryHelper.recomputeRetry(ctx, inst, result, err)
 	if err != nil {
@@ -200,8 +197,7 @@ func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alp
 	return result, err
 }
 
-func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1.Installation,
-	oldInstStatus *lsv1alpha1.InstallationStatus) (reconcile.Result, error) {
+func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
@@ -256,7 +252,7 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 
 	// handle reconcile
 	if inst.Status.JobID != inst.Status.JobIDFinished {
-		err := c.handleReconcilePhase(ctx, inst, oldInstStatus)
+		err := c.handleReconcilePhase(ctx, inst)
 		return utils.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	} else {
 		// job finished; nothing to do
@@ -356,7 +352,7 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 
 func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
 	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID,
-	reduceLogLevelForConflicts bool, oldInstStatus *lsv1alpha1.InstallationStatus) lserrors.LsError {
+	reduceLogLevelForConflicts bool) lserrors.LsError {
 
 	op := "setInstallationPhaseAndUpdate"
 

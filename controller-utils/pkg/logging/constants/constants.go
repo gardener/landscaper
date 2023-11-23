@@ -81,8 +81,6 @@ const (
 	KeyExportKey = "exportKey"
 	// KeyManagedResourcePolicy is for the manage policy of a resource.
 	KeyManagedResourcePolicy = "managedResourcePolicy"
-	// KeyTryToUpdate is signaling if operation was tried to be executed.
-	KeyTryToUpdate = "tryToUpdate"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

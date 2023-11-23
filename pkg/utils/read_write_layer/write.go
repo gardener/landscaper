@@ -3,7 +3,6 @@ package read_write_layer
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -134,20 +133,6 @@ func (w *Writer) UpdateInstallationStatus(ctx context.Context, writeID WriteID, 
 	return errorWithWriteID(err, writeID)
 }
 
-func (w *Writer) UpdateInstallationStatusIfChanged(ctx context.Context, writeID WriteID,
-	installation *lsv1alpha1.Installation, oldInstallationStatus *lsv1alpha1.InstallationStatus) error {
-	generationOld, resourceVersionOld := getGenerationAndResourceVersion(installation)
-	var err error
-	tryToUpdate := false
-	if !reflect.DeepEqual(oldInstallationStatus, &installation.Status) {
-		tryToUpdate = true
-		err = updateStatus(ctx, w.client.Status(), installation)
-	}
-
-	w.logInstallationUpdateExtended(ctx, writeID, opInstStatus, installation, generationOld, resourceVersionOld, err, tryToUpdate)
-	return errorWithWriteID(err, writeID)
-}
-
 func (w *Writer) DeleteInstallation(ctx context.Context, writeID WriteID, installation *lsv1alpha1.Installation) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(installation)
 	err := delete(ctx, w.client, installation)
@@ -176,19 +161,6 @@ func (w *Writer) UpdateExecutionStatus(ctx context.Context, writeID WriteID, exe
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(execution)
 	err := updateStatus(ctx, w.client.Status(), execution)
 	w.logExecutionUpdate(ctx, writeID, opExecStatus, execution, generationOld, resourceVersionOld, err)
-	return errorWithWriteID(err, writeID)
-}
-
-func (w *Writer) UpdateExecutionStatusIfChanged(ctx context.Context, writeID WriteID, execution *lsv1alpha1.Execution,
-	oldExecutionStatus *lsv1alpha1.ExecutionStatus) error {
-	generationOld, resourceVersionOld := getGenerationAndResourceVersion(execution)
-	var err error
-	tryToUpdate := false
-	if !reflect.DeepEqual(oldExecutionStatus, &execution.Status) {
-		tryToUpdate = true
-		err = updateStatus(ctx, w.client.Status(), execution)
-	}
-	w.logExecutionUpdateExtended(ctx, writeID, opExecStatus, execution, generationOld, resourceVersionOld, err, tryToUpdate)
 	return errorWithWriteID(err, writeID)
 }
 
