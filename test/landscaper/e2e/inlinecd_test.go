@@ -81,9 +81,9 @@ var _ = Describe("Inline Component Descriptor", func() {
 		inst := &lsv1alpha1.Installation{}
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
 		Expect(testutils.AddReconcileAnnotation(ctx, testenv, inst)).To(Succeed())
-		testutils.ShouldReconcile(ctx, instActuator, instReq)         // add finalizer
-		testutils.ShouldReconcile(ctx, instActuator, instReq)         // remove reconcile annotation and generate jobID
-		testutils.ShouldReconcileButRetry(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
+		testutils.ShouldReconcile(ctx, instActuator, instReq) // add finalizer
+		testutils.ShouldReconcile(ctx, instActuator, instReq) // remove reconcile annotation and generate jobID
+		testutils.ShouldReconcile(ctx, instActuator, instReq) // create execution; returns error because execution is unfinished
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).To(Succeed())
 		Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Progressing))
