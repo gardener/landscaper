@@ -4,7 +4,7 @@ In this tour, you will learn about the different Landscaper features by simple e
 
 ## Prerequisites and Basic Definitions
 
-- For all examples, you need a [running Landscaper instance](../gettingstarted/install-landscaper-controller.md).
+- For all examples, you need a [running Landscaper instance](../installation/install-landscaper-controller.md).
 
 - A convenient tool we will often use in the following examples is the [Landscaper
   CLI](https://github.com/gardener/landscapercli). 

@@ -1,0 +1,10 @@
+---
+type: blueprint
+name: ingress-nginx-blueprint
+relation: local
+input:
+  type: "dir"
+  path: "./blueprint"
+  compress: true
+  mediaType: "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+...

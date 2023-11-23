@@ -20,8 +20,7 @@ kind: LandscaperConfiguration
 
 registry:
   local:
-    paths:
-    - "/path/to/definitions"
+    rootPath: "/path/to/definitions"
 ```
 
 The blueprints are referenced via `local` access type in the component descriptor.

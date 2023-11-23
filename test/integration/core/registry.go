@@ -73,7 +73,7 @@ func RegistryTest(f *framework.Framework) {
 
 			It("should upload a component descriptor and blueprint to a private registry and install that blueprint", func() {
 				var (
-					tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/local-ingress-nginx")
+					tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/testdata/tutorial/local-ingress-nginx")
 					targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")
 					importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 					instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
@@ -512,7 +512,7 @@ func RegistryTest(f *framework.Framework) {
 func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f *framework.Framework, name, version string) *cdv2.ComponentDescriptor {
 	// define component descriptor
 	var (
-		tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/local-ingress-nginx")
+		tutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/testdata/tutorial/local-ingress-nginx")
 		blueprintDir             = filepath.Join(tutorialResourcesRootDir, "blueprint")
 		helmChartDir             = filepath.Join(tutorialResourcesRootDir, "chart")
 		cd                       = &cdv2.ComponentDescriptor{}

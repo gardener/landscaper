@@ -6,7 +6,7 @@
     - [_Landscaper Host Cluster_](#landscaper-host-cluster)
     - [_Landscaper Resource Cluster_](#landscaper-resource-cluster)
     - [_Target Cluster_](#target-cluster)
-  - [_Component Descriptor_](#component-descriptor)
+  - [_Components and Component Descriptors_](#component-descriptor)
   - [_Context_](#context)
   - [_DataObject_](#dataobject)
   - [_Deployer_](#deployer)
@@ -73,11 +73,15 @@ to different target clusters.
 
 [↑](#glossary)
 
-#### _Component Descriptor_
-  A Component Descriptor contains references and locations to all resources that are used by Landscaper to deploy and install an application.
-  Typically, a Component Descriptor is stored in an OCI registry.
+#### _Components and Component Descriptors_
+A component descriptor describes a component, or rather, a specific component version. In general, a component version 
+is a container for all required resources for the deployment of a specific version of an application or software system.
+A component version may either contain a resource through referencing it at an external location (e.g. an OCI 
+registry) or through embedding it as a local blob (e.g. as an additional layer of the component version's OCI artifact).
 
-  For more details see [here](https://gardener.github.io/component-spec/format.html) and [here](https://gardener.github.io/component-spec/semantics.html).
+For more details on ocm components in general, see [here](https://ocm.software/). For more details on the usage of ocm
+components in the context of the landscaper, check out the blueprint and components section of the guided tour 
+[here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/README.md#blueprints-and-components).
 
 [↑](#glossary)
 

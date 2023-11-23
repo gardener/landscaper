@@ -1,0 +1,9 @@
+---
+type: landscaper.gardener.cloud/jsonschema
+name: resources-definition
+relation: local
+input:
+  type: "file"
+  path: "./resources.json"
+  mediaType: "application/vnd.gardener.landscaper.jsonscheme.v1+json"
+...

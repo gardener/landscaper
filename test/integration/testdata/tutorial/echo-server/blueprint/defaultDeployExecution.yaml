@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+{{ $name :=  "echo-server" }}
+deployItems:
+- name: deploy
+  type: landscaper.gardener.cloud/kubernetes-manifest
+  target:
+    import: cluster
+  config:
+    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+    kind: ProviderConfiguration
+
+    updateStrategy: patch
+
+    manifests:
+    - policy: manage
+      manifest:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: {{ $name }}
+          namespace: {{ .imports.namespace }}
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: {{ $name }}
+          template:
+            metadata:
+              labels:
+                app: {{ $name }}
+            spec:
+              containers:
+                - image: {{ with (getResource .cd "name" "echo-server-image") }}{{ .access.imageReference }}{{end}}
+                  imagePullPolicy: IfNotPresent
+                  name: {{ $name }}
+                  args:
+                  - -text="hello world"
+                  ports:
+                    - containerPort: 5678
+    - policy: manage
+      manifest:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: {{ $name }}
+          namespace: {{ .imports.namespace }}
+        spec:
+          selector:
+            app: {{ $name }}
+          ports:
+          - protocol: TCP
+            port: 80
+            targetPort: 5678
+    - policy: manage
+      manifest:
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: {{ $name }}
+          namespace: {{ .imports.namespace }}
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /
+            kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"
+        spec:
+          rules:
+          - http:
+              paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: {{ $name }}
+                    port: 
+                      number: 80
