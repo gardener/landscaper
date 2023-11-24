@@ -184,7 +184,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}); err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CreateOrUpdateExecutionReason, "Unable to create or update execution")
-		_ = o.UpdateInstallationStatus(ctx, inst.GetInstallation(), cond)
+		_ = o.UpdateInstallationStatus(ctx, inst.GetInstallation(), read_write_layer.W000058, cond)
 		return err
 	}
 
@@ -194,7 +194,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		ExecutionDeployedReason, "Deployed execution item")
-	if err := o.UpdateInstallationStatus(ctx, inst.GetInstallation(), cond); err != nil {
+	if err := o.UpdateInstallationStatus(ctx, inst.GetInstallation(), read_write_layer.W000066, cond); err != nil {
 		return err
 	}
 

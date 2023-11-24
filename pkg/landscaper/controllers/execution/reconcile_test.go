@@ -63,7 +63,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(state.Create(ctx, exec)).To(Succeed())
 		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 		Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
-		testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Progressing))
@@ -123,7 +123,7 @@ var _ = Describe("Reconcile", func() {
 			Expect(state.Create(ctx, exec)).To(Succeed())
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			// expect a deploy item
 			items := &lsv1alpha1.DeployItemList{}
@@ -156,7 +156,7 @@ var _ = Describe("Reconcile", func() {
 			Expect(state.Create(ctx, exec)).To(Succeed())
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			// expect a deploy item
 			items := &lsv1alpha1.DeployItemList{}
@@ -191,7 +191,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 		Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
 
-		testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Progressing))
 		Expect(exec.Status.JobIDFinished).NotTo(Equal(exec.Status.JobID))
@@ -263,7 +263,7 @@ var _ = Describe("Reconcile", func() {
 
 			// Reconcile the execution with two orphaned deploy items di-b and di-c
 			Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			// Check execution state
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
@@ -309,7 +309,7 @@ var _ = Describe("Reconcile", func() {
 			currentJobID := exec.Status.JobID
 			Expect(exec.Status.JobIDFinished).NotTo(Equal(currentJobID))
 
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(exec.Status.JobID).To(Equal(currentJobID))
@@ -340,7 +340,7 @@ var _ = Describe("Reconcile", func() {
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 			Expect(state.Client.Status().Update(ctx, di1)).To(Succeed())
 
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(exec.Status.JobID).To(Equal(currentJobID))
@@ -358,7 +358,7 @@ var _ = Describe("Reconcile", func() {
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di2)).To(Succeed())
 
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(exec.Status.JobID).To(Equal(currentJobID))
@@ -402,7 +402,7 @@ var _ = Describe("Reconcile", func() {
 			currentJobID = exec.Status.JobID
 			Expect(exec.Status.JobIDFinished).NotTo(Equal(currentJobID))
 
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(exec.Status.JobID).To(Equal(currentJobID))
@@ -427,7 +427,7 @@ var _ = Describe("Reconcile", func() {
 			di1.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di1)).To(Succeed())
 
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(exec.Status.JobID).To(Equal(currentJobID))
@@ -452,7 +452,7 @@ var _ = Describe("Reconcile", func() {
 			di2.Status.Phase = lsv1alpha1.DeployItemPhases.Succeeded
 			Expect(state.Client.Status().Update(ctx, di2)).To(Succeed())
 
-			testutils.ShouldReconcileButRetry(ctx, ctrl, testutils.RequestFromObject(exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(exec.Status.JobID).To(Equal(currentJobID))

@@ -162,7 +162,7 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 		deployItem.Status.TransitionTimes = lsutil.SetFinishedTransitionTime(deployItem.Status.TransitionTimes)
 	}
 
-	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {
+	if !reflect.DeepEqual(&oldDeployItem.Status, &deployItem.Status) {
 		if err2 := read_write_layer.NewWriter(lsClient).UpdateDeployItemStatus(ctx, read_write_layer.W000092, deployItem); err2 != nil {
 			if !deployItem.DeletionTimestamp.IsZero() {
 				// recheck if already deleted
@@ -188,7 +188,7 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 }
 
 func CheckResponsibility(ctx context.Context, lsClient client.Client, obj *metav1.PartialObjectMetadata,
-	deployerType lsv1alpha1.DeployItemType, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.ResolvedTarget, bool, lserrors.LsError) {
+	deployerType lsv1alpha1.DeployItemType, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.ResolvedTarget, bool, bool, lserrors.LsError) {
 
 	annotatedDeployerType, found := obj.GetAnnotations()[lsv1alpha1.DeployerTypeAnnotation]
 	targetName := obj.GetAnnotations()[lsv1alpha1.DeployerTargetNameAnnotation]
@@ -196,7 +196,7 @@ func CheckResponsibility(ctx context.Context, lsClient client.Client, obj *metav
 		// deploy item in old version
 		di := &lsv1alpha1.DeployItem{}
 		if err := read_write_layer.GetDeployItem(ctx, lsClient, client.ObjectKeyFromObject(obj), di); err != nil {
-			return nil, false, lserrors.NewWrappedError(err, "CheckResponsibility", "fetchDeployItem",
+			return nil, false, false, lserrors.NewWrappedError(err, "CheckResponsibility", "fetchDeployItem",
 				"fetching deploy item failed")
 		}
 
@@ -209,22 +209,26 @@ func CheckResponsibility(ctx context.Context, lsClient client.Client, obj *metav
 	}
 
 	if annotatedDeployerType != string(deployerType) {
-		return nil, false, nil
+		return nil, false, false, nil
 	}
 
 	return checkTargetResponsibilityAndResolve(ctx, lsClient, obj.Namespace, targetName, targetSelectors)
 }
 
 func checkTargetResponsibilityAndResolve(ctx context.Context, lsClient client.Client,
-	targetNamespace, targetName string, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.ResolvedTarget, bool, lserrors.LsError) {
+	targetNamespace, targetName string, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.ResolvedTarget, bool, bool, lserrors.LsError) {
 
-	target, responsible, lsError := checkTargetResponsibility(ctx, lsClient, targetNamespace, targetName, targetSelectors)
+	target, responsible, targetNotFound, lsError := checkTargetResponsibility(ctx, lsClient, targetNamespace, targetName, targetSelectors)
 	if lsError != nil {
-		return nil, false, lsError
+		return nil, false, false, lsError
+	}
+
+	if targetNotFound {
+		return nil, responsible, targetNotFound, nil // = nil, true, true, nil
 	}
 
 	if !responsible {
-		return nil, false, nil
+		return nil, responsible, targetNotFound, nil // = nil, false, false, nil
 	}
 
 	// resolve Target reference, if any
@@ -234,15 +238,15 @@ func checkTargetResponsibilityAndResolve(ctx context.Context, lsClient client.Cl
 		rt, err = targetresolver.Resolve(ctx, target, lsClient)
 		if err != nil {
 			lsError = lserrors.NewWrappedError(err, "checkTargetResponsibilityAndResolve", "resolveTarget", err.Error())
-			return nil, false, lsError
+			return nil, false, false, lsError
 		}
 	}
 
-	return rt, true, nil
+	return rt, true, false, nil
 }
 
 func checkTargetResponsibility(ctx context.Context, lsClient client.Client,
-	targetNamespace, targetName string, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.Target, bool, lserrors.LsError) {
+	targetNamespace, targetName string, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.Target, bool, bool, lserrors.LsError) {
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
@@ -250,32 +254,31 @@ func checkTargetResponsibility(ctx context.Context, lsClient client.Client,
 
 	if targetName == lsv1alpha1.NoTargetNameValue {
 		logger.Debug("No target defined")
-		return nil, true, nil
+		return nil, true, false, nil
 	}
 
 	logger.Debug("Found target. Checking responsibility")
 	target := &lsv1alpha1.Target{}
 	if err := lsClient.Get(ctx, client.ObjectKey{Namespace: targetNamespace, Name: targetName}, target); err != nil {
-		lsError := lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item")
+		lsError := lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item - other error")
 		if apierrors.IsNotFound(err) {
-			lsError = lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item",
-				lsv1alpha1.ErrorForInfoOnly)
+			return nil, true, true, nil
 		}
-		return nil, false, lsError
+		return nil, false, false, lsError
 	}
 	if len(targetSelectors) == 0 {
 		logger.Debug("No target selectors defined")
-		return target, true, nil
+		return target, true, false, nil
 	}
 	matched, err := targetselector.MatchOne(target, targetSelectors)
 	if err != nil {
 		lsError := lserrors.NewWrappedError(err, op, "MatchOne", "unable to match target selector")
-		return nil, false, lsError
+		return nil, false, false, lsError
 	}
 	if !matched {
 		logger.Debug("The deployitem's target has not matched the given target selector",
 			"target", target.Name)
-		return nil, false, nil
+		return nil, false, false, nil
 	}
-	return target, true, nil
+	return target, true, false, nil
 }

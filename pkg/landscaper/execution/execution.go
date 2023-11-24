@@ -96,7 +96,7 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 						return nil, err
 					}
 				} else {
-					if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+					if err := o.triggerDeployItem(ctx, item.DeployItem, read_write_layer.W000030); err != nil {
 						return nil, err
 					}
 				}
@@ -116,7 +116,7 @@ func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassifi
 	if !classification.HasFailedItems() {
 		runnableItems := classification.GetRunnableItems()
 		for _, item := range runnableItems {
-			if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+			if err := o.triggerDeployItem(ctx, item.DeployItem, read_write_layer.W000056); err != nil {
 				return nil, err
 			}
 		}
@@ -165,7 +165,7 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 					return nil, err
 				}
 			} else {
-				if err := o.triggerDeployItem(ctx, item.DeployItem); err != nil {
+				if err := o.triggerDeployItem(ctx, item.DeployItem, read_write_layer.W000090); err != nil {
 					return nil, err
 				}
 			}
@@ -175,7 +175,7 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 	return classification, nil
 }
 
-func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.DeployItem) lserrors.LsError {
+func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.DeployItem, writeId read_write_layer.WriteID) lserrors.LsError {
 	op := "TriggerDeployItem"
 
 	key := kutil.ObjectKeyFromObject(di)
@@ -188,7 +188,7 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 	di.Status.TransitionTimes = utils.NewTransitionTimes()
 	now := metav1.Now()
 	di.Status.JobIDGenerationTime = &now
-	if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
+	if err := o.Writer().UpdateDeployItemStatus(ctx, writeId, di); err != nil {
 		return lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
 	}
 
