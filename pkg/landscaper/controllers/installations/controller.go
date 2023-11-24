@@ -178,6 +178,7 @@ func (c *Controller) updateInstallationWithDefaults(ctx context.Context, inst *l
 }
 
 func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+
 	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "handleAutomaticReconcile")
 
 	retryHelper := newRetryHelper(c.Client(), c.clock)
@@ -197,6 +198,7 @@ func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alp
 }
 
 func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {

@@ -152,7 +152,7 @@ func (w *Webhook) Handle(ctx context.Context, req admission.Request) admission.R
 		if w.Type == MutatingWebhook {
 			log = log.WithValues("patched", len(res.Patches) > 0)
 		}
-		log.Info("Request allowed", lc.KeyReason, msg)
+		log.Debug("Request allowed", lc.KeyReason, msg)
 	} else {
 		log.Info("Request denied", lc.KeyReason, msg)
 	}

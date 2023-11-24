@@ -160,6 +160,8 @@ const (
 	ErrorUnfinished ErrorCode = "ERR_UNFINISHED"
 	// ErrorForInfoOnly indicates that the error is no real error but an info and should be logged only on infor level.
 	ErrorForInfoOnly ErrorCode = "ERR_FOR_INFO_ONLY"
+	// ErrorNoRetry indicates that no retry is required.
+	ErrorNoRetry ErrorCode = "ERR_NO_RETRY"
 )
 
 // Condition holds the information about the state of a resource.
