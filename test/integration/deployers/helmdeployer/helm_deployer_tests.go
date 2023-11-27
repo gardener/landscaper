@@ -378,7 +378,7 @@ func createHelmDeployItem(chartDir string, valuesFile string, name string, targe
 			Namespace: target.Namespace,
 		},
 		Spec: lsv1alpha1.DeployItemSpec{
-			Timeout:       &lsv1alpha1.Duration{Duration: 5 * time.Second},
+			Timeout:       &lsv1alpha1.Duration{Duration: 30 * time.Second},
 			Configuration: rawProviderConfig,
 			Target: &lsv1alpha1.ObjectReference{
 				Name:      target.Name,
