@@ -89,8 +89,6 @@ func ContainerTests(f *framework.Framework) {
 	})
 
 	It("should create the configmap", func() {
-		// force failure so i can debug
-		Expect(1).To(Equal(2))
 		createTargetAndDataObjects()
 
 		By("create installation")
