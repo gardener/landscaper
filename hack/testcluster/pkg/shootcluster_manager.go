@@ -372,6 +372,7 @@ func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, 
 		shoot, getError := gardenClient.Get(ctx, clusterName, metav1.GetOptions{})
 		if getError != nil {
 			if errors.IsNotFound(getError) {
+				o.log.Logfln("is not found")
 				return false, nil
 			}
 
@@ -398,6 +399,7 @@ func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, 
 		if !ok {
 			return false, fmt.Errorf("failed to get cluster status: unexpected type")
 		}
+		o.log.Logfln("conditions: ", conditions)
 
 		checkList := map[string]bool{
 			"APIServerAvailable":      false,
@@ -406,6 +408,7 @@ func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, 
 			"SystemComponentsHealthy": false,
 		}
 
+		o.log.Logfln("checklist: ", checkList)
 		for _, condition := range conditions {
 			conditionMap, ok := condition.(map[string]interface{})
 			if !ok {
