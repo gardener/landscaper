@@ -9,15 +9,54 @@ set -e
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
-# test OCI registry currently doesnt support darwin/arm64 / force amd64
-ARCH_ARG=$(go env GOARCH)
-if [[ $(go env GOOS) == "darwin" && $(go env GOARCH) == "arm64" ]]; then
-  ARCH_ARG="amd64"
-fi
+# OCI Registry
 
-mkdir -p ${PROJECT_ROOT}/tmp/test/registry
-curl -sfL "https://storage.googleapis.com/gardener-public/test/oci-registry/registry-$(go env GOOS)-${ARCH_ARG}" --output ${PROJECT_ROOT}/tmp/test/registry/registry
-chmod +x ${PROJECT_ROOT}/tmp/test/registry/registry
+REGISTRY_LOCAL_DIR="${PROJECT_ROOT}/tmp/test/registry"
+REGISTRY_LOCAL_BINARY="${REGISTRY_LOCAL_DIR}/registry"
+
+if [[ ! -f ${REGISTRY_LOCAL_BINARY} || ! $(${REGISTRY_LOCAL_BINARY} --version) ]]; then
+  # test OCI registry currently doesnt support darwin/arm64 / force amd64
+  ARCH_ARG=$(go env GOARCH)
+  GO_OS=$(go env GOOS)
+  if [[ ${GO_OS} == "darwin" && ${ARCH_ARG} == "arm64" ]]; then
+    ARCH_ARG="amd64"
+  fi
+
+  mkdir -p ${PROJECT_ROOT}/tmp/test/registry
+  REGISTRY_VERSION="2.8.3"
+  REGISTRY_DOWNLOAD_FILENAME="registry_${REGISTRY_VERSION}_${GO_OS}_${ARCH_ARG}.tar.gz"
+  REGISTRY_DOWNLOAD_FILEPATH="${PROJECT_ROOT}/tmp/test/${REGISTRY_DOWNLOAD_FILENAME}"
+  REGISTRY_URL="https://github.com/distribution/distribution/releases/download/v${REGISTRY_VERSION}/${REGISTRY_DOWNLOAD_FILENAME}"
+  echo "Downloading registry from REGISTRY_DOWNLOAD_URL to \"${REGISTRY_DOWNLOAD_FILEPATH}\""
+  set +e
+  curl_rc=$(curl -sfL "${REGISTRY_URL}" --output ${REGISTRY_DOWNLOAD_FILEPATH})
+  set -e
+  if [[ ${curl_rc} == 0 ]]; then
+    echo "Extracting file \"registry\" from \"${REGISTRY_DOWNLOAD_FILEPATH}\" to \"${PROJECT_ROOT}/tmp/test/registry\""
+    tar -C ${PROJECT_ROOT}/tmp/test/registry -xzf ${REGISTRY_DOWNLOAD_FILEPATH} registry
+  else
+    echo "Can't download registry \"${REGISTRY_DOWNLOAD_FILENAME}\", clone repository and build."
+    if [[ ! -d ${PROJECT_ROOT}/tmp/test/distribution ]]; then
+      echo "git clone --depth 1 --branch v${REGISTRY_VERSION} https://github.com/distribution/distribution.git"
+      # git clone --quiet --branch v${REGISTRY_VERSION} https://github.com/distribution/distribution.git ${PROJECT_ROOT}/tmp/test/distribution
+      git clone --quiet  https://github.com/distribution/distribution.git ${PROJECT_ROOT}/tmp/test/distribution
+    else
+      echo "Reposisory github.com/distribution already downloaded"
+    fi
+
+    echo "CURRENT_DIR=${CURRENT_DIR}"
+    cd ${PROJECT_ROOT}/tmp/test/distribution
+    make bin/registry
+    cp bin/registry ${REGISTRY_LOCAL_BINARY}
+    cd ${CURRENT_DIR}
+  fi
+
+  # old deleted location
+  # curl -sfL "https://storage.googleapis.com/gardener-public/test/oci-registry/registry-$(go env GOOS)-${ARCH_ARG}" --output ${PROJECT_ROOT}/tmp/test/registry/registry
+  chmod +x ${PROJECT_ROOT}/tmp/test/registry/registry
+else
+    echo "OCI registry already installed with version: $(${REGISTRY_LOCAL_BINARY} --version)"
+fi
 
 GO111MODULE=off go get golang.org/x/tools/cmd/goimports
 
