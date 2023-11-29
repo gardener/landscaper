@@ -29,8 +29,10 @@ if [[ ! -f ${REGISTRY_LOCAL_BINARY} || ! $(${REGISTRY_LOCAL_BINARY} --version) ]
   REGISTRY_URL="https://github.com/distribution/distribution/releases/download/v${REGISTRY_VERSION}/${REGISTRY_DOWNLOAD_FILENAME}"
   echo "Downloading registry from REGISTRY_DOWNLOAD_URL to \"${REGISTRY_DOWNLOAD_FILEPATH}\""
   set +e
-  curl_rc=$(curl -sfL "${REGISTRY_URL}" --output ${REGISTRY_DOWNLOAD_FILEPATH})
+  curl -sfL "${REGISTRY_URL}" --output ${REGISTRY_DOWNLOAD_FILEPATH}
+  curl_rc=${?}
   set -e
+  
   if [[ ${curl_rc} == 0 ]]; then
     echo "Extracting file \"registry\" from \"${REGISTRY_DOWNLOAD_FILEPATH}\" to \"${PROJECT_ROOT}/tmp/test/registry\""
     tar -C ${PROJECT_ROOT}/tmp/test/registry -xzf ${REGISTRY_DOWNLOAD_FILEPATH} registry
@@ -41,7 +43,7 @@ if [[ ! -f ${REGISTRY_LOCAL_BINARY} || ! $(${REGISTRY_LOCAL_BINARY} --version) ]
       # git clone --quiet --branch v${REGISTRY_VERSION} https://github.com/distribution/distribution.git ${PROJECT_ROOT}/tmp/test/distribution
       git clone --quiet  https://github.com/distribution/distribution.git ${PROJECT_ROOT}/tmp/test/distribution
     else
-      echo "Reposisory github.com/distribution already downloaded"
+      echo "Repository github.com/distribution already downloaded"
     fi
 
     echo "CURRENT_DIR=${CURRENT_DIR}"
