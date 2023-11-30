@@ -25,7 +25,11 @@ In this tour, you will learn about the different Landscaper features by simple e
 
 > **_NOTE:_** **The Landscaper now also supports [OCM (Open Component Model)](https://ocm.software/) Component
 > Descriptors [Version 3](https://ocm.software/docs/component-descriptors/version-3/), additionally to [Version
-> 2](https://ocm.software/docs/component-descriptors/version-2/).**
+> 2](https://ocm.software/docs/component-descriptors/version-2/).  
+> Since we try our best to avoid disruptions, this functionality is currently behind a feature switch. For detailed 
+> information on how to enable this for your own landscaper instance, set the corresponding flag in the configuration to
+> `true`, as shown [here](https://github.com/gardener/landscaper/blob/master/docs/installation/install-landscaper-controller.md#configuration-through-valuesyaml).
+> If you just want to follow along the tour, you should have the switch enabled!**
 
 ## A Hello World Example
 
