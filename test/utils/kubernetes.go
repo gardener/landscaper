@@ -41,7 +41,7 @@ func WaitForObjectDeletion(
 		return false, nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while waiting for installation to be deleted: %w", err)
+		return fmt.Errorf("error while waiting for object to be deleted: %w", err)
 	}
 	return nil
 }
