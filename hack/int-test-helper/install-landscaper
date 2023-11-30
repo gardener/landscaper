@@ -27,6 +27,7 @@ echo "> Installing Landscaper version ${VERSION}"
 printf "
 landscaper:
   landscaper:
+    verbosity: debug
     deployers:
     - container
     - helm
