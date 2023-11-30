@@ -75,7 +75,12 @@ landscaper:
           }
       metrics:
         port: 8080  
-    
+        
+      # tell the landscaper to use the new ocm tooling to process components     
+      # if you use the ocm-cli to create components you likely want this to be set to true
+      # if you use the deprecated component-cli to create components you likely want this to be set to false
+      useOCM: true # current default: false    
+      
       # deploy with integrated deployers for quick start
       deployers: 
       - container
