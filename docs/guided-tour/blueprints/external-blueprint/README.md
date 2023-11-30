@@ -27,6 +27,9 @@ in this script: [commands/push-blueprint.sh](./commands/push-blueprint.sh).
 
 ## Components and Component Descriptors
 
+> **_NOTE:_** **To follow along the following section, be sure to set the `useOCM: true` feature switch in the 
+> values.yaml, as shown [here](https://github.com/gardener/landscaper/blob/master/docs/installation/install-landscaper-controller.md#configuration-through-valuesyaml).**
+
 An Installation may reference its blueprints via so-called
 [component-descriptors](../../../concepts/Glossary.md#_component-descriptor_).  A component descriptor describes a
 component, or rather, a specific component version. In general, a component version is a container for all required
