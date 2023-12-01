@@ -81,6 +81,30 @@ var _ = Describe("Installation Controller", func() {
 			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Succeeded))
 		})
 
+		It("should reconcile an installation with reconcile-if-changed annotation", func() {
+			// We consider an Installation in a finished state.
+			// The Installation has no reconcile annotation. Therefore, a reconciliation should have no effect.
+			// After the reconciliation, the jobID and jobIDFinished should be the same as before.
+			ctx := context.Background()
+
+			var err error
+			state, err = testenv.InitResources(ctx, "./testdata/state/test10")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+
+			inst := &lsv1alpha1.Installation{}
+			inst.Name = "root"
+			inst.Namespace = state.Namespace
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			Expect(inst.Status.JobIDFinished).To(Equal(inst.Status.JobID))
+			Expect(inst.Status.InstallationPhase).To(Equal(lsv1alpha1.InstallationPhases.Succeeded))
+
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			Expect(inst.Status.JobID).ToNot(Equal(inst.Status.JobIDFinished))
+		})
+
 		It("should pass an interrupt annotation to an execution", func() {
 			// We consider an unfinished Installation with an Execution and a subinstallation.
 			// The Installation has an interrupt annotation. After a reconciliation the annotation should be
