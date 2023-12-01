@@ -3,8 +3,6 @@ package command
 import (
 	"bufio"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +10,7 @@ import (
 	"strings"
 
 	configtypes "github.com/docker/cli/cli/config/types"
+	"github.com/docker/cli/cli/hints"
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
@@ -21,20 +20,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ElectAuthServer returns the default registry to use.
-//
-// Deprecated: use [registry.IndexServer] instead.
-func ElectAuthServer(_ context.Context, _ Cli) string {
-	return registry.IndexServer
-}
+const patSuggest = "You can log in with your password or a Personal Access " +
+	"Token (PAT). Using a limited-scope PAT grants better security and is required " +
+	"for organizations using SSO. Learn more at https://docs.docker.com/go/access-tokens/"
 
-// EncodeAuthToBase64 serializes the auth configuration as JSON base64 payload
-func EncodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
-	buf, err := json.Marshal(authConfig)
-	if err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(buf), nil
+// EncodeAuthToBase64 serializes the auth configuration as JSON base64 payload.
+//
+// Deprecated: use [registrytypes.EncodeAuthConfig] instead.
+func EncodeAuthToBase64(authConfig registrytypes.AuthConfig) (string, error) {
+	return registrytypes.EncodeAuthConfig(authConfig)
 }
 
 // RegistryAuthenticationPrivilegedFunc returns a RequestPrivilegeFunc from the specified registry index info
@@ -52,7 +46,7 @@ func RegistryAuthenticationPrivilegedFunc(cli Cli, index *registrytypes.IndexInf
 		if err != nil {
 			return "", err
 		}
-		return EncodeAuthToBase64(authConfig)
+		return registrytypes.EncodeAuthConfig(authConfig)
 	}
 }
 
@@ -62,19 +56,19 @@ func RegistryAuthenticationPrivilegedFunc(cli Cli, index *registrytypes.IndexInf
 //
 // It is similar to [registry.ResolveAuthConfig], but uses the credentials-
 // store, instead of looking up credentials from a map.
-func ResolveAuthConfig(_ context.Context, cli Cli, index *registrytypes.IndexInfo) types.AuthConfig {
+func ResolveAuthConfig(_ context.Context, cli Cli, index *registrytypes.IndexInfo) registrytypes.AuthConfig {
 	configKey := index.Name
 	if index.Official {
 		configKey = registry.IndexServer
 	}
 
 	a, _ := cli.ConfigFile().GetAuthConfig(configKey)
-	return types.AuthConfig(a)
+	return registrytypes.AuthConfig(a)
 }
 
 // GetDefaultAuthConfig gets the default auth config given a serverAddress
 // If credentials for given serverAddress exists in the credential store, the configuration will be populated with values in it
-func GetDefaultAuthConfig(cli Cli, checkCredStore bool, serverAddress string, isDefaultRegistry bool) (types.AuthConfig, error) {
+func GetDefaultAuthConfig(cli Cli, checkCredStore bool, serverAddress string, isDefaultRegistry bool) (registrytypes.AuthConfig, error) {
 	if !isDefaultRegistry {
 		serverAddress = registry.ConvertToHostname(serverAddress)
 	}
@@ -83,20 +77,27 @@ func GetDefaultAuthConfig(cli Cli, checkCredStore bool, serverAddress string, is
 	if checkCredStore {
 		authconfig, err = cli.ConfigFile().GetAuthConfig(serverAddress)
 		if err != nil {
-			return types.AuthConfig{
+			return registrytypes.AuthConfig{
 				ServerAddress: serverAddress,
 			}, err
 		}
 	}
 	authconfig.ServerAddress = serverAddress
 	authconfig.IdentityToken = ""
-	res := types.AuthConfig(authconfig)
+	res := registrytypes.AuthConfig(authconfig)
 	return res, nil
 }
 
 // ConfigureAuth handles prompting of user's username and password if needed
-func ConfigureAuth(cli Cli, flUser, flPassword string, authconfig *types.AuthConfig, isDefaultRegistry bool) error {
-	// On Windows, force the use of the regular OS stdin stream. Fixes #14336/#14210
+func ConfigureAuth(cli Cli, flUser, flPassword string, authconfig *registrytypes.AuthConfig, isDefaultRegistry bool) error {
+	// On Windows, force the use of the regular OS stdin stream.
+	//
+	// See:
+	// - https://github.com/moby/moby/issues/14336
+	// - https://github.com/moby/moby/issues/14210
+	// - https://github.com/moby/moby/pull/17738
+	//
+	// TODO(thaJeztah): we need to confirm if this special handling is still needed, as we may not be doing this in other places.
 	if runtime.GOOS == "windows" {
 		cli.SetIn(streams.NewIn(os.Stdin))
 	}
@@ -117,11 +118,18 @@ func ConfigureAuth(cli Cli, flUser, flPassword string, authconfig *types.AuthCon
 	if flUser = strings.TrimSpace(flUser); flUser == "" {
 		if isDefaultRegistry {
 			// if this is a default registry (docker hub), then display the following message.
-			fmt.Fprintln(cli.Out(), "Login with your Docker ID to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com to create one.")
+			fmt.Fprintln(cli.Out(), "Log in with your Docker ID or email address to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com/ to create one.")
+			if hints.Enabled() {
+				fmt.Fprintln(cli.Out(), patSuggest)
+				fmt.Fprintln(cli.Out())
+			}
 		}
 		promptWithDefault(cli.Out(), "Username", authconfig.Username)
-		flUser = readInput(cli.In(), cli.Out())
-		flUser = strings.TrimSpace(flUser)
+		var err error
+		flUser, err = readInput(cli.In())
+		if err != nil {
+			return err
+		}
 		if flUser == "" {
 			flUser = authconfig.Username
 		}
@@ -135,12 +143,15 @@ func ConfigureAuth(cli Cli, flUser, flPassword string, authconfig *types.AuthCon
 			return err
 		}
 		fmt.Fprintf(cli.Out(), "Password: ")
-		term.DisableEcho(cli.In().FD(), oldState)
-
-		flPassword = readInput(cli.In(), cli.Out())
+		_ = term.DisableEcho(cli.In().FD(), oldState)
+		defer func() {
+			_ = term.RestoreTerminal(cli.In().FD(), oldState)
+		}()
+		flPassword, err = readInput(cli.In())
+		if err != nil {
+			return err
+		}
 		fmt.Fprint(cli.Out(), "\n")
-
-		term.RestoreTerminal(cli.In().FD(), oldState)
 		if flPassword == "" {
 			return errors.Errorf("Error: Password Required")
 		}
@@ -152,14 +163,15 @@ func ConfigureAuth(cli Cli, flUser, flPassword string, authconfig *types.AuthCon
 	return nil
 }
 
-func readInput(in io.Reader, out io.Writer) string {
-	reader := bufio.NewReader(in)
-	line, _, err := reader.ReadLine()
+// readInput reads, and returns user input from in. It tries to return a
+// single line, not including the end-of-line bytes, and trims leading
+// and trailing whitespace.
+func readInput(in io.Reader) (string, error) {
+	line, _, err := bufio.NewReader(in).ReadLine()
 	if err != nil {
-		fmt.Fprintln(out, err.Error())
-		os.Exit(1)
+		return "", errors.Wrap(err, "error while reading input")
 	}
-	return string(line)
+	return strings.TrimSpace(string(line)), nil
 }
 
 func promptWithDefault(out io.Writer, prompt string, configDefault string) {
@@ -170,14 +182,19 @@ func promptWithDefault(out io.Writer, prompt string, configDefault string) {
 	}
 }
 
-// RetrieveAuthTokenFromImage retrieves an encoded auth token given a complete image
+// RetrieveAuthTokenFromImage retrieves an encoded auth token given a complete
+// image. The auth configuration is serialized as a base64url encoded RFC4648,
+// section 5) JSON string for sending through the X-Registry-Auth header.
+//
+// For details on base64url encoding, see:
+// - RFC4648, section 5:   https://tools.ietf.org/html/rfc4648#section-5
 func RetrieveAuthTokenFromImage(ctx context.Context, cli Cli, image string) (string, error) {
 	// Retrieve encoded auth token from the image reference
 	authConfig, err := resolveAuthConfigFromImage(ctx, cli, image)
 	if err != nil {
 		return "", err
 	}
-	encodedAuth, err := EncodeAuthToBase64(authConfig)
+	encodedAuth, err := registrytypes.EncodeAuthConfig(authConfig)
 	if err != nil {
 		return "", err
 	}
@@ -185,14 +202,14 @@ func RetrieveAuthTokenFromImage(ctx context.Context, cli Cli, image string) (str
 }
 
 // resolveAuthConfigFromImage retrieves that AuthConfig using the image string
-func resolveAuthConfigFromImage(ctx context.Context, cli Cli, image string) (types.AuthConfig, error) {
+func resolveAuthConfigFromImage(ctx context.Context, cli Cli, image string) (registrytypes.AuthConfig, error) {
 	registryRef, err := reference.ParseNormalizedNamed(image)
 	if err != nil {
-		return types.AuthConfig{}, err
+		return registrytypes.AuthConfig{}, err
 	}
 	repoInfo, err := registry.ParseRepositoryInfo(registryRef)
 	if err != nil {
-		return types.AuthConfig{}, err
+		return registrytypes.AuthConfig{}, err
 	}
 	return ResolveAuthConfig(ctx, cli, repoInfo.Index), nil
 }
