@@ -393,6 +393,25 @@ var _ = Describe("Manifest Deployer", func() {
 		}
 	})
 
+	It("should fail if provider config is missing", func() {
+		ctx := logging.NewContextWithDiscard(context.Background())
+		defer ctx.Done()
+
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/08-di-no-config.yaml")
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
+		Expect(testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)).ToNot(HaveOccurred())
+
+		// First reconcile will add a finalizer
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+
+		Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhases.Failed)).To(BeTrue())
+		Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
+	})
+
 })
 
 func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconcile.Reconciler) {
