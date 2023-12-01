@@ -1,0 +1,10 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: my-manifests
+spec:
+  type: landscaper.gardener.cloud/kubernetes-manifest
+
+  target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
+    name: my-cluster
+    namespace: test

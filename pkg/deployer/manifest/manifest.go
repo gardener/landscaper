@@ -72,8 +72,10 @@ func New(lsKubeClient client.Client,
 	item *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget) (*Manifest, error) {
 
-	config := &manifestv1alpha2.ProviderConfiguration{}
 	currOp := "InitManifestOperation"
+
+	config := &manifestv1alpha2.ProviderConfiguration{}
+
 	manifestDecoder := api.NewDecoder(Scheme)
 	if _, _, err := manifestDecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, lserrors.NewWrappedError(err,
