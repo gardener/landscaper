@@ -72,24 +72,27 @@ func New(lsClient,
 	lsCtx *lsv1alpha1.Context,
 	sharedCache cache.Cache,
 	rt *lsv1alpha1.ResolvedTarget) (*Container, error) {
+
+	currOp := "InitContainerOperation"
+
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := api.NewDecoder(Scheme)
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
 		return nil, lserrors.NewWrappedError(err,
-			"Init", "DecodeProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+			currOp, "DecodeProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	applyDefaults(&config, providerConfig)
 
 	if err := container1alpha1validation.ValidateProviderConfiguration(providerConfig); err != nil {
 		return nil, lserrors.NewWrappedError(err,
-			"Init", "ValidateProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+			currOp, "ValidateProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	status, err := DecodeProviderStatus(item.Status.ProviderStatus)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
-			"Init", "DecodeProviderStatus", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+			currOp, "DecodeProviderStatus", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	return &Container{

@@ -352,6 +352,11 @@ func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		return lsErr
 	}
 
+	if deployItem.Spec.Configuration == nil || len(deployItem.Spec.Configuration.Raw) == 0 {
+		return lserrors.NewError(operation, "ProviderConfigurationMissing", "provider configuration missing",
+			lsv1alpha1.ErrorConfigurationProblem)
+	}
+
 	err := c.deployer.Reconcile(ctx, lsCtx, deployItem, rt)
 	return lserrors.BuildLsErrorOrNil(err, operation, "Reconcile")
 }
