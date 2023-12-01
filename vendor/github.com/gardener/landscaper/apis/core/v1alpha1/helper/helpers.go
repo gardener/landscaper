@@ -221,6 +221,11 @@ func RemoveVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObject
 	return objects
 }
 
+func HasReconcileIfChangedAnnotation(obj metav1.ObjectMeta) bool {
+	v, ok := obj.GetAnnotations()[v1alpha1.ReconcileIfChangedAnnotation]
+	return ok && v == "true"
+}
+
 // HasIgnoreAnnotation returns true only if the given object
 // has the 'landscaper.gardener.cloud/ignore' annotation
 // and its value is 'true'.

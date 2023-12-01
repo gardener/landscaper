@@ -182,7 +182,7 @@ func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alp
 	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "handleAutomaticReconcile")
 
 	if installations.IsRootInstallation(inst) &&
-		metav1.HasAnnotation(inst.ObjectMeta, lsv1alpha1.ReconcileIfChangedAnnotation) &&
+		lsv1alpha1helper.HasReconcileIfChangedAnnotation(inst.ObjectMeta) &&
 		!lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) &&
 		inst.Status.JobID == inst.Status.JobIDFinished &&
 		inst.GetGeneration() != inst.Status.ObservedGeneration {
