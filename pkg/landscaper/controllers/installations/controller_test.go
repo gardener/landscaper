@@ -82,9 +82,9 @@ var _ = Describe("Installation Controller", func() {
 		})
 
 		It("should reconcile an installation with reconcile-if-changed annotation", func() {
-			// We consider an Installation in a finished state.
-			// The Installation has no reconcile annotation. Therefore, a reconciliation should have no effect.
-			// After the reconciliation, the jobID and jobIDFinished should be the same as before.
+			// We consider an Installation with a reconcile-if-changed annotation and an observed generation
+			// different from the observation. Though the Installation has no reconcile annotation, it must be
+			// processed.
 			ctx := context.Background()
 
 			var err error
