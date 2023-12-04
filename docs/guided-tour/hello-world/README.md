@@ -106,9 +106,15 @@ Note that deleting an `Installation` like this will also delete the deployed Hel
 ## Automatic Reconcile
 
 Above we wrote that Landscaper only starts working on an Installation if it has the annotation
-`landscaper.gardener.cloud/operation: reconcile`. There is also the possibility to let Landscaper add this
-annotation automatically such that you get an automatic reconciliation of an Installation. For more details
-see [here](../../usage/Installations.md#automatic-reconciliationprocessing-of-installations).
+`landscaper.gardener.cloud/operation: reconcile`. 
+
+There is also the possibility to let Landscaper add this annotation automatically such that you get an automatic 
+reconciliation of an Installation. For more details see 
+[here](../../usage/Installations.md#automatic-reconciliationprocessing-of-installations).
+
+With the annotation `landscaper.gardener.cloud/reconcile-if-changed: true`, Installations are automatically processed
+only if their `spec` was changed and a new `generation` created. For more details see
+[here](../../usage/Installations.md#automatic-reconciliationprocessing-of-installations-if-spec-was-changed).
 
 ## References
 

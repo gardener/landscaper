@@ -38,6 +38,9 @@ const (
 	// ReconcileReasonAnnotation can be used to specify a reason for a reconcile operation, for example a retry.
 	ReconcileReasonAnnotation = LandscaperDomain + "/reconcile-reason"
 
+	// ReconcileIfChangedAnnotation can be used to automatically trigger a reconcile operation if the spec has changed
+	ReconcileIfChangedAnnotation = LandscaperDomain + "/reconcile-if-changed"
+
 	// ReconcileTimestampAnnotation is used to recognize timeouts in deployitems
 	ReconcileTimestampAnnotation = LandscaperDomain + "/reconcile-time"
 
