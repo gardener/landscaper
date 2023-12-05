@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	genericresolver "github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/generic"
@@ -180,7 +182,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string]interface{}, error) {
 	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.GetInstallation())
 	dataObjectList := &lsv1alpha1.DataObjectList{}
-	if err := c.Client().List(ctx, dataObjectList, client.InNamespace(c.Inst.GetInstallation().Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
+	if err := read_write_layer.ListDataObjects(ctx, c.Client(), dataObjectList, read_write_layer.R000070,
+		client.InNamespace(c.Inst.GetInstallation().Namespace),
+		client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err
 	}
 
@@ -199,7 +203,9 @@ func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[st
 func (c *Constructor) aggregateTargetsInContext(ctx context.Context) (map[string]interface{}, error) {
 	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.GetInstallation())
 	targetList := &lsv1alpha1.TargetList{}
-	if err := c.Client().List(ctx, targetList, client.InNamespace(c.Inst.GetInstallation().Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
+	if err := read_write_layer.ListTargets(ctx, c.Client(), targetList, read_write_layer.R000071,
+		client.InNamespace(c.Inst.GetInstallation().Namespace),
+		client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err
 	}
 

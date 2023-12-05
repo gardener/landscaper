@@ -183,7 +183,7 @@ func getObjectsByLabels(ctx context.Context, cl client.Client, selector *health.
 	objList.SetAPIVersion(selector.APIVersion)
 	objList.SetKind(selector.Kind)
 
-	if err := cl.List(ctx, objList, &client.ListOptions{
+	if err := read_write_layer.ListUnstructured(ctx, cl, objList, read_write_layer.R000080, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(selector.Labels),
 	}); err != nil {
 		return nil, NewRecoverableError(err)

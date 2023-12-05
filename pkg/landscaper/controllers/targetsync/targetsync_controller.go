@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/go-logr/logr"
@@ -251,7 +253,8 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 		}
 
 		secrets := &corev1.SecretList{}
-		if err = sourceClient.List(ctx, secrets, client.InNamespace(targetSync.Spec.SourceNamespace)); err != nil {
+		if err = read_write_layer.ListSecrets(ctx, sourceClient, secrets, read_write_layer.R000064,
+			client.InNamespace(targetSync.Spec.SourceNamespace)); err != nil {
 			logger.Error(err, "fetching secret list for targetsync object failed")
 			errors = append(errors, err)
 			return errors
@@ -514,7 +517,8 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	secrets := &corev1.SecretList{}
-	if err := c.targetClient.List(ctx, secrets, client.InNamespace(targetSync.Namespace),
+	if err := read_write_layer.ListSecrets(ctx, c.targetClient, secrets, read_write_layer.R000065,
+		client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "listing secrets for deleting targetsync object failed")
 		return err
@@ -532,7 +536,8 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	}
 
 	targets := &lsv1alpha1.TargetList{}
-	if err := c.targetClient.List(ctx, targets, client.InNamespace(targetSync.Namespace),
+	if err := read_write_layer.ListTargets(ctx, c.targetClient, targets, read_write_layer.R000066,
+		client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "listing targets for deleting targetsync object failed")
 		return err
@@ -554,7 +559,8 @@ func (c *TargetSyncController) fetchTargetSyncs(ctx context.Context, targetSync 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targetSyncs := &lsv1alpha1.TargetSyncList{}
-	if err := c.targetClient.List(ctx, targetSyncs, client.InNamespace(targetSync.Namespace)); err != nil {
+	if err := read_write_layer.ListTargetSyncs(ctx, c.targetClient, targetSyncs, read_write_layer.R000067,
+		client.InNamespace(targetSync.Namespace)); err != nil {
 		logger.Error(err, "targetsync failed: could not fetch targetsync list")
 		return nil, err
 	}
@@ -566,7 +572,8 @@ func (c *TargetSyncController) fetchOldTargets(ctx context.Context, targetSync *
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targets := &lsv1alpha1.TargetList{}
-	if err := c.targetClient.List(ctx, targets, client.InNamespace(targetSync.Namespace), client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
+	if err := read_write_layer.ListTargets(ctx, c.targetClient, targets, read_write_layer.R000068,
+		client.InNamespace(targetSync.Namespace), client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "targetsync failed: old targets could not be fetched")
 		return nil, err
 	}

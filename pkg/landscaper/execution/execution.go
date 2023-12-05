@@ -211,7 +211,8 @@ func (o *Operation) skipUninstall(ctx context.Context, di *lsv1alpha1.DeployItem
 	}
 
 	targetSyncs := &lsv1alpha1.TargetSyncList{}
-	if err := o.Client().List(ctx, targetSyncs, client.InNamespace(di.GetNamespace())); err != nil {
+	if err := read_write_layer.ListTargetSyncs(ctx, o.Client(), targetSyncs, read_write_layer.R000069,
+		client.InNamespace(di.GetNamespace())); err != nil {
 		msg := fmt.Sprintf("unable to retrieve targetsync object for namespace%s", di.GetNamespace())
 		return false, lserrors.NewWrappedError(err, op, msg, err.Error())
 	}

@@ -55,16 +55,45 @@ func GetTarget(ctx context.Context, c client.Reader, key client.ObjectKey, targe
 	return get(ctx, c, key, target)
 }
 
+func ListTargets(ctx context.Context, c client.Reader, targets *lsv1alpha1.TargetList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, targets, opts...)
+}
+
+// read methods for data objects
+
+func ListDataObjects(ctx context.Context, c client.Reader, dataObjects *lsv1alpha1.DataObjectList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, dataObjects, opts...)
+}
+
+// read methods for targetsync
+
+func ListTargetSyncs(ctx context.Context, c client.Reader, targetSyncs *lsv1alpha1.TargetSyncList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, targetSyncs, opts...)
+}
+
 // read methods for secret
 
 func GetSecret(ctx context.Context, c client.Reader, key client.ObjectKey, secret *v1.Secret, readID ReadID) error {
 	return get(ctx, c, key, secret)
 }
 
-// read methods for secret
+func ListSecrets(ctx context.Context, c client.Reader, secrets *v1.SecretList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, secrets, opts...)
+}
+
+// read methods for health checks
 
 func GetHealthCheck(ctx context.Context, c client.Reader, key client.ObjectKey, health *lsv1alpha1.LsHealthCheck, readID ReadID) error {
 	return get(ctx, c, key, health)
+}
+
+func ListHealthChecks(ctx context.Context, c client.Reader, healthChecks *lsv1alpha1.LsHealthCheckList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, healthChecks, opts...)
+}
+
+// read methods for context
+func GetContext(ctx context.Context, c client.Reader, key client.ObjectKey, lsContext *lsv1alpha1.Context, readID ReadID) error {
+	return get(ctx, c, key, lsContext)
 }
 
 // read methods for env
@@ -83,19 +112,27 @@ func GetPod(ctx context.Context, c client.Reader, key client.ObjectKey, pod *v1.
 	return get(ctx, c, key, pod)
 }
 
+func ListPods(ctx context.Context, c client.Reader, pods *v1.PodList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, pods, opts...)
+}
+
+// read methods for namespaces
+func ListNamespaces(ctx context.Context, c client.Reader, namespaces *v1.NamespaceList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, namespaces, opts...)
+}
+
 // read methods for metadata
 func GetMetaData(ctx context.Context, c client.Reader, key client.ObjectKey, metadata *v12.PartialObjectMetadata, readID ReadID) error {
 	return get(ctx, c, key, metadata)
 }
 
-// read methods for context
-func GetContext(ctx context.Context, c client.Reader, key client.ObjectKey, lsContext *lsv1alpha1.Context, readID ReadID) error {
-	return get(ctx, c, key, lsContext)
-}
-
 // read methods for unstructured
 func GetUnstructured(ctx context.Context, c client.Reader, key client.ObjectKey, unstruc *unstructured.Unstructured, readID ReadID) error {
 	return get(ctx, c, key, unstruc)
+}
+
+func ListUnstructured(ctx context.Context, c client.Reader, unstrucs *unstructured.UnstructuredList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, unstrucs, opts...)
 }
 
 // basic functions

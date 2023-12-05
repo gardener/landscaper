@@ -55,7 +55,7 @@ func (l *LockCleaner) cleanupSyncObjects(ctx context.Context) {
 	log.Info("locker: starting syncobject cleanup")
 
 	namespaces := &v1.NamespaceList{}
-	if err := l.lsReadClient.List(ctx, namespaces); err != nil {
+	if err := read_write_layer.ListNamespaces(ctx, l.lsReadClient, namespaces, read_write_layer.R000073); err != nil {
 		log.Error(err, "locker: failed to list namespaces")
 		return
 	}

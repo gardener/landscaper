@@ -72,7 +72,8 @@ func (c *HealthChecker) initializeHealthCheck(ctx context.Context) error {
 	log.Info("initializing healthcheck")
 
 	lsHealthCheckList := &lsv1alpha1.LsHealthCheckList{}
-	if err := c.hostClient.List(ctx, lsHealthCheckList, client.InNamespace(c.lsDeployments.DeploymentsNamespace)); err == nil {
+	if err := read_write_layer.ListHealthChecks(ctx, c.hostClient, lsHealthCheckList, read_write_layer.R000059,
+		client.InNamespace(c.lsDeployments.DeploymentsNamespace)); err == nil {
 		for _, item := range lsHealthCheckList.Items {
 			if item.Name != c.lsDeployments.LsHealthCheckName {
 				if err := c.hostClient.Delete(ctx, &item); err != nil {

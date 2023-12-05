@@ -121,7 +121,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	// cleanup secrets
 	secretList := &corev1.SecretList{}
-	if err := gc.hostClient.List(ctx, secretList, listOptions...); err != nil {
+	if err := read_write_layer.ListSecrets(ctx, gc.hostClient, secretList, read_write_layer.R000074, listOptions...); err != nil {
 		logger.Error(err, err.Error())
 	}
 
@@ -135,7 +135,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 	if !gc.keepPods {
 		// cleanup pods
 		podList := &corev1.PodList{}
-		if err := gc.hostClient.List(ctx, podList, listOptions...); err != nil {
+		if err := read_write_layer.ListPods(ctx, gc.hostClient, podList, read_write_layer.R000075, listOptions...); err != nil {
 			logger.Error(err, err.Error())
 		}
 
@@ -233,10 +233,12 @@ func (gc *GarbageCollector) isLatestPod(ctx context.Context, pod *corev1.Pod) (b
 	)
 
 	podList := &corev1.PodList{}
-	if err := gc.hostClient.List(ctx, podList, client.InNamespace(gc.hostNamespace), client.MatchingLabels{
-		container.ContainerDeployerDeployItemNameLabel:      diName,
-		container.ContainerDeployerDeployItemNamespaceLabel: diNamespace,
-	}); err != nil {
+	if err := read_write_layer.ListPods(ctx, gc.hostClient, podList, read_write_layer.R000076,
+		client.InNamespace(gc.hostNamespace),
+		client.MatchingLabels{
+			container.ContainerDeployerDeployItemNameLabel:      diName,
+			container.ContainerDeployerDeployItemNamespaceLabel: diNamespace,
+		}); err != nil {
 		return false, err
 	}
 
