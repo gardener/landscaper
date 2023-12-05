@@ -8,8 +8,8 @@ cloud.google.com/go/compute/metadata
 ## explicit; go 1.17
 filippo.io/edwards25519
 filippo.io/edwards25519/field
-# github.com/AdaLogics/go-fuzz-headers v0.0.0-20230106234847-43070de90fa1
-## explicit; go 1.18
+# github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24
+## explicit; go 1.20
 github.com/AdaLogics/go-fuzz-headers
 # github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/alibabacloudsdkgo/helper v0.2.0
 ## explicit; go 1.17
@@ -76,6 +76,9 @@ github.com/Microsoft/go-winio/internal/fs
 github.com/Microsoft/go-winio/internal/socket
 github.com/Microsoft/go-winio/internal/stringbuffer
 github.com/Microsoft/go-winio/pkg/guid
+# github.com/Microsoft/hcsshim v0.11.0
+## explicit; go 1.18
+github.com/Microsoft/hcsshim/osversion
 # github.com/ProtonMail/go-crypto v0.0.0-20230518184743-7afd39499903
 ## explicit; go 1.13
 github.com/ProtonMail/go-crypto/bitcurves
@@ -320,7 +323,7 @@ github.com/cloudflare/circl/sign/ed448
 # github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 ## explicit
 github.com/common-nighthawk/go-figure
-# github.com/containerd/containerd v1.7.0
+# github.com/containerd/containerd v1.7.6
 ## explicit; go 1.19
 github.com/containerd/containerd/archive/compression
 github.com/containerd/containerd/content
@@ -400,7 +403,7 @@ github.com/digitorus/timestamp
 # github.com/dimchansky/utfbom v1.1.1
 ## explicit
 github.com/dimchansky/utfbom
-# github.com/docker/cli v23.0.5+incompatible
+# github.com/docker/cli v24.0.6+incompatible
 ## explicit
 github.com/docker/cli/cli/command
 github.com/docker/cli/cli/config
@@ -415,6 +418,7 @@ github.com/docker/cli/cli/context/docker
 github.com/docker/cli/cli/context/store
 github.com/docker/cli/cli/debug
 github.com/docker/cli/cli/flags
+github.com/docker/cli/cli/hints
 github.com/docker/cli/cli/manifest/store
 github.com/docker/cli/cli/manifest/types
 github.com/docker/cli/cli/registry/client
@@ -441,7 +445,7 @@ github.com/docker/distribution/registry/client/transport
 github.com/docker/distribution/registry/storage/cache
 github.com/docker/distribution/registry/storage/cache/memory
 github.com/docker/distribution/uuid
-# github.com/docker/docker v23.0.5+incompatible
+# github.com/docker/docker v24.0.7+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
@@ -1313,7 +1317,7 @@ github.com/opencontainers/distribution-spec/specs-go/v1
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
-# github.com/opencontainers/image-spec v1.1.0-rc3
+# github.com/opencontainers/image-spec v1.1.0-rc5
 ## explicit; go 1.18
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
@@ -2382,7 +2386,7 @@ k8s.io/utils/net
 k8s.io/utils/pointer
 k8s.io/utils/strings/slices
 k8s.io/utils/trace
-# oras.land/oras-go v1.2.3
+# oras.land/oras-go v1.2.4
 ## explicit; go 1.18
 oras.land/oras-go/pkg/artifact
 oras.land/oras-go/pkg/auth
