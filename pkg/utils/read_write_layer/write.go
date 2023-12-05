@@ -31,7 +31,7 @@ func NewWriter(c client.Client) *Writer {
 func (w *Writer) CreateSyncObject(ctx context.Context, writeID WriteID, syncObject *lsv1alpha1.SyncObject) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(syncObject)
 	err := create(ctx, w.client, syncObject)
-	w.logSyncObjectUpdate(ctx, writeID, opSyncObjectCreate, syncObject, generationOld, resourceVersionOld, err)
+	w.logSyncObjectUpdateBasic(ctx, writeID, opSyncObjectCreate, syncObject, generationOld, resourceVersionOld, err, true)
 	return errorWithWriteID(err, writeID)
 }
 

@@ -167,7 +167,12 @@ func (c *HealthChecker) checkDeployment(ctx context.Context, namespace string, n
 	deployment := &v1.Deployment{}
 	if err := c.hostClient.Get(ctx, deploymentKey, deployment); err != nil {
 		description := fmt.Sprintf("deployment %s could not be be fetched", deploymentKey.String())
-		log.Error(err, description)
+		if apierrors.IsNotFound(err) {
+			log.Info(description + ":" + err.Error())
+		} else {
+			log.Error(err, description)
+		}
+
 		return false, description
 	}
 

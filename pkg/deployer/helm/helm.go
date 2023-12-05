@@ -78,6 +78,7 @@ func New(helmconfig helmv1alpha1.Configuration,
 	sharedCache cache.Cache) (*Helm, error) {
 
 	currOp := "InitHelmOperation"
+
 	config := &helmv1alpha1.ProviderConfiguration{}
 	helmdecoder := api.NewDecoder(HelmScheme)
 	if _, _, err := helmdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {

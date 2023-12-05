@@ -1,0 +1,45 @@
+component:
+  componentReferences: []
+  creationTime: "2023-11-08T12:19:07Z"
+  name: github.com/gardener/landscaper-examples/guided-tour/echo-server
+  provider: internal
+  repositoryContexts: []
+  resources:
+  - access:
+      localReference: sha256.079c6e6c01909cb2571befb811efcdf43a4be7137c54553a0ffa87196a70fdf8
+      mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      type: localBlob
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: genericBlobDigest/v1
+      value: 079c6e6c01909cb2571befb811efcdf43a4be7137c54553a0ffa87196a70fdf8
+    name: blueprint
+    relation: local
+    type: blueprint
+    version: 1.1.0
+  - access:
+      imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+      type: ociArtifact
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: ociArtifactDigest/v1
+      value: ad9ff738e8ae00895ab6978cf1754179fd82e470b44602b35a131bf556b55dfc
+    name: echo-server-chart
+    relation: external
+    type: helmChart
+    version: 1.0.0
+  - access:
+      imageReference: hashicorp/http-echo:0.2.3
+      type: ociArtifact
+    digest:
+      hashAlgorithm: SHA-256
+      normalisationAlgorithm: ociArtifactDigest/v1
+      value: ba27d460cd1f22a1a4331bdf74f4fccbc025552357e8a3249c40ae216275de96
+    name: echo-server-image
+    relation: external
+    type: ociImage
+    version: 0.2.3
+  sources: []
+  version: 2.1.0
+meta:
+  schemaVersion: v2

@@ -156,7 +156,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 	}
 	install.Timeout = timeout
 
-	logger.Info(fmt.Sprintf("installing helm chart release %s", c.releaseName))
+	logger.Debug(fmt.Sprintf("installing helm chart release %s", c.releaseName))
 
 	rel, err := install.Run(c.chart, values)
 	if err != nil {

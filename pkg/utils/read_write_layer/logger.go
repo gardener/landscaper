@@ -89,6 +89,12 @@ func (w *Writer) logTargetUpdate(ctx context.Context, writeID WriteID, msg strin
 func (w *Writer) logSyncObjectUpdate(ctx context.Context, writeID WriteID, msg string, syncObject *lsv1alpha1.SyncObject,
 	generationOld int64, resourceVersionOld string, err error) {
 
+	w.logSyncObjectUpdateBasic(ctx, writeID, msg, syncObject, generationOld, resourceVersionOld, err, false)
+}
+
+func (w *Writer) logSyncObjectUpdateBasic(ctx context.Context, writeID WriteID, msg string,
+	syncObject *lsv1alpha1.SyncObject, generationOld int64, resourceVersionOld string, err error, logAlreadyExistsAsInfo bool) {
+
 	logger := w.getLogger(ctx, keyUpdatedResource, fmt.Sprintf("%s/%s", syncObject.Namespace, syncObject.Name))
 
 	if err == nil {
@@ -100,7 +106,7 @@ func (w *Writer) logSyncObjectUpdate(ctx context.Context, writeID WriteID, msg s
 			lc.KeyResourceVersionOld, resourceVersionOld,
 			lc.KeyResourceVersionNew, resourceVersionNew,
 		)
-	} else if apierrors.IsConflict(err) {
+	} else if apierrors.IsConflict(err) || (logAlreadyExistsAsInfo && apierrors.IsAlreadyExists(err)) {
 		message := msg + ": " + err.Error()
 		logger.Info(message,
 			lc.KeyWriteID, writeID,

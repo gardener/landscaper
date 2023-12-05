@@ -178,7 +178,18 @@ func (c *Controller) updateInstallationWithDefaults(ctx context.Context, inst *l
 }
 
 func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+
 	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "handleAutomaticReconcile")
+
+	if installations.IsRootInstallation(inst) &&
+		lsv1alpha1helper.HasReconcileIfChangedAnnotation(inst.ObjectMeta) &&
+		!lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) &&
+		inst.Status.JobID == inst.Status.JobIDFinished &&
+		inst.GetGeneration() != inst.Status.ObservedGeneration {
+		if err := c.addReconcileAnnotation(ctx, inst); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 
 	retryHelper := newRetryHelper(c.Client(), c.clock)
 
@@ -197,6 +208,7 @@ func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alp
 }
 
 func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1.Installation) (reconcile.Result, error) {
+
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
@@ -416,4 +428,17 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	}
 
 	return lsError
+}
+
+func (c *Controller) addReconcileAnnotation(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+
+	if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000078, inst); err != nil {
+		logger.Error(err, "failed to trigger automatic reconcile operation of installation")
+		return err
+	}
+
+	return nil
 }

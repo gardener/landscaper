@@ -27,6 +27,7 @@ echo "> Installing Landscaper version ${VERSION}"
 printf "
 landscaper:
   landscaper:
+    verbosity: debug
     deployers:
     - container
     - helm
@@ -37,12 +38,24 @@ landscaper:
         container:
           deployer:
             verbosityLevel: debug
+            targetSelector:
+            - annotations:
+              - key: landscaper.gardener.cloud/environment
+                operator: !
         helm:
           deployer:
             verbosityLevel: debug
+            targetSelector:
+            - annotations:
+              - key: landscaper.gardener.cloud/environment
+                operator: !
         manifest:
           deployer:
             verbosityLevel: debug
+            targetSelector:
+            - annotations:
+              - key: landscaper.gardener.cloud/environment
+                operator: !
     deployItemTimeouts:
       pickup: 30s
       abort: 30s

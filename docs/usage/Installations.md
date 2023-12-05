@@ -50,13 +50,6 @@ spec:
 #        baseUrl: eu.gcr.io/myproj
       componentName: github.com/gardener/gardener
       version: v1.7.2
-#    inline:    # https://gardener.github.io/component-spec/component-descriptor-v2.html
-#      meta:
-#        schemaVersion: v2
-#      component:
-#        name: github.com/gardener/gardener
-#        version: v.1.7.2
-#        ...
 
   blueprint:
     ref:
@@ -321,7 +314,7 @@ component:
       imageReference: registry.example.com/blueprints/my-application
 ```
 
-After having referenced the component descriptor, the defined blueprint can be resolved via its name as described in the below example in `.spec.blueprint.ref.resourceName`.<br>
+After having referenced the component descriptor, the defined blueprint can be resolved via its name as described in the below example in `.spec.blueprint.ref.resourceName`.
 
 ```yaml
 spec:
@@ -927,3 +920,16 @@ the spec, the labels or annotations of an installations. If you want to start th
 annotation. With this strategy, it is possible to make different changes before starting the processing. If you
 do not want this behaviour, you could just always add the reconcile annotation together with any changes of the 
 installation. 
+
+## Automatic Reconciliation/Processing of Installations if Spec was changed
+
+As already described before, the Landscaper only processes an installation if the annotation 
+`landscaper.gardener.cloud/operation: reconcile` is set. If you add the annotation 
+`landscaper.gardener.cloud/reconcile-if-changed: true` to the Installation, the Landscaper automatically adds the reconcile 
+annotation to the Installation when the `spec` of the Installation was changed and therefore the `generation` differs 
+from the `observedGeneration` in the status.
+
+The motivation for this annotation is that in a system setup where e.g. Flux is watching and synchronizing Installations 
+from a git repository, the `reconcile` annotation which is removed when processing an Installation, would be added again 
+by flux and this results in endless reconcile iterations. The `reconcile-if-changed` annotation is not removed by 
+Landscaper preventing frequent reconciliations but relevant modifications of an Installation are still processed.

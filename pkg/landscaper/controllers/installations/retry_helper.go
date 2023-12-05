@@ -169,7 +169,7 @@ func (r *retryHelper) updateRetryStatus(ctx context.Context, inst *lsv1alpha1.In
 func (r *retryHelper) resetRetryStatus(ctx context.Context, inst *lsv1alpha1.Installation, writeID read_write_layer.WriteID) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
-	logger.Info("reset retry status")
+	logger.Debug("reset retry status")
 	inst.Status.AutomaticReconcileStatus = nil
 	if err := r.writer.UpdateInstallationStatus(ctx, writeID, inst); err != nil {
 		logger.Error(err, "failed to reset retry status")

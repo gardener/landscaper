@@ -63,11 +63,6 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	registryAccess.octx = ocm.New(datacontext.MODE_EXTENDED)
 	registryAccess.session = ocm.NewSession(datacontext.NewSession())
 
-	ociConfigFiles := make([]string, 0)
-	if ociRegistryConfig != nil {
-		ociConfigFiles = ociRegistryConfig.ConfigFiles
-	}
-
 	var localfs vfs.FileSystem
 	if localRegistryConfig != nil {
 		var err error
@@ -120,41 +115,16 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 
 	}
 
-	for _, path := range ociConfigFiles {
-		dockerConfigBytes, err := vfs.ReadFile(fs, path)
-		if err != nil {
-			return nil, err
-		}
-		spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes, true)
-		_, err = registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
-		if err != nil {
+	if ociRegistryConfig != nil {
+		// set credentials from pull secrets
+		if err := addConfigFileCredsToCredContext(fs, ociRegistryConfig.ConfigFiles, registryAccess.octx); err != nil {
 			return nil, err
 		}
 	}
 
 	// set credentials from pull secrets
-	for _, secret := range secrets {
-		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
-		if ok {
-			spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes, true)
-			_, err := registryAccess.octx.CredentialsContext().RepositoryForSpec(spec)
-			if err != nil {
-				return nil, errors.Wrapf(err, "cannot create credentials from secret")
-			}
-		}
-		ocmConfigBytes, ok := secret.Data[".ocmcredentialconfig"]
-		if ok {
-			cfg, err := registryAccess.octx.ConfigContext().GetConfigForData(ocmConfigBytes, runtime.DefaultYAMLEncoding)
-			if err != nil {
-				return nil, err
-			}
-			if cfg.GetKind() == credconfig.ConfigType {
-				err := registryAccess.octx.ConfigContext().ApplyConfig(cfg, fmt.Sprintf("landscaper secret: %s/%s", secret.Namespace, secret.Name))
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
+	if err := addSecretCredsToCredContext(secrets, registryAccess.octx); err != nil {
+		return nil, err
 	}
 
 	return registryAccess, nil
@@ -216,49 +186,87 @@ func (c *CredentialSource) Credentials(ctx credentials.Context, _ ...credentials
 	return credentials.NewCredentials(props), nil
 }
 
-func (f *Factory) NewHelmOCIResource(ctx context.Context, ociImageRef string, registryPullSecrets []corev1.Secret, ociConfig *config.OCIConfiguration, sharedCache cache.Cache) (model.TypedResourceProvider, error) {
+func (f *Factory) NewHelmOCIResource(ctx context.Context,
+	fs vfs.FileSystem, ociImageRef string,
+	registryPullSecrets []corev1.Secret,
+	ociConfig *config.OCIConfiguration,
+	sharedCache cache.Cache) (model.TypedResourceProvider, error) {
+
+	if fs == nil {
+		fs = osfs.New()
+	}
+
 	refspec, err := oci.ParseRef(ociImageRef)
 	if err != nil {
 		return nil, err
 	}
 
 	provider := &HelmChartProvider{
-		ocictx:  oci.DefaultContext(),
+		ocictx:  oci.New(datacontext.MODE_EXTENDED),
 		ref:     refspec.Repository,
 		version: refspec.Version(),
 		repourl: fmt.Sprintf("oci://%s", refspec.Host),
 	}
 
-	ociConfigFiles := make([]string, 0)
 	if ociConfig != nil {
-		ociConfigFiles = ociConfig.ConfigFiles
-	}
-
-	// set available default credentials from dockerconfig files
-	var credspec *dockerconfig.RepositorySpec
-	for _, path := range ociConfigFiles {
-		credspec = dockerconfig.NewRepositorySpec(path, true)
-		_, err := provider.ocictx.CredentialsContext().RepositoryForSpec(credspec)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot access %v", path)
+		// set credentials from config files
+		if err = addConfigFileCredsToCredContext(fs, ociConfig.ConfigFiles, provider.ocictx); err != nil {
+			return nil, err
 		}
 	}
 
 	// set credentials from pull secrets
-	for _, secret := range registryPullSecrets {
-		if secret.Type != corev1.SecretTypeDockerConfigJson {
-			continue
-		}
-		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
-		if !ok {
-			continue
-		}
-		credspec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes)
-		_, err := provider.ocictx.CredentialsContext().RepositoryForSpec(credspec)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot create credentials from secret")
-		}
+	if err = addSecretCredsToCredContext(registryPullSecrets, provider.ocictx); err != nil {
+		return nil, err
 	}
 
 	return provider, nil
+}
+
+func addConfigFileCredsToCredContext(fs vfs.FileSystem, filePaths []string, provider credentials.ContextProvider) error {
+	credctx := provider.CredentialsContext()
+
+	// set available default credentials from dockerconfig files
+	for _, path := range filePaths {
+		dockerConfigBytes, err := vfs.ReadFile(fs, path)
+		if err != nil {
+			return err
+		}
+		spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes, true)
+		_, err = credctx.RepositoryForSpec(spec)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func addSecretCredsToCredContext(secrets []corev1.Secret, provider credentials.ContextProvider) error {
+	credctx := provider.CredentialsContext()
+	cfgctx := credctx.ConfigContext()
+
+	for _, secret := range secrets {
+		dockerConfigBytes, ok := secret.Data[corev1.DockerConfigJsonKey]
+		if ok {
+			spec := dockerconfig.NewRepositorySpecForConfig(dockerConfigBytes, true)
+			_, err := credctx.RepositoryForSpec(spec)
+			if err != nil {
+				return errors.Wrapf(err, "cannot create credentials from secret")
+			}
+		}
+		ocmConfigBytes, ok := secret.Data[".ocmcredentialconfig"]
+		if ok {
+			cfg, err := cfgctx.GetConfigForData(ocmConfigBytes, runtime.DefaultYAMLEncoding)
+			if err != nil {
+				return err
+			}
+			if cfg.GetKind() == credconfig.ConfigType {
+				err := cfgctx.ApplyConfig(cfg, fmt.Sprintf("landscaper secret: %s/%s", secret.Namespace, secret.Name))
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }

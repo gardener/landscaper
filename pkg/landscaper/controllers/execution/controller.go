@@ -124,6 +124,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
+
 	op := "handleReconcilePhase"
 
 	// A final or empty execution phase means that the current job was not yet started.
@@ -176,7 +177,8 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecutionPhases.Failed, err, read_write_layer.W000135)
 		} else if !deployItemClassification.AllSucceeded() {
 			// remain in progressing in all other cases
-			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items", lsv1alpha1.ErrorUnfinished, lsv1alpha1.ErrorForInfoOnly)
+			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items", lsv1alpha1.ErrorUnfinished,
+				lsv1alpha1.ErrorForInfoOnly, lsv1alpha1.ErrorNoRetry)
 			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000136)
 		} else {
 			// all succeeded; go to next phase
@@ -347,6 +349,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 
 func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1alpha1.Execution,
 	phase lsv1alpha1.ExecutionPhase, lsErr lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
+
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	exec.Status.LastError = lserrors.TryUpdateLsError(exec.Status.LastError, lsErr)

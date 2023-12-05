@@ -47,8 +47,8 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 
 		It("should deploy a nginx ingress controller and a echo-server", func() {
 			var (
-				nginxTutorialResourcesRootDir      = filepath.Join(f.RootPath, "/docs/tutorials/resources/local-ingress-nginx")
-				echoServerTutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/echo-server")
+				nginxTutorialResourcesRootDir      = filepath.Join(f.RootPath, "/test/integration/testdata/tutorial/local-ingress-nginx")
+				echoServerTutorialResourcesRootDir = filepath.Join(f.RootPath, "/test/integration/testdata/tutorial/echo-server")
 				targetResource                     = filepath.Join(nginxTutorialResourcesRootDir, "my-target.yaml")
 				importResource                     = filepath.Join(nginxTutorialResourcesRootDir, "configmap.yaml")
 				nginxInstResource                  = filepath.Join(nginxTutorialResourcesRootDir, "installation.yaml")

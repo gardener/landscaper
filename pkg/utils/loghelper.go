@@ -20,6 +20,9 @@ func (LogHelper) LogErrorAndGetReconcileResult(ctx context.Context, lsError lser
 
 	if lsError == nil {
 		return reconcile.Result{}, nil
+	} else if lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorNoRetry) {
+		logger.Info(lsError.Error())
+		return reconcile.Result{Requeue: false}, nil
 	} else if lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorForInfoOnly) {
 		logger.Info(lsError.Error())
 		return reconcile.Result{Requeue: true}, nil
