@@ -181,7 +181,8 @@ func GetParent(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.I
 	// get the parent by owner reference
 	parentName := GetParentInstallationName(inst)
 	parent := &lsv1alpha1.Installation{}
-	if err := read_write_layer.GetInstallation(ctx, kubeClient, client.ObjectKey{Name: parentName, Namespace: inst.Namespace}, parent); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, kubeClient, client.ObjectKey{Name: parentName, Namespace: inst.Namespace},
+		parent, read_write_layer.R000003); err != nil {
 		return nil, err
 	}
 	return parent, nil

@@ -280,7 +280,7 @@ func (gc *GarbageCollector) shouldGarbageCollect(ctx context.Context, obj client
 		Name:      obj.GetLabels()[container.ContainerDeployerDeployItemNameLabel],
 	}
 	logger := gc.log.WithValues("deployItem", key.String(), lc.KeyResource, kutil.ObjectKeyFromObject(obj).String())
-	if err := read_write_layer.GetDeployItem(ctx, gc.lsClient, key, di); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, gc.lsClient, key, di, read_write_layer.R000036); err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}

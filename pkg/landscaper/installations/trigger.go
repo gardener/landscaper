@@ -98,7 +98,7 @@ func (t *InstallationTrigger) getDependent(ctx context.Context, dependent lsv1al
 		Namespace: t.inst.GetNamespace(),
 		Name:      dependent.Name,
 	}
-	if err := read_write_layer.GetInstallation(ctx, t.client, dependentKey, dependentInst); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, t.client, dependentKey, dependentInst, read_write_layer.R000014); err != nil {
 		return nil, err
 	}
 	return dependentInst, nil

@@ -62,7 +62,7 @@ func (l *LockCleaner) cleanupSyncObjects(ctx context.Context) {
 
 	for _, namespace := range namespaces.Items {
 		syncObjects := &lsv1alpha1.SyncObjectList{}
-		if err := read_write_layer.ListSyncObjects(ctx, l.lsReadClient, syncObjects, client.InNamespace(namespace.Name)); err != nil {
+		if err := read_write_layer.ListSyncObjects(ctx, l.lsReadClient, syncObjects, read_write_layer.R000002, client.InNamespace(namespace.Name)); err != nil {
 			log.Error(err, "locker: failed to list syncobjects in namespace", keyNamespace, namespace.Name)
 			continue
 		}
@@ -117,7 +117,7 @@ func (l *LockCleaner) existsResource(ctx context.Context, syncObject *lsv1alpha1
 		Name:      syncObject.Spec.Name,
 	}
 
-	if err := l.lsReadClient.Get(ctx, resourceKey, resource); err != nil {
+	if err := read_write_layer.GetMetaData(ctx, l.lsReadClient, resourceKey, resource, read_write_layer.R000057); err != nil {
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}

@@ -12,6 +12,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/imdario/mergo"
 	corev1 "k8s.io/api/core/v1"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -233,7 +235,8 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 	currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
 	currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-	if err := a.kubeClient.Get(ctx, key, &currObj); err != nil {
+
+	if err := read_write_layer.GetUnstructured(ctx, a.kubeClient, key, &currObj, read_write_layer.R000048); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("unable to get object: %w", err)
 		}
@@ -370,7 +373,8 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 		ref := mr.Resource
 		obj := kutil.ObjectFromCoreObjectReference(&ref)
 		key := kutil.ObjectKey(ref.Name, ref.Namespace)
-		if err := a.kubeClient.Get(ctx, key, obj); err != nil {
+
+		if err := read_write_layer.GetUnstructured(ctx, a.kubeClient, key, obj, read_write_layer.R000049); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger2.Debug("Object not found")
 				continue

@@ -9,6 +9,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -35,7 +37,7 @@ func WaitUntilMainContainerFinished(ctx context.Context, kubeClient client.Clien
 	// no timeout is needed as we use the max active seconds of the pod to react on the timeout
 	return wait.ExponentialBackoff(backoff, func() (bool, error) {
 		pod := &corev1.Pod{}
-		if err := kubeClient.Get(ctx, podKey, pod); err != nil {
+		if err := read_write_layer.GetPod(ctx, kubeClient, podKey, pod, read_write_layer.R000041); err != nil {
 			if apierrors.IsNotFound(err) {
 				return false, err
 			}

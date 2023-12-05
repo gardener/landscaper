@@ -58,7 +58,7 @@ func GetKubeconfigFromSecretRef(ctx context.Context, ref *lsv1alpha1.SecretRefer
 
 	secret := &corev1.Secret{}
 	secretKey := client.ObjectKey{Name: ref.Name, Namespace: targetNamespace}
-	if err := lsClient.Get(ctx, secretKey, secret); err != nil {
+	if err := read_write_layer.GetSecret(ctx, lsClient, secretKey, secret, read_write_layer.R000050); err != nil {
 		return nil, apierrors.NewNotFound(schema.GroupResource{
 			Resource: "secret",
 		}, ref.Name)
@@ -167,7 +167,8 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 			if !deployItem.DeletionTimestamp.IsZero() {
 				// recheck if already deleted
 				diRecheck := &lsv1alpha1.DeployItem{}
-				errRecheck := read_write_layer.GetDeployItem(ctx, lsClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), diRecheck)
+				errRecheck := read_write_layer.GetDeployItem(ctx, lsClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace),
+					diRecheck, read_write_layer.R000030)
 				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
 					return nil
 				}
@@ -195,7 +196,7 @@ func CheckResponsibility(ctx context.Context, lsClient client.Client, obj *metav
 	if !found {
 		// deploy item in old version
 		di := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, lsClient, client.ObjectKeyFromObject(obj), di); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, lsClient, client.ObjectKeyFromObject(obj), di, read_write_layer.R000032); err != nil {
 			return nil, false, false, lserrors.NewWrappedError(err, "CheckResponsibility", "fetchDeployItem",
 				"fetching deploy item failed")
 		}
@@ -259,7 +260,8 @@ func checkTargetResponsibility(ctx context.Context, lsClient client.Client,
 
 	logger.Debug("Found target. Checking responsibility")
 	target := &lsv1alpha1.Target{}
-	if err := lsClient.Get(ctx, client.ObjectKey{Namespace: targetNamespace, Name: targetName}, target); err != nil {
+	if err := read_write_layer.GetTarget(ctx, lsClient, client.ObjectKey{Namespace: targetNamespace, Name: targetName},
+		target, read_write_layer.R000051); err != nil {
 		lsError := lserrors.NewWrappedError(err, op, "FetchTarget", "unable to get target for deploy item - other error")
 		if apierrors.IsNotFound(err) {
 			return nil, true, true, nil

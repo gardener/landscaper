@@ -170,7 +170,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	defer c.workerCounter.Exit()
 
 	metadata := lsutil.EmptyDeployItemMetadata()
-	if err := c.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
+	if err := read_write_layer.GetMetaData(ctx, c.lsClient, req.NamespacedName, metadata, read_write_layer.R000042); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
@@ -214,7 +214,7 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	di := &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, client.ObjectKeyFromObject(metadata), di); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, client.ObjectKeyFromObject(metadata), di, read_write_layer.R000035); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
@@ -328,7 +328,8 @@ func (c *controller) getContext(ctx context.Context, deployItem *lsv1alpha1.Depl
 	}
 
 	lsCtx := &lsv1alpha1.Context{}
-	if err := c.lsClient.Get(ctx, kutil.ObjectKey(contextName, deployItem.Namespace), lsCtx); err != nil {
+	if err := read_write_layer.GetContext(ctx, c.lsClient, kutil.ObjectKey(contextName, deployItem.Namespace), lsCtx,
+		read_write_layer.R000043); err != nil {
 		return nil, lserrors.NewWrappedError(err, operation, "GetLandscaperContext", err.Error())
 	}
 

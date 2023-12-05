@@ -410,7 +410,7 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 	if inst.Status.ExecutionReference != nil {
 		key := client.ObjectKey{Namespace: inst.Status.ExecutionReference.Namespace, Name: inst.Status.ExecutionReference.Name}
 		exec := &lsv1alpha1.Execution{}
-		if err := read_write_layer.GetExecution(ctx, c.Client(), key, exec); err != nil {
+		if err := read_write_layer.GetExecution(ctx, c.Client(), key, exec, read_write_layer.R000020); err != nil {
 			return lserrors.NewWrappedError(err, currentOperation, "GetExecution", err.Error())
 		}
 
@@ -450,7 +450,7 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 	if inst.Status.ExecutionReference != nil {
 		key := client.ObjectKey{Namespace: inst.Status.ExecutionReference.Namespace, Name: inst.Status.ExecutionReference.Name}
 		exec := &lsv1alpha1.Execution{}
-		if err := read_write_layer.GetExecution(ctx, c.Client(), key, exec); err != nil {
+		if err := read_write_layer.GetExecution(ctx, c.Client(), key, exec, read_write_layer.R000024); err != nil {
 			return false, lserrors.NewWrappedError(err, currentOperation, "GetExecution", err.Error())
 		}
 

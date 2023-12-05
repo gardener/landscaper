@@ -180,7 +180,7 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 
 	key := kutil.ObjectKeyFromObject(di)
 	di = &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di, read_write_layer.R000034); err != nil {
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 	}
 
@@ -240,7 +240,7 @@ func (o *Operation) removeFinalizerFromDeployItem(ctx context.Context, di *lsv1a
 
 	key := kutil.ObjectKeyFromObject(di)
 	di = &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di, read_write_layer.R000031); err != nil {
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 	}
 

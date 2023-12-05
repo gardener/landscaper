@@ -90,7 +90,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, c.lsClient, req.NamespacedName, exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, c.lsClient, req.NamespacedName, exec, read_write_layer.R000019); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -370,7 +370,8 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 		if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Deleting {
 			// recheck if already deleted
 			execRecheck := &lsv1alpha1.Execution{}
-			errRecheck := read_write_layer.GetExecution(ctx, c.lsClient, kutil.ObjectKey(exec.Name, exec.Namespace), execRecheck)
+			errRecheck := read_write_layer.GetExecution(ctx, c.lsClient, kutil.ObjectKey(exec.Name, exec.Namespace),
+				execRecheck, read_write_layer.R000021)
 			if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
 				return nil
 			}

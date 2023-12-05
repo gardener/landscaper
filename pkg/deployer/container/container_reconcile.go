@@ -89,7 +89,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 		// before we start syncing lets read the current deploy item from the server
 		oldDeployItem := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, c.lsClient, kutil.ObjectKey(c.DeployItem.GetName(), c.DeployItem.GetNamespace()), oldDeployItem); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, c.lsClient, kutil.ObjectKey(c.DeployItem.GetName(),
+			c.DeployItem.GetNamespace()), oldDeployItem, read_write_layer.R000027); err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "FetchDeployItem", err.Error())
 		}
