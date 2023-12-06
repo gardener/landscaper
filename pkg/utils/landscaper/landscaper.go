@@ -61,7 +61,8 @@ func WaitForInstallationToBeDeleted(
 
 	pollErr := wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(ctx context.Context) (done bool, err error) {
 		updated := &lsv1alpha1.Installation{}
-		getErr := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated)
+		getErr := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace),
+			updated, read_write_layer.R000012)
 		return getErr != nil && apierrors.IsNotFound(getErr), nil
 	})
 
@@ -84,7 +85,8 @@ func WaitForInstallationToHaveCondition(
 
 	return wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		updated := &lsv1alpha1.Installation{}
-		if err := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated,
+			read_write_layer.R000015); err != nil {
 			return false, err
 		}
 		*inst = *updated
@@ -102,7 +104,8 @@ func WaitForDeployItemToFinish(
 
 	err := wait.PollUntilContextTimeout(ctx, 5*time.Second, timeout, false, func(ctx context.Context) (bool, error) {
 		updated := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, kubeClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, kubeClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace),
+			updated, read_write_layer.R000029); err != nil {
 			return false, err
 		}
 		*deployItem = *updated
@@ -127,14 +130,16 @@ func GetDeployItemsOfInstallation(ctx context.Context, kubeClient client.Client,
 		return nil, errors.New("no execution reference defined for the installation")
 	}
 	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, kubeClient, inst.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, kubeClient, inst.Status.ExecutionReference.NamespacedName(), exec,
+		read_write_layer.R000023); err != nil {
 		return nil, err
 	}
 
 	items := make([]*lsv1alpha1.DeployItem, 0)
 	for _, ref := range exec.Status.DeployItemReferences {
 		item := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, kubeClient, ref.Reference.NamespacedName(), item); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, kubeClient, ref.Reference.NamespacedName(),
+			item, read_write_layer.R000033); err != nil {
 			return nil, fmt.Errorf("unable to find deploy item %q: %w", ref.Name, err)
 		}
 		items = append(items, item)
@@ -151,7 +156,7 @@ func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Cl
 
 	for _, ref := range inst.Status.InstallationReferences {
 		inst := &lsv1alpha1.Installation{}
-		if err := read_write_layer.GetInstallation(ctx, kubeClient, ref.Reference.NamespacedName(), inst); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, kubeClient, ref.Reference.NamespacedName(), inst, read_write_layer.R000006); err != nil {
 			return nil, fmt.Errorf("unable to find installation %q: %w", ref.Name, err)
 		}
 		list = append(list, inst)
@@ -165,7 +170,7 @@ func GetDeployItemExport(ctx context.Context, kubeClient client.Client, di *lsv1
 		return nil, errors.New("no export defined")
 	}
 	secret := &corev1.Secret{}
-	if err := kubeClient.Get(ctx, di.Status.ExportReference.NamespacedName(), secret); err != nil {
+	if err := read_write_layer.GetSecret(ctx, kubeClient, di.Status.ExportReference.NamespacedName(), secret, read_write_layer.R000056); err != nil {
 		return nil, fmt.Errorf("unable to get export from %q: %w", di.Status.ExportReference.NamespacedName(), err)
 	}
 

@@ -133,7 +133,7 @@ func (dm *DeployerManagement) getInstallation(ctx context.Context,
 	log, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "getInstallation")
 
 	installations := &lsv1alpha1.InstallationList{}
-	if err := read_write_layer.ListInstallations(ctx, dm.client, installations,
+	if err := read_write_layer.ListInstallations(ctx, dm.client, installations, read_write_layer.R000017,
 		client.InNamespace(dm.config.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.DeployerEnvironmentLabelName:  env.Name,

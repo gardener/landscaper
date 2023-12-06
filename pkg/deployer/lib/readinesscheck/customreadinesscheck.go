@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -160,7 +162,7 @@ func getObjectsByTypedReference(ctx context.Context, cl client.Client, key []lsv
 		obj := &unstructured.Unstructured{}
 		obj.SetAPIVersion(k.APIVersion)
 		obj.SetKind(k.Kind)
-		if err := cl.Get(ctx, k.ObjectReference.NamespacedName(), obj); err != nil {
+		if err := read_write_layer.GetUnstructured(ctx, cl, k.ObjectReference.NamespacedName(), obj, read_write_layer.R000044); err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, NewObjectNotReadyError(obj, err)
 			} else {
@@ -181,7 +183,7 @@ func getObjectsByLabels(ctx context.Context, cl client.Client, selector *health.
 	objList.SetAPIVersion(selector.APIVersion)
 	objList.SetKind(selector.Kind)
 
-	if err := cl.List(ctx, objList, &client.ListOptions{
+	if err := read_write_layer.ListUnstructured(ctx, cl, objList, read_write_layer.R000080, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(selector.Labels),
 	}); err != nil {
 		return nil, NewRecoverableError(err)

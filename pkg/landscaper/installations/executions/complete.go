@@ -21,7 +21,8 @@ import (
 // GetExportedValues returns the exported values of the execution
 func (o *ExecutionOperation) GetExportedValues(ctx context.Context, inst *installations.InstallationImportsAndBlueprint) (*dataobjects.DataObject, error) {
 	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, o.Client(), kutil.ObjectKey(inst.GetInstallation().Name, inst.GetInstallation().Namespace), exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, o.Client(), kutil.ObjectKey(inst.GetInstallation().Name, inst.GetInstallation().Namespace),
+		exec, read_write_layer.R000022); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}

@@ -10,6 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -103,7 +105,7 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 		env.Spec.HostTarget.TargetSpec = target.Spec
 	}
 
-	if err := lsClient.Get(ctx, kutil.ObjectKeyFromObject(env), env); err != nil {
+	if err := read_write_layer.GetEnv(ctx, lsClient, kutil.ObjectKeyFromObject(env), env, read_write_layer.R000038); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info("Environment not found, creating it")
 			mutateFunc()
@@ -230,9 +232,11 @@ func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Clien
 			}
 		}
 	}
+
 	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		for _, obj := range resources {
-			if err := kubeClient.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
+
+			if err := read_write_layer.GetObject(ctx, kubeClient, kutil.ObjectKeyFromObject(obj), obj, read_write_layer.R000039); err != nil {
 				if apierrors.IsNotFound(err) {
 					continue
 				}

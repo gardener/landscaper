@@ -30,7 +30,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	defer con.workerCounter.Exit()
 
 	di := &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di, read_write_layer.R000028); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil

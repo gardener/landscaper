@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	v1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +72,8 @@ func (c *HealthChecker) initializeHealthCheck(ctx context.Context) error {
 	log.Info("initializing healthcheck")
 
 	lsHealthCheckList := &lsv1alpha1.LsHealthCheckList{}
-	if err := c.hostClient.List(ctx, lsHealthCheckList, client.InNamespace(c.lsDeployments.DeploymentsNamespace)); err == nil {
+	if err := read_write_layer.ListHealthChecks(ctx, c.hostClient, lsHealthCheckList, read_write_layer.R000059,
+		client.InNamespace(c.lsDeployments.DeploymentsNamespace)); err == nil {
 		for _, item := range lsHealthCheckList.Items {
 			if item.Name != c.lsDeployments.LsHealthCheckName {
 				if err := c.hostClient.Delete(ctx, &item); err != nil {
@@ -81,7 +84,7 @@ func (c *HealthChecker) initializeHealthCheck(ctx context.Context) error {
 	}
 
 	lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
-	if err := c.hostClient.Get(ctx, c.healthCheckKey(), lsHealthCheck); err != nil {
+	if err := read_write_layer.GetHealthCheck(ctx, c.hostClient, c.healthCheckKey(), lsHealthCheck, read_write_layer.R000053); err != nil {
 		if apierrors.IsNotFound(err) {
 			lsHealthCheck = &lsv1alpha1.LsHealthCheck{
 				ObjectMeta:     metav1.ObjectMeta{Name: c.lsDeployments.LsHealthCheckName, Namespace: c.lsDeployments.DeploymentsNamespace},
@@ -106,7 +109,7 @@ func (c *HealthChecker) ExecuteHealthCheck(ctx context.Context) {
 
 	// The healthcheck object was created during initialization.
 	lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
-	if err := c.hostClient.Get(ctx, c.healthCheckKey(), lsHealthCheck); err != nil {
+	if err := read_write_layer.GetHealthCheck(ctx, c.hostClient, c.healthCheckKey(), lsHealthCheck, read_write_layer.R000054); err != nil {
 		log.Error(err, "lsHealthCheck object could not be accessed")
 		return
 	}

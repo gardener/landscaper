@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -26,7 +28,7 @@ import (
 func UploadExport(ctx context.Context, kubeClient client.Client, deployItemKey lsv1alpha1.ObjectReference, podKey lsv1alpha1.ObjectReference, exportFilePath string) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 	pod := &corev1.Pod{}
-	if err := kubeClient.Get(ctx, podKey.NamespacedName(), pod); err != nil {
+	if err := read_write_layer.GetPod(ctx, kubeClient, podKey.NamespacedName(), pod, read_write_layer.R000040); err != nil {
 		return err
 	}
 	mainContainerStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)

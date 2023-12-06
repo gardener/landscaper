@@ -133,7 +133,8 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 
 	// the controller-runtime cache does currently not support field selectors (except a simple equal matcher).
 	// Therefore, we have to use our own filtering.
-	err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, client.InNamespace(inst.Namespace),
+	err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, read_write_layer.R000018,
+		client.InNamespace(inst.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
 		})
@@ -199,7 +200,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 				Namespace: o.Inst.GetInstallation().Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
-			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
+			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst, read_write_layer.R000008); err != nil {
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
@@ -254,7 +255,8 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 				Namespace: o.Inst.GetInstallation().Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
-			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
+			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst,
+				read_write_layer.R000004); err != nil {
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
@@ -313,7 +315,7 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 					Namespace: o.Inst.GetInstallation().Namespace,
 				}
 				inst := &lsv1alpha1.Installation{}
-				if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
+				if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst, read_write_layer.R000011); err != nil {
 					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 						sourceRef.NamespacedName().String(), def.Name, err)
 				}
@@ -356,7 +358,7 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	opts = append(opts, client.MatchingLabelsSelector{Selector: labels.NewSelector().Add(*r)})
 
 	installationList := &lsv1alpha1.InstallationList{}
-	if err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, opts...); err != nil {
+	if err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, read_write_layer.R000016, opts...); err != nil {
 		return nil, err
 	}
 

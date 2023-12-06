@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -364,10 +366,11 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 // Pods that have no finalizer are ignored.
 func (c *Container) getPod(ctx context.Context) (*corev1.Pod, error) {
 	podList := &corev1.PodList{}
-	if err := c.hostClient.List(ctx, podList, client.InNamespace(c.Configuration.Namespace), client.MatchingLabels{
-		container.ContainerDeployerDeployItemNameLabel:      c.DeployItem.Name,
-		container.ContainerDeployerDeployItemNamespaceLabel: c.DeployItem.Namespace,
-	}); err != nil {
+	if err := read_write_layer.ListPods(ctx, c.hostClient, podList, read_write_layer.R000077,
+		client.InNamespace(c.Configuration.Namespace), client.MatchingLabels{
+			container.ContainerDeployerDeployItemNameLabel:      c.DeployItem.Name,
+			container.ContainerDeployerDeployItemNamespaceLabel: c.DeployItem.Namespace,
+		}); err != nil {
 		return nil, err
 	}
 
