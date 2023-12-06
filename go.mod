@@ -5,13 +5,8 @@ go 1.21
 toolchain go1.21.4
 
 require (
-	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/aws/aws-sdk-go v1.44.288
-	github.com/bshuster-repo/logrus-logstash-hook v1.0.0
-	github.com/bugsnag/bugsnag-go v1.0.5-0.20150529004307-13fd6b8acda0
 	github.com/containerd/containerd v1.7.6
 	github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba
 	github.com/distribution/reference v0.5.0
@@ -32,8 +27,6 @@ require (
 	github.com/mandelsoft/filepath v0.0.0-20230412200429-36b1eb66bd27
 	github.com/mandelsoft/spiff v1.7.0-beta-5
 	github.com/mandelsoft/vfs v0.0.0-20230713123140-269aa4fb1338
-	github.com/mitchellh/mapstructure v1.5.0
-	github.com/ncw/swift v1.0.47
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
@@ -46,16 +39,11 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/xeipuuv/gojsonschema v1.2.0
-	github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50
 	golang.org/x/crypto v0.14.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/oauth2 v0.13.0
 	golang.org/x/sync v0.5.0
 	golang.org/x/sys v0.13.0
-	google.golang.org/api v0.128.0
-	google.golang.org/cloud v0.0.0-20151119220103-975617b05ea8
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.12.2
 	k8s.io/api v0.28.3
@@ -169,6 +157,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go v1.5.1-1.0.20160303222718-d30aec9fd63c // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/drone/envsubst v1.0.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -266,6 +255,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -334,8 +324,6 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
-	github.com/yvasiyarov/go-metrics v0.0.0-20140926110328-57bccd1ccd43 // indirect
-	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f // indirect
 	github.com/zeebo/errs v1.3.0 // indirect
 	go.mongodb.org/mongo-driver v1.12.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
