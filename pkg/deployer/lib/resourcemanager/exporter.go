@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -100,7 +102,8 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) (map[string]interface{}, error) {
 	// get resource from client
 	obj := kutil.ObjectFromTypedObjectReference(export.FromResource)
-	if err := e.kubeClient.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
+	if err := read_write_layer.GetUnstructured(ctx, e.kubeClient, kutil.ObjectKeyFromObject(obj), obj,
+		read_write_layer.R000046); err != nil {
 		return nil, err
 	}
 
@@ -157,7 +160,9 @@ func (e *Exporter) exportFromReferencedResource(ctx context.Context, export mana
 			Namespace: namespace,
 		},
 	})
-	if err := e.kubeClient.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
+
+	if err := read_write_layer.GetUnstructured(ctx, e.kubeClient, kutil.ObjectKeyFromObject(obj), obj,
+		read_write_layer.R000047); err != nil {
 		return nil, err
 	}
 

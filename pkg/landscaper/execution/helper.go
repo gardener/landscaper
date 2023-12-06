@@ -55,8 +55,9 @@ func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string)
 func (o *Operation) ListManagedDeployItems(ctx context.Context) ([]lsv1alpha1.DeployItem, error) {
 	deployItemList := &lsv1alpha1.DeployItemList{}
 	// todo: maybe use name and namespace
-	if err := read_write_layer.ListDeployItems(ctx, o.Client(), deployItemList,
-		client.MatchingLabels{lsv1alpha1.ExecutionManagedByLabel: o.exec.Name}, client.InNamespace(o.exec.Namespace)); err != nil {
+	if err := read_write_layer.ListDeployItems(ctx, o.Client(), deployItemList, read_write_layer.R000037,
+		client.MatchingLabels{lsv1alpha1.ExecutionManagedByLabel: o.exec.Name},
+		client.InNamespace(o.exec.Namespace)); err != nil {
 		return nil, err
 	}
 	return deployItemList.Items, nil

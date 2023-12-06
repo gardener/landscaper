@@ -214,7 +214,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 		currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
 		currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
 		key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-		if err := kubeClient.Get(ctx, key, &currObj); err != nil {
+		if err := read_write_layer.GetUnstructured(ctx, kubeClient, key, &currObj, read_write_layer.R000052); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}

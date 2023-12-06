@@ -205,7 +205,8 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 // The execution can be nil if no execution has been found.
 func GetExecutionForInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (*lsv1alpha1.Execution, error) {
 	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, kubeClient, kutil.ObjectKeyFromObject(inst), exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, kubeClient, kutil.ObjectKeyFromObject(inst), exec,
+		read_write_layer.R000025); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}

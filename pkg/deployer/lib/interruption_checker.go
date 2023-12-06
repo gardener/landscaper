@@ -28,7 +28,7 @@ func (c *InterruptionChecker) Check(ctx context.Context) error {
 	}
 
 	di := &lsv1alpha1.DeployItem{}
-	err := read_write_layer.GetDeployItem(ctx, c.lsClient, client.ObjectKeyFromObject(c.deployItem), di)
+	err := read_write_layer.GetDeployItem(ctx, c.lsClient, client.ObjectKeyFromObject(c.deployItem), di, read_write_layer.R000026)
 	if err != nil {
 		return err
 	}

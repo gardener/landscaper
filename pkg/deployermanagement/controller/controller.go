@@ -251,7 +251,7 @@ func (con *InstallationController) Reconcile(ctx context.Context, req reconcile.
 	}
 
 	inst := &lsv1alpha1.Installation{}
-	if err := read_write_layer.GetInstallation(ctx, con.client, req.NamespacedName, inst); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, con.client, req.NamespacedName, inst, read_write_layer.R000005); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil

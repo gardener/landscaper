@@ -28,7 +28,7 @@ func NewDataObjectAndTargetCleaner(installation *lsv1alpha1.Installation, cl cli
 // label (data.landscaper.gardener.cloud/source) indicating that they have been exported by the Installation.
 func (c *DataObjectAndTargetCleaner) CleanupExports(ctx context.Context) error {
 	doList := &lsv1alpha1.DataObjectList{}
-	if err := c.client.List(ctx, doList,
+	if err := read_write_layer.ListDataObjects(ctx, c.client, doList, read_write_layer.R000060,
 		client.InNamespace(c.installation.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.DataObjectSourceLabel:     lsv1alpha1helper.DataObjectSourceFromInstallation(c.installation),
@@ -42,7 +42,7 @@ func (c *DataObjectAndTargetCleaner) CleanupExports(ctx context.Context) error {
 	}
 
 	targetList := &lsv1alpha1.TargetList{}
-	if err := c.client.List(ctx, targetList,
+	if err := read_write_layer.ListTargets(ctx, c.client, targetList, read_write_layer.R000061,
 		client.InNamespace(c.installation.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.DataObjectSourceLabel:     lsv1alpha1helper.DataObjectSourceFromInstallation(c.installation),
@@ -61,7 +61,7 @@ func (c *DataObjectAndTargetCleaner) CleanupExports(ctx context.Context) error {
 // CleanupContext deletes all DataObjects and Targets in the context of the given Installation.
 func (c *DataObjectAndTargetCleaner) CleanupContext(ctx context.Context) error {
 	doList := &lsv1alpha1.DataObjectList{}
-	if err := c.client.List(ctx, doList,
+	if err := read_write_layer.ListDataObjects(ctx, c.client, doList, read_write_layer.R000062,
 		client.InNamespace(c.installation.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.DataObjectContextLabel: lsv1alpha1helper.DataObjectSourceFromInstallation(c.installation),
@@ -74,7 +74,7 @@ func (c *DataObjectAndTargetCleaner) CleanupContext(ctx context.Context) error {
 	}
 
 	targetList := &lsv1alpha1.TargetList{}
-	if err := c.client.List(ctx, targetList,
+	if err := read_write_layer.ListTargets(ctx, c.client, targetList, read_write_layer.R000063,
 		client.InNamespace(c.installation.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.DataObjectContextLabel: lsv1alpha1helper.DataObjectSourceFromInstallation(c.installation),

@@ -16,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/google/uuid"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -127,7 +129,8 @@ func (s *State) Restore(ctx context.Context) error {
 	}
 
 	secretList := &corev1.SecretList{}
-	if err := s.kubeClient.List(ctx, secretList, StateSecretListOptions(s.namespace, s.deployItem)...); err != nil {
+	if err := read_write_layer.ListSecrets(ctx, s.kubeClient, secretList, read_write_layer.R000078,
+		StateSecretListOptions(s.namespace, s.deployItem)...); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
@@ -264,7 +267,8 @@ func (s stateSecretsList) Less(i, j int) bool {
 // CleanupState deletes all state secrets for a deployitem
 func CleanupState(ctx context.Context, log logging.Logger, kubeClient client.Client, namespace string, deployItem lsv1alpha1.ObjectReference) error {
 	secretList := &corev1.SecretList{}
-	if err := kubeClient.List(ctx, secretList, StateSecretListOptions(namespace, deployItem)...); err != nil {
+	if err := read_write_layer.ListSecrets(ctx, kubeClient, secretList, read_write_layer.R000079,
+		StateSecretListOptions(namespace, deployItem)...); err != nil {
 		return nil
 	}
 

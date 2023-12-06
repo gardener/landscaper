@@ -144,7 +144,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	inst := &lsv1alpha1.Installation{}
-	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst, read_write_layer.R000010); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -407,7 +407,8 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Deleting {
 			// recheck if already deleted
 			instRecheck := &lsv1alpha1.Installation{}
-			errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), instRecheck)
+			errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace),
+				instRecheck, read_write_layer.R000009)
 			if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
 				return nil
 			}

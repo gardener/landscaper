@@ -33,6 +33,8 @@ const (
 	KeyExecutionPhase = "executionPhase"
 	// KeyDeployItemPhase is for the phase of a deployitem.
 	KeyDeployItemPhase = "deployitemPhase"
+	// KeyReadID is for a reader ID.
+	KeyReadID = "readID"
 	// KeyWriteID is for a writer ID.
 	KeyWriteID = "writeID"
 	// KeyGeneration is for the generation of a resource.

@@ -17,6 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -298,7 +300,9 @@ func GetTargetListImportBySelector(
 		}
 		contextSelector = contextSelector.Add(*r)
 	}
-	if err := kubeClient.List(ctx, targets, client.InNamespace(inst.Namespace), &client.ListOptions{LabelSelector: contextSelector}); err != nil {
+
+	if err := read_write_layer.ListTargets(ctx, kubeClient, targets, read_write_layer.R000072,
+		client.InNamespace(inst.Namespace), &client.ListOptions{LabelSelector: contextSelector}); err != nil {
 		return nil, err
 	}
 	targetExtensionList := dataobjects.NewTargetExtensionList(targets.Items, &targetImport)

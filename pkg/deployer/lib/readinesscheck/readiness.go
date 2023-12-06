@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserror "github.com/gardener/landscaper/apis/errors"
 
@@ -169,7 +171,7 @@ func IsObjectReady(ctx context.Context, kubeClient client.Client, obj *unstructu
 		lc.KeyResource, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()).String())
 
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-	if err := kubeClient.Get(ctx, key, obj); err != nil {
+	if err := read_write_layer.GetUnstructured(ctx, kubeClient, key, obj, read_write_layer.R000045); err != nil {
 		objLog.Debug("Resource status", lc.KeyStatus, StatusUnknown)
 		return NewRecoverableError(fmt.Errorf("unable to get %s %s/%s: %w",
 			obj.GroupVersionKind().String(),

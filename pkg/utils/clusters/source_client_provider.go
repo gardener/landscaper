@@ -14,6 +14,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
@@ -100,7 +102,7 @@ func (p *DefaultSourceClientProvider) resolveSecretRef(ctx context.Context, targ
 		Name:      secretRef.Name,
 	}
 
-	if err := targetClient.Get(ctx, secretKey, secret); err != nil {
+	if err := read_write_layer.GetSecret(ctx, targetClient, secretKey, secret, read_write_layer.R000055); err != nil {
 		return nil, err
 	}
 

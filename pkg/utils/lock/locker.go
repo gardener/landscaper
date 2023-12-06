@@ -188,7 +188,7 @@ func (l *Locker) getSyncObject(ctx context.Context, namespace, name string) (*ls
 		Name:      name,
 	}
 	syncObject := &lsv1alpha1.SyncObject{}
-	if err := read_write_layer.GetSyncObject(ctx, l.lsReadClient, syncObjectKey, syncObject); err != nil {
+	if err := read_write_layer.GetSyncObject(ctx, l.lsReadClient, syncObjectKey, syncObject, read_write_layer.R000001); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
@@ -216,7 +216,7 @@ func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
 		Name:      podName,
 	}
 	pod := &v1.Pod{}
-	if err := l.hostClient.Get(ctx, podKey, pod); err != nil {
+	if err := read_write_layer.GetPod(ctx, l.hostClient, podKey, pod, read_write_layer.R000058); err != nil {
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
