@@ -25,7 +25,7 @@ func GetSyncObject(ctx context.Context, c client.Reader, key client.ObjectKey, s
 }
 
 func ListSyncObjects(ctx context.Context, c client.Reader, syncObjects *lsv1alpha1.SyncObjectList, readID ReadID, opts ...client.ListOption) error {
-	return list(ctx, c, syncObjects, readID, "dyncObjects", opts...)
+	return list(ctx, c, syncObjects, readID, "syncObjects", opts...)
 }
 
 // read methods for installations
@@ -161,7 +161,7 @@ func list(ctx context.Context, c client.Reader, objects client.ObjectList, readI
 		log = log.WithValues(lc.KeyError, err.Error())
 	}
 
-	log.Debug("ReadLayer list: + msg")
+	log.Debug("ReadLayer list: " + msg)
 
 	return err
 }
