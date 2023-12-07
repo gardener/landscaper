@@ -82,7 +82,7 @@ make integration-test KUBECONFIG_PATH=<path to cluster kubeconfig file> USE_OCM_
 
 The tests set up a local OCI registry, install/upgrade the landscaper and executes the integration tests.
 
-It is also possible to execute the tests with Gardner shoot cluster creation and deletion with:
+Caveat! It is not recommended to use the same cluster more than once. The better possibility is to execute the tests with Gardner shoot cluster creation and deletion with:
 
 ```
 make integration-test-with-cluster-creation KUBECONFIG_PATH=<path to Gardener kubeconfig for project laas on the Canary landscape> USE_OCM_LIB=false
