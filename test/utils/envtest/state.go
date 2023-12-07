@@ -351,14 +351,14 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 
 	s.log.Logln("cleanup deploy items")
 	for _, obj := range s.DeployItems {
-		if err := CleanupForDeployItem(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForDeployItem(ctx, s.log, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 
 	s.log.Logln("cleanup executions")
 	for _, obj := range s.Executions {
-		if err := CleanupForExecution(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForExecution(ctx, s.log, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
@@ -372,42 +372,42 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 
 	s.log.Logln("cleanup data objects")
 	for _, obj := range s.DataObjects {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForObject(ctx, s.log, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 
 	s.log.Logln("cleanup targets")
 	for _, obj := range s.Targets {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForObject(ctx, s.log, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 
 	s.log.Logln("cleanup target syncs")
 	for _, obj := range s.TargetSyncs {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForObject(ctx, s.log, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 
 	s.log.Logln("cleanup secrets")
 	for _, obj := range s.Secrets {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForObject(ctx, s.log, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 
 	s.log.Logln("cleanup config maps")
 	for _, obj := range s.ConfigMaps {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForObject(ctx, s.log, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 
 	s.log.Logln("cleanup generic")
 	for _, obj := range s.Generic {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForObject(ctx, s.log, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
@@ -419,7 +419,7 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 		return fmt.Errorf("unable to list pods in %q: %w", s.Namespace, err)
 	}
 	for _, obj := range pods.Items {
-		if err := CleanupForObject(ctx, c, &obj, *timeout); err != nil {
+		if err := CleanupForObject(ctx, s.log, c, &obj, *timeout); err != nil {
 			return err
 		}
 	}
@@ -451,7 +451,7 @@ func (s *State) cleanupNamespace(ctx context.Context, c client.Client, namespace
 			return err
 		}
 		if options.WaitForDeletion {
-			return WaitForObjectToBeDeleted(ctx, c, ns, *timeout)
+			return WaitForObjectToBeDeleted(ctx, s.log, c, ns, *timeout)
 		}
 	}
 
@@ -465,7 +465,7 @@ func (s *State) CleanupState(ctx context.Context, opts ...CleanupOption) error {
 }
 
 // CleanupForObject cleans up a object from a cluster
-func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, timeout time.Duration) error {
+func CleanupForObject(ctx context.Context, log utils.Logger, c client.Client, obj client.Object, timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -479,7 +479,7 @@ func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, t
 			return err
 		}
 	}
-	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
+	if err := WaitForObjectToBeDeleted(ctx, log, c, obj, timeout); err != nil {
 		if err := removeFinalizer(ctx, c, obj); err != nil {
 			return err
 		}
@@ -505,7 +505,7 @@ func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj
 	}
 
 	var innerErr error
-	if err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 10*time.Second, true, func(ctx context.Context) (done bool, err error) {
+	if err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 60*time.Second, true, func(ctx context.Context) (done bool, err error) {
 		innerErr = s.addReconcileAnnotation(ctx, c, obj)
 		return innerErr == nil, nil
 	}); err != nil {
@@ -515,7 +515,7 @@ func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj
 		return err
 	}
 
-	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
+	if err := WaitForObjectToBeDeleted(ctx, s.log, c, obj, timeout); err != nil {
 		if err := removeFinalizer(ctx, c, obj); err != nil {
 			return err
 		}
@@ -524,7 +524,7 @@ func (s *State) CleanupForInstallation(ctx context.Context, c client.Client, obj
 }
 
 // CleanupForExecution cleans up an execution from a cluster
-func CleanupForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.Execution, timeout time.Duration) error {
+func CleanupForExecution(ctx context.Context, log utils.Logger, c client.Client, obj *lsv1alpha1.Execution, timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -543,7 +543,7 @@ func CleanupForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.E
 		return err
 	}
 
-	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
+	if err := WaitForObjectToBeDeleted(ctx, log, c, obj, timeout); err != nil {
 		if err := removeFinalizer(ctx, c, obj); err != nil {
 			return err
 		}
@@ -553,7 +553,7 @@ func CleanupForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.E
 }
 
 // CleanupForDeployItem cleans up a deploy item from a cluster
-func CleanupForDeployItem(ctx context.Context, c client.Client, obj *lsv1alpha1.DeployItem, timeout time.Duration) error {
+func CleanupForDeployItem(ctx context.Context, log utils.Logger, c client.Client, obj *lsv1alpha1.DeployItem, timeout time.Duration) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -572,7 +572,7 @@ func CleanupForDeployItem(ctx context.Context, c client.Client, obj *lsv1alpha1.
 		return err
 	}
 
-	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
+	if err := WaitForObjectToBeDeleted(ctx, log, c, obj, timeout); err != nil {
 		if err := removeFinalizer(ctx, c, obj); err != nil {
 			return err
 		}
@@ -586,6 +586,7 @@ func (s *State) addReconcileAnnotation(ctx context.Context, c client.Client, obj
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
+		s.log.Logfln("addReconcileAnnotation: failed to get object: %w", err)
 		return err
 	}
 
@@ -595,7 +596,8 @@ func (s *State) addReconcileAnnotation(ctx context.Context, c client.Client, obj
 			if readError := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); apierrors.IsNotFound(readError) {
 				return nil
 			}
-			err = errors.Wrap(err, "Failed to add reconcile annotation to installation during cleanup")
+			s.log.Logfln("addReconcileAnnotation: update failed: %w", err)
+			err = errors.Wrap(err, "Failed to add reconcile annotation during cleanup")
 			return err
 		}
 	}
@@ -650,7 +652,7 @@ func updateJobIdForExecution(ctx context.Context, c client.Client, obj *lsv1alph
 }
 
 // WaitForObjectToBeDeleted waits for a object to be deleted.
-func WaitForObjectToBeDeleted(ctx context.Context, c client.Client, obj client.Object, timeout time.Duration) error {
+func WaitForObjectToBeDeleted(ctx context.Context, log utils.Logger, c client.Client, obj client.Object, timeout time.Duration) error {
 	var (
 		lastErr error
 		uObj    client.Object
@@ -661,6 +663,7 @@ func WaitForObjectToBeDeleted(ctx context.Context, c client.Client, obj client.O
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
+			log.Logfln("WaitForObjectToBeDeleted: failed to get object: %w", err)
 			lastErr = err
 			return false, nil
 		}

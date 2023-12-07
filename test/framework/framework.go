@@ -16,8 +16,6 @@ import (
 	"strings"
 	"time"
 
-	utils3 "github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -37,6 +35,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	utils2 "github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 	lsscheme "github.com/gardener/landscaper/pkg/api"
+	utils3 "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -357,7 +356,7 @@ func (f *Framework) cleanupBeforeObjectsInTestNamespace(ctx context.Context, nam
 		return err
 	}
 	for _, obj := range instList.Items {
-		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+		if err := envtest.CleanupForObject(ctx, f.logger, f.Client, &obj, time.Second); err != nil {
 			return err
 		}
 	}
@@ -367,7 +366,7 @@ func (f *Framework) cleanupBeforeObjectsInTestNamespace(ctx context.Context, nam
 		return err
 	}
 	for _, obj := range execList.Items {
-		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+		if err := envtest.CleanupForObject(ctx, f.logger, f.Client, &obj, time.Second); err != nil {
 			return err
 		}
 	}
@@ -377,7 +376,7 @@ func (f *Framework) cleanupBeforeObjectsInTestNamespace(ctx context.Context, nam
 		return err
 	}
 	for _, obj := range diList.Items {
-		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+		if err := envtest.CleanupForObject(ctx, f.logger, f.Client, &obj, time.Second); err != nil {
 			return err
 		}
 	}
@@ -387,7 +386,7 @@ func (f *Framework) cleanupBeforeObjectsInTestNamespace(ctx context.Context, nam
 		return err
 	}
 	for _, obj := range podList.Items {
-		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+		if err := envtest.CleanupForObject(ctx, f.logger, f.Client, &obj, time.Second); err != nil {
 			return err
 		}
 	}

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
@@ -128,6 +127,7 @@ func retrySporadic(ctx context.Context, log utils.Logger, fn func() error) error
 			log.Logfln("retrying client: all attempts failed: %w", err)
 			return err
 		} else if !isSporadicError(err) {
+			log.Logfln("retrying client: stop retrying after non-sporadic error: %w", err)
 			return err
 		} else if ctxError := ctx.Err(); ctxError != nil {
 			log.Logfln("retrying client: stop retrying because context is closed: %w", ctxError)
