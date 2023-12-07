@@ -7,9 +7,14 @@ package gotemplate
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	"os"
 	"strings"
 	gotmpl "text/template"
@@ -76,6 +81,7 @@ func LandscaperTplFuncMap(blueprint *blueprints.Blueprint,
 		"ociRefVersion": getOCIReferenceVersion,
 		"resolve":       resolveArtifactFunc(componentVersion),
 
+		"getResourceKey":       getResourceKeyGoFunc(componentVersion),
 		"getResource":          getResourceGoFunc(cd),
 		"getResources":         getResourcesGoFunc(cd),
 		"getComponent":         getComponentGoFunc(cd, cdList, ocmSchemaVersion),
@@ -188,6 +194,61 @@ func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []ma
 			panic(err)
 		}
 		return parsedResources
+	}
+}
+
+type GlobalResourceIdentity struct {
+	ComponentIdentity ComponentIdentity `json:"component"`
+	ResourceIdentity  v1.Identity       `json:"resource"`
+}
+
+type ComponentIdentity struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) string {
+	return func(args ...interface{}) string {
+		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
+		if !ok {
+			panic("Unable to use without useOCM set to true.")
+		}
+		compvers := ocmlibCv.GetOCMObject()
+
+		if args == nil {
+			panic("Unable to provide key for empty relative artifact reference.")
+		}
+		resourceRefStr, ok := args[0].(string)
+		if !ok {
+			panic("The relative artifact reference has to be given as string.")
+		}
+		resourceRef := v1.ResourceReference{}
+		err := runtime.DefaultYAMLEncoding.Unmarshal([]byte(resourceRefStr), &resourceRef)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		resource, resourceCv, err := utils.ResolveResourceReference(compvers, resourceRef, nil)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		globalId := GlobalResourceIdentity{
+			ComponentIdentity: ComponentIdentity{
+				Name:    resourceCv.GetName(),
+				Version: resourceCv.GetVersion(),
+			},
+			ResourceIdentity: resource.Meta().GetIdentity(resourceCv.GetDescriptor().Resources),
+		}
+
+		globalIdData, err := runtime.DefaultYAMLEncoding.Marshal(globalId)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		Key := base64.StdEncoding.EncodeToString(globalIdData)
+
+		return Key
 	}
 }
 
