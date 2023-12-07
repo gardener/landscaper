@@ -5,18 +5,17 @@
 package genericocireg
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/support"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/repocpi"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/refmgmt"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
@@ -24,41 +23,51 @@ const META_SEPARATOR = ".build-"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type _ComponentAccessImplBase = cpi.ComponentAccessImplBase
-
 type componentAccessImpl struct {
-	_ComponentAccessImplBase
+	bridge    repocpi.ComponentAccessBridge
 	repo      *RepositoryImpl
 	name      string
 	namespace oci.NamespaceAccess
 }
 
-func newComponentAccess(repo *RepositoryImpl, name string, main bool) (cpi.ComponentAccess, error) {
+func newComponentAccess(repo *RepositoryImpl, name string, main bool) (*repocpi.ComponentAccessInfo, error) {
 	mapped, err := repo.MapComponentNameToNamespace(name)
-	if err != nil {
-		return nil, err
-	}
-
-	base, err := cpi.NewComponentAccessImplBase(repo.GetContext(), name, repo)
 	if err != nil {
 		return nil, err
 	}
 	namespace, err := repo.ocirepo.LookupNamespace(mapped)
 	if err != nil {
-		base.Close()
 		return nil, err
 	}
 	impl := &componentAccessImpl{
-		_ComponentAccessImplBase: *base,
-		repo:                     repo,
-		name:                     name,
-		namespace:                namespace,
+		repo:      repo,
+		name:      name,
+		namespace: namespace,
 	}
-	return cpi.NewComponentAccess(impl, "OCM component[OCI]"), nil
+	return &repocpi.ComponentAccessInfo{impl, "OCM component[OCI]", main}, nil
 }
 
 func (c *componentAccessImpl) Close() error {
-	return accessio.Close(c.namespace, c._ComponentAccessImplBase)
+	refmgmt.AllocLog.Trace("closing component [OCI]", "name", c.name)
+	err := c.namespace.Close()
+	refmgmt.AllocLog.Trace("closed component [OCI]", "name", c.name)
+	return err
+}
+
+func (c *componentAccessImpl) SetBridge(base repocpi.ComponentAccessBridge) {
+	c.bridge = base
+}
+
+func (c *componentAccessImpl) GetParentBridge() repocpi.RepositoryViewManager {
+	return c.repo.bridge
+}
+
+func (c *componentAccessImpl) GetContext() cpi.Context {
+	return c.repo.GetContext()
+}
+
+func (c *componentAccessImpl) GetName() string {
+	return c.name
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,13 +131,7 @@ func (c *componentAccessImpl) HasVersion(vers string) (bool, error) {
 	return false, err
 }
 
-func (c *componentAccessImpl) LookupVersion(version string) (cpi.ComponentVersionAccess, error) {
-	v, err := c.repo.View()
-	if err != nil {
-		return nil, err
-	}
-	defer v.Close()
-
+func (c *componentAccessImpl) LookupVersion(version string) (*repocpi.ComponentVersionAccessInfo, error) {
 	acc, err := c.namespace.GetArtifact(toTag(version))
 	if err != nil {
 		if errors.IsErrNotFound(err) {
@@ -139,32 +142,7 @@ func (c *componentAccessImpl) LookupVersion(version string) (cpi.ComponentVersio
 	return newComponentVersionAccess(accessobj.ACC_WRITABLE, c, version, acc, true)
 }
 
-func (c *componentAccessImpl) AddVersion(access cpi.ComponentVersionAccess) error {
-	if access.GetName() != c.GetName() {
-		return errors.ErrInvalid("component name", access.GetName())
-	}
-	cont, err := support.GetComponentVersionContainer(access)
-	if err != nil {
-		return fmt.Errorf("cannot add component version: component version access %s not created for target", access.GetName()+":"+access.GetVersion())
-	}
-	mine, ok := cont.(*ComponentVersionContainer)
-	if !ok || mine.comp != c {
-		return fmt.Errorf("cannot add component version: component version access %s not created for target", access.GetName()+":"+access.GetVersion())
-	}
-	ok = mine.impl.EnablePersistence()
-	if !ok {
-		return fmt.Errorf("version has been discarded")
-	}
-	return mine.impl.Update(false)
-}
-
-func (c *componentAccessImpl) NewVersion(version string, overrides ...bool) (cpi.ComponentVersionAccess, error) {
-	v, err := c.View(false)
-	if err != nil {
-		return nil, err
-	}
-	defer v.Close()
-
+func (c *componentAccessImpl) NewVersion(version string, overrides ...bool) (*repocpi.ComponentVersionAccessInfo, error) {
 	override := utils.Optional(overrides...)
 	acc, err := c.namespace.GetArtifact(toTag(version))
 	if err == nil {

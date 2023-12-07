@@ -45,6 +45,16 @@ func NewRawAccessSpecRef(data []byte, unmarshaler runtime.Unmarshaler) (*AccessS
 	return &AccessSpecRef{generic: &spec}, nil
 }
 
+func (a *AccessSpecRef) Get() AccessSpec {
+	if a == nil {
+		return nil
+	}
+	if a.evaluated != nil {
+		return a.evaluated
+	}
+	return a.generic
+}
+
 func (a *AccessSpecRef) Set(spec AccessSpec) {
 	if g, ok := spec.(*GenericAccessSpec); ok {
 		a.evaluated = nil
@@ -53,6 +63,13 @@ func (a *AccessSpecRef) Set(spec AccessSpec) {
 		a.evaluated = spec
 		a.generic = nil
 	}
+}
+
+func (a *AccessSpecRef) Unwrap() AccessSpec {
+	if a == nil {
+		return nil
+	}
+	return a
 }
 
 func (a *AccessSpecRef) Describe(ctx Context) string {

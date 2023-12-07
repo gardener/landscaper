@@ -10,9 +10,11 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
-	"github.com/open-component-model/ocm/pkg/common"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/compression"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/generics"
+	"github.com/open-component-model/ocm/pkg/iotools"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
@@ -40,58 +42,35 @@ func NopWriteCloser(w io.Writer) io.WriteCloser {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type additionalCloser struct {
-	msg              []string
-	reader           io.ReadCloser
-	additionalCloser io.Closer
-}
-
-var _ io.ReadCloser = (*additionalCloser)(nil)
-
+// Deprecated: use iotools.BlobData.
 func AddCloser(reader io.ReadCloser, closer io.Closer, msg ...string) io.ReadCloser {
-	return &additionalCloser{
-		msg:              msg,
-		reader:           reader,
-		additionalCloser: closer,
-	}
-}
-
-func (c *additionalCloser) Close() error {
-	var list *errors.ErrorList
-	if len(c.msg) == 0 {
-		list = errors.ErrListf("close")
-	} else {
-		list = errors.ErrListf(c.msg[0], common.IterfaceSlice(c.msg[1:])...)
-	}
-	list.Add(c.reader.Close())
-	list.Add(c.additionalCloser.Close())
-	return list.Result()
-}
-
-func (c *additionalCloser) Read(p []byte) (n int, err error) {
-	return c.reader.Read(p)
+	return iotools.AddReaderCloser(reader, closer, generics.ConvertSliceTo[any](msg)...)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func BlobData(blob DataGetter, err error) ([]byte, error) {
+// Deprecated: use blobaccess.BlobData.
+func BlobData(blob blobaccess.DataGetter, err error) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
 	return blob.Get()
 }
 
-func BlobReader(blob DataReader, err error) (io.ReadCloser, error) {
+// Deprecated: use blobaccess.BlobReader.
+func BlobReader(blob blobaccess.DataReader, err error) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
 	return blob.Reader()
 }
 
+// Deprecated: use utils.FileSystem.
 func FileSystem(fss ...vfs.FileSystem) vfs.FileSystem {
 	return utils.FileSystem(fss...)
 }
 
+// Deprecated: use utils.DefaultedFileSystem.
 func DefaultedFileSystem(def vfs.FileSystem, fss ...vfs.FileSystem) vfs.FileSystem {
 	return utils.DefaultedFileSystem(def, fss...)
 }

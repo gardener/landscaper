@@ -11,7 +11,7 @@ import (
 	"github.com/opencontainers/image-spec/specs-go"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 )
 
 type Index ociv1.Index
@@ -61,13 +61,13 @@ func (i *Index) DeleteAnnotation(name string) {
 	}
 }
 
-func (i *Index) ToBlobAccess() (accessio.BlobAccess, error) {
+func (i *Index) ToBlobAccess() (blobaccess.BlobAccess, error) {
 	i.MediaType = i.MimeType()
 	data, err := json.Marshal(i)
 	if err != nil {
 		return nil, err
 	}
-	return accessio.BlobAccessForData(i.MediaType, data), nil
+	return blobaccess.ForData(i.MediaType, data), nil
 }
 
 func (i *Index) AddManifest(d *Descriptor) {

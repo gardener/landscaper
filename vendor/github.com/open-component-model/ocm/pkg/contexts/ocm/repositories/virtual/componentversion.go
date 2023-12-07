@@ -11,12 +11,14 @@ import (
 	ocmhdlr "github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/support"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/repocpi"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/refmgmt"
 )
 
 // newComponentVersionAccess creates a component access for the artifact access, if this fails the artifact acess is closed.
-func newComponentVersionAccess(comp *componentAccessImpl, version string, persistent bool) (cpi.ComponentVersionAccess, error) {
+func newComponentVersionAccess(comp *componentAccessImpl, version string, persistent bool) (*repocpi.ComponentVersionAccessInfo, error) {
 	access, err := comp.repo.access.GetComponentVersion(comp.GetName(), version)
 	if err != nil {
 		return nil, err
@@ -25,25 +27,20 @@ func newComponentVersionAccess(comp *componentAccessImpl, version string, persis
 	if err != nil {
 		return nil, err
 	}
-	impl, err := support.NewComponentVersionAccessImpl(comp.GetName(), version, c, true, persistent)
-	if err != nil {
-		c.Close()
-		return nil, err
-	}
-	return cpi.NewComponentVersionAccess(impl), nil
+	return &repocpi.ComponentVersionAccessInfo{c, true, persistent}, nil
 }
 
 // //////////////////////////////////////////////////////////////////////////////
 
 type ComponentVersionContainer struct {
-	impl support.ComponentVersionAccessImpl
+	bridge repocpi.ComponentVersionAccessBridge
 
 	comp    *componentAccessImpl
 	version string
 	access  VersionAccess
 }
 
-var _ support.ComponentVersionContainer = (*ComponentVersionContainer)(nil)
+var _ repocpi.ComponentVersionAccessImpl = (*ComponentVersionContainer)(nil)
 
 func newComponentVersionContainer(comp *componentAccessImpl, version string, access VersionAccess) (*ComponentVersionContainer, error) {
 	return &ComponentVersionContainer{
@@ -53,12 +50,12 @@ func newComponentVersionContainer(comp *componentAccessImpl, version string, acc
 	}, nil
 }
 
-func (c *ComponentVersionContainer) SetImplementation(impl support.ComponentVersionAccessImpl) {
-	c.impl = impl
+func (c *ComponentVersionContainer) SetBridge(base repocpi.ComponentVersionAccessBridge) {
+	c.bridge = base
 }
 
-func (c *ComponentVersionContainer) GetParentViewManager() cpi.ComponentAccessViewManager {
-	return c.comp
+func (c *ComponentVersionContainer) GetParentBridge() repocpi.ComponentAccessBridge {
+	return c.comp.bridge
 }
 
 func (c *ComponentVersionContainer) Close() error {
@@ -96,7 +93,7 @@ func (c *ComponentVersionContainer) IsClosed() bool {
 	return c.access == nil
 }
 
-func (c *ComponentVersionContainer) AccessMethod(a cpi.AccessSpec) (cpi.AccessMethod, error) {
+func (c *ComponentVersionContainer) AccessMethod(a cpi.AccessSpec, cv refmgmt.ExtendedAllocatable) (cpi.AccessMethod, error) {
 	accessSpec, err := c.comp.GetContext().AccessSpecForSpec(a)
 	if err != nil {
 		return nil, err
@@ -106,13 +103,18 @@ func (c *ComponentVersionContainer) AccessMethod(a cpi.AccessSpec) (cpi.AccessMe
 	case localfsblob.Type:
 		fallthrough
 	case localblob.Type:
-		return newLocalBlobAccessMethod(accessSpec.(*localblob.AccessSpec), c.access), nil
+		blob, err := c.access.GetBlob(accessSpec.(*localblob.AccessSpec).LocalReference)
+		if err != nil {
+			return nil, err
+		}
+
+		return accspeccpi.AccessMethodForImplementation(newLocalBlobAccessMethod(accessSpec.(*localblob.AccessSpec), blob))
 	}
 
 	return nil, errors.ErrNotSupported(errors.KIND_ACCESSMETHOD, a.GetType(), "virtual registry")
 }
 
-func (c *ComponentVersionContainer) GetInexpensiveContentVersionIdentity(a cpi.AccessSpec) string {
+func (c *ComponentVersionContainer) GetInexpensiveContentVersionIdentity(a cpi.AccessSpec, cv refmgmt.ExtendedAllocatable) string {
 	accessSpec, err := c.comp.GetContext().AccessSpecForSpec(a)
 	if err != nil {
 		return ""
@@ -132,19 +134,25 @@ func (c *ComponentVersionContainer) Update() error {
 	return c.access.Update()
 }
 
+func (c *ComponentVersionContainer) SetDescriptor(cd *compdesc.ComponentDescriptor) error {
+	cur := c.access.GetDescriptor()
+	*cur = *cd
+	return c.access.Update()
+}
+
 func (c *ComponentVersionContainer) GetDescriptor() *compdesc.ComponentDescriptor {
 	return c.access.GetDescriptor()
 }
 
-func (c *ComponentVersionContainer) GetBlobData(name string) (cpi.DataAccess, error) {
+func (c *ComponentVersionContainer) GetBlob(name string) (cpi.DataAccess, error) {
 	return c.access.GetBlob(name)
 }
 
-func (c *ComponentVersionContainer) GetStorageContext(cv cpi.ComponentVersionAccess) cpi.StorageContext {
-	return ocmhdlr.New(c.Repository(), cv, c.access, Type, c.access)
+func (c *ComponentVersionContainer) GetStorageContext() cpi.StorageContext {
+	return ocmhdlr.New(c.Repository(), c.comp.GetName(), c.access, Type, c.access)
 }
 
-func (c *ComponentVersionContainer) AddBlobFor(storagectx cpi.StorageContext, blob cpi.BlobAccess, refName string, global cpi.AccessSpec) (cpi.AccessSpec, error) {
+func (c *ComponentVersionContainer) AddBlob(blob cpi.BlobAccess, refName string, global cpi.AccessSpec) (cpi.AccessSpec, error) {
 	if c.IsReadOnly() {
 		return nil, accessio.ErrReadOnly
 	}

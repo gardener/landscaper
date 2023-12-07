@@ -18,6 +18,8 @@ func TypeOf[T any]() reflect.Type {
 	return reflect.TypeOf(&ifce).Elem()
 }
 
+// As casts an element typed by a type parameter
+// to a subtype, given by the type parameter T.
 func As[T any](o interface{}) T {
 	var _nil T
 	if o == nil {
@@ -26,7 +28,7 @@ func As[T any](o interface{}) T {
 	return o.(T)
 }
 
-// CastPointer casts a pointer/error result to an interface/error
+// AsE casts a pointer/error result to an interface/error
 // result.
 // In Go this cannot be done directly, because returning a nil pinter
 // for an interface return type, would result is a typed nil value for
@@ -42,7 +44,7 @@ func AsE[T any](o interface{}, err error) (T, error) {
 	return o.(T), err
 }
 
-// AsI converts a struct pointetr to an appropriat interface type
+// AsI converts a struct pointer to an appropriate interface type
 // given as type parameter.
 // In Go this cannot be done directly, because returning a nil pinter
 // for an interface return type, would result is a typed nil value for

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package blob
+package helm
 
 import (
 	"strings"
@@ -57,6 +57,9 @@ func Download2(p common.Printer, ctx oci.Context, ref string, path string, fs vf
 			return "", "", "", errors.Wrapf(err, "cannot create artifact set")
 		}
 		err = artifactset.TransferArtifact(art, ctf)
+		if err == nil {
+			ctf.Annotate(artifactset.MAINARTIFACT_ANNOTATION, art.Digest().String())
+		}
 		ctf.Close()
 		if err != nil {
 			fs.Remove(aset)

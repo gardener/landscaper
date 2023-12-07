@@ -27,11 +27,11 @@ type StorageContext struct {
 
 var _ ocmcpi.StorageContext = (*StorageContext)(nil)
 
-func New(vers ocmcpi.ComponentVersionAccess, impltyp string, ocirepo oci.Repository, namespace oci.NamespaceAccess, manifest oci.ManifestAccess) *StorageContext {
+func New(compname string, repo ocmcpi.Repository, impltyp string, ocirepo oci.Repository, namespace oci.NamespaceAccess, manifest oci.ManifestAccess) *StorageContext {
 	return &StorageContext{
 		DefaultStorageContext: *ocmcpi.NewDefaultStorageContext(
-			vers.Repository(),
-			vers,
+			repo,
+			compname,
 			ocmcpi.ImplementationRepositoryType{
 				ContextType:    cpi.CONTEXT_TYPE,
 				RepositoryType: impltyp,
@@ -47,13 +47,16 @@ func (s *StorageContext) TargetComponentRepository() ocmcpi.Repository {
 	return s.ComponentRepository
 }
 
-func (s *StorageContext) TargetComponentVersion() ocmcpi.ComponentVersionAccess {
-	return s.ComponentVersion
+func (s *StorageContext) TargetComponentName() string {
+	return s.ComponentName
 }
 
 func (s *StorageContext) AssureLayer(blob cpi.BlobAccess) error {
+	return AssureLayer(s.Manifest.GetDescriptor(), blob)
+}
+
+func AssureLayer(desc *artdesc.Manifest, blob cpi.BlobAccess) error {
 	d := artdesc.DefaultBlobDescriptor(blob)
-	desc := s.Manifest.GetDescriptor()
 
 	found := -1
 	for i, l := range desc.Layers {

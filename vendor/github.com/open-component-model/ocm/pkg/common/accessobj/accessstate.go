@@ -12,6 +12,7 @@ import (
 	"github.com/modern-go/reflect2"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
@@ -52,7 +53,7 @@ type StateAccess interface {
 	// Get returns the technical representation of a state object from its persistence
 	// It MUST return an errors.IsErrNotFound compatible error
 	// if the persistence not yet exists.
-	Get() (accessio.BlobAccess, error)
+	Get() (blobaccess.BlobAccess, error)
 	// Digest() digest.Digest
 	Put(data []byte) error
 }
@@ -60,12 +61,12 @@ type StateAccess interface {
 // BlobStateAccess provides state handling for data given by a blob access.
 type BlobStateAccess struct {
 	lock sync.RWMutex
-	blob accessio.BlobAccess
+	blob blobaccess.BlobAccess
 }
 
 var _ StateAccess = (*BlobStateAccess)(nil)
 
-func NewBlobStateAccess(blob accessio.BlobAccess) StateAccess {
+func NewBlobStateAccess(blob blobaccess.BlobAccess) StateAccess {
 	return &BlobStateAccess{
 		blob: blob,
 	}
@@ -73,11 +74,11 @@ func NewBlobStateAccess(blob accessio.BlobAccess) StateAccess {
 
 func NewBlobStateAccessForData(mimeType string, data []byte) StateAccess {
 	return &BlobStateAccess{
-		blob: accessio.BlobAccessForData(mimeType, data),
+		blob: blobaccess.ForData(mimeType, data),
 	}
 }
 
-func (b *BlobStateAccess) Get() (accessio.BlobAccess, error) {
+func (b *BlobStateAccess) Get() (blobaccess.BlobAccess, error) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	return b.blob, nil
@@ -86,7 +87,7 @@ func (b *BlobStateAccess) Get() (accessio.BlobAccess, error) {
 func (b *BlobStateAccess) Put(data []byte) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	b.blob = accessio.BlobAccessForData(b.blob.MimeType(), data)
+	b.blob = blobaccess.ForData(b.blob.MimeType(), data)
 	return nil
 }
 
@@ -104,8 +105,8 @@ type State interface {
 	IsReadOnly() bool
 	IsCreate() bool
 
-	GetOriginalBlob() accessio.BlobAccess
-	GetBlob() (accessio.BlobAccess, error)
+	GetOriginalBlob() blobaccess.BlobAccess
+	GetBlob() (blobaccess.BlobAccess, error)
 
 	HasChanged() bool
 	GetOriginalState() interface{}
@@ -119,7 +120,7 @@ type state struct {
 	mode         AccessMode
 	access       StateAccess
 	handler      StateHandler
-	originalBlob accessio.BlobAccess
+	originalBlob blobaccess.BlobAccess
 	original     interface{}
 	current      interface{}
 }
@@ -153,7 +154,7 @@ func newState(mode AccessMode, a StateAccess, p StateHandler) (*state, error) {
 			return nil, fmt.Errorf("failed to get blob data: %w", err)
 		}
 
-		blob = accessio.BlobAccessForData(blob.MimeType(), data) // cache original data
+		blob = blobaccess.ForData(blob.MimeType(), data) // cache original data
 		current, err = p.Decode(data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode blob data: %w", err)
@@ -179,13 +180,13 @@ func newState(mode AccessMode, a StateAccess, p StateHandler) (*state, error) {
 // It tries to keep the blob representation unchanged as long as possible
 // consulting the state handler responsible for analysing the binary blob data
 // and the object.
-func NewBlobStateForBlob(mode AccessMode, blob accessio.BlobAccess, p StateHandler) (State, error) {
+func NewBlobStateForBlob(mode AccessMode, blob blobaccess.BlobAccess, p StateHandler) (State, error) {
 	if blob == nil {
 		data, err := p.Encode(p.Initial())
 		if err != nil {
 			return nil, err
 		}
-		blob = accessio.BlobAccessForData("", data)
+		blob = blobaccess.ForData("", data)
 	}
 	return NewState(mode, NewBlobStateAccess(blob), p)
 }
@@ -199,7 +200,7 @@ func NewBlobStateForObject(mode AccessMode, obj interface{}, p StateHandler) (St
 	if err != nil {
 		return nil, err
 	}
-	return NewBlobStateForBlob(mode, accessio.BlobAccessForData("", data), p)
+	return NewBlobStateForBlob(mode, blobaccess.ForData("", data), p)
 }
 
 func (s *state) IsReadOnly() bool {
@@ -240,8 +241,9 @@ func (s *state) GetState() interface{} {
 	return s.current
 }
 
-func (s *state) GetOriginalBlob() accessio.BlobAccess {
-	return s.originalBlob
+func (s *state) GetOriginalBlob() blobaccess.BlobAccess {
+	b, _ := s.originalBlob.Dup()
+	return b
 }
 
 func (s *state) HasChanged() bool {
@@ -251,18 +253,18 @@ func (s *state) HasChanged() bool {
 	return !s.handler.Equivalent(s.original, s.current)
 }
 
-func (s *state) GetBlob() (accessio.BlobAccess, error) {
+func (s *state) GetBlob() (blobaccess.BlobAccess, error) {
 	if !s.HasChanged() {
-		return s.originalBlob, nil
+		return s.originalBlob.Dup()
 	}
 	data, err := s.handler.Encode(s.current)
 	if err != nil {
 		return nil, err
 	}
 	if s.originalBlob != nil {
-		return accessio.BlobAccessForData(s.originalBlob.MimeType(), data), nil
+		return blobaccess.ForData(s.originalBlob.MimeType(), data), nil
 	}
-	return accessio.BlobAccessForData("", data), nil
+	return blobaccess.ForData("", data), nil
 }
 
 func (s *state) Update() (bool, error) {
@@ -289,7 +291,7 @@ func (s *state) Update() (bool, error) {
 	if s.originalBlob != nil {
 		mimeType = s.originalBlob.MimeType()
 	}
-	s.originalBlob = accessio.BlobAccessForData(mimeType, data)
+	s.originalBlob = blobaccess.ForData(mimeType, data)
 	s.original = original
 	return true, nil
 }
@@ -303,7 +305,7 @@ type fileBasedAccess struct {
 	mode       vfs.FileMode
 }
 
-func (f *fileBasedAccess) Get() (accessio.BlobAccess, error) {
+func (f *fileBasedAccess) Get() (blobaccess.BlobAccess, error) {
 	ok, err := vfs.FileExists(f.filesystem, f.path)
 	if err != nil {
 		return nil, err
@@ -311,7 +313,7 @@ func (f *fileBasedAccess) Get() (accessio.BlobAccess, error) {
 	if !ok {
 		return nil, errors.ErrNotFoundWrap(vfs.ErrNotExist, "file", f.path)
 	}
-	return accessio.BlobAccessForFile(f.mimeType, f.path, f.filesystem), nil
+	return blobaccess.ForFile(f.mimeType, f.path, f.filesystem), nil
 }
 
 func (f *fileBasedAccess) Put(data []byte) error {

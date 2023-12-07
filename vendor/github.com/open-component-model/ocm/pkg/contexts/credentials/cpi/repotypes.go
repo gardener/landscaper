@@ -9,6 +9,7 @@ package cpi
 
 import (
 	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/runtime/descriptivetype"
 )
 
 type RepositoryTypeVersionScheme = runtime.TypeVersionScheme[RepositorySpec, RepositoryType]
@@ -27,14 +28,26 @@ func RegisterRepositoryTypeVersions(s RepositoryTypeVersionScheme) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func NewRepositoryType[I RepositorySpec](name string) RepositoryType {
-	return runtime.NewVersionedTypedObjectType[RepositorySpec, I](name)
+func NewRepositoryType[I RepositorySpec](name string, opts ...RepositoryOption) RepositoryType {
+	return descriptivetype.NewTypedObjectTypeObject(runtime.NewVersionedTypedObjectType[RepositorySpec, I](name), opts...)
 }
 
-func NewRepositoryTypeByConverter[I RepositorySpec, V runtime.TypedObject](name string, converter runtime.Converter[I, V]) RepositoryType {
-	return runtime.NewVersionedTypedObjectTypeByConverter[RepositorySpec, I](name, converter)
+func NewRepositoryTypeByConverter[I RepositorySpec, V runtime.TypedObject](name string, converter runtime.Converter[I, V], opts ...RepositoryOption) RepositoryType {
+	return descriptivetype.NewTypedObjectTypeObject(runtime.NewVersionedTypedObjectTypeByConverter[RepositorySpec, I](name, converter), opts...)
 }
 
-func NewRepositoryTypeByFormatVersion(name string, fmt runtime.FormatVersion[RepositorySpec]) RepositoryType {
-	return runtime.NewVersionedTypedObjectTypeByFormatVersion[RepositorySpec](name, fmt)
+func NewRepositoryTypeByFormatVersion(name string, fmt runtime.FormatVersion[RepositorySpec], opts ...RepositoryOption) RepositoryType {
+	return descriptivetype.NewTypedObjectTypeObject(runtime.NewVersionedTypedObjectTypeByFormatVersion[RepositorySpec](name, fmt), opts...)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type RepositoryOption = descriptivetype.Option
+
+func WithDescription(v string) RepositoryOption {
+	return descriptivetype.WithDescription(v)
+}
+
+func WithFormatSpec(v string) RepositoryOption {
+	return descriptivetype.WithFormatSpec(v)
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
 )
 
-type Signature struct {
+type Signature struct { //nolint: musttag // only for string output
 	Value     string
 	MediaType string
 	Algorithm string

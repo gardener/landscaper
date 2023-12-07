@@ -11,6 +11,8 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 )
 
+const AltType = "ctf"
+
 func init() {
 	h := &repospechandler{}
 	cpi.RegisterRepositorySpecHandler(h, "")
@@ -36,12 +38,13 @@ func MapReference(ctx cpi.Context, u *cpi.UniformRepositorySpec) (cpi.Repository
 	}
 	fs := vfsattr.Get(ctx)
 
-	hint := u.TypeHint
+	typ, _ := accessobj.MapType(u.Type, Type, accessio.FormatNone, true, AltType)
+	hint, f := accessobj.MapType(u.TypeHint, Type, accessio.FormatDirectory, true, AltType)
 	if !u.CreateIfMissing {
 		hint = ""
 	}
-	create, ok, err := accessobj.CheckFile(Type, hint, accessio.TypeForType(u.Type) != "", path, fs, ArtifactIndexFileName)
-	if !ok || err != nil {
+	create, ok, err := accessobj.CheckFile(Type, hint, accessio.TypeForTypeSpec(typ) == Type, path, fs, ArtifactIndexFileName)
+	if !ok || (err != nil && typ == "") {
 		if err != nil {
 			return nil, err
 		}
@@ -50,8 +53,10 @@ func MapReference(ctx cpi.Context, u *cpi.UniformRepositorySpec) (cpi.Repository
 		}
 	}
 	mode := accessobj.ACC_WRITABLE
+	createHint := accessio.FormatNone
 	if create {
 		mode |= accessobj.ACC_CREATE
+		createHint = f
 	}
-	return NewRepositorySpec(mode, path, accessio.FileFormatForType(u.Type), accessio.PathFileSystem(fs))
+	return NewRepositorySpec(mode, path, createHint, accessio.PathFileSystem(fs))
 }

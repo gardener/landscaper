@@ -10,10 +10,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/mime"
@@ -69,29 +69,29 @@ func (a *FileSystemBlobAccess) BlobPath(name string) string {
 	return a.base.GetInfo().SubPath(name)
 }
 
-func (a *FileSystemBlobAccess) GetBlobData(digest digest.Digest) (int64, accessio.DataAccess, error) {
+func (a *FileSystemBlobAccess) GetBlobData(digest digest.Digest) (int64, blobaccess.DataAccess, error) {
 	if a.IsClosed() {
-		return accessio.BLOB_UNKNOWN_SIZE, nil, accessio.ErrClosed
+		return blobaccess.BLOB_UNKNOWN_SIZE, nil, accessio.ErrClosed
 	}
 	path := a.DigestPath(digest)
 	if ok, err := vfs.FileExists(a.base.GetFileSystem(), path); ok {
-		return accessio.BLOB_UNKNOWN_SIZE, accessio.DataAccessForFile(a.base.GetFileSystem(), path), nil
+		return blobaccess.BLOB_UNKNOWN_SIZE, blobaccess.DataAccessForFile(a.base.GetFileSystem(), path), nil
 	} else {
 		if err != nil {
-			return accessio.BLOB_UNKNOWN_SIZE, nil, err
+			return blobaccess.BLOB_UNKNOWN_SIZE, nil, err
 		}
-		return accessio.BLOB_UNKNOWN_SIZE, nil, accessio.ErrBlobNotFound(digest)
+		return blobaccess.BLOB_UNKNOWN_SIZE, nil, blobaccess.ErrBlobNotFound(digest)
 	}
 }
 
-func (a *FileSystemBlobAccess) GetBlobDataByName(name string) (accessio.DataAccess, error) {
+func (a *FileSystemBlobAccess) GetBlobDataByName(name string) (blobaccess.DataAccess, error) {
 	if a.IsClosed() {
 		return nil, accessio.ErrClosed
 	}
 
 	path := a.BlobPath(name)
 	if ok, err := vfs.IsDir(a.base.GetFileSystem(), path); ok {
-		tempfile, err := accessio.NewTempFile(osfs.New(), os.TempDir(), "COMPARCH")
+		tempfile, err := blobaccess.NewTempFile(os.TempDir(), "COMPARCH")
 		if err != nil {
 			return nil, err
 		}
@@ -106,17 +106,17 @@ func (a *FileSystemBlobAccess) GetBlobDataByName(name string) (accessio.DataAcce
 		}
 
 		if ok, err := vfs.FileExists(a.base.GetFileSystem(), path); ok {
-			return accessio.DataAccessForFile(a.base.GetFileSystem(), path), nil
+			return blobaccess.DataAccessForFile(a.base.GetFileSystem(), path), nil
 		} else {
 			if err != nil {
 				return nil, err
 			}
-			return nil, accessio.ErrBlobNotFound(digest.Digest(name))
+			return nil, blobaccess.ErrBlobNotFound(digest.Digest(name))
 		}
 	}
 }
 
-func (a *FileSystemBlobAccess) AddBlob(blob accessio.BlobAccess) error {
+func (a *FileSystemBlobAccess) AddBlob(blob blobaccess.BlobAccess) error {
 	if a.base.IsClosed() {
 		return accessio.ErrClosed
 	}

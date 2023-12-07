@@ -7,6 +7,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/modern-go/reflect2"
 
@@ -14,16 +15,12 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/generics"
+	"github.com/open-component-model/ocm/pkg/refmgmt"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type AccessType flagsetscheme.VersionTypedObjectType[AccessSpec]
-
-type AccessMethodSupport interface {
-	GetContext() Context
-	LocalSupportForAccessSpec(spec AccessSpec) bool
-}
 
 // AccessSpec is the interface access method specifications
 // must fulfill. The main task is to map the specification
@@ -34,7 +31,7 @@ type AccessSpec interface {
 	Describe(Context) string
 	IsLocal(Context) bool
 	GlobalAccessSpec(Context) AccessSpec
-	// AccessMethod provides an access method implementation for
+	// AccessMethodImpl provides an access method implementation for
 	// an access spec. This might be a repository local implementation
 	// or a global one. It might be implemented directly by the AccessSpec
 	// for global AccessMethods or forwarded to the ComponentVersion for
@@ -46,7 +43,7 @@ type AccessSpec interface {
 	// GetInexpensiveContentVersionIdentity implements a method that attempts to provide an inexpensive identity.
 	// Therefore, an identity that can be provided without requiring the entire object (e.g. calculating the digest from
 	// the bytes), which would defeat the purpose of caching.
-	// It follows the same contract as AccessMethod.
+	// It follows the same contract as AccessMethodImpl.
 	GetInexpensiveContentVersionIdentity(access ComponentVersionAccess) string
 }
 
@@ -64,29 +61,56 @@ type HintProvider interface {
 	GetReferenceHint(cv ComponentVersionAccess) string
 }
 
-// AccessMethod described the access to a dedicated resource
+// GlobalAccessProvider is used to provide a non-local access specification.
+// It may optionally be provided by an access spec.
+type GlobalAccessProvider interface {
+	GlobalAccessSpec(ctx Context) AccessSpec
+}
+
+// AccessMethodImpl is the implementation interface
+// for access methods provided by access types. It describes
+// the access to a dedicated resource
 // It can allocate external resources, which should be released
 // with the Close() call.
 // Resources SHOULD only be allocated, if the content is accessed
 // via the DataAccess interface to avoid unnecessary effort
 // if the method object is just used to access meta data.
-type AccessMethod interface {
+// It is always wrapped by a view model enabling Dup
+// operations to pass and keep instances on demand.
+type AccessMethodImpl interface {
+	io.Closer
 	DataAccess
+	MimeType
 
+	IsLocal() bool
 	GetKind() string
 	AccessSpec() AccessSpec
-	MimeType
-	Close() error
+}
+
+// AccessMethod is used to support independently closable
+// views on an access method implementation, which can
+// be passed around and stored. The original method implementation
+// object is closed once the last view is closed.
+type AccessMethod interface {
+	refmgmt.Dup[AccessMethod]
+	AccessMethodImpl
+
+	// AsBlobAccess maps a method object into a
+	// basic blob access interface.
+	// It does not provide a separate reference,
+	// closing the blob access with close the
+	// access method.
+	AsBlobAccess() BlobAccess
 }
 
 type AccessTypeScheme flagsetscheme.TypeScheme[AccessSpec, AccessType]
 
 func NewAccessTypeScheme(base ...AccessTypeScheme) AccessTypeScheme {
-	return flagsetscheme.NewTypeScheme[AccessSpec, AccessType, AccessTypeScheme]("access", "accessType", "blob access specification", "Access Specification Options", &UnknownAccessSpec{}, true, base...)
+	return flagsetscheme.NewTypeScheme[AccessSpec, AccessType, AccessTypeScheme]("Access type", "access", "accessType", "blob access specification", "Access Specification Options", &UnknownAccessSpec{}, true, base...)
 }
 
 func NewStrictAccessTypeScheme(base ...AccessTypeScheme) runtime.VersionedTypeRegistry[AccessSpec, AccessType] {
-	return flagsetscheme.NewTypeScheme[AccessSpec, AccessType, AccessTypeScheme]("access", "accessType", "blob access specification", "Access Specification Options", nil, false, base...)
+	return flagsetscheme.NewTypeScheme[AccessSpec, AccessType, AccessTypeScheme]("Access type", "access", "accessType", "blob access specification", "Access Specification Options", nil, false, base...)
 }
 
 // DefaultAccessTypeScheme contains all globally known access serializer.

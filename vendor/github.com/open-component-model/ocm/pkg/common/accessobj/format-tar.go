@@ -95,6 +95,7 @@ func (h TarHandler) WriteToStream(obj *AccessObject, writer io.Writer, opts acce
 	if err != nil {
 		return fmt.Errorf("unable to write to get state blob: %w", err)
 	}
+	defer data.Close()
 
 	tw := tar.NewWriter(writer)
 	cdHeader := &tar.Header{

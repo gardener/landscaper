@@ -6,7 +6,7 @@ package helm
 
 import (
 	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/helm/identity"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 )
 
 type Option interface {

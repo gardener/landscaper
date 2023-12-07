@@ -7,7 +7,7 @@ package artifactset
 import (
 	"github.com/opencontainers/go-digest"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi/support"
@@ -29,7 +29,7 @@ func (i *FileSystemBlobAccess) GetArtifact(access support.NamespaceAccessImpl, d
 	defer v.Close()
 	_, data, err := i.GetBlobData(digest)
 	if err == nil {
-		blob := accessio.BlobAccessForDataAccess("", -1, "", data)
+		blob := blobaccess.ForDataAccess("", -1, "", data)
 		acc, err = support.NewArtifactForBlob(access, blob)
 	}
 	return

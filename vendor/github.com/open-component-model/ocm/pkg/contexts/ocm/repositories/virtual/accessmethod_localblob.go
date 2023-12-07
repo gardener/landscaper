@@ -8,32 +8,36 @@ import (
 	"io"
 	"sync"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localblob"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
+	"github.com/open-component-model/ocm/pkg/errors"
 )
 
 type localBlobAccessMethod struct {
-	lock   sync.Mutex
-	data   accessio.DataAccess
-	spec   *localblob.AccessSpec
-	access VersionAccess
+	lock sync.Mutex
+	data blobaccess.DataAccess
+	spec *localblob.AccessSpec
 }
 
-var _ cpi.AccessMethod = (*localBlobAccessMethod)(nil)
+var _ accspeccpi.AccessMethodImpl = (*localBlobAccessMethod)(nil)
 
-func newLocalBlobAccessMethod(a *localblob.AccessSpec, acc VersionAccess) *localBlobAccessMethod {
+func newLocalBlobAccessMethod(a *localblob.AccessSpec, data blobaccess.DataAccess) (*localBlobAccessMethod, error) {
 	return &localBlobAccessMethod{
-		spec:   a,
-		access: acc,
-	}
+		spec: a,
+		data: data,
+	}, nil
+}
+
+func (_ *localBlobAccessMethod) IsLocal() bool {
+	return true
 }
 
 func (m *localBlobAccessMethod) GetKind() string {
 	return m.spec.GetKind()
 }
 
-func (m *localBlobAccessMethod) AccessSpec() cpi.AccessSpec {
+func (m *localBlobAccessMethod) AccessSpec() accspeccpi.AccessSpec {
 	return m.spec
 }
 
@@ -41,39 +45,21 @@ func (m *localBlobAccessMethod) Close() error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if m.data != nil {
-		tmp := m.data
-		m.data = nil
-		return tmp.Close()
+	if m.data == nil {
+		return blobaccess.ErrClosed
 	}
-	return nil
-}
-
-func (m *localBlobAccessMethod) getBlob() (cpi.DataAccess, error) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	if m.data != nil {
-		return m.data, nil
-	}
-	data, err := m.access.GetBlob(m.spec.LocalReference)
-	if err != nil {
-		return nil, err
-	}
-	m.data = data
-	return m.data, err
+	list := errors.ErrorList{}
+	list.Add(m.data.Close())
+	m.data = nil
+	return list.Result()
 }
 
 func (m *localBlobAccessMethod) Reader() (io.ReadCloser, error) {
-	blob, err := m.getBlob()
-	if err != nil {
-		return nil, err
-	}
-	return blob.Reader()
+	return m.data.Reader()
 }
 
-func (m *localBlobAccessMethod) Get() ([]byte, error) {
-	return accessio.BlobData(m.getBlob())
+func (m *localBlobAccessMethod) Get() (data []byte, ferr error) {
+	return blobaccess.BlobData(m.data)
 }
 
 func (m *localBlobAccessMethod) MimeType() string {

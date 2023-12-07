@@ -7,15 +7,17 @@ package support
 import (
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/refmgmt"
 )
 
 // BlobProvider manages the technical access to blobs.
 type BlobProvider interface {
-	accessio.Allocatable
+	refmgmt.Allocatable
 	cpi.BlobSource
 	cpi.BlobSink
 }
@@ -38,7 +40,7 @@ type NamespaceContainer interface {
 	GetArtifact(i NamespaceAccessImpl, vers string) (cpi.ArtifactAccess, error)
 	NewArtifact(i NamespaceAccessImpl, arts ...*artdesc.Artifact) (cpi.ArtifactAccess, error)
 
-	AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error)
+	AddArtifact(artifact cpi.Artifact, tags ...string) (access blobaccess.BlobAccess, err error)
 
 	AddTags(digest digest.Digest, tags ...string) error
 	ListTags() ([]string, error)
@@ -107,7 +109,7 @@ func (i *namespaceAccessImpl) GetArtifact(vers string) (cpi.ArtifactAccess, erro
 	return i.NamespaceContainer.GetArtifact(i, vers)
 }
 
-func (i *namespaceAccessImpl) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
+func (i *namespaceAccessImpl) AddArtifact(artifact cpi.Artifact, tags ...string) (access blobaccess.BlobAccess, err error) {
 	return i.NamespaceContainer.AddArtifact(artifact, tags...)
 }
 

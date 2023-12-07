@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
@@ -71,7 +71,7 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 		"hint", hint,
 		"target", string(target),
 	}
-	if m, ok := blob.(accessio.AnnotatedBlobAccess[cpi.AccessMethod]); ok {
+	if m, ok := blob.(blobaccess.AnnotatedBlobAccess[cpi.AccessMethod]); ok {
 		// prepare for optimized point to point implementation
 		cpi.BlobHandlerLogger(ctx.GetContext()).Debug("oci generic artifact handler with ocm access source",
 			generics.AppendedSlice[any](values, "sourcetype", m.Source().AccessSpec().GetType())...,
@@ -86,7 +86,7 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 	var tag string
 
 	if hint == "" {
-		name = path.Join(prefix, ctx.TargetComponentVersion().GetName())
+		name = path.Join(prefix, ctx.TargetComponentName())
 	} else {
 		i := strings.LastIndex(hint, ":")
 		if i > 0 {

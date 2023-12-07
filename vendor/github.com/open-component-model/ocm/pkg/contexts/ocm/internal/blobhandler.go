@@ -32,7 +32,7 @@ func (t ImplementationRepositoryType) IsInitial() bool {
 // It depends on the Context type of the used base repository.
 type StorageContext interface {
 	GetContext() Context
-	TargetComponentVersion() ComponentVersionAccess
+	TargetComponentName() string
 	TargetComponentRepository() Repository
 	GetImplementationRepositoryType() ImplementationRepositoryType
 }
@@ -196,6 +196,32 @@ func NewBlobHandlerRegistrationRegistry(base ...BlobHandlerRegistrationRegistry)
 
 func NewRegistrationHandlerInfo(path string, handler BlobHandlerRegistrationHandler) *RegistrationHandlerInfo {
 	return registrations.NewRegistrationHandlerInfo[Context, BlobHandlerOption](path, handler)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// BlobHandlerProvider is used to find a blob handler to use adding a resource
+// blob to a component version.
+// The task of the BlobHandler is to reject the upload, provide an (external)
+// access method for the blob or state not to be responsible.
+type BlobHandlerProvider interface {
+	LookupHandler(sctx StorageContext, artifacttype, mimeType string) BlobHandler
+}
+
+type registryBasedProvider struct {
+	registry BlobHandlerRegistry
+}
+
+func (p *registryBasedProvider) LookupHandler(sctx StorageContext, artifacttype, mimeType string) BlobHandler {
+	return p.registry.LookupHandler(sctx.GetImplementationRepositoryType(), artifacttype, mimeType)
+}
+
+func BlobHandlerProviderForRegistry(r BlobHandlerRegistry) BlobHandlerProvider {
+	return &registryBasedProvider{r}
+}
+
+func DefaultBlobHandlerProvider(ctx Context) BlobHandlerProvider {
+	return BlobHandlerProviderForRegistry(ctx.BlobHandlers())
 }
 
 ////////////////////////////////////////////////////////////////////////////////

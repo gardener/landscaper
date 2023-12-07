@@ -12,11 +12,12 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/generics"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/runtime/descriptivetype"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type RepositoryType interface {
-	runtime.VersionedTypedObjectType[RepositorySpec]
+	descriptivetype.TypedObjectType[RepositorySpec]
 }
 
 type RepositorySpec interface {
@@ -31,22 +32,22 @@ type (
 )
 
 type RepositoryTypeScheme interface {
-	runtime.TypeScheme[RepositorySpec, RepositoryType]
+	descriptivetype.TypeScheme[RepositorySpec, RepositoryType]
 }
 
-type _Scheme = runtime.TypeScheme[RepositorySpec, RepositoryType]
+type _Scheme = descriptivetype.TypeScheme[RepositorySpec, RepositoryType]
 
 type repositoryTypeScheme struct {
 	_Scheme
 }
 
 func NewRepositoryTypeScheme(defaultDecoder RepositorySpecDecoder, base ...RepositoryTypeScheme) RepositoryTypeScheme {
-	scheme := runtime.MustNewDefaultTypeScheme[RepositorySpec, RepositoryType](&UnknownRepositorySpec{}, true, defaultDecoder, utils.Optional(base...))
+	scheme := descriptivetype.MustNewDefaultTypeScheme[RepositorySpec, RepositoryType, RepositoryTypeScheme]("Credential provider", nil, &UnknownRepositorySpec{}, true, defaultDecoder, utils.Optional(base...))
 	return &repositoryTypeScheme{scheme}
 }
 
 func NewStrictRepositoryTypeScheme(base ...RepositoryTypeScheme) runtime.VersionedTypeRegistry[RepositorySpec, RepositoryType] {
-	scheme := runtime.MustNewDefaultTypeScheme[RepositorySpec, RepositoryType](nil, false, nil, utils.Optional(base...))
+	scheme := descriptivetype.MustNewDefaultTypeScheme[RepositorySpec, RepositoryType, RepositoryTypeScheme]("Credential provider", nil, nil, false, nil, utils.Optional(base...))
 	return &repositoryTypeScheme{scheme}
 }
 

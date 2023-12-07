@@ -9,10 +9,10 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 )
 
-func DefaultBlobDescriptor(blob accessio.BlobAccess) *Descriptor {
+func DefaultBlobDescriptor(blob blobaccess.BlobAccess) *Descriptor {
 	return &Descriptor{
 		MediaType:   blob.MimeType(),
 		Digest:      blob.Digest(),
@@ -126,11 +126,11 @@ func MapArtifactMimeType(mime string, legacy bool) string {
 	return mime
 }
 
-func MapArtifactBlobMimeType(blob accessio.BlobAccess, legacy bool) accessio.BlobAccess {
+func MapArtifactBlobMimeType(blob blobaccess.BlobAccess, legacy bool) blobaccess.BlobAccess {
 	mime := blob.MimeType()
 	mapped := MapArtifactMimeType(mime, legacy)
 	if mapped != mime {
-		return accessio.BlobWithMimeType(mapped, blob)
+		return blobaccess.WithMimeType(mapped, blob)
 	}
 	return blob
 }

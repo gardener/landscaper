@@ -99,7 +99,7 @@ func MustBeSuccessfulWithOffset(offset int, err error) {
 }
 
 func MustFailWithMessage(err error, msg string) {
-	ExpectWithOffset(1, err).NotTo(BeNil())
+	ExpectWithOffset(1, err).To(HaveOccurred())
 	ExpectWithOffset(1, err.Error()).To(Equal(msg))
 }
 

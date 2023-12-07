@@ -20,6 +20,7 @@ package utils
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"strings"
 	"time"
@@ -77,7 +78,15 @@ func (m *FileSystemSupport) Create(name string) (vfs.File, error) {
 		return nil, err
 	}
 	if f != nil {
-		return nil, os.ErrExist
+		if f.Mode()&fs.ModeType != 0 {
+			return nil, fs.ErrExist
+		}
+		h := newFileHandle(n, f)
+		err := h.Truncate(0)
+		if err != nil {
+			return nil, err
+		}
+		return h, nil
 	}
 
 	f = m.adapter.CreateFile(os.ModePerm)

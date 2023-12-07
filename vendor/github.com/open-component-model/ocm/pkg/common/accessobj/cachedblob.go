@@ -11,6 +11,8 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
+	"github.com/open-component-model/ocm/pkg/blobaccess/bpi"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/tmpcache"
@@ -25,20 +27,20 @@ type CachedBlobAccess struct {
 	digest    digest.Digest
 	size      int64
 	source    accessio.DataWriter
-	effective accessio.BlobAccess
+	effective blobaccess.BlobAccess
 }
 
-var _ accessio.BlobAccess = (*CachedBlobAccess)(nil)
+var _ bpi.BlobAccessBase = (*CachedBlobAccess)(nil)
 
-func CachedBlobAccessForWriter(ctx datacontext.Context, mime string, src accessio.DataWriter) accessio.BlobAccess {
-	return &CachedBlobAccess{
+func CachedBlobAccessForWriter(ctx datacontext.Context, mime string, src accessio.DataWriter) blobaccess.BlobAccess {
+	return bpi.NewBlobAccessForBase(&CachedBlobAccess{
 		source: src,
 		mime:   mime,
 		cache:  tmpcache.Get(ctx),
-	}
+	})
 }
 
-func CachedBlobAccessForDataAccess(ctx datacontext.Context, mime string, src accessio.DataAccess) accessio.BlobAccess {
+func CachedBlobAccessForDataAccess(ctx datacontext.Context, mime string, src blobaccess.DataAccess) blobaccess.BlobAccess {
 	return CachedBlobAccessForWriter(ctx, mime, accessio.NewDataAccessWriter(src))
 }
 
@@ -64,7 +66,7 @@ func (c *CachedBlobAccess) setup() error {
 		return fmt.Errorf("unable to write source to file '%s': %w", file.Name(), err)
 	}
 
-	c.effective = accessio.BlobAccessForFile(c.mime, c.path, c.cache.Filesystem)
+	c.effective = blobaccess.ForFile(c.mime, c.path, c.cache.Filesystem)
 
 	return nil
 }

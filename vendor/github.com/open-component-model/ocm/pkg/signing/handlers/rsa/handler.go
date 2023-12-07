@@ -155,6 +155,10 @@ func GetSignaturePEMBlocks(pemData []byte) ([]*pem.Block, error) {
 }
 
 func (_ Handler) CreateKeyPair() (priv interface{}, pub interface{}, err error) {
+	return CreateKeyPair()
+}
+
+func CreateKeyPair() (priv interface{}, pub interface{}, err error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, nil, err

@@ -7,12 +7,19 @@ package ocm
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/repocpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
+
+// ErrTempVersion indicates an ignored update in the backend because the
+// current version has not yet been added to the repository.
+var ErrTempVersion = repocpi.ErrTempVersion
 
 const (
 	KIND_COMPONENTVERSION   = internal.KIND_COMPONENTVERSION
@@ -73,6 +80,7 @@ type (
 type (
 	BlobHandlerRegistry = internal.BlobHandlerRegistry
 	BlobHandler         = internal.BlobHandler
+	BlobHandlerProvider = internal.BlobHandlerProvider
 )
 
 func NewDigestDescriptor(digest, hashAlgo, normAlgo string) *DigestDescriptor {
@@ -84,8 +92,20 @@ func DefaultContext() internal.Context {
 	return internal.DefaultContext
 }
 
+// NoComponentVersion provides a dummy component version
+// providing access to the context.
+// It can be used to instantiate external access methods
+// (not based on any component version).
+func NoComponentVersion(ctx ContextProvider) ComponentVersionAccess {
+	return &cpi.DummyComponentVersionAccess{ctx.OCMContext()}
+}
+
 func DefaultBlobHandlers() BlobHandlerRegistry {
 	return internal.DefaultBlobHandlerRegistry
+}
+
+func DefaultBlobHandlerProvider(ctx Context) BlobHandlerProvider {
+	return internal.DefaultBlobHandlerProvider(ctx)
 }
 
 func DefaultRepositoryDelegationRegistry() RepositoryDelegationRegistry {
@@ -146,38 +166,6 @@ func NewResourceMeta(name string, typ string, relation metav1.ResourceRelation) 
 
 ///////////////////////////////////////////////////////
 
-type (
-	ModificationOption  = internal.ModificationOption
-	ModificationOptions = internal.ModificationOptions
-)
-
-func NewModificationOptions(list ...ModificationOption) *ModificationOptions {
-	return internal.NewModificationOptions(list...)
-}
-
-func ModifyResource(flag ...bool) ModificationOption {
-	return internal.ModifyResource(flag...)
-}
-
-func AcceptExistentDigests(flag ...bool) ModificationOption {
-	return internal.AcceptExistentDigests(flag...)
-}
-
-func WithDefaultHashAlgorithm(algo ...string) ModificationOption {
-	return internal.WithDefaultHashAlgorithm(algo...)
-}
-
-func WithHasherProvider(prov HasherProvider) ModificationOption {
-	return internal.WithHasherProvider(prov)
-}
-
-func SkipVerify(flag ...bool) ModificationOption {
-	return internal.SkipVerify(flag...)
-}
-
-// SkipDigest disables digest creation if enabled.
-//
-// Deprecated: for legacy code, only.
-func SkipDigest(flag ...bool) ModificationOption {
-	return internal.SkipDigest(flag...)
+func BlobAccessForAccessMethod(m AccessMethod) (blobaccess.AnnotatedBlobAccess[accspeccpi.AccessMethodView], error) {
+	return accspeccpi.BlobAccessForAccessMethod(m)
 }

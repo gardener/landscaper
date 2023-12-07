@@ -15,9 +15,6 @@ func init() {
 	h := &repospechandler{}
 	cpi.RegisterRepositorySpecHandler(h, "")
 	cpi.RegisterRepositorySpecHandler(h, Type)
-	for _, f := range SupportedFormats() {
-		cpi.RegisterRepositorySpecHandler(h, string(f))
-	}
 }
 
 type repospechandler struct{}
@@ -32,14 +29,14 @@ func (h *repospechandler) MapReference(ctx cpi.Context, u *cpi.UniformRepository
 	}
 	fs := vfsattr.Get(ctx)
 
-	hint := u.TypeHint
+	hint, f := accessobj.MapType(u.TypeHint, Type, accessio.FormatDirectory, false)
 	if !u.CreateIfMissing {
 		hint = ""
 	}
 
-	create, ok, err := accessobj.CheckFile(Type, hint, accessio.TypeForType(u.Type) == Type, path, fs, ArtifactSetDescriptorFileName)
+	create, ok, err := accessobj.CheckFile(Type, hint, accessio.TypeForTypeSpec(u.Type) == Type, path, fs, ArtifactSetDescriptorFileName)
 	if err == nil && !ok {
-		create, ok, err = accessobj.CheckFile(Type, hint, accessio.TypeForType(u.Type) == Type, path, fs, OCIArtifactSetDescriptorFileName)
+		create, ok, err = accessobj.CheckFile(Type, hint, accessio.TypeForTypeSpec(u.Type) == Type, path, fs, OCIArtifactSetDescriptorFileName)
 	}
 
 	if !ok || err != nil {
@@ -47,8 +44,10 @@ func (h *repospechandler) MapReference(ctx cpi.Context, u *cpi.UniformRepository
 	}
 
 	mode := accessobj.ACC_WRITABLE
+	createHint := accessio.FormatNone
 	if create {
 		mode |= accessobj.ACC_CREATE
+		createHint = f
 	}
-	return NewRepositorySpec(mode, path, accessio.FileFormatForType(u.Type), accessio.PathFileSystem(fs))
+	return NewRepositorySpec(mode, path, createHint, accessio.PathFileSystem(fs))
 }

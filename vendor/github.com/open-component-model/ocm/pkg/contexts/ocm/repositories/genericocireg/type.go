@@ -162,7 +162,7 @@ func (s *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentia
 	if err != nil {
 		return nil, err
 	}
-	return NewRepository(ctx, &s.ComponentRepositoryMeta, r)
+	return NewRepository(ctx, &s.ComponentRepositoryMeta, r), nil
 }
 
 func DefaultComponentRepositoryMeta(meta *ComponentRepositoryMeta) *ComponentRepositoryMeta {

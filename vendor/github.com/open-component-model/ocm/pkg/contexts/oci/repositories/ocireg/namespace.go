@@ -11,6 +11,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/actions/oci-repository-prepare"
@@ -165,7 +166,7 @@ func (n *NamespaceContainer) GetArtifact(i support.NamespaceAccessImpl, vers str
 	if err != nil {
 		return nil, err
 	}
-	return support.NewArtifactForBlob(i, accessio.BlobAccessForDataAccess(desc.Digest, desc.Size, desc.MediaType, acc))
+	return support.NewArtifactForBlob(i, blobaccess.ForDataAccess(desc.Digest, desc.Size, desc.MediaType, acc))
 }
 
 func (n *NamespaceContainer) HasArtifact(vers string) (bool, error) {
@@ -201,7 +202,7 @@ func (n *NamespaceContainer) assureCreated() error {
 	return nil
 }
 
-func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
+func (n *NamespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access blobaccess.BlobAccess, err error) {
 	blob, err := artifact.Blob()
 	if err != nil {
 		return nil, err
@@ -244,7 +245,7 @@ func (n *NamespaceContainer) AddTags(digest digest.Digest, tags ...string) error
 		return fmt.Errorf("error creating new data access: %w", err)
 	}
 
-	blob := accessio.BlobAccessForDataAccess(desc.Digest, desc.Size, desc.MediaType, acc)
+	blob := blobaccess.ForDataAccess(desc.Digest, desc.Size, desc.MediaType, acc)
 	for _, tag := range tags {
 		err := n.push(tag, blob)
 		if err != nil {

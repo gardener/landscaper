@@ -9,6 +9,7 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/errors"
@@ -201,11 +202,11 @@ func SupportedFormats() []accessio.FileFormat {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func OpenFromBlob(acc accessobj.AccessMode, blob accessio.BlobAccess, opts ...accessio.Option) (*Object, error) {
+func OpenFromBlob(acc accessobj.AccessMode, blob blobaccess.BlobAccess, opts ...accessio.Option) (*Object, error) {
 	return OpenFromDataAccess(acc, blob.MimeType(), blob, opts...)
 }
 
-func OpenFromDataAccess(acc accessobj.AccessMode, mime string, data accessio.DataAccess, opts ...accessio.Option) (*Object, error) {
+func OpenFromDataAccess(acc accessobj.AccessMode, mime string, data blobaccess.DataAccess, opts ...accessio.Option) (*Object, error) {
 	o, err := accessio.AccessOptions(nil, opts...)
 	if err != nil {
 		return nil, err

@@ -135,10 +135,12 @@ func addFileToTar(fs vfs.FileSystem, tw *tar.Writer, path string, realPath strin
 			if err != nil {
 				return err
 			}
-			relPath, err := vfs.Rel(fs, realPath, subFilePath)
-			if err != nil {
-				return fmt.Errorf("unable to calculate relative path for %s: %w", subFilePath, err)
-			}
+			/*
+				relPath, err := vfs.Rel(fs, realPath, subFilePath)
+				if err != nil {
+					return fmt.Errorf("unable to calculate relative path for %s: %w", subFilePath, err)
+				}*/
+			relPath := vfs.Base(fs, subFilePath)
 			err = addFileToTar(fs, tw, vfs.Join(fs, path, relPath), subFilePath, opts)
 			if err != nil {
 				return fmt.Errorf("failed to tar the input from %q: %w", subFilePath, err)
@@ -167,14 +169,22 @@ func addFileToTar(fs vfs.FileSystem, tw *tar.Writer, path string, realPath strin
 		return nil
 	case header.Typeflag == tar.TypeSymlink:
 		if !opts.FollowSymlinks {
-			// log.Info(fmt.Sprintf("symlink found in %q but symlinks are not followed", path))
+			link, err := fs.Readlink(realPath)
+			if err != nil {
+				return fmt.Errorf("cannot read symlink %s: %w", realPath, err)
+			}
+			header.Linkname = link
+			if err := tw.WriteHeader(header); err != nil {
+				return fmt.Errorf("unable to write header for %q: %w", path, err)
+			}
 			return nil
+		} else {
+			effPath, err := vfs.EvalSymlinks(fs, realPath)
+			if err != nil {
+				return fmt.Errorf("unable to follow symlink %s: %w", realPath, err)
+			}
+			return addFileToTar(fs, tw, path, effPath, opts)
 		}
-		effPath, err := vfs.EvalSymlinks(fs, realPath)
-		if err != nil {
-			return fmt.Errorf("unable to follow symlink %s: %w", realPath, err)
-		}
-		return addFileToTar(fs, tw, path, effPath, opts)
 	default:
 		return fmt.Errorf("unsupported file type %s in %s", info.Mode().String(), path)
 	}

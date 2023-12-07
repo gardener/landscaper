@@ -9,12 +9,12 @@ import (
 
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 )
 
 type ImageConfig = ociv1.Image
 
-func ParseImageConfig(blob accessio.BlobAccess) (*ImageConfig, error) {
+func ParseImageConfig(blob blobaccess.BlobAccess) (*ImageConfig, error) {
 	var cfg ImageConfig
 
 	data, err := blob.Get()

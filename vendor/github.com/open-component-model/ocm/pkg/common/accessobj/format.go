@@ -149,3 +149,30 @@ func DefaultCreateOptsFileHandling(kind string, info AccessObjectInfo, path stri
 
 	return NewAccessObject(info, ACC_CREATE, opts.GetRepresentation(), nil, CloserFunction(func(obj *AccessObject) error { return handler.Write(obj, path, opts, mode) }), DirMode)
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+// MapType maps a given type name to an effective type and a format.
+func MapType(hint string, efftyp string, deffmt accessio.FileFormat, useFormats bool, alt ...string) (string, accessio.FileFormat) {
+	typ := accessio.TypeForTypeSpec(hint)
+	f := accessio.FileFormatForTypeSpec(hint)
+	if f != "" {
+		deffmt = f
+	}
+	if typ == efftyp {
+		return efftyp, deffmt
+	}
+	for _, t := range alt {
+		if typ == t {
+			return efftyp, deffmt
+		}
+	}
+	if useFormats {
+		for _, f := range accessio.GetFormats() {
+			if hint == f {
+				return efftyp, accessio.FileFormat(f)
+			}
+		}
+	}
+	return "", ""
+}

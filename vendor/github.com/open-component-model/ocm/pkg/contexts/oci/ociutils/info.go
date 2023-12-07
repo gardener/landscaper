@@ -14,8 +14,8 @@ import (
 	"github.com/opencontainers/go-digest"
 	"sigs.k8s.io/yaml"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/compression"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
@@ -68,7 +68,7 @@ func GetManifestInfo(m cpi.ManifestAccess, layerFiles bool) *ArtifactInfo {
 	}
 	info.Config = cfg
 
-	config, err := accessio.BlobData(m.GetBlob(man.Config.Digest))
+	config, err := blobaccess.BlobData(m.GetBlob(man.Config.Digest))
 	if err != nil {
 		cfg.Error = "error getting config blob: " + err.Error()
 	} else {
@@ -105,7 +105,7 @@ type LayerInfo struct {
 	Content     interface{} `json:"content,omitempty"`
 }
 
-func GetLayerInfo(blob accessio.BlobAccess, layerFiles bool) *LayerInfo {
+func GetLayerInfo(blob blobaccess.BlobAccess, layerFiles bool) *LayerInfo {
 	info := &LayerInfo{}
 
 	if mime.IsJSON(blob.MimeType()) {

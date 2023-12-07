@@ -84,6 +84,14 @@ func NewCredentials(props common.Properties) Credentials {
 	return internal.NewCredentials(props)
 }
 
+func CredentialsFromList(props ...string) Credentials {
+	creds := DirectCredentials{}
+	for i := 1; i < len(props); i += 2 {
+		creds[props[i-1]] = props[i]
+	}
+	return creds
+}
+
 func ToGenericCredentialsSpec(spec CredentialsSpec) (*GenericCredentialsSpec, error) {
 	return internal.ToGenericCredentialsSpec(spec)
 }

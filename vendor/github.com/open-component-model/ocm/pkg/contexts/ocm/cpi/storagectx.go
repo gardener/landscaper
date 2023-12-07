@@ -6,16 +6,16 @@ package cpi
 
 type DefaultStorageContext struct {
 	ComponentRepository          Repository
-	ComponentVersion             ComponentVersionAccess
+	ComponentName                string
 	ImplementationRepositoryType ImplementationRepositoryType
 }
 
 var _ StorageContext = (*DefaultStorageContext)(nil)
 
-func NewDefaultStorageContext(repo Repository, vers ComponentVersionAccess, reptype ImplementationRepositoryType) *DefaultStorageContext {
+func NewDefaultStorageContext(repo Repository, compname string, reptype ImplementationRepositoryType) *DefaultStorageContext {
 	return &DefaultStorageContext{
 		ComponentRepository:          repo,
-		ComponentVersion:             vers,
+		ComponentName:                compname,
 		ImplementationRepositoryType: reptype,
 	}
 }
@@ -24,8 +24,8 @@ func (c *DefaultStorageContext) GetContext() Context {
 	return c.ComponentRepository.GetContext()
 }
 
-func (c *DefaultStorageContext) TargetComponentVersion() ComponentVersionAccess {
-	return c.ComponentVersion
+func (c *DefaultStorageContext) TargetComponentName() string {
+	return c.ComponentName
 }
 
 func (c *DefaultStorageContext) TargetComponentRepository() Repository {

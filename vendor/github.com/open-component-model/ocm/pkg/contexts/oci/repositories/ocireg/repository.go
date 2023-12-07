@@ -15,15 +15,15 @@ import (
 	"github.com/containerd/containerd/remotes/docker/config"
 	"github.com/mandelsoft/logging"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/oci/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
-	ociidentity "github.com/open-component-model/ocm/pkg/contexts/oci/identity"
 	"github.com/open-component-model/ocm/pkg/docker"
 	"github.com/open-component-model/ocm/pkg/docker/resolve"
 	"github.com/open-component-model/ocm/pkg/errors"
 	ocmlog "github.com/open-component-model/ocm/pkg/logging"
+	"github.com/open-component-model/ocm/pkg/refmgmt"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
@@ -88,13 +88,13 @@ func (r *RepositoryImpl) Close() error {
 
 func (r *RepositoryImpl) GetConsumerId(uctx ...credentials.UsageContext) credentials.ConsumerIdentity {
 	if c, ok := utils.Optional(uctx...).(credentials.StringUsageContext); ok {
-		return ociidentity.GetConsumerId(r.info.Locator, c.String())
+		return identity.GetConsumerId(r.info.Locator, c.String())
 	}
-	return ociidentity.GetConsumerId(r.info.Locator, "")
+	return identity.GetConsumerId(r.info.Locator, "")
 }
 
 func (r *RepositoryImpl) GetIdentityMatcher() string {
-	return ociidentity.CONSUMER_TYPE
+	return identity.CONSUMER_TYPE
 }
 
 func (r *RepositoryImpl) NamespaceLister() cpi.NamespaceLister {
@@ -109,7 +109,7 @@ func (r *RepositoryImpl) getCreds(comp string) (credentials.Credentials, error) 
 	if r.info.Creds != nil {
 		return r.info.Creds, nil
 	}
-	return ociidentity.GetCredentials(r.GetContext(), r.info.Locator, comp)
+	return identity.GetCredentials(r.GetContext(), r.info.Locator, comp)
 }
 
 func (r *RepositoryImpl) getResolver(comp string) (resolve.Resolver, error) {
@@ -204,7 +204,7 @@ func (r *RepositoryImpl) LookupArtifact(name string, version string) (acc cpi.Ar
 	if err != nil {
 		return nil, err
 	}
-	defer accessio.PropagateCloseTemporary(&err, ns) // temporary namespace object not exposed.
+	defer refmgmt.PropagateCloseTemporary(&err, ns) // temporary namespace object not exposed.
 
 	return ns.GetArtifact(version)
 }

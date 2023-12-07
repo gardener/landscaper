@@ -28,6 +28,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/finalizer"
 	"github.com/open-component-model/ocm/pkg/generics"
+	"github.com/open-component-model/ocm/pkg/iotools"
 	"github.com/open-component-model/ocm/pkg/mime"
 	"github.com/open-component-model/ocm/pkg/utils"
 	"github.com/open-component-model/ocm/pkg/utils/tarutils"
@@ -122,7 +123,7 @@ func (h *Handler) download(pr common.Printer, fs vfs.FileSystem, path string, lf
 			pr.Printf("%s: %d byte(s) written\n", path, n)
 			return true, path, nil
 		} else {
-			cw := accessio.NewCountingWriter(w)
+			cw := iotools.NewCountingWriter(w)
 			err := tarutils.PackFsIntoTar(lfs, "", cw, tarutils.TarFileSystemOptions{})
 			if err == nil {
 				pr.Printf("%s: %d byte(s) written\n", path, cw.Size())
@@ -172,7 +173,9 @@ func (h *Handler) GetForResource(racc cpi.ResourceAccess) (fs vfs.FileSystem, re
 	case mime.MIME_TGZ, mime.MIME_TAR:
 	case MimeOCIImageArtifact:
 	default:
-		return nil, nil, nil
+		if !h.ociConfigtypes.Contains(media) && !h.ociConfigtypes.Contains(meth.MimeType()) {
+			return nil, nil, nil
+		}
 	}
 
 	r, err := meth.Reader()

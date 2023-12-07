@@ -5,16 +5,19 @@
 package v3alpha1
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+	"github.com/open-component-model/ocm/pkg/errors"
 )
 
 // Validate validates a parsed v2 component descriptor.
 func (cd *ComponentDescriptor) Validate() error {
 	if err := Validate(nil, cd); err != nil {
-		return err.ToAggregate()
+		return errors.Wrapf(err.ToAggregate(), "%s:%s", cd.Name, cd.Version)
 	}
 	return nil
 }
@@ -79,12 +82,13 @@ func ValidateSources(fldPath *field.Path, sources Sources) field.ErrorList {
 		srcPath := fldPath.Index(i)
 		allErrs = append(allErrs, ValidateSource(srcPath, src, false)...)
 
-		id := string(src.GetIdentityDigest(sources))
-		if _, ok := sourceIDs[id]; ok {
-			allErrs = append(allErrs, field.Duplicate(srcPath, "duplicate source"))
+		id := src.GetIdentity(sources)
+		dig := string(id.Digest())
+		if _, ok := sourceIDs[dig]; ok {
+			allErrs = append(allErrs, field.Duplicate(srcPath, fmt.Sprintf("duplicate source %s", id)))
 			continue
 		}
-		sourceIDs[id] = struct{}{}
+		sourceIDs[dig] = struct{}{}
 	}
 	return allErrs
 }
@@ -155,12 +159,13 @@ func ValidateComponentReferences(fldPath *field.Path, refs References) field.Err
 		refPath := fldPath.Index(i)
 		allErrs = append(allErrs, ValidateComponentReference(refPath, ref)...)
 
-		id := string(ref.GetIdentityDigest(refs))
-		if _, ok := refIDs[id]; ok {
-			allErrs = append(allErrs, field.Duplicate(refPath, "duplicate component reference name"))
+		id := ref.GetIdentity(refs)
+		dig := string(id.Digest())
+		if _, ok := refIDs[dig]; ok {
+			allErrs = append(allErrs, field.Duplicate(refPath, fmt.Sprintf("duplicate component reference %s", id)))
 			continue
 		}
-		refIDs[id] = struct{}{}
+		refIDs[dig] = struct{}{}
 	}
 	return allErrs
 }
@@ -178,12 +183,13 @@ func ValidateResources(fldPath *field.Path, resources Resources, componentVersio
 			allErrs = append(allErrs, err...)
 		}
 
-		id := string(res.GetIdentityDigest(resources))
-		if _, ok := resourceIDs[id]; ok {
-			allErrs = append(allErrs, field.Duplicate(localPath, "duplicated resource"))
+		id := res.GetIdentity(resources)
+		dig := string(id.Digest())
+		if _, ok := resourceIDs[dig]; ok {
+			allErrs = append(allErrs, field.Duplicate(localPath, fmt.Sprintf("duplicate resource %s", id)))
 			continue
 		}
-		resourceIDs[id] = struct{}{}
+		resourceIDs[dig] = struct{}{}
 	}
 	return allErrs
 }

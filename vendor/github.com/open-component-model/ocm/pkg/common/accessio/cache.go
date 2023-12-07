@@ -18,126 +18,17 @@ import (
 	"github.com/marstr/guid"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/logging"
+	"github.com/open-component-model/ocm/pkg/iotools"
+	"github.com/open-component-model/ocm/pkg/refmgmt"
 )
 
-var ALLOC_REALM = logging.DefineSubRealm("reference counting", "refcnt")
-
-var allocLog = logging.DynamicLogger(ALLOC_REALM)
-
-type Allocatable interface {
-	Ref() error
-	Unref() error
-}
-
-type RefMgmt interface {
-	Allocatable
-	UnrefLast() error
-	IsClosed() bool
-
-	WithName(name string) RefMgmt
-}
-
-type refMgmt struct {
-	lock     sync.Mutex
-	refcount int
-	closed   bool
-	cleanup  func() error
-	name     string
-}
-
-func NewAllocatable(cleanup func() error, unused ...bool) RefMgmt {
-	n := 1
-	for _, b := range unused {
-		if b {
-			n = 0
-		}
-	}
-	return &refMgmt{refcount: n, cleanup: cleanup, name: "object"}
-}
-
-func (c *refMgmt) WithName(name string) RefMgmt {
-	c.name = name
-	return c
-}
-
-func (c *refMgmt) IsClosed() bool {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	return c.closed
-}
-
-func (c *refMgmt) Ref() error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	if c.closed {
-		return ErrClosed
-	}
-	c.refcount++
-	allocLog.Trace("ref", "name", c.name, "refcnt", c.refcount)
-	return nil
-}
-
-func (c *refMgmt) Unref() error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	if c.closed {
-		return ErrClosed
-	}
-
-	var err error
-
-	c.refcount--
-	allocLog.Trace("unref", "name", c.name, "refcnt", c.refcount)
-	if c.refcount <= 0 {
-		if c.cleanup != nil {
-			err = c.cleanup()
-		}
-
-		c.closed = true
-	}
-
-	if err != nil {
-		return fmt.Errorf("unable to unref %s: %w", c.name, err)
-	}
-
-	return nil
-}
-
-func (c *refMgmt) UnrefLast() error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	if c.closed {
-		return ErrClosed
-	}
-
-	if c.refcount > 1 {
-		return errors.ErrStillInUseWrap(errors.Newf("%d reference(s) pending", c.refcount), c.name)
-	}
-
-	var err error
-
-	c.refcount--
-	allocLog.Trace("unref last", "name", c.name, "refcnt", c.refcount)
-	if c.refcount <= 0 {
-		if c.cleanup != nil {
-			err = c.cleanup()
-		}
-
-		c.closed = true
-	}
-
-	if err != nil {
-		allocLog.Trace("cleanup last failed", "name", c.name, "error", err.Error())
-		return errors.Wrapf(err, "unable to cleanup %s while unref last", c.name)
-	}
-
-	return nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
+const (
+	BLOB_UNKNOWN_SIZE   = blobaccess.BLOB_UNKNOWN_SIZE
+	BLOB_UNKNOWN_DIGEST = blobaccess.BLOB_UNKNOWN_DIGEST
+)
 
 type StaticAllocatable struct{}
 
@@ -145,13 +36,13 @@ func (_ StaticAllocatable) Ref() error   { return nil }
 func (_ StaticAllocatable) Unref() error { return nil }
 
 type BlobSource interface {
-	Allocatable
-	GetBlobData(digest digest.Digest) (int64, DataAccess, error)
+	refmgmt.Allocatable
+	GetBlobData(digest digest.Digest) (int64, blobaccess.DataAccess, error)
 }
 
 type BlobSink interface {
-	Allocatable
-	AddBlob(blob BlobAccess) (int64, digest.Digest, error)
+	refmgmt.Allocatable
+	AddBlob(blob blobaccess.BlobAccess) (int64, digest.Digest, error)
 }
 
 type RootedCache interface {
@@ -170,11 +61,11 @@ type CleanupCache interface {
 type BlobCache interface {
 	BlobSource
 	BlobSink
-	AddData(data DataAccess) (int64, digest.Digest, error)
+	AddData(data blobaccess.DataAccess) (int64, digest.Digest, error)
 }
 
 type blobCache struct {
-	Allocatable
+	refmgmt.Allocatable
 	lock  sync.RWMutex
 	cache vfs.FileSystem
 }
@@ -202,7 +93,7 @@ func NewDefaultBlobCache(fss ...vfs.FileSystem) (BlobCache, error) {
 	c := &blobCache{
 		cache: fs,
 	}
-	c.Allocatable = NewAllocatable(c.cleanup)
+	c.Allocatable = refmgmt.NewAllocatable(c.cleanup)
 	return c, nil
 }
 
@@ -290,7 +181,7 @@ func (c *blobCache) cleanup() error {
 	return vfs.Cleanup(c.cache)
 }
 
-func (c *blobCache) GetBlobData(digest digest.Digest) (int64, DataAccess, error) {
+func (c *blobCache) GetBlobData(digest digest.Digest) (int64, blobaccess.DataAccess, error) {
 	err := c.Ref()
 	if err == nil {
 		defer c.Unref()
@@ -303,23 +194,23 @@ func (c *blobCache) GetBlobData(digest digest.Digest) (int64, DataAccess, error)
 			vfs.WriteFile(c.cache, path+ACCESS_SUFFIX, []byte{}, 0o600)
 			// now := time.Now()
 			// c.cache.Chtimes(path+ACCESS_SUFFIX, now, now)
-			return fi.Size(), DataAccessForFile(c.cache, path), nil
+			return fi.Size(), blobaccess.DataAccessForFile(c.cache, path), nil
 		}
 		if os.IsNotExist(err) {
-			return -1, nil, ErrBlobNotFound(digest)
+			return -1, nil, blobaccess.ErrBlobNotFound(digest)
 		}
 	}
 	return BLOB_UNKNOWN_SIZE, nil, err
 }
 
-func (c *blobCache) AddBlob(blob BlobAccess) (int64, digest.Digest, error) {
+func (c *blobCache) AddBlob(blob blobaccess.BlobAccess) (int64, digest.Digest, error) {
 	err := c.Ref()
 	if err != nil {
 		return BLOB_UNKNOWN_SIZE, BLOB_UNKNOWN_DIGEST, err
 	}
 	defer c.Unref()
 
-	var digester *DigestReader
+	var digester *iotools.DigestReader
 
 	if blob.DigestKnown() {
 		c.lock.RLock()
@@ -341,7 +232,7 @@ func (c *blobCache) AddBlob(blob BlobAccess) (int64, digest.Digest, error) {
 
 	reader := io.Reader(br)
 	if !blob.DigestKnown() {
-		digester = NewDefaultDigestReader(reader)
+		digester = iotools.NewDefaultDigestReader(reader)
 		reader = digester
 	}
 
@@ -375,14 +266,14 @@ func (c *blobCache) AddBlob(blob BlobAccess) (int64, digest.Digest, error) {
 	return size, digest, err
 }
 
-func (c *blobCache) AddData(data DataAccess) (int64, digest.Digest, error) {
-	return c.AddBlob(BlobAccessForDataAccess(BLOB_UNKNOWN_DIGEST, BLOB_UNKNOWN_SIZE, "", data))
+func (c *blobCache) AddData(data blobaccess.DataAccess) (int64, digest.Digest, error) {
+	return c.AddBlob(blobaccess.ForDataAccess(BLOB_UNKNOWN_DIGEST, BLOB_UNKNOWN_SIZE, "", data))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 type cascadedCache struct {
-	Allocatable
+	refmgmt.Allocatable
 	lock   sync.RWMutex
 	parent BlobSource
 	source BlobSource
@@ -401,7 +292,7 @@ func NewCascadedBlobCache(parent BlobCache) (BlobCache, error) {
 	c := &cascadedCache{
 		parent: parent,
 	}
-	c.Allocatable = NewAllocatable(c.cleanup)
+	c.Allocatable = refmgmt.NewAllocatable(c.cleanup)
 	return c, nil
 }
 
@@ -422,7 +313,7 @@ func NewCascadedBlobCacheForSource(parent BlobSource, src BlobSource) (BlobCache
 		parent: parent,
 		source: src,
 	}
-	c.Allocatable = NewAllocatable(c.cleanup)
+	c.Allocatable = refmgmt.NewAllocatable(c.cleanup)
 	return c, nil
 }
 
@@ -444,7 +335,7 @@ func NewCascadedBlobCacheForCache(parent BlobSource, src BlobCache) (BlobCache, 
 		source: src,
 		sink:   src,
 	}
-	c.Allocatable = NewAllocatable(c.cleanup)
+	c.Allocatable = refmgmt.NewAllocatable(c.cleanup)
 	return c, nil
 }
 
@@ -459,7 +350,7 @@ func (c *cascadedCache) cleanup() error {
 	return list.Result()
 }
 
-func (c *cascadedCache) GetBlobData(digest digest.Digest) (int64, DataAccess, error) {
+func (c *cascadedCache) GetBlobData(digest digest.Digest) (int64, blobaccess.DataAccess, error) {
 	err := c.Ref()
 	if err != nil {
 		return BLOB_UNKNOWN_SIZE, nil, err
@@ -474,21 +365,21 @@ func (c *cascadedCache) GetBlobData(digest digest.Digest) (int64, DataAccess, er
 		if err == nil {
 			return size, acc, err
 		}
-		if !IsErrBlobNotFound(err) {
+		if !blobaccess.IsErrBlobNotFound(err) {
 			return BLOB_UNKNOWN_SIZE, nil, err
 		}
 	}
 	if c.parent != nil {
 		return c.parent.GetBlobData(digest)
 	}
-	return BLOB_UNKNOWN_SIZE, nil, ErrBlobNotFound(digest)
+	return BLOB_UNKNOWN_SIZE, nil, blobaccess.ErrBlobNotFound(digest)
 }
 
-func (c *cascadedCache) AddData(data DataAccess) (int64, digest.Digest, error) {
-	return c.AddBlob(BlobAccessForDataAccess(BLOB_UNKNOWN_DIGEST, BLOB_UNKNOWN_SIZE, "", data))
+func (c *cascadedCache) AddData(data blobaccess.DataAccess) (int64, digest.Digest, error) {
+	return c.AddBlob(blobaccess.ForDataAccess(BLOB_UNKNOWN_DIGEST, BLOB_UNKNOWN_SIZE, "", data))
 }
 
-func (c *cascadedCache) AddBlob(blob BlobAccess) (int64, digest.Digest, error) {
+func (c *cascadedCache) AddBlob(blob blobaccess.BlobAccess) (int64, digest.Digest, error) {
 	err := c.Ref()
 	if err == nil {
 		defer c.Unref()
@@ -518,7 +409,7 @@ func (c *cascadedCache) AddBlob(blob BlobAccess) (int64, digest.Digest, error) {
 ////////////////////////////////////////////////////////////////////////////////
 
 type cached struct {
-	Allocatable
+	refmgmt.Allocatable
 	lock   sync.RWMutex
 	source BlobSource
 	sink   BlobSink
@@ -539,7 +430,7 @@ func (c *cached) cleanup() error {
 	return list.Result()
 }
 
-func (a *cached) GetBlobData(digest digest.Digest) (int64, DataAccess, error) {
+func (a *cached) GetBlobData(digest digest.Digest) (int64, blobaccess.DataAccess, error) {
 	err := a.Ref()
 	if err != nil {
 		return BLOB_UNKNOWN_SIZE, nil, err
@@ -548,7 +439,7 @@ func (a *cached) GetBlobData(digest digest.Digest) (int64, DataAccess, error) {
 
 	size, acc, err := a.cache.GetBlobData(digest)
 	if err != nil {
-		if !IsErrBlobNotFound(err) {
+		if !blobaccess.IsErrBlobNotFound(err) {
 			return BLOB_UNKNOWN_SIZE, nil, err
 		}
 		size, acc, err = a.source.GetBlobData(digest)
@@ -559,7 +450,7 @@ func (a *cached) GetBlobData(digest digest.Digest) (int64, DataAccess, error) {
 	return size, acc, err
 }
 
-func (a *cached) AddBlob(blob BlobAccess) (int64, digest.Digest, error) {
+func (a *cached) AddBlob(blob blobaccess.BlobAccess) (int64, digest.Digest, error) {
 	err := a.Ref()
 	if err != nil {
 		return BLOB_UNKNOWN_SIZE, BLOB_UNKNOWN_DIGEST, err
@@ -577,15 +468,15 @@ func (a *cached) AddBlob(blob BlobAccess) (int64, digest.Digest, error) {
 	if err != nil {
 		return BLOB_UNKNOWN_SIZE, BLOB_UNKNOWN_DIGEST, err
 	}
-	size, digest, err = a.sink.AddBlob(BlobAccessForDataAccess(digest, size, blob.MimeType(), acc))
+	size, digest, err = a.sink.AddBlob(blobaccess.ForDataAccess(digest, size, blob.MimeType(), acc))
 	if err != nil {
 		return BLOB_UNKNOWN_SIZE, BLOB_UNKNOWN_DIGEST, err
 	}
 	return size, digest, err
 }
 
-func (c *cached) AddData(data DataAccess) (int64, digest.Digest, error) {
-	return c.AddBlob(BlobAccessForDataAccess(BLOB_UNKNOWN_DIGEST, BLOB_UNKNOWN_SIZE, "", data))
+func (c *cached) AddData(data blobaccess.DataAccess) (int64, digest.Digest, error) {
+	return c.AddBlob(blobaccess.ForDataAccess(blobaccess.BLOB_UNKNOWN_DIGEST, BLOB_UNKNOWN_SIZE, "", data))
 }
 
 /////////////////////////////////////////
@@ -593,13 +484,13 @@ func (c *cached) AddData(data DataAccess) (int64, digest.Digest, error) {
 type cachedAccess struct {
 	lock   sync.Mutex
 	cache  *cached
-	access DataAccess
+	access blobaccess.DataAccess
 	digest digest.Digest
 	size   int64
-	orig   DataAccess
+	orig   blobaccess.DataAccess
 }
 
-var _ DataAccess = (*cachedAccess)(nil)
+var _ blobaccess.DataAccess = (*cachedAccess)(nil)
 
 func CachedAccess(src BlobSource, dst BlobSink, cache BlobCache) (BlobCache, error) {
 	var err error
@@ -627,11 +518,11 @@ func CachedAccess(src BlobSource, dst BlobSink, cache BlobCache) (BlobCache, err
 		}
 	}
 	c := &cached{source: src, sink: dst, cache: cache}
-	c.Allocatable = NewAllocatable(c.cleanup)
+	c.Allocatable = refmgmt.NewAllocatable(c.cleanup)
 	return c, nil
 }
 
-func newCachedAccess(cache *cached, blob DataAccess, size int64, digest digest.Digest) DataAccess {
+func newCachedAccess(cache *cached, blob blobaccess.DataAccess, size int64, digest digest.Digest) blobaccess.DataAccess {
 	return &cachedAccess{
 		cache:  cache,
 		size:   size,
@@ -654,7 +545,7 @@ func (c *cachedAccess) Get() ([]byte, error) {
 
 		if c.digest != "" {
 			c.size, c.access, err = c.cache.cache.GetBlobData(c.digest)
-			if err != nil && !IsErrBlobNotFound(err) {
+			if err != nil && !blobaccess.IsErrBlobNotFound(err) {
 				return nil, err
 			}
 		}
@@ -663,7 +554,7 @@ func (c *cachedAccess) Get() ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			c.size, c.digest, err = c.cache.cache.AddData(DataAccessForBytes(data))
+			c.size, c.digest, err = c.cache.cache.AddData(blobaccess.DataAccessForBytes(data))
 			if err == nil {
 				c.orig.Close()
 				c.orig = nil
@@ -688,7 +579,7 @@ func (c *cachedAccess) Reader() (io.ReadCloser, error) {
 
 		if c.digest != "" {
 			c.size, c.access, err = c.cache.cache.GetBlobData(c.digest)
-			if err != nil && !IsErrBlobNotFound(err) {
+			if err != nil && !blobaccess.IsErrBlobNotFound(err) {
 				return nil, err
 			}
 		}

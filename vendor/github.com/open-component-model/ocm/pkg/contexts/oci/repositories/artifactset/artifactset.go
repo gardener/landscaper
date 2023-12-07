@@ -10,6 +10,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
@@ -25,6 +26,19 @@ const (
 
 	OCITAG_ANNOTATION = "org.opencontainers.image.ref.name"
 )
+
+func RetrieveMainArtifactFromIndex(index *artdesc.Index) string {
+	if index.Annotations != nil {
+		main := index.Annotations[MAINARTIFACT_ANNOTATION]
+		if main != "" {
+			return main
+		}
+	}
+	if len(index.Manifests) == 1 {
+		return index.Manifests[0].Digest.String()
+	}
+	return ""
+}
 
 func RetrieveMainArtifact(m map[string]string) string {
 	return m[MAINARTIFACT_ANNOTATION]
@@ -59,7 +73,7 @@ func (a *ArtifactSet) Close() error { // why???
 	return a.NamespaceAccess.Close()
 }
 
-func (a *ArtifactSet) GetBlobData(digest digest.Digest) (int64, accessio.DataAccess, error) {
+func (a *ArtifactSet) GetBlobData(digest digest.Digest) (int64, blobaccess.DataAccess, error) {
 	return a.container.GetBlobData(digest)
 }
 
@@ -85,6 +99,12 @@ func (a *ArtifactSet) GetAnnotation(name string) string {
 
 func (a *ArtifactSet) HasAnnotation(name string) bool {
 	return a.container.HasAnnotation(name)
+}
+
+func (a *ArtifactSet) SetMainArtifact(version string) {
+	if version != "" {
+		a.Annotate(MAINARTIFACT_ANNOTATION, version)
+	}
 }
 
 func AsArtifactSet(ns cpi.NamespaceAccess) (*ArtifactSet, error) {
@@ -396,7 +416,7 @@ func (a *namespaceContainer) AnnotateArtifact(digest digest.Digest, name, value 
 	return errors.ErrUnknown(cpi.KIND_OCIARTIFACT, digest.String())
 }
 
-func (a *namespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
+func (a *namespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access blobaccess.BlobAccess, err error) {
 	blob, err := a.AddPlatformArtifact(artifact, nil)
 	if err != nil {
 		return nil, err
@@ -404,9 +424,9 @@ func (a *namespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) 
 	return blob, a.AddTags(blob.Digest(), tags...)
 }
 
-func (a *namespaceContainer) AddPlatformArtifact(artifact cpi.Artifact, platform *artdesc.Platform) (access accessio.BlobAccess, err error) {
+func (a *namespaceContainer) AddPlatformArtifact(artifact cpi.Artifact, platform *artdesc.Platform) (access blobaccess.BlobAccess, err error) {
 	if a.IsClosed() {
-		return nil, accessio.ErrClosed
+		return nil, blobaccess.ErrClosed
 	}
 	if a.IsReadOnly() {
 		return nil, accessio.ErrReadOnly

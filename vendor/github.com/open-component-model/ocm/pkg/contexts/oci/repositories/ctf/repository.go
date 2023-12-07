@@ -13,6 +13,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/repositories/artifactset"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/repositories/ctf/index"
+	"github.com/open-component-model/ocm/pkg/refmgmt"
 )
 
 /*
@@ -132,7 +133,7 @@ func (r *RepositoryImpl) LookupArtifact(name string, ref string) (acc cpi.Artifa
 		return nil, err
 	}
 
-	defer accessio.PropagateCloseTemporary(&err, ns) // temporary namespace object not exposed.
+	defer refmgmt.PropagateCloseTemporary(&err, ns) // temporary namespace object not exposed.
 
 	a := r.getIndex().GetArtifactInfo(name, ref)
 	if a == nil {

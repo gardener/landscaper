@@ -112,8 +112,10 @@ func DefinedForContext(ctx context.Context) (Context, bool) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+type _InternalContext = datacontext.InternalContext
+
 type coreContext struct {
-	datacontext.Context
+	_InternalContext
 	updater Updater
 
 	sharedAttributes datacontext.AttributesContext
@@ -130,6 +132,18 @@ type _context struct {
 
 var _ Context = &_context{}
 
+// gcWrapper is used as garbage collectable
+// wrapper for a context implementation
+// to establish a runtime finalizer.
+type gcWrapper struct {
+	datacontext.GCWrapper
+	*_context
+}
+
+func (w *gcWrapper) SetContext(c *_context) {
+	w._context = c
+}
+
 func newContext(shared datacontext.AttributesContext, reposcheme ConfigTypeScheme, delegates datacontext.Delegates) Context {
 	c := &_context{
 		coreContext: &coreContext{
@@ -138,10 +152,11 @@ func newContext(shared datacontext.AttributesContext, reposcheme ConfigTypeSchem
 			configs:          NewConfigStore(),
 		},
 	}
-	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, shared.GetAttributes(), delegates)
+	c._InternalContext = datacontext.NewContextBase(c, CONTEXT_TYPE, key, shared.GetAttributes(), delegates)
 	c.updater = NewUpdater(c, c)
 	datacontext.AssureUpdater(shared, NewUpdater(c, shared))
-	return c
+
+	return datacontext.FinalizedContext[gcWrapper](c)
 }
 
 func (c *_context) ConfigContext() Context {

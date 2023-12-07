@@ -13,8 +13,8 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const (
@@ -181,11 +181,11 @@ func OptionalDecrypt(key []byte, data []byte) ([]byte, error) {
 
 func WriteKey(key []byte, path string, fss ...vfs.FileSystem) error {
 	data := KeyToPem(key)
-	return vfs.WriteFile(accessio.FileSystem(fss...), path, data, 0o100)
+	return vfs.WriteFile(utils.FileSystem(fss...), path, data, 0o100)
 }
 
 func ReadKey(path string, fss ...vfs.FileSystem) ([]byte, error) {
-	data, err := vfs.ReadFile(accessio.FileSystem(fss...), path)
+	data, err := vfs.ReadFile(utils.FileSystem(fss...), path)
 	if err != nil {
 		return nil, err
 	}

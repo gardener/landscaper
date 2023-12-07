@@ -5,7 +5,7 @@
 package builder
 
 import (
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
@@ -18,7 +18,7 @@ type ocmResource struct {
 	orig   ocm.AccessSpec
 	meta   compdesc.ResourceMeta
 	access compdesc.AccessSpec
-	blob   accessio.BlobAccess
+	blob   blobaccess.BlobAccess
 	opts   ocm.ModificationOptions
 	hint   string
 }

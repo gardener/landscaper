@@ -5,97 +5,71 @@
 package identity
 
 import (
-	"strings"
-
-	"helm.sh/helm/v3/pkg/registry"
-
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
-	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
-	"github.com/open-component-model/ocm/pkg/contexts/credentials/identity/hostpath"
-	ociidentity "github.com/open-component-model/ocm/pkg/contexts/oci/identity"
-	"github.com/open-component-model/ocm/pkg/listformat"
+	helmidentity "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 )
 
 // CONSUMER_TYPE is the Helm chart repository type.
-const CONSUMER_TYPE = "HelmChartRepository"
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+const CONSUMER_TYPE = helmidentity.CONSUMER_TYPE
 
 // ID_TYPE is the type field of a consumer identity.
-const ID_TYPE = cpi.ID_TYPE
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+const ID_TYPE = helmidentity.ID_PORT
 
 // ID_SCHEME is the scheme of the repository.
-const ID_SCHEME = hostpath.ID_SCHEME
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+const ID_SCHEME = helmidentity.ID_SCHEME
 
 // ID_HOSTNAME is the hostname of a repository.
-const ID_HOSTNAME = hostpath.ID_HOSTNAME
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+const ID_HOSTNAME = helmidentity.ID_HOSTNAME
 
 // ID_PORT is the port number of a repository.
-const ID_PORT = hostpath.ID_PORT
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+const ID_PORT = helmidentity.ID_PORT
 
 // ID_PATHPREFIX is the path of a repository.
-const ID_PATHPREFIX = hostpath.ID_PATHPREFIX
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+const ID_PATHPREFIX = helmidentity.ID_PATHPREFIX
 
-func init() {
-	attrs := listformat.FormatListElements("", listformat.StringElementDescriptionList{
-		ATTR_USERNAME, "the basic auth user name",
-		ATTR_PASSWORD, "the basic auth password",
-		ATTR_CERTIFICATE, "TLS client certificate",
-		ATTR_PRIVATE_KEY, "TLS private key",
-		ATTR_CERTIFICATE_AUTHORITY, "TLS certificate authority",
-	})
-
-	cpi.RegisterStandardIdentity(CONSUMER_TYPE, IdentityMatcher, `Helm chart repository
-
-It matches the <code>`+CONSUMER_TYPE+`</code> consumer type and additionally acts like 
-the <code>`+hostpath.IDENTITY_TYPE+`</code> type.`,
-		attrs)
-}
-
-var identityMatcher = hostpath.IdentityMatcher(CONSUMER_TYPE)
-
-func IdentityMatcher(pattern, cur, id cpi.ConsumerIdentity) bool {
-	return identityMatcher(pattern, cur, id)
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+func IdentityMatcher(pattern, cur, id credentials.ConsumerIdentity) bool {
+	return helmidentity.IdentityMatcher(pattern, cur, id)
 }
 
 // used credential attributes
 
 const (
-	ATTR_USERNAME              = credentials.ATTR_USERNAME
-	ATTR_PASSWORD              = credentials.ATTR_PASSWORD
+	// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+	ATTR_USERNAME = credentials.ATTR_USERNAME
+	// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+	ATTR_PASSWORD = credentials.ATTR_PASSWORD
+	// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
 	ATTR_CERTIFICATE_AUTHORITY = credentials.ATTR_CERTIFICATE_AUTHORITY
-	ATTR_CERTIFICATE           = credentials.ATTR_CERTIFICATE
-	ATTR_PRIVATE_KEY           = credentials.ATTR_PRIVATE_KEY
+	// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+	ATTR_CERTIFICATE = credentials.ATTR_CERTIFICATE
+	// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+	ATTR_PRIVATE_KEY = credentials.ATTR_PRIVATE_KEY
 )
 
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
 func OCIRepoURL(repourl string, chartname string) string {
-	repourl = strings.TrimSuffix(repourl, "/")[3+len(registry.OCIScheme):]
-	if chartname != "" {
-		repourl += "/" + chartname
-	}
-	return repourl
+	return helmidentity.OCIRepoURL(repourl, chartname)
 }
 
-func GetConsumerId(repourl string, chartname string) cpi.ConsumerIdentity {
-	i := strings.LastIndex(chartname, ":")
-	if i >= 0 {
-		chartname = chartname[:i]
-	}
-	if registry.IsOCI(repourl) {
-		repourl = strings.TrimSuffix(repourl, "/")
-		return ociidentity.GetConsumerId(OCIRepoURL(repourl, ""), chartname)
-	} else {
-		return hostpath.GetConsumerIdentity(CONSUMER_TYPE, repourl)
-	}
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+func SimpleCredentials(user, passwd string) credentials.Credentials {
+	return helmidentity.SimpleCredentials(user, passwd)
 }
 
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
+func GetConsumerId(repourl string, chartname string) credentials.ConsumerIdentity {
+	return helmidentity.GetConsumerId(repourl, chartname)
+}
+
+// Deprecated: use package github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity.
 func GetCredentials(ctx credentials.ContextProvider, repourl string, chartname string) common.Properties {
-	id := GetConsumerId(repourl, chartname)
-	if id == nil {
-		return nil
-	}
-	creds, err := credentials.CredentialsForConsumer(ctx.CredentialsContext(), id)
-	if creds == nil || err != nil {
-		return nil
-	}
-	return creds.Properties()
+	return helmidentity.GetCredentials(ctx, repourl, chartname)
 }

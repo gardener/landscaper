@@ -60,6 +60,7 @@ type Context interface {
 	RepositorySpecHandlers() RepositorySpecHandlers
 	MapUniformRepositorySpec(u *UniformRepositorySpec) (RepositorySpec, error)
 
+	DisableBlobHandlers()
 	BlobHandlers() BlobHandlerRegistry
 	BlobDigesters() BlobDigesterRegistry
 
@@ -120,8 +121,10 @@ func DefinedForContext(ctx context.Context) (Context, bool) {
 
 // //////////////////////////////////////////////////////////////////////////////
 
+type _InternalContext = datacontext.InternalContext
+
 type _context struct {
-	datacontext.Context
+	_InternalContext
 	updater cfgcpi.Updater
 
 	sharedattributes datacontext.AttributesContext
@@ -136,10 +139,21 @@ type _context struct {
 	blobDigesters BlobDigesterRegistry
 	aliases       map[string]RepositorySpec
 	resolver      *resolver
-	finalizer     Finalizer
 }
 
 var _ Context = &_context{}
+
+// gcWrapper is used as garbage collectable
+// wrapper for a context implementation
+// to establish a runtime finalizer.
+type gcWrapper struct {
+	datacontext.GCWrapper
+	*_context
+}
+
+func (w *gcWrapper) SetContext(c *_context) {
+	w._context = c
+}
 
 func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme RepositoryTypeScheme, accessscheme AccessTypeScheme, specHandlers RepositorySpecHandlers, blobHandlers BlobHandlerRegistry, blobDigesters BlobDigesterRegistry, repodel RepositoryDelegationRegistry, delegates datacontext.Delegates) Context {
 	c := &_context{
@@ -157,13 +171,14 @@ func newContext(credctx credentials.Context, ocictx oci.Context, reposcheme Repo
 	if repodel != nil {
 		c.knownRepositoryTypes = NewRepositoryTypeScheme(&delegatingDecoder{ctx: c, delegate: repodel}, reposcheme)
 	}
-	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.GetAttributes(), delegates)
+	c._InternalContext = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.GetAttributes(), delegates)
 	c.updater = cfgcpi.NewUpdater(credctx.ConfigContext(), c)
 	c.resolver = &resolver{
 		ctx:              c,
 		MatchingResolver: NewMatchingResolver(c),
 	}
-	return c
+	c.Finalizer().With(c.resolver.Finalize)
+	return datacontext.FinalizedContext[gcWrapper](c)
 }
 
 func (c *_context) OCMContext() Context {
@@ -172,15 +187,6 @@ func (c *_context) OCMContext() Context {
 
 func (c *_context) Update() error {
 	return c.updater.Update()
-}
-
-func (c *_context) Finalize() error {
-	c.finalizer.With(c.resolver.Finalize)
-	return c.finalizer.Finalize()
-}
-
-func (c *_context) Finalizer() *Finalizer {
-	return &c.finalizer
 }
 
 func (c *_context) AttributesContext() datacontext.AttributesContext {
@@ -209,6 +215,10 @@ func (c *_context) RepositorySpecHandlers() RepositorySpecHandlers {
 
 func (c *_context) MapUniformRepositorySpec(u *UniformRepositorySpec) (RepositorySpec, error) {
 	return c.specHandlers.MapUniformRepositorySpec(c, u)
+}
+
+func (c *_context) DisableBlobHandlers() {
+	c.blobHandlers = NewBlobHandlerRegistry(nil)
 }
 
 func (c *_context) BlobHandlers() BlobHandlerRegistry {
@@ -299,6 +309,7 @@ func (c *_context) SetAlias(name string, spec RepositorySpec) {
 }
 
 func (c *_context) GetResolver() ComponentVersionResolver {
+	c.Update()
 	if len(c.resolver.rules) == 0 {
 		return nil
 	}

@@ -7,7 +7,7 @@ package support
 import (
 	"github.com/opencontainers/go-digest"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
@@ -94,7 +94,7 @@ func (i *IndexAccess) GetBlob(digest digest.Digest) (internal.BlobAccess, error)
 		if err != nil {
 			return nil, err
 		}
-		return accessio.BlobAccessForDataAccess(d.Digest, d.Size, d.MediaType, data), nil
+		return blobaccess.ForDataAccess(d.Digest, d.Size, d.MediaType, data), nil
 	}
 	return nil, cpi.ErrBlobNotFound(digest)
 }
@@ -108,6 +108,6 @@ func (i *IndexAccess) GetArtifact(digest digest.Digest) (internal.ArtifactAccess
 	return nil, errors.ErrNotFound(cpi.KIND_OCIARTIFACT, digest.String())
 }
 
-func (a *IndexAccess) AddArtifact(art cpi.Artifact, platform *artdesc.Platform) (access accessio.BlobAccess, err error) {
+func (a *IndexAccess) AddArtifact(art cpi.Artifact, platform *artdesc.Platform) (access blobaccess.BlobAccess, err error) {
 	return a.master.AddArtifact(art, platform)
 }

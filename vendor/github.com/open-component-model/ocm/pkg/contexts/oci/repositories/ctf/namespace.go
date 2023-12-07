@@ -7,6 +7,7 @@ package ctf
 import (
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
@@ -76,7 +77,7 @@ func (n *namespaceContainer) HasArtifact(vers string) (bool, error) {
 	return meta != nil, nil
 }
 
-func (n *namespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access accessio.BlobAccess, err error) {
+func (n *namespaceContainer) AddArtifact(artifact cpi.Artifact, tags ...string) (access blobaccess.BlobAccess, err error) {
 	n.repo.base.Lock()
 	defer n.repo.base.Unlock()
 

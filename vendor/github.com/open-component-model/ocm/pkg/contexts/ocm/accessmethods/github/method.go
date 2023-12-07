@@ -17,13 +17,14 @@ import (
 	"github.com/google/go-github/v45/github"
 	"golang.org/x/oauth2"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessio/downloader"
 	hd "github.com/open-component-model/ocm/pkg/common/accessio/downloader/http"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/github/identity"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/mime"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -43,13 +44,13 @@ const (
 const ShaLength = 40
 
 func init() {
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](Type, cpi.WithDescription(usage)))
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](TypeV1, cpi.WithFormatSpec(formatV1), cpi.WithConfigHandler(ConfigHandler())))
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](LegacyType))
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](LegacyTypeV1))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](Type, accspeccpi.WithDescription(usage)))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](TypeV1, accspeccpi.WithFormatSpec(formatV1), accspeccpi.WithConfigHandler(ConfigHandler())))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](LegacyType))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](LegacyTypeV1))
 }
 
-func Is(spec cpi.AccessSpec) bool {
+func Is(spec accspeccpi.AccessSpec) bool {
 	return spec != nil && spec.GetKind() == Type || spec.GetKind() == LegacyType
 }
 
@@ -71,7 +72,7 @@ type AccessSpec struct {
 	downloader downloader.Downloader
 }
 
-var _ cpi.AccessSpec = (*AccessSpec)(nil)
+var _ accspeccpi.AccessSpec = (*AccessSpec)(nil)
 
 // AccessSpecOptions defines a set of options which can be applied to the access spec.
 type AccessSpecOptions func(s *AccessSpec)
@@ -104,15 +105,15 @@ func New(repoURL, apiHostname, commit string, opts ...AccessSpecOptions) *Access
 	return s
 }
 
-func (a *AccessSpec) Describe(ctx cpi.Context) string {
+func (a *AccessSpec) Describe(ctx accspeccpi.Context) string {
 	return fmt.Sprintf("GitHub commit %s[%s]", a.RepoURL, a.Commit)
 }
 
-func (_ *AccessSpec) IsLocal(cpi.Context) bool {
+func (_ *AccessSpec) IsLocal(accspeccpi.Context) bool {
 	return false
 }
 
-func (a *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
+func (a *AccessSpec) GlobalAccessSpec(ctx accspeccpi.Context) accspeccpi.AccessSpec {
 	return a
 }
 
@@ -120,11 +121,11 @@ func (_ *AccessSpec) GetType() string {
 	return Type
 }
 
-func (a *AccessSpec) AccessMethod(c cpi.ComponentVersionAccess) (cpi.AccessMethod, error) {
-	return newMethod(c, a)
+func (a *AccessSpec) AccessMethod(c accspeccpi.ComponentVersionAccess) (accspeccpi.AccessMethod, error) {
+	return accspeccpi.AccessMethodForImplementation(newMethod(c, a))
 }
 
-func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVersionAccess) string {
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access accspeccpi.ComponentVersionAccess) string {
 	return a.Commit
 }
 
@@ -150,18 +151,19 @@ type RepositoryService interface {
 
 type accessMethod struct {
 	lock   sync.Mutex
-	access accessio.BlobAccess
+	access blobaccess.BlobAccess
 
-	compvers          cpi.ComponentVersionAccess
+	compvers          accspeccpi.ComponentVersionAccess
 	spec              *AccessSpec
 	repositoryService RepositoryService
 	owner             string
 	repo              string
+	cid               credentials.ConsumerIdentity
 }
 
-var _ cpi.AccessMethod = (*accessMethod)(nil)
+var _ accspeccpi.AccessMethodImpl = (*accessMethod)(nil)
 
-func newMethod(c cpi.ComponentVersionAccess, a *AccessSpec) (cpi.AccessMethod, error) {
+func newMethod(c accspeccpi.ComponentVersionAccess, a *AccessSpec) (*accessMethod, error) {
 	if err := validateCommit(a.Commit); err != nil {
 		return nil, fmt.Errorf("failed to validate commit: %w", err)
 	}
@@ -181,7 +183,7 @@ func newMethod(c cpi.ComponentVersionAccess, a *AccessSpec) (cpi.AccessMethod, e
 		return nil, errors.ErrInvalid("repository path", path, a.RepoURL)
 	}
 
-	token, err := getCreds(unparsed, path, c.GetContext().CredentialsContext())
+	token, cid, err := getCreds(unparsed, path, c.GetContext().CredentialsContext())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get creds: %w", err)
 	}
@@ -209,6 +211,7 @@ func newMethod(c cpi.ComponentVersionAccess, a *AccessSpec) (cpi.AccessMethod, e
 		compvers:          c,
 		owner:             pathcomps[0],
 		repo:              pathcomps[1],
+		cid:               cid,
 		repositoryService: client.Repositories,
 	}, nil
 }
@@ -225,12 +228,17 @@ func validateCommit(commit string) error {
 	return nil
 }
 
-func getCreds(serverurl, path string, cctx credentials.Context) (string, error) {
-	creds, err := identity.GetCredentials(cctx, serverurl, path)
+func getCreds(serverurl, path string, cctx credentials.Context) (string, credentials.ConsumerIdentity, error) {
+	id := identity.GetConsumerId(serverurl, path)
+	creds, err := credentials.CredentialsForConsumer(cctx.CredentialsContext(), id, identity.IdentityMatcher)
 	if creds == nil || err != nil {
-		return "", err
+		return "", id, err
 	}
-	return creds.GetProperty(credentials.ATTR_TOKEN), nil
+	return creds.GetProperty(credentials.ATTR_TOKEN), id, nil
+}
+
+func (_ *accessMethod) IsLocal() bool {
+	return false
 }
 
 func (m *accessMethod) GetKind() string {
@@ -241,7 +249,7 @@ func (m *accessMethod) MimeType() string {
 	return mime.MIME_TGZ
 }
 
-func (m *accessMethod) AccessSpec() cpi.AccessSpec {
+func (m *accessMethod) AccessSpec() accspeccpi.AccessSpec {
 	return m.spec
 }
 
@@ -303,4 +311,12 @@ func (m *accessMethod) getDownloadLink() (string, error) {
 	defer resp.Body.Close()
 
 	return link.String(), nil
+}
+
+func (m *accessMethod) GetConsumerId(uctx ...credentials.UsageContext) credentials.ConsumerIdentity {
+	return m.cid
+}
+
+func (m *accessMethod) GetIdentityMatcher() string {
+	return identity.CONSUMER_TYPE
 }

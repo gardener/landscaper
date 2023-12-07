@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package blob
+package executable
 
 import (
 	"io"
@@ -37,7 +37,7 @@ func wrapErr(err error, racc cpi.ResourceAccess) error {
 }
 
 func (_ Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string, fs vfs.FileSystem) (bool, string, error) {
-	rd, err := cpi.ResourceReader(racc)
+	rd, err := cpi.GetResourceReader(racc)
 	if err != nil {
 		return true, "", wrapErr(err, racc)
 	}

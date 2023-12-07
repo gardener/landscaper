@@ -11,7 +11,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc/helper"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
@@ -160,7 +160,7 @@ func (d *Artifact) modifyAnnotation(mod func(annos *map[string]string)) error {
 	return nil
 }
 
-func (d *Artifact) ToBlobAccess() (accessio.BlobAccess, error) {
+func (d *Artifact) ToBlobAccess() (blobaccess.BlobAccess, error) {
 	if d.IsManifest() {
 		return d.manifest.ToBlobAccess()
 	}

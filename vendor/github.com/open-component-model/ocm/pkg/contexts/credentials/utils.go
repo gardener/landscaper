@@ -4,16 +4,18 @@
 
 package credentials
 
+import (
+	"github.com/open-component-model/ocm/pkg/utils"
+)
+
 func GetProvidedConsumerId(obj interface{}, uctx ...UsageContext) ConsumerIdentity {
-	if p, ok := obj.(ConsumerIdentityProvider); ok {
-		return p.GetConsumerId(uctx...)
-	}
-	return nil
+	return utils.UnwrappingCall(obj, func(provider ConsumerIdentityProvider) ConsumerIdentity {
+		return provider.GetConsumerId()
+	})
 }
 
-func GetProvidedIdentityMatcher(obj interface{}, uctx ...UsageContext) string {
-	if p, ok := obj.(ConsumerIdentityProvider); ok {
-		return p.GetIdentityMatcher()
-	}
-	return ""
+func GetProvidedIdentityMatcher(obj interface{}) string {
+	return utils.UnwrappingCall(obj, func(provider ConsumerIdentityProvider) string {
+		return provider.GetIdentityMatcher()
+	})
 }

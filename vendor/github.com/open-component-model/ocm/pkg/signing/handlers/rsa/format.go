@@ -58,6 +58,10 @@ func GetPrivateKey(key interface{}) (*rsa.PrivateKey, error) {
 }
 
 func WriteKeyData(key interface{}, w io.Writer) error {
+	if data, ok := key.([]byte); ok {
+		_, err := w.Write(data)
+		return err
+	}
 	block, err := PemBlockForKey(key)
 	if err != nil {
 		return err

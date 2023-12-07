@@ -11,6 +11,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
@@ -28,7 +29,7 @@ type ArtifactAccessImpl struct {
 
 var _ cpi.ArtifactAccessImpl = (*ArtifactAccessImpl)(nil)
 
-func NewArtifactForBlob(container NamespaceAccessImpl, blob accessio.BlobAccess, closer ...io.Closer) (cpi.ArtifactAccess, error) {
+func NewArtifactForBlob(container NamespaceAccessImpl, blob blobaccess.BlobAccess, closer ...io.Closer) (cpi.ArtifactAccess, error) {
 	mode := accessobj.ACC_WRITABLE
 	if container.IsReadOnly() {
 		mode = accessobj.ACC_READONLY
@@ -37,7 +38,6 @@ func NewArtifactForBlob(container NamespaceAccessImpl, blob accessio.BlobAccess,
 	if err != nil {
 		return nil, err
 	}
-
 	return newArtifact(container, state, closer...)
 }
 
@@ -191,7 +191,7 @@ func (a *ArtifactAccessImpl) GetBlob(digest digest.Digest) (cpi.BlobAccess, erro
 		if err != nil {
 			return nil, err
 		}
-		return accessio.BlobAccessForDataAccess(d.Digest, d.Size, d.MediaType, data), nil
+		return blobaccess.ForDataAccess(d.Digest, d.Size, d.MediaType, data), nil
 	}
 	return nil, cpi.ErrBlobNotFound(digest)
 }
@@ -268,8 +268,8 @@ func (a *ArtifactAccessImpl) AddLayer(blob cpi.BlobAccess, d *cpi.Descriptor) (i
 }
 
 func AdjustSize(d *artdesc.Descriptor, size int64) error {
-	if size != accessio.BLOB_UNKNOWN_SIZE {
-		if d.Size == accessio.BLOB_UNKNOWN_SIZE {
+	if size != blobaccess.BLOB_UNKNOWN_SIZE {
+		if d.Size == blobaccess.BLOB_UNKNOWN_SIZE {
 			d.Size = size
 		} else if d.Size != size {
 			return errors.Newf("blob size mismatch %d != %d", size, d.Size)

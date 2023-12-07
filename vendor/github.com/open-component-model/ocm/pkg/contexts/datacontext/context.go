@@ -103,11 +103,18 @@ func ComposeDelegates(l logging.Context, a handlers.Registry) Delegates {
 	return _delegates{l, a}
 }
 
+type ContextBinder interface {
+	// BindTo binds the context to a context.Context and makes it
+	// retrievable by a ForContext method
+	BindTo(ctx context.Context) context.Context
+}
+
 // Context describes a common interface for a data context used for a dedicated
 // purpose.
 // Such has a type and always specific attribute store.
 // Every Context can be bound to a context.Context.
 type Context interface {
+	ContextBinder
 	ContextProvider
 	Delegates
 
@@ -115,15 +122,17 @@ type Context interface {
 	GetType() string
 	GetId() ContextIdentity
 
-	// BindTo binds the context to a context.Context and makes it
-	// retrievable by a ForContext method
-	BindTo(ctx context.Context) context.Context
 	GetAttributes() Attributes
+
+	Finalize() error
+	Finalizer() *finalizer.Finalizer
 }
 
 type InternalContext interface {
 	Context
 	finalizer.RecorderProvider
+	GetKey() interface{}
+	Cleanup() error
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -141,6 +150,8 @@ type AttributesContext interface {
 type AttributeFactory func(Context) interface{}
 
 type Attributes interface {
+	finalizer.Finalizable
+
 	GetAttribute(name string, def ...interface{}) interface{}
 	SetAttribute(name string, value interface{}) error
 	SetEncodedAttribute(name string, data []byte, unmarshaller runtime.Unmarshaler) error
@@ -180,71 +191,30 @@ func (u UpdateFunc) Update() error {
 
 type delegates = Delegates
 
-type contextBase struct {
-	ctxtype    string
-	id         ContextIdentity
-	key        interface{}
-	effective  Context
-	attributes Attributes
-	delegates
-
-	ref      *finalizer.RuntimeFinalizer
-	recorder *finalizer.RuntimeFinalizationRecoder
-}
-
-var _ Context = (*contextBase)(nil)
-
-// NewContextBase creates a context base implementation supporting
-// context attributes and the binding to a context.Context.
-func NewContextBase(eff Context, typ string, key interface{}, parentAttrs Attributes, delegates Delegates) InternalContext {
-	recorder := &finalizer.RuntimeFinalizationRecoder{}
-	id := ContextIdentity(fmt.Sprintf("%s/%d", typ, contextrange.NextId()))
-	updater, _ := eff.(Updater)
-	c := &contextBase{ctxtype: typ, id: id, key: key, effective: eff, recorder: recorder}
-	c.attributes = newAttributes(eff, parentAttrs, &updater)
-	c.delegates = ComposeDelegates(logging.NewWithBase(delegates.LoggingContext()), handlers.NewRegistry(nil, delegates.GetActions()))
-	c.recorder = recorder
-	c.ref = finalizer.NewRuntimeFinalizer(id, recorder)
-	return c
-}
-
-func (c *contextBase) GetType() string {
-	return c.ctxtype
-}
-
-func (c *contextBase) GetId() ContextIdentity {
-	return c.id
-}
-
-// BindTo make the Context reachable via the resulting context.Context.
-func (c *contextBase) BindTo(ctx context.Context) context.Context {
-	return context.WithValue(ctx, c.key, c.effective)
-}
-
-func (c *contextBase) AttributesContext() AttributesContext {
-	return c.effective.AttributesContext()
-}
-
-func (c *contextBase) GetAttributes() Attributes {
-	return c.attributes
-}
-
-func (c *contextBase) GetRecorder() *finalizer.RuntimeFinalizationRecoder {
-	return c.recorder
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
+var key = reflect.TypeOf(_context{})
+
 type _context struct {
-	Context
+	*contextBase
 	updater Updater
 }
 
-var key = reflect.TypeOf(contextBase{})
+// gcWrapper is used as garbage collectable
+// wrapper for a context implementation
+// to establish a runtime finalizer.
+type gcWrapper struct {
+	GCWrapper
+	*_context
+}
+
+func (w *gcWrapper) SetContext(c *_context) {
+	w._context = c
+}
 
 // New provides a root attribute context.
-func New(parentAttrs Attributes) AttributesContext {
-	return NewWithActions(parentAttrs, handlers.NewRegistry(nil, handlers.DefaultRegistry()))
+func New(parentAttrs ...Attributes) AttributesContext {
+	return NewWithActions(utils.Optional(parentAttrs...), handlers.NewRegistry(nil, handlers.DefaultRegistry()))
 }
 
 func NewWithActions(parentAttrs Attributes, actions handlers.Registry) AttributesContext {
@@ -253,53 +223,31 @@ func NewWithActions(parentAttrs Attributes, actions handlers.Registry) Attribute
 
 func newWithActions(mode BuilderMode, parentAttrs Attributes, actions handlers.Registry) AttributesContext {
 	c := &_context{}
-
-	recorder := &finalizer.RuntimeFinalizationRecoder{}
-	id := ContextIdentity(fmt.Sprintf("%s/%d", CONTEXT_TYPE, contextrange.NextId()))
-	c.Context = &contextBase{
-		ctxtype:    CONTEXT_TYPE,
-		id:         id,
-		recorder:   recorder,
-		effective:  c,
-		attributes: newAttributes(c, parentAttrs, &c.updater),
-		delegates:  ComposeDelegates(logging.NewWithBase(ocmlog.Context()), handlers.NewRegistry(nil, actions)),
-		ref:        finalizer.NewRuntimeFinalizer(id, recorder),
-	}
-	return SetupContext(mode, c)
-}
-
-// AssureUpdater is used to assure the existence of an updater in
-// a root context if a config context is down the context hierarchy.
-// This method SHOULD only be called by a config context.
-func AssureUpdater(attrs AttributesContext, u Updater) {
-	c, ok := attrs.(*_context)
-	if !ok {
-		return
-	}
-	if c.updater == nil {
-		c.updater = u
-	}
+	c.contextBase = newContextBase(c, CONTEXT_TYPE, key, parentAttrs, &c.updater,
+		ComposeDelegates(logging.NewWithBase(ocmlog.Context()), handlers.NewRegistry(nil, actions)),
+	)
+	return SetupContext(mode, FinalizedContext[gcWrapper](c))
 }
 
 func (c *_context) Actions() handlers.Registry {
 	if c.updater != nil {
 		c.updater.Update()
 	}
-	return c.Context.GetActions()
+	return c.contextBase.GetActions()
 }
 
 func (c *_context) LoggingContext() logging.Context {
 	if c.updater != nil {
 		c.updater.Update()
 	}
-	return c.Context.LoggingContext()
+	return c.contextBase.LoggingContext()
 }
 
 func (c *_context) Logger(messageContext ...logging.MessageContext) logging.Logger {
 	if c.updater != nil {
 		c.updater.Update()
 	}
-	return c.Context.Logger(messageContext...)
+	return c.contextBase.Logger(messageContext...)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -329,6 +277,16 @@ func newAttributes(ctx Context, parent Attributes, updater *Updater) *_attribute
 		updater:    updater,
 		attributes: map[string]interface{}{},
 	}
+}
+
+func (c *_attributes) Finalize() error {
+	list := errors.ErrListf("finalizing attributes")
+	for n, a := range c.attributes {
+		if f, ok := a.(finalizer.Finalizable); ok {
+			list.Addf(nil, f.Finalize(), "attribute %s", n)
+		}
+	}
+	return list.Result()
 }
 
 func (c *_attributes) GetAttribute(name string, def ...interface{}) interface{} {

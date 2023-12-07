@@ -8,8 +8,8 @@ import (
 	"os"
 
 	"github.com/open-component-model/ocm/pkg/common"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/oci/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
-	"github.com/open-component-model/ocm/pkg/contexts/oci/identity"
 )
 
 const HOST = "ghcr.io"

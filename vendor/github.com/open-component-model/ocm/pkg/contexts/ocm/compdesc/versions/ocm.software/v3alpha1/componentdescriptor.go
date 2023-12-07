@@ -38,7 +38,7 @@ var _ compdesc.ComponentDescriptorVersion = (*ComponentDescriptor)(nil)
 // representation.
 func (cd *ComponentDescriptor) SchemaVersion() string {
 	if cd.APIVersion == "" {
-		return GroupVersion
+		return SchemaVersion
 	}
 	return cd.APIVersion
 }

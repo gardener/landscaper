@@ -7,14 +7,14 @@ package internal
 import (
 	"fmt"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
 const (
 	KIND_OCIARTIFACT = "oci artifact"
-	KIND_BLOB        = accessio.KIND_BLOB
-	KIND_MEDIATYPE   = accessio.KIND_MEDIATYPE
+	KIND_BLOB        = blobaccess.KIND_BLOB
+	KIND_MEDIATYPE   = blobaccess.KIND_MEDIATYPE
 )
 
 func ErrUnknownArtifact(name, version string) error {

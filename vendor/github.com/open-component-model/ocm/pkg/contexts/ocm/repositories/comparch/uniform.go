@@ -8,7 +8,6 @@ import (
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
-	"github.com/open-component-model/ocm/pkg/contexts/oci/repositories/ctf"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 )
 
@@ -17,11 +16,6 @@ func init() {
 	cpi.RegisterRepositorySpecHandler(h, "")
 	cpi.RegisterRepositorySpecHandler(h, Type)
 	cpi.RegisterRepositorySpecHandler(h, "ca")
-	for _, f := range ctf.SupportedFormats() {
-		cpi.RegisterRepositorySpecHandler(h, string(f))
-		cpi.RegisterRepositorySpecHandler(h, "ca+"+string(f))
-		cpi.RegisterRepositorySpecHandler(h, Type+"+"+string(f))
-	}
 }
 
 type repospechandler struct{}
@@ -35,12 +29,14 @@ func (h *repospechandler) MapReference(ctx cpi.Context, u *cpi.UniformRepository
 		path = u.Host
 	}
 	fs := vfsattr.Get(ctx)
-	hint := u.TypeHint
+
+	typ, _ := accessobj.MapType(u.Type, Type, accessio.FormatNone, true, "ca")
+	hint, f := accessobj.MapType(u.TypeHint, Type, accessio.FormatDirectory, false, "ca")
 	if !u.CreateIfMissing {
 		hint = ""
 	}
-	create, ok, err := accessobj.CheckFile(Type, hint, accessio.TypeForType(u.Type) == Type, path, fs, ComponentDescriptorFileName)
-	if !ok || err != nil {
+	create, ok, err := accessobj.CheckFile(Type, hint, accessio.TypeForTypeSpec(typ) == Type, path, fs, ComponentDescriptorFileName)
+	if !ok || (err != nil && typ == "") {
 		if err != nil {
 			return nil, err
 		}
@@ -49,8 +45,10 @@ func (h *repospechandler) MapReference(ctx cpi.Context, u *cpi.UniformRepository
 		}
 	}
 	mode := accessobj.ACC_WRITABLE
+	createHint := accessio.FormatNone
 	if create {
 		mode |= accessobj.ACC_CREATE
+		createHint = f
 	}
-	return NewRepositorySpec(mode, path, accessio.FileFormatForType(u.Type), accessio.PathFileSystem(fs))
+	return NewRepositorySpec(mode, path, createHint, accessio.PathFileSystem(fs))
 }
