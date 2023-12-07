@@ -10,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -23,6 +21,7 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 	"github.com/gardener/landscaper/pkg/agent"
 	"github.com/gardener/landscaper/pkg/api"
@@ -84,7 +83,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				if previousDeployerRegistrations.Has(reg.Name) {
 					continue
 				}
-				if err := envtest.CleanupForObject(ctx, f.Client, &reg, 2*time.Minute); err != nil {
+				if err := envtest.CleanupForObject(ctx, f.Log(), f.Client, &reg, 2*time.Minute); err != nil {
 					allErrs = append(allErrs, err)
 				}
 			}
@@ -95,7 +94,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				if previousEnvironments.Has(env.Name) {
 					continue
 				}
-				if err := envtest.CleanupForObject(ctx, f.Client, &env, 2*time.Minute); err != nil {
+				if err := envtest.CleanupForObject(ctx, f.Log(), f.Client, &env, 2*time.Minute); err != nil {
 					allErrs = append(allErrs, err)
 				}
 			}
@@ -160,7 +159,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				// remove finalizer from testenv
 				env := &lsv1alpha1.Environment{}
 				env.Name = "testenv"
-				testutil.ExpectNoError(envtest.CleanupForObject(ctx, f.Client, env, 5*time.Second))
+				testutil.ExpectNoError(envtest.CleanupForObject(ctx, f.Log(), f.Client, env, 5*time.Second))
 			})
 
 			It("should create and delete new installations for a new environment", func() {

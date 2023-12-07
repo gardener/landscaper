@@ -10,20 +10,19 @@ import (
 	"testing"
 	"time"
 
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/cmd/landscaper-controller/app"
-	deployerconfig "github.com/gardener/landscaper/pkg/deployermanagement/config"
-
 	"github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/cmd/landscaper-controller/app"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
+	deployerconfig "github.com/gardener/landscaper/pkg/deployermanagement/config"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -84,7 +83,7 @@ var _ = Describe("Landscaper Controller", func() {
 			Expect(testenv.Client.List(ctx, deployerRegistrations)).To(Succeed())
 			for _, reg := range deployerRegistrations.Items {
 				d := 10 * time.Second
-				Expect(envtest.CleanupForObject(ctx, testenv.Client, &reg, d)).To(Succeed())
+				Expect(envtest.CleanupForObject(ctx, utils.NewDiscardLogger(), testenv.Client, &reg, d)).To(Succeed())
 			}
 		})
 
