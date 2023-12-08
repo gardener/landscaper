@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -21,7 +23,8 @@ import (
 )
 
 // AddControllerToManager register the installation Controller in a manager.
-func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config *config.LandscaperConfiguration, callerName string) error {
+func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config *config.LandscaperConfiguration, callerName string,
+	indepLsClient, indepHostClient client.Client) error {
 	log := logger.Reconciles("installation", "Installation")
 
 	lockingEnabled := lock.IsLockingEnabledForMainControllers(config)
@@ -30,10 +33,20 @@ func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manage
 		"numberOfWorkerThreads", config.Controllers.Installations.CommonControllerConfig.Workers,
 		"lockingEnabled", lockingEnabled)
 
+	hostClient := indepHostClient
+	if indepHostClient != nil {
+		hostClient = indepHostClient
+	}
+
+	lsClient := indepLsClient
+	if indepLsClient != nil {
+		lsClient = indepLsClient
+	}
+
 	a, err := NewController(
-		hostMgr.GetClient(),
+		hostClient,
 		log,
-		lsMgr.GetClient(),
+		lsClient,
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
 		config,

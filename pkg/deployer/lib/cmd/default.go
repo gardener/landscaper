@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"os"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
@@ -35,6 +37,9 @@ type DefaultOptions struct {
 	Log     logging.Logger
 	LsMgr   manager.Manager
 	HostMgr manager.Manager
+
+	LsClient   client.Client
+	HostClient client.Client
 
 	decoder runtime.Decoder
 }
@@ -66,12 +71,14 @@ func (o *DefaultOptions) Complete() error {
 
 	hostAndResourceClusterDifferent := len(o.LsKubeconfig) != 0
 
-	burst, qps := lsutils.GetHostClientRequestRestrictions(log, hostAndResourceClusterDifferent)
+	hostBurst, hostQps := lsutils.GetHostClientRequestRestrictions(log, hostAndResourceClusterDifferent)
+	lsBurst := hostBurst
+	lsQps := hostQps
 
 	opts := manager.Options{
 		LeaderElection:     false,
 		MetricsBindAddress: "0", // disable the metrics serving by default
-		NewClient:          lsutils.NewUncachedClient(burst, qps),
+		NewClient:          lsutils.NewUncachedClient(hostBurst, hostQps),
 	}
 
 	restConfig, err := ctrl.GetConfig()
@@ -98,8 +105,8 @@ func (o *DefaultOptions) Complete() error {
 			return fmt.Errorf("unable to build landscaper cluster rest client from %s: %w", o.LsKubeconfig, err)
 		}
 
-		burst, qps = lsutils.GetResourceClientRequestRestrictions(log)
-		opts.NewClient = lsutils.NewUncachedClient(burst, qps)
+		lsBurst, lsQps = lsutils.GetResourceClientRequestRestrictions(log)
+		opts.NewClient = lsutils.NewUncachedClient(lsBurst, lsQps)
 
 		o.LsMgr, err = ctrl.NewManager(restConfig, opts)
 		if err != nil {
@@ -108,6 +115,19 @@ func (o *DefaultOptions) Complete() error {
 	}
 
 	lsinstall.Install(o.LsMgr.GetScheme())
+
+	lsClient, err := lsutils.NewUncached(lsBurst, lsQps, o.LsMgr.GetConfig(), client.Options{Scheme: o.LsMgr.GetScheme()})
+	if err != nil {
+		return fmt.Errorf("unable to get an independendant lsClient: %w", err)
+	}
+
+	hostClient, err := lsutils.NewUncached(hostBurst, hostQps, o.HostMgr.GetConfig(), client.Options{Scheme: o.HostMgr.GetScheme()})
+	if err != nil {
+		return fmt.Errorf("unable to get an independendant hostClient: %w", err)
+	}
+
+	o.LsClient = lsClient
+	o.HostClient = hostClient
 
 	return nil
 }

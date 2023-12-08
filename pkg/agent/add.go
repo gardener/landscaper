@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib/cmd"
+
 	"k8s.io/apimachinery/pkg/selection"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -88,7 +90,17 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 			},
 		},
 	}
-	if err := helmctlr.AddDeployerToManager(log, lsMgr, hostMgr, helmConfig, callerName); err != nil {
+
+	do := cmd.DefaultOptions{
+		LsKubeconfig: "",
+		Log:          log,
+		LsMgr:        lsMgr,
+		HostMgr:      hostMgr,
+		LsClient:     nil,
+		HostClient:   nil,
+	}
+
+	if err := helmctlr.AddDeployerToManager(&do, helmConfig, callerName); err != nil {
 		return err
 	}
 

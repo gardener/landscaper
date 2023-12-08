@@ -67,9 +67,7 @@ func NewDeployer(log logging.Logger,
 		hostClient:  hostKubeClient,
 		config:      config,
 		sharedCache: sharedCache,
-		hooks:       extension.ReconcileExtensionHooks{},
 	}
-	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
 	return dep, nil
 }
 

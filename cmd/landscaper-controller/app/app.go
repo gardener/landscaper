@@ -67,6 +67,17 @@ func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
+type controllerValues struct {
+	lsMgr   manager.Manager
+	hostMgr manager.Manager
+
+	lsBurst int
+	lsQps   int
+
+	hostBurst int
+	hostQps   int
+}
+
 func (o *Options) run(ctx context.Context) error {
 	setupLogger := o.Log.WithName("setup")
 	setupLogger.Info("Starting Landscaper Controller", lc.KeyVersion, version.Get().String())
@@ -102,7 +113,15 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to setup manager: %w", err)
 	}
 
-	lsMgr := hostMgr
+	contVals := controllerValues{
+		lsMgr:     hostMgr,
+		hostMgr:   hostMgr,
+		lsBurst:   burst,
+		lsQps:     qps,
+		hostBurst: burst,
+		hostQps:   qps,
+	}
+
 	if hostAndResourceClusterDifferent {
 		data, err := os.ReadFile(o.landscaperKubeconfigPath)
 		if err != nil {
@@ -118,10 +137,10 @@ func (o *Options) run(ctx context.Context) error {
 		}
 
 		opts.MetricsBindAddress = "0"
-		burst, qps = lsutils.GetResourceClientRequestRestrictions(setupLogger)
+		contVals.lsBurst, contVals.lsQps = lsutils.GetResourceClientRequestRestrictions(setupLogger)
 		opts.NewClient = lsutils.NewUncachedClient(burst, qps)
 
-		lsMgr, err = ctrl.NewManager(lsConfig, opts)
+		contVals.lsMgr, err = ctrl.NewManager(lsConfig, opts)
 		if err != nil {
 			return fmt.Errorf("unable to setup landscaper cluster manager from %s: %w", o.landscaperKubeconfigPath, err)
 		}
@@ -131,16 +150,16 @@ func (o *Options) run(ctx context.Context) error {
 	ctrlLogger := o.Log.WithName("controllers")
 
 	if os.Getenv("LANDSCAPER_MODE") == "central-landscaper" {
-		return o.startCentralLandscaper(ctx, lsMgr, hostMgr, ctrlLogger, setupLogger)
+		return o.startCentralLandscaper(ctx, &contVals, ctrlLogger, setupLogger)
 	} else {
-		return o.startMainController(ctx, lsMgr, hostMgr, ctrlLogger, setupLogger)
+		return o.startMainController(ctx, &contVals, ctrlLogger, setupLogger)
 	}
 
 }
 
-func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manager.Manager,
+func (o *Options) startMainController(ctx context.Context, contVals *controllerValues,
 	ctrlLogger, setupLogger logging.Logger) error {
-	install.Install(lsMgr.GetScheme())
+	install.Install(contVals.lsMgr.GetScheme())
 
 	store, err := blueprint.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
 	if err != nil {
@@ -148,32 +167,43 @@ func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manage
 	}
 	blueprint.SetStore(store)
 
-	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config, "installations"); err != nil {
+	lsClient, err := lsutils.NewUncached(contVals.lsBurst, contVals.lsQps, contVals.lsMgr.GetConfig(), client.Options{Scheme: contVals.lsMgr.GetScheme()})
+	if err != nil {
+		return fmt.Errorf("unable to get an independendant lsClient: %w", err)
+	}
+
+	hostClient, err := lsutils.NewUncached(contVals.hostBurst, contVals.hostQps, contVals.hostMgr.GetConfig(), client.Options{Scheme: contVals.hostMgr.GetScheme()})
+	if err != nil {
+		return fmt.Errorf("unable to get an independendant hostClient: %w", err)
+	}
+
+	if err := installationsctrl.AddControllerToManager(ctrlLogger, contVals.lsMgr, contVals.hostMgr, o.Config, "installations",
+		lsClient, hostClient); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config); err != nil {
+	if err := executionactrl.AddControllerToManager(ctrlLogger, contVals.lsMgr, contVals.hostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
 	setupLogger.Info("starting the controllers")
-	if lsMgr != hostMgr {
+	if contVals.lsMgr != contVals.hostMgr {
 		eg.Go(func() error {
-			if err := hostMgr.Start(ctx); err != nil {
+			if err := contVals.hostMgr.Start(ctx); err != nil {
 				return fmt.Errorf("error while running host manager: %w", err)
 			}
 			return nil
 		})
 		setupLogger.Info("Waiting for host cluster cache to sync")
-		if !hostMgr.GetCache().WaitForCacheSync(ctx) {
+		if !contVals.hostMgr.GetCache().WaitForCacheSync(ctx) {
 			return fmt.Errorf("unable to sync host cluster cache")
 		}
 		setupLogger.Info("Cache of host cluster successfully synced")
 	}
 	eg.Go(func() error {
-		if err := lsMgr.Start(ctx); err != nil {
+		if err := contVals.lsMgr.Start(ctx); err != nil {
 			return fmt.Errorf("error while running landscaper manager: %w", err)
 		}
 		return nil
@@ -181,27 +211,27 @@ func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manage
 	return eg.Wait()
 }
 
-func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr manager.Manager,
+func (o *Options) startCentralLandscaper(ctx context.Context, contVals *controllerValues,
 	ctrlLogger, setupLogger logging.Logger) error {
 
-	if err := o.ensureCRDs(ctx, lsMgr); err != nil {
+	if err := o.ensureCRDs(ctx, contVals.lsMgr); err != nil {
 		return err
 	}
 
-	if lsMgr != hostMgr {
-		if err := o.ensureCRDs(ctx, hostMgr); err != nil {
+	if contVals.lsMgr != contVals.hostMgr {
+		if err := o.ensureCRDs(ctx, contVals.hostMgr); err != nil {
 			return err
 		}
 	}
 
-	install.Install(lsMgr.GetScheme())
+	install.Install(contVals.lsMgr.GetScheme())
 
-	if err := contextctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config); err != nil {
+	if err := contextctrl.AddControllerToManager(ctrlLogger, contVals.lsMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup context controller: %w", err)
 	}
 
 	if !o.Config.DeployerManagement.Disable {
-		if err := deployers.AddControllersToManager(ctrlLogger, lsMgr, o.Config); err != nil {
+		if err := deployers.AddControllersToManager(ctrlLogger, contVals.lsMgr, o.Config); err != nil {
 			return fmt.Errorf("unable to setup deployer controllers: %w", err)
 		}
 		if !o.Config.DeployerManagement.Agent.Disable {
@@ -217,11 +247,11 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 					},
 				},
 			)
-			if err := agent.AddToManager(ctx, o.Log, lsMgr, hostMgr, agentConfig, "landscaper-helm"); err != nil {
+			if err := agent.AddToManager(ctx, o.Log, contVals.lsMgr, contVals.hostMgr, agentConfig, "landscaper-helm"); err != nil {
 				return fmt.Errorf("unable to setup default agent: %w", err)
 			}
 		}
-		if err := o.DeployInternalDeployers(ctx, lsMgr); err != nil {
+		if err := o.DeployInternalDeployers(ctx, contVals.lsMgr); err != nil {
 			return err
 		}
 
@@ -237,20 +267,20 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 	}
 
 	if err := deployitemctrl.AddControllerToManager(ctrlLogger,
-		lsMgr,
+		contVals.lsMgr,
 		o.Config.Controllers.DeployItems,
 		o.Config.DeployItemTimeouts.Pickup); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 
-	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, lsMgr); err != nil {
+	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, contVals.lsMgr); err != nil {
 		return fmt.Errorf("unable to register target sync controller: %w", err)
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		healthChecker := healthcheck.NewHealthChecker(o.Config.LsDeployments, hostMgr.GetClient())
+		healthChecker := healthcheck.NewHealthChecker(o.Config.LsDeployments, contVals.hostMgr.GetClient())
 		if err := healthChecker.StartPeriodicalHealthCheck(ctx, ctrlLogger); err != nil {
 			return err
 		}
@@ -258,33 +288,33 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 	})
 
 	eg.Go(func() error {
-		lockCleaner := lock.NewLockCleaner(lsMgr.GetClient())
+		lockCleaner := lock.NewLockCleaner(contVals.lsMgr.GetClient())
 		lockCleaner.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
 		return nil
 	})
 
 	eg.Go(func() error {
-		monitor := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostMgr.GetClient())
+		monitor := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), contVals.hostMgr.GetClient())
 		monitor.StartMonitoring(ctx, ctrlLogger)
 		return nil
 	})
 
 	setupLogger.Info("starting the controllers")
-	if lsMgr != hostMgr {
+	if contVals.lsMgr != contVals.hostMgr {
 		eg.Go(func() error {
-			if err := hostMgr.Start(ctx); err != nil {
+			if err := contVals.hostMgr.Start(ctx); err != nil {
 				return fmt.Errorf("error while running host manager: %w", err)
 			}
 			return nil
 		})
 		setupLogger.Info("Waiting for host cluster cache to sync")
-		if !hostMgr.GetCache().WaitForCacheSync(ctx) {
+		if !contVals.hostMgr.GetCache().WaitForCacheSync(ctx) {
 			return fmt.Errorf("unable to sync host cluster cache")
 		}
 		setupLogger.Info("Cache of host cluster successfully synced")
 	}
 	eg.Go(func() error {
-		if err := lsMgr.Start(ctx); err != nil {
+		if err := contVals.lsMgr.Start(ctx); err != nil {
 			return fmt.Errorf("error while running landscaper manager: %w", err)
 		}
 		return nil

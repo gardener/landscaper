@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	deployercmd "github.com/gardener/landscaper/pkg/deployer/lib/cmd"
+
 	"github.com/google/uuid"
 
 	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
@@ -131,7 +133,16 @@ var _ = Describe("Template", func() {
 				NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 			})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{},
+
+			do := deployercmd.DefaultOptions{
+				LsKubeconfig: "",
+				Log:          logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)),
+				LsMgr:        mgr,
+				HostMgr:      mgr,
+				LsClient:     nil,
+				HostClient:   nil,
+			}
+			Expect(helm.AddDeployerToManager(&do, helmv1alpha1.Configuration{},
 				"helmintegration"+utils.GetNextCounter())).To(Succeed())
 
 			timeout.ActivateStandardTimeoutChecker()
