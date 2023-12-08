@@ -11,14 +11,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
-	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
-	"github.com/open-component-model/ocm/pkg/runtime"
 	"os"
 	"strings"
 	gotmpl "text/template"
 	"time"
+
+	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	"github.com/open-component-model/ocm/pkg/runtime"
+
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
 
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"

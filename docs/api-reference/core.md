@@ -99,7 +99,7 @@ e.g. &ldquo;<a href="https://json-schema.org/draft/2019-09/schema&quot;">https:/
 <code>localTypes</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.JSONSchemaDefinition">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition
+map[string]..JSONSchemaDefinition
 </a>
 </em>
 </td>
@@ -1012,7 +1012,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1043,7 +1043,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1166,7 +1166,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -1197,7 +1197,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -2494,7 +2494,7 @@ Note that the type information is used to determine the secret key and the type 
 <code>configurations</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -2909,8 +2909,8 @@ Error
 <td>
 <code>lastErrors</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.*github.com/gardener/landscaper/apis/core/v1alpha1.Error">
-[]*github.com/gardener/landscaper/apis/core/v1alpha1.Error
+<a href="#landscaper.gardener.cloud/v1alpha1.*..Error">
+[]*..Error
 </a>
 </em>
 </td>
@@ -3306,7 +3306,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -4492,7 +4492,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
@@ -4523,7 +4523,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+map[string]..AnyJSON
 </a>
 </em>
 </td>
