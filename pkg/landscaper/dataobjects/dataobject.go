@@ -12,7 +12,7 @@ import (
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -90,7 +90,7 @@ func GetMetadataFromObject(objAcc metav1.Object, data []byte) Metadata {
 		if rawIndex, ok := labels[lsv1alpha1.DataObjectIndexLabel]; ok {
 			index, err := strconv.Atoi(rawIndex)
 			if err == nil {
-				meta.Index = pointer.Int(index)
+				meta.Index = ptr.To[int](index)
 			}
 		}
 	}

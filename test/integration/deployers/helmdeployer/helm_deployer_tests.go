@@ -11,12 +11,13 @@ import (
 	"path/filepath"
 	"time"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/utils/pointer"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
@@ -356,7 +357,7 @@ func createHelmDeployItem(chartDir string, valuesFile string, name string, targe
 	config := &helmv1alpha1.ProviderConfiguration{
 		Name:           name,
 		Namespace:      target.Namespace,
-		HelmDeployment: pointer.Bool(useHelmDeployment),
+		HelmDeployment: ptr.To[bool](useHelmDeployment),
 		Values:         valuesBytes,
 		Chart:          *chartArchive,
 		Exports:        exports,

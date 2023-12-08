@@ -10,7 +10,8 @@ import (
 	"path"
 	"sync"
 
-	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
+
 	"github.com/open-component-model/ocm/pkg/mime"
 	"github.com/open-component-model/ocm/pkg/utils/tarutils"
 
@@ -135,7 +136,7 @@ func (v *ComponentVersionAccess) GetBlob(name string) (cpi.DataAccess, error) {
 	filepath := path.Join("/", name)
 
 	if ok, err := vfs.IsDir(v.access.blobsFs, filepath); ok {
-		tempfile, err := accessio.NewTempFile(osfs.New(), os.TempDir(), "TEMP_BLOB_DATA")
+		tempfile, err := blobaccess.NewTempFile(os.TempDir(), "TEMP_BLOB_DATA")
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +151,7 @@ func (v *ComponentVersionAccess) GetBlob(name string) (cpi.DataAccess, error) {
 		}
 
 		if ok, err := vfs.FileExists(v.access.blobsFs, filepath); ok {
-			return accessio.DataAccessForFile(v.access.blobsFs, filepath), nil
+			return blobaccess.DataAccessForFile(v.access.blobsFs, filepath), nil
 		} else {
 			if err != nil {
 				return nil, err
@@ -184,7 +185,7 @@ func (v *ComponentVersionAccess) GetInexpensiveContentVersionIdentity(a cpi.Acce
 			return ""
 		}
 		defer blob.Close()
-		dig, err := accessio.Digest(blob)
+		dig, err := blobaccess.Digest(blob)
 		if err != nil {
 			return ""
 		}

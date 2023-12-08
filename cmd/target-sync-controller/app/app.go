@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
@@ -109,8 +109,8 @@ func (o *options) run(ctx context.Context) error {
 func (o *options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {
 	ctx = logging.NewContext(ctx, logging.Wrap(ctrl.Log.WithName("crdManager")))
 	crdConfig := lsconfig.CrdManagementConfiguration{
-		DeployCustomResourceDefinitions: pointer.Bool(true),
-		ForceUpdate:                     pointer.Bool(true),
+		DeployCustomResourceDefinitions: ptr.To[bool](true),
+		ForceUpdate:                     ptr.To[bool](true),
 	}
 
 	lsConfig := lsconfig.LandscaperConfiguration{

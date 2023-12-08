@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	"github.com/gardener/landscaper/pkg/utils"
@@ -25,7 +27,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
-	"k8s.io/utils/pointer"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -710,7 +711,7 @@ func (c *TargetSyncController) fetchNewToken(ctx context.Context, namespace, ser
 
 	treq := &authenticationv1.TokenRequest{
 		Spec: authenticationv1.TokenRequestSpec{
-			ExpirationSeconds: pointer.Int64(tokenExpirationSeconds),
+			ExpirationSeconds: ptr.To[int64](tokenExpirationSeconds),
 		},
 	}
 

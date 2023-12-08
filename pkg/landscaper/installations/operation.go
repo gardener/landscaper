@@ -12,7 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -590,7 +590,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 		tar.SetNamespace(o.Inst.GetInstallation().Namespace).
 			SetContext(src).
 			SetKey(importDef.Name).
-			SetIndex(pointer.Int(i)).
+			SetIndex(ptr.To[int](i)).
 			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
 	}
 

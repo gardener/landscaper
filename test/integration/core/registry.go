@@ -28,7 +28,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -535,7 +535,7 @@ func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f 
 	helmInput := input.BlobInput{
 		Type:             input.DirInputType,
 		Path:             helmChartDir,
-		CompressWithGzip: pointer.Bool(true),
+		CompressWithGzip: ptr.To[bool](true),
 	}
 	blob, err := helmInput.Read(ctx, osfs.New(), "")
 	utils.ExpectNoError(err)
@@ -568,7 +568,7 @@ func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f 
 		Type:             input.DirInputType,
 		Path:             blueprintDir,
 		MediaType:        mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String(),
-		CompressWithGzip: pointer.Bool(true),
+		CompressWithGzip: ptr.To[bool](true),
 	}
 	blob, err = blueprintInput.Read(ctx, osfs.New(), "")
 	utils.ExpectNoError(err)
@@ -629,7 +629,7 @@ func buildAndUploadComponentDescriptorsWithBlueprints(ctx context.Context, f *fr
 			Type:             input.DirInputType,
 			Path:             cdd.blueprintDir,
 			MediaType:        mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String(),
-			CompressWithGzip: pointer.Bool(true),
+			CompressWithGzip: ptr.To[bool](true),
 		}
 		blob, err := blueprintInput.Read(ctx, osfs.New(), "")
 		utils.ExpectNoError(err)

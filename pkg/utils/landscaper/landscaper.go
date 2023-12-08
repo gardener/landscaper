@@ -15,7 +15,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -197,7 +197,7 @@ func BuildKubernetesTarget(target *lsv1alpha1.Target, restConfig *rest.Config) e
 
 	config := targettypes.KubernetesClusterTargetConfig{
 		Kubeconfig: targettypes.ValueRef{
-			StrVal: pointer.String(string(data)),
+			StrVal: ptr.To[string](string(data)),
 		},
 	}
 	data, err = json.Marshal(config)
