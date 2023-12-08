@@ -15,4 +15,4 @@ spec:
     --id=$TM_TESTRUN_ID
     --timeout=10m
 
-  image: golang:1.20.11
+  image: golang:1.21.4
