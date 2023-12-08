@@ -52,7 +52,7 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-	github.com/open-component-model/ocm => /Users/I544542/Repositories/sap/github.com/fabianburth/ocm
+	github.com/open-component-model/ocm => github.com/open-component-model/ocm v0.3.0-rc.1.0.20231129170201-106672038fa3
 )
 
 require (
