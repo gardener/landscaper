@@ -5,7 +5,7 @@ For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions
 In this example, we start by deploying the hello-world Helm chart in its original version `1.0.0`. 
 Afterwards, we will upgrade the Installation so that it deploys the newer version `1.0.1` of the chart.
 
-You can find the new Helm chart [here](chart/hello-world). It replaces the ConfigMap of the original chart version by
+You can find the new Helm chart [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/basics/upgrade/chart/hello-world). It replaces the ConfigMap of the original chart version by
 a Secret. The new chart version can be found in our
 [public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.1).
 
