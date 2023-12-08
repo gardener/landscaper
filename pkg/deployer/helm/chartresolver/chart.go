@@ -51,7 +51,30 @@ func GetChart(ctx context.Context,
 	if chartConfig.FromResource != nil {
 		return nil, errors.New("chart.fromResource is no longer supported")
 	}
+
+	if chartConfig.ResourceRef != nil {
+		return getChartFromResourceRef(ctx, chartConfig.ResourceRef, contextObj, lsClient)
+	}
 	return nil, NoChartDefinedError
+}
+
+func getChartFromResourceRef(ctx context.Context, resourceRef *helmv1alpha1.ResourceRef, lsCtx *lsv1alpha1.Context,
+	lsClient client.Client) (*chart.Chart, error) {
+
+	// resolve all registry pull secrets
+	//registryPullSecretRefs := lib.GetRegistryPullSecretsFromContext(lsCtx)
+	//registryPullSecrets, err := kutil.ResolveSecrets(ctx, lsClient, registryPullSecretRefs)
+	//if err != nil {
+	//	return nil, fmt.Errorf("error resolving secrets: %w", err)
+	//}
+	key, err := base64.StdEncoding.DecodeString(resourceRef.Key)
+	if err != nil {
+		return nil, err
+	}
+	keyStr := string(key)
+	_ = keyStr
+
+	return nil, nil
 }
 
 func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Chart, error) {
