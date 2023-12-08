@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	"github.com/gardener/landscaper/pkg/utils/lock/podcache"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +30,7 @@ type Locker struct {
 	lsReadClient client.Client
 	hostClient   client.Client
 	prefix       string
+	podCache     podcache.PodCache
 }
 
 func NewLocker(lsClient, hostClient client.Client, prefix string) *Locker {
@@ -38,6 +40,7 @@ func NewLocker(lsClient, hostClient client.Client, prefix string) *Locker {
 		lsReadClient: lsClient,
 		hostClient:   hostClient,
 		prefix:       prefix,
+		podCache:     *podcache.NewPodCache(hostClient),
 	}
 }
 
@@ -201,8 +204,6 @@ func (l *Locker) getSyncObject(ctx context.Context, namespace, name string) (*ls
 }
 
 func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
-	log, ctx := logging.FromContextOrNew(ctx, nil)
-
 	if podName == "" {
 		return false, nil
 	}
@@ -215,17 +216,8 @@ func (l *Locker) existsPod(ctx context.Context, podName string) (bool, error) {
 		Namespace: utils.GetCurrentPodNamespace(),
 		Name:      podName,
 	}
-	pod := &v1.Pod{}
-	if err := read_write_layer.GetPod(ctx, l.hostClient, podKey, pod, read_write_layer.R000058); err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
 
-		log.Error(err, "locker: unable to get pod")
-		return false, fmt.Errorf("locker: unable to get pod %s: %w", podName, err)
-	}
-
-	return true, nil
+	return l.podCache.PodExists(ctx, podKey)
 }
 
 func getName(prefix string, obj *metav1.PartialObjectMetadata) string {

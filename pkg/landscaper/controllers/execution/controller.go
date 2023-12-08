@@ -43,6 +43,7 @@ func NewController(logger logging.Logger, lsClient, hostClient client.Client, sc
 		workerCounter:  wc,
 		lockingEnabled: lockingEnabled,
 		callerName:     callerName,
+		locker:         *lock.NewLocker(lsClient, hostClient, callerName),
 	}, nil
 }
 
@@ -55,6 +56,7 @@ type controller struct {
 	workerCounter  *lsutil.WorkerCounter
 	lockingEnabled bool
 	callerName     string
+	locker         lock.Locker
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -74,18 +76,17 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if c.lockingEnabled {
-		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
-		syncObject, err := locker.LockExecution(ctx, metadata)
+		syncObject, err := c.locker.LockExecution(ctx, metadata)
 		if err != nil {
 			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 		}
 
 		if syncObject == nil {
-			return locker.NotLockedResult()
+			return c.locker.NotLockedResult()
 		}
 
 		defer func() {
-			locker.Unlock(ctx, syncObject)
+			c.locker.Unlock(ctx, syncObject)
 		}()
 	}
 
