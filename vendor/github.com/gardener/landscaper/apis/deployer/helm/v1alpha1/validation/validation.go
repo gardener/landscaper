@@ -76,7 +76,7 @@ func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) e
 // ValidateChart validates the access methods for a chart
 func ValidateChart(fldPath *field.Path, chart helmv1alpha1.Chart) field.ErrorList {
 	allErrs := field.ErrorList{}
-	if len(chart.Ref) == 0 && chart.Archive == nil && chart.FromResource == nil && chart.HelmChartRepo == nil {
+	if len(chart.Ref) == 0 && chart.Archive == nil && chart.FromResource == nil && chart.HelmChartRepo == nil && chart.ResourceRef == nil {
 		subPath := fldPath.Child("ref", "archive", "fromResource", "helmChartRepo")
 		err := field.Required(subPath, "must not be empty")
 		return append(allErrs, err)

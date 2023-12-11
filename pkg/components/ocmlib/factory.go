@@ -123,7 +123,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	}
 
 	// set credentials from pull secrets
-	if err := addSecretCredsToCredContext(secrets, registryAccess.octx); err != nil {
+	if err := AddSecretCredsToCredContext(secrets, registryAccess.octx); err != nil {
 		return nil, err
 	}
 
@@ -158,6 +158,13 @@ func (f *Factory) NewHelmRepoResource(ctx context.Context, helmChartRepo *helmv1
 	}
 
 	return provider, nil
+}
+func NewHelmCredentialSource(lsClient client.Client, auth helmv1alpha1.Auth, namespace string) *CredentialSource {
+	return &CredentialSource{
+		lsClient:  lsClient,
+		auth:      auth,
+		namespace: namespace,
+	}
 }
 
 type CredentialSource struct {
@@ -216,7 +223,7 @@ func (f *Factory) NewHelmOCIResource(ctx context.Context,
 	}
 
 	// set credentials from pull secrets
-	if err = addSecretCredsToCredContext(registryPullSecrets, provider.ocictx); err != nil {
+	if err = AddSecretCredsToCredContext(registryPullSecrets, provider.ocictx); err != nil {
 		return nil, err
 	}
 
@@ -241,7 +248,7 @@ func addConfigFileCredsToCredContext(fs vfs.FileSystem, filePaths []string, prov
 	return nil
 }
 
-func addSecretCredsToCredContext(secrets []corev1.Secret, provider credentials.ContextProvider) error {
+func AddSecretCredsToCredContext(secrets []corev1.Secret, provider credentials.ContextProvider) error {
 	credctx := provider.CredentialsContext()
 	cfgctx := credctx.ConfigContext()
 

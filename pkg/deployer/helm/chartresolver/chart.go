@@ -10,7 +10,19 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/components/cnudie/resourcetypehandlers/helmchart"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/open-component-model/ocm/pkg/finalizer"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	"net/http"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
@@ -59,14 +71,40 @@ func GetChart(ctx context.Context,
 }
 
 func getChartFromResourceRef(ctx context.Context, resourceRef *helmv1alpha1.ResourceRef, lsCtx *lsv1alpha1.Context,
-	lsClient client.Client) (*chart.Chart, error) {
+	lsClient client.Client) (_ *chart.Chart, err error) {
 
-	// resolve all registry pull secrets
-	//registryPullSecretRefs := lib.GetRegistryPullSecretsFromContext(lsCtx)
-	//registryPullSecrets, err := kutil.ResolveSecrets(ctx, lsClient, registryPullSecretRefs)
-	//if err != nil {
-	//	return nil, fmt.Errorf("error resolving secrets: %w", err)
-	//}
+	octx := ocm.New(datacontext.MODE_EXTENDED)
+
+	// Credential Handling
+	// resolve all credentials from registry pull secrets
+	registryPullSecretRefs := lib.GetRegistryPullSecretsFromContext(lsCtx)
+	registryPullSecrets, err := kutil.ResolveSecrets(ctx, lsClient, registryPullSecretRefs)
+	if err != nil {
+		return nil, fmt.Errorf("error resolving secrets: %w", err)
+	}
+
+	err = ocmlib.AddSecretCredsToCredContext(registryPullSecrets, octx)
+	if err != nil {
+		return nil, err
+	}
+
+	// resolve all credentials for helm chart repositories
+	if lsCtx != nil && lsCtx.Configurations != nil {
+		if rawAuths, ok := lsCtx.Configurations[helmv1alpha1.HelmChartRepoCredentialsKey]; ok {
+			repoCredentials := helmv1alpha1.HelmChartRepoCredentials{}
+			err := yaml.Unmarshal(rawAuths.RawMessage, &repoCredentials)
+			if err != nil {
+				return nil, lserrors.NewWrappedError(err, "NewHelmChartRepoClient", "ParsingAuths", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+			}
+
+			for _, a := range repoCredentials.Auths {
+				id := helmid.GetConsumerId(a.URL, "")
+				octx.CredentialsContext().SetCredentialsForConsumer(id, ocmlib.NewHelmCredentialSource(lsClient, a, lsCtx.Namespace))
+			}
+		}
+	}
+
+	// Business Logic
 	key, err := base64.StdEncoding.DecodeString(resourceRef.Key)
 	if err != nil {
 		return nil, err
@@ -74,7 +112,59 @@ func getChartFromResourceRef(ctx context.Context, resourceRef *helmv1alpha1.Reso
 	keyStr := string(key)
 	_ = keyStr
 
-	return nil, nil
+	// TODO: implement a MUX so this could deal with multiple kinds of requests
+	globalId := model.GlobalResourceIdentity{}
+	err = runtime.DefaultYAMLEncoding.Unmarshal(key, &globalId)
+	if err != nil {
+		return nil, err
+	}
+
+	spec, err := octx.RepositorySpecForConfig(lsCtx.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
+	if err != nil {
+		return nil, err
+	}
+
+	var finalize finalizer.Finalizer
+	defer finalize.FinalizeWithErrorPropagation(&err)
+
+	repo, err := spec.Repository(octx, nil)
+	if err != nil {
+		return nil, err
+	}
+	finalize.Close(repo)
+
+	compvers, err := repo.LookupComponentVersion(globalId.ComponentIdentity.Name, globalId.ComponentIdentity.Version)
+	if err != nil {
+		return nil, err
+	}
+	finalize.Close(compvers)
+
+	res, err := compvers.GetResource(globalId.ResourceIdentity)
+	if err != nil {
+		return nil, err
+	}
+
+	acc, err := res.AccessMethod()
+	if err != nil {
+		return nil, err
+	}
+
+	reader, err := acc.Reader()
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := helmchart.New().Prepare(ctx, reader, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	chart, ok := content.Resource.(*chart.Chart)
+	if !ok {
+		return nil, errors.New("error resource is not a helm chart")
+	}
+
+	return chart, nil
 }
 
 func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Chart, error) {

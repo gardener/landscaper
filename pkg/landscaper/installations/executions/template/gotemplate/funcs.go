@@ -199,16 +199,6 @@ func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []ma
 	}
 }
 
-type GlobalResourceIdentity struct {
-	ComponentIdentity ComponentIdentity `json:"component"`
-	ResourceIdentity  v1.Identity       `json:"resource"`
-}
-
-type ComponentIdentity struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-}
-
 func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) string {
 	return func(args ...interface{}) string {
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
@@ -235,8 +225,8 @@ func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) s
 			panic(err.Error())
 		}
 
-		globalId := GlobalResourceIdentity{
-			ComponentIdentity: ComponentIdentity{
+		globalId := model.GlobalResourceIdentity{
+			ComponentIdentity: model.ComponentIdentity{
 				Name:    resourceCv.GetName(),
 				Version: resourceCv.GetVersion(),
 			},

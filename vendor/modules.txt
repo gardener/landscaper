@@ -1313,7 +1313,6 @@ github.com/open-component-model/ocm/pkg/contexts/oci/config
 github.com/open-component-model/ocm/pkg/contexts/oci/cpi
 github.com/open-component-model/ocm/pkg/contexts/oci/cpi/support
 github.com/open-component-model/ocm/pkg/contexts/oci/grammar
-github.com/open-component-model/ocm/pkg/contexts/oci/identity
 github.com/open-component-model/ocm/pkg/contexts/oci/internal
 github.com/open-component-model/ocm/pkg/contexts/oci/ociutils
 github.com/open-component-model/ocm/pkg/contexts/oci/ociutils/helm/ignore
@@ -1419,7 +1418,6 @@ github.com/open-component-model/ocm/pkg/exception
 github.com/open-component-model/ocm/pkg/finalizer
 github.com/open-component-model/ocm/pkg/generics
 github.com/open-component-model/ocm/pkg/helm
-github.com/open-component-model/ocm/pkg/helm/identity
 github.com/open-component-model/ocm/pkg/helm/loader
 github.com/open-component-model/ocm/pkg/iotools
 github.com/open-component-model/ocm/pkg/listformat
