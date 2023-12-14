@@ -252,6 +252,7 @@ func (g *DeletionGroup) Delete(ctx context.Context) (err error) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
 	if err := ctx.Err(); err != nil {
+		// Currently, only tests might cancel the context
 		log.Info("context cancelled before processing deletiongroup", lc.KeyError, err)
 		err = fmt.Errorf("context cancelled before processing deletiongroup: %w", err)
 		return err
@@ -283,6 +284,7 @@ func (g *DeletionGroup) Delete(ctx context.Context) (err error) {
 		}
 
 		if ctx.Err() != nil {
+			// Currently, only tests might cancel the context
 			log.Info("context cancelled during processing deletiongroup", lc.KeyError, err)
 			err = fmt.Errorf("context cancelled during processing deletiongroup: %w", err)
 			return err

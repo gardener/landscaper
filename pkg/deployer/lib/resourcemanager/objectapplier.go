@@ -373,7 +373,7 @@ func (a *ManifestApplier) cleanupOrphanedResourcesInGroups(ctx context.Context, 
 			lc.KeyResourceKind, mr.Resource.Kind)
 		mrLogger.Debug("Checking resource")
 
-		ok, err := a.filterByPolicy(mrCtx, mr)
+		ok, err := FilterByPolicy(mrCtx, mr, a.kubeClient, a.deployItemName)
 		if err != nil {
 			return err
 		}
@@ -400,7 +400,9 @@ func (a *ManifestApplier) cleanupOrphanedResourcesInGroups(ctx context.Context, 
 	)
 }
 
-func (a *ManifestApplier) filterByPolicy(ctx context.Context, mr *managedresource.ManagedResourceStatus) (bool, error) {
+// FilterByPolicy is used during the deletion of manifest deployitems and manifest-only helm deployitems.
+// It returns true if the deployitem can be deleted according to its policy, and false if it must not be deleted.
+func FilterByPolicy(ctx context.Context, mr *managedresource.ManagedResourceStatus, targetClient client.Client, deployItemName string) (bool, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
@@ -415,14 +417,14 @@ func (a *ManifestApplier) filterByPolicy(ctx context.Context, mr *managedresourc
 		obj := kutil.ObjectFromCoreObjectReference(&ref)
 		key := kutil.ObjectKey(ref.Name, ref.Namespace)
 
-		if err := read_write_layer.GetUnstructured(ctx, a.kubeClient, key, obj, read_write_layer.R000049); err != nil {
+		if err := read_write_layer.GetUnstructured(ctx, targetClient, key, obj, read_write_layer.R000049); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger.Debug("Object not found")
 				return false, nil
 			}
 			return false, fmt.Errorf("unable to get object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
 		}
-		if !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
+		if !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, deployItemName) {
 			logger.Info("Resource is already managed, skip cleanup")
 			return false, nil
 		}

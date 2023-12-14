@@ -214,7 +214,7 @@ func (m *Manifest) deleteManifestsInGroups(ctx context.Context) error {
 			lc.KeyResourceKind, mr.Resource.Kind)
 		mrLogger.Debug("Checking resource")
 
-		ok, err := filterByPolicy(mrCtx, mr, targetClient, m.DeployItem.Name)
+		ok, err := resourcemanager.FilterByPolicy(mrCtx, mr, targetClient, m.DeployItem.Name)
 		if err != nil {
 			return err
 		}
@@ -251,36 +251,6 @@ func (m *Manifest) deleteManifestsInGroups(ctx context.Context) error {
 	// remove finalizer
 	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return m.Writer().UpdateDeployItem(ctx, read_write_layer.W000045, m.DeployItem)
-}
-
-func filterByPolicy(ctx context.Context, mr *managedresource.ManagedResourceStatus, targetClient client.Client, deployItemName string) (bool, error) {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
-	if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
-		logger.Debug("Ignoring resource due to policy", lc.KeyManagedResourcePolicy, string(mr.Policy))
-		return false, nil
-	}
-
-	if mr.Policy == managedresource.FallbackPolicy {
-		// if fallback policy is set and the resource is already managed by another deployer
-		// we are not allowed to manage that resource
-		ref := mr.Resource
-		obj := kutil.ObjectFromCoreObjectReference(&ref)
-		key := kutil.ObjectKey(ref.Name, ref.Namespace)
-		if err := targetClient.Get(ctx, key, obj); err != nil {
-			if apierrors.IsNotFound(err) {
-				logger.Debug("Object not found")
-				return false, nil
-			}
-			return false, fmt.Errorf("unable to get object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
-		}
-		if !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, deployItemName) {
-			logger.Info("Resource is already managed, skip cleanup")
-			return false, nil
-		}
-	}
-
-	return true, nil
 }
 
 func annotateBeforeDelete(ctx context.Context, mr *managedresource.ManagedResourceStatus, targetClient client.Client) (notFound bool, err error) {

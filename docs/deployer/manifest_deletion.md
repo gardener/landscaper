@@ -47,6 +47,10 @@ group.
 The list of deletion groups can be build from [predefined resource groups](#predefined-resource-groups) and 
 [custom resource groups](#custom-resource-groups).
 
+Note that you can omit the section `deletionGroups` only if you accept the exact default behaviour.
+As soon as you want to deviate from the default behaviour, you have to specify the `deletionGroups` list with all
+groups you want to be processed.
+
 ### Predefined Resource Groups
 
 The simplest way to specify a deletion group is using one of the following predefined groups: 
@@ -74,10 +78,6 @@ deployItems:
         - predefinedResourceGroup: 
             type: crds
 ```
-
-Note that you can omit the section `deletionGroups` only if you accept the exact default behaviour.
-As soon as you want to deviate from the default behaviour, you have to specify the `deletionGroups` list with all
-groups you want to be processed.
 
 #### Example: skip deletion of CRDs
 
