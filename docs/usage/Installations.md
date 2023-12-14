@@ -925,7 +925,7 @@ installation.
 
 As already described before, the Landscaper only processes an installation if the annotation 
 `landscaper.gardener.cloud/operation: reconcile` is set. If you add the annotation 
-`landscaper.gardener.cloud/reconcile-if-changed: true` to the Installation, the Landscaper automatically adds the reconcile 
+`landscaper.gardener.cloud/reconcile-if-changed: "true"` to the Installation, the Landscaper automatically adds the reconcile 
 annotation to the Installation when the `spec` of the Installation was changed and therefore the `generation` differs 
 from the `observedGeneration` in the status.
 
