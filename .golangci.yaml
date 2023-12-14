@@ -1,7 +1,7 @@
 run:
   concurrency: 4
   deadline: 10m
-  go: '1.21'
+  go: '1.21.4'
 
   skip-files:
   - "zz_generated.*\\.go$"
