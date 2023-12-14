@@ -9,7 +9,6 @@ require (
 	github.com/docker/cli v24.0.6+incompatible
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.95
-	github.com/gardener/image-vector v0.10.0
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.3.0
