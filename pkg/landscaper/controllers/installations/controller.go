@@ -47,7 +47,7 @@ const (
 
 // NewController creates a new Controller that reconciles Installation resources.
 func NewController(hostClient client.Client, logger logging.Logger,
-	kubeClient client.Client,
+	lsClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
 	lsConfig *config.LandscaperConfiguration,
@@ -65,6 +65,7 @@ func NewController(hostClient client.Client, logger logging.Logger,
 		workerCounter:  ws,
 		lockingEnabled: lockingEnabled,
 		callerName:     callerName,
+		locker:         *lock.NewLocker(lsClient, hostClient, callerName),
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -78,7 +79,7 @@ func NewController(hostClient client.Client, logger logging.Logger,
 
 	registries.SetOCMLibraryMode(lsConfig.UseOCMLib)
 
-	op := operation.NewOperation(kubeClient, scheme, eventRecorder)
+	op := operation.NewOperation(lsClient, scheme, eventRecorder)
 	ctrl.Operation = *op
 	return ctrl, nil
 }
@@ -96,6 +97,7 @@ func NewTestActuator(op operation.Operation, hostClient client.Client, logger lo
 		hostClient:     hostClient,
 		lockingEnabled: lock.IsLockingEnabledForMainControllers(configuration),
 		callerName:     callerName,
+		locker:         *lock.NewLocker(hostClient, hostClient, callerName),
 	}
 }
 
@@ -110,6 +112,7 @@ type Controller struct {
 	workerCounter  *utils.WorkerCounter
 	lockingEnabled bool
 	callerName     string
+	locker         lock.Locker
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -128,18 +131,17 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if c.lockingEnabled {
-		locker := lock.NewLocker(c.Client(), c.hostClient, c.callerName)
-		syncObject, err := locker.LockInstallation(ctx, metadata)
+		syncObject, err := c.locker.LockInstallation(ctx, metadata)
 		if err != nil {
 			return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 
 		if syncObject == nil {
-			return locker.NotLockedResult()
+			return c.locker.NotLockedResult()
 		}
 
 		defer func() {
-			locker.Unlock(ctx, syncObject)
+			c.locker.Unlock(ctx, syncObject)
 		}()
 	}
 

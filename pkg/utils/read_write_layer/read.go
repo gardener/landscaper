@@ -128,6 +128,10 @@ func GetMetaData(ctx context.Context, c client.Reader, key client.ObjectKey, met
 	return get(ctx, c, key, metadata, readID, "metadata")
 }
 
+func ListMetaData(ctx context.Context, c client.Reader, metadataList *v12.PartialObjectMetadataList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, metadataList, readID, "metadataList", opts...)
+}
+
 // read methods for unstructured
 func GetUnstructured(ctx context.Context, c client.Reader, key client.ObjectKey, unstruc *unstructured.Unstructured, readID ReadID) error {
 	return get(ctx, c, key, unstruc, readID, "unstructured")

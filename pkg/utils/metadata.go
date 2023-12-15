@@ -61,3 +61,9 @@ func EmptyPodMetadata() *metav1.PartialObjectMetadata {
 	metadata.SetGroupVersionKind(podGVK)
 	return metadata
 }
+
+func EmptyPodMetadataList() *metav1.PartialObjectMetadataList {
+	metadata := &metav1.PartialObjectMetadataList{}
+	metadata.SetGroupVersionKind(podGVK)
+	return metadata
+}

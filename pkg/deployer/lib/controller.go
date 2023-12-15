@@ -128,6 +128,7 @@ type controller struct {
 	workerCounter  *lsutil.WorkerCounter
 	lockingEnabled bool
 	callerName     string
+	locker         lock.Locker
 }
 
 // NewController creates a new generic deployitem controller.
@@ -160,6 +161,7 @@ func NewController(lsClient client.Client,
 		workerCounter:   wc,
 		lockingEnabled:  lockingEnabled,
 		callerName:      callerName,
+		locker:          *lock.NewLocker(lsClient, hostClient, callerName),
 	}
 }
 
@@ -189,18 +191,17 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if c.lockingEnabled {
-		locker := lock.NewLocker(c.lsClient, c.hostClient, c.callerName)
-		syncObject, err := locker.LockDI(ctx, metadata)
+		syncObject, err := c.locker.LockDI(ctx, metadata)
 		if err != nil {
 			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 		}
 
 		if syncObject == nil {
-			return locker.NotLockedResult()
+			return c.locker.NotLockedResult()
 		}
 
 		defer func() {
-			locker.Unlock(ctx, syncObject)
+			c.locker.Unlock(ctx, syncObject)
 		}()
 	}
 
