@@ -12,6 +12,8 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
+const PodCacheTimeout = 1 * time.Minute
+
 func NewPodCache(hostClient client.Client) *PodCache {
 	return &PodCache{
 		pods:       map[string]bool{},
@@ -37,10 +39,12 @@ func (p *PodCache) PodExists(ctx context.Context, podKey client.ObjectKey) (bool
 
 	if !exists {
 		// we must not miss new pods and do their work in parallel
-		exists, err := podExist(ctx, p.hostClient, podKey)
+		tmpExists, err := podExist(ctx, p.hostClient, podKey)
 		if err != nil {
 			return false, err
 		}
+
+		exists = tmpExists
 
 		if exists {
 			p.addPod(podKey)
@@ -87,8 +91,15 @@ func (p *PodCache) addPod(podKey client.ObjectKey) {
 	p.pods[podKey.String()] = true
 }
 
+// only for testing purposes
+func (p *PodCache) TestSetLastUpdateTime(time time.Time) {
+	p.rwLock.RLock()
+	defer p.rwLock.RUnlock()
+	p.lastUpdate = time
+}
+
 func outdated(lastUpdate time.Time) bool {
-	return lastUpdate.Add(1 * time.Minute).Before(time.Now())
+	return lastUpdate.Add(PodCacheTimeout).Before(time.Now())
 }
 
 func podExist(ctx context.Context, cl client.Client, key client.ObjectKey) (bool, error) {

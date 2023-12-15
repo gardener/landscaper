@@ -1,22 +1,20 @@
-// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
+// SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package manifest_test
+package podcache_test
 
 import (
-	"path/filepath"
-	"testing"
-
+	"github.com/gardener/landscaper/test/utils/envtest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/gardener/landscaper/test/utils/envtest"
+	"path/filepath"
+	"testing"
 )
 
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "manifest Test Suite")
+	RunSpecs(t, "pod cache Test Suite")
 }
 
 var (
