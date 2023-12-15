@@ -41,7 +41,6 @@ const (
 	TimeoutCheckpointHelmStartCreateManifests      = "helm deployer: start create manifests"
 	TimeoutCheckpointHelmDefaultReadinessChecks    = "helm deployer: default readiness checks"
 	TimeoutCheckpointHelmCustomReadinessChecks     = "helm deployer: custom readiness checks"
-	TimeoutCheckpointHelmDeleteResources           = "helm deployer: delete resources"
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.

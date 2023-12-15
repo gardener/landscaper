@@ -349,6 +349,20 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 		*out = new(HelmDeploymentConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.DeletionGroups != nil {
+		in, out := &in.DeletionGroups, &out.DeletionGroups
+		*out = make([]managedresource.DeletionGroupDefinition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.DeletionGroupsDuringUpdate != nil {
+		in, out := &in.DeletionGroupsDuringUpdate, &out.DeletionGroupsDuringUpdate
+		*out = make([]managedresource.DeletionGroupDefinition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 

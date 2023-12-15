@@ -495,6 +495,8 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	out.HelmDeployment = (*bool)(unsafe.Pointer(in.HelmDeployment))
 	out.HelmDeploymentConfig = (*helm.HelmDeploymentConfiguration)(unsafe.Pointer(in.HelmDeploymentConfig))
+	out.DeletionGroups = *(*[]managedresource.DeletionGroupDefinition)(unsafe.Pointer(&in.DeletionGroups))
+	out.DeletionGroupsDuringUpdate = *(*[]managedresource.DeletionGroupDefinition)(unsafe.Pointer(&in.DeletionGroupsDuringUpdate))
 	return nil
 }
 
@@ -519,6 +521,8 @@ func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	out.HelmDeployment = (*bool)(unsafe.Pointer(in.HelmDeployment))
 	out.HelmDeploymentConfig = (*HelmDeploymentConfiguration)(unsafe.Pointer(in.HelmDeploymentConfig))
+	out.DeletionGroups = *(*[]managedresource.DeletionGroupDefinition)(unsafe.Pointer(&in.DeletionGroups))
+	out.DeletionGroupsDuringUpdate = *(*[]managedresource.DeletionGroupDefinition)(unsafe.Pointer(&in.DeletionGroupsDuringUpdate))
 	return nil
 }
 

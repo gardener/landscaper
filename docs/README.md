@@ -18,6 +18,7 @@
 - [Deployer Resource Health-/Readiness Checks](deployer/healthchecks.md)
 - [Helm Deployer](deployer/helm.md)
 - [Kubernetes Manifest Deployer](deployer/manifest.md)
+- [Deletion of Manifest and Manifest-Only Helm DeployItems](deployer/manifest_deletion.md)
 - [Mock Deployer](deployer/mock.md)
 
 ## Development

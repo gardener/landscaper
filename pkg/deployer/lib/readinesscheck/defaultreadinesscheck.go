@@ -18,7 +18,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 )
 
 // DefaultReadinessCheck contains all the data and methods required to kick off a default readiness check
@@ -29,7 +29,7 @@ type DefaultReadinessCheck struct {
 	Timeout             *lsv1alpha1.Duration
 	ManagedResources    []lsv1alpha1.TypedObjectReference
 	FailOnMissingObject bool
-	InterruptionChecker *lib.InterruptionChecker
+	InterruptionChecker interruption.InterruptionChecker
 }
 
 // CheckResourcesReady implements the default readiness check for Kubernetes manifests

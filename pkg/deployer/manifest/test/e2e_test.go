@@ -377,7 +377,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		for _, checkpoint := range []string{
 			manifestctlr.TimeoutCheckpointManifestStartDelete,
-			manifestctlr.TimeoutCheckpointManifestDeleteResources,
+			resourcemanager.TimeoutCheckpointDeployerDeleteResources,
 		} {
 			timeout.ActivateCheckpointTimeoutChecker(checkpoint)
 			item.Status.SetJobID(uuid.New().String())

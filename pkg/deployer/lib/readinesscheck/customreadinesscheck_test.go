@@ -11,22 +11,20 @@ import (
 	"path/filepath"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
-
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 )
 
 var _ = Describe("Custom health checks", func() {
@@ -37,10 +35,11 @@ var _ = Describe("Custom health checks", func() {
 
 	BeforeEach(func() {
 		customHealthCheck = CustomReadinessCheck{
-			Context:   logging.NewContext(ctx, logging.Discard()),
-			Client:    testenv.Client,
-			CurrentOp: "custom health check test",
-			Timeout:   &lsv1alpha1.Duration{Duration: 180 * time.Second},
+			Context:             logging.NewContext(ctx, logging.Discard()),
+			Client:              testenv.Client,
+			CurrentOp:           "custom health check test",
+			Timeout:             &lsv1alpha1.Duration{Duration: 180 * time.Second},
+			InterruptionChecker: interruption.NewIgnoreInterruptionChecker(),
 		}
 	})
 

@@ -1,8 +1,7 @@
-package lib
+package interruption
 
 import (
 	"context"
-	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -10,19 +9,19 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
-type InterruptionChecker struct {
+type standardInterruptionChecker struct {
 	deployItem *lsv1alpha1.DeployItem
 	lsClient   client.Client
 }
 
-func NewInterruptionChecker(deployItem *lsv1alpha1.DeployItem, lsClient client.Client) *InterruptionChecker {
-	return &InterruptionChecker{
+func NewStandardInterruptionChecker(deployItem *lsv1alpha1.DeployItem, lsClient client.Client) InterruptionChecker {
+	return &standardInterruptionChecker{
 		deployItem: deployItem,
 		lsClient:   lsClient,
 	}
 }
 
-func (c *InterruptionChecker) Check(ctx context.Context) error {
+func (c *standardInterruptionChecker) Check(ctx context.Context) error {
 	if c == nil {
 		return nil
 	}
@@ -34,7 +33,7 @@ func (c *InterruptionChecker) Check(ctx context.Context) error {
 	}
 
 	if di.Status.Phase.IsFailed() {
-		return fmt.Errorf("interrupted during readiness check/export collection")
+		return ErrInterruption
 	}
 
 	return nil

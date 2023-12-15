@@ -6,13 +6,14 @@ package manifest
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/imdario/mergo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
@@ -68,6 +70,8 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		Labels: map[string]string{
 			manifestv1alpha2.ManagedDeployItemLabel: m.DeployItem.Name,
 		},
+		DeletionGroupsDuringUpdate: m.ProviderConfiguration.DeletionGroupsDuringUpdate,
+		InterruptionChecker:        interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient),
 	})
 
 	err = applier.Apply(ctx)
@@ -106,7 +110,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
-			InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
+			InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient),
 			DeployItem:          m.DeployItem,
 		}
 
@@ -143,7 +147,7 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 			Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 			ManagedResources:    managedresources,
 			FailOnMissingObject: true,
-			InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
+			InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient),
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
@@ -165,7 +169,7 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 				Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 				ManagedResources:    managedresources,
 				Configuration:       customReadinessCheckConfig,
-				InterruptionChecker: deployerlib.NewInterruptionChecker(m.DeployItem, m.lsKubeClient),
+				InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient),
 			}
 			err := customReadinessCheck.CheckResourcesReady()
 			if err != nil {
@@ -178,13 +182,13 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 }
 
 func (m *Manifest) Delete(ctx context.Context) error {
+	return m.deleteManifestsInGroups(ctx)
+}
+
+func (m *Manifest) deleteManifestsInGroups(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "Delete")
+	op := "deleteManifestsInGroups"
 
-	if _, err := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestStartDelete); err != nil {
-		return err
-	}
-
-	currOp := "DeleteManifests"
 	m.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Deleting
 
 	if m.ProviderStatus == nil || len(m.ProviderStatus.ManagedResources) == 0 {
@@ -192,79 +196,109 @@ func (m *Manifest) Delete(ctx context.Context) error {
 		return m.Writer().UpdateDeployItem(ctx, read_write_layer.W000044, m.DeployItem)
 	}
 
-	_, kubeClient, _, err := m.TargetClient(ctx)
-	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "TargetClusterClient", err.Error())
+	if _, err := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestStartDelete); err != nil {
+		return err
 	}
 
-	completed := true
-	for i := len(m.ProviderStatus.ManagedResources) - 1; i >= 0; i-- {
-		if _, err := timeout.TimeoutExceeded(ctx, m.DeployItem, TimeoutCheckpointManifestDeleteResources); err != nil {
+	_, targetClient, _, err := m.TargetClient(ctx)
+	if err != nil {
+		return lserrors.NewWrappedError(err, op, "TargetClusterClient", err.Error())
+	}
+
+	managedResources := []managedresource.ManagedResourceStatus{}
+	for i := range m.ProviderStatus.ManagedResources {
+		mr := &m.ProviderStatus.ManagedResources[i]
+
+		mrLogger, mrCtx := logger.WithValuesAndContext(ctx,
+			lc.KeyResource, types.NamespacedName{Namespace: mr.Resource.Namespace, Name: mr.Resource.Name}.String(),
+			lc.KeyResourceKind, mr.Resource.Kind)
+		mrLogger.Debug("Checking resource")
+
+		ok, err := resourcemanager.FilterByPolicy(mrCtx, mr, targetClient, m.DeployItem.Name)
+		if err != nil {
 			return err
 		}
-
-		mr := m.ProviderStatus.ManagedResources[i]
-		if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
-			continue
-		}
-		ref := mr.Resource
-		obj := kutil.ObjectFromCoreObjectReference(&ref)
-
-		currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
-		currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
-		key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-		if err := read_write_layer.GetUnstructured(ctx, kubeClient, key, &currObj, read_write_layer.R000052); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return lserrors.NewWrappedError(err,
-				currOp, "GetManifest", err.Error())
-		}
-
-		// if fallback policy is set and the resource is already managed by another deployer
-		// we are not allowed to delete that resource
-		if mr.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(&currObj, manifestv1alpha2.ManagedDeployItemLabel, m.DeployItem.Name) {
-			logger.Info("Resource is already managed, skip delete", lc.KeyResource, key.String())
+		if !ok {
 			continue
 		}
 
-		if mr.AnnotateBeforeDelete != nil {
-			objAnnotations := currObj.GetAnnotations()
-			if objAnnotations == nil {
-				objAnnotations = mr.AnnotateBeforeDelete
-			} else {
-				if err := mergo.Merge(&objAnnotations, mr.AnnotateBeforeDelete, mergo.WithOverride); err != nil {
-					logger.Error(err, "unable to merge resource annotations with before delete annotations", lc.KeyResource, key.String())
-				}
-			}
-
-			currObj.SetAnnotations(objAnnotations)
-
-			if err := kubeClient.Update(ctx, &currObj); err != nil {
-				if apierrors.IsConflict(err) {
-					logger.Info("unable to update resource with before delete annotations", lc.KeyResource, key.String(), lc.KeyError, err.Error())
-				} else {
-					logger.Error(err, "unable to update resource with before delete annotations", lc.KeyResource, key.String())
-				}
-			}
+		notFound, err := annotateBeforeDelete(ctx, mr, targetClient)
+		if err != nil {
+			return err
+		}
+		if notFound {
+			continue
 		}
 
-		if err := kubeClient.Delete(ctx, obj); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return lserrors.NewWrappedError(err,
-				currOp, "DeleteManifest", err.Error())
-		}
-		completed = false
+		mrLogger.Debug("Object will be deleted")
+		managedResources = append(managedResources, *mr)
 	}
 
-	if !completed {
-		return errors.New("not all items are deleted")
+	interruptionChecker := interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient)
+
+	err = resourcemanager.DeleteManagedResources(
+		ctx,
+		managedResources,
+		m.ProviderConfiguration.DeletionGroups,
+		targetClient,
+		m.DeployItem,
+		interruptionChecker,
+	)
+	if err != nil {
+		return fmt.Errorf("failed deleting managed resources: %w", err)
 	}
+
+	// remove finalizer
 	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return m.Writer().UpdateDeployItem(ctx, read_write_layer.W000045, m.DeployItem)
+}
+
+func annotateBeforeDelete(ctx context.Context, mr *managedresource.ManagedResourceStatus, targetClient client.Client) (notFound bool, err error) {
+	if mr.AnnotateBeforeDelete == nil {
+		return false, nil
+	}
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	ref := mr.Resource
+	obj := kutil.ObjectFromCoreObjectReference(&ref)
+	currObj := unstructured.Unstructured{}
+	currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
+	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
+	if err := read_write_layer.GetUnstructured(ctx, targetClient, key, &currObj, read_write_layer.R000052); err != nil {
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, fmt.Errorf("unable to get resource with before-delete annotations %s %s: %w",
+			obj.GroupVersionKind().String(), obj.GetName(), err)
+	}
+
+	objAnnotations := currObj.GetAnnotations()
+	if objAnnotations == nil {
+		objAnnotations = mr.AnnotateBeforeDelete
+	} else {
+		if err := mergo.Merge(&objAnnotations, mr.AnnotateBeforeDelete, mergo.WithOverride); err != nil {
+			logger.Error(err, "unable to merge resource annotations with before-delete annotations")
+			return false, fmt.Errorf("unable to merge resource annotations with before-delete annotations %s %s: %w",
+				obj.GroupVersionKind().String(), obj.GetName(), err)
+		}
+	}
+
+	currObj.SetAnnotations(objAnnotations)
+
+	if err := targetClient.Update(ctx, &currObj); err != nil {
+		if apierrors.IsConflict(err) {
+			logger.Info("unable to update resource with before-delete annotations due to a conflict", lc.KeyError, err.Error())
+			return false, fmt.Errorf("unable to update resource with before-delete annotations due to a conflict %s %s: %w",
+				obj.GroupVersionKind().String(), obj.GetName(), err)
+		} else {
+			logger.Error(err, "unable to update resource with before-delete annotations")
+			return false, fmt.Errorf("unable to update resource with before-delete annotations %s %s: %w",
+				obj.GroupVersionKind().String(), obj.GetName(), err)
+		}
+	}
+
+	return false, nil
 }
 
 func (m *Manifest) Writer() *read_write_layer.Writer {

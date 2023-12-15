@@ -7,11 +7,10 @@ package validation
 import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/apis/deployer/utils/managedresource/validation"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource/validation"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks/validation"
 )
 
@@ -21,6 +20,7 @@ func ValidateProviderConfiguration(config *manifestv1alpha2.ProviderConfiguratio
 	allErrs = append(allErrs, validation.ValidateManifestList(field.NewPath(""), config.Manifests)...)
 	allErrs = append(allErrs, health.ValidateReadinessCheckConfiguration(field.NewPath(""), &config.ReadinessChecks)...)
 	allErrs = append(allErrs, crval.ValidateContinuousReconcileSpec(field.NewPath("continuousReconcile"), config.ContinuousReconcile)...)
+	allErrs = append(allErrs, validation.ValidateDeletionGroups(field.NewPath("deletionGroups"), config.DeletionGroups)...)
 	return allErrs.ToAggregate()
 }
 
