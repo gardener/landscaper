@@ -10,19 +10,24 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	lserrors "github.com/gardener/landscaper/apis/errors"
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/components/cnudie/resourcetypehandlers/helmchart"
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
-	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/mandelsoft/filepath/pkg/filepath"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
+	"github.com/open-component-model/ocm/pkg/helm/loader"
+	"net/http"
+
 	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/finalizer"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"net/http"
 	"sigs.k8s.io/yaml"
+
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
@@ -109,8 +114,6 @@ func getChartFromResourceRef(ctx context.Context, resourceRef *helmv1alpha1.Reso
 	if err != nil {
 		return nil, err
 	}
-	keyStr := string(key)
-	_ = keyStr
 
 	// TODO: implement a MUX so this could deal with multiple kinds of requests
 	globalId := model.GlobalResourceIdentity{}
@@ -144,26 +147,15 @@ func getChartFromResourceRef(ctx context.Context, resourceRef *helmv1alpha1.Reso
 		return nil, err
 	}
 
-	acc, err := res.AccessMethod()
+	fs := memoryfs.New()
+	path, err := download.DownloadResource(octx, res, filepath.Join("/", "chart"), download.WithFileSystem(fs))
 	if err != nil {
 		return nil, err
 	}
-
-	reader, err := acc.Reader()
+	chart, err := loader.Load(path, fs)
 	if err != nil {
 		return nil, err
 	}
-
-	content, err := helmchart.New().Prepare(ctx, reader, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	chart, ok := content.Resource.(*chart.Chart)
-	if !ok {
-		return nil, errors.New("error resource is not a helm chart")
-	}
-
 	return chart, nil
 }
 
