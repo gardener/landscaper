@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver/secret"
@@ -32,12 +31,12 @@ type executionItem struct {
 }
 
 // deployOrTrigger creates a new deployitem or triggers it if it already exists.
-func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) lserrors.LsError {
+func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) (*lsv1alpha1.DiNamePair, lserrors.LsError) {
 	op := "updateDeployItem"
 
 	clusterName, err := o.getShootClusterName(ctx, item.Info)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	deployItemExists := item.DeployItem != nil
@@ -62,7 +61,7 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 		if deployItemExists {
 			msg = fmt.Sprintf("error while triggering deployitem %s", item.DeployItem.Name)
 		}
-		return lserrors.NewWrappedError(err, op, msg, err.Error())
+		return nil, lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
 
 	ref := lsv1alpha1.VersionedNamedObjectReference{}
@@ -71,13 +70,15 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) ls
 	ref.Reference.Namespace = item.DeployItem.Namespace
 	ref.Reference.ObservedGeneration = item.DeployItem.Generation
 
-	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
 	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
 	if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000034, o.exec); err != nil {
 		msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
-		return lserrors.NewWrappedError(err, op, msg, err.Error())
+		return nil, lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
-	return nil
+	return &lsv1alpha1.DiNamePair{
+		SpecName:   item.Info.Name,
+		ObjectName: item.DeployItem.Name,
+	}, nil
 }
 
 // getShootClusterName determines for a deployitem whether the "skipUninstallIfClusterRemoved" feature is enabled,
@@ -124,7 +125,7 @@ func (o *Operation) getShootClusterName(ctx context.Context, info lsv1alpha1.Dep
 func (o *Operation) CollectAndUpdateExportsNew(ctx context.Context) lserrors.LsError {
 	op := "CollectAndUpdateExports"
 
-	items, _, lsErr := o.getDeployItems(ctx)
+	items, _, lsErr := o.getDeployItems(ctx, o.exec.Status.DeployItemCache)
 	if lsErr != nil {
 		return lsErr
 	}

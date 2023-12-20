@@ -44,10 +44,10 @@ func NewOperation(op *operation.Operation, exec *lsv1alpha1.Execution, forceReco
 	}
 }
 
-func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
+func (o *Operation) UpdateDeployItems(ctx context.Context, deployItemCache *lsv1alpha1.DeployItemCache) lserrors.LsError {
 	op := "UpdateDeployItems"
 
-	executionItems, orphaned, lsErr := o.getDeployItems(ctx)
+	executionItems, orphaned, lsErr := o.getDeployItems(ctx, deployItemCache)
 	if lsErr != nil {
 		return lsErr
 	}
@@ -56,11 +56,23 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 		return lserrors.NewWrappedError(err, op, "CleanupOrphanedDeployItems", err.Error())
 	}
 
+	activePairs := []lsv1alpha1.DiNamePair{}
 	for _, item := range executionItems {
-		lsErr := o.updateDeployItem(ctx, *item)
+		nextDiNamePair, lsErr := o.updateDeployItem(ctx, *item)
 		if lsErr != nil {
 			return lsErr
 		}
+		activePairs = append(activePairs, *nextDiNamePair)
+	}
+
+	orphanedNames := []string{}
+	for i := range orphaned {
+		orphanedNames = append(orphanedNames, orphaned[i].Name)
+	}
+
+	o.exec.Status.DeployItemCache = &lsv1alpha1.DeployItemCache{
+		ActiveDIs:   activePairs,
+		OrphanedDIs: orphanedNames,
 	}
 
 	return nil
@@ -69,7 +81,7 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassification, lserrors.LsError) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "TriggerDeployItems")
 
-	items, orphaned, lsErr := o.getDeployItems(ctx)
+	items, orphaned, lsErr := o.getDeployItems(ctx, o.exec.Status.DeployItemCache)
 	if lsErr != nil {
 		return nil, lsErr
 	}
@@ -130,7 +142,7 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 
 	op := "TriggerDeployItemsForDelete"
 
-	items, _, lsErr := o.getDeployItems(ctx)
+	items, _, lsErr := o.getDeployItems(ctx, o.exec.Status.DeployItemCache)
 	if lsErr != nil {
 		return nil, lsErr
 	}
@@ -255,10 +267,12 @@ func (o *Operation) removeFinalizerFromDeployItem(ctx context.Context, di *lsv1a
 	return nil
 }
 
-func (o *Operation) getDeployItems(ctx context.Context) ([]*executionItem, []lsv1alpha1.DeployItem, lserrors.LsError) {
+func (o *Operation) getDeployItems(ctx context.Context,
+	deployItemCache *lsv1alpha1.DeployItemCache) ([]*executionItem, []*lsv1alpha1.DeployItem, lserrors.LsError) {
+
 	op := "getDeployItems"
 
-	managedItems, err := o.ListManagedDeployItems(ctx)
+	managedItems, err := o.ListManagedDeployItems(ctx, read_write_layer.R000037, deployItemCache)
 	if err != nil {
 		return nil, nil, lserrors.NewWrappedError(err, op, "ListManagedDeployItems", err.Error())
 	}

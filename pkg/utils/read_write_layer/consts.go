@@ -159,6 +159,7 @@ type ReadID string
 
 const (
 	// Constants to identify different read operations. Every constant must be used only once.
+	R000000 ReadID = "r000000" // for tests
 	R000001 ReadID = "r000001"
 	R000002 ReadID = "r000002"
 	R000003 ReadID = "r000003"

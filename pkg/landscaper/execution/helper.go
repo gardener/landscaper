@@ -8,6 +8,7 @@ import (
 	"context"
 	"strings"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +41,7 @@ func ApplyDeployItemTemplate(di *lsv1alpha1.DeployItem, tmpl lsv1alpha1.DeployIt
 	metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.DeployerTargetNameAnnotation, targetName)
 }
 
-func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string) (int, bool) {
+func getDeployItemIndexByManagedName(items []*lsv1alpha1.DeployItem, name string) (int, bool) {
 	for i, item := range items {
 		if ann := item.Labels[lsv1alpha1.ExecutionManagedNameLabel]; ann == name {
 			return i, true
@@ -52,20 +53,54 @@ func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string)
 
 // listManagedDeployItems collects all deploy items that are managed by the execution.
 // The managed execution is identified by the managed by label and the ownership.
-func (o *Operation) ListManagedDeployItems(ctx context.Context) ([]lsv1alpha1.DeployItem, error) {
-	deployItemList := &lsv1alpha1.DeployItemList{}
-	// todo: maybe use name and namespace
-	if err := read_write_layer.ListDeployItems(ctx, o.Client(), deployItemList, read_write_layer.R000037,
-		client.MatchingLabels{lsv1alpha1.ExecutionManagedByLabel: o.exec.Name},
-		client.InNamespace(o.exec.Namespace)); err != nil {
-		return nil, err
+func (o *Operation) ListManagedDeployItems(ctx context.Context, readID read_write_layer.ReadID,
+	deployItemCache *lsv1alpha1.DeployItemCache) ([]*lsv1alpha1.DeployItem, error) {
+
+	deployItems := []*lsv1alpha1.DeployItem{}
+
+	if deployItemCache != nil {
+		for i := range deployItemCache.OrphanedDIs {
+			nextDi := &lsv1alpha1.DeployItem{}
+			key := client.ObjectKey{Namespace: o.exec.Namespace, Name: deployItemCache.OrphanedDIs[i]}
+			if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, nextDi, readID); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				return nil, err
+			}
+			deployItems = append(deployItems, nextDi)
+		}
+
+		for i := range deployItemCache.ActiveDIs {
+			nextDi := &lsv1alpha1.DeployItem{}
+			key := client.ObjectKey{Namespace: o.exec.Namespace, Name: deployItemCache.ActiveDIs[i].ObjectName}
+			if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, nextDi, readID); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				return nil, err
+			}
+			deployItems = append(deployItems, nextDi)
+		}
+
+		return deployItems, nil
+
+	} else {
+		deployItemList, err := read_write_layer.ListManagedDeployItems(ctx, o.Client(), client.ObjectKeyFromObject(o.exec), readID)
+		if err != nil {
+			return nil, err
+		}
+
+		for i := range deployItemList.Items {
+			deployItems = append(deployItems, &deployItemList.Items[i])
+		}
+		return deployItems, nil
 	}
-	return deployItemList.Items, nil
 }
 
 // getExecutionItems creates an internal representation for all execution items.
 // It also returns all removed deploy items that are not defined by the execution anymore.
-func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]*executionItem, []lsv1alpha1.DeployItem) {
+func (o *Operation) getExecutionItems(items []*lsv1alpha1.DeployItem) ([]*executionItem, []*lsv1alpha1.DeployItem) {
 	execItems := make([]*executionItem, len(o.exec.Spec.DeployItems))
 	managed := sets.NewInt()
 	for i, di := range o.exec.Spec.DeployItems {
@@ -78,7 +113,7 @@ func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]*executi
 		}
 		execItems[i] = &execItem
 	}
-	orphaned := make([]lsv1alpha1.DeployItem, 0)
+	orphaned := make([]*lsv1alpha1.DeployItem, 0)
 	for i, item := range items {
 		if !managed.Has(i) {
 			orphaned = append(orphaned, item)

@@ -121,32 +121,6 @@ func WaitForDeployItemToFinish(
 	return nil
 }
 
-// GetDeployItemsOfInstallation returns all direct deploy items of the installation.
-// It does not return deploy items of subinstllations
-// todo: for further tests create recursive installation navigator
-// e.g. Navigator(inst).GetSubinstallation(name).GetDeployItems()
-func GetDeployItemsOfInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.DeployItem, error) {
-	if inst.Status.ExecutionReference == nil {
-		return nil, errors.New("no execution reference defined for the installation")
-	}
-	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, kubeClient, inst.Status.ExecutionReference.NamespacedName(), exec,
-		read_write_layer.R000023); err != nil {
-		return nil, err
-	}
-
-	items := make([]*lsv1alpha1.DeployItem, 0)
-	for _, ref := range exec.Status.DeployItemReferences {
-		item := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, kubeClient, ref.Reference.NamespacedName(),
-			item, read_write_layer.R000033); err != nil {
-			return nil, fmt.Errorf("unable to find deploy item %q: %w", ref.Name, err)
-		}
-		items = append(items, item)
-	}
-	return items, nil
-}
-
 // GetSubInstallationsOfInstallation returns the direct subinstallations of a installation.
 func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, error) {
 	list := make([]*lsv1alpha1.Installation, 0)

@@ -47,6 +47,17 @@ func GetDeployItem(ctx context.Context, c client.Reader, key client.ObjectKey, d
 	return get(ctx, c, key, deployItem, readID, "deployItem")
 }
 
+func ListManagedDeployItems(ctx context.Context, c client.Reader, execKey client.ObjectKey, readID ReadID) (*lsv1alpha1.DeployItemList, error) {
+	deployItemList := &lsv1alpha1.DeployItemList{}
+	// todo: maybe use name and namespace
+	if err := ListDeployItems(ctx, c, deployItemList, readID,
+		client.MatchingLabels{lsv1alpha1.ExecutionManagedByLabel: execKey.Name},
+		client.InNamespace(execKey.Namespace)); err != nil {
+		return nil, err
+	}
+	return deployItemList, nil
+}
+
 func ListDeployItems(ctx context.Context, c client.Reader, deployItems *lsv1alpha1.DeployItemList, readID ReadID, opts ...client.ListOption) error {
 	return list(ctx, c, deployItems, readID, "deployItems", opts...)
 }

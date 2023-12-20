@@ -160,40 +160,26 @@ spec:
                   - message
                   type: object
                 type: array
-              deployItemRefs:
-                description: DeployItemReferences contain the state of all deploy
-                  items.
-                items:
-                  description: VersionedNamedObjectReference is a named reference
-                    to a object with its last observed resource generation. This struct
-                    is used by status fields.
-                  properties:
-                    name:
-                      description: Name is the unique name of the reference.
-                      type: string
-                    ref:
-                      description: Reference is the reference to an object.
+              deployItemCache:
+                description: DeployItemCache contains the currently existing deploy
+                  item belonging to the execution. If nil undefined.
+                properties:
+                  activeDIs:
+                    items:
+                      description: DiNamePair contains the spec name and the real
+                        name of a deploy item
                       properties:
-                        name:
-                          description: Name is the name of the kubernetes object.
+                        objectName:
                           type: string
-                        namespace:
-                          description: Namespace is the namespace of kubernetes object.
+                        specName:
                           type: string
-                        observedGeneration:
-                          description: ObservedGeneration defines the last observed
-                            generation of the referenced resource.
-                          format: int64
-                          type: integer
-                      required:
-                      - name
-                      - observedGeneration
                       type: object
-                  required:
-                  - name
-                  - ref
-                  type: object
-                type: array
+                    type: array
+                  orphanedDIs:
+                    items:
+                      type: string
+                    type: array
+                type: object
               execGenerations:
                 description: ExecutionGenerations stores which generation the execution
                   had when it last applied a specific deployitem. So in this case,

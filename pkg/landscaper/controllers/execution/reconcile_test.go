@@ -7,6 +7,8 @@ package execution_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -267,7 +269,9 @@ var _ = Describe("Reconcile", func() {
 
 			// Check execution state
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
-			Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
+			deployItems, err := read_write_layer.ListManagedDeployItems(ctx, testenv.Client, client.ObjectKeyFromObject(exec), read_write_layer.R000000)
+			Expect(err).To(BeNil())
+			Expect(deployItems.Items).To(HaveLen(3))
 			Expect(exec.Status.ExecutionGenerations).To(HaveLen(1))
 
 			// Check that the first deploy item di-a is not deleted

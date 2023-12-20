@@ -157,13 +157,13 @@ func newDeployItemClassificationForDelete(executionJobID string, items []*execut
 	return c, nil
 }
 
-func newDeployItemClassificationForOrphans(executionJobID string, deployitems []lsv1alpha1.DeployItem) (*DeployItemClassification, lserrors.LsError) {
+func newDeployItemClassificationForOrphans(executionJobID string, deployitems []*lsv1alpha1.DeployItem) (*DeployItemClassification, lserrors.LsError) {
 	items := make([]*executionItem, len(deployitems))
 
 	for i := range deployitems {
 		items[i] = &executionItem{
 			Info:       lsv1alpha1.DeployItemTemplate{},
-			DeployItem: &deployitems[i],
+			DeployItem: deployitems[i],
 		}
 	}
 

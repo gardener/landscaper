@@ -8,6 +8,10 @@ import (
 	"context"
 	"path/filepath"
 
+	clientlib "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -110,19 +114,17 @@ var _ = Describe("Simple", func() {
 		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Progressing))
 		Expect(exec.Status.JobID).To(Equal(jobID))
 		Expect(exec.Status.JobIDFinished).To(BeEmpty())
-		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
+		deployItems, err := read_write_layer.ListManagedDeployItems(ctx, testenv.Client, clientlib.ObjectKeyFromObject(exec), read_write_layer.R000000)
+		Expect(err).To(BeNil())
+		Expect(deployItems.Items).To(HaveLen(1))
 
-		diList := &lsv1alpha1.DeployItemList{}
-		Expect(testenv.Client.List(ctx, diList)).ToNot(HaveOccurred())
-		Expect(diList.Items).To(HaveLen(1))
-		diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
-		di := &lsv1alpha1.DeployItem{}
-		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
+		di := &deployItems.Items[0]
 		Expect(di.Status.Phase).To(BeEmpty())
 		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(BeEmpty())
 
 		// reconcile deploy item
+		diReq := testutils.Request(di.Name, di.Namespace)
 		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 

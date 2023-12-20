@@ -111,6 +111,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Default":                                            schema_landscaper_apis_core_v1alpha1_Default(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger":                                 schema_landscaper_apis_core_v1alpha1_DependentToTrigger(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItem":                                         schema_landscaper_apis_core_v1alpha1_DeployItem(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache":                                    schema_landscaper_apis_core_v1alpha1_DeployItemCache(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemList":                                     schema_landscaper_apis_core_v1alpha1_DeployItemList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemSpec":                                     schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemStatus":                                   schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref),
@@ -121,6 +122,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationList":                           schema_landscaper_apis_core_v1alpha1_DeployerRegistrationList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationSpec":                           schema_landscaper_apis_core_v1alpha1_DeployerRegistrationSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationStatus":                         schema_landscaper_apis_core_v1alpha1_DeployerRegistrationStatus(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.DiNamePair":                                         schema_landscaper_apis_core_v1alpha1_DiNamePair(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Duration":                                           schema_landscaper_apis_core_v1alpha1_Duration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Environment":                                        schema_landscaper_apis_core_v1alpha1_Environment(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.EnvironmentList":                                    schema_landscaper_apis_core_v1alpha1_EnvironmentList(ref),
@@ -4295,6 +4297,48 @@ func schema_landscaper_apis_core_v1alpha1_DeployItem(ref common.ReferenceCallbac
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_DeployItemCache(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DeployItemCache contains the existing deploy items",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"activeDIs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.DiNamePair"),
+									},
+								},
+							},
+						},
+					},
+					"orphanedDIs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.DiNamePair"},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_DeployItemList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4873,6 +4917,31 @@ func schema_landscaper_apis_core_v1alpha1_DeployerRegistrationStatus(ref common.
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_DiNamePair(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DiNamePair contains the spec name and the real name of a deploy item",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"specName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"objectName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_Duration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5311,18 +5380,10 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
 						},
 					},
-					"deployItemRefs": {
+					"deployItemCache": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeployItemReferences contain the state of all deploy items.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference"),
-									},
-								},
-							},
+							Description: "DeployItemCache contains the currently existing deploy item belonging to the execution. If nil undefined.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache"),
 						},
 					},
 					"execGenerations": {
@@ -5376,7 +5437,7 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 

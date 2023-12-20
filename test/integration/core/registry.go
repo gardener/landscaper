@@ -119,7 +119,7 @@ func RegistryTest(f *framework.Framework) {
 				// wait for installation to finish
 				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
-				deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
+				deployItems, err := utils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 				utils.ExpectNoError(err)
 				Expect(deployItems).To(HaveLen(1))
 				Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))
@@ -297,12 +297,12 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Client.Get(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
 
 				By("fetch deployitems of referenced subinstallations")
-				deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, state.Client, sourceReferencedSubinst)
+				deployItems, err := utils.GetDeployItemsOfInstallation(ctx, state.Client, sourceReferencedSubinst)
 				utils.ExpectNoError(err)
 				Expect(deployItems).To(HaveLen(1))
 				sourceReferencedDI := deployItems[0]
 
-				deployItems, err = lsutils.GetDeployItemsOfInstallation(ctx, state.Client, intermediateReferencedSubinst)
+				deployItems, err = utils.GetDeployItemsOfInstallation(ctx, state.Client, intermediateReferencedSubinst)
 				utils.ExpectNoError(err)
 				Expect(deployItems).To(HaveLen(1))
 				intermediateReferencedDI := deployItems[0]
@@ -492,7 +492,7 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Client.Get(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
 
 				By("fetch deployitems of referenced subinstallations")
-				deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, state.Client, intermediateReferencedSubinst)
+				deployItems, err := utils.GetDeployItemsOfInstallation(ctx, state.Client, intermediateReferencedSubinst)
 				utils.ExpectNoError(err)
 				Expect(deployItems).To(HaveLen(1))
 				intermediateReferencedDI := deployItems[0]
