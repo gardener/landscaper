@@ -6,8 +6,14 @@ package spiff
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	"github.com/open-component-model/ocm/pkg/mime"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	"time"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
@@ -45,6 +51,8 @@ func LandscaperSpiffFuncs(blueprint *blueprints.Blueprint, functions spiffing.Fu
 	}
 
 	functions.RegisterFunction("getResource", spiffResolveResources(cd))
+	functions.RegisterFunction("getResourceKey", spiffGetResourceKey(componentVersion))
+	functions.RegisterFunction("getResourceContent", spiffGetResourceContent(componentVersion))
 	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList, ocmSchemaVersion))
 	functions.RegisterFunction("generateImageOverwrite", spiffGenerateImageOverwrite(cd, cdList))
 	functions.RegisterFunction("parseOCIRef", parseOCIReference)
@@ -111,6 +119,120 @@ func spiffResolveResources(cd *types.ComponentDescriptor) func(arguments []inter
 		}
 
 		return result.Value(), info, true
+	}
+}
+
+func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+		info := dynaml.DefaultInfo()
+
+		if arguments == nil {
+			return info.Error("unable to provide key for empty relative artifact reference")
+		}
+		if len(arguments) > 1 {
+			return info.Error("this function only requires a single argument, but multiple were provided")
+		}
+
+		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
+		if !ok {
+			return info.Error("unable to use this function without useOCM set to true")
+		}
+		compvers := ocmlibCv.GetOCMObject()
+
+		resourceRefData, err := spiffyaml.ValueToJSON(arguments[0])
+		if err != nil {
+			return info.Error("unable to parse input")
+		}
+
+		resourceRef := v1.ResourceReference{}
+		err = runtime.DefaultYAMLEncoding.Unmarshal(resourceRefData, &resourceRef)
+		if err != nil {
+			return info.Error("unable to unmarshal argument into a relative resource reference: %w", err)
+		}
+
+		resource, resourceCv, err := utils.ResolveResourceReference(compvers, resourceRef, nil)
+		if err != nil {
+			return info.Error("unable to resolve relative resource reference: %w", err)
+		}
+
+		globalId := model.GlobalResourceIdentity{
+			ComponentIdentity: model.ComponentIdentity{
+				Name:    resourceCv.GetName(),
+				Version: resourceCv.GetVersion(),
+			},
+			ResourceIdentity: resource.Meta().GetIdentity(resourceCv.GetDescriptor().Resources),
+		}
+
+		globalIdData, err := runtime.DefaultYAMLEncoding.Marshal(globalId)
+		if err != nil {
+			return info.Error("unable to marshal global resource identity: %w", err)
+		}
+
+		key := base64.StdEncoding.EncodeToString(globalIdData)
+
+		return key, info, true
+	}
+}
+
+func spiffGetResourceContent(cv model.ComponentVersion) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+		info := dynaml.DefaultInfo()
+
+		if arguments == nil {
+			return info.Error("unable to provide key for empty relative artifact reference")
+		}
+		if len(arguments) > 1 {
+			return info.Error("this function only requires a single argument, but multiple were provided")
+		}
+
+		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
+		if !ok {
+			return info.Error("unable to use this function without useOCM set to true")
+		}
+		compvers := ocmlibCv.GetOCMObject()
+
+		resourceRefData, err := spiffyaml.ValueToJSON(arguments[0])
+		if err != nil {
+			return info.Error("unable to parse input")
+		}
+
+		resourceRef := v1.ResourceReference{}
+		err = runtime.DefaultYAMLEncoding.Unmarshal(resourceRefData, &resourceRef)
+		if err != nil {
+			return info.Error("unable to unmarshal argument into a relative resource reference: %w", err)
+		}
+
+		resource, _, err := utils.ResolveResourceReference(compvers, resourceRef, nil)
+		if err != nil {
+			return info.Error("unable to resolve relative resource reference: %w", err)
+		}
+
+		m, err := resource.AccessMethod()
+		if err != nil {
+			return info.Error("unable to get access method for resource: %w", err)
+		}
+
+		data, err := m.Get()
+		if err != nil {
+			return info.Error("unable to read resource content: %w", err)
+		}
+
+		var out []byte
+		switch m.MimeType() {
+		case mime.MIME_OCTET:
+			dst := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
+			base64.StdEncoding.Encode(dst, data)
+			out = dst
+		default:
+			out = data
+		}
+
+		node, err := spiffyaml.Unmarshal("data", out)
+		if err != nil {
+			return info.Error("unable to marshal resource into spiff node")
+		}
+
+		return node, info, true
 	}
 }
 

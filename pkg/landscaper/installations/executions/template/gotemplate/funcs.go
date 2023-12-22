@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/open-component-model/ocm/pkg/mime"
 	"os"
 	"strings"
 	gotmpl "text/template"
@@ -208,18 +209,19 @@ func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []ma
 // which can be used by the deployers to fetch the resource content.
 func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (string, error) {
 	return func(args ...interface{}) (string, error) {
-		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
-		if !ok {
-			return "", errors.New("unable to use this function without useOCM set to true")
-		}
-		compvers := ocmlibCv.GetOCMObject()
-
 		if args == nil {
 			return "", errors.New("unable to provide key for empty relative artifact reference")
 		}
 		if len(args) > 1 {
 			return "", errors.New("this function only requires a single argument, but multiple were provided")
 		}
+
+		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
+		if !ok {
+			return "", errors.New("unable to use this function without useOCM set to true")
+		}
+		compvers := ocmlibCv.GetOCMObject()
+
 		resourceRefStr, ok := args[0].(string)
 		if !ok {
 			return "", errors.New("unable to assert the first argument as string")
@@ -257,45 +259,54 @@ func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (
 // getResourceContentGoFunc returns a function that resolves a relative resource reference
 // (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references),
 // based on an ocm component version given as input parameter and returns the content of the corresponding resource
-func getResourceContentGoFunc(cv model.ComponentVersion) func(args ...interface{}) ([]byte, error) {
-	return func(args ...interface{}) ([]byte, error) {
+func getResourceContentGoFunc(cv model.ComponentVersion) func(args ...interface{}) (string, error) {
+	return func(args ...interface{}) (string, error) {
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
 		if !ok {
-			return nil, errors.New("unable to use this function without useOCM set to true")
+			return "", errors.New("unable to use this function without useOCM set to true")
 		}
 		compvers := ocmlibCv.GetOCMObject()
 
 		if args == nil {
-			return nil, errors.New("unable to provide key for empty relative artifact reference")
+			return "", errors.New("unable to provide key for empty relative artifact reference")
 		}
 		if len(args) > 1 {
-			return nil, errors.New("this function only requires a single argument, but multiple were provided")
+			return "", errors.New("this function only requires a single argument, but multiple were provided")
 		}
 		resourceRefStr, ok := args[0].(string)
 		if !ok {
-			return nil, errors.New("unable to assert the first argument as string")
+			return "", errors.New("unable to assert the first argument as string")
 		}
 		resourceRef := v1.ResourceReference{}
 		err := runtime.DefaultYAMLEncoding.Unmarshal([]byte(resourceRefStr), &resourceRef)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal argument into a relative resource reference: %w", err)
+			return "", fmt.Errorf("unable to unmarshal argument into a relative resource reference: %w", err)
 		}
 
 		resource, _, err := utils.ResolveResourceReference(compvers, resourceRef, nil)
 		if err != nil {
-			return nil, fmt.Errorf("unable to resolve relative resource reference: %w", err)
+			return "", fmt.Errorf("unable to resolve relative resource reference: %w", err)
 		}
 
 		m, err := resource.AccessMethod()
 		if err != nil {
-			return nil, fmt.Errorf("unable to get access method for resource: %w", err)
+			return "", fmt.Errorf("unable to get access method for resource: %w", err)
 		}
 
 		data, err := m.Get()
 		if err != nil {
-			return nil, fmt.Errorf("unable to read resource content: %w", err)
+			return "", fmt.Errorf("unable to read resource content: %w", err)
 		}
-		return data, nil
+
+		var out string
+		switch m.MimeType() {
+		case mime.MIME_OCTET:
+			out = base64.StdEncoding.EncodeToString(data)
+		default:
+			out = string(data)
+		}
+
+		return out, nil
 	}
 }
 
