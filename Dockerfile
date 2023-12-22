@@ -15,7 +15,8 @@ RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 #### BASE ####
 FROM docker.io/debian:11 AS base
 
-#RUN apt install -y --no-cache ca-certificates
+RUN apt update
+RUN apt install -y ca-certificates
 
 #### Landscaper Controller ####
 FROM base as landscaper-controller
