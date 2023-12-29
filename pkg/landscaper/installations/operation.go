@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -119,8 +121,10 @@ func (o *Operation) JSONSchemaValidator(schema []byte) (*jsonschema.Validator, e
 
 // ListSubinstallations returns a list of all subinstallations of the given installation.
 // Returns nil if no installations can be found
-func (o *Operation) ListSubinstallations(ctx context.Context, filter ...FilterInstallationFunc) ([]*lsv1alpha1.Installation, error) {
-	return ListSubinstallations(ctx, o.Client(), o.Inst.GetInstallation(), filter...)
+func (o *Operation) ListSubinstallations(ctx context.Context, subInstCache *lsv1alpha1.SubInstCache,
+	readID read_write_layer.ReadID) ([]*lsv1alpha1.Installation, error) {
+
+	return ListSubinstallations(ctx, o.Client(), o.Inst.GetInstallation(), subInstCache, readID)
 }
 
 type FilterInstallationFunc func(inst *lsv1alpha1.Installation) bool
@@ -128,23 +132,58 @@ type FilterInstallationFunc func(inst *lsv1alpha1.Installation) bool
 // ListSubinstallations returns a list of all subinstallations of the given installation.
 // The returned subinstallations can be filtered
 // Returns nil if no installations can be found.
-func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation, filter ...FilterInstallationFunc) ([]*lsv1alpha1.Installation, error) {
-	installationList := &lsv1alpha1.InstallationList{}
+func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation,
+	subInstCache *lsv1alpha1.SubInstCache, readID read_write_layer.ReadID, filter ...FilterInstallationFunc) ([]*lsv1alpha1.Installation, error) {
+
+	tmpInstallations := []*lsv1alpha1.Installation{}
+
+	if subInstCache != nil {
+		for i := range subInstCache.OrphanedSubs {
+			nextInst := &lsv1alpha1.Installation{}
+			key := client.ObjectKey{Namespace: inst.Namespace, Name: subInstCache.OrphanedSubs[i]}
+			if err := read_write_layer.GetInstallation(ctx, kubeClient, key, nextInst, readID); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				return nil, err
+			}
+			tmpInstallations = append(tmpInstallations, nextInst)
+		}
+
+		for i := range subInstCache.ActiveSubs {
+			nextInst := &lsv1alpha1.Installation{}
+			key := client.ObjectKey{Namespace: inst.Namespace, Name: subInstCache.ActiveSubs[i].ObjectName}
+			if err := read_write_layer.GetInstallation(ctx, kubeClient, key, nextInst, readID); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				return nil, err
+			}
+			tmpInstallations = append(tmpInstallations, nextInst)
+		}
+	} else {
+		installationList := &lsv1alpha1.InstallationList{}
+
+		err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, readID,
+			client.InNamespace(inst.Namespace),
+			client.MatchingLabels{
+				lsv1alpha1.EncompassedByLabel: inst.Name,
+			})
+
+		if err != nil {
+			return nil, err
+		}
+		if len(installationList.Items) == 0 {
+			return nil, nil
+		}
+
+		for i := range installationList.Items {
+			tmpInstallations = append(tmpInstallations, &installationList.Items[i])
+		}
+	}
 
 	// the controller-runtime cache does currently not support field selectors (except a simple equal matcher).
 	// Therefore, we have to use our own filtering.
-	err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, read_write_layer.R000018,
-		client.InNamespace(inst.Namespace),
-		client.MatchingLabels{
-			lsv1alpha1.EncompassedByLabel: inst.Name,
-		})
-	if err != nil {
-		return nil, err
-	}
-	if len(installationList.Items) == 0 {
-		return nil, nil
-	}
-
 	filterInst := func(inst *lsv1alpha1.Installation) bool {
 		for _, f := range filter {
 			if f(inst) {
@@ -153,12 +192,13 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 		}
 		return false
 	}
+
 	installations := make([]*lsv1alpha1.Installation, 0)
-	for _, inst := range installationList.Items {
-		if len(filter) != 0 && filterInst(&inst) {
+	for i := range tmpInstallations {
+		if len(filter) != 0 && filterInst(tmpInstallations[i]) {
 			continue
 		}
-		installations = append(installations, inst.DeepCopy())
+		installations = append(installations, tmpInstallations[i])
 	}
 	return installations, nil
 }

@@ -11,6 +11,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/utils/landscaper"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -80,14 +82,17 @@ func ImportExportTests(f *framework.Framework) {
 			By("verify that subinstallation has been created")
 			subinst := &lsv1alpha1.Installation{}
 			Eventually(func() (bool, error) {
-				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(root), root)
-				if err != nil || len(root.Status.InstallationReferences) == 0 {
-					return false, err
-				}
-				err = f.Client.Get(ctx, root.Status.InstallationReferences[0].Reference.NamespacedName(), subinst)
+				err = f.Client.Get(ctx, kutil.ObjectKeyFromObject(root), root)
 				if err != nil {
 					return false, err
 				}
+
+				subinsts, err := landscaper.GetSubInstallationsOfInstallation(ctx, f.Client, root)
+				if err != nil || len(subinsts) == 0 {
+					return false, err
+				}
+
+				subinst = subinsts[0]
 				return true, nil
 			}, timeoutTime, resyncTime).Should(BeTrue(), "unable to fetch subinstallation")
 

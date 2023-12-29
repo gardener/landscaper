@@ -162,7 +162,7 @@ func GetParentAndSiblings(ctx context.Context, kubeClient client.Client, inst *l
 	}
 
 	// siblings are all encompassed installation of the parent installation
-	siblings, err = ListSubinstallations(ctx, kubeClient, parent, func(found *lsv1alpha1.Installation) bool {
+	siblings, err = ListSubinstallations(ctx, kubeClient, parent, nil, read_write_layer.R000006, func(found *lsv1alpha1.Installation) bool {
 		return inst.Name == found.Name
 	})
 	if err != nil {
