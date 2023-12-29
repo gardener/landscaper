@@ -31,8 +31,17 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 
 	op := "handleReconcilePhase"
 
+	// the cache is only available and reliable if not nil
+	var subInstCache = inst.Status.SubInstCache
+
 	// set init phase if the phase is empty or final from previous job
 	if inst.Status.InstallationPhase.IsFinal() || inst.Status.InstallationPhase.IsEmpty() {
+
+		if inst.Status.InstallationPhase.IsEmpty() {
+			subInstCache = &lsv1alpha1.SubInstCache{}
+		}
+
+		inst.Status.SubInstCache = nil
 
 		nextPhase := lsv1alpha1.InstallationPhases.Init
 		if !inst.DeletionTimestamp.IsZero() {
@@ -52,7 +61,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Init {
-		fatalError, normalError := c.handlePhaseInit(ctx, inst)
+		fatalError, normalError := c.handlePhaseInit(ctx, inst, subInstCache)
 
 		inst.Status.ObservedGeneration = inst.GetGeneration()
 
@@ -87,6 +96,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 				read_write_layer.W000024, false)
 		}
 
+		inst.Status.SubInstCache.OrphanedSubs = nil
 		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhases.ObjectsCreated, nil,
 			read_write_layer.W000025, false); err != nil {
 			return err
@@ -213,7 +223,9 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	return nil
 }
 
-func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
+func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Installation,
+	subInstCache *lsv1alpha1.SubInstCache) (lserrors.LsError, lserrors.LsError) {
+
 	currentOperation := "handlePhaseInit"
 
 	// cleanup
@@ -233,7 +245,7 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 		return nil, normalError
 	}
 
-	if err := c.CreateImportsAndSubobjects(ctx, instOp, imps); err != nil {
+	if err := c.CreateImportsAndSubobjects(ctx, instOp, imps, subInstCache); err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "CreateImportsAndSubobjects", err.Error()), nil
 	}
 
@@ -329,7 +341,7 @@ func (c *Controller) hash(imps *imports.Imports) (string, error) {
 func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
 	currentOperation := "handlePhaseCleanupOrphaned"
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000018)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
@@ -374,26 +386,9 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	currentOperation := "handlePhaseObjectsCreated"
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000089)
 	if err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
-	}
-
-	// cleanup references in status
-	oldReferences := inst.Status.InstallationReferences
-	newReferences := []lsv1alpha1.NamedObjectReference{}
-	for _, nextRef := range oldReferences {
-		for _, nextSubInst := range subInsts {
-			if nextSubInst.Name == nextRef.Reference.Name {
-				newReferences = append(newReferences, nextRef)
-				break
-			}
-		}
-	}
-
-	inst.Status.InstallationReferences = newReferences
-	if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000026, inst); err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "UpdateInstallationReferences", err.Error())
 	}
 
 	// trigger subinstallations
@@ -431,7 +426,7 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 
 	allSucceeded = true
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000087)
 	if err != nil {
 		return false, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
@@ -514,7 +509,9 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 	return nil, nil
 }
 
-func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *installations.Operation, imps *imports.Imports) lserrors.LsError {
+func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *installations.Operation, imps *imports.Imports,
+	subInstCache *lsv1alpha1.SubInstCache) lserrors.LsError {
+
 	inst := op.Inst
 	currOp := "CreateImportsAndSubobjects"
 	// collect and merge all imports and start the Executions
@@ -531,7 +528,7 @@ func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *install
 	}
 
 	subinstallation := subinstallations.New(op)
-	if err := subinstallation.Ensure(ctx); err != nil {
+	if err := subinstallation.Ensure(ctx, subInstCache); err != nil {
 		return lserrors.NewWrappedError(err, currOp, "EnsureSubinstallations", err.Error())
 	}
 

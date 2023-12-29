@@ -4712,16 +4712,16 @@ string
 </tr>
 <tr>
 <td>
-<code>installationRefs</code></br>
+<code>subInstCache</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.NamedObjectReference">
-[]NamedObjectReference
+<a href="#landscaper.gardener.cloud/v1alpha1.SubInstCache">
+SubInstCache
 </a>
 </em>
 </td>
 <td>
-<p>InstallationReferences contain all references to sub-components
-that are created based on the component definition.</p>
+<em>(Optional)</em>
+<p>SubInstCache contains the currently existing sub installations belonging to the execution. If nil undefined.</p>
 </td>
 </tr>
 <tr>
@@ -5020,10 +5020,6 @@ string
 </p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.NamedObjectReference">NamedObjectReference
 </h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
-</p>
 <p>
 <p>NamedObjectReference is a named reference to a specific resource.</p>
 </p>
@@ -5493,6 +5489,86 @@ SecretLabelSelectorRef
 <em>(Optional)</em>
 <p>Selects a key from multiple secrets in the installations&rsquo;s namespace
 that matches the given labels.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.SubInstCache">SubInstCache
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+<p>SubInstCache contains the existing sub installations</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>activeSubs</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SubNamePair">
+[]SubNamePair
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>orphanedSubs</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.SubNamePair">SubNamePair
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SubInstCache">SubInstCache</a>)
+</p>
+<p>
+<p>DiNamePair contains the spec name and the real name of a deploy item</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>specName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>objectName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>

@@ -274,27 +274,34 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
 				var sourceIntermediateSubinst *lsv1alpha1.Installation
 				var sourceReferencedSubinst *lsv1alpha1.Installation
-				Expect(inst.Status.InstallationReferences).To(HaveLen(2))
-				for _, subInstRef := range inst.Status.InstallationReferences {
-					switch subInstRef.Name {
+				subinsts, err := lsutils.GetSubInstallationsOfInstallation(ctx, state.Client, inst)
+				Expect(err).To(BeNil())
+				Expect(subinsts).To(HaveLen(2))
+				for i := range subinsts {
+					name := subinsts[i].Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+					key := client.ObjectKeyFromObject(subinsts[i])
+					switch name {
 					case "intermediate":
 						sourceIntermediateSubinst = &lsv1alpha1.Installation{}
-						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceIntermediateSubinst))
+						utils.ExpectNoError(state.Client.Get(ctx, key, sourceIntermediateSubinst))
 					case "referenced":
 						sourceReferencedSubinst = &lsv1alpha1.Installation{}
-						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceReferencedSubinst))
+						utils.ExpectNoError(state.Client.Get(ctx, key, sourceReferencedSubinst))
 					default:
-						Fail(fmt.Sprintf("unexpected subinstallation: %s", subInstRef.Name))
+						Fail(fmt.Sprintf("unexpected subinstallation: %s", subinsts[i].Name))
 					}
 				}
 				Expect(sourceIntermediateSubinst).ToNot(BeNil())
 				Expect(sourceReferencedSubinst).ToNot(BeNil())
 
 				By("fetch subinstallations of intermediate installation")
-				Expect(sourceIntermediateSubinst.Status.InstallationReferences).To(HaveLen(1))
-				Expect(sourceIntermediateSubinst.Status.InstallationReferences[0].Name).To(BeEquivalentTo("referenced"))
-				intermediateReferencedSubinst := &lsv1alpha1.Installation{}
-				utils.ExpectNoError(state.Client.Get(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
+				subinsts, err = lsutils.GetSubInstallationsOfInstallation(ctx, state.Client, sourceIntermediateSubinst)
+				Expect(err).To(BeNil())
+				Expect(subinsts).To(HaveLen(1))
+				name := subinsts[0].Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+				Expect(name).To(BeEquivalentTo("referenced"))
+
+				intermediateReferencedSubinst := subinsts[0]
 
 				By("fetch deployitems of referenced subinstallations")
 				deployItems, err := utils.GetDeployItemsOfInstallation(ctx, state.Client, sourceReferencedSubinst)
@@ -469,27 +476,34 @@ func RegistryTest(f *framework.Framework) {
 				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)) // refresh installation for updated status
 				var sourceIntermediateSubinst *lsv1alpha1.Installation
 				var sourceReferencedSubinst *lsv1alpha1.Installation
-				Expect(inst.Status.InstallationReferences).To(HaveLen(2))
-				for _, subInstRef := range inst.Status.InstallationReferences {
-					switch subInstRef.Name {
+
+				subinsts, err := lsutils.GetSubInstallationsOfInstallation(ctx, state.Client, inst)
+				Expect(err).To(BeNil())
+				Expect(subinsts).To(HaveLen(2))
+				for i := range subinsts {
+					name := subinsts[i].Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+					key := client.ObjectKeyFromObject(subinsts[i])
+					switch name {
 					case "intermediate":
 						sourceIntermediateSubinst = &lsv1alpha1.Installation{}
-						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceIntermediateSubinst))
+						utils.ExpectNoError(state.Client.Get(ctx, key, sourceIntermediateSubinst))
 					case "referenced":
 						sourceReferencedSubinst = &lsv1alpha1.Installation{}
-						utils.ExpectNoError(state.Client.Get(ctx, subInstRef.Reference.NamespacedName(), sourceReferencedSubinst))
+						utils.ExpectNoError(state.Client.Get(ctx, key, sourceReferencedSubinst))
 					default:
-						Fail(fmt.Sprintf("unexpected subinstallation: %s", subInstRef.Name))
+						Fail(fmt.Sprintf("unexpected subinstallation: %s", subinsts[i].Name))
 					}
 				}
 				Expect(sourceIntermediateSubinst).ToNot(BeNil())
 				Expect(sourceReferencedSubinst).ToNot(BeNil())
 
 				By("fetch subinstallations of intermediate installation")
-				Expect(sourceIntermediateSubinst.Status.InstallationReferences).To(HaveLen(1))
-				Expect(sourceIntermediateSubinst.Status.InstallationReferences[0].Name).To(BeEquivalentTo("referenced"))
-				intermediateReferencedSubinst := &lsv1alpha1.Installation{}
-				utils.ExpectNoError(state.Client.Get(ctx, sourceIntermediateSubinst.Status.InstallationReferences[0].Reference.NamespacedName(), intermediateReferencedSubinst))
+				subinsts, err = lsutils.GetSubInstallationsOfInstallation(ctx, state.Client, sourceIntermediateSubinst)
+				Expect(err).To(BeNil())
+				Expect(subinsts).To(HaveLen(1))
+				name := subinsts[0].Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+				Expect(name).To(BeEquivalentTo("referenced"))
+				intermediateReferencedSubinst := subinsts[0]
 
 				By("fetch deployitems of referenced subinstallations")
 				deployItems, err := utils.GetDeployItemsOfInstallation(ctx, state.Client, intermediateReferencedSubinst)

@@ -6,14 +6,15 @@ package subinstallations_test
 
 import (
 	"context"
+	"strings"
+
+	"github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	"github.com/gardener/landscaper/apis/config"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,27 +72,33 @@ var _ = Describe("SubInstallation", func() {
 			inst := fakeInstallations[namespace+"/"+rootInstallation]
 			Expect(inst).ToNot(BeNil())
 			si := createSubInstallationsOperation(ctx, inst)
-			Expect(si.Ensure(ctx)).To(Succeed())
+			Expect(si.Ensure(ctx, nil)).To(Succeed())
 
 			err = fakeClient.Get(ctx, client.ObjectKeyFromObject(inst), inst)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(inst.Status.Conditions).To(HaveLen(1))
 			Expect(inst.Status.Conditions[0].Type).To(Equal(lsv1alpha1.EnsureSubInstallationsCondition))
 			Expect(inst.Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionTrue))
-			Expect(inst.Status.InstallationReferences).To(HaveLen(len(expectedSubInstallations)))
+			subinsts, err := landscaper.GetSubInstallationsOfInstallation(ctx, fakeClient, inst)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(subinsts).To(HaveLen(len(expectedSubInstallations)))
 
 			subInstallationList := make([]*lsv1alpha1.Installation, 0, len(expectedSubInstallations))
 
-			for i, expectedSubInst := range expectedSubInstallations {
-				Expect(inst.Status.InstallationReferences[i].Name).To(Equal(expectedSubInst.Name))
-				Expect(inst.Status.InstallationReferences[i].Reference.Name).To(HavePrefix(expectedSubInst.Reference.Name))
-				Expect(inst.Status.InstallationReferences[i].Reference.Namespace).To(Equal(expectedSubInst.Reference.Namespace))
+			for _, expectedSubInst := range expectedSubInstallations {
+				found := false
 
-				subinst := &lsv1alpha1.Installation{}
-				err = fakeClient.Get(ctx, types.NamespacedName{Name: inst.Status.InstallationReferences[i].Reference.Name, Namespace: inst.Status.InstallationReferences[i].Reference.Namespace}, subinst)
-				Expect(err).ToNot(HaveOccurred())
-
-				subInstallationList = append(subInstallationList, subinst)
+				for i := range subinsts {
+					name := subinsts[i].Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+					if name == expectedSubInst.Name &&
+						strings.HasPrefix(subinsts[i].Name, expectedSubInst.Name) &&
+						subinsts[i].Namespace == expectedSubInst.Reference.Namespace {
+						found = true
+						subInstallationList = append(subInstallationList, subinsts[i])
+						break
+					}
+				}
+				Expect(found).To(BeTrue())
 			}
 
 			return inst, subInstallationList
@@ -101,7 +108,7 @@ var _ = Describe("SubInstallation", func() {
 			inst := fakeInstallations[namespace+"/"+rootInstallation]
 			Expect(inst).ToNot(BeNil())
 			si := createSubInstallationsOperation(ctx, inst)
-			Expect(si.Ensure(ctx)).To(HaveOccurred())
+			Expect(si.Ensure(ctx, nil)).To(HaveOccurred())
 			return inst
 		}
 	)
@@ -300,16 +307,14 @@ var _ = Describe("SubInstallation", func() {
 				inst := fakeInstallations["test10/root"]
 				Expect(inst).ToNot(BeNil())
 				si := createSubInstallationsOperation(ctx, inst)
-				Expect(si.Ensure(ctx)).To(Succeed())
+				Expect(si.Ensure(ctx, nil)).To(Succeed())
 
 				err := fakeClient.Get(ctx, client.ObjectKeyFromObject(inst), inst)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(inst.Status.InstallationReferences).To(HaveLen(1))
 
-				subinst := &lsv1alpha1.Installation{}
-				err = fakeClient.Get(ctx, types.NamespacedName{Name: inst.Status.InstallationReferences[0].Reference.Name, Namespace: inst.Status.InstallationReferences[0].Reference.Namespace}, subinst)
-				Expect(err).To(HaveOccurred())
-				Expect(apierrors.IsNotFound(err)).To(BeTrue())
+				subinsts, err := landscaper.GetSubInstallationsOfInstallation(ctx, fakeClient, inst)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(subinsts).To(HaveLen(0))
 			})
 		})
 
