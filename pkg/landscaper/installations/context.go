@@ -143,18 +143,6 @@ func (c *ExternalContext) RegistryPullSecrets() []lsv1alpha1.ObjectReference {
 // The visible context consists of the installation's parent and siblings.
 // The context is later used to validate and get imported data.
 func GetParentAndSiblings(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (parent *lsv1alpha1.Installation, siblings []*lsv1alpha1.Installation, err error) {
-	if IsRootInstallation(inst) {
-		// get all root object as siblings
-		filter := func(a lsv1alpha1.Installation) bool {
-			return a.Name == inst.Name
-		}
-		rootInstallations, err := GetRootInstallations(ctx, kubeClient, filter, client.InNamespace(inst.Namespace))
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, rootInstallations, err
-	}
-
 	// get the parent by owner reference
 	parent, err = GetParent(ctx, kubeClient, inst)
 	if err != nil {
@@ -162,14 +150,36 @@ func GetParentAndSiblings(ctx context.Context, kubeClient client.Client, inst *l
 	}
 
 	// siblings are all encompassed installation of the parent installation
-	siblings, err = ListSubinstallations(ctx, kubeClient, parent, parent.Status.SubInstCache, read_write_layer.R000006, func(found *lsv1alpha1.Installation) bool {
-		return inst.Name == found.Name
-	})
+	siblings, err = GetSiblings(ctx, kubeClient, inst, parent)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return parent, siblings, nil
+}
+
+func GetSiblings(ctx context.Context, kubeClient client.Client, inst, parent *lsv1alpha1.Installation) (siblings []*lsv1alpha1.Installation, err error) {
+	if IsRootInstallation(inst) {
+		// get all root object as siblings
+		filter := func(a lsv1alpha1.Installation) bool {
+			return a.Name == inst.Name
+		}
+		rootInstallations, err := GetRootInstallations(ctx, kubeClient, filter, client.InNamespace(inst.Namespace))
+		if err != nil {
+			return nil, err
+		}
+		return rootInstallations, err
+	}
+
+	// siblings are all encompassed installation of the parent installation
+	siblings, err = ListSubinstallations(ctx, kubeClient, parent, parent.Status.SubInstCache, read_write_layer.R000006, func(found *lsv1alpha1.Installation) bool {
+		return inst.Name == found.Name
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return siblings, nil
 }
 
 // GetParent returns the parent of an installation.
