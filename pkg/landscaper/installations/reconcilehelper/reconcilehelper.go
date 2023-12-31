@@ -17,7 +17,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 )
@@ -204,42 +203,4 @@ func (rh *ReconcileHelper) FetchPredecessors() (sets.String, error) {
 	}
 
 	return dependencies.FetchPredecessorsFromInstallation(inst, siblingInsts), nil
-}
-
-///// AUXILIARY FUNCTIONS /////
-
-// getConfigGenerationsFromImportStatus gets the config generation(s) for the given import
-// If the import is a list-type import, the second argument will contain a mapping from the in-cluster object names to their respective config generations.
-// Otherwise, the first argument will contain the config generation.
-// The 'unused' return value will be set to its default value.
-func (rh *ReconcileHelper) getConfigGenerationsFromImportStatus(imp *dataobjects.Imported) (string, map[string]string, error) {
-	var err error
-	var importStatus lsv1alpha1.ImportStatus
-	var configGen string
-	var configGens map[string]string
-	switch imp.GetImportType() {
-	case lsv1alpha1.ImportTypeData:
-		importStatus, err = rh.importStatus.GetData(imp.GetImportName())
-		if err == nil {
-			configGen = importStatus.ConfigGeneration
-		}
-	case lsv1alpha1.ImportTypeTarget:
-		importStatus, err = rh.importStatus.GetTarget(imp.GetImportName())
-		if err == nil {
-			configGen = importStatus.ConfigGeneration
-		}
-	case lsv1alpha1.ImportTypeTargetList:
-		importStatus, err = rh.importStatus.GetTarget(imp.GetImportName())
-		if err == nil {
-			configGens = map[string]string{}
-			for _, ts := range importStatus.Targets {
-				configGens[ts.Target] = ts.ConfigGeneration
-			}
-		}
-	default:
-		return "", nil, fmt.Errorf("unknown import type %q", imp.GetImportName())
-	}
-	// errors while fetching the import status are ignored
-	// as an non-existing import status most probably means that it belongs to a new import which hasn't been imported before
-	return configGen, configGens, nil
 }
