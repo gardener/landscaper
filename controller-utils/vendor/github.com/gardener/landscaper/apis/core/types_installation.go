@@ -79,6 +79,10 @@ type InstallationSpec struct {
 	// AutomaticReconcile allows to configure automatically repeated reconciliations.
 	// +optional
 	AutomaticReconcile *AutomaticReconcile `json:"automaticReconcile,omitempty"`
+
+	// Optimization contains settings to improve execution performance.
+	// +optional
+	Optimization *Optimization `json:"optimization,omitempty"`
 }
 
 // AutomaticReconcile allows to configure automatically repeated reconciliations.

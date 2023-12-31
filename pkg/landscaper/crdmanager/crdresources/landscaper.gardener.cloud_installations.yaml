@@ -615,6 +615,14 @@ spec:
                       type: object
                     type: array
                 type: object
+              optimization:
+                description: Optimization contains settings to improve execution performance.
+                properties:
+                  hasSiblingExports:
+                    type: boolean
+                  hasSiblingImports:
+                    type: boolean
+                type: object
             required:
             - blueprint
             type: object

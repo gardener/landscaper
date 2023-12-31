@@ -377,3 +377,9 @@ type DiNamePair struct {
 	SpecName   string `json:"specName,omitempty"`
 	ObjectName string `json:"objectName,omitempty"`
 }
+
+// Optimization contains settings to improve execution preformance
+type Optimization struct {
+	HasSiblingImports bool `json:"hasSiblingImports,omitempty"`
+	HasSiblingExports bool `json:"hasSiblingExports,omitempty"`
+}

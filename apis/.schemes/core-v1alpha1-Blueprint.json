@@ -242,6 +242,18 @@
         }
       }
     },
+    "core-v1alpha1-Optimization": {
+      "description": "Optimization contains settings to improve execution preformance",
+      "type": "object",
+      "properties": {
+        "hasSiblingExports": {
+          "type": "boolean"
+        },
+        "hasSiblingImports": {
+          "type": "boolean"
+        }
+      }
+    },
     "core-v1alpha1-SubinstallationTemplate": {
       "description": "SubinstallationTemplate defines a subinstallation template.",
       "type": "object",
@@ -295,6 +307,10 @@
           "description": "Name is the unique name of the step",
           "type": "string",
           "default": ""
+        },
+        "optimization": {
+          "description": "Optimization contains settings to improve execution performance.",
+          "$ref": "#/definitions/core-v1alpha1-Optimization"
         }
       }
     },
