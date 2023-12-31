@@ -298,6 +298,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 			ImportDataMappings:  subInstTmpl.ImportDataMappings,
 			Exports:             subInstTmpl.Exports,
 			ExportDataMappings:  subInstTmpl.ExportDataMappings,
+			Optimization:        subInstTmpl.Optimization,
 		}
 
 		o.Scheme().Default(subInst)

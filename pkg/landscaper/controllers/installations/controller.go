@@ -121,16 +121,16 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, "installations")
 	defer c.workerCounter.Exit()
 
-	metadata := utils.EmptyInstallationMetadata()
-	if err := c.Client().Get(ctx, req.NamespacedName, metadata); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
-			return reconcile.Result{}, nil
-		}
-		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
-	}
-
 	if c.lockingEnabled {
+		metadata := utils.EmptyInstallationMetadata()
+		if err := c.Client().Get(ctx, req.NamespacedName, metadata); err != nil {
+			if apierrors.IsNotFound(err) {
+				logger.Debug(err.Error())
+				return reconcile.Result{}, nil
+			}
+			return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
+		}
+
 		syncObject, err := c.locker.LockInstallation(ctx, metadata)
 		if err != nil {
 			return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)

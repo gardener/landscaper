@@ -32,6 +32,10 @@ func NewInstallationTrigger(cl client.Client, inst *lsv1alpha1.Installation) *In
 func (t *InstallationTrigger) DetermineDependents(ctx context.Context) ([]lsv1alpha1.DependentToTrigger, error) {
 	var dependents []lsv1alpha1.DependentToTrigger
 
+	if t.inst.Spec.Optimization != nil && t.inst.Spec.Optimization.HasNoSiblingExports {
+		return dependents, nil
+	}
+
 	_, siblings, err := GetParentAndSiblings(ctx, t.client, t.inst)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch sibling installations: %w", err)

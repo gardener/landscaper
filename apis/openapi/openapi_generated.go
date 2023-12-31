@@ -155,6 +155,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference":                               schema_landscaper_apis_core_v1alpha1_NamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference":                                    schema_landscaper_apis_core_v1alpha1_ObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig":                                     schema_landscaper_apis_core_v1alpha1_OnDeleteConfig(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.Optimization":                                       schema_landscaper_apis_core_v1alpha1_Optimization(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.RemoteBlueprintReference":                           schema_landscaper_apis_core_v1alpha1_RemoteBlueprintReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Requirement":                                        schema_landscaper_apis_core_v1alpha1_Requirement(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResolvedTarget":                                     schema_landscaper_apis_core_v1alpha1_ResolvedTarget(ref),
@@ -5993,12 +5994,18 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile"),
 						},
 					},
+					"optimization": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optimization contains settings to improve execution performance.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"),
+						},
+					},
 				},
 				Required: []string{"blueprint"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"},
 	}
 }
 
@@ -6218,12 +6225,18 @@ func schema_landscaper_apis_core_v1alpha1_InstallationTemplate(ref common.Refere
 							},
 						},
 					},
+					"optimization": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optimization contains settings to improve execution performance.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"),
+						},
+					},
 				},
 				Required: []string{"name", "blueprint"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"},
 	}
 }
 
@@ -6508,6 +6521,31 @@ func schema_landscaper_apis_core_v1alpha1_OnDeleteConfig(ref common.ReferenceCal
 							Description: "SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted. Works only in the context of an existing target sync object which is used to check the Garden project with the shoot cluster resources",
 							Type:        []string{"boolean"},
 							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_Optimization(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Optimization contains settings to improve execution preformance",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"hasNoSiblingImports": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"hasNoSiblingExports": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
 						},
 					},
 				},
@@ -6923,12 +6961,18 @@ func schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref common.Ref
 							},
 						},
 					},
+					"optimization": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optimization contains settings to improve execution performance.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"),
+						},
+					},
 				},
 				Required: []string{"name", "blueprint"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"},
 	}
 }
 

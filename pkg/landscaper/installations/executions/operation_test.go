@@ -68,9 +68,8 @@ var _ = Describe("Execution Operation", func() {
 		var err error
 
 		lsCtx := &installations.Scope{
-			Name:     "default",
-			Parent:   nil,
-			Siblings: nil,
+			Name:   "default",
+			Parent: nil,
 			External: installations.ExternalContext{
 				Context: lsv1alpha1.Context{
 					ContextConfiguration: lsv1alpha1.ContextConfiguration{
