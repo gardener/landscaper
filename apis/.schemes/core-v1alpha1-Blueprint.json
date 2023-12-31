@@ -246,10 +246,10 @@
       "description": "Optimization contains settings to improve execution preformance",
       "type": "object",
       "properties": {
-        "hasSiblingExports": {
+        "hasNoSiblingExports": {
           "type": "boolean"
         },
-        "hasSiblingImports": {
+        "hasNoSiblingImports": {
           "type": "boolean"
         }
       }

@@ -5210,7 +5210,7 @@ the shoot cluster resources</p>
 <tbody>
 <tr>
 <td>
-<code>hasSiblingImports</code></br>
+<code>hasNoSiblingImports</code></br>
 <em>
 bool
 </em>
@@ -5220,7 +5220,7 @@ bool
 </tr>
 <tr>
 <td>
-<code>hasSiblingExports</code></br>
+<code>hasNoSiblingExports</code></br>
 <em>
 bool
 </em>

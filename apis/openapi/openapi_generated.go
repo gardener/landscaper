@@ -6536,13 +6536,13 @@ func schema_landscaper_apis_core_v1alpha1_Optimization(ref common.ReferenceCallb
 				Description: "Optimization contains settings to improve execution preformance",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"hasSiblingImports": {
+					"hasNoSiblingImports": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"boolean"},
 							Format: "",
 						},
 					},
-					"hasSiblingExports": {
+					"hasNoSiblingExports": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"boolean"},
 							Format: "",

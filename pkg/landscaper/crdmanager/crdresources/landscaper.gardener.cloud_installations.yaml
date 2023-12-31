@@ -618,9 +618,9 @@ spec:
               optimization:
                 description: Optimization contains settings to improve execution performance.
                 properties:
-                  hasSiblingExports:
+                  hasNoSiblingExports:
                     type: boolean
-                  hasSiblingImports:
+                  hasNoSiblingImports:
                     type: boolean
                 type: object
             required:

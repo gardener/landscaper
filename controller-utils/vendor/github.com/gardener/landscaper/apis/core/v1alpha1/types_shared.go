@@ -380,6 +380,6 @@ type DiNamePair struct {
 
 // Optimization contains settings to improve execution preformance
 type Optimization struct {
-	HasSiblingImports bool `json:"hasSiblingImports,omitempty"`
-	HasSiblingExports bool `json:"hasSiblingExports,omitempty"`
+	HasNoSiblingImports bool `json:"hasNoSiblingImports,omitempty"`
+	HasNoSiblingExports bool `json:"hasNoSiblingExports,omitempty"`
 }

@@ -146,23 +146,25 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 			return false, false, lserrors.NewWrappedError(err, op, "UpdateInstallation", err.Error())
 		}
 
-		// touch siblings to speed up processing
-		// a potential improvement is to only touch siblings exporting data for the current installation but this would
-		// result in more complex coding and should only be done if the current approach results in performance problems
-		_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
-		if err != nil {
-			return false, false, lserrors.NewWrappedError(err, op, "GetParentAndSiblings", err.Error())
-		}
-		for _, nextSibling := range siblings {
-			if !nextSibling.DeletionTimestamp.IsZero() {
-				lsv1alpha1helper.Touch(&nextSibling.ObjectMeta)
-				if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000147, nextSibling); err != nil {
-					if apierrors.IsConflict(err) {
-						logger.Info(op + " - conflict touching sibling inst")
-					} else if apierrors.IsNotFound(err) {
-						logger.Info(op + " - not found touching sibling inst")
-					} else {
-						return false, false, lserrors.NewWrappedError(err, op, "TouchSibling", err.Error())
+		if inst.Spec.Optimization == nil || inst.Spec.Optimization.HasNoSiblingImports {
+			// touch siblings to speed up processing
+			// a potential improvement is to only touch siblings exporting data for the current installation but this would
+			// result in more complex coding and should only be done if the current approach results in performance problems
+			_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
+			if err != nil {
+				return false, false, lserrors.NewWrappedError(err, op, "GetParentAndSiblings", err.Error())
+			}
+			for _, nextSibling := range siblings {
+				if !nextSibling.DeletionTimestamp.IsZero() {
+					lsv1alpha1helper.Touch(&nextSibling.ObjectMeta)
+					if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000147, nextSibling); err != nil {
+						if apierrors.IsConflict(err) {
+							logger.Info(op + " - conflict touching sibling inst")
+						} else if apierrors.IsNotFound(err) {
+							logger.Info(op + " - not found touching sibling inst")
+						} else {
+							return false, false, lserrors.NewWrappedError(err, op, "TouchSibling", err.Error())
+						}
 					}
 				}
 			}
@@ -193,6 +195,10 @@ func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Install
 
 	v, ok := inst.GetAnnotations()[lsv1alpha1.DeleteIgnoreSuccessors]
 	if ok && v == "true" {
+		return nil, nil
+	}
+
+	if inst.Spec.Optimization != nil && inst.Spec.Optimization.HasNoSiblingImports {
 		return nil, nil
 	}
 

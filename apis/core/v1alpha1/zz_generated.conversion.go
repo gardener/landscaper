@@ -3008,8 +3008,8 @@ func Convert_core_OnDeleteConfig_To_v1alpha1_OnDeleteConfig(in *core.OnDeleteCon
 }
 
 func autoConvert_v1alpha1_Optimization_To_core_Optimization(in *Optimization, out *core.Optimization, s conversion.Scope) error {
-	out.HasSiblingImports = in.HasSiblingImports
-	out.HasSiblingExports = in.HasSiblingExports
+	out.HasNoSiblingImports = in.HasNoSiblingImports
+	out.HasNoSiblingExports = in.HasNoSiblingExports
 	return nil
 }
 
@@ -3019,8 +3019,8 @@ func Convert_v1alpha1_Optimization_To_core_Optimization(in *Optimization, out *c
 }
 
 func autoConvert_core_Optimization_To_v1alpha1_Optimization(in *core.Optimization, out *Optimization, s conversion.Scope) error {
-	out.HasSiblingImports = in.HasSiblingImports
-	out.HasSiblingExports = in.HasSiblingExports
+	out.HasNoSiblingImports = in.HasNoSiblingImports
+	out.HasNoSiblingExports = in.HasNoSiblingExports
 	return nil
 }
 
