@@ -29,15 +29,47 @@ type Scope struct {
 	// Name is the name of the current installation's context.
 	// By default, it is the source name of the parent.
 	Name string
+	// current installation
+	inst *lsv1alpha1.Installation
 	// Parent is the installation is encompassed in.
 	// Parents are handled separately as installation have access to the same imports as their parent.
 	Parent *InstallationAndImports
 	// Siblings are installations with the same parent.
 	// The installation has access to the exports of these components
-	Siblings []*InstallationAndImports
+	siblings []*InstallationAndImports
 	// External describes the external installation context that contains
 	// context specific configuration.
 	External ExternalContext
+}
+
+func (s *Scope) GetSiblings(ctx context.Context, kubeClient client.Client) ([]*InstallationAndImports, error) {
+	if s.siblings != nil {
+		return s.siblings, nil
+	}
+
+	siblingInstallations, err := GetSiblings(ctx, kubeClient, s.inst, s.Parent.GetInstallation())
+	if err != nil {
+		return nil, err
+	}
+
+	// set optional default repository context
+	for _, inst := range siblingInstallations {
+		if inst.Spec.ComponentDescriptor != nil &&
+			inst.Spec.ComponentDescriptor.Reference != nil &&
+			inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
+			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = s.External.RepositoryContext
+		}
+	}
+
+	siblings := CreateInternalInstallationBases(siblingInstallations...)
+
+	if siblings == nil {
+		s.siblings = []*InstallationAndImports{}
+	} else {
+		s.siblings = siblings
+	}
+
+	return s.siblings, nil
 }
 
 // SetInstallationContext determines the current context and updates the operation context.
@@ -67,30 +99,15 @@ func GetInstallationContext(ctx context.Context,
 		return nil, err
 	}
 
-	siblingInstallations, err := GetSiblings(ctx, kubeClient, inst, parentInst)
-	if err != nil {
-		return nil, err
-	}
-
-	// set optional default repository context
-	for _, inst := range siblingInstallations {
-		if inst.Spec.ComponentDescriptor != nil &&
-			inst.Spec.ComponentDescriptor.Reference != nil &&
-			inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
-			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = externalCtx.RepositoryContext
-		}
-	}
-
 	ctxName := ""
 	if parentInst != nil {
 		ctxName = lsv1alpha1helper.DataObjectSourceFromInstallation(parentInst)
 	}
 
 	return &Scope{
-		Name:   ctxName,
-		Parent: CreateInternalInstallationBase(parentInst),
-		// siblings are all encompassed installation of the parent installation
-		Siblings: CreateInternalInstallationBases(siblingInstallations...),
+		Name:     ctxName,
+		inst:     inst,
+		Parent:   CreateInternalInstallationBase(parentInst),
 		External: externalCtx,
 	}, nil
 }

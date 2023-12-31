@@ -294,22 +294,30 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*
 		return nil, nil, "", nil, fatalError, nil
 	}
 
-	predecessors := rh.FetchPredecessors()
+	predecessorMap := map[string]*installations.InstallationAndImports{}
 
-	predecessorMap, err := rh.GetPredecessors(inst, predecessors)
-	if err != nil {
-		normalError := lserrors.NewWrappedError(err, currentOperation, "GetPredecessors", err.Error())
-		return nil, nil, "", nil, nil, normalError
-	}
+	if inst.Spec.Optimization != nil || !inst.Spec.Optimization.HasNoSiblingImports {
+		predecessors, err := rh.FetchPredecessors()
+		if err != nil {
+			fatalError = lserrors.NewWrappedError(err, currentOperation, "FetchPredecessors", err.Error())
+			return nil, nil, "", nil, fatalError, nil
+		}
 
-	if err = rh.AllPredecessorsFinished(inst, predecessorMap); err != nil {
-		normalError := lserrors.NewWrappedError(err, currentOperation, "AllPredecessorsFinished", err.Error())
-		return nil, nil, "", nil, nil, normalError
-	}
+		predecessorMap, err = rh.GetPredecessors(predecessors)
+		if err != nil {
+			normalError := lserrors.NewWrappedError(err, currentOperation, "GetPredecessors", err.Error())
+			return nil, nil, "", nil, nil, normalError
+		}
 
-	if err = rh.AllPredecessorsSucceeded(inst, predecessorMap); err != nil {
-		fatalError = lserrors.NewWrappedError(err, currentOperation, "AllPredecessorsSucceeded", err.Error())
-		return nil, nil, "", nil, fatalError, nil
+		if err = rh.AllPredecessorsFinished(inst, predecessorMap); err != nil {
+			normalError := lserrors.NewWrappedError(err, currentOperation, "AllPredecessorsFinished", err.Error())
+			return nil, nil, "", nil, nil, normalError
+		}
+
+		if err = rh.AllPredecessorsSucceeded(inst, predecessorMap); err != nil {
+			fatalError = lserrors.NewWrappedError(err, currentOperation, "AllPredecessorsSucceeded", err.Error())
+			return nil, nil, "", nil, fatalError, nil
+		}
 	}
 
 	imps, err := rh.ImportsSatisfied()

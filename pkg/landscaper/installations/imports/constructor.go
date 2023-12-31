@@ -34,7 +34,7 @@ const (
 func NewConstructor(op *installations.Operation) *Constructor {
 	return &Constructor{
 		Operation: op,
-		siblings:  op.Context().Siblings,
+		scope:     op.Context(),
 	}
 }
 
