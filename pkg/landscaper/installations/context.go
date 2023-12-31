@@ -56,12 +56,18 @@ func (o *Operation) SetInstallationContext(ctx context.Context) error {
 func GetInstallationContext(ctx context.Context,
 	kubeClient client.Client,
 	inst *lsv1alpha1.Installation) (*Scope, error) {
-	parentInst, siblingInstallations, err := GetParentAndSiblings(ctx, kubeClient, inst)
+
+	parentInst, err := GetParent(ctx, kubeClient, inst)
 	if err != nil {
 		return nil, err
 	}
 
 	externalCtx, err := GetExternalContext(ctx, kubeClient, inst)
+	if err != nil {
+		return nil, err
+	}
+
+	siblingInstallations, err := GetSiblings(ctx, kubeClient, inst, parentInst)
 	if err != nil {
 		return nil, err
 	}
