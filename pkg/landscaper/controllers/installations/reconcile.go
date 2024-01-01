@@ -296,7 +296,7 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*
 
 	predecessorMap := map[string]*installations.InstallationAndImports{}
 
-	if inst.Spec.Optimization != nil || !inst.Spec.Optimization.HasNoSiblingImports {
+	if inst.Spec.Optimization == nil || !inst.Spec.Optimization.HasNoSiblingImports {
 		predecessors, err := rh.FetchPredecessors()
 		if err != nil {
 			fatalError = lserrors.NewWrappedError(err, currentOperation, "FetchPredecessors", err.Error())
