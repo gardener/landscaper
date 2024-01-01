@@ -47,7 +47,12 @@ func (s *Scope) GetSiblings(ctx context.Context, kubeClient client.Client) ([]*I
 		return s.siblings, nil
 	}
 
-	siblingInstallations, err := GetSiblings(ctx, kubeClient, s.inst, s.Parent.GetInstallation())
+	var parent *lsv1alpha1.Installation = nil
+	if s.Parent != nil {
+		parent = s.Parent.GetInstallation()
+	}
+
+	siblingInstallations, err := GetSiblings(ctx, kubeClient, s.inst, parent)
 	if err != nil {
 		return nil, err
 	}
