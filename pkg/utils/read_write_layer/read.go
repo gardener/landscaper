@@ -3,6 +3,7 @@ package read_write_layer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
@@ -158,11 +159,17 @@ func get(ctx context.Context, c client.Reader, key client.ObjectKey, object clie
 		keyFetchedResource, fmt.Sprintf("%s/%s", key.Namespace, key.Name),
 		lc.KeyReadID, readID)
 
+	start := time.Now()
 	err := c.Get(ctx, key, object)
+	duration := time.Now().Sub(start).Milliseconds()
+
 	if err != nil {
 		log = log.WithValues(lc.KeyError, err.Error())
 	}
 
+	if duration > 1000 {
+		msg = msg + " - duration: " + string(duration)
+	}
 	log.Debug("ReadLayer get: " + msg)
 
 	return err
@@ -171,11 +178,17 @@ func get(ctx context.Context, c client.Reader, key client.ObjectKey, object clie
 func list(ctx context.Context, c client.Reader, objects client.ObjectList, readID ReadID, msg string, opts ...client.ListOption) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyReadID, readID)
 
+	start := time.Now()
 	err := c.List(ctx, objects, opts...)
+	duration := time.Now().Sub(start).Milliseconds()
+
 	if err != nil {
 		log = log.WithValues(lc.KeyError, err.Error())
 	}
 
+	if duration > 1000 {
+		msg = msg + " - duration: " + string(duration)
+	}
 	log.Debug("ReadLayer list: " + msg)
 
 	return err
