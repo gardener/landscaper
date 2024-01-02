@@ -112,7 +112,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		switch def.Type {
 		case lsv1alpha1.ExportTypeData:
 			if def.Schema == nil {
-				return nil, nil, fmt.Errorf("%s: schema is nil", fldPath.String())
+				return nil, nil, fmt.Errorf("%s: schema for data export %q must not be empty", fldPath.String(), def.Name)
 			}
 
 			validator, err := c.JSONSchemaValidator(def.Schema.RawMessage)
