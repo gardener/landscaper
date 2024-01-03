@@ -160,18 +160,25 @@ func get(ctx context.Context, c client.Reader, key client.ObjectKey, object clie
 		keyFetchedResource, fmt.Sprintf("%s/%s", key.Namespace, key.Name),
 		lc.KeyReadID, readID)
 
-	start := time.Now()
+	debugEnabled := log.Enabled(logging.DEBUG)
+	var start time.Time
+	if debugEnabled {
+		start = time.Now()
+	}
+
 	err := c.Get(ctx, key, object)
-	duration := time.Since(start).Milliseconds()
 
-	if err != nil {
-		log = log.WithValues(lc.KeyError, err.Error())
-	}
+	if debugEnabled {
+		if err != nil {
+			log = log.WithValues(lc.KeyError, err.Error())
+		}
 
-	if duration > 1000 {
-		msg = msg + " - duration: " + strconv.FormatInt(duration, 10)
+		duration := time.Since(start).Milliseconds()
+		if duration > 1000 {
+			msg = msg + " - duration: " + strconv.FormatInt(duration, 10)
+		}
+		log.Debug("ReadLayer get: " + msg)
 	}
-	log.Debug("ReadLayer get: " + msg)
 
 	return err
 }
@@ -179,18 +186,25 @@ func get(ctx context.Context, c client.Reader, key client.ObjectKey, object clie
 func list(ctx context.Context, c client.Reader, objects client.ObjectList, readID ReadID, msg string, opts ...client.ListOption) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyReadID, readID)
 
-	start := time.Now()
+	debugEnabled := log.Enabled(logging.DEBUG)
+	var start time.Time
+	if debugEnabled {
+		start = time.Now()
+	}
+
 	err := c.List(ctx, objects, opts...)
-	duration := time.Since(start).Milliseconds()
 
-	if err != nil {
-		log = log.WithValues(lc.KeyError, err.Error())
-	}
+	if debugEnabled {
+		if err != nil {
+			log = log.WithValues(lc.KeyError, err.Error())
+		}
 
-	if duration > 1000 {
-		msg = msg + " - duration: " + strconv.FormatInt(duration, 10)
+		duration := time.Since(start).Milliseconds()
+		if duration > 1000 {
+			msg = msg + " - duration: " + strconv.FormatInt(duration, 10)
+		}
+		log.Debug("ReadLayer list: " + msg)
 	}
-	log.Debug("ReadLayer list: " + msg)
 
 	return err
 }
