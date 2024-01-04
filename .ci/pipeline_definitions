@@ -11,8 +11,7 @@ landscaper:
         preprocess: 'inject-commit-hash'
         inject_effective_version: true
       component_descriptor:
-        ctx_repository: landscaper
-        snapshot_ctx_repository: landscaper
+        ocm_repository: landscaper
       publish:
         dockerimages:
           landscaper-controller:
