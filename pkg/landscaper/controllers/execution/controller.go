@@ -66,16 +66,16 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, "executions")
 	defer c.workerCounter.Exit()
 
-	metadata := lsutil.EmptyExecutionMetadata()
-	if err := c.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
-			return reconcile.Result{}, nil
-		}
-		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
-	}
-
 	if c.lockingEnabled {
+		metadata := lsutil.EmptyExecutionMetadata()
+		if err := c.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
+			if apierrors.IsNotFound(err) {
+				logger.Debug(err.Error())
+				return reconcile.Result{}, nil
+			}
+			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
+		}
+
 		syncObject, err := c.locker.LockExecution(ctx, metadata)
 		if err != nil {
 			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
