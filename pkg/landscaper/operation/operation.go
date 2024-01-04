@@ -43,6 +43,7 @@ func (o *Operation) Copy() *Operation {
 	return &Operation{
 		client:            o.client,
 		scheme:            o.scheme,
+		eventRecorder:     o.eventRecorder,
 		componentRegistry: o.componentRegistry,
 	}
 }
