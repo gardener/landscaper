@@ -16,7 +16,7 @@ import (
 func NewUncachedClient(burst, qps int) func(config *rest.Config, options client.Options) (client.Client, error) {
 
 	return func(config *rest.Config, options client.Options) (client.Client, error) {
-		options.Cache = nil
+		// options.Cache = nil
 
 		log, err := logging.GetLogger()
 		if err != nil {

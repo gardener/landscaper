@@ -13,7 +13,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
@@ -188,19 +187,12 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 	return err
 }
 
-func CheckResponsibility(ctx context.Context, lsClient client.Client, obj *metav1.PartialObjectMetadata,
+func CheckResponsibility(ctx context.Context, lsClient client.Client, di *lsv1alpha1.DeployItem,
 	deployerType lsv1alpha1.DeployItemType, targetSelectors []lsv1alpha1.TargetSelector) (*lsv1alpha1.ResolvedTarget, bool, bool, lserrors.LsError) {
 
-	annotatedDeployerType, found := obj.GetAnnotations()[lsv1alpha1.DeployerTypeAnnotation]
-	targetName := obj.GetAnnotations()[lsv1alpha1.DeployerTargetNameAnnotation]
+	annotatedDeployerType, found := di.GetAnnotations()[lsv1alpha1.DeployerTypeAnnotation]
+	targetName := di.GetAnnotations()[lsv1alpha1.DeployerTargetNameAnnotation]
 	if !found {
-		// deploy item in old version
-		di := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, lsClient, client.ObjectKeyFromObject(obj), di, read_write_layer.R000032); err != nil {
-			return nil, false, false, lserrors.NewWrappedError(err, "CheckResponsibility", "fetchDeployItem",
-				"fetching deploy item failed")
-		}
-
 		annotatedDeployerType = string(di.Spec.Type)
 
 		targetName = lsv1alpha1.NoTargetNameValue
@@ -213,7 +205,7 @@ func CheckResponsibility(ctx context.Context, lsClient client.Client, obj *metav
 		return nil, false, false, nil
 	}
 
-	return checkTargetResponsibilityAndResolve(ctx, lsClient, obj.Namespace, targetName, targetSelectors)
+	return checkTargetResponsibilityAndResolve(ctx, lsClient, di.Namespace, targetName, targetSelectors)
 }
 
 func checkTargetResponsibilityAndResolve(ctx context.Context, lsClient client.Client,

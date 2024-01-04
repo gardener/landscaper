@@ -41,7 +41,7 @@ func AddControllerToManager(logger logging.Logger,
 	}
 
 	return builder.ControllerManagedBy(mgr).
-		For(&lsv1alpha1.DeployItem{}, builder.OnlyMetadata).
+		For(&lsv1alpha1.DeployItem{}).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(a)

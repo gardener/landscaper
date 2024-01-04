@@ -46,9 +46,9 @@ func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manage
 	}
 
 	return builder.ControllerManagedBy(lsMgr).
-		For(&v1alpha1.Installation{}, builder.OnlyMetadata).
-		Owns(&v1alpha1.Execution{}, builder.OnlyMetadata).
-		Owns(&v1alpha1.Installation{}, builder.OnlyMetadata).
+		For(&v1alpha1.Installation{}).
+		Owns(&v1alpha1.Execution{}).
+		Owns(&v1alpha1.Installation{}).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.Controllers.Installations.CommonControllerConfig)).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(a)

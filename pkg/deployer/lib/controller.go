@@ -105,7 +105,7 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, 
 	log = log.Reconciles("", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
 
 	return builder.ControllerManagedBy(lsMgr).
-		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type)), builder.OnlyMetadata).
+		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
 		WithOptions(args.Options).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(con)
@@ -171,8 +171,8 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, c.callerName)
 	defer c.workerCounter.Exit()
 
-	metadata := lsutil.EmptyDeployItemMetadata()
-	if err := read_write_layer.GetMetaData(ctx, c.lsClient, req.NamespacedName, metadata, read_write_layer.R000042); err != nil {
+	di := &lsv1alpha1.DeployItem{}
+	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, di, read_write_layer.R000035); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
@@ -181,7 +181,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	// this check is only for compatibility reasons
-	rt, responsible, targetNotFound, err := CheckResponsibility(ctx, c.lsClient, metadata, c.deployerType, c.targetSelectors)
+	rt, responsible, targetNotFound, err := CheckResponsibility(ctx, c.lsClient, di, c.deployerType, c.targetSelectors)
 	if err != nil {
 		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
@@ -190,44 +190,15 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if c.lockingEnabled {
-		syncObject, err := c.locker.LockDI(ctx, metadata)
-		if err != nil {
-			return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
-		}
-
-		if syncObject == nil {
-			return c.locker.NotLockedResult()
-		}
-
-		defer func() {
-			c.locker.Unlock(ctx, syncObject)
-		}()
-	}
-
-	return c.reconcilePrivate(ctx, metadata, rt, targetNotFound)
+	return c.reconcilePrivate(ctx, di, rt, targetNotFound)
 }
 
-func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.PartialObjectMetadata,
+func (c *controller) reconcilePrivate(ctx context.Context, di *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget, targetNotFound bool) (reconcile.Result, error) {
 
 	op := "reconcilePrivate"
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
-	di := &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, client.ObjectKeyFromObject(metadata), di, read_write_layer.R000035); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
-			return reconcile.Result{}, nil
-		}
-		return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
-	}
-
-	// do we really need to check if metadata and di have the same guid?
-	if metadata.UID != di.UID {
-		err := lserrors.NewError("Reconcile", "differentUIDs", "different UIDs")
-		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
-	}
 
 	c.lsScheme.Default(di)
 
