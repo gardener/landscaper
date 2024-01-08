@@ -128,9 +128,18 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 	op := "handleReconcilePhase"
 
+	// the cache is only available and reliable if not nil
+	var deployItemCache = exec.Status.DeployItemCache
+
 	// A final or empty execution phase means that the current job was not yet started.
 	// Switch to start phase Init / InitDelete.
 	if exec.Status.ExecutionPhase.IsFinal() || exec.Status.ExecutionPhase.IsEmpty() {
+
+		if exec.Status.ExecutionPhase.IsEmpty() {
+			deployItemCache = &lsv1alpha1.DeployItemCache{}
+		}
+
+		exec.Status.DeployItemCache = nil
 
 		if exec.DeletionTimestamp.IsZero() {
 			exec.Status.ExecutionPhase = lsv1alpha1.ExecutionPhases.Init
@@ -150,7 +159,7 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 	}
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Init {
-		if err := c.handlePhaseInit(ctx, exec); err != nil {
+		if err := c.handlePhaseInit(ctx, exec, deployItemCache); err != nil {
 			if lsutil.IsRecoverableError(err) {
 				return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err, read_write_layer.W000007)
 			}
@@ -241,11 +250,11 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 	return nil
 }
 
-func (c *controller) handlePhaseInit(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
+func (c *controller) handlePhaseInit(ctx context.Context, exec *lsv1alpha1.Execution, deployItemCache *lsv1alpha1.DeployItemCache) lserrors.LsError {
 	forceReconcile := false
 	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
-	return o.UpdateDeployItems(ctx)
+	return o.UpdateDeployItems(ctx, deployItemCache)
 }
 
 func (c *controller) handlePhaseProgressing(ctx context.Context, exec *lsv1alpha1.Execution) (
@@ -257,6 +266,8 @@ func (c *controller) handlePhaseProgressing(ctx context.Context, exec *lsv1alpha
 }
 
 func (c *controller) handlePhaseCompleting(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
+	exec.Status.DeployItemCache.OrphanedDIs = nil
+
 	forceReconcile := false
 	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
@@ -269,13 +280,13 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1
 	forceReconcile := false
 	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
-	managedItems, err := o.ListManagedDeployItems(ctx)
+	managedItems, err := o.ListManagedDeployItems(ctx, read_write_layer.R000083, exec.Status.DeployItemCache)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListDeployItems", err.Error())
 	}
 
 	for i := range managedItems {
-		item := &managedItems[i]
+		item := managedItems[i]
 
 		if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(exec.ObjectMeta) &&
 			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(item.ObjectMeta) {
@@ -320,13 +331,13 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 	forceReconcile := false
 	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
 
-	managedItems, err := o.ListManagedDeployItems(ctx)
+	managedItems, err := o.ListManagedDeployItems(ctx, read_write_layer.R000058, nil)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListDeployItems", err.Error())
 	}
 
 	for i := range managedItems {
-		item := &managedItems[i]
+		item := managedItems[i]
 
 		if item.Status.JobIDFinished != exec.Status.JobID {
 			item.Status.SetJobID(exec.Status.JobID)

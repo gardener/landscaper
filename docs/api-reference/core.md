@@ -2712,6 +2712,47 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemCache">DeployItemCache
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
+</p>
+<p>
+<p>DeployItemCache contains the existing deploy items</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>activeDIs</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DiNamePair">
+[]DiNamePair
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>orphanedDIs</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemPhase">DeployItemPhase
 (<code>string</code> alias)</p></h3>
 <p>
@@ -3397,6 +3438,45 @@ Error
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DiNamePair">DiNamePair
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemCache">DeployItemCache</a>)
+</p>
+<p>
+<p>DiNamePair contains the spec name and the real name of a deploy item</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>specName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>objectName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Duration">Duration
 </h3>
 <p>
@@ -3790,16 +3870,16 @@ only used for operation purpose.</p>
 </tr>
 <tr>
 <td>
-<code>deployItemRefs</code></br>
+<code>deployItemCache</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.VersionedNamedObjectReference">
-[]VersionedNamedObjectReference
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemCache">
+DeployItemCache
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>DeployItemReferences contain the state of all deploy items.</p>
+<p>DeployItemCache contains the currently existing deploy item belonging to the execution. If nil undefined.</p>
 </td>
 </tr>
 <tr>
@@ -6442,10 +6522,6 @@ ObjectReference
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.VersionedNamedObjectReference">VersionedNamedObjectReference
 </h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
-</p>
 <p>
 <p>VersionedNamedObjectReference is a named reference to a object with its last observed resource generation.
 This struct is used by status fields.</p>
