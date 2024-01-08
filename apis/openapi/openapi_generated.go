@@ -163,6 +163,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference":                                    schema_landscaper_apis_core_v1alpha1_SecretReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.StaticDataSource":                                   schema_landscaper_apis_core_v1alpha1_StaticDataSource(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.StaticDataValueFrom":                                schema_landscaper_apis_core_v1alpha1_StaticDataValueFrom(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.SubInstCache":                                       schema_landscaper_apis_core_v1alpha1_SubInstCache(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.SubNamePair":                                        schema_landscaper_apis_core_v1alpha1_SubNamePair(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SubinstallationTemplate":                            schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SucceededReconcile":                                 schema_landscaper_apis_core_v1alpha1_SucceededReconcile(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SyncObject":                                         schema_landscaper_apis_core_v1alpha1_SyncObject(ref),
@@ -6057,18 +6059,10 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							},
 						},
 					},
-					"installationRefs": {
+					"subInstCache": {
 						SchemaProps: spec.SchemaProps{
-							Description: "InstallationReferences contain all references to sub-components that are created based on the component definition.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference"),
-									},
-								},
-							},
+							Description: "SubInstCache contains the currently existing sub installations belonging to the execution. If nil undefined.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SubInstCache"),
 						},
 					},
 					"executionRef": {
@@ -6142,7 +6136,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.SubInstCache", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -6774,6 +6768,73 @@ func schema_landscaper_apis_core_v1alpha1_StaticDataValueFrom(ref common.Referen
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.SecretLabelSelectorRef", "k8s.io/api/core/v1.SecretKeySelector"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_SubInstCache(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SubInstCache contains the existing sub installations",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"activeSubs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.SubNamePair"),
+									},
+								},
+							},
+						},
+					},
+					"orphanedSubs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.SubNamePair"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_SubNamePair(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DiNamePair contains the spec name and the real name of a deploy item",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"specName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"objectName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

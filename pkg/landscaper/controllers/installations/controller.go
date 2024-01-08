@@ -345,7 +345,7 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000090)
 	if err != nil {
 		return nil
 	}

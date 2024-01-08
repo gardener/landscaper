@@ -123,16 +123,20 @@ func WaitForDeployItemToFinish(
 
 // GetSubInstallationsOfInstallation returns the direct subinstallations of a installation.
 func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, error) {
-	list := make([]*lsv1alpha1.Installation, 0)
-	if len(inst.Status.InstallationReferences) == 0 {
-		return list, nil
+	installationList := &lsv1alpha1.InstallationList{}
+
+	if err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, read_write_layer.R000033,
+		client.InNamespace(inst.Namespace),
+		client.MatchingLabels{
+			lsv1alpha1.EncompassedByLabel: inst.Name,
+		}); err != nil {
+		return nil, err
 	}
 
-	for _, ref := range inst.Status.InstallationReferences {
-		inst := &lsv1alpha1.Installation{}
-		if err := read_write_layer.GetInstallation(ctx, kubeClient, ref.Reference.NamespacedName(), inst, read_write_layer.R000006); err != nil {
-			return nil, fmt.Errorf("unable to find installation %q: %w", ref.Name, err)
-		}
+	list := make([]*lsv1alpha1.Installation, 0)
+
+	for i := range installationList.Items {
+		inst := &installationList.Items[i]
 		list = append(list, inst)
 	}
 	return list, nil

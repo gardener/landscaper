@@ -63,7 +63,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000085)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error()), nil
 	}
@@ -108,7 +108,7 @@ func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, ins
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000088)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error())
 	}
@@ -135,7 +135,7 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 		return false, false, lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error())
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000091)
 	if err != nil {
 		return false, false, lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error())
 	}
