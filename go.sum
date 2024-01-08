@@ -390,8 +390,8 @@ github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDk
 github.com/cloudflare/cfssl v0.0.0-20180223231731-4e2dcbde5004 h1:lkAMpLVBDaj17e85keuznYcH5rqI438v41pKcBl4ZxQ=
 github.com/cloudflare/cfssl v0.0.0-20180223231731-4e2dcbde5004/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
 github.com/cloudflare/circl v1.1.0/go.mod h1:prBCrKB9DV4poKZY1l9zBXg2QJY7mvgRvtMxxK7fi4I=
-github.com/cloudflare/circl v1.3.3 h1:fE/Qz0QdIGqeWfnwq0RE0R7MI51s0M2E4Ga9kq5AEMs=
-github.com/cloudflare/circl v1.3.3/go.mod h1:5XYMA4rFBvNIrhs50XuiBJ15vF2pZn4nnUKZrLbUZFA=
+github.com/cloudflare/circl v1.3.7 h1:qlCDlTPz2n9fu58M0Nh1J/JzcFpfgkFHHX3O35r5vcU=
+github.com/cloudflare/circl v1.3.7/go.mod h1:sRTcRWXGLrKw6yIGJ+l7amYJFfAXbZG0kBSc8r4zxgA=
 github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af h1:6Cpkahw28+gcBdnXQL7LcMTX488+6jl6hfoTMRT6Hm4=
 github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af/go.mod h1:dOLSIXcRQJiDS1vlrYFNJicoHNZLsBKideE+70hGdV4=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
