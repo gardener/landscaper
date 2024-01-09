@@ -34,9 +34,9 @@ var _ = Describe("Installation Controller", func() {
 		)
 
 		BeforeEach(func() {
-			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
+			op = lsoperation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024))
 
-			ctrl = installationsctl.NewTestActuator(*op, testenv.Client, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
+			ctrl = installationsctl.NewTestActuator(testenv.Client, testenv.Client, testenv.Client, testenv.Client, *op, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
 					Local: &config.LocalRegistryConfiguration{
 						RootPath: "./testdata",

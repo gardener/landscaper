@@ -46,9 +46,12 @@ func init() {
 
 // Manifest is the internal representation of a DeployItem of Type Manifest
 type Manifest struct {
-	lsKubeClient   client.Client
-	hostKubeClient client.Client
-	Configuration  *manifestv1alpha2.Configuration
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+
+	Configuration *manifestv1alpha2.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.ResolvedTarget
@@ -66,8 +69,7 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 }
 
 // New creates a new internal manifest item
-func New(lsKubeClient client.Client,
-	hostKubeClient client.Client,
+func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	configuration *manifestv1alpha2.Configuration,
 	item *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget) (*Manifest, error) {
@@ -97,8 +99,11 @@ func New(lsKubeClient client.Client,
 	}
 
 	return &Manifest{
-		lsKubeClient:          lsKubeClient,
-		hostKubeClient:        hostKubeClient,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+
 		Configuration:         configuration,
 		DeployItem:            item,
 		Target:                rt,
@@ -146,7 +151,7 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.Target.Namespace, m.lsKubeClient)
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.Target.Namespace, m.lsUncachedClient)
 		if err != nil {
 			return nil, nil, nil, err
 		}

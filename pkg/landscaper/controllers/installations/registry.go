@@ -44,7 +44,7 @@ func (c *Controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1
 	for i, secretRef := range secretRefs {
 		secret := corev1.Secret{}
 		// todo: check for cache
-		if err := c.Client().Get(ctx, secretRef.NamespacedName(), &secret); err != nil {
+		if err := c.lsUncachedClient.Get(ctx, secretRef.NamespacedName(), &secret); err != nil {
 			return nil, err
 		}
 		secrets[i] = secret

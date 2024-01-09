@@ -99,7 +99,7 @@ func CleanupRBAC(ctx context.Context, deployItem *lsv1alpha1.DeployItem, hostCli
 }
 
 // CleanupDeployItem deletes all secrets from a host cluster which belong to a deploy item.
-func CleanupDeployItem(ctx context.Context, deployItem *lsv1alpha1.DeployItem, lsClient, hostClient client.Client, hostNamespace string) error {
+func CleanupDeployItem(ctx context.Context, deployItem *lsv1alpha1.DeployItem, lsUncachedClient, hostUncachedClient client.Client, hostNamespace string) error {
 	log := logging.FromContextOrDiscard(ctx)
 	secrets := []string{
 		ConfigurationSecretName(deployItem.Namespace, deployItem.Name),
@@ -113,7 +113,7 @@ func CleanupDeployItem(ctx context.Context, deployItem *lsv1alpha1.DeployItem, l
 		secret := &corev1.Secret{}
 		secret.Name = secretName
 		secret.Namespace = hostNamespace
-		if err := hostClient.Delete(ctx, secret); err != nil {
+		if err := hostUncachedClient.Delete(ctx, secret); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return err
 			}
@@ -123,7 +123,7 @@ func CleanupDeployItem(ctx context.Context, deployItem *lsv1alpha1.DeployItem, l
 	// cleanup state
 	if err := state.CleanupState(ctx,
 		log,
-		hostClient,
+		hostUncachedClient,
 		hostNamespace,
 		lsv1alpha1helper.ObjectReferenceFromObject(deployItem)); err != nil {
 		return err
@@ -132,13 +132,13 @@ func CleanupDeployItem(ctx context.Context, deployItem *lsv1alpha1.DeployItem, l
 	secret := &corev1.Secret{}
 	secret.Name = DeployItemExportSecretName(deployItem.Name)
 	secret.Namespace = deployItem.Namespace
-	if err := lsClient.Delete(ctx, secret); err != nil {
+	if err := lsUncachedClient.Delete(ctx, secret); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
 
 	controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-	writer := read_write_layer.NewWriter(lsClient)
+	writer := read_write_layer.NewWriter(lsUncachedClient)
 	return writer.UpdateDeployItem(ctx, read_write_layer.W000038, deployItem)
 }

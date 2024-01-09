@@ -7,6 +7,8 @@ package helm
 import (
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -18,7 +20,9 @@ import (
 )
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
-func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
+func AddDeployerToManager(logger logging.Logger,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	lsMgr, hostMgr manager.Manager,
 	config helmv1alpha1.Configuration, callerName string) error {
 	log := logger.WithName("helm")
 
@@ -28,10 +32,8 @@ func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
 		"numberOfWorkerThreads", config.Controller.Workers,
 		"lockingEnabled", lockingEnabled)
 
-	d, err := NewDeployer(
-		log,
-		lsMgr.GetClient(),
-		hostMgr.GetClient(),
+	d, err := NewDeployer(log,
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		config,
 	)
 	if err != nil {
@@ -45,13 +47,15 @@ func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
 		options.CacheSyncTimeout = config.Controller.CacheSyncTimeout.Duration
 	}
 
-	return deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
-		Name:            Name,
-		Version:         version.Get().String(),
-		Identity:        config.Identity,
-		Type:            Type,
-		Deployer:        d,
-		TargetSelectors: config.TargetSelector,
-		Options:         options,
-	}, config.Controller.Workers, lockingEnabled, callerName)
+	return deployerlib.Add(log,
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		lsMgr, hostMgr, deployerlib.DeployerArgs{
+			Name:            Name,
+			Version:         version.Get().String(),
+			Identity:        config.Identity,
+			Type:            Type,
+			Deployer:        d,
+			TargetSelectors: config.TargetSelector,
+			Options:         options,
+		}, config.Controller.Workers, lockingEnabled, callerName)
 }

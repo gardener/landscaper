@@ -95,7 +95,7 @@ var _ = Describe("", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -149,7 +149,7 @@ var _ = Describe("", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -225,7 +225,7 @@ var _ = Describe("", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
@@ -294,7 +294,7 @@ var _ = Describe("", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -352,7 +352,7 @@ var _ = Describe("", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -442,7 +442,7 @@ var _ = Describe("", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		go func() {
@@ -522,7 +522,7 @@ var _ = Describe("", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -586,7 +586,7 @@ var _ = Describe("", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())

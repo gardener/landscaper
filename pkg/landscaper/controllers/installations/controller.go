@@ -46,8 +46,8 @@ const (
 )
 
 // NewController creates a new Controller that reconciles Installation resources.
-func NewController(hostClient client.Client, logger logging.Logger,
-	lsClient client.Client,
+func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	logger logging.Logger,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
 	lsConfig *config.LandscaperConfiguration,
@@ -58,14 +58,17 @@ func NewController(hostClient client.Client, logger logging.Logger,
 	ws := utils.NewWorkerCounter(maxNumberOfWorkers)
 
 	ctrl := &Controller{
-		hostClient:     hostClient,
-		log:            logger,
-		clock:          clock.RealClock{},
-		LsConfig:       lsConfig,
-		workerCounter:  ws,
-		lockingEnabled: lockingEnabled,
-		callerName:     callerName,
-		locker:         *lock.NewLocker(lsClient, hostClient, callerName),
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		log:                logger,
+		clock:              clock.RealClock{},
+		LsConfig:           lsConfig,
+		workerCounter:      ws,
+		lockingEnabled:     lockingEnabled,
+		callerName:         callerName,
+		locker:             *lock.NewLocker(lsUncachedClient, hostUncachedClient, callerName),
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -79,40 +82,47 @@ func NewController(hostClient client.Client, logger logging.Logger,
 
 	registries.SetOCMLibraryMode(lsConfig.UseOCMLib)
 
-	op := operation.NewOperation(lsClient, scheme, eventRecorder)
+	op := operation.NewOperation(scheme, eventRecorder)
 	ctrl.Operation = *op
 	return ctrl, nil
 }
 
 // NewTestActuator creates a new Controller that is only meant for testing.
-func NewTestActuator(op operation.Operation, hostClient client.Client, logger logging.Logger, passiveClock clock.PassiveClock,
+func NewTestActuator(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	op operation.Operation, logger logging.Logger, passiveClock clock.PassiveClock,
 	configuration *config.LandscaperConfiguration, callerName string) *Controller {
 
 	return &Controller{
-		log:            logger,
-		clock:          passiveClock,
-		Operation:      op,
-		LsConfig:       configuration,
-		workerCounter:  utils.NewWorkerCounter(1000),
-		hostClient:     hostClient,
-		lockingEnabled: lock.IsLockingEnabledForMainControllers(configuration),
-		callerName:     callerName,
-		locker:         *lock.NewLocker(hostClient, hostClient, callerName),
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		log:                logger,
+		clock:              passiveClock,
+		Operation:          op,
+		LsConfig:           configuration,
+		workerCounter:      utils.NewWorkerCounter(1000),
+		lockingEnabled:     lock.IsLockingEnabledForMainControllers(configuration),
+		callerName:         callerName,
+		locker:             *lock.NewLocker(lsUncachedClient, hostUncachedClient, callerName),
 	}
 }
 
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
-	hostClient     client.Client
-	log            logging.Logger
-	clock          clock.PassiveClock
-	LsConfig       *config.LandscaperConfiguration
-	SharedCache    cache.Cache
-	workerCounter  *utils.WorkerCounter
-	lockingEnabled bool
-	callerName     string
-	locker         lock.Locker
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+	log                logging.Logger
+	clock              clock.PassiveClock
+	LsConfig           *config.LandscaperConfiguration
+	SharedCache        cache.Cache
+	workerCounter      *utils.WorkerCounter
+	lockingEnabled     bool
+	callerName         string
+	locker             lock.Locker
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -123,7 +133,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if c.lockingEnabled {
 		metadata := utils.EmptyInstallationMetadata()
-		if err := c.Client().Get(ctx, req.NamespacedName, metadata); err != nil {
+		if err := c.lsUncachedClient.Get(ctx, req.NamespacedName, metadata); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger.Debug(err.Error())
 				return reconcile.Result{}, nil
@@ -146,7 +156,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	inst := &lsv1alpha1.Installation{}
-	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst, read_write_layer.R000010); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, c.lsUncachedClient, req.NamespacedName, inst, read_write_layer.R000010); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -193,7 +203,7 @@ func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alp
 		}
 	}
 
-	retryHelper := newRetryHelper(c.Client(), c.clock)
+	retryHelper := newRetryHelper(c.lsUncachedClient, c.clock)
 
 	if err := retryHelper.preProcessRetry(ctx, inst); err != nil {
 		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
@@ -221,7 +231,7 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 		return reconcile.Result{}, nil
 	}
 
-	if err := installations.NewInstallationTrigger(c.Client(), inst).TriggerDependents(ctx); err != nil {
+	if err := installations.NewInstallationTrigger(c.lsUncachedClient, inst).TriggerDependents(ctx); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -278,7 +288,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
-	lsCtx, err := installations.GetInstallationContext(ctx, c.Client(), inst)
+	lsCtx, err := installations.GetInstallationContext(ctx, c.lsUncachedClient, inst)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
@@ -297,7 +307,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	instOp, err := installations.NewOperationBuilder(internalInstallation).
 		WithOperation(op).
 		WithContext(lsCtx).
-		Build(ctx)
+		Build(ctx, c.lsUncachedClient)
 	if err != nil {
 		err = fmt.Errorf("unable to create installation operation: %w", err)
 		return nil, lserrors.NewWrappedError(err,
@@ -331,7 +341,7 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 		return err
 	}
 
-	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	exec, err := executions.GetExecutionForInstallation(ctx, c.lsUncachedClient, inst)
 	if err != nil {
 		return err
 	}
@@ -345,7 +355,7 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000090)
+	subInsts, err := installations.ListSubinstallations(ctx, c.lsUncachedClient, inst, inst.Status.SubInstCache, read_write_layer.R000090)
 	if err != nil {
 		return nil
 	}
@@ -392,7 +402,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {
 		// The installation is about to finish. Put the names of dependent installations in the status.
 		// The dependents will then be triggered in the beginning of the next reconcile event.
-		dependents, err := installations.NewInstallationTrigger(c.Client(), inst).DetermineDependents(ctx)
+		dependents, err := installations.NewInstallationTrigger(c.lsUncachedClient, inst).DetermineDependents(ctx)
 		if err != nil {
 			logger.Error(err, "unable to determine successor installations")
 			if lsError == nil {
@@ -409,7 +419,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Deleting {
 			// recheck if already deleted
 			instRecheck := &lsv1alpha1.Installation{}
-			errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace),
+			errRecheck := read_write_layer.GetInstallation(ctx, c.lsUncachedClient, kutil.ObjectKey(inst.Name, inst.Namespace),
 				instRecheck, read_write_layer.R000009)
 			if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
 				return nil
@@ -444,4 +454,8 @@ func (c *Controller) addReconcileAnnotation(ctx context.Context, inst *lsv1alpha
 	}
 
 	return nil
+}
+
+func (o *Controller) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(o.lsUncachedClient)
 }

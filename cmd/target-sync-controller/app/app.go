@@ -94,7 +94,12 @@ func (o *options) run(ctx context.Context) error {
 
 	lsinstall.Install(lsMgr.GetScheme())
 
-	if err := targetsync.AddControllerToManagerForTargetSyncs(o.Log, lsMgr); err != nil {
+	lsUncachedClient := lsMgr.GetClient()
+	lsCachedClient := lsMgr.GetClient()
+	hostUncachedClient := lsMgr.GetClient()
+	hostCachedClient := lsMgr.GetClient()
+
+	if err := targetsync.AddControllerToManagerForTargetSyncs(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient, o.Log, lsMgr); err != nil {
 		return fmt.Errorf("unable to setup landscaper deployments controller for target sync controller: %w", err)
 	}
 

@@ -62,7 +62,7 @@ func (o *Operation) ListManagedDeployItems(ctx context.Context, readID read_writ
 		for i := range deployItemCache.OrphanedDIs {
 			nextDi := &lsv1alpha1.DeployItem{}
 			key := client.ObjectKey{Namespace: o.exec.Namespace, Name: deployItemCache.OrphanedDIs[i]}
-			if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, nextDi, readID); err != nil {
+			if err := read_write_layer.GetDeployItem(ctx, o.lsUncachedClient, key, nextDi, readID); err != nil {
 				if apierrors.IsNotFound(err) {
 					continue
 				}
@@ -74,7 +74,7 @@ func (o *Operation) ListManagedDeployItems(ctx context.Context, readID read_writ
 		for i := range deployItemCache.ActiveDIs {
 			nextDi := &lsv1alpha1.DeployItem{}
 			key := client.ObjectKey{Namespace: o.exec.Namespace, Name: deployItemCache.ActiveDIs[i].ObjectName}
-			if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, nextDi, readID); err != nil {
+			if err := read_write_layer.GetDeployItem(ctx, o.lsUncachedClient, key, nextDi, readID); err != nil {
 				if apierrors.IsNotFound(err) {
 					continue
 				}
@@ -86,7 +86,7 @@ func (o *Operation) ListManagedDeployItems(ctx context.Context, readID read_writ
 		return deployItems, nil
 
 	} else {
-		deployItemList, err := read_write_layer.ListManagedDeployItems(ctx, o.Client(), client.ObjectKeyFromObject(o.exec), readID)
+		deployItemList, err := read_write_layer.ListManagedDeployItems(ctx, o.lsUncachedClient, client.ObjectKeyFromObject(o.exec), readID)
 		if err != nil {
 			return nil, err
 		}

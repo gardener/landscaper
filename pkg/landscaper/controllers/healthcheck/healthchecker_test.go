@@ -49,7 +49,7 @@ var _ = Describe("Reconcile", func() {
 			},
 		}
 
-		healthChecker := healthcheck.NewHealthChecker(&lsDeployments, state.Client)
+		healthChecker := healthcheck.NewHealthChecker(state.Client, state.Client, state.Client, state.Client, &lsDeployments)
 
 		lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
 		Expect(state.Client.Get(ctx, types.NamespacedName{Name: lsDeployments.LsHealthCheckName, Namespace: lsDeployments.DeploymentsNamespace}, lsHealthCheck)).ToNot(HaveOccurred())
@@ -84,7 +84,7 @@ var _ = Describe("Reconcile", func() {
 			},
 		}
 
-		healthChecker := healthcheck.NewHealthChecker(&lsDeployments, state.Client)
+		healthChecker := healthcheck.NewHealthChecker(state.Client, state.Client, state.Client, state.Client, &lsDeployments)
 
 		lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
 		Expect(state.Client.Get(ctx, types.NamespacedName{Name: lsDeployments.LsHealthCheckName, Namespace: lsDeployments.DeploymentsNamespace}, lsHealthCheck)).ToNot(HaveOccurred())

@@ -76,10 +76,11 @@ var _ = Describe("GarbageCollector", func() {
 
 		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, lsState.Namespace)).To(Succeed())
 
-		gc = containerctlr.NewGarbageCollector(logger, testenv.Client, hostTestEnv.Client, "test", hostState.Namespace, containerv1alpha1.GarbageCollection{
-			Worker:             1,
-			RequeueTimeSeconds: 1,
-		}, false)
+		gc = containerctlr.NewGarbageCollector(logger, testenv.Client, testenv.Client, hostTestEnv.Client, hostTestEnv.Client,
+			"test", hostState.Namespace, containerv1alpha1.GarbageCollection{
+				Worker:             1,
+				RequeueTimeSeconds: 1,
+			}, false)
 
 		Expect(testutils.AddMimicKCMSecretControllerToManager(hostMgr)).To(Succeed())
 

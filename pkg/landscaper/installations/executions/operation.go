@@ -57,10 +57,10 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.GetInstallation().Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
-		KubeClient: o.Client(),
+		KubeClient: o.GetUncacheLsClient(),
 		Inst:       inst.GetInstallation(),
 	}
-	targetResolver := genericresolver.New(o.Client())
+	targetResolver := genericresolver.New(o.GetUncacheLsClient())
 	tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(

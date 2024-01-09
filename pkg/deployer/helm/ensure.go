@@ -146,7 +146,7 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 			helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name,
 		},
 		DeletionGroupsDuringUpdate: h.ProviderConfiguration.DeletionGroupsDuringUpdate,
-		InterruptionChecker:        interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient),
+		InterruptionChecker:        interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
 	})
 
 	err := applier.Apply(ctx)
@@ -230,7 +230,7 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 			Timeout:             &lsv1alpha1.Duration{Duration: t},
 			ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 			FailOnMissingObject: failOnMissingObject,
-			InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient),
+			InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
@@ -251,7 +251,7 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 				Timeout:             &lsv1alpha1.Duration{Duration: t},
 				ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:       customReadinessCheckConfig,
-				InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient),
+				InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
 			}
 			err := customReadinessCheck.CheckResourcesReady()
 			if err != nil {
@@ -274,7 +274,7 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 	if len(exportDefinition.Exports) != 0 {
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
-			InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient),
+			InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
 			DeployItem:          h.DeployItem,
 		}
 
@@ -287,7 +287,7 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 		exports = utils.MergeMaps(exports, resourceExports)
 	}
 
-	if err := deployerlib.CreateOrUpdateExport(ctx, h.Writer(), h.lsKubeClient, h.DeployItem, exports); err != nil {
+	if err := deployerlib.CreateOrUpdateExport(ctx, h.Writer(), h.lsUncachedClient, h.DeployItem, exports); err != nil {
 		return err
 	}
 
@@ -319,7 +319,7 @@ func (h *Helm) deleteManifestsInGroups(ctx context.Context) error {
 		return err
 	}
 
-	interruptionChecker := interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsKubeClient)
+	interruptionChecker := interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient)
 
 	err = resourcemanager.DeleteManagedResources(
 		ctx,
@@ -395,5 +395,5 @@ func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[st
 }
 
 func (h *Helm) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(h.lsKubeClient)
+	return read_write_layer.NewWriter(h.lsUncachedClient)
 }

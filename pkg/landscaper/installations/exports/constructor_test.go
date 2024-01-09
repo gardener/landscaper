@@ -66,7 +66,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 
-		c := exports.NewConstructor(op)
+		c := exports.NewConstructor(fakeClient, op)
 		res, _, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
@@ -105,7 +105,7 @@ var _ = Describe("Constructor", func() {
 			},
 		}
 
-		c := exports.NewConstructor(op)
+		c := exports.NewConstructor(fakeClient, op)
 		res, _, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
@@ -147,7 +147,7 @@ var _ = Describe("Constructor", func() {
 			},
 		}
 
-		c := exports.NewConstructor(op)
+		c := exports.NewConstructor(fakeClient, op)
 		_, _, err = c.Construct(ctx)
 		Expect(err).To(HaveOccurred())
 	})
@@ -167,7 +167,7 @@ var _ = Describe("Constructor", func() {
 			},
 		}
 
-		c := exports.NewConstructor(op)
+		c := exports.NewConstructor(fakeClient, op)
 		res, targets, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
@@ -205,7 +205,7 @@ var _ = Describe("Constructor", func() {
 			op.Inst = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			c := exports.NewConstructor(op)
+			c := exports.NewConstructor(fakeClient, op)
 			_, res, err := c.Construct(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).ToNot(BeNil())
@@ -239,7 +239,7 @@ var _ = Describe("Constructor", func() {
 			target.Spec.Type = "unknownType"
 			Expect(fakeClient.Update(ctx, target))
 
-			c := exports.NewConstructor(op)
+			c := exports.NewConstructor(fakeClient, op)
 			_, _, err = c.Construct(ctx)
 			Expect(err).To(HaveOccurred())
 		})
@@ -252,7 +252,7 @@ var _ = Describe("Constructor", func() {
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 
-			c := exports.NewConstructor(op)
+			c := exports.NewConstructor(fakeClient, op)
 			res, _, err := c.Construct(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).ToNot(BeNil())
@@ -285,7 +285,7 @@ var _ = Describe("Constructor", func() {
 				},
 			}
 
-			c := exports.NewConstructor(op)
+			c := exports.NewConstructor(fakeClient, op)
 			res, _, err := c.Construct(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).ToNot(BeNil())

@@ -54,17 +54,15 @@ var _ = Describe("Manifest Deployer", func() {
 
 		deployer, err := manifestctlr.NewDeployer(
 			logging.Discard(),
-			testenv.Client,
-			testenv.Client,
+			testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			manifestv1alpha2.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl = deployerlib.NewController(
-			testenv.Client,
+			testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			api.LandscaperScheme,
 			record.NewFakeRecorder(1024),
-			testenv.Client,
 			api.LandscaperScheme,
 			deployerlib.DeployerArgs{
 				Type:     manifestctlr.Type,

@@ -75,7 +75,7 @@ var _ = Describe("ConditionalImports", func() {
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, conInst, nil)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, fakeClient, op.Operation, conInst, nil)
 		utils.ExpectNoError(err)
 		subInstOp := subinstallations.New(instOp)
 		// satisfy imports
@@ -130,7 +130,7 @@ var _ = Describe("ConditionalImports", func() {
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, conInst, nil)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, fakeClient, op.Operation, conInst, nil)
 		utils.ExpectNoError(err)
 		subInstOp := subinstallations.New(instOp)
 		// satisfy imports

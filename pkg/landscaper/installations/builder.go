@@ -101,7 +101,7 @@ func (b *OperationBuilder) validate() error {
 }
 
 // Build creates an installation operation.
-func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
+func (b *OperationBuilder) Build(ctx context.Context, lsUncachedClient client.Client) (*Operation, error) {
 	if err := b.validate(); err != nil {
 		return nil, err
 	}
@@ -116,13 +116,14 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 
 	instOp := &Operation{
 		Operation:                       b.op,
+		lsUncachedClient:                lsUncachedClient,
 		Inst:                            b.inst,
 		ComponentVersion:                b.componentVersion,
 		ResolvedComponentDescriptorList: b.resolvedComponentDescriptorList,
 	}
 
 	if b.context == nil {
-		newCtx, err := GetInstallationContext(ctx, instOp.Client(), instOp.Inst.GetInstallation())
+		newCtx, err := GetInstallationContext(ctx, lsUncachedClient, instOp.Inst.GetInstallation())
 		if err != nil {
 			return nil, err
 		}

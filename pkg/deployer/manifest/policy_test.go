@@ -105,7 +105,7 @@ var _ = Describe("Policy", func() {
 		It("should create a configured configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ManagePolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -117,7 +117,7 @@ var _ = Describe("Policy", func() {
 		It("should update the created configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ManagePolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -129,7 +129,7 @@ var _ = Describe("Policy", func() {
 				"key": "updated",
 			}
 			updateDeployItem(ctx, state, deployItem, configMap, managedresource.ManagePolicy)
-			m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err = manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -140,7 +140,7 @@ var _ = Describe("Policy", func() {
 		It("should delete a created configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ManagePolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -158,7 +158,7 @@ var _ = Describe("Policy", func() {
 		It("should create a configured configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -170,7 +170,7 @@ var _ = Describe("Policy", func() {
 		It("should update the created configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -182,7 +182,7 @@ var _ = Describe("Policy", func() {
 				"key": "updated",
 			}
 			updateDeployItem(ctx, state, deployItem, configMap, managedresource.FallbackPolicy)
-			m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err = manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -193,7 +193,7 @@ var _ = Describe("Policy", func() {
 		It("should not update the created configmap when the deployer label is not matching", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -208,7 +208,7 @@ var _ = Describe("Policy", func() {
 				"key": "updated",
 			}
 			updateDeployItem(ctx, state, deployItem, configMap, managedresource.FallbackPolicy)
-			m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err = manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -219,7 +219,7 @@ var _ = Describe("Policy", func() {
 		It("should delete a created configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -235,7 +235,7 @@ var _ = Describe("Policy", func() {
 		It("should not delete a created configmap when the deployer label is not matching", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.FallbackPolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -256,7 +256,7 @@ var _ = Describe("Policy", func() {
 		It("should create a configured configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.KeepPolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -268,7 +268,7 @@ var _ = Describe("Policy", func() {
 		It("should update the created configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.KeepPolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -280,7 +280,7 @@ var _ = Describe("Policy", func() {
 				"key": "updated",
 			}
 			updateDeployItem(ctx, state, deployItem, configMap, managedresource.KeepPolicy)
-			m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err = manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -291,7 +291,7 @@ var _ = Describe("Policy", func() {
 		It("should not delete a created configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.KeepPolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -309,7 +309,7 @@ var _ = Describe("Policy", func() {
 		It("should not create a configured configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.IgnorePolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -322,7 +322,7 @@ var _ = Describe("Policy", func() {
 		It("should create a configured configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ImmutablePolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -334,7 +334,7 @@ var _ = Describe("Policy", func() {
 		It("should not update the created configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ImmutablePolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -346,7 +346,7 @@ var _ = Describe("Policy", func() {
 				"key": "updated",
 			}
 			updateDeployItem(ctx, state, deployItem, configMap, managedresource.ImmutablePolicy)
-			m, err = manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err = manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -357,7 +357,7 @@ var _ = Describe("Policy", func() {
 		It("should delete a created configmap", func() {
 			deployItem := createDeployItem(ctx, state, "my-deployitem", target.Target, configMap, managedresource.ImmutablePolicy)
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 

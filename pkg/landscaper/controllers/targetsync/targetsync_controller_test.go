@@ -34,7 +34,7 @@ var _ = Describe("TargetSync Controller", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl = NewTargetSyncController(logging.Discard(), testenv.Client, clusters.NewTrivialSourceClientProvider(testenv.Client, nil))
+			ctrl = NewTargetSyncController(testenv.Client, testenv.Client, testenv.Client, testenv.Client, logging.Discard(), clusters.NewTrivialSourceClientProvider(testenv.Client, nil))
 		})
 
 		AfterEach(func() {

@@ -25,16 +25,23 @@ import (
 const healthCheckInterval = time.Minute
 
 type HealthChecker struct {
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+
 	lsDeployments *config.LsDeployments
-	hostClient    client.Client
 	oldStatus     lsv1alpha1.LsHealthCheckStatus
 }
 
-func NewHealthChecker(lsDeployments *config.LsDeployments, hostClient client.Client) *HealthChecker {
+func NewHealthChecker(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client, lsDeployments *config.LsDeployments) *HealthChecker {
 	return &HealthChecker{
-		lsDeployments: lsDeployments,
-		hostClient:    hostClient,
-		oldStatus:     lsv1alpha1.LsHealthCheckStatusOk,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		lsDeployments:      lsDeployments,
+		oldStatus:          lsv1alpha1.LsHealthCheckStatusOk,
 	}
 }
 
@@ -72,11 +79,11 @@ func (c *HealthChecker) initializeHealthCheck(ctx context.Context) error {
 	log.Info("initializing healthcheck")
 
 	lsHealthCheckList := &lsv1alpha1.LsHealthCheckList{}
-	if err := read_write_layer.ListHealthChecks(ctx, c.hostClient, lsHealthCheckList, read_write_layer.R000059,
+	if err := read_write_layer.ListHealthChecks(ctx, c.hostUncachedClient, lsHealthCheckList, read_write_layer.R000059,
 		client.InNamespace(c.lsDeployments.DeploymentsNamespace)); err == nil {
 		for _, item := range lsHealthCheckList.Items {
 			if item.Name != c.lsDeployments.LsHealthCheckName {
-				if err := c.hostClient.Delete(ctx, &item); err != nil {
+				if err := c.hostUncachedClient.Delete(ctx, &item); err != nil {
 					return fmt.Errorf("error deleting lsHealthCheck resource %s: %w", client.ObjectKeyFromObject(&item).String(), err)
 				}
 			}
@@ -84,7 +91,7 @@ func (c *HealthChecker) initializeHealthCheck(ctx context.Context) error {
 	}
 
 	lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
-	if err := read_write_layer.GetHealthCheck(ctx, c.hostClient, c.healthCheckKey(), lsHealthCheck, read_write_layer.R000053); err != nil {
+	if err := read_write_layer.GetHealthCheck(ctx, c.hostUncachedClient, c.healthCheckKey(), lsHealthCheck, read_write_layer.R000053); err != nil {
 		if apierrors.IsNotFound(err) {
 			lsHealthCheck = &lsv1alpha1.LsHealthCheck{
 				ObjectMeta:     metav1.ObjectMeta{Name: c.lsDeployments.LsHealthCheckName, Namespace: c.lsDeployments.DeploymentsNamespace},
@@ -93,7 +100,7 @@ func (c *HealthChecker) initializeHealthCheck(ctx context.Context) error {
 				LastUpdateTime: metav1.Unix(0, 0),
 			}
 
-			if err := c.hostClient.Create(ctx, lsHealthCheck); err != nil {
+			if err := c.hostUncachedClient.Create(ctx, lsHealthCheck); err != nil {
 				return fmt.Errorf("error creating lsHealthCheck resource: %w", err)
 			}
 		} else {
@@ -109,7 +116,7 @@ func (c *HealthChecker) ExecuteHealthCheck(ctx context.Context) {
 
 	// The healthcheck object was created during initialization.
 	lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
-	if err := read_write_layer.GetHealthCheck(ctx, c.hostClient, c.healthCheckKey(), lsHealthCheck, read_write_layer.R000054); err != nil {
+	if err := read_write_layer.GetHealthCheck(ctx, c.hostUncachedClient, c.healthCheckKey(), lsHealthCheck, read_write_layer.R000054); err != nil {
 		log.Error(err, "lsHealthCheck object could not be accessed")
 		return
 	}
@@ -130,7 +137,7 @@ func (c *HealthChecker) ExecuteHealthCheck(ctx context.Context) {
 
 	c.oldStatus = newStatus
 
-	if err := c.hostClient.Update(ctx, lsHealthCheck); err != nil {
+	if err := c.hostUncachedClient.Update(ctx, lsHealthCheck); err != nil {
 		log.Error(err, "error updating lsHealthCheck object")
 	}
 }
@@ -168,7 +175,7 @@ func (c *HealthChecker) checkDeployment(ctx context.Context, namespace string, n
 
 	deploymentKey := client.ObjectKey{Namespace: namespace, Name: name}
 	deployment := &v1.Deployment{}
-	if err := c.hostClient.Get(ctx, deploymentKey, deployment); err != nil {
+	if err := c.hostUncachedClient.Get(ctx, deploymentKey, deployment); err != nil {
 		description := fmt.Sprintf("deployment %s could not be be fetched", deploymentKey.String())
 		if apierrors.IsNotFound(err) {
 			log.Info(description + ":" + err.Error())

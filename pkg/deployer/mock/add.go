@@ -21,7 +21,9 @@ import (
 )
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
-func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config mockv1alpha1.Configuration,
+func AddDeployerToManager(logger logging.Logger,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	lsMgr, hostMgr manager.Manager, config mockv1alpha1.Configuration,
 	callerName string) error {
 	log := logger.WithName("mock")
 
@@ -29,41 +31,39 @@ func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager,
 
 	d, err := NewDeployer(
 		log,
-		lsMgr.GetClient(),
-		hostMgr.GetClient(),
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		config,
 	)
 	if err != nil {
 		return err
 	}
 
-	return deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
-		Name:            Name,
-		Version:         version.Get().String(),
-		Identity:        config.Identity,
-		Type:            Type,
-		Deployer:        d,
-		TargetSelectors: config.TargetSelector,
-	}, 5, false, callerName)
+	return deployerlib.Add(log, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient, lsMgr, hostMgr,
+		deployerlib.DeployerArgs{
+			Name:            Name,
+			Version:         version.Get().String(),
+			Identity:        config.Identity,
+			Type:            Type,
+			Deployer:        d,
+			TargetSelectors: config.TargetSelector,
+		}, 5, false, callerName)
 }
 
 // NewController creates a new simple controller.
 // This method should only be used for testing.
-func NewController(log logging.Logger, kubeClient client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder,
+func NewController(log logging.Logger, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder,
 	config mockv1alpha1.Configuration, callerName string) (reconcile.Reconciler, error) {
 	d, err := NewDeployer(
 		log,
-		kubeClient,
-		kubeClient,
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		config,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return deployerlib.NewController(kubeClient,
-		scheme, eventRecorder,
-		kubeClient, scheme,
+	return deployerlib.NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		scheme, eventRecorder, scheme,
 		deployerlib.DeployerArgs{
 			Type:            Type,
 			Deployer:        d,

@@ -95,7 +95,7 @@ func (o *Operation) getShootClusterName(ctx context.Context, info lsv1alpha1.Dep
 
 	target := &lsv1alpha1.Target{}
 	targetKey := client.ObjectKey{Namespace: o.exec.Namespace, Name: info.Target.Name}
-	if err := o.Client().Get(ctx, targetKey, target); err != nil {
+	if err := o.lsUncachedClient.Get(ctx, targetKey, target); err != nil {
 		msg := fmt.Sprintf("unable to fetch target %s/%s", o.exec.Namespace, info.Target.Name)
 		return "", lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
@@ -104,7 +104,7 @@ func (o *Operation) getShootClusterName(ctx context.Context, info lsv1alpha1.Dep
 		return "", nil
 	}
 
-	targetResolver := secret.New(o.Client())
+	targetResolver := secret.New(o.lsUncachedClient)
 	kubeconfigBytes, err := targetResolver.GetKubeconfigFromTarget(ctx, target)
 	if err != nil {
 		msg := fmt.Sprintf("unable to retrieve kubeconfig from target %s/%s", o.exec.Namespace, info.Target.Name)
@@ -152,7 +152,7 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem)
 		return nil, nil
 	}
 	secret := &corev1.Secret{}
-	if err := o.Client().Get(ctx, item.Status.ExportReference.NamespacedName(), secret); err != nil {
+	if err := o.lsUncachedClient.Get(ctx, item.Status.ExportReference.NamespacedName(), secret); err != nil {
 		return nil, err
 	}
 	var data map[string]interface{}

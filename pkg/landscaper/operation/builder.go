@@ -80,7 +80,6 @@ func (b *Builder) Build(ctx context.Context) (*Operation, error) {
 	}
 
 	return &Operation{
-		client:            b.client,
 		scheme:            b.scheme,
 		eventRecorder:     b.eventRecorder,
 		componentRegistry: b.componentRegistry,

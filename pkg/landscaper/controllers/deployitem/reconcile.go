@@ -30,7 +30,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	defer con.workerCounter.Exit()
 
 	di := &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di, read_write_layer.R000028); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, con.lsUncachedClient, req.NamespacedName, di, read_write_layer.R000028); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -59,7 +59,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			target := &lsv1alpha1.Target{}
 			target.SetName(di.Spec.Target.Name)
 			target.SetNamespace(di.Namespace)
-			if err := con.c.Get(ctx, client.ObjectKeyFromObject(target), target); err != nil {
+			if err := con.lsUncachedClient.Get(ctx, client.ObjectKeyFromObject(target), target); err != nil {
 				if apierrors.IsNotFound(err) {
 					targetNotFound = true
 				}

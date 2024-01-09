@@ -187,10 +187,10 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 	var instTmpls []*lsv1alpha1.InstallationTemplate
 	if len(o.Inst.GetBlueprint().Info.SubinstallationExecutions) != 0 {
 		templateStateHandler := template.KubernetesStateHandler{
-			KubeClient: o.Client(),
+			KubeClient: o.GetUncacheLsClient(),
 			Inst:       o.Inst.GetInstallation(),
 		}
-		targetResolver := genericresolver.New(o.Client())
+		targetResolver := genericresolver.New(o.GetUncacheLsClient())
 		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(

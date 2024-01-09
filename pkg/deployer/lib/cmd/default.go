@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"os"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
@@ -37,6 +39,11 @@ type DefaultOptions struct {
 	HostMgr manager.Manager
 
 	decoder runtime.Decoder
+
+	LsUncachedClient   client.Client
+	LsCachedClient     client.Client
+	HostUncachedClient client.Client
+	HostCachedClient   client.Client
 }
 
 // NewDefaultOptions creates new default options for a deployer.
@@ -108,6 +115,11 @@ func (o *DefaultOptions) Complete() error {
 	}
 
 	lsinstall.Install(o.LsMgr.GetScheme())
+
+	o.LsUncachedClient = o.LsMgr.GetClient()
+	o.LsCachedClient = o.LsMgr.GetClient()
+	o.HostUncachedClient = o.HostMgr.GetClient()
+	o.HostCachedClient = o.HostMgr.GetClient()
 
 	return nil
 }

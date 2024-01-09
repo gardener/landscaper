@@ -7,6 +7,8 @@ package deployers
 import (
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -20,16 +22,18 @@ import (
 )
 
 // AddControllersToManager adds all deployer registration related deployers to the manager.
-func AddControllersToManager(logger logging.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
+func AddControllersToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	logger logging.Logger, lsMgr manager.Manager, config *config.LandscaperConfiguration) error {
+
 	log := logger.Reconciles("environment", "Environment")
 	env := NewEnvironmentController(
 		log,
-		mgr.GetClient(),
-		mgr.GetScheme(),
+		lsUncachedClient,
+		lsMgr.GetScheme(),
 		config,
 	)
 
-	err := builder.ControllerManagedBy(mgr).
+	err := builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.Environment{}).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(env)
@@ -40,12 +44,12 @@ func AddControllersToManager(logger logging.Logger, mgr manager.Manager, config 
 	log = logger.Reconciles("deployerRegistration", "DeployerRegistration")
 	deployerReg := NewDeployerRegistrationController(
 		log,
-		mgr.GetClient(),
-		mgr.GetScheme(),
+		lsUncachedClient,
+		lsMgr.GetScheme(),
 		config,
 	)
 
-	err = builder.ControllerManagedBy(mgr).
+	err = builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployerRegistration{}).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(deployerReg)
@@ -56,12 +60,12 @@ func AddControllersToManager(logger logging.Logger, mgr manager.Manager, config 
 	log = logger.Reconciles("deployerRegistration", "Installation")
 	inst := NewInstallationController(
 		log,
-		mgr.GetClient(),
-		mgr.GetScheme(),
+		lsUncachedClient,
+		lsMgr.GetScheme(),
 		config,
 	)
 
-	err = builder.ControllerManagedBy(mgr).
+	err = builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.Installation{}).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(inst)

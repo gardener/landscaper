@@ -96,7 +96,7 @@ var _ = Describe("Template", func() {
 		lsCtx := &lsv1alpha1.Context{}
 		lsCtx.Name = lsv1alpha1.DefaultContextName
 		lsCtx.Namespace = item.Namespace
-		h, err := helm.New(helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
+		h, err := helm.New(helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
 		Expect(err).ToNot(HaveOccurred())
 		files, crds, _, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -130,7 +130,9 @@ var _ = Describe("Template", func() {
 				NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 			})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{},
+			client := mgr.GetClient()
+			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), client, client, client,
+				client, mgr, mgr, helmv1alpha1.Configuration{},
 				"helmintegration"+utils.GetNextCounter())).To(Succeed())
 
 			timeout.ActivateStandardTimeoutChecker()

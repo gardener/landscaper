@@ -35,7 +35,7 @@ var _ = Describe("Operation", func() {
 
 	BeforeEach(func() {
 		kubeClient = fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithStatusSubresource(&lsv1alpha1.Installation{}).Build()
-		commonOp := operation.NewOperation(kubeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		commonOp := operation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024))
 		instImportsAndBlueprint := installations.NewInstallationImportsAndBlueprint(&lsv1alpha1.Installation{},
 			&blueprints.Blueprint{Info: &lsv1alpha1.Blueprint{}})
 		op = &installations.Operation{

@@ -142,17 +142,24 @@ func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manage
 	ctrlLogger, setupLogger logging.Logger) error {
 	install.Install(lsMgr.GetScheme())
 
+	lsUncachedClient := lsMgr.GetClient()
+	lsCachedClient := lsMgr.GetClient()
+	hostUncachedClient := hostMgr.GetClient()
+	hostCachedClient := hostMgr.GetClient()
+
 	store, err := blueprint.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
 	if err != nil {
 		return fmt.Errorf("unable to setup blueprint store: %w", err)
 	}
 	blueprint.SetStore(store)
 
-	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config, "installations"); err != nil {
+	if err := installationsctrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		ctrlLogger, lsMgr, hostMgr, o.Config, "installations"); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config); err != nil {
+	if err := executionactrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		ctrlLogger, lsMgr, hostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
@@ -196,12 +203,19 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 
 	install.Install(lsMgr.GetScheme())
 
-	if err := contextctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config); err != nil {
+	lsUncachedClient := lsMgr.GetClient()
+	lsCachedClient := lsMgr.GetClient()
+	hostUncachedClient := hostMgr.GetClient()
+	hostCachedClient := hostMgr.GetClient()
+
+	if err := contextctrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		ctrlLogger, lsMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup context controller: %w", err)
 	}
 
 	if !o.Config.DeployerManagement.Disable {
-		if err := deployers.AddControllersToManager(ctrlLogger, lsMgr, o.Config); err != nil {
+		if err := deployers.AddControllersToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+			ctrlLogger, lsMgr, o.Config); err != nil {
 			return fmt.Errorf("unable to setup deployer controllers: %w", err)
 		}
 		if !o.Config.DeployerManagement.Agent.Disable {
@@ -217,7 +231,8 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 					},
 				},
 			)
-			if err := agent.AddToManager(ctx, o.Log, lsMgr, hostMgr, agentConfig, "landscaper-helm"); err != nil {
+			if err := agent.AddToManager(ctx, o.Log, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+				lsMgr, hostMgr, agentConfig, "landscaper-helm"); err != nil {
 				return fmt.Errorf("unable to setup default agent: %w", err)
 			}
 		}
@@ -236,21 +251,22 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 		}
 	}
 
-	if err := deployitemctrl.AddControllerToManager(ctrlLogger,
+	if err := deployitemctrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient, ctrlLogger,
 		lsMgr,
 		o.Config.Controllers.DeployItems,
 		o.Config.DeployItemTimeouts.Pickup); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 
-	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, lsMgr); err != nil {
+	if err := targetsync.AddControllerToManagerForTargetSyncs(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient, ctrlLogger, lsMgr); err != nil {
 		return fmt.Errorf("unable to register target sync controller: %w", err)
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		healthChecker := healthcheck.NewHealthChecker(o.Config.LsDeployments, hostMgr.GetClient())
+		healthChecker := healthcheck.NewHealthChecker(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+			o.Config.LsDeployments)
 		if err := healthChecker.StartPeriodicalHealthCheck(ctx, ctrlLogger); err != nil {
 			return err
 		}
@@ -258,13 +274,14 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 	})
 
 	eg.Go(func() error {
-		lockCleaner := lock.NewLockCleaner(lsMgr.GetClient())
+		lockCleaner := lock.NewLockCleaner(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient)
 		lockCleaner.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
 		return nil
 	})
 
 	eg.Go(func() error {
-		monitor := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostMgr.GetClient())
+		monitor := monitoring.NewMonitor(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+			lsutils.GetCurrentPodNamespace())
 		monitor.StartMonitoring(ctx, ctrlLogger)
 		return nil
 	})

@@ -102,7 +102,7 @@ var _ = Describe("Execution Operation", func() {
 			ComponentVersion(componentVersion).
 			ComponentRegistry(registryAccess).
 			WithContext(lsCtx).
-			Build(ctx)
+			Build(ctx, kClient)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(installationOperation).ToNot(BeNil())
 

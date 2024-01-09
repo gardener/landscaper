@@ -36,7 +36,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		return fatalError, normalError
 	}
 
-	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	exec, err := executions.GetExecutionForInstallation(ctx, c.lsUncachedClient, inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error()), nil
 	}
@@ -63,7 +63,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000085)
+	subInsts, err := installations.ListSubinstallations(ctx, c.lsUncachedClient, inst, inst.Status.SubInstCache, read_write_layer.R000085)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error()), nil
 	}
@@ -95,7 +95,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 
 func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	op := "handleDeletionPhaseTriggerDeleting"
-	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	exec, err := executions.GetExecutionForInstallation(ctx, c.lsCachedClient, inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error())
 	}
@@ -108,7 +108,7 @@ func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, ins
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000088)
+	subInsts, err := installations.ListSubinstallations(ctx, c.lsUncachedClient, inst, inst.Status.SubInstCache, read_write_layer.R000088)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error())
 	}
@@ -130,12 +130,12 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 	op := "handleDeletionPhaseDeleting"
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
-	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	exec, err := executions.GetExecutionForInstallation(ctx, c.lsCachedClient, inst)
 	if err != nil {
 		return false, false, lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error())
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000091)
+	subInsts, err := installations.ListSubinstallations(ctx, c.lsUncachedClient, inst, inst.Status.SubInstCache, read_write_layer.R000091)
 	if err != nil {
 		return false, false, lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error())
 	}
@@ -150,7 +150,7 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 			// touch siblings to speed up processing
 			// a potential improvement is to only touch siblings exporting data for the current installation but this would
 			// result in more complex coding and should only be done if the current approach results in performance problems
-			_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
+			_, siblings, err := installations.GetParentAndSiblings(ctx, c.lsCachedClient, inst)
 			if err != nil {
 				return false, false, lserrors.NewWrappedError(err, op, "GetParentAndSiblings", err.Error())
 			}
@@ -202,7 +202,7 @@ func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Install
 		return nil, nil
 	}
 
-	_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
+	_, siblings, err := installations.GetParentAndSiblings(ctx, c.lsUncachedClient, inst)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			op, "CalculateInstallationContext", err.Error(), lsv1alpha1.ErrorInternalProblem)

@@ -87,15 +87,17 @@ func (args DeployerArgs) Validate() error {
 }
 
 // Add adds a deployer to the given managers using the given args.
-func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, lockingEnabled bool, callerName string) error {
+func Add(log logging.Logger,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, lockingEnabled bool, callerName string) error {
 	args.Default()
 	if err := args.Validate(); err != nil {
 		return err
 	}
-	con := NewController(lsMgr.GetClient(),
+	con := NewController(
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor(args.Name),
-		hostMgr.GetClient(),
 		hostMgr.GetScheme(),
 		args,
 		maxNumberOfWorkers,
@@ -113,16 +115,19 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, 
 
 // controller reconciles deployitems and delegates the business logic to the configured Deployer.
 type controller struct {
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+
 	deployer Deployer
 	info     lsv1alpha1.DeployerInformation
 	// deployerType defines the deployer type the deployer is responsible for.
 	deployerType    lsv1alpha1.DeployItemType
 	targetSelectors []lsv1alpha1.TargetSelector
 
-	lsClient        client.Client
 	lsScheme        *runtime.Scheme
 	lsEventRecorder record.EventRecorder
-	hostClient      client.Client
 	hostScheme      *runtime.Scheme
 
 	workerCounter  *lsutil.WorkerCounter
@@ -132,10 +137,9 @@ type controller struct {
 }
 
 // NewController creates a new generic deployitem controller.
-func NewController(lsClient client.Client,
+func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	lsScheme *runtime.Scheme,
 	lsEventRecorder record.EventRecorder,
-	hostClient client.Client,
 	hostScheme *runtime.Scheme,
 	args DeployerArgs,
 	maxNumberOfWorkers int,
@@ -152,16 +156,18 @@ func NewController(lsClient client.Client,
 			Name:     args.Name,
 			Version:  args.Version,
 		},
-		targetSelectors: args.TargetSelectors,
-		lsClient:        lsClient,
-		lsScheme:        lsScheme,
-		lsEventRecorder: lsEventRecorder,
-		hostClient:      hostClient,
-		hostScheme:      hostScheme,
-		workerCounter:   wc,
-		lockingEnabled:  lockingEnabled,
-		callerName:      callerName,
-		locker:          *lock.NewLocker(lsClient, hostClient, callerName),
+		targetSelectors:    args.TargetSelectors,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		lsScheme:           lsScheme,
+		lsEventRecorder:    lsEventRecorder,
+		hostScheme:         hostScheme,
+		workerCounter:      wc,
+		lockingEnabled:     lockingEnabled,
+		callerName:         callerName,
+		locker:             *lock.NewLocker(lsUncachedClient, hostUncachedClient, callerName),
 	}
 }
 
@@ -172,7 +178,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	defer c.workerCounter.Exit()
 
 	metadata := lsutil.EmptyDeployItemMetadata()
-	if err := read_write_layer.GetMetaData(ctx, c.lsClient, req.NamespacedName, metadata, read_write_layer.R000042); err != nil {
+	if err := read_write_layer.GetMetaData(ctx, c.lsUncachedClient, req.NamespacedName, metadata, read_write_layer.R000042); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
@@ -181,7 +187,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	// this check is only for compatibility reasons
-	rt, responsible, targetNotFound, err := CheckResponsibility(ctx, c.lsClient, metadata, c.deployerType, c.targetSelectors)
+	rt, responsible, targetNotFound, err := CheckResponsibility(ctx, c.lsUncachedClient, metadata, c.deployerType, c.targetSelectors)
 	if err != nil {
 		return lsutil.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	}
@@ -215,7 +221,7 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	di := &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, client.ObjectKeyFromObject(metadata), di, read_write_layer.R000035); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, c.lsUncachedClient, client.ObjectKeyFromObject(metadata), di, read_write_layer.R000035); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
@@ -302,7 +308,7 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 }
 
 func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem) error {
-	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsClient, c.lsEventRecorder)
+	return HandleReconcileResult(ctx, err, oldDeployItem, deployItem, c.lsUncachedClient, c.lsEventRecorder)
 }
 
 func (c *controller) buildResult(ctx context.Context, phase lsv1alpha1.DeployItemPhase, lsError lserrors.LsError) (reconcile.Result, error) {
@@ -329,7 +335,7 @@ func (c *controller) getContext(ctx context.Context, deployItem *lsv1alpha1.Depl
 	}
 
 	lsCtx := &lsv1alpha1.Context{}
-	if err := read_write_layer.GetContext(ctx, c.lsClient, kutil.ObjectKey(contextName, deployItem.Namespace), lsCtx,
+	if err := read_write_layer.GetContext(ctx, c.lsUncachedClient, kutil.ObjectKey(contextName, deployItem.Namespace), lsCtx,
 		read_write_layer.R000043); err != nil {
 		return nil, lserrors.NewWrappedError(err, operation, "GetLandscaperContext", err.Error())
 	}
@@ -394,7 +400,7 @@ func (c *controller) delete(ctx context.Context, deployItem *lsv1alpha1.DeployIt
 }
 
 func (c *controller) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(c.lsClient)
+	return read_write_layer.NewWriter(c.lsUncachedClient)
 }
 
 func (c *controller) initAndUpdateStatus(ctx context.Context, di *lsv1alpha1.DeployItem) error {

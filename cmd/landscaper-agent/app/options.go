@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
@@ -32,6 +34,11 @@ type options struct {
 	config  config.AgentConfiguration
 	LsMgr   manager.Manager
 	HostMgr manager.Manager
+
+	LsUncachedClient   client.Client
+	LsCachedClient     client.Client
+	HostUncachedClient client.Client
+	HostCachedClient   client.Client
 }
 
 func NewOptions() *options {
@@ -99,6 +106,11 @@ func (o *options) Complete() error {
 		return fmt.Errorf("unable to setup manager")
 	}
 	lsinstall.Install(o.LsMgr.GetScheme())
+
+	o.LsUncachedClient = o.LsMgr.GetClient()
+	o.LsCachedClient = o.LsMgr.GetClient()
+	o.HostUncachedClient = o.HostMgr.GetClient()
+	o.HostCachedClient = o.HostMgr.GetClient()
 
 	return nil
 }

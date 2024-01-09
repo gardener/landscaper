@@ -71,7 +71,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 			manifestv1alpha2.ManagedDeployItemLabel: m.DeployItem.Name,
 		},
 		DeletionGroupsDuringUpdate: m.ProviderConfiguration.DeletionGroupsDuringUpdate,
-		InterruptionChecker:        interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient),
+		InterruptionChecker:        interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient),
 	})
 
 	err = applier.Apply(ctx)
@@ -110,7 +110,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
-			InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient),
+			InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient),
 			DeployItem:          m.DeployItem,
 		}
 
@@ -120,7 +120,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 			return lserrors.NewWrappedError(err, currOp, "ReadExportValues", err.Error())
 		}
 
-		if err := deployerlib.CreateOrUpdateExport(ctx, m.Writer(), m.lsKubeClient, m.DeployItem, exports); err != nil {
+		if err := deployerlib.CreateOrUpdateExport(ctx, m.Writer(), m.lsUncachedClient, m.DeployItem, exports); err != nil {
 			return err
 		}
 	}
@@ -147,7 +147,7 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 			Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 			ManagedResources:    managedresources,
 			FailOnMissingObject: true,
-			InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient),
+			InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient),
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
@@ -169,7 +169,7 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 				Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 				ManagedResources:    managedresources,
 				Configuration:       customReadinessCheckConfig,
-				InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient),
+				InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient),
 			}
 			err := customReadinessCheck.CheckResourcesReady()
 			if err != nil {
@@ -234,7 +234,7 @@ func (m *Manifest) deleteManifestsInGroups(ctx context.Context) error {
 		managedResources = append(managedResources, *mr)
 	}
 
-	interruptionChecker := interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsKubeClient)
+	interruptionChecker := interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient)
 
 	err = resourcemanager.DeleteManagedResources(
 		ctx,
@@ -302,5 +302,5 @@ func annotateBeforeDelete(ctx context.Context, mr *managedresource.ManagedResour
 }
 
 func (m *Manifest) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(m.lsKubeClient)
+	return read_write_layer.NewWriter(m.lsUncachedClient)
 }

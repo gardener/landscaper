@@ -115,7 +115,7 @@ var _ = Describe("ReadinessCheck", func() {
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
 			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -189,7 +189,7 @@ var _ = Describe("ReadinessCheck", func() {
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
 			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -262,7 +262,7 @@ var _ = Describe("ReadinessCheck", func() {
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
 			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).ToNot(Succeed())
 		})
@@ -330,7 +330,7 @@ var _ = Describe("ReadinessCheck", func() {
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
 			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -411,7 +411,7 @@ var _ = Describe("ReadinessCheck", func() {
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
 			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -492,7 +492,7 @@ var _ = Describe("ReadinessCheck", func() {
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
 			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -564,7 +564,7 @@ var _ = Describe("ReadinessCheck", func() {
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
 			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 
@@ -636,7 +636,7 @@ var _ = Describe("ReadinessCheck", func() {
 			Expect(state.Create(ctx, deployItem)).To(Succeed())
 			Expect(state.SetInitTime(ctx, deployItem)).To(Succeed())
 
-			m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
+			m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, deployItem, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(m.Reconcile(ctx)).To(Succeed())
 

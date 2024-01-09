@@ -95,7 +95,7 @@ var _ = Describe("Export", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, lsv1alpha1.NewResolvedTarget(target))
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, lsv1alpha1.NewResolvedTarget(target))
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -170,7 +170,7 @@ var _ = Describe("Export", func() {
 		Expect(state.Create(ctx, item)).To(Succeed())
 		Expect(state.SetInitTime(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, lsv1alpha1.NewResolvedTarget(target))
+		m, err := manifest.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, lsv1alpha1.NewResolvedTarget(target))
 		Expect(err).ToNot(HaveOccurred())
 
 		go func() {

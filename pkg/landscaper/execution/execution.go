@@ -31,16 +31,18 @@ import (
 // Operation contains all execution operations
 type Operation struct {
 	*operation.Operation
-	exec           *lsv1alpha1.Execution
-	forceReconcile bool
+	lsUncachedClient client.Client
+	exec             *lsv1alpha1.Execution
+	forceReconcile   bool
 }
 
 // NewOperation creates a new execution operations
-func NewOperation(op *operation.Operation, exec *lsv1alpha1.Execution, forceReconcile bool) *Operation {
+func NewOperation(lsUncachedClient client.Client, op *operation.Operation, exec *lsv1alpha1.Execution, forceReconcile bool) *Operation {
 	return &Operation{
-		Operation:      op,
-		exec:           exec,
-		forceReconcile: forceReconcile,
+		lsUncachedClient: lsUncachedClient,
+		Operation:        op,
+		exec:             exec,
+		forceReconcile:   forceReconcile,
 	}
 }
 
@@ -192,7 +194,7 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 
 	key := kutil.ObjectKeyFromObject(di)
 	di = &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di, read_write_layer.R000034); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, o.lsUncachedClient, key, di, read_write_layer.R000034); err != nil {
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 	}
 
@@ -223,7 +225,7 @@ func (o *Operation) skipUninstall(ctx context.Context, di *lsv1alpha1.DeployItem
 	}
 
 	targetSyncs := &lsv1alpha1.TargetSyncList{}
-	if err := read_write_layer.ListTargetSyncs(ctx, o.Client(), targetSyncs, read_write_layer.R000069,
+	if err := read_write_layer.ListTargetSyncs(ctx, o.lsUncachedClient, targetSyncs, read_write_layer.R000069,
 		client.InNamespace(di.GetNamespace())); err != nil {
 		msg := fmt.Sprintf("unable to retrieve targetsync object for namespace%s", di.GetNamespace())
 		return false, lserrors.NewWrappedError(err, op, msg, err.Error())
@@ -235,7 +237,7 @@ func (o *Operation) skipUninstall(ctx context.Context, di *lsv1alpha1.DeployItem
 	tgs := targetSyncs.Items[0]
 
 	sourceClientProvider := clusters.NewDefaultSourceClientProvider()
-	shootClient, err := sourceClientProvider.GetSourceShootClient(ctx, &tgs, o.Client())
+	shootClient, err := sourceClientProvider.GetSourceShootClient(ctx, &tgs, o.lsUncachedClient)
 	if err != nil {
 		return false, lserrors.NewError(op, "GetSourceShootClient", "failed to get shoot client for skipUninstall")
 	}
@@ -253,7 +255,7 @@ func (o *Operation) removeFinalizerFromDeployItem(ctx context.Context, di *lsv1a
 
 	key := kutil.ObjectKeyFromObject(di)
 	di = &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di, read_write_layer.R000031); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, o.lsUncachedClient, key, di, read_write_layer.R000031); err != nil {
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 	}
 
@@ -320,4 +322,8 @@ func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values in
 		Namespace: raw.Namespace,
 	}
 	return o.UpdateStatus(ctx)
+}
+
+func (o *Operation) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(o.lsUncachedClient)
 }

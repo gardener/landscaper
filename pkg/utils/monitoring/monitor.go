@@ -23,14 +23,20 @@ const (
 )
 
 type Monitor struct {
-	namespace  string
-	hostClient client.Client
+	namespace          string
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
 }
 
-func NewMonitor(namespace string, hostClient client.Client) *Monitor {
+func NewMonitor(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client, namespace string) *Monitor {
 	return &Monitor{
-		namespace:  namespace,
-		hostClient: hostClient,
+		namespace:          namespace,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
 	}
 }
 
@@ -51,7 +57,7 @@ func (m *Monitor) monitorHpas(ctx context.Context) {
 	log.Debug("monitor: starting monitoring hpas")
 
 	hpas := &v2.HorizontalPodAutoscalerList{}
-	if err := m.hostClient.List(ctx, hpas, client.InNamespace(m.namespace)); err != nil {
+	if err := m.hostUncachedClient.List(ctx, hpas, client.InNamespace(m.namespace)); err != nil {
 		log.Error(err, "monitor: failed to list hpas")
 		return
 	}

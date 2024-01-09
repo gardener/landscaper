@@ -366,7 +366,7 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 // Pods that have no finalizer are ignored.
 func (c *Container) getPod(ctx context.Context) (*corev1.Pod, error) {
 	podList := &corev1.PodList{}
-	if err := read_write_layer.ListPods(ctx, c.hostClient, podList, read_write_layer.R000077,
+	if err := read_write_layer.ListPods(ctx, c.hostUncachedClient, podList, read_write_layer.R000077,
 		client.InNamespace(c.Configuration.Namespace), client.MatchingLabels{
 			container.ContainerDeployerDeployItemNameLabel:      c.DeployItem.Name,
 			container.ContainerDeployerDeployItemNamespaceLabel: c.DeployItem.Namespace,

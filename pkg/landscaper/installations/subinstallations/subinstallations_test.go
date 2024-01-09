@@ -61,7 +61,7 @@ var _ = Describe("SubInstallation", func() {
 				Raw:        repoCtxRaw,
 			}
 
-			rootInstOp, err := installations.NewOperationBuilder(instRoot).WithOperation(op).WithContext(lsCtx).Build(ctx)
+			rootInstOp, err := installations.NewOperationBuilder(instRoot).WithOperation(op).WithContext(lsCtx).Build(ctx, fakeClient)
 			Expect(err).ToNot(HaveOccurred())
 			return subinstallations.New(rootInstOp)
 		}

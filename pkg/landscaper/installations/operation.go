@@ -39,6 +39,8 @@ import (
 type Operation struct {
 	*lsoperation.Operation
 
+	lsUncachedClient client.Client
+
 	Inst                            *InstallationImportsAndBlueprint
 	ComponentVersion                model.ComponentVersion
 	ResolvedComponentDescriptorList *model.ComponentVersionList
@@ -53,10 +55,11 @@ type Operation struct {
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation.
 // DEPRECATED: use the builder instead.
-func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *InstallationImportsAndBlueprint, _ *types.UnstructuredTypedObject) (*Operation, error) {
+func NewInstallationOperationFromOperation(ctx context.Context, lsUncachedClient client.Client,
+	op *lsoperation.Operation, inst *InstallationImportsAndBlueprint, _ *types.UnstructuredTypedObject) (*Operation, error) {
 	return NewOperationBuilder(inst).
 		WithOperation(op).
-		Build(ctx)
+		Build(ctx, lsUncachedClient)
 }
 
 func (o *Operation) GetTargetImport(name string) *dataobjects.TargetExtension {
@@ -103,6 +106,10 @@ func (o *Operation) InstallationContextName() string {
 	return o.context.Name
 }
 
+func (o *Operation) GetUncacheLsClient() client.Client {
+	return o.lsUncachedClient
+}
+
 // JSONSchemaValidator returns a jsonschema validator.
 func (o *Operation) JSONSchemaValidator(schema []byte) (*jsonschema.Validator, error) {
 	v := jsonschema.NewValidator(&jsonschema.ReferenceContext{
@@ -124,7 +131,7 @@ func (o *Operation) JSONSchemaValidator(schema []byte) (*jsonschema.Validator, e
 func (o *Operation) ListSubinstallations(ctx context.Context, subInstCache *lsv1alpha1.SubInstCache,
 	readID read_write_layer.ReadID) ([]*lsv1alpha1.Installation, error) {
 
-	return ListSubinstallations(ctx, o.Client(), o.Inst.GetInstallation(), subInstCache, readID)
+	return ListSubinstallations(ctx, o.lsUncachedClient, o.Inst.GetInstallation(), subInstCache, readID)
 }
 
 type FilterInstallationFunc func(inst *lsv1alpha1.Installation) bool
@@ -223,7 +230,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 	dataObjects := map[string]*dataobjects.DataObject{}
 	for _, def := range o.Inst.GetInstallation().Spec.Imports.Data {
 
-		do, _, err := GetDataImport(ctx, o.Client(), o.Context().Name, &o.Inst.InstallationAndImports, def)
+		do, _, err := GetDataImport(ctx, o.lsUncachedClient, o.Context().Name, &o.Inst.InstallationAndImports, def)
 		if err != nil {
 			return nil, err
 		}
@@ -240,7 +247,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 				Namespace: o.Inst.GetInstallation().Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
-			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst, read_write_layer.R000008); err != nil {
+			if err := read_write_layer.GetInstallation(ctx, o.lsUncachedClient, sourceRef.NamespacedName(), inst, read_write_layer.R000008); err != nil {
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
@@ -278,7 +285,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			// It's a target list, skip it
 			continue
 		}
-		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst.GetInstallation(), def)
+		target, err := GetTargetImport(ctx, o.lsUncachedClient, o.Context().Name, o.Inst.GetInstallation(), def)
 		if err != nil {
 			return nil, err
 		}
@@ -295,7 +302,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 				Namespace: o.Inst.GetInstallation().Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
-			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst,
+			if err := read_write_layer.GetInstallation(ctx, o.lsUncachedClient, sourceRef.NamespacedName(), inst,
 				read_write_layer.R000004); err != nil {
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
@@ -328,10 +335,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		)
 		if def.Targets != nil {
 			// List of target names
-			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst.GetInstallation(), def)
+			tl, err = GetTargetListImportByNames(ctx, o.lsUncachedClient, o.Context().Name, o.Inst.GetInstallation(), def)
 		} else if len(def.TargetListReference) != 0 {
 			// TargetListReference is converted to a label selector internally
-			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst.GetInstallation(), map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def, true)
+			tl, err = GetTargetListImportBySelector(ctx, o.lsUncachedClient, o.Context().Name, o.Inst.GetInstallation(), map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def, true)
 		} else {
 			// Invalid target
 			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
@@ -355,7 +362,7 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 					Namespace: o.Inst.GetInstallation().Namespace,
 				}
 				inst := &lsv1alpha1.Installation{}
-				if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst, read_write_layer.R000011); err != nil {
+				if err := read_write_layer.GetInstallation(ctx, o.lsUncachedClient, sourceRef.NamespacedName(), inst, read_write_layer.R000011); err != nil {
 					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 						sourceRef.NamespacedName().String(), def.Name, err)
 				}
@@ -666,8 +673,12 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 func (o *Operation) GetExportForKey(ctx context.Context, key string) (*dataobjects.DataObject, error) {
 	doName := lsv1alpha1helper.GenerateDataObjectName(o.context.Name, key)
 	rawDO := &lsv1alpha1.DataObject{}
-	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.GetInstallation().Namespace), rawDO); err != nil {
+	if err := o.lsUncachedClient.Get(ctx, kutil.ObjectKey(doName, o.Inst.GetInstallation().Namespace), rawDO); err != nil {
 		return nil, err
 	}
 	return dataobjects.NewFromDataObject(rawDO)
+}
+
+func (o *Operation) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(o.lsUncachedClient)
 }

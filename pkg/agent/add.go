@@ -26,7 +26,9 @@ import (
 )
 
 // AddToManager adds the agent to the provided manager.
-func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Manager, hostMgr manager.Manager,
+func AddToManager(ctx context.Context, logger logging.Logger,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	lsMgr manager.Manager, hostMgr manager.Manager,
 	config config.AgentConfiguration, callerName string) error {
 
 	log := logger.WithName("agent").WithValues("targetEnvironment", config.Name)
@@ -44,10 +46,9 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 	if err != nil {
 		return fmt.Errorf("unable to create direct landscaper kubernetes client: %w", err)
 	}
-	agent := New(lsMgr.GetClient(),
+	agent := New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		lsMgr.GetConfig(),
 		lsMgr.GetScheme(),
-		hostMgr.GetClient(),
 		hostMgr.GetConfig(),
 		hostMgr.GetScheme(),
 		config,
@@ -88,7 +89,9 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 			},
 		},
 	}
-	if err := helmctlr.AddDeployerToManager(log, lsMgr, hostMgr, helmConfig, callerName); err != nil {
+	if err := helmctlr.AddDeployerToManager(log,
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		lsMgr, hostMgr, helmConfig, callerName); err != nil {
 		return err
 	}
 

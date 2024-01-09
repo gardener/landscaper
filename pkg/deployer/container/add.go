@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -19,7 +20,10 @@ import (
 )
 
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
-func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manager, config containerv1alpha1.Configuration,
+func AddControllerToManager(logger logging.Logger,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	hostMgr, lsMgr manager.Manager,
+	config containerv1alpha1.Configuration,
 	callerName string) (*GarbageCollector, error) {
 	log := logger.WithName("container")
 
@@ -29,17 +33,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		"numberOfWorkerThreads", config.Controller.Workers,
 		"lockingEnabled", lockingEnabled)
 
-	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
-		Scheme: hostMgr.GetScheme(),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create direct client for the host cluster: %w", err)
-	}
-	containerDeployer, err := NewDeployer(
-		log,
-		lsMgr.GetClient(),
-		hostMgr.GetClient(),
-		directHostClient,
+	containerDeployer, err := NewDeployer(log, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		config)
 	if err != nil {
 		return nil, err
@@ -52,15 +46,17 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 		options.CacheSyncTimeout = config.Controller.CacheSyncTimeout.Duration
 	}
 
-	err = deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
-		Name:            Name,
-		Version:         version.Get().String(),
-		Identity:        config.Identity,
-		Type:            Type,
-		Deployer:        containerDeployer,
-		TargetSelectors: config.TargetSelector,
-		Options:         options,
-	}, config.Controller.Workers, lockingEnabled, callerName)
+	err = deployerlib.Add(log,
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		lsMgr, hostMgr, deployerlib.DeployerArgs{
+			Name:            Name,
+			Version:         version.Get().String(),
+			Identity:        config.Identity,
+			Type:            Type,
+			Deployer:        containerDeployer,
+			TargetSelectors: config.TargetSelector,
+			Options:         options,
+		}, config.Controller.Workers, lockingEnabled, callerName)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +68,7 @@ func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manage
 
 	keepPods := config.DebugOptions != nil && config.DebugOptions.KeepPod
 	gc := NewGarbageCollector(log.WithName("garbageCollector"),
-		lsMgr.GetClient(),
-		hostMgr.GetClient(),
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		config.Identity,
 		config.Namespace,
 		config.GarbageCollection,

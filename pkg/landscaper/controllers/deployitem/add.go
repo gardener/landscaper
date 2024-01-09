@@ -7,6 +7,8 @@ package deployitem
 import (
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -19,7 +21,8 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
-func AddControllerToManager(logger logging.Logger,
+func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	logger logging.Logger,
 	mgr manager.Manager,
 	config config.DeployItemsController,
 	deployItemPickupTimeout *lscore.Duration) error {
@@ -29,9 +32,8 @@ func AddControllerToManager(logger logging.Logger,
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
 		"numberOfWorkerThreads", config.CommonControllerConfig.Workers)
 
-	a, err := NewController(
+	a, err := NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		log,
-		mgr.GetClient(),
 		mgr.GetScheme(),
 		deployItemPickupTimeout,
 		config.CommonControllerConfig.Workers,

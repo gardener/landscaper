@@ -130,7 +130,8 @@ func DeployerManagementTests(f *framework.Framework) {
 
 				By("Adding agent with LandscaperNamespace: " + f.LsNamespace)
 				logger := utils.NewLoggerFromTestLogger(f.TestLog()).WithName("dm-test-agent")
-				err = agent.AddToManager(ctx, logger, mgr, mgr, config.AgentConfiguration{
+				client := mgr.GetClient()
+				err = agent.AddToManager(ctx, logger, client, client, client, client, mgr, mgr, config.AgentConfiguration{
 					Name:                "testenv",
 					Namespace:           state.Namespace,
 					LandscaperNamespace: f.LsNamespace,

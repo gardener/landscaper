@@ -38,31 +38,35 @@ import (
 
 // Agent is the internal landscaper agent that contains all landscaper specific code.
 type Agent struct {
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+
 	config         config.AgentConfiguration
-	lsClient       client.Client
 	lsRestConfig   *rest.Config
 	lsScheme       *runtime.Scheme
-	hostClient     client.Client
 	hostScheme     *runtime.Scheme
 	hostRestConfig *rest.Config
 }
 
 // New creates a new agent.
-func New(lsClient client.Client,
+func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	lsRestConfig *rest.Config,
 	lsScheme *runtime.Scheme,
-	hostClient client.Client,
 	hostRestConfig *rest.Config,
 	hostScheme *runtime.Scheme,
 	config config.AgentConfiguration) *Agent {
 	return &Agent{
-		config:         config,
-		lsClient:       lsClient,
-		lsRestConfig:   lsRestConfig,
-		lsScheme:       lsScheme,
-		hostClient:     hostClient,
-		hostRestConfig: hostRestConfig,
-		hostScheme:     hostScheme,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		config:             config,
+		lsRestConfig:       lsRestConfig,
+		lsScheme:           lsScheme,
+		hostRestConfig:     hostRestConfig,
+		hostScheme:         hostScheme,
 	}
 }
 
@@ -256,7 +260,7 @@ func (a *Agent) Reconcile(ctx context.Context, req reconcile.Request) (reconcile
 		return reconcile.Result{}, nil
 	}
 	logger.Info("Ensuring Landscaper resources")
-	env, err := a.EnsureLandscaperResources(ctx, a.lsClient, a.hostClient)
+	env, err := a.EnsureLandscaperResources(ctx, a.lsUncachedClient, a.hostUncachedClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -266,7 +270,7 @@ func (a *Agent) Reconcile(ctx context.Context, req reconcile.Request) (reconcile
 		return reconcile.Result{}, nil
 	}
 	logger.Info("Ensuring host resources")
-	if _, err := a.EnsureHostResources(ctx, a.hostClient, a.lsClient); err != nil {
+	if _, err := a.EnsureHostResources(ctx, a.hostUncachedClient, a.lsUncachedClient); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil

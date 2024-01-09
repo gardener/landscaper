@@ -31,27 +31,30 @@ import (
 
 // NewDeployer creates a new deployer that reconciles deploy items of type mock.
 func NewDeployer(log logging.Logger,
-	lsKubeClient client.Client,
-	hostKubeClient client.Client,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	config mockv1alpha1.Configuration) (deployerlib.Deployer, error) {
 
 	dep := &deployer{
-		log:        log,
-		lsClient:   lsKubeClient,
-		hostClient: hostKubeClient,
-		config:     config,
-		hooks:      extension.ReconcileExtensionHooks{},
+		log:                log,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		config:             config,
+		hooks:              extension.ReconcileExtensionHooks{},
 	}
 	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
 	return dep, nil
 }
 
 type deployer struct {
-	log        logging.Logger
-	lsClient   client.Client
-	hostClient client.Client
-	config     mockv1alpha1.Configuration
-	hooks      extension.ReconcileExtensionHooks
+	log                logging.Logger
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+	config             mockv1alpha1.Configuration
+	hooks              extension.ReconcileExtensionHooks
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.ResolvedTarget) error {
@@ -104,7 +107,7 @@ func (d *deployer) ensureDeletion(ctx context.Context, item *lsv1alpha1.DeployIt
 	secret.Name = item.Status.ExportReference.Name
 	secret.Namespace = item.Status.ExportReference.Namespace
 
-	if err := d.lsClient.Delete(ctx, secret); err != nil {
+	if err := d.lsUncachedClient.Delete(ctx, secret); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
@@ -126,7 +129,7 @@ func (d *deployer) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem
 		secret.Namespace = item.Status.ExportReference.Namespace
 	}
 
-	_, err := kubernetesutil.CreateOrUpdate(ctx, d.lsClient, secret, func() error {
+	_, err := kubernetesutil.CreateOrUpdate(ctx, d.lsUncachedClient, secret, func() error {
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: *config.Export,
 		}
@@ -179,5 +182,5 @@ func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1al
 }
 
 func (d *deployer) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(d.lsClient)
+	return read_write_layer.NewWriter(d.lsUncachedClient)
 }

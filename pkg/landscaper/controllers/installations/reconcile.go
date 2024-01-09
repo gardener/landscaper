@@ -229,7 +229,7 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 	currentOperation := "handlePhaseInit"
 
 	// cleanup
-	newCleaner := NewDataObjectAndTargetCleaner(inst, c.Client())
+	newCleaner := NewDataObjectAndTargetCleaner(inst, c.lsUncachedClient)
 	if err := newCleaner.CleanupContext(ctx); err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error()), nil
 	}
@@ -349,7 +349,7 @@ func (c *Controller) hash(imps *imports.Imports) (string, error) {
 func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
 	currentOperation := "handlePhaseCleanupOrphaned"
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000018)
+	subInsts, err := installations.ListSubinstallations(ctx, c.lsUncachedClient, inst, inst.Status.SubInstCache, read_write_layer.R000018)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
@@ -394,7 +394,7 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	currentOperation := "handlePhaseObjectsCreated"
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000089)
+	subInsts, err := installations.ListSubinstallations(ctx, c.lsCachedClient, inst, inst.Status.SubInstCache, read_write_layer.R000089)
 	if err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
@@ -413,7 +413,7 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 	if inst.Status.ExecutionReference != nil {
 		key := client.ObjectKey{Namespace: inst.Status.ExecutionReference.Namespace, Name: inst.Status.ExecutionReference.Name}
 		exec := &lsv1alpha1.Execution{}
-		if err := read_write_layer.GetExecution(ctx, c.Client(), key, exec, read_write_layer.R000020); err != nil {
+		if err := read_write_layer.GetExecution(ctx, c.lsUncachedClient, key, exec, read_write_layer.R000020); err != nil {
 			return lserrors.NewWrappedError(err, currentOperation, "GetExecution", err.Error())
 		}
 
@@ -434,7 +434,7 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 
 	allSucceeded = true
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000087)
+	subInsts, err := installations.ListSubinstallations(ctx, c.lsCachedClient, inst, inst.Status.SubInstCache, read_write_layer.R000087)
 	if err != nil {
 		return false, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
@@ -453,7 +453,7 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 	if inst.Status.ExecutionReference != nil {
 		key := client.ObjectKey{Namespace: inst.Status.ExecutionReference.Namespace, Name: inst.Status.ExecutionReference.Name}
 		exec := &lsv1alpha1.Execution{}
-		if err := read_write_layer.GetExecution(ctx, c.Client(), key, exec, read_write_layer.R000024); err != nil {
+		if err := read_write_layer.GetExecution(ctx, c.lsCachedClient, key, exec, read_write_layer.R000024); err != nil {
 			return false, lserrors.NewWrappedError(err, currentOperation, "GetExecution", err.Error())
 		}
 
@@ -502,7 +502,7 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 		return lserrors.NewWrappedError(err, currentOperation, "RenderImportExecutionsForExports", err.Error()), nil
 	}
 
-	dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
+	dataExports, targetExports, err := exports.NewConstructor(c.lsUncachedClient, instOp).Construct(ctx)
 	if err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "ConstructExports", err.Error()), nil
 	}

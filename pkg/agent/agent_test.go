@@ -42,10 +42,9 @@ var _ = Describe("Agent", func() {
 		agConfig.Namespace = state.Namespace
 		agConfig.LandscaperNamespace = state.Namespace
 
-		ag = agent.New(testenv.Client,
+		ag = agent.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			testenv.Env.Config,
 			api.LandscaperScheme,
-			testenv.Client,
 			testenv.Env.Config,
 			api.LandscaperScheme,
 			*agConfig,

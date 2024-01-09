@@ -38,6 +38,8 @@ func (o *options) run(ctx context.Context) error {
 	o.DeployerOptions.Log.Info("Starting Container Deployer", lc.KeyVersion, version.Get().GitVersion)
 
 	gc, err := containerctlr.AddControllerToManager(o.DeployerOptions.Log,
+		o.DeployerOptions.LsUncachedClient, o.DeployerOptions.LsCachedClient,
+		o.DeployerOptions.HostCachedClient, o.DeployerOptions.HostUncachedClient,
 		o.DeployerOptions.HostMgr,
 		o.DeployerOptions.LsMgr,
 		o.Config,

@@ -52,9 +52,12 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 
 // Helm is the internal representation of a DeployItem of Type Helm
 type Helm struct {
-	lsKubeClient   client.Client
-	hostKubeClient client.Client
-	Configuration  helmv1alpha1.Configuration
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+
+	Configuration helmv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.ResolvedTarget
@@ -70,8 +73,7 @@ type Helm struct {
 
 // New creates a new internal helm item
 func New(helmconfig helmv1alpha1.Configuration,
-	lsKubeClient client.Client,
-	hostKubeClient client.Client,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	item *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget,
 	lsCtx *lsv1alpha1.Context,
@@ -101,8 +103,10 @@ func New(helmconfig helmv1alpha1.Configuration,
 	}
 
 	return &Helm{
-		lsKubeClient:          lsKubeClient,
-		hostKubeClient:        hostKubeClient,
+		lsUncachedClient:      lsUncachedClient,
+		lsCachedClient:        lsCachedClient,
+		hostUncachedClient:    hostUncachedClient,
+		hostCachedClient:      hostCachedClient,
 		Configuration:         helmconfig,
 		DeployItem:            item,
 		Target:                rt,
@@ -128,14 +132,14 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 
 	// resolve all registry pull secrets
 	registryPullSecretRefs := lib.GetRegistryPullSecretsFromContext(h.Context)
-	registryPullSecrets, err := kutil.ResolveSecrets(ctx, h.lsKubeClient, registryPullSecretRefs)
+	registryPullSecrets, err := kutil.ResolveSecrets(ctx, h.lsUncachedClient, registryPullSecretRefs)
 	if err != nil {
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "ResolveSecrets", err.Error())
 	}
 
 	ch, err := chartresolver.GetChart(ctx,
 		&h.ProviderConfiguration.Chart,
-		h.lsKubeClient,
+		h.lsUncachedClient,
 		h.Context,
 		registryPullSecrets,
 		h.Configuration.OCI,
@@ -216,7 +220,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.Target.Namespace, h.lsKubeClient)
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.Target.Namespace, h.lsUncachedClient)
 		if err != nil {
 			return nil, nil, nil, err
 		}

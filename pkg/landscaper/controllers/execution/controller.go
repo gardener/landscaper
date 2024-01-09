@@ -29,34 +29,39 @@ import (
 )
 
 // NewController creates a new execution controller that reconcile Execution resources.
-func NewController(logger logging.Logger, lsClient, hostClient client.Client, scheme *runtime.Scheme,
+func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	logger logging.Logger, scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder, maxNumberOfWorker int, lockingEnabled bool, callerName string) (reconcile.Reconciler, error) {
 
 	wc := lsutil.NewWorkerCounter(maxNumberOfWorker)
 
 	return &controller{
-		log:            logger,
-		lsClient:       lsClient,
-		hostClient:     hostClient,
-		scheme:         scheme,
-		eventRecorder:  eventRecorder,
-		workerCounter:  wc,
-		lockingEnabled: lockingEnabled,
-		callerName:     callerName,
-		locker:         *lock.NewLocker(lsClient, hostClient, callerName),
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		log:                logger,
+		scheme:             scheme,
+		eventRecorder:      eventRecorder,
+		workerCounter:      wc,
+		lockingEnabled:     lockingEnabled,
+		callerName:         callerName,
+		locker:             *lock.NewLocker(lsUncachedClient, hostUncachedClient, callerName),
 	}, nil
 }
 
 type controller struct {
-	log            logging.Logger
-	lsClient       client.Client
-	hostClient     client.Client
-	eventRecorder  record.EventRecorder
-	scheme         *runtime.Scheme
-	workerCounter  *lsutil.WorkerCounter
-	lockingEnabled bool
-	callerName     string
-	locker         lock.Locker
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+	log                logging.Logger
+	eventRecorder      record.EventRecorder
+	scheme             *runtime.Scheme
+	workerCounter      *lsutil.WorkerCounter
+	lockingEnabled     bool
+	callerName         string
+	locker             lock.Locker
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -68,7 +73,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if c.lockingEnabled {
 		metadata := lsutil.EmptyExecutionMetadata()
-		if err := c.lsClient.Get(ctx, req.NamespacedName, metadata); err != nil {
+		if err := c.lsUncachedClient.Get(ctx, req.NamespacedName, metadata); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger.Debug(err.Error())
 				return reconcile.Result{}, nil
@@ -91,7 +96,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, c.lsClient, req.NamespacedName, exec, read_write_layer.R000019); err != nil {
+	if err := read_write_layer.GetExecution(ctx, c.lsUncachedClient, req.NamespacedName, exec, read_write_layer.R000019); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -252,7 +257,7 @@ func (c *controller) handleReconcilePhase(ctx context.Context, exec *lsv1alpha1.
 
 func (c *controller) handlePhaseInit(ctx context.Context, exec *lsv1alpha1.Execution, deployItemCache *lsv1alpha1.DeployItemCache) lserrors.LsError {
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(c.lsUncachedClient, operation.NewOperation(c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.UpdateDeployItems(ctx, deployItemCache)
 }
@@ -260,7 +265,7 @@ func (c *controller) handlePhaseInit(ctx context.Context, exec *lsv1alpha1.Execu
 func (c *controller) handlePhaseProgressing(ctx context.Context, exec *lsv1alpha1.Execution) (
 	*execution.DeployItemClassification, lserrors.LsError) {
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(c.lsUncachedClient, operation.NewOperation(c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.TriggerDeployItems(ctx)
 }
@@ -269,7 +274,7 @@ func (c *controller) handlePhaseCompleting(ctx context.Context, exec *lsv1alpha1
 	exec.Status.DeployItemCache.OrphanedDIs = nil
 
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(c.lsUncachedClient, operation.NewOperation(c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.CollectAndUpdateExportsNew(ctx)
 }
@@ -278,7 +283,7 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1
 	op := "handlePhaseInitDelete"
 
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(c.lsUncachedClient, operation.NewOperation(c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	managedItems, err := o.ListManagedDeployItems(ctx, read_write_layer.R000083, exec.Status.DeployItemCache)
 	if err != nil {
@@ -298,7 +303,7 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1
 		}
 
 		if item.DeletionTimestamp.IsZero() {
-			if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000112, item); client.IgnoreNotFound(err) != nil {
+			if err := c.Writer().DeleteDeployItem(ctx, read_write_layer.W000112, item); client.IgnoreNotFound(err) != nil {
 				return lserrors.NewWrappedError(err, "DeleteDeployItem",
 					fmt.Sprintf("unable to delete deploy item %s / %s", item.Namespace, item.Name), err.Error())
 			}
@@ -311,13 +316,13 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, exec *lsv1alpha1
 func (c *controller) handlePhaseDeleting(ctx context.Context, exec *lsv1alpha1.Execution) (
 	*execution.DeployItemClassification, lserrors.LsError) {
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(c.lsUncachedClient, operation.NewOperation(c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.TriggerDeployItemsForDelete(ctx)
 }
 
 func (c *controller) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(c.lsClient)
+	return read_write_layer.NewWriter(c.lsUncachedClient)
 }
 
 func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alpha1.Execution) error {
@@ -329,7 +334,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 	op := "handleInterruptOperation"
 
 	forceReconcile := false
-	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
+	o := execution.NewOperation(c.lsUncachedClient, operation.NewOperation(c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	managedItems, err := o.ListManagedDeployItems(ctx, read_write_layer.R000058, nil)
 	if err != nil {
@@ -349,7 +354,7 @@ func (c *controller) handleInterruptOperation(ctx context.Context, exec *lsv1alp
 				"InterruptOperation",
 				"operation was interrupted"))
 
-			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000101, item); err != nil {
+			if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000101, item); err != nil {
 				return lserrors.NewWrappedError(err, "UpdateDeployItemStatus",
 					fmt.Sprintf("unable to update deploy item %s / %s for interrupt", item.Namespace, item.Name), err.Error())
 			}
@@ -382,7 +387,7 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 		if exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Deleting {
 			// recheck if already deleted
 			execRecheck := &lsv1alpha1.Execution{}
-			errRecheck := read_write_layer.GetExecution(ctx, c.lsClient, kutil.ObjectKey(exec.Name, exec.Namespace),
+			errRecheck := read_write_layer.GetExecution(ctx, c.lsUncachedClient, kutil.ObjectKey(exec.Name, exec.Namespace),
 				execRecheck, read_write_layer.R000021)
 			if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
 				return nil

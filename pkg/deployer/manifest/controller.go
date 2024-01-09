@@ -31,31 +31,34 @@ const (
 
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.
 func NewDeployer(log logging.Logger,
-	lsKubeClient client.Client,
-	hostKubeClient client.Client,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	config manifestv1alpha2.Configuration) (deployerlib.Deployer, error) {
 
 	dep := &deployer{
-		log:        log,
-		lsClient:   lsKubeClient,
-		hostClient: hostKubeClient,
-		config:     config,
-		hooks:      extension.ReconcileExtensionHooks{},
+		log:                log,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		config:             config,
+		hooks:              extension.ReconcileExtensionHooks{},
 	}
 	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
 	return dep, nil
 }
 
 type deployer struct {
-	log        logging.Logger
-	lsClient   client.Client
-	hostClient client.Client
-	config     manifestv1alpha2.Configuration
-	hooks      extension.ReconcileExtensionHooks
+	log                logging.Logger
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+	config             manifestv1alpha2.Configuration
+	hooks              extension.ReconcileExtensionHooks
 }
 
 func (d *deployer) Reconcile(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
-	manifest, err := New(d.lsClient, d.hostClient, &d.config, di, rt)
+	manifest, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, &d.config, di, rt)
 	if err != nil {
 		return err
 	}
@@ -63,7 +66,7 @@ func (d *deployer) Reconcile(ctx context.Context, _ *lsv1alpha1.Context, di *lsv
 }
 
 func (d deployer) Delete(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
-	manifest, err := New(d.lsClient, d.hostClient, &d.config, di, rt)
+	manifest, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, &d.config, di, rt)
 	if err != nil {
 		return err
 	}
@@ -80,7 +83,7 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 }
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
-	manifest, err := New(d.lsClient, d.hostClient, &d.config, di, nil)
+	manifest, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, &d.config, di, nil)
 	if err != nil {
 		return nil, err
 	}

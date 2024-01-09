@@ -54,15 +54,16 @@ var _ = Describe("Helm Deployer", func() {
 			logging.Discard(),
 			testenv.Client,
 			testenv.Client,
+			testenv.Client,
+			testenv.Client,
 			helmv1alpha1.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl := deployerlib.NewController(
-			testenv.Client,
+			testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			api.LandscaperScheme,
 			record.NewFakeRecorder(1024),
-			testenv.Client,
 			api.LandscaperScheme,
 			deployerlib.DeployerArgs{
 				Type:     helmctrl.Type,
