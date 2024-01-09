@@ -68,7 +68,7 @@ var _ = Describe("Context", func() {
 		lCtx := instOp.Context()
 
 		Expect(lCtx.Parent).To(BeNil())
-		Expect(lCtx.Siblings).To(HaveLen(0))
+		Expect(lCtx.GetSiblings(ctx, op.Client())).To(HaveLen(0))
 	})
 
 	It("should show no parent and one sibling for the test2/a installation", func() {
@@ -82,7 +82,7 @@ var _ = Describe("Context", func() {
 		lCtx := instOp.Context()
 
 		Expect(lCtx.Parent).To(BeNil())
-		Expect(lCtx.Siblings).To(HaveLen(1))
+		Expect(lCtx.GetSiblings(ctx, op.Client())).To(HaveLen(1))
 	})
 
 	It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Context", func() {
 		lCtx := instOp.Context()
 
 		Expect(lCtx.Parent).ToNot(BeNil())
-		Expect(lCtx.Siblings).To(HaveLen(3))
+		Expect(lCtx.GetSiblings(ctx, op.Client())).To(HaveLen(3))
 
 		Expect(lCtx.Parent.GetInstallation().Name).To(Equal("root"))
 	})
@@ -113,7 +113,9 @@ var _ = Describe("Context", func() {
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, &defaultRepoContext)
 		Expect(err).ToNot(HaveOccurred())
-		repoContextOfOtherRoot := instOp.Context().Siblings[0].GetInstallation().Spec.ComponentDescriptor.Reference.RepositoryContext
+		siblings, err := instOp.Context().GetSiblings(ctx, op.Client())
+		Expect(err).ToNot(HaveOccurred())
+		repoContextOfOtherRoot := siblings[0].GetInstallation().Spec.ComponentDescriptor.Reference.RepositoryContext
 		Expect(repoContextOfOtherRoot).ToNot(BeNil())
 	})
 

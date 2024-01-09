@@ -3,6 +3,8 @@ package read_write_layer
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
 
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
@@ -158,12 +160,25 @@ func get(ctx context.Context, c client.Reader, key client.ObjectKey, object clie
 		keyFetchedResource, fmt.Sprintf("%s/%s", key.Namespace, key.Name),
 		lc.KeyReadID, readID)
 
-	err := c.Get(ctx, key, object)
-	if err != nil {
-		log = log.WithValues(lc.KeyError, err.Error())
+	debugEnabled := log.Enabled(logging.DEBUG)
+	var start time.Time
+	if debugEnabled {
+		start = time.Now()
 	}
 
-	log.Debug("ReadLayer get: " + msg)
+	err := c.Get(ctx, key, object)
+
+	if debugEnabled {
+		if err != nil {
+			log = log.WithValues(lc.KeyError, err.Error())
+		}
+
+		duration := time.Since(start).Milliseconds()
+		if duration > 1000 {
+			msg = msg + " - duration: " + strconv.FormatInt(duration, 10)
+		}
+		log.Debug("ReadLayer get: " + msg)
+	}
 
 	return err
 }
@@ -171,12 +186,25 @@ func get(ctx context.Context, c client.Reader, key client.ObjectKey, object clie
 func list(ctx context.Context, c client.Reader, objects client.ObjectList, readID ReadID, msg string, opts ...client.ListOption) error {
 	log, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyReadID, readID)
 
-	err := c.List(ctx, objects, opts...)
-	if err != nil {
-		log = log.WithValues(lc.KeyError, err.Error())
+	debugEnabled := log.Enabled(logging.DEBUG)
+	var start time.Time
+	if debugEnabled {
+		start = time.Now()
 	}
 
-	log.Debug("ReadLayer list: " + msg)
+	err := c.List(ctx, objects, opts...)
+
+	if debugEnabled {
+		if err != nil {
+			log = log.WithValues(lc.KeyError, err.Error())
+		}
+
+		duration := time.Since(start).Milliseconds()
+		if duration > 1000 {
+			msg = msg + " - duration: " + strconv.FormatInt(duration, 10)
+		}
+		log.Debug("ReadLayer list: " + msg)
+	}
 
 	return err
 }

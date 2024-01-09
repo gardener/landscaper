@@ -1069,6 +1069,20 @@ AutomaticReconcile
 <p>AutomaticReconcile allows to configure automatically repeated reconciliations.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>optimization</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Optimization">
+Optimization
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optimization contains settings to improve execution performance.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1207,6 +1221,20 @@ map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 It is expected to contain a key for every blueprint-defined data export.
 Missing keys will be defaulted to their respective data export.
 Example: namespace: (( blueprint.exports.namespace ))</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>optimization</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Optimization">
+Optimization
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optimization contains settings to improve execution performance.</p>
 </td>
 </tr>
 </tbody>
@@ -4629,6 +4657,20 @@ AutomaticReconcile
 <p>AutomaticReconcile allows to configure automatically repeated reconciliations.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>optimization</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Optimization">
+Optimization
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optimization contains settings to improve execution performance.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus
@@ -5148,6 +5190,46 @@ the shoot cluster resources</p>
 (<code>string</code> alias)</p></h3>
 <p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.Optimization">Optimization
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplate">InstallationTemplate</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>)
+</p>
+<p>
+<p>Optimization contains settings to improve execution preformance</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>hasNoSiblingImports</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>hasNoSiblingExports</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.RemoteBlueprintReference">RemoteBlueprintReference
 </h3>
 <p>
