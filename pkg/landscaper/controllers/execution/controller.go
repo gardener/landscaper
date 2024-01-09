@@ -266,7 +266,10 @@ func (c *controller) handlePhaseProgressing(ctx context.Context, exec *lsv1alpha
 }
 
 func (c *controller) handlePhaseCompleting(ctx context.Context, exec *lsv1alpha1.Execution) lserrors.LsError {
-	exec.Status.DeployItemCache.OrphanedDIs = nil
+
+	if exec.Status.DeployItemCache != nil {
+		exec.Status.DeployItemCache.OrphanedDIs = nil
+	}
 
 	forceReconcile := false
 	o := execution.NewOperation(operation.NewOperation(c.lsClient, c.scheme, c.eventRecorder), exec, forceReconcile)
