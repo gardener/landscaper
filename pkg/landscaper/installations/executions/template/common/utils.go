@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
 	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
@@ -108,7 +107,8 @@ func ConvertMapCdToCompDescV2(mapCd map[string]interface{}) (*types.ComponentDes
 			return nil, err
 		}
 	case SCHEMA_VERSION_V2:
-		if err := codec.Decode(data, &descriptor); err != nil {
+		err = runtime.DefaultYAMLEncoding.Unmarshal(data, &descriptor)
+		if err != nil {
 			return nil, err
 		}
 	default:
