@@ -47,7 +47,7 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) (*
 		item.DeployItem.Namespace = o.exec.Namespace
 	}
 
-	if _, err := o.Writer().CreateOrUpdateDeployItem(ctx, read_write_layer.W000036, item.DeployItem, func() error {
+	if _, err := o.WriterToLsUncachedClient().CreateOrUpdateDeployItem(ctx, read_write_layer.W000036, item.DeployItem, func() error {
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
 		item.DeployItem.Spec.Context = o.exec.Spec.Context
@@ -71,7 +71,7 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) (*
 	ref.Reference.ObservedGeneration = item.DeployItem.Generation
 
 	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
-	if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000034, o.exec); err != nil {
+	if err := o.WriterToLsUncachedClient().UpdateExecutionStatus(ctx, read_write_layer.W000034, o.exec); err != nil {
 		msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
 		return nil, lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
@@ -95,7 +95,7 @@ func (o *Operation) getShootClusterName(ctx context.Context, info lsv1alpha1.Dep
 
 	target := &lsv1alpha1.Target{}
 	targetKey := client.ObjectKey{Namespace: o.exec.Namespace, Name: info.Target.Name}
-	if err := o.Client().Get(ctx, targetKey, target); err != nil {
+	if err := o.LsUncachedClient().Get(ctx, targetKey, target); err != nil {
 		msg := fmt.Sprintf("unable to fetch target %s/%s", o.exec.Namespace, info.Target.Name)
 		return "", lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
@@ -104,7 +104,7 @@ func (o *Operation) getShootClusterName(ctx context.Context, info lsv1alpha1.Dep
 		return "", nil
 	}
 
-	targetResolver := secret.New(o.Client())
+	targetResolver := secret.New(o.LsUncachedClient())
 	kubeconfigBytes, err := targetResolver.GetKubeconfigFromTarget(ctx, target)
 	if err != nil {
 		msg := fmt.Sprintf("unable to retrieve kubeconfig from target %s/%s", o.exec.Namespace, info.Target.Name)
@@ -152,7 +152,7 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem)
 		return nil, nil
 	}
 	secret := &corev1.Secret{}
-	if err := o.Client().Get(ctx, item.Status.ExportReference.NamespacedName(), secret); err != nil {
+	if err := o.LsUncachedClient().Get(ctx, item.Status.ExportReference.NamespacedName(), secret); err != nil {
 		return nil, err
 	}
 	var data map[string]interface{}

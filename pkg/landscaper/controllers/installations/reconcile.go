@@ -55,7 +55,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		inst.Status.ObservedGeneration = inst.GetGeneration()
 
 		// do not use setInstallationPhaseAndUpdate because jobIDFinished should not be set here
-		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000115, inst); err != nil {
+		if err := c.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, read_write_layer.W000115, inst); err != nil {
 			return lserrors.NewWrappedError(err, op, "InitialPhaseSetting", err.Error())
 		}
 	}
@@ -231,7 +231,7 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 	currentOperation := "handlePhaseInit"
 
 	// cleanup
-	newCleaner := NewDataObjectAndTargetCleaner(inst, c.Client())
+	newCleaner := NewDataObjectAndTargetCleaner(inst, c.LsUncachedClient())
 	if err := newCleaner.CleanupContext(ctx); err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error()), nil
 	}
@@ -351,7 +351,7 @@ func (c *Controller) hash(imps *imports.Imports) (string, error) {
 func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
 	currentOperation := "handlePhaseCleanupOrphaned"
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000018)
+	subInsts, err := installations.ListSubinstallations(ctx, c.LsUncachedClient(), inst, inst.Status.SubInstCache, read_write_layer.R000018)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
@@ -383,7 +383,7 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 		if next.Status.JobID != inst.Status.JobID {
 			next.Status.JobID = inst.Status.JobID
 			inst.Status.TransitionTimes = lsutil.NewTransitionTimes()
-			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000076, next); err != nil {
+			if err = c.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, read_write_layer.W000076, next); err != nil {
 				return nil, lserrors.NewWrappedError(err, currentOperation, "UpdateInstallationStatus", err.Error())
 			}
 		}
@@ -396,7 +396,7 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	currentOperation := "handlePhaseObjectsCreated"
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000089)
+	subInsts, err := installations.ListSubinstallations(ctx, c.LsUncachedClient(), inst, inst.Status.SubInstCache, read_write_layer.R000089)
 	if err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
@@ -406,7 +406,7 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 		if next.Status.JobID != inst.Status.JobID {
 			next.Status.JobID = inst.Status.JobID
 			next.Status.TransitionTimes = lsutil.NewTransitionTimes()
-			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000083, next); err != nil {
+			if err = c.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, read_write_layer.W000083, next); err != nil {
 				return lserrors.NewWrappedError(err, currentOperation, "UpdateInstallationStatus", err.Error())
 			}
 		}
@@ -415,14 +415,14 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 	if inst.Status.ExecutionReference != nil {
 		key := client.ObjectKey{Namespace: inst.Status.ExecutionReference.Namespace, Name: inst.Status.ExecutionReference.Name}
 		exec := &lsv1alpha1.Execution{}
-		if err := read_write_layer.GetExecution(ctx, c.Client(), key, exec, read_write_layer.R000020); err != nil {
+		if err := read_write_layer.GetExecution(ctx, c.LsUncachedClient(), key, exec, read_write_layer.R000020); err != nil {
 			return lserrors.NewWrappedError(err, currentOperation, "GetExecution", err.Error())
 		}
 
 		if exec.Status.JobID != inst.Status.JobID {
 			exec.Status.JobID = inst.Status.JobID
 			exec.Status.TransitionTimes = lsutil.NewTransitionTimes()
-			if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000084, exec); err != nil {
+			if err := c.WriterToLsUncachedClient().UpdateExecutionStatus(ctx, read_write_layer.W000084, exec); err != nil {
 				return lserrors.NewWrappedError(err, currentOperation, "UpdateExecutionStatus", err.Error())
 			}
 		}
@@ -436,7 +436,7 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 
 	allSucceeded = true
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000087)
+	subInsts, err := installations.ListSubinstallations(ctx, c.LsUncachedClient(), inst, inst.Status.SubInstCache, read_write_layer.R000087)
 	if err != nil {
 		return false, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
@@ -455,7 +455,7 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 	if inst.Status.ExecutionReference != nil {
 		key := client.ObjectKey{Namespace: inst.Status.ExecutionReference.Namespace, Name: inst.Status.ExecutionReference.Name}
 		exec := &lsv1alpha1.Execution{}
-		if err := read_write_layer.GetExecution(ctx, c.Client(), key, exec, read_write_layer.R000024); err != nil {
+		if err := read_write_layer.GetExecution(ctx, c.LsUncachedClient(), key, exec, read_write_layer.R000024); err != nil {
 			return false, lserrors.NewWrappedError(err, currentOperation, "GetExecution", err.Error())
 		}
 
@@ -558,7 +558,7 @@ func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *lsv1al
 		logger.Debug("remove reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
 		delete(inst.Annotations, lsv1alpha1.ReconcileReasonAnnotation)
-		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst); client.IgnoreNotFound(err) != nil {
+		if err := c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000009, inst); client.IgnoreNotFound(err) != nil {
 			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateInstallation", err.Error())
 		}
 	}

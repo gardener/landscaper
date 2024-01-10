@@ -7,6 +7,8 @@ package execution
 import (
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -20,7 +22,8 @@ import (
 )
 
 // AddControllerToManager adds the execution controller to the controller manager
-func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config *config.LandscaperConfiguration) error {
+func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	logger logging.Logger, lsMgr, hostMgr manager.Manager, config *config.LandscaperConfiguration) error {
 	log := logger.Reconciles("execution", "Execution")
 
 	lockingEnabled := lock.IsLockingEnabledForMainControllers(config)
@@ -30,9 +33,8 @@ func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manage
 		"lockingEnabled", lockingEnabled)
 
 	a, err := NewController(
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		log,
-		lsMgr.GetClient(),
-		hostMgr.GetClient(),
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
 		config.Controllers.Executions.CommonControllerConfig.Workers,

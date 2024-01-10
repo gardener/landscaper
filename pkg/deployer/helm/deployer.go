@@ -44,9 +44,8 @@ const (
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.
-func NewDeployer(log logging.Logger,
-	lsKubeClient client.Client,
-	hostKubeClient client.Client,
+func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	log logging.Logger,
 	config helmv1alpha1.Configuration) (deployerlib.Deployer, error) {
 
 	var sharedCache cache.Cache
@@ -61,21 +60,26 @@ func NewDeployer(log logging.Logger,
 	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
-		log:         log,
-		lsClient:    lsKubeClient,
-		hostClient:  hostKubeClient,
-		config:      config,
-		sharedCache: sharedCache,
-		hooks:       extension.ReconcileExtensionHooks{},
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		log:                log,
+		config:             config,
+		sharedCache:        sharedCache,
+		hooks:              extension.ReconcileExtensionHooks{},
 	}
 	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
 	return dep, nil
 }
 
 type deployer struct {
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+
 	log         logging.Logger
-	lsClient    client.Client
-	hostClient  client.Client
 	config      helmv1alpha1.Configuration
 	sharedCache cache.Cache
 	hooks       extension.ReconcileExtensionHooks
@@ -86,7 +90,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 		return err
 	}
 
-	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
+	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "newRootLogger", err.Error())
 		return err
@@ -122,7 +126,7 @@ func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *ls
 		return err
 	}
 
-	helm, err := New(d.config, d.lsClient, d.hostClient, di, rt, lsCtx, d.sharedCache)
+	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, rt, lsCtx, d.sharedCache)
 	if err != nil {
 		return err
 	}
@@ -145,7 +149,7 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
 	// todo: directly parse deploy items
-	helm, err := New(d.config, d.lsClient, d.hostClient, di, nil, nil, d.sharedCache)
+	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, nil, nil, d.sharedCache)
 	if err != nil {
 		return nil, err
 	}

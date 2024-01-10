@@ -160,7 +160,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 
 		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteIgnoreSuccessors, "true")
 
-		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000015, subInst); err != nil {
+		if err := o.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000015, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -168,7 +168,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 			return nil, o.NewError(err, "UpdateInstallationDeleteIgnoreSuccessors", err.Error())
 		}
 
-		if err := o.Writer().DeleteInstallation(ctx, read_write_layer.W000021, subInst); err != nil {
+		if err := o.WriterToLsUncachedClient().DeleteInstallation(ctx, read_write_layer.W000021, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -187,10 +187,10 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 	var instTmpls []*lsv1alpha1.InstallationTemplate
 	if len(o.Inst.GetBlueprint().Info.SubinstallationExecutions) != 0 {
 		templateStateHandler := template.KubernetesStateHandler{
-			KubeClient: o.Client(),
+			KubeClient: o.LsUncachedClient(),
 			Inst:       o.Inst.GetInstallation(),
 		}
-		targetResolver := genericresolver.New(o.Client())
+		targetResolver := genericresolver.New(o.LsUncachedClient())
 		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
@@ -280,7 +280,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		return nil, err
 	}
 
-	_, err = o.Writer().CreateOrUpdateInstallation(ctx, read_write_layer.W000001, subInst, func() error {
+	_, err = o.WriterToLsUncachedClient().CreateOrUpdateInstallation(ctx, read_write_layer.W000001, subInst, func() error {
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
 		}

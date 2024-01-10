@@ -24,14 +24,15 @@ import (
 )
 
 // NewDefaulterController creates a new context controller that reconciles the default context object in the namespaces.
-func NewDefaulterController(logger logging.Logger,
-	kubeClient client.Client,
+func NewDefaulterController(lsUncachedClient, lsCachedClient client.Client,
+	logger logging.Logger,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
 	config config.ContextControllerConfig) (reconcile.Reconciler, error) {
 	return &defaulterController{
+		lsUncachedClient:  lsUncachedClient,
+		lsCachedClient:    lsCachedClient,
 		log:               logger,
-		client:            kubeClient,
 		scheme:            scheme,
 		eventRecorder:     eventRecorder,
 		config:            config,
@@ -40,8 +41,9 @@ func NewDefaulterController(logger logging.Logger,
 }
 
 type defaulterController struct {
+	lsUncachedClient  client.Client
+	lsCachedClient    client.Client
 	log               logging.Logger
-	client            client.Client
 	eventRecorder     record.EventRecorder
 	scheme            *runtime.Scheme
 	config            config.ContextControllerConfig
@@ -57,7 +59,7 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 	ctx = logging.NewContext(ctx, logger)
 
 	ns := &corev1.Namespace{}
-	if err := c.client.Get(ctx, req.NamespacedName, ns); err != nil {
+	if err := c.lsUncachedClient.Get(ctx, req.NamespacedName, ns); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -90,5 +92,5 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 }
 
 func (c *defaulterController) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(c.client)
+	return read_write_layer.NewWriter(c.lsUncachedClient)
 }

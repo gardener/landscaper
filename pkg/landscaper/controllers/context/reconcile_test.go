@@ -39,8 +39,8 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl, err = contextctrl.NewDefaulterController(
+			testenv.Client, testenv.Client,
 			logging.Discard(),
-			testenv.Client,
 			api.Scheme,
 			record.NewFakeRecorder(1024),
 			config.ContextControllerConfig{
@@ -93,8 +93,8 @@ var _ = Describe("Reconcile", func() {
 		ctx := context.Background()
 
 		ctrl, err := contextctrl.NewDefaulterController(
+			testenv.Client, testenv.Client,
 			logging.Discard(),
-			testenv.Client,
 			api.Scheme,
 			record.NewFakeRecorder(1024),
 			config.ContextControllerConfig{

@@ -98,7 +98,7 @@ var _ = Describe("Execution Operation", func() {
 		})
 
 		installationOperation, err := installations.NewOperationBuilder(internalInst).
-			Client(kClient).
+			WithLsUncachedClient(kClient).
 			ComponentVersion(componentVersion).
 			ComponentRegistry(registryAccess).
 			WithContext(lsCtx).

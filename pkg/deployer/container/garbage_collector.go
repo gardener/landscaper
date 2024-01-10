@@ -31,33 +31,37 @@ import (
 )
 
 type GarbageCollector struct {
-	log           logging.Logger
-	deployerID    string
-	hostNamespace string
-	config        containerv1alpha1.GarbageCollection
-	lsClient      client.Client
-	hostClient    client.Client
-	requeueAfter  time.Duration
-	keepPods      bool
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+	log                logging.Logger
+	deployerID         string
+	hostNamespace      string
+	config             containerv1alpha1.GarbageCollection
+	requeueAfter       time.Duration
+	keepPods           bool
 }
 
 // NewGarbageCollector creates a new Garbage collector that cleanups leaked service accounts, rbac rules and pods.
-func NewGarbageCollector(log logging.Logger,
-	lsClient,
-	hostClient client.Client,
+func NewGarbageCollector(
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	log logging.Logger,
 	deployerID,
 	hostNamespace string,
 	config containerv1alpha1.GarbageCollection,
 	keepPods bool) *GarbageCollector {
 	return &GarbageCollector{
-		log:           log,
-		deployerID:    deployerID,
-		hostNamespace: hostNamespace,
-		config:        config,
-		lsClient:      lsClient,
-		hostClient:    hostClient,
-		requeueAfter:  time.Duration(config.RequeueTimeSeconds) * time.Second,
-		keepPods:      keepPods,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		log:                log,
+		deployerID:         deployerID,
+		hostNamespace:      hostNamespace,
+		config:             config,
+		requeueAfter:       time.Duration(config.RequeueTimeSeconds) * time.Second,
+		keepPods:           keepPods,
 	}
 }
 
@@ -82,7 +86,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	// cleanup service accounts
 	saList := &corev1.ServiceAccountList{}
-	if err := gc.hostClient.List(ctx, saList, listOptions...); err != nil {
+	if err := gc.hostUncachedClient.List(ctx, saList, listOptions...); err != nil {
 		logger.Error(err, err.Error())
 	}
 
@@ -95,7 +99,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	// cleanup roles
 	roleList := &rbacv1.RoleList{}
-	if err := gc.hostClient.List(ctx, roleList, listOptions...); err != nil {
+	if err := gc.hostUncachedClient.List(ctx, roleList, listOptions...); err != nil {
 		logger.Error(err, err.Error())
 	}
 
@@ -108,7 +112,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	// cleanup rolesbidings
 	roleBindingList := &rbacv1.RoleBindingList{}
-	if err := gc.hostClient.List(ctx, roleBindingList, listOptions...); err != nil {
+	if err := gc.hostUncachedClient.List(ctx, roleBindingList, listOptions...); err != nil {
 		logger.Error(err, err.Error())
 	}
 
@@ -121,7 +125,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 
 	// cleanup secrets
 	secretList := &corev1.SecretList{}
-	if err := read_write_layer.ListSecrets(ctx, gc.hostClient, secretList, read_write_layer.R000074, listOptions...); err != nil {
+	if err := read_write_layer.ListSecrets(ctx, gc.hostUncachedClient, secretList, read_write_layer.R000074, listOptions...); err != nil {
 		logger.Error(err, err.Error())
 	}
 
@@ -135,7 +139,7 @@ func (gc *GarbageCollector) Cleanup(ctx context.Context) {
 	if !gc.keepPods {
 		// cleanup pods
 		podList := &corev1.PodList{}
-		if err := read_write_layer.ListPods(ctx, gc.hostClient, podList, read_write_layer.R000075, listOptions...); err != nil {
+		if err := read_write_layer.ListPods(ctx, gc.hostUncachedClient, podList, read_write_layer.R000075, listOptions...); err != nil {
 			logger.Error(err, err.Error())
 		}
 
@@ -160,7 +164,7 @@ func (gc *GarbageCollector) cleanupRBACResources(ctx context.Context, obj client
 	di := &lsv1alpha1.DeployItem{}
 	di.Name = obj.GetLabels()[container.ContainerDeployerDeployItemNameLabel]
 	di.Namespace = obj.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]
-	if err := CleanupRBAC(ctx, di, gc.hostClient, obj.GetNamespace()); err != nil {
+	if err := CleanupRBAC(ctx, di, gc.hostUncachedClient, obj.GetNamespace()); err != nil {
 		return err
 	}
 	return nil
@@ -176,7 +180,7 @@ func (gc *GarbageCollector) cleanupSecret(ctx context.Context, obj *corev1.Secre
 		return nil
 	}
 
-	if err := gc.hostClient.Delete(ctx, obj); err != nil {
+	if err := gc.hostUncachedClient.Delete(ctx, obj); err != nil {
 		return err
 	}
 	return nil
@@ -197,7 +201,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, obj *corev1.Pod) err
 	if shouldGC {
 		// always garbage collect pods that do not have a corresponding deployitem anymore
 		logger.Debug("Garbage collected", lc.KeyReason, "deploy item does not exist anymore")
-		if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
+		if err := CleanupPod(ctx, gc.hostUncachedClient, obj, false); err != nil {
 			return fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 		}
 		return nil
@@ -205,7 +209,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, obj *corev1.Pod) err
 
 	if !controllerutil.ContainsFinalizer(obj, container.ContainerDeployerFinalizer) {
 		logger.Debug("Garbage collected", lc.KeyReason, "pod has no finalizer")
-		err := gc.hostClient.Delete(ctx, obj)
+		err := gc.hostUncachedClient.Delete(ctx, obj)
 		return err
 	}
 
@@ -218,7 +222,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, obj *corev1.Pod) err
 		return nil
 	}
 
-	if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
+	if err := CleanupPod(ctx, gc.hostUncachedClient, obj, false); err != nil {
 		return fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 	}
 	logger.Debug("Garbage collected")
@@ -233,7 +237,7 @@ func (gc *GarbageCollector) isLatestPod(ctx context.Context, pod *corev1.Pod) (b
 	)
 
 	podList := &corev1.PodList{}
-	if err := read_write_layer.ListPods(ctx, gc.hostClient, podList, read_write_layer.R000076,
+	if err := read_write_layer.ListPods(ctx, gc.hostUncachedClient, podList, read_write_layer.R000076,
 		client.InNamespace(gc.hostNamespace),
 		client.MatchingLabels{
 			container.ContainerDeployerDeployItemNameLabel:      diName,
@@ -282,7 +286,7 @@ func (gc *GarbageCollector) shouldGarbageCollect(ctx context.Context, obj client
 		Name:      obj.GetLabels()[container.ContainerDeployerDeployItemNameLabel],
 	}
 	logger := gc.log.WithValues("deployItem", key.String(), lc.KeyResource, kutil.ObjectKeyFromObject(obj).String())
-	if err := read_write_layer.GetDeployItem(ctx, gc.lsClient, key, di, read_write_layer.R000036); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, gc.lsUncachedClient, key, di, read_write_layer.R000036); err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}

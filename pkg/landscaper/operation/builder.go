@@ -18,7 +18,7 @@ import (
 
 // Builder implements the builder-pattern to craft the operation
 type Builder struct {
-	client            client.Client
+	lsUncachedClient  client.Client
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
 	componentRegistry model.RegistryAccess
@@ -30,8 +30,8 @@ func NewBuilder() *Builder {
 }
 
 // Client sets the kubernetes client.
-func (b *Builder) Client(c client.Client) *Builder {
-	b.client = c
+func (b *Builder) WithLsUncachedClient(lsUncachedClient client.Client) *Builder {
+	b.lsUncachedClient = lsUncachedClient
 	return b
 }
 
@@ -63,7 +63,7 @@ func (b *Builder) applyDefaults(ctx context.Context) {
 }
 
 func (b *Builder) validate() error {
-	if b.client == nil {
+	if b.lsUncachedClient == nil {
 		return errors.New("a kubernetes client must be set")
 	}
 	if b.componentRegistry == nil {
@@ -80,7 +80,7 @@ func (b *Builder) Build(ctx context.Context) (*Operation, error) {
 	}
 
 	return &Operation{
-		client:            b.client,
+		lsUncachedClient:  b.lsUncachedClient,
 		scheme:            b.scheme,
 		eventRecorder:     b.eventRecorder,
 		componentRegistry: b.componentRegistry,

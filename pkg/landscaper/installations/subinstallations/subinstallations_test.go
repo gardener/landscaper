@@ -130,7 +130,7 @@ var _ = Describe("SubInstallation", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		op, err = lsoperation.NewBuilder().
-			Client(fakeClient).Scheme(api.LandscaperScheme).
+			WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).
 			WithEventRecorder(record.NewFakeRecorder(1024)).
 			ComponentRegistry(registryAccess).
 			Build(context.Background())

@@ -14,7 +14,7 @@ import (
 
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/agent"
-
+	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/version"
 )
 
@@ -43,7 +43,13 @@ func NewLandscaperAgentCommand(ctx context.Context) *cobra.Command {
 func (o *options) run(ctx context.Context) error {
 	o.log.Info("Starting Landscaper Agent", lc.KeyVersion, version.Get().String())
 
-	if err := agent.AddToManager(ctx, o.log, o.LsMgr, o.HostMgr, o.config, "agent-helm"); err != nil {
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient, err := lsutils.ClientsFromManagers(o.LsMgr, o.HostMgr)
+	if err != nil {
+		return err
+	}
+
+	if err := agent.AddToManager(ctx, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		o.log, o.LsMgr, o.HostMgr, o.config, "agent-helm"); err != nil {
 		return fmt.Errorf("unable to setup default agent: %w", err)
 	}
 

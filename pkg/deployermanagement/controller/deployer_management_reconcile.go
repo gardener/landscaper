@@ -38,19 +38,21 @@ import (
 const DeployerClusterRoleName = "landscaper:deployer"
 
 type DeployerManagement struct {
-	log    logging.Logger
-	client client.Client
-	scheme *runtime.Scheme
-	config config.DeployerManagementConfiguration
+	lsUncachedClient client.Client
+	lsCachedClient   client.Client
+	log              logging.Logger
+	scheme           *runtime.Scheme
+	config           config.DeployerManagementConfiguration
 }
 
 // NewDeployerManagement creates a new deployer manager.
-func NewDeployerManagement(log logging.Logger, client client.Client, scheme *runtime.Scheme, config config.DeployerManagementConfiguration) *DeployerManagement {
+func NewDeployerManagement(lsUncachedClient, lsCachedClient client.Client, log logging.Logger, scheme *runtime.Scheme, config config.DeployerManagementConfiguration) *DeployerManagement {
 	return &DeployerManagement{
-		log:    log,
-		client: client,
-		scheme: scheme,
-		config: config,
+		lsUncachedClient: lsUncachedClient,
+		lsCachedClient:   lsCachedClient,
+		log:              log,
+		scheme:           scheme,
+		config:           config,
 	}
 }
 
@@ -133,7 +135,7 @@ func (dm *DeployerManagement) getInstallation(ctx context.Context,
 	log, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "getInstallation")
 
 	installations := &lsv1alpha1.InstallationList{}
-	if err := read_write_layer.ListInstallations(ctx, dm.client, installations, read_write_layer.R000017,
+	if err := read_write_layer.ListInstallations(ctx, dm.lsUncachedClient, installations, read_write_layer.R000017,
 		client.InNamespace(dm.config.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.DeployerEnvironmentLabelName:  env.Name,
@@ -153,7 +155,7 @@ func (dm *DeployerManagement) getInstallation(ctx context.Context,
 				fmt.Sprintf("installation name %q in namespace %q exceeds maximum length of %d (environment %q)", inst.Name, dm.config.Namespace, validation.InstallationNameMaxLength, env.Name))
 			registration.Status.LastError = lserrors.TryUpdateError(inst.Status.LastError, err)
 
-			if err := dm.client.Status().Update(ctx, registration); err != nil {
+			if err := dm.lsUncachedClient.Status().Update(ctx, registration); err != nil {
 				log.Error(err, "failed to update status for deployer registration")
 			}
 
@@ -194,7 +196,7 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 	sa.Name = FQName(registration, env)
 	sa.Namespace = dm.config.Namespace
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, dm.client, sa, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, dm.lsUncachedClient, sa, func() error {
 		return controllerutil.SetControllerReference(inst, sa, dm.scheme)
 	}); err != nil {
 		return err
@@ -207,7 +209,7 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 	restConfig.TLSClientConfig.ServerName = env.Spec.LandscaperClusterRestConfig.TLSClientConfig.ServerName
 	restConfig.TLSClientConfig.CAData = env.Spec.LandscaperClusterRestConfig.TLSClientConfig.CAData
 
-	if err := kutil.AddServiceAccountToken(ctx, dm.client, sa, restConfig); err != nil {
+	if err := kutil.AddServiceAccountToken(ctx, dm.lsUncachedClient, sa, restConfig); err != nil {
 		log.Error(err, "unable to add service account token", lc.KeyServiceAccount, client.ObjectKeyFromObject(sa).String())
 		return err
 	}
@@ -218,7 +220,7 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 
 	crb := &rbacv1.ClusterRoleBinding{}
 	crb.Name = FQName(registration, env)
-	if _, err := controllerutil.CreateOrUpdate(ctx, dm.client, crb, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, dm.lsUncachedClient, crb, func() error {
 		crb.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
 			Kind:     "ClusterRole",
@@ -262,13 +264,13 @@ func (dm *DeployerManagement) CleanupInstallation(ctx context.Context, inst *lsv
 
 	crb := &rbacv1.ClusterRoleBinding{}
 	crb.Name = FQNameFromName(regName, envName)
-	if err := dm.client.Delete(ctx, crb); err != nil && !apierrors.IsNotFound(err) {
+	if err := dm.lsUncachedClient.Delete(ctx, crb); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("unable to delete clusterrolebinding %q: %w", crb.Name, err)
 	}
 
 	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 2*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		obj := crb.DeepCopy()
-		if err := dm.client.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
+		if err := dm.lsUncachedClient.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
@@ -290,7 +292,7 @@ func (dm *DeployerManagement) EnsureRBACRoles(ctx context.Context) error {
 	clusterrole := &rbacv1.ClusterRole{}
 	clusterrole.Name = DeployerClusterRoleName
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, dm.client, clusterrole, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, dm.lsUncachedClient, clusterrole, func() error {
 		// secrets to interact with the deploy items
 		clusterrole.Rules = []rbacv1.PolicyRule{
 			{
@@ -324,6 +326,11 @@ func (dm *DeployerManagement) EnsureRBACRoles(ctx context.Context) error {
 				Resources: []string{"events"},
 				Verbs:     []string{"create", "get", "watch", "patch", "update"},
 			},
+			{
+				APIGroups: []string{corev1.SchemeGroupVersion.Group},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"get", "watch", "list"},
+			},
 		}
 		return nil
 	}); err != nil {
@@ -333,7 +340,7 @@ func (dm *DeployerManagement) EnsureRBACRoles(ctx context.Context) error {
 }
 
 func (dm *DeployerManagement) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(dm.client)
+	return read_write_layer.NewWriter(dm.lsUncachedClient)
 }
 
 // FQName defines the fully qualified name for the resources created for a deployer installation.

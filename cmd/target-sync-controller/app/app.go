@@ -9,27 +9,20 @@ import (
 	"fmt"
 	"os"
 
-	"k8s.io/utils/pointer"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"k8s.io/client-go/tools/clientcmd"
-
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
-
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	lsconfig "github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
-	"github.com/gardener/landscaper/pkg/version"
-
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
 	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/version"
 )
 
 // NewTargetSyncControllerCommand creates a new command for the landscaper service controller
@@ -63,7 +56,6 @@ func (o *options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		NewClient:          lsutils.NewUncachedClient(10, 8),
 	}
 
 	data, err := os.ReadFile(o.landscaperKubeconfigPath)
@@ -71,17 +63,13 @@ func (o *options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to read landscaper kubeconfig for target sync controller from %s: %w", o.landscaperKubeconfigPath, err)
 	}
 
-	client, err := clientcmd.NewClientConfigFromBytes(data)
-	if err != nil {
-		return fmt.Errorf("unable to build landscaper cluster client for target sync controller from %s: %w", o.landscaperKubeconfigPath, err)
-	}
-
-	lsConfig, err := client.ClientConfig()
+	lsRestConfig, err := clientcmd.RESTConfigFromKubeConfig(data)
 	if err != nil {
 		return fmt.Errorf("unable to build landscaper cluster rest client for target sync controller from %s: %w", o.landscaperKubeconfigPath, err)
 	}
+	lsRestConfig = lsutils.RestConfigWithModifiedClientRequestRestrictions(o.Log, lsRestConfig, 10, 8)
 
-	lsMgr, err := ctrl.NewManager(lsConfig, opts)
+	lsMgr, err := ctrl.NewManager(lsRestConfig, opts)
 	if err != nil {
 		return fmt.Errorf("unable to setup manager for target sync controller: %w", err)
 	}
@@ -94,7 +82,13 @@ func (o *options) run(ctx context.Context) error {
 
 	lsinstall.Install(lsMgr.GetScheme())
 
-	if err := targetsync.AddControllerToManagerForTargetSyncs(o.Log, lsMgr); err != nil {
+	lsUncachedClient, err := lsutils.NewUncachedClientFromManager(lsMgr)
+	if err != nil {
+		return fmt.Errorf("unable to build new uncached ls client: %w", err)
+	}
+	lsCachedClient := lsMgr.GetClient()
+
+	if err := targetsync.AddControllerToManagerForTargetSyncs(lsUncachedClient, lsCachedClient, o.Log, lsMgr); err != nil {
 		return fmt.Errorf("unable to setup landscaper deployments controller for target sync controller: %w", err)
 	}
 

@@ -46,8 +46,9 @@ const (
 )
 
 // NewController creates a new Controller that reconciles Installation resources.
-func NewController(hostClient client.Client, logger logging.Logger,
-	lsClient client.Client,
+func NewController(ctx context.Context,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	logger logging.Logger,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
 	lsConfig *config.LandscaperConfiguration,
@@ -58,14 +59,16 @@ func NewController(hostClient client.Client, logger logging.Logger,
 	ws := utils.NewWorkerCounter(maxNumberOfWorkers)
 
 	ctrl := &Controller{
-		hostClient:     hostClient,
-		log:            logger,
-		clock:          clock.RealClock{},
-		LsConfig:       lsConfig,
-		workerCounter:  ws,
-		lockingEnabled: lockingEnabled,
-		callerName:     callerName,
-		locker:         *lock.NewLocker(lsClient, hostClient, callerName),
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		log:                logger,
+		clock:              clock.RealClock{},
+		LsConfig:           lsConfig,
+		workerCounter:      ws,
+		lockingEnabled:     lockingEnabled,
+		callerName:         callerName,
+		locker:             *lock.NewLocker(lsUncachedClient, hostUncachedClient, callerName),
 	}
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
@@ -79,40 +82,92 @@ func NewController(hostClient client.Client, logger logging.Logger,
 
 	registries.SetOCMLibraryMode(lsConfig.UseOCMLib)
 
-	op := operation.NewOperation(lsClient, scheme, eventRecorder)
+	op := operation.NewOperation(scheme, eventRecorder, lsUncachedClient)
 	ctrl.Operation = *op
+
+	finishedObjectCache, err := prepareFinishedObjectCache(ctx, lsUncachedClient)
+	if err != nil {
+		return nil, err
+	}
+	ctrl.finishedObjectCache = finishedObjectCache
+
 	return ctrl, nil
 }
 
+func prepareFinishedObjectCache(ctx context.Context, lsUncachedClient client.Client) (*utils.FinishedObjectCache, error) {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+
+	finishedObjectCache := utils.NewFinishedObjectCache()
+	namespaces := &corev1.NamespaceList{}
+	if err := read_write_layer.ListNamespaces(ctx, lsUncachedClient, namespaces, read_write_layer.R000096); err != nil {
+		return nil, err
+	}
+
+	perfTotal := utils.StartPerformanceMeasurement(&log, "prepare finished object for installations")
+	defer perfTotal.Stop()
+
+	for _, namespace := range namespaces.Items {
+		perf := utils.StartPerformanceMeasurement(&log, "prepare finished object cache for installations: fetch from namespace "+namespace.Name)
+
+		instList := &lsv1alpha1.InstallationList{}
+		if err := read_write_layer.ListInstallations(ctx, lsUncachedClient, instList, read_write_layer.R000097,
+			client.InNamespace(namespace.Name)); err != nil {
+			return nil, err
+		}
+
+		perf.Stop()
+
+		perf = utils.StartPerformanceMeasurement(&log, "prepare finished object cache for installations: add for namespace "+namespace.Name)
+
+		for instIndex := range instList.Items {
+			inst := &instList.Items[instIndex]
+			if isInstFinished(inst) {
+				finishedObjectCache.Add(&inst.ObjectMeta)
+			}
+		}
+
+		perf.Stop()
+	}
+
+	return finishedObjectCache, nil
+}
+
 // NewTestActuator creates a new Controller that is only meant for testing.
-func NewTestActuator(op operation.Operation, hostClient client.Client, logger logging.Logger, passiveClock clock.PassiveClock,
+func NewTestActuator(lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	op operation.Operation, logger logging.Logger, passiveClock clock.PassiveClock,
 	configuration *config.LandscaperConfiguration, callerName string) *Controller {
 
 	return &Controller{
-		log:            logger,
-		clock:          passiveClock,
-		Operation:      op,
-		LsConfig:       configuration,
-		workerCounter:  utils.NewWorkerCounter(1000),
-		hostClient:     hostClient,
-		lockingEnabled: lock.IsLockingEnabledForMainControllers(configuration),
-		callerName:     callerName,
-		locker:         *lock.NewLocker(hostClient, hostClient, callerName),
+		lsCachedClient:      lsCachedClient,
+		hostUncachedClient:  hostUncachedClient,
+		hostCachedClient:    hostCachedClient,
+		finishedObjectCache: utils.NewFinishedObjectCache(),
+		log:                 logger,
+		clock:               passiveClock,
+		Operation:           op,
+		LsConfig:            configuration,
+		workerCounter:       utils.NewWorkerCounter(1000),
+		lockingEnabled:      lock.IsLockingEnabledForMainControllers(configuration),
+		callerName:          callerName,
+		locker:              *lock.NewLocker(op.LsUncachedClient(), hostUncachedClient, callerName),
 	}
 }
 
 // Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
-	hostClient     client.Client
-	log            logging.Logger
-	clock          clock.PassiveClock
-	LsConfig       *config.LandscaperConfiguration
-	SharedCache    cache.Cache
-	workerCounter  *utils.WorkerCounter
-	lockingEnabled bool
-	callerName     string
-	locker         lock.Locker
+	lsCachedClient      client.Client
+	hostUncachedClient  client.Client
+	hostCachedClient    client.Client
+	finishedObjectCache *utils.FinishedObjectCache
+	log                 logging.Logger
+	clock               clock.PassiveClock
+	LsConfig            *config.LandscaperConfiguration
+	SharedCache         cache.Cache
+	workerCounter       *utils.WorkerCounter
+	lockingEnabled      bool
+	callerName          string
+	locker              lock.Locker
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -121,9 +176,24 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, "installations")
 	defer c.workerCounter.Exit()
 
+	if c.finishedObjectCache.IsContained(req) {
+		cachedMetadata := utils.EmptyInstallationMetadata()
+		if err := read_write_layer.GetMetaData(ctx, c.lsCachedClient, req.NamespacedName, cachedMetadata, read_write_layer.R000098); err != nil {
+			if apierrors.IsNotFound(err) {
+				logger.Debug(err.Error())
+				return reconcile.Result{}, nil
+			}
+			return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
+		}
+
+		if c.finishedObjectCache.IsFinishedAndRemove(cachedMetadata) {
+			return reconcile.Result{}, nil
+		}
+	}
+
 	if c.lockingEnabled {
 		metadata := utils.EmptyInstallationMetadata()
-		if err := c.Client().Get(ctx, req.NamespacedName, metadata); err != nil {
+		if err := c.LsUncachedClient().Get(ctx, req.NamespacedName, metadata); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger.Debug(err.Error())
 				return reconcile.Result{}, nil
@@ -146,7 +216,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	inst := &lsv1alpha1.Installation{}
-	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst, read_write_layer.R000010); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, c.LsUncachedClient(), req.NamespacedName, inst, read_write_layer.R000010); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -170,7 +240,7 @@ func (c *Controller) updateInstallationWithDefaults(ctx context.Context, inst *l
 	api.LandscaperScheme.Default(inst)
 
 	if !reflect.DeepEqual(&inst.Spec, &oldInst.Spec) {
-		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000065, inst); err != nil {
+		if err := c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000065, inst); err != nil {
 			logger.Error(err, "failed to update installation with defaults")
 			return err
 		}
@@ -183,17 +253,13 @@ func (c *Controller) handleAutomaticReconcile(ctx context.Context, inst *lsv1alp
 
 	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "handleAutomaticReconcile")
 
-	if installations.IsRootInstallation(inst) &&
-		lsv1alpha1helper.HasReconcileIfChangedAnnotation(inst.ObjectMeta) &&
-		!lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) &&
-		inst.Status.JobID == inst.Status.JobIDFinished &&
-		inst.GetGeneration() != inst.Status.ObservedGeneration {
+	if isAutomaticReconcileOnSpecChange(inst) {
 		if err := c.addReconcileAnnotation(ctx, inst); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 
-	retryHelper := newRetryHelper(c.Client(), c.clock)
+	retryHelper := newRetryHelper(c.LsUncachedClient(), c.clock)
 
 	if err := retryHelper.preProcessRetry(ctx, inst); err != nil {
 		return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
@@ -213,26 +279,28 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
-	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
+	if needsFinalizer(inst) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000107, inst); err != nil {
+		if err := c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000107, inst); err != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
 	}
 
-	if err := installations.NewInstallationTrigger(c.Client(), inst).TriggerDependents(ctx); err != nil {
-		return reconcile.Result{}, err
+	if len(inst.Status.DependentsToTrigger) > 0 {
+		if err := installations.NewInstallationTrigger(c.LsUncachedClient(), inst).TriggerDependents(ctx); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.InterruptOperation) {
+	if hasInterruptOperation(inst) {
 		if err := c.handleInterruptOperation(ctx, inst); err != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
 	}
 
-	if !installations.IsRootInstallation(inst) && lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+	if isNotRootWithReconcileOperation(inst) {
 		// only root installations could be triggered with operation annotation to prevent that end users interfere with overall
 		// algorithm
 		logger.Info("Removing reconcile annotation from non-root installation. A reconcile annotation at a non-root installation has no effect")
@@ -243,15 +311,11 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 	}
 
 	// generate new jobID
-	isFirstDelete := !inst.DeletionTimestamp.IsZero() && !inst.Status.InstallationPhase.IsDeletion()
-	if installations.IsRootInstallation(inst) &&
-		(lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || isFirstDelete) &&
-		inst.Status.JobID == inst.Status.JobIDFinished {
-
+	if isCreateNewJobID(inst) {
 		inst.Status.JobID = uuid.New().String()
 		inst.Status.TransitionTimes = utils.NewTransitionTimes()
 
-		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000082, inst); err != nil {
+		if err := c.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, read_write_layer.W000082, inst); err != nil {
 			return reconcile.Result{}, err
 		}
 
@@ -263,7 +327,7 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 	}
 
 	// handle reconcile
-	if inst.Status.JobID != inst.Status.JobIDFinished {
+	if isDifferentJobIDs(inst) {
 		err := c.handleReconcilePhase(ctx, inst)
 		return utils.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	} else {
@@ -278,7 +342,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
-	lsCtx, err := installations.GetInstallationContext(ctx, c.Client(), inst)
+	lsCtx, err := installations.GetInstallationContext(ctx, c.LsUncachedClient(), inst)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
@@ -327,11 +391,11 @@ func (c *Controller) compareJobIDs(predecessorMap, predecessorMapNew map[string]
 
 func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-	if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000097, inst); err != nil {
+	if err := c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000097, inst); err != nil {
 		return err
 	}
 
-	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	exec, err := executions.GetExecutionForInstallation(ctx, c.LsUncachedClient(), inst)
 	if err != nil {
 		return err
 	}
@@ -340,12 +404,12 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 		lsv1alpha1helper.SetOperation(&exec.ObjectMeta, lsv1alpha1.InterruptOperation)
 		lsv1alpha1helper.Touch(&exec.ObjectMeta)
 
-		if err = c.Writer().UpdateExecution(ctx, read_write_layer.W000098, exec); err != nil {
+		if err = c.WriterToLsUncachedClient().UpdateExecution(ctx, read_write_layer.W000098, exec); err != nil {
 			return err
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000090)
+	subInsts, err := installations.ListSubinstallations(ctx, c.LsUncachedClient(), inst, inst.Status.SubInstCache, read_write_layer.R000090)
 	if err != nil {
 		return nil
 	}
@@ -354,7 +418,7 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 		lsv1alpha1helper.SetOperation(&subInst.ObjectMeta, lsv1alpha1.InterruptOperation)
 		lsv1alpha1helper.Touch(&subInst.ObjectMeta)
 
-		if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000099, subInst); err != nil {
+		if err = c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000099, subInst); err != nil {
 			return err
 		}
 	}
@@ -392,7 +456,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	if inst.Status.JobIDFinished == inst.Status.JobID && inst.DeletionTimestamp.IsZero() {
 		// The installation is about to finish. Put the names of dependent installations in the status.
 		// The dependents will then be triggered in the beginning of the next reconcile event.
-		dependents, err := installations.NewInstallationTrigger(c.Client(), inst).DetermineDependents(ctx)
+		dependents, err := installations.NewInstallationTrigger(c.LsUncachedClient(), inst).DetermineDependents(ctx)
 		if err != nil {
 			logger.Error(err, "unable to determine successor installations")
 			if lsError == nil {
@@ -404,12 +468,12 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		inst.Status.DependentsToTrigger = dependents
 	}
 
-	err := c.Writer().UpdateInstallationStatus(ctx, writeID, inst)
+	err := c.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, writeID, inst)
 	if err != nil {
 		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Deleting {
 			// recheck if already deleted
 			instRecheck := &lsv1alpha1.Installation{}
-			errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace),
+			errRecheck := read_write_layer.GetInstallation(ctx, c.LsUncachedClient(), kutil.ObjectKey(inst.Name, inst.Namespace),
 				instRecheck, read_write_layer.R000009)
 			if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
 				return nil
@@ -438,7 +502,7 @@ func (c *Controller) addReconcileAnnotation(ctx context.Context, inst *lsv1alpha
 
 	lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
 
-	if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000078, inst); err != nil {
+	if err := c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000078, inst); err != nil {
 		logger.Error(err, "failed to trigger automatic reconcile operation of installation")
 		return err
 	}

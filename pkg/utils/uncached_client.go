@@ -6,12 +6,40 @@ import (
 	"strconv"
 
 	"k8s.io/client-go/kubernetes"
-
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
+
+func ClientsFromManagers(lsMgr, hostMgr manager.Manager) (
+	lsUncachedClient,
+	lsCachedClient,
+	hostUncachedClient,
+	hostCachedClient client.Client,
+	err error,
+) {
+	lsUncachedClient, err = NewUncachedClientFromManager(lsMgr)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("unable to build new uncached ls client: %w", err)
+	}
+
+	lsCachedClient = lsMgr.GetClient()
+
+	hostUncachedClient, err = NewUncachedClientFromManager(hostMgr)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("unable to build new uncached host client: %w", err)
+	}
+
+	hostCachedClient = hostMgr.GetClient()
+
+	return lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient, nil
+}
+
+func NewUncachedClientFromManager(mgr manager.Manager) (client.Client, error) {
+	return client.New(mgr.GetConfig(), client.Options{Scheme: mgr.GetScheme()})
+}
 
 func NewUncachedClient(burst, qps int) func(config *rest.Config, options client.Options) (client.Client, error) {
 

@@ -25,7 +25,7 @@ func (dm *DeployerManagement) Delete(ctx context.Context, registration *lsv1alph
 	}
 	instKey := kutil.ObjectKeyFromObject(inst)
 
-	if err := read_write_layer.GetInstallation(ctx, dm.client, instKey, inst, read_write_layer.R000013); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, dm.lsUncachedClient, instKey, inst, read_write_layer.R000013); err != nil {
 		if apierrors.IsNotFound(err) {
 			// installation is already deleted
 			// nothing to do.
@@ -40,7 +40,7 @@ func (dm *DeployerManagement) Delete(ctx context.Context, registration *lsv1alph
 	}
 	// wait for installation deletion.
 	return wait.PollUntilContextTimeout(ctx, 20*time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
-		if err := read_write_layer.GetInstallation(ctx, dm.client, instKey, inst, read_write_layer.R000007); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, dm.lsUncachedClient, instKey, inst, read_write_layer.R000007); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}

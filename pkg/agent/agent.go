@@ -38,37 +38,40 @@ import (
 
 // Agent is the internal landscaper agent that contains all landscaper specific code.
 type Agent struct {
-	config         config.AgentConfiguration
-	lsClient       client.Client
-	lsRestConfig   *rest.Config
-	lsScheme       *runtime.Scheme
-	hostClient     client.Client
-	hostScheme     *runtime.Scheme
-	hostRestConfig *rest.Config
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+	config             config.AgentConfiguration
+	lsRestConfig       *rest.Config
+	lsScheme           *runtime.Scheme
+	hostScheme         *runtime.Scheme
+	hostRestConfig     *rest.Config
 }
 
 // New creates a new agent.
-func New(lsClient client.Client,
+func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	lsRestConfig *rest.Config,
 	lsScheme *runtime.Scheme,
-	hostClient client.Client,
 	hostRestConfig *rest.Config,
 	hostScheme *runtime.Scheme,
 	config config.AgentConfiguration) *Agent {
 	return &Agent{
-		config:         config,
-		lsClient:       lsClient,
-		lsRestConfig:   lsRestConfig,
-		lsScheme:       lsScheme,
-		hostClient:     hostClient,
-		hostRestConfig: hostRestConfig,
-		hostScheme:     hostScheme,
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		config:             config,
+		lsRestConfig:       lsRestConfig,
+		lsScheme:           lsScheme,
+		hostRestConfig:     hostRestConfig,
+		hostScheme:         hostScheme,
 	}
 }
 
 // EnsureLandscaperResources ensures that all landscaper resources
 // like the Environment and the Target are registered in the landscaper cluster.
-func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostClient client.Client) (*lsv1alpha1.Environment, error) {
+func (a *Agent) EnsureLandscaperResources(ctx context.Context) (*lsv1alpha1.Environment, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "EnsureLandscaperResources")
 	target, err := utils.NewTargetBuilder(string(targettypes.KubernetesClusterTargetType)).
 		SecretRef(&lsv1alpha1.LocalSecretReference{
@@ -105,11 +108,11 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 		env.Spec.HostTarget.TargetSpec = target.Spec
 	}
 
-	if err := read_write_layer.GetEnv(ctx, lsClient, kutil.ObjectKeyFromObject(env), env, read_write_layer.R000038); err != nil {
+	if err := read_write_layer.GetEnv(ctx, a.lsUncachedClient, kutil.ObjectKeyFromObject(env), env, read_write_layer.R000038); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info("Environment not found, creating it")
 			mutateFunc()
-			if err := lsClient.Create(ctx, env); err != nil {
+			if err := a.lsUncachedClient.Create(ctx, env); err != nil {
 				return nil, err
 			}
 			return env, nil
@@ -125,7 +128,7 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 			logger.Debug("Cleaning up resources")
 			// cleanup resources but do not remove the finalizer
 			// as we would otherwise just right directly reconcile a new environment.
-			if err := a.RemoveHostResources(ctx, hostClient); err != nil {
+			if err := a.RemoveHostResources(ctx); err != nil {
 				return nil, fmt.Errorf("unable to remove host resources: %w", err)
 			}
 			return env, nil
@@ -137,7 +140,7 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 
 	logger.Info("Updating Environment")
 	mutateFunc()
-	if err := lsClient.Update(ctx, env); err != nil {
+	if err := a.lsUncachedClient.Update(ctx, env); err != nil {
 		return nil, err
 	}
 	return env, nil
@@ -147,7 +150,7 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 // like the Target secret are registered in the landscaper cluster.
 // The function ensure the following resources:
 // - the secret containing the kubeconfig for the host kubeconfig
-func (a *Agent) EnsureHostResources(ctx context.Context, hostClient, lsClient client.Client) (*rest.Config, error) {
+func (a *Agent) EnsureHostResources(ctx context.Context) (*rest.Config, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "EnsureHostResources")
 	// create a dedicated service account and rbac rules for the kubeconfig
 	// Currently that kubeconfig has access to all resources as the deployers could install anything.
@@ -156,21 +159,21 @@ func (a *Agent) EnsureHostResources(ctx context.Context, hostClient, lsClient cl
 	sa.Name = fmt.Sprintf("deployer-%s", a.config.Name)
 	sa.Namespace = a.config.Namespace
 	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(sa).String(), lc.KeyResourceKind, "ServiceAccount")
-	if _, err := controllerutil.CreateOrUpdate(ctx, hostClient, sa, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, a.hostUncachedClient, sa, func() error {
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create service account %q for deployer on host cluster: %w", sa.Name, err)
 	}
 	cr := DeployerClusterRole(a.config.Name)
 	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(cr).String(), lc.KeyResourceKind, "ClusterRole")
-	if _, err := controllerutil.CreateOrUpdate(ctx, hostClient, cr, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, a.hostUncachedClient, cr, func() error {
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create cluster role %q for deployer on host cluster: %w", cr.Name, err)
 	}
 	crb := DeployerClusterRoleBinding(sa, a.config.Name)
 	logger.Info("Creating/Updating resource", lc.KeyResource, kutil.ObjectKeyFromObject(crb).String(), lc.KeyResourceKind, "ClusterRoleBinding")
-	if _, err := controllerutil.CreateOrUpdate(ctx, hostClient, crb, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, a.hostUncachedClient, crb, func() error {
 		crb.Subjects = DeployerClusterRoleBindingSubjects(sa)
 		return nil
 	}); err != nil {
@@ -178,7 +181,7 @@ func (a *Agent) EnsureHostResources(ctx context.Context, hostClient, lsClient cl
 	}
 
 	hostRestConfig := rest.CopyConfig(a.hostRestConfig)
-	if err := kutil.AddServiceAccountToken(ctx, hostClient, sa, hostRestConfig); err != nil {
+	if err := kutil.AddServiceAccountToken(ctx, a.hostUncachedClient, sa, hostRestConfig); err != nil {
 		logger.Error(err, "unable to add a service account token", "service-account", sa.Name)
 		return nil, err
 	}
@@ -192,7 +195,7 @@ func (a *Agent) EnsureHostResources(ctx context.Context, hostClient, lsClient cl
 	secret.Name = a.TargetSecretName()
 	secret.Namespace = a.config.LandscaperNamespace
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, lsClient, secret, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, a.lsUncachedClient, secret, func() error {
 		secret.Data = map[string][]byte{
 			targettypes.DefaultKubeconfigKey: kubeconfigBytes,
 		}
@@ -205,7 +208,7 @@ func (a *Agent) EnsureHostResources(ctx context.Context, hostClient, lsClient cl
 }
 
 // RemoveHostResources removes all resources created by the agent from the host.
-func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Client) error {
+func (a *Agent) RemoveHostResources(ctx context.Context) error {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "RemoveHostResources")
 	sa := &corev1.ServiceAccount{}
 	sa.Name = fmt.Sprintf("deployer-%s", a.config.Name)
@@ -216,7 +219,7 @@ func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Clien
 
 	resources := []client.Object{sa, cr, crb}
 	for _, obj := range resources {
-		if err := kubeClient.Delete(ctx, obj); err != nil {
+		if err := a.hostUncachedClient.Delete(ctx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -236,7 +239,7 @@ func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Clien
 	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		for _, obj := range resources {
 
-			if err := read_write_layer.GetObject(ctx, kubeClient, kutil.ObjectKeyFromObject(obj), obj, read_write_layer.R000039); err != nil {
+			if err := read_write_layer.GetObject(ctx, a.hostUncachedClient, kutil.ObjectKeyFromObject(obj), obj, read_write_layer.R000039); err != nil {
 				if apierrors.IsNotFound(err) {
 					continue
 				}
@@ -256,7 +259,7 @@ func (a *Agent) Reconcile(ctx context.Context, req reconcile.Request) (reconcile
 		return reconcile.Result{}, nil
 	}
 	logger.Info("Ensuring Landscaper resources")
-	env, err := a.EnsureLandscaperResources(ctx, a.lsClient, a.hostClient)
+	env, err := a.EnsureLandscaperResources(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -266,7 +269,7 @@ func (a *Agent) Reconcile(ctx context.Context, req reconcile.Request) (reconcile
 		return reconcile.Result{}, nil
 	}
 	logger.Info("Ensuring host resources")
-	if _, err := a.EnsureHostResources(ctx, a.hostClient, a.lsClient); err != nil {
+	if _, err := a.EnsureHostResources(ctx); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil

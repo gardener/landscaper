@@ -8,6 +8,8 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	clientlib "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -44,20 +46,23 @@ var _ = Describe("Inline Component Descriptor", func() {
 	BeforeEach(func() {
 		var err error
 
-		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		op := operation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024), testenv.Client)
 
-		instActuator = instctlr.NewTestActuator(*op, testenv.Client, logging.Discard(), clock.RealClock{},
+		instActuator = instctlr.NewTestActuator(testenv.Client, testenv.Client, testenv.Client, *op, logging.Discard(), clock.RealClock{},
 			&config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
 					Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
 				},
 			}, "test-inst3-"+testutils.GetNextCounter())
 
-		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, testenv.Client, api.LandscaperScheme,
+		execActuator, err = execctlr.NewController(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
+			logging.Discard(), api.LandscaperScheme,
 			record.NewFakeRecorder(1024), 1000, false, "exec-test-"+testutils.GetNextCounter())
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,
+		mockActuator, err = mockctlr.NewController(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
+			utils.NewFinishedObjectCache(),
+			logging.Discard(), api.LandscaperScheme,
 			record.NewFakeRecorder(1024), mockv1alpha1.Configuration{}, "test-inline"+testutils.GetNextCounter())
 		Expect(err).ToNot(HaveOccurred())
 	})

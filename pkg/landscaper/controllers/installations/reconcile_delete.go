@@ -36,7 +36,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		return fatalError, normalError
 	}
 
-	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	exec, err := executions.GetExecutionForInstallation(ctx, c.LsUncachedClient(), inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error()), nil
 	}
@@ -45,7 +45,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(inst.ObjectMeta) &&
 			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(exec.ObjectMeta) {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
-			if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000102, exec); err != nil {
+			if err := c.WriterToLsUncachedClient().UpdateExecution(ctx, read_write_layer.W000102, exec); err != nil {
 				if apierrors.IsConflict(err) {
 					return nil, lserrors.NewWrappedError(err, op, "UpdateExecutionConflict", err.Error())
 				}
@@ -54,7 +54,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		}
 
 		if exec.DeletionTimestamp.IsZero() {
-			if err = c.Writer().DeleteExecution(ctx, read_write_layer.W000012, exec); err != nil {
+			if err = c.WriterToLsUncachedClient().DeleteExecution(ctx, read_write_layer.W000012, exec); err != nil {
 				if apierrors.IsConflict(err) {
 					return nil, lserrors.NewWrappedError(err, op, "DeleteExecutionConflict", err.Error())
 				}
@@ -63,7 +63,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000085)
+	subInsts, err := installations.ListSubinstallations(ctx, c.LsUncachedClient(), inst, inst.Status.SubInstCache, read_write_layer.R000085)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error()), nil
 	}
@@ -72,7 +72,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(inst.ObjectMeta) &&
 			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(subInst.ObjectMeta) {
 			metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
-			if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000103, subInst); err != nil {
+			if err := c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000103, subInst); err != nil {
 				if apierrors.IsConflict(err) {
 					return nil, lserrors.NewWrappedError(err, op, "UpdateInstallationConflict", err.Error())
 				}
@@ -81,7 +81,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		}
 
 		if subInst.DeletionTimestamp.IsZero() {
-			if err = c.Writer().DeleteInstallation(ctx, read_write_layer.W000091, subInst); err != nil {
+			if err = c.WriterToLsUncachedClient().DeleteInstallation(ctx, read_write_layer.W000091, subInst); err != nil {
 				if apierrors.IsConflict(err) {
 					return nil, lserrors.NewWrappedError(err, op, "DeleteInstallationConflict", err.Error())
 				}
@@ -95,7 +95,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 
 func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	op := "handleDeletionPhaseTriggerDeleting"
-	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	exec, err := executions.GetExecutionForInstallation(ctx, c.LsUncachedClient(), inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error())
 	}
@@ -103,12 +103,12 @@ func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, ins
 	if exec != nil && exec.Status.JobID != inst.Status.JobID {
 		exec.Status.JobID = inst.Status.JobID
 		exec.Status.TransitionTimes = lsutil.NewTransitionTimes()
-		if err = c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000093, exec); err != nil {
+		if err = c.WriterToLsUncachedClient().UpdateExecutionStatus(ctx, read_write_layer.W000093, exec); err != nil {
 			return lserrors.NewWrappedError(err, op, "UpdateExecutionStatus", err.Error())
 		}
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000088)
+	subInsts, err := installations.ListSubinstallations(ctx, c.LsUncachedClient(), inst, inst.Status.SubInstCache, read_write_layer.R000088)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error())
 	}
@@ -117,7 +117,7 @@ func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, ins
 		if subInst.Status.JobID != inst.Status.JobID {
 			subInst.Status.JobID = inst.Status.JobID
 			subInst.Status.TransitionTimes = lsutil.NewTransitionTimes()
-			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000094, subInst); err != nil {
+			if err = c.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, read_write_layer.W000094, subInst); err != nil {
 				return lserrors.NewWrappedError(err, op, "UpdateInstallationStatus", err.Error())
 			}
 		}
@@ -130,19 +130,19 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 	op := "handleDeletionPhaseDeleting"
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
-	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	exec, err := executions.GetExecutionForInstallation(ctx, c.LsUncachedClient(), inst)
 	if err != nil {
 		return false, false, lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error())
 	}
 
-	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst, inst.Status.SubInstCache, read_write_layer.R000091)
+	subInsts, err := installations.ListSubinstallations(ctx, c.LsUncachedClient(), inst, inst.Status.SubInstCache, read_write_layer.R000091)
 	if err != nil {
 		return false, false, lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error())
 	}
 
 	if exec == nil && len(subInsts) == 0 {
 		controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000095, inst); err != nil {
+		if err = c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000095, inst); err != nil {
 			return false, false, lserrors.NewWrappedError(err, op, "UpdateInstallation", err.Error())
 		}
 
@@ -150,14 +150,14 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 			// touch siblings to speed up processing
 			// a potential improvement is to only touch siblings exporting data for the current installation but this would
 			// result in more complex coding and should only be done if the current approach results in performance problems
-			_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
+			_, siblings, err := installations.GetParentAndSiblings(ctx, c.LsUncachedClient(), inst)
 			if err != nil {
 				return false, false, lserrors.NewWrappedError(err, op, "GetParentAndSiblings", err.Error())
 			}
 			for _, nextSibling := range siblings {
 				if !nextSibling.DeletionTimestamp.IsZero() {
 					lsv1alpha1helper.Touch(&nextSibling.ObjectMeta)
-					if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000147, nextSibling); err != nil {
+					if err = c.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000147, nextSibling); err != nil {
 						if apierrors.IsConflict(err) {
 							logger.Info(op + " - conflict touching sibling inst")
 						} else if apierrors.IsNotFound(err) {
@@ -202,7 +202,7 @@ func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Install
 		return nil, nil
 	}
 
-	_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
+	_, siblings, err := installations.GetParentAndSiblings(ctx, c.LsUncachedClient(), inst)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			op, "CalculateInstallationContext", err.Error(), lsv1alpha1.ErrorInternalProblem)

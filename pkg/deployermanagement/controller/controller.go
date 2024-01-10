@@ -24,38 +24,41 @@ import (
 )
 
 // NewEnvironmentController creates a new landscaper agent EnvironmentController.
-func NewEnvironmentController(log logging.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
+func NewEnvironmentController(lsUncachedClient, lsCachedClient client.Client, log logging.Logger, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
 	return &EnvironmentController{
-		log:    log,
-		client: c,
-		scheme: scheme,
-		config: config,
+		lsUncachedClient: lsUncachedClient,
+		lsCachedClient:   lsCachedClient,
+		log:              log,
+		scheme:           scheme,
+		config:           config,
 		dm: &DeployerManagement{
-			log:    log,
-			client: c,
-			scheme: scheme,
-			config: config.DeployerManagement,
+			lsUncachedClient: lsUncachedClient,
+			lsCachedClient:   lsCachedClient,
+			log:              log,
+			scheme:           scheme,
+			config:           config.DeployerManagement,
 		},
 	}
 }
 
 type EnvironmentController struct {
-	log    logging.Logger
-	config *config.LandscaperConfiguration
-	client client.Client
-	scheme *runtime.Scheme
-	dm     *DeployerManagement
+	lsUncachedClient client.Client
+	lsCachedClient   client.Client
+	log              logging.Logger
+	config           *config.LandscaperConfiguration
+	scheme           *runtime.Scheme
+	dm               *DeployerManagement
 }
 
 func (con *EnvironmentController) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(con.client)
+	return read_write_layer.NewWriter(con.lsUncachedClient)
 }
 
 func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := con.log.StartReconcileAndAddToContext(ctx, req)
 
 	env := &lsv1alpha1.Environment{}
-	if err := con.client.Get(ctx, req.NamespacedName, env); err != nil {
+	if err := con.lsUncachedClient.Get(ctx, req.NamespacedName, env); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -64,7 +67,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 	}
 
 	registrations := &lsv1alpha1.DeployerRegistrationList{}
-	if err := con.client.List(ctx, registrations); err != nil {
+	if err := con.lsUncachedClient.List(ctx, registrations); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -92,7 +95,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 			return reconcile.Result{}, err
 		}
 		controllerutil.RemoveFinalizer(env, lsv1alpha1.LandscaperDMFinalizer)
-		if err := con.client.Update(ctx, env); err != nil {
+		if err := con.lsUncachedClient.Update(ctx, env); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to remove finalizer: %w", err)
 		}
 		return reconcile.Result{}, nil
@@ -102,7 +105,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 	if !controllerutil.ContainsFinalizer(env, lsv1alpha1.LandscaperDMFinalizer) {
 		controllerutil.AddFinalizer(env, lsv1alpha1.LandscaperDMFinalizer)
 
-		if err := con.client.Update(ctx, env); err != nil {
+		if err := con.lsUncachedClient.Update(ctx, env); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to add finalizer: %w", err)
 		}
 	}
@@ -136,30 +139,34 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 }
 
 // NewDeployerRegistrationController creates a new landscaper agent DeployerRegistrationController.
-func NewDeployerRegistrationController(log logging.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
+func NewDeployerRegistrationController(lsUncachedClient, lsCachedClient client.Client, log logging.Logger,
+	scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
 	return &DeployerRegistrationController{
-		log:    log,
-		client: c,
+		lsUncachedClient: lsUncachedClient,
+		lsCachedClient:   lsCachedClient,
+		log:              log,
 		dm: &DeployerManagement{
-			log:    log,
-			client: c,
-			scheme: scheme,
-			config: config.DeployerManagement,
+			lsUncachedClient: lsUncachedClient,
+			lsCachedClient:   lsCachedClient,
+			log:              log,
+			scheme:           scheme,
+			config:           config.DeployerManagement,
 		},
 	}
 }
 
 type DeployerRegistrationController struct {
-	log    logging.Logger
-	client client.Client
-	dm     *DeployerManagement
+	lsUncachedClient client.Client
+	lsCachedClient   client.Client
+	log              logging.Logger
+	dm               *DeployerManagement
 }
 
 func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := con.log.StartReconcileAndAddToContext(ctx, req)
 
 	registration := &lsv1alpha1.DeployerRegistration{}
-	if err := con.client.Get(ctx, req.NamespacedName, registration); err != nil {
+	if err := con.lsUncachedClient.Get(ctx, req.NamespacedName, registration); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -170,13 +177,13 @@ func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req re
 	if !controllerutil.ContainsFinalizer(registration, lsv1alpha1.LandscaperDMFinalizer) {
 		controllerutil.AddFinalizer(registration, lsv1alpha1.LandscaperDMFinalizer)
 
-		if err := con.client.Update(ctx, registration); err != nil {
+		if err := con.lsUncachedClient.Update(ctx, registration); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to add finalizer: %w", err)
 		}
 	}
 
 	environments := &lsv1alpha1.EnvironmentList{}
-	if err := con.client.List(ctx, environments); err != nil {
+	if err := con.lsUncachedClient.List(ctx, environments); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -204,7 +211,7 @@ func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req re
 			return reconcile.Result{}, err
 		}
 		controllerutil.RemoveFinalizer(registration, lsv1alpha1.LandscaperDMFinalizer)
-		if err := con.client.Update(ctx, registration); err != nil {
+		if err := con.lsUncachedClient.Update(ctx, registration); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to remove finalizer: %w", err)
 		}
 		return reconcile.Result{}, nil
@@ -221,24 +228,27 @@ func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req re
 }
 
 type InstallationController struct {
-	log    logging.Logger
-	config *config.LandscaperConfiguration
-	client client.Client
-	dm     *DeployerManagement
+	lsUncachedClient client.Client
+	lsCachedClient   client.Client
+	log              logging.Logger
+	config           *config.LandscaperConfiguration
+	dm               *DeployerManagement
 }
 
 // NewInstallationController creates a new landscaper agent InstallationController.
 // This controller only reconciles deployer installations and its main purpose is cleanup.
-func NewInstallationController(log logging.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
+func NewInstallationController(lsUncachedClient, lsCachedClient client.Client, log logging.Logger, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
 	return &InstallationController{
-		log:    log,
-		config: config,
-		client: c,
+		lsUncachedClient: lsUncachedClient,
+		lsCachedClient:   lsCachedClient,
+		log:              log,
+		config:           config,
 		dm: &DeployerManagement{
-			log:    log,
-			client: c,
-			scheme: scheme,
-			config: config.DeployerManagement,
+			lsUncachedClient: lsUncachedClient,
+			lsCachedClient:   lsCachedClient,
+			log:              log,
+			scheme:           scheme,
+			config:           config.DeployerManagement,
 		},
 	}
 }
@@ -251,7 +261,7 @@ func (con *InstallationController) Reconcile(ctx context.Context, req reconcile.
 	}
 
 	inst := &lsv1alpha1.Installation{}
-	if err := read_write_layer.GetInstallation(ctx, con.client, req.NamespacedName, inst, read_write_layer.R000005); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, con.lsUncachedClient, req.NamespacedName, inst, read_write_layer.R000005); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil

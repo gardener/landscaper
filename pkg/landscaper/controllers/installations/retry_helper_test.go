@@ -37,11 +37,11 @@ var _ = Describe("Retry handler", func() {
 		)
 
 		BeforeEach(func() {
-			op = lsoperation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
+			op = lsoperation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024), testenv.Client)
 			clok = &testing.FakePassiveClock{}
 
-			ctrl = installationsctl.NewTestActuator(*op, testenv.Client, logging.Discard(), clok,
-				&config.LandscaperConfiguration{}, "test-inst2-"+testutils.GetNextCounter())
+			ctrl = installationsctl.NewTestActuator(testenv.Client, testenv.Client, testenv.Client, *op,
+				logging.Discard(), clok, &config.LandscaperConfiguration{}, "test-inst2-"+testutils.GetNextCounter())
 		})
 
 		AfterEach(func() {

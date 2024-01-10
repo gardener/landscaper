@@ -298,10 +298,10 @@ func (c *Constructor) RenderImportExecutions() error {
 	cond := lsv1alpha1helper.GetOrInitCondition(c.Operation.Inst.GetInstallation().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
-		KubeClient: c.Operation.Client(),
+		KubeClient: c.Operation.LsUncachedClient(),
 		Inst:       c.Operation.Inst.GetInstallation(),
 	}
-	targetResolver := genericresolver.New(c.Operation.Client())
+	targetResolver := genericresolver.New(c.Operation.LsUncachedClient())
 	tmpl := template.New(
 		gotemplate.New(templateStateHandler, targetResolver),
 		spiff.New(templateStateHandler, targetResolver))

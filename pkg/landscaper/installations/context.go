@@ -79,7 +79,7 @@ func (s *Scope) GetSiblings(ctx context.Context, kubeClient client.Client) ([]*I
 
 // SetInstallationContext determines the current context and updates the operation context.
 func (o *Operation) SetInstallationContext(ctx context.Context) error {
-	newCtx, err := GetInstallationContext(ctx, o.Client(), o.Inst.GetInstallation())
+	newCtx, err := GetInstallationContext(ctx, o.LsUncachedClient(), o.Inst.GetInstallation())
 	if err != nil {
 		return err
 	}

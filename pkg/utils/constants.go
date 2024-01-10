@@ -1,12 +1,15 @@
 package utils
 
 import (
+	"fmt"
 	"os"
+	"reflect"
 	"strconv"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"k8s.io/client-go/rest"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 const (
@@ -62,6 +65,22 @@ func IsInstallationJobIDsIdentical(inst *lsv1alpha1.Installation) bool {
 
 func IsExecutionJobIDsIdentical(exec *lsv1alpha1.Execution) bool {
 	return exec.Status.JobID == exec.Status.JobIDFinished
+}
+
+func RestConfigWithModifiedClientRequestRestrictions(log logging.Logger, restConfig *rest.Config, burst, qps int) *rest.Config {
+	modifiedRestConfig := *restConfig
+
+	if restConfig.RateLimiter != nil {
+		log.Info("ClientRequestRestrictions - RateLimiter: " + reflect.TypeOf(restConfig.RateLimiter).String())
+	}
+	log.Info("ClientRequestRestrictions - OldBurst: " + strconv.Itoa(restConfig.Burst))
+	log.Info("ClientRequestRestrictions - OldQPS: " + fmt.Sprintf("%v", restConfig.QPS))
+
+	modifiedRestConfig.RateLimiter = nil
+	modifiedRestConfig.Burst = burst
+	modifiedRestConfig.QPS = float32(qps)
+
+	return &modifiedRestConfig
 }
 
 func GetHostClientRequestRestrictions(log logging.Logger, hostAndResourceClusterDifferent bool) (int, int) {

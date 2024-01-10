@@ -148,7 +148,7 @@ func (rh *ReconcileHelper) fetchParent() error {
 	if rh.Operation.Context().Parent != nil {
 		var err error
 		parent, err = installations.CreateInternalInstallationWithContext(rh.ctx, rh.Operation.Context().Parent.GetInstallation(),
-			rh.Operation.Client(), rh.Operation.ComponentsRegistry())
+			rh.Operation.LsUncachedClient(), rh.Operation.ComponentsRegistry())
 		if err != nil {
 			return err
 		}
@@ -163,7 +163,7 @@ func (rh *ReconcileHelper) getSiblings() (map[string]*installations.Installation
 		return rh.siblingsNew, nil
 	}
 
-	rawSiblings, err := rh.Context().GetSiblings(rh.ctx, rh.Client())
+	rawSiblings, err := rh.Context().GetSiblings(rh.ctx, rh.LsUncachedClient())
 	if err != nil {
 		return nil, err
 	}
