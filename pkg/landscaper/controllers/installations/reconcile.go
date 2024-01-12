@@ -96,7 +96,9 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 				read_write_layer.W000024, false)
 		}
 
-		inst.Status.SubInstCache.OrphanedSubs = nil
+		if inst.Status.SubInstCache != nil {
+			inst.Status.SubInstCache.OrphanedSubs = nil
+		}
 		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhases.ObjectsCreated, nil,
 			read_write_layer.W000025, false); err != nil {
 			return err
