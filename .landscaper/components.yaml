@@ -1,0 +1,93 @@
+components:
+  - name: ${HELM_DEPLOYER_COMPONENT_NAME}
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        version: ${VERSION}
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: ${COMPONENT_REPO}
+    resources:
+      - name: helm-deployer-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./helm-deployer/blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: helm-deployer-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${HELM_DEPLOYER_CHART_PATH}
+          repository: charts/helm-deployer
+      - name: helm-deployer-image
+        type: ociImage
+        input:
+          type: docker
+          path: ${HELM_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          repository: images/helm-deployer
+  - name: ${LANDSCAPER_COMPONENT_NAME}
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: ${COMPONENT_REPO}
+    componentReferences:
+      - name: helm-deployer
+        componentName: ${HELM_DEPLOYER_COMPONENT_NAME}
+        version: ${VERSION}
+    resources:
+      - name: landscaper-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${LANDSCAPER_CHART_PATH}
+          repository: charts/landscaper
+      - name: landscaper-controller-rbac-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${LANDSCAPER_CONTROLLER_RBAC_CHART_PATH}
+          repository: charts/landscaper-controller-rbac
+      - name: landscaper-controller-deployment-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${LANDSCAPER_CONTROLLER_DEPLOYMENT_CHART_PATH}
+          repository: charts/landscaper-controller-deployment
+      - name: landscaper-agent-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${LANDSCAPER_AGENT_CHART_PATH}
+          repository: charts/landscaper-agent
+      - name: landscaper-controller
+        type: ociImage
+        input:
+          type: docker
+          path: ${LANDSCAPER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          repository: images/landscaper-controller
+      - name: landscaper-webhooks-server
+        type: ociImage
+        input:
+          type: docker
+          path: ${LANDSCAPER_WEBHOOKS_SERVER_IMAGE_PATH}:${VERSION}
+          repository: images/landscaper-webhooks-server
+      - name: landscaper-agent
+        type: ociImage
+        input:
+          type: docker
+          path: ${LANDSCAPER_AGENT_IMAGE_PATH}:${VERSION}
+          repository: images/landscaper-agent
