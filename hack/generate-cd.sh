@@ -6,15 +6,6 @@
 
 set -e
 
-if ! which ocm 1>/dev/null; then
-  curl -s https://ocm.software/install.sh | bash
-fi
-
-if ! which docker 1>/dev/null; then
-  curl -s https://get.docker.com | bash
-  service docker start
-fi
-
 SOURCE_PATH="$(realpath $(dirname $0)/..)"
 EFFECTIVE_VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
 

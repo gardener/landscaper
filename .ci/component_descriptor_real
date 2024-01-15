@@ -10,4 +10,9 @@ set -o pipefail
 
 SOURCE_PATH="$(dirname $0)/.."
 
+curl -s https://ocm.software/install.sh | bash
+
+curl -s https://get.docker.com | bash
+service docker start
+
 ${SOURCE_PATH}/hack/generate-cd.sh
