@@ -105,7 +105,6 @@ landscaper:
           - true
       traits:
         pull-request: ~
-        draft_release: ~
         options:
           public_build_logs: True
     release:
