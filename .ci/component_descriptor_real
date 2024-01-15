@@ -10,8 +10,4 @@ set -o pipefail
 
 SOURCE_PATH="$(dirname $0)/.."
 
-pushd ${SOURCE_PATH}
-make docker-images
-popd
-
 ${SOURCE_PATH}/hack/generate-cd.sh
