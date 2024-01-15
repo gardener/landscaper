@@ -11,7 +11,8 @@ set -o pipefail
 SOURCE_PATH="$(dirname $0)/.."
 
 curl -s https://ocm.software/install.sh | bash
+
 apk add docker
-service docker start
+docker run -v /var/run/docker.sock:/var/run/docker.sock
 
 ${SOURCE_PATH}/hack/generate-cd.sh
