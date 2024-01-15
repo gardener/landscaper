@@ -44,7 +44,7 @@ landscaper:
           container-deployer-init:
             registry: 'laas-component-descriptor-pipeline'
             target: 'container-deployer-init'
-            image:europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-init
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-init
           container-deployer-wait:
             registry: 'laas-component-descriptor-pipeline'
             target: 'container-deployer-wait'
