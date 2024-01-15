@@ -11,7 +11,7 @@ if ! which ocm 1>/dev/null; then
 fi
 
 if ! which docker 1>/dev/null; then
-  curl -L -o - https://download.docker.com/linux/static/stable/x86_64/docker-18.06.3-ce.tgz | tar zxvf - --strip 1 -C /usr/bin docker/docker
+  curl -s https://get.docker.com | bash
 fi
 
 SOURCE_PATH="$(realpath $(dirname $0)/..)"
