@@ -11,8 +11,6 @@ set -o pipefail
 SOURCE_PATH="$(dirname $0)/.."
 
 curl -s https://ocm.software/install.sh | bash
-
-curl -s https://get.docker.com | bash
-service docker start
+apt-get install docker-ce docker-ce-cli
 
 ${SOURCE_PATH}/hack/generate-cd.sh
