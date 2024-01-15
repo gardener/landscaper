@@ -12,6 +12,7 @@ fi
 
 if ! which docker 1>/dev/null; then
   curl -s https://get.docker.com | bash
+  service docker start
 fi
 
 SOURCE_PATH="$(realpath $(dirname $0)/..)"
