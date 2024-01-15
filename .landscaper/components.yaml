@@ -32,6 +32,121 @@ components:
           type: docker
           path: ${HELM_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
           repository: images/helm-deployer
+
+  - name: ${MANIFEST_DEPLOYER_COMPONENT_NAME}
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        version: ${VERSION}
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: ${COMPONENT_REPO}
+    resources:
+      - name: manifest-deployer-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./manifest-deployer/blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: manifest-deployer-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${MANIFEST_DEPLOYER_CHART_PATH}
+          repository: charts/manifest-deployer
+      - name: manifest-deployer-image
+        type: ociImage
+        input:
+          type: docker
+          path: ${MANIFEST_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          repository: images/manifest-deployer
+
+  - name: ${CONTAINER_DEPLOYER_COMPONENT_NAME}
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        version: ${VERSION}
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: ${COMPONENT_REPO}
+    resources:
+      - name: container-deployer-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./container-deployer/blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: container-deployer-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${CONTAINER_DEPLOYER_CHART_PATH}
+          repository: charts/container-deployer
+      - name: container-deployer-image
+        type: ociImage
+        input:
+          type: docker
+          path: ${CONTAINER_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          repository: images/container-deployer
+      - name: container-init-image
+        type: ociImage
+        input:
+          type: docker
+          path: ${CONTAINER_DEPLOYER_INIT_IMAGE_PATH}:${VERSION}
+          repository: images/container-init
+      - name: container-wait-image
+        type: ociImage
+        input:
+          type: docker
+          path: ${CONTAINER_DEPLOYER_WAIT_IMAGE_PATH}:${VERSION}
+          repository: images/container-wait
+
+  - name: ${MOCK_DEPLOYER_COMPONENT_NAME}
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        version: ${VERSION}
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: ${COMPONENT_REPO}
+    resources:
+      - name: mock-deployer-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./mock-deployer/blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: mock-deployer-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${MOCK_DEPLOYER_CHART_PATH}
+          repository: charts/mock-deployer
+      - name: mock-deployer-image
+        type: ociImage
+        input:
+          type: docker
+          path: ${MOCK_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          repository: images/mock-deployer
+
   - name: ${LANDSCAPER_COMPONENT_NAME}
     version: ${VERSION}
     provider:
@@ -47,6 +162,15 @@ components:
     componentReferences:
       - name: helm-deployer
         componentName: ${HELM_DEPLOYER_COMPONENT_NAME}
+        version: ${VERSION}
+      - name: manifest-deployer
+        componentName: ${MANIFEST_DEPLOYER_COMPONENT_NAME}
+        version: ${VERSION}
+      - name: container-deployer
+        componentName: ${CONTAINER_DEPLOYER_COMPONENT_NAME}
+        version: ${VERSION}
+      - name: mock-deployer
+        componentName: ${MOCK_DEPLOYER_COMPONENT_NAME}
         version: ${VERSION}
     resources:
       - name: landscaper-chart
