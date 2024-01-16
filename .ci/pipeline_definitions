@@ -95,14 +95,6 @@ landscaper:
         - verify
 
   jobs:
-    component-descriptor-ocm:
-      steps:
-        ocm_build_and_publish:
-          execute:
-          - component_descriptor_ocm
-          trait_depends:
-          - publish
-
     head-update:
       traits:
         draft_release: ~
@@ -114,6 +106,11 @@ landscaper:
               - committers
               - codeowners
       steps:
+        ocm_build_and_publish:
+          execute:
+          - component_descriptor_ocm
+          trait_depends:
+          - publish
         integration_test_cnudie:
           execute:
           - integration-test
@@ -132,6 +129,11 @@ landscaper:
           output_dir: 'integration_test_ocm'
     pull-request:
       steps:
+        ocm_build_and_publish:
+          execute:
+          - component_descriptor_ocm
+          trait_depends:
+          - publish
         integration_test_cnudie:
           depends:
           - ocm_build_and_publish
@@ -164,6 +166,11 @@ landscaper:
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
+        ocm_build_and_publish:
+          execute:
+          - component_descriptor_ocm
+          trait_depends:
+          - publish
         integration_test_cnudie:
           execute:
           - integration-test
