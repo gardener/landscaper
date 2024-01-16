@@ -11,48 +11,45 @@ landscaper:
         preprocess: 'inject-commit-hash'
         inject_effective_version: true
       component_descriptor:
-        upload: no-upload
-        depends:
-        - publish
-        - prepare
+        ocm_repository: landscaper
       publish:
         dockerimages:
           landscaper-controller:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'landscaper-controller'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-controller
+            image: eu.gcr.io/gardener-project/landscaper/landscaper-controller
           landscaper-webhooks-server:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'landscaper-webhooks-server'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-webhooks-server
+            image: eu.gcr.io/gardener-project/landscaper/landscaper-webhooks-server
           landscaper-agent:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'landscaper-agent'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-agent
+            image: eu.gcr.io/gardener-project/landscaper/landscaper-agent
           helm-deployer-controller:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'helm-deployer-controller'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/helm-deployer/images/helm-deployer-controller
+            image: eu.gcr.io/gardener-project/landscaper/helm-deployer-controller
           manifest-deployer-controller:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'manifest-deployer-controller'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/manifest-deployer/images/manifest-deployer-controller
+            image: eu.gcr.io/gardener-project/landscaper/manifest-deployer-controller
           container-deployer-controller:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'container-deployer-controller'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-controller
+            image: eu.gcr.io/gardener-project/landscaper/container-deployer-controller
           container-deployer-init:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'container-deployer-init'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-init
+            image: eu.gcr.io/gardener-project/landscaper/container-deployer-init
           container-deployer-wait:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'container-deployer-wait'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-wait
+            image: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
           mock-deployer-controller:
-            registry: 'laas-component-descriptor-pipeline'
+            registry: 'gcr-readwrite'
             target: 'mock-deployer-controller'
-            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/mock-deployer/images/mock-deployer-controller
+            image: eu.gcr.io/gardener-project/landscaper/mock-deployer-controller
     steps:
       verify:
         image: 'golang:1.21.5'
@@ -63,6 +60,7 @@ landscaper:
   jobs:
     head-update:
       traits:
+        draft_release: ~
         notifications:
           default:
             on_error:
@@ -105,6 +103,7 @@ landscaper:
           - true
       traits:
         pull-request: ~
+        draft_release: ~
         options:
           public_build_logs: True
     release:
