@@ -95,6 +95,14 @@ landscaper:
         - verify
 
   jobs:
+    component-descriptor-ocm:
+      steps:
+        ocm_build_and_publish:
+          execute:
+          - component_descriptor_ocm
+          trait_depends:
+          - publish
+
     head-update:
       traits:
         draft_release: ~
@@ -110,30 +118,30 @@ landscaper:
           execute:
           - integration-test
           - false
-          trait_depends:
-          - publish
+          depends:
+          - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
           output_dir: 'integration_test_cnudie'
         integration_test_ocm:
           execute:
           - integration-test
           - true
-          trait_depends:
-          - publish
+          depends:
+          - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
           output_dir: 'integration_test_ocm'
     pull-request:
       steps:
         integration_test_cnudie:
           depends:
-          - publish
+          - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
           execute:
           - integration-test-new
           - false
         integration_test_ocm:
           depends:
-          - publish
+          - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
           execute:
           - integration-test-new
@@ -160,16 +168,16 @@ landscaper:
           execute:
           - integration-test
           - false
-          trait_depends:
-          - publish
+          depends:
+          - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
           output_dir: 'integration_test_cnudie'
         integration_test_ocm:
           execute:
           - integration-test
           - true
-          trait_depends:
-          - publish
+          depends:
+          - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
           output_dir: 'integration_test_ocm'
         update_release:
@@ -181,5 +189,6 @@ landscaper:
           trait_depends:
           - release
           depends:
+          - ocm_build_and_publish
           - integration_test_cnudie
           - integration_test_ocm
