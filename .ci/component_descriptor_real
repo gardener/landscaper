@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -8,11 +8,105 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+echo "component-cli is required to generate the component descriptors"
+CLI_PATH="$(mktemp -d)"
+COMP_CLI=${CLI_PATH}/component-cli
+echo "Trying to installing component-cli to ${COMP_CLI}"
+OS="$(uname -o | awk '{print tolower($0)}')"
+ARCH="$(uname -m | awk '{print tolower($0)}')"
+
+if [[ ${OS} == *"linux"* ]]; then
+  OS="linux"
+fi
+if [[ ${OS} == *"darwin"* ]]; then
+  OS="darwin"
+fi
+
+if [[ ${ARCH} == *"x86_64"* ]]; then
+  ARCH="amd64"
+fi
+if [[ ${ARCH} == *"arm64"* ]]; then
+  ARCH="arm64"
+fi
+if [[ ${ARCH} == *"aarch64"* ]]; then
+  ARCH="arm64"
+fi
+
+curl -L https://github.com/gardener/component-cli/releases/download/v0.55.0/componentcli-${OS}-${ARCH}.gz | gzip -d > ${COMP_CLI}
+chmod +x ${COMP_CLI}
+
 SOURCE_PATH="$(dirname $0)/.."
+VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
+COMMIT_SHA="$(git --git-dir ${SOURCE_PATH}/.git rev-parse HEAD)"
 
-curl -s https://ocm.software/install.sh | bash
+printf "> Building components with version ${VERSION} - ${COMMIT_SHA}\n"
 
-apk add docker
-docker run -v /var/run/docker.sock:/var/run/docker.sock
+REPO_CTX="eu.gcr.io/sap-gcp-cp-k8s-stable-hub/landscaper"
+REPO_CTX_DEV="eu.gcr.io/gardener-project/development"
+CTF_PATH="$(mktemp -d)"
+CTF_PATH="${CTF_PATH}/ctf.tar"
 
-${SOURCE_PATH}/hack/generate-cd.sh
+# creates a component archive for deployer
+# it expects 1 argument with
+# $1 is the name of the component
+function buildComponentArchive() {
+  COMPONENT_NAME=$1
+  CA_PATH="$(mktemp -d)"
+  printf "> Building component ${COMPONENT_NAME}\n"
+
+  COMPONENT_REFERENCES=""
+
+  if [ -f ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/component-references.yaml ]; then
+    COMPONENT_REFERENCES="-c ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/component-references.yaml"
+  fi
+
+  ${COMP_CLI} ca "${CA_PATH}" "${CTF_PATH}" \
+    --component-name=github.com/gardener/landscaper/${COMPONENT_NAME} \
+    --component-version=${VERSION} \
+    --repo-ctx=${REPO_CTX} \
+    -s ${SOURCE_PATH}/.landscaper/sources.yaml \
+    -r ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/resources.yaml \
+    COMMIT_SHA=${COMMIT_SHA} \
+    VERSION=${VERSION} \
+    $COMPONENT_REFERENCES
+}
+
+buildComponentArchive "container-deployer"
+buildComponentArchive "helm-deployer"
+buildComponentArchive "manifest-deployer"
+buildComponentArchive "mock-deployer"
+
+# add landscaper component descriptor
+printf "> Create Landscaper Component"
+LS_CA_PATH="$(mktemp -d)"
+${COMP_CLI}  ca create "${LS_CA_PATH}" \
+  --component-name=github.com/gardener/landscaper \
+  --component-version=${VERSION} \
+  --repo-ctx=${REPO_CTX}
+
+printf "> add resources\n"
+${COMP_CLI} ca resources add ${LS_CA_PATH} \
+    VERSION=${VERSION} \
+    ${SOURCE_PATH}/.landscaper/resources.yaml
+
+printf "> add component references\n"
+${COMP_CLI} ca component-references add ${LS_CA_PATH} \
+    VERSION=${VERSION} \
+    ${SOURCE_PATH}/.landscaper/component-references.yaml
+
+printf "> add sources\n"
+${COMP_CLI} ca sources add ${LS_CA_PATH} \
+    VERSION=${VERSION} \
+    COMMIT_SHA=${COMMIT_SHA} \
+    ${SOURCE_PATH}/.landscaper/sources.yaml
+
+cat ${LS_CA_PATH}/component-descriptor.yaml
+
+printf "> Add Landscaper CA to ctf\n"
+${COMP_CLI} ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
+
+printf "> Publish Landscaper Components to ${REPO_CTX}\n"
+${COMP_CLI} ctf push --repo-ctx=${REPO_CTX} "${CTF_PATH}"
+
+printf "> Publish Landscaper Components to ${REPO_CTX_DEV}\n"
+${COMP_CLI} ctf push --repo-ctx=${REPO_CTX_DEV} "${CTF_PATH}"

@@ -4,4 +4,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-echo "component descriptor ocm"
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+REPOSITORY_CONTEXT="europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper"
+
+# start docker daemon
+launch-dockerd.sh
+
+# configure credentials
+mkdir -p "$HOME/.docker"
+gardener-ci docker cfg --image "${REPOSITORY_CONTEXT}" > $HOME/.docker/config.json
+
+SOURCE_PATH="$(dirname $0)/.."
+${SOURCE_PATH}/hack/generate-cd.sh ${REPOSITORY_CONTEXT}
