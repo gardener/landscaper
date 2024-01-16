@@ -196,6 +196,5 @@ landscaper:
           trait_depends:
           - release
           depends:
-          - ocm_build_and_publish
           - integration_test_cnudie
           - integration_test_ocm
