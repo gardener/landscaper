@@ -50,6 +50,43 @@ landscaper:
             registry: 'gcr-readwrite'
             target: 'mock-deployer-controller'
             image: eu.gcr.io/gardener-project/landscaper/mock-deployer-controller
+
+          landscaper-controller-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'landscaper-controller'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-controller
+          landscaper-webhooks-server-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'landscaper-webhooks-server'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-webhooks-server
+          landscaper-agent-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'landscaper-agent'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-agent
+          helm-deployer-controller-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'helm-deployer-controller'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/helm-deployer/images/helm-deployer-controller
+          manifest-deployer-controller-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'manifest-deployer-controller'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/manifest-deployer/images/manifest-deployer-controller
+          container-deployer-controller-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'container-deployer-controller'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-controller
+          container-deployer-init-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'container-deployer-init'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-init
+          container-deployer-wait-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'container-deployer-wait'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-wait
+          mock-deployer-controller-new:
+            registry: 'laas-component-descriptor-pipeline'
+            target: 'mock-deployer-controller'
+            image: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/mock-deployer/images/mock-deployer-controller
     steps:
       verify:
         image: 'golang:1.21.5'
