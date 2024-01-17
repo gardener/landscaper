@@ -29,8 +29,8 @@ components:
       - name: helm-deployer-image
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${HELM_DEPLOYER_CONTROLLER_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${HELM_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
           repository: images/helm-deployer-controller
 
   - name: ${MANIFEST_DEPLOYER_COMPONENT_NAME}
@@ -63,8 +63,8 @@ components:
       - name: manifest-deployer-image
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${MANIFEST_DEPLOYER_CONTROLLER_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${MANIFEST_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
           repository: images/manifest-deployer-controller
 
   - name: ${CONTAINER_DEPLOYER_COMPONENT_NAME}
@@ -97,20 +97,20 @@ components:
       - name: container-deployer-image
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${CONTAINER_DEPLOYER_CONTROLLER_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${CONTAINER_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
           repository: images/container-deployer-controller
       - name: container-init-image
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${CONTAINER_DEPLOYER_INIT_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${CONTAINER_DEPLOYER_INIT_IMAGE_PATH}:${VERSION}
           repository: images/container-deployer-init
       - name: container-wait-image
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${CONTAINER_DEPLOYER_WAIT_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${CONTAINER_DEPLOYER_WAIT_IMAGE_PATH}:${VERSION}
           repository: images/container-deployer-wait
 
   - name: ${MOCK_DEPLOYER_COMPONENT_NAME}
@@ -143,8 +143,8 @@ components:
       - name: mock-deployer-image
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${MOCK_DEPLOYER_CONTROLLER_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${MOCK_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
           repository: images/mock-deployer-controller
 
   - name: ${LANDSCAPER_COMPONENT_NAME}
@@ -200,18 +200,18 @@ components:
       - name: landscaper-controller
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${LANDSCAPER_CONTROLLER_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${LANDSCAPER_CONTROLLER_IMAGE_PATH}:${VERSION}
           repository: images/landscaper-controller
       - name: landscaper-webhooks-server
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${LANDSCAPER_WEBHOOKS_SERVER_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${LANDSCAPER_WEBHOOKS_SERVER_IMAGE_PATH}:${VERSION}
           repository: images/landscaper-webhooks-server
       - name: landscaper-agent
         type: ociImage
         input:
-          type: ociArtifact
-          path: ${LANDSCAPER_AGENT_IMAGE_REF}:${VERSION}
+          type: docker
+          path: ${LANDSCAPER_AGENT_IMAGE_PATH}:${VERSION}
           repository: images/landscaper-agent
