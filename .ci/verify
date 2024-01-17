@@ -8,9 +8,6 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# disable for now
-exit 0
-
 cd "$(dirname $0)/.."
 
 make install-requirements
