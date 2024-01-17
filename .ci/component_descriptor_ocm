@@ -12,6 +12,12 @@ set -o pipefail
 SOURCE_PATH="$(dirname $0)/.."
 REPOSITORY_CONTEXT="europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper"
 
+# install make
+if ! which make 1>/dev/null; then
+  echo "> Installing make ..."
+  apk add make 1>/dev/null
+fi
+
 # start docker daemon
 launch-dockerd.sh
 
