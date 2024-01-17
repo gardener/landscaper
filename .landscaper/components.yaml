@@ -1,5 +1,5 @@
 components:
-  - name: ${HELM_DEPLOYER_COMPONENT_NAME}
+  - name: github.com/gardener/landscaper/helm-deployer
     version: ${VERSION}
     provider:
       name: ${PROVIDER}
@@ -11,7 +11,7 @@ components:
           type: github
           commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
-          repoUrl: ${COMPONENT_REPO}
+          repoUrl: github.com/gardener/landscaper
     resources:
       - name: helm-deployer-blueprint
         type: landscaper.gardener.cloud/blueprint
@@ -30,10 +30,10 @@ components:
         type: ociImage
         input:
           type: docker
-          path: ${HELM_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          path: helm-deployer-controller:${VERSION}
           repository: images/helm-deployer-controller
 
-  - name: ${MANIFEST_DEPLOYER_COMPONENT_NAME}
+  - name: github.com/gardener/landscaper/manifest-deployer
     version: ${VERSION}
     provider:
       name: ${PROVIDER}
@@ -45,7 +45,7 @@ components:
           type: github
           commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
-          repoUrl: ${COMPONENT_REPO}
+          repoUrl: github.com/gardener/landscaper
     resources:
       - name: manifest-deployer-blueprint
         type: landscaper.gardener.cloud/blueprint
@@ -64,10 +64,10 @@ components:
         type: ociImage
         input:
           type: docker
-          path: ${MANIFEST_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          path: manifest-deployer-controller:${VERSION}
           repository: images/manifest-deployer-controller
 
-  - name: ${CONTAINER_DEPLOYER_COMPONENT_NAME}
+  - name: github.com/gardener/landscaper/container-deployer
     version: ${VERSION}
     provider:
       name: ${PROVIDER}
@@ -79,7 +79,7 @@ components:
           type: github
           commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
-          repoUrl: ${COMPONENT_REPO}
+          repoUrl: github.com/gardener/landscaper
     resources:
       - name: container-deployer-blueprint
         type: landscaper.gardener.cloud/blueprint
@@ -98,22 +98,22 @@ components:
         type: ociImage
         input:
           type: docker
-          path: ${CONTAINER_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          path: container-deployer-controller:${VERSION}
           repository: images/container-deployer-controller
       - name: container-init-image
         type: ociImage
         input:
           type: docker
-          path: ${CONTAINER_DEPLOYER_INIT_IMAGE_PATH}:${VERSION}
+          path: container-deployer-init:${VERSION}
           repository: images/container-deployer-init
       - name: container-wait-image
         type: ociImage
         input:
           type: docker
-          path: ${CONTAINER_DEPLOYER_WAIT_IMAGE_PATH}:${VERSION}
+          path: container-deployer-wait:${VERSION}
           repository: images/container-deployer-wait
 
-  - name: ${MOCK_DEPLOYER_COMPONENT_NAME}
+  - name: github.com/gardener/landscaper/mock-deployer
     version: ${VERSION}
     provider:
       name: ${PROVIDER}
@@ -125,7 +125,7 @@ components:
           type: github
           commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
-          repoUrl: ${COMPONENT_REPO}
+          repoUrl: github.com/gardener/landscaper
     resources:
       - name: mock-deployer-blueprint
         type: landscaper.gardener.cloud/blueprint
@@ -144,10 +144,10 @@ components:
         type: ociImage
         input:
           type: docker
-          path: ${MOCK_DEPLOYER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          path: mock-deployer-controller:${VERSION}
           repository: images/mock-deployer-controller
 
-  - name: ${LANDSCAPER_COMPONENT_NAME}
+  - name: github.com/gardener/landscaper
     version: ${VERSION}
     provider:
       name: ${PROVIDER}
@@ -158,19 +158,19 @@ components:
           type: github
           commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
-          repoUrl: ${COMPONENT_REPO}
+          repoUrl: github.com/gardener/landscaper
     componentReferences:
       - name: helm-deployer
-        componentName: ${HELM_DEPLOYER_COMPONENT_NAME}
+        componentName: github.com/gardener/landscaper/helm-deployer
         version: ${VERSION}
       - name: manifest-deployer
-        componentName: ${MANIFEST_DEPLOYER_COMPONENT_NAME}
+        componentName: github.com/gardener/landscaper/manifest-deployer
         version: ${VERSION}
       - name: container-deployer
-        componentName: ${CONTAINER_DEPLOYER_COMPONENT_NAME}
+        componentName: github.com/gardener/landscaper/container-deployer
         version: ${VERSION}
       - name: mock-deployer
-        componentName: ${MOCK_DEPLOYER_COMPONENT_NAME}
+        componentName: github.com/gardener/landscaper/mock-deployer
         version: ${VERSION}
     resources:
       - name: landscaper-chart
@@ -201,17 +201,17 @@ components:
         type: ociImage
         input:
           type: docker
-          path: ${LANDSCAPER_CONTROLLER_IMAGE_PATH}:${VERSION}
+          path: landscaper-controller:${VERSION}
           repository: images/landscaper-controller
       - name: landscaper-webhooks-server
         type: ociImage
         input:
           type: docker
-          path: ${LANDSCAPER_WEBHOOKS_SERVER_IMAGE_PATH}:${VERSION}
+          path: landscaper-webhooks-server:${VERSION}
           repository: images/landscaper-webhooks-server
       - name: landscaper-agent
         type: ociImage
         input:
           type: docker
-          path: ${LANDSCAPER_AGENT_IMAGE_PATH}:${VERSION}
+          path: landscaper-agent:${VERSION}
           repository: images/landscaper-agent
