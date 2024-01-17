@@ -18,6 +18,11 @@ if ! which make 1>/dev/null; then
   apk add make 1>/dev/null
 fi
 
+# install ocm cli
+if ! which ocm 1>/dev/null; then
+  curl -s https://ocm.software/install.sh | bash
+fi
+
 # start docker daemon
 launch-dockerd.sh
 
