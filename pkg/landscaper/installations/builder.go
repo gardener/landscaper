@@ -70,8 +70,8 @@ func (b *OperationBuilder) WithContext(ctx *Scope) *OperationBuilder {
 // operation builder wrapped options
 
 // Client sets the kubernetes client.
-func (b *OperationBuilder) Client(c client.Client) *OperationBuilder {
-	b.Builder.Client(c)
+func (b *OperationBuilder) WithLsUncachedClient(lsUncachedClient client.Client) *OperationBuilder {
+	b.Builder.WithLsUncachedClient(lsUncachedClient)
 	return b
 }
 
@@ -122,7 +122,7 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 
 	if b.context == nil {
-		newCtx, err := GetInstallationContext(ctx, instOp.Client(), instOp.Inst.GetInstallation())
+		newCtx, err := GetInstallationContext(ctx, instOp.LsUncachedClient(), instOp.Inst.GetInstallation())
 		if err != nil {
 			return nil, err
 		}

@@ -78,10 +78,10 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	internalExports["targets"] = targetsMap
 
 	stateHdlr := template.KubernetesStateHandler{
-		KubeClient: c.Client(),
+		KubeClient: c.LsUncachedClient(),
 		Inst:       c.Inst.GetInstallation(),
 	}
-	targetResolver := genericresolver.New(c.Client())
+	targetResolver := genericresolver.New(c.LsUncachedClient())
 
 	tmpl := template.New(
 		gotemplate.New(stateHdlr, targetResolver),
@@ -186,7 +186,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string]interface{}, error) {
 	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.GetInstallation())
 	dataObjectList := &lsv1alpha1.DataObjectList{}
-	if err := read_write_layer.ListDataObjects(ctx, c.Client(), dataObjectList, read_write_layer.R000070,
+	if err := read_write_layer.ListDataObjects(ctx, c.LsUncachedClient(), dataObjectList, read_write_layer.R000070,
 		client.InNamespace(c.Inst.GetInstallation().Namespace),
 		client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err
@@ -207,7 +207,7 @@ func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[st
 func (c *Constructor) aggregateTargetsInContext(ctx context.Context) (map[string]interface{}, error) {
 	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.GetInstallation())
 	targetList := &lsv1alpha1.TargetList{}
-	if err := read_write_layer.ListTargets(ctx, c.Client(), targetList, read_write_layer.R000071,
+	if err := read_write_layer.ListTargets(ctx, c.LsUncachedClient(), targetList, read_write_layer.R000071,
 		client.InNamespace(c.Inst.GetInstallation().Namespace),
 		client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err

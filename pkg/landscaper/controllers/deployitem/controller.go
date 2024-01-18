@@ -23,12 +23,19 @@ import (
 // It is expected that deployers remove the timestamp annotation from deploy items during reconciliation. If the timestamp annotation exists and is older than a specified duration,
 // the controller marks the deploy item as failed.
 // pickupTimeout is a string containing the pickup timeout duration, either as 'none' or as a duration that can be parsed by time.ParseDuration.
-func NewController(logger logging.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout *lscore.Duration,
+func NewController(lsUncachedClient, lsCachedClient client.Client,
+	logger logging.Logger, scheme *runtime.Scheme, pickupTimeout *lscore.Duration,
 	maxNumberOfWorkers int) (reconcile.Reconciler, error) {
 
 	wc := utils.NewWorkerCounter(maxNumberOfWorkers)
 
-	con := controller{log: logger, c: c, scheme: scheme, workerCounter: wc}
+	con := controller{
+		lsUncachedClient: lsUncachedClient,
+		lsCachedClient:   lsCachedClient,
+		log:              logger,
+		scheme:           scheme,
+		workerCounter:    wc,
+	}
 
 	if pickupTimeout != nil {
 		con.pickupTimeout = pickupTimeout.Duration
@@ -43,15 +50,16 @@ func NewController(logger logging.Logger, c client.Client, scheme *runtime.Schem
 }
 
 type controller struct {
-	log           logging.Logger
-	c             client.Client
-	scheme        *runtime.Scheme
-	pickupTimeout time.Duration
-	workerCounter *utils.WorkerCounter
+	lsUncachedClient client.Client
+	lsCachedClient   client.Client
+	log              logging.Logger
+	scheme           *runtime.Scheme
+	pickupTimeout    time.Duration
+	workerCounter    *utils.WorkerCounter
 }
 
 func (con *controller) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(con.c)
+	return read_write_layer.NewWriter(con.lsUncachedClient)
 }
 
 func HasBeenPickedUp(di *lsv1alpha1.DeployItem) bool {

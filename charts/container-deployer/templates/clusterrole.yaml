@@ -59,24 +59,21 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - "secrets"
-  verbs:
-  - "*"
-
-- apiGroups:
-  - ""
-  resources:
   - "pods"
   - "pods/status"
-  verbs:
-  - "*"
-
-- apiGroups:
-  - ""
-  resources:
+  - "secrets"
   - "serviceaccounts"
   verbs:
   - "*"
+
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
 
 - apiGroups:
   - "rbac.authorization.k8s.io"

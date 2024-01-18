@@ -22,7 +22,7 @@ type RegistriesAccessor interface {
 
 // Operation is the type that is used to share common operational data across the landscaper reconciler
 type Operation struct {
-	client            client.Client
+	lsUncachedClient  client.Client
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
 	componentRegistry model.RegistryAccess
@@ -30,18 +30,18 @@ type Operation struct {
 
 // NewOperation creates a new internal installation Operation object.
 // DEPRECATED: use the Builder instead.
-func NewOperation(c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) *Operation {
+func NewOperation(scheme *runtime.Scheme, recorder record.EventRecorder, lsUncachedClient client.Client) *Operation {
 	return &Operation{
-		client:        c,
-		scheme:        scheme,
-		eventRecorder: recorder,
+		lsUncachedClient: lsUncachedClient,
+		scheme:           scheme,
+		eventRecorder:    recorder,
 	}
 }
 
 // Copy creates a new operation with the same client, scheme and component resolver
 func (o *Operation) Copy() *Operation {
 	return &Operation{
-		client:            o.client,
+		lsUncachedClient:  o.lsUncachedClient,
 		scheme:            o.scheme,
 		eventRecorder:     o.eventRecorder,
 		componentRegistry: o.componentRegistry,
@@ -49,12 +49,12 @@ func (o *Operation) Copy() *Operation {
 }
 
 // Client returns a controller runtime client.Registry
-func (o *Operation) Client() client.Client {
-	return o.client
+func (o *Operation) LsUncachedClient() client.Client {
+	return o.lsUncachedClient
 }
 
-func (o *Operation) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(o.client)
+func (o *Operation) WriterToLsUncachedClient() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(o.lsUncachedClient)
 }
 
 // Scheme returns a kubernetes scheme

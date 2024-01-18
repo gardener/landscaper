@@ -42,7 +42,7 @@ var _ = Describe("Deployer Management Test", func() {
 		Expect(err).ToNot(HaveOccurred())
 		dmConfig = &config.DeployerManagementConfiguration{}
 		dmConfig.Namespace = state.Namespace
-		dm = deployers.NewDeployerManagement(logging.Discard(), testenv.Client, api.LandscaperScheme, *dmConfig)
+		dm = deployers.NewDeployerManagement(testenv.Client, testenv.Client, logging.Discard(), api.LandscaperScheme, *dmConfig)
 	})
 
 	AfterEach(func() {

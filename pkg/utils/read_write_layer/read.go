@@ -44,6 +44,10 @@ func GetExecution(ctx context.Context, c client.Reader, key client.ObjectKey, ex
 	return get(ctx, c, key, execution, readID, "execution")
 }
 
+func ListExecutions(ctx context.Context, c client.Reader, executions *lsv1alpha1.ExecutionList, readID ReadID, opts ...client.ListOption) error {
+	return list(ctx, c, executions, readID, "executions", opts...)
+}
+
 // read methods for deploy items
 func GetDeployItem(ctx context.Context, c client.Reader, key client.ObjectKey, deployItem *lsv1alpha1.DeployItem, readID ReadID) error {
 	return get(ctx, c, key, deployItem, readID, "deployItem")

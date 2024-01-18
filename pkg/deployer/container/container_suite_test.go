@@ -78,7 +78,8 @@ var _ = Describe("Template", func() {
 		})
 		Expect(err).ToNot(HaveOccurred())
 
-		_, err = containerctlr.AddControllerToManager(logging.Discard(), mgr, mgr,
+		_, err = containerctlr.AddControllerToManager(mgr.GetClient(), mgr.GetClient(), mgr.GetClient(), mgr.GetClient(),
+			lsutils.NewFinishedObjectCache(), logging.Discard(), mgr, mgr,
 			containerv1alpha1.Configuration{}, "template-"+utils.GetNextCounter())
 		Expect(err).To(BeNil())
 

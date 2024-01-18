@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"k8s.io/apimachinery/pkg/selection"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -26,42 +28,30 @@ import (
 )
 
 // AddToManager adds the agent to the provided manager.
-func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Manager, hostMgr manager.Manager,
+func AddToManager(ctx context.Context, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	logger logging.Logger, lsMgr manager.Manager, hostMgr manager.Manager,
 	config config.AgentConfiguration, callerName string) error {
 
 	log := logger.WithName("agent").WithValues("targetEnvironment", config.Name)
 	ctx = logging.NewContext(ctx, log)
-	// create direct client for the agent to ensure the landscaper resources
-	lsClient, err := client.New(lsMgr.GetConfig(), client.Options{
-		Scheme: lsMgr.GetScheme(),
-	})
-	if err != nil {
-		return fmt.Errorf("unable to create direct landscaper kubernetes client: %w", err)
-	}
-	hostClient, err := client.New(hostMgr.GetConfig(), client.Options{
-		Scheme: hostMgr.GetScheme(),
-	})
-	if err != nil {
-		return fmt.Errorf("unable to create direct landscaper kubernetes client: %w", err)
-	}
-	agent := New(lsMgr.GetClient(),
+
+	agent := New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		lsMgr.GetConfig(),
 		lsMgr.GetScheme(),
-		hostMgr.GetClient(),
 		hostMgr.GetConfig(),
 		hostMgr.GetScheme(),
 		config,
 	)
 
-	if _, err := agent.EnsureLandscaperResources(ctx, lsClient, hostClient); err != nil {
+	if _, err := agent.EnsureLandscaperResources(ctx); err != nil {
 		return fmt.Errorf("unable to ensure landscaper resources: %w", err)
 	}
-	if _, err := agent.EnsureHostResources(ctx, hostClient, lsClient); err != nil {
+	if _, err := agent.EnsureHostResources(ctx); err != nil {
 		return fmt.Errorf("unable to ensure host resources: %w", err)
 	}
 
-	err = builder.ControllerManagedBy(lsMgr).
-		For(&lsv1alpha1.Environment{}).
+	err := builder.ControllerManagedBy(lsMgr).
+		For(&lsv1alpha1.Environment{}, builder.OnlyMetadata).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Reconciles("environment", "Environment").Logr() }).
 		Complete(agent)
 	if err != nil {
@@ -88,7 +78,9 @@ func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Mana
 			},
 		},
 	}
-	if err := helmctlr.AddDeployerToManager(log, lsMgr, hostMgr, helmConfig, callerName); err != nil {
+	if err := helmctlr.AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		utils.NewFinishedObjectCache(),
+		log, lsMgr, hostMgr, helmConfig, callerName); err != nil {
 		return err
 	}
 

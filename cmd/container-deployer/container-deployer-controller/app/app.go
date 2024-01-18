@@ -37,7 +37,10 @@ func NewContainerDeployerControllerCommand(ctx context.Context) *cobra.Command {
 func (o *options) run(ctx context.Context) error {
 	o.DeployerOptions.Log.Info("Starting Container Deployer", lc.KeyVersion, version.Get().GitVersion)
 
-	gc, err := containerctlr.AddControllerToManager(o.DeployerOptions.Log,
+	gc, err := containerctlr.AddControllerToManager(
+		o.DeployerOptions.LsUncachedClient, o.DeployerOptions.LsCachedClient, o.DeployerOptions.HostUncachedClient, o.DeployerOptions.HostCachedClient,
+		o.DeployerOptions.FinishedObjectCache,
+		o.DeployerOptions.Log,
 		o.DeployerOptions.HostMgr,
 		o.DeployerOptions.LsMgr,
 		o.Config,
@@ -45,6 +48,8 @@ func (o *options) run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to setup container controller")
 	}
+
+	o.DeployerOptions.Log.Info("Starting container deployer manager")
 
 	if gc == nil {
 		return o.DeployerOptions.StartManagers(ctx)
