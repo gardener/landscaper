@@ -31,6 +31,7 @@ func (t *checkpointTimeoutChecker) TimeoutExceeded(ctx context.Context, deployIt
 		logger.Info(err.Error())
 		return 0, err
 	} else {
+		logger.Info("timeout not exceeded at checkpoint", "checkpoint", checkpoint)
 		return defaultTimeout, nil
 	}
 }
