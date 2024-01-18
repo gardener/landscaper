@@ -61,7 +61,6 @@ landscaper:
         privilege_mode: privileged
         trait_depends:
         - version
-        - publish
         depends:
         - verify
         execute:
@@ -83,6 +82,8 @@ landscaper:
           execute:
           - integration-test
           - false
+          trait_depends:
+          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
@@ -91,6 +92,8 @@ landscaper:
           execute:
           - integration-test
           - true
+          trait_depends:
+          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
@@ -98,6 +101,8 @@ landscaper:
     pull-request:
       steps:
         integration_test_cnudie:
+          trait_depends:
+          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
@@ -105,6 +110,8 @@ landscaper:
           - integration-test-new
           - false
         integration_test_ocm:
+          trait_depends:
+          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
@@ -133,6 +140,8 @@ landscaper:
           execute:
           - integration-test
           - false
+          trait_depends:
+          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
@@ -141,6 +150,8 @@ landscaper:
           execute:
           - integration-test
           - true
+          trait_depends:
+          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
