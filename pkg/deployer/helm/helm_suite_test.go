@@ -57,6 +57,7 @@ func TestConfig(t *testing.T) {
 var (
 	testenv     *envtest.Environment
 	projectRoot = filepath.Join("../../../")
+	log         logging.Logger
 )
 
 var _ = BeforeSuite(func() {
@@ -65,6 +66,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	_, err = testenv.Start()
+	Expect(err).ToNot(HaveOccurred())
+
+	log, err = logging.GetLogger()
 	Expect(err).ToNot(HaveOccurred())
 })
 
@@ -772,6 +776,9 @@ var _ = Describe("Template", func() {
 			// This test creates/reconciles/deletes a real helm deploy item. Before these operations,
 			// it replaces the standard timeout checker by test implementations that throw a timeout error at certain
 			// check points. It verifies that the expected timeouts actually occur.
+
+			suiteConfig, _ := GinkgoConfiguration()
+			log.Info("Suite config", "suiteConfig", suiteConfig)
 
 			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
