@@ -778,7 +778,8 @@ var _ = Describe("Template", func() {
 			// check points. It verifies that the expected timeouts actually occur.
 
 			suiteConfig, _ := GinkgoConfiguration()
-			log.Info("Suite config", "suiteConfig", suiteConfig)
+			Expect(suiteConfig.ParallelProcess).To(Equal(1))
+			Expect(suiteConfig.ParallelTotal).To(Equal(1))
 
 			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
