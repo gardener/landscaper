@@ -61,6 +61,7 @@ landscaper:
         privilege_mode: privileged
         trait_depends:
         - version
+        - publish
         depends:
         - verify
         execute:
