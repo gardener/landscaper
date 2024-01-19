@@ -36,7 +36,7 @@ We have uploaded these three component descriptors into an OCI registry, so that
 
 ## The Blueprint
 
-The [blueprint](./blueprint) of the present example belongs to the root component. Part of the blueprint is a 
+The [blueprint](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/blueprint) of the present example belongs to the root component. Part of the blueprint is a 
 [deploy execution](./blueprint/deploy-execution.yaml). The deploy execution is a [Go Template][2], 
 which is used to generate a DeployItem. 
 The template can be filled with values from a certain data structure. The following fields in this data structure 

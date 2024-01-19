@@ -15,13 +15,11 @@ becomes possible if we store the Blueprint at a referencable location, e.g. an O
 
 ## The Example Blueprint
 
-You can find the blueprint for the current example [here](./blueprint). Note that the blueprint is a directory, and not
-just the [blueprint/blueprint.yaml](./blueprint/blueprint.yaml) file. In future examples the blueprint directory will
-contain further files.
+You can find the blueprint for the current example [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/blueprints/external-blueprint/blueprint). Note that the blueprint is a directory, and not just the [blueprint/blueprint.yaml](./blueprint/blueprint.yaml) file. In future examples the blueprint directory will contain further files.
 
 We have uploaded the blueprint
 [here](https://eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint) into an OCI
-registry, from where the Landscaper can access it. You can find the commands which we have used to upload the blueprint
+registry, from where the Landscaper can access it. You can find the commands, which we have used to upload the blueprint
 in this script: [commands/push-blueprint.sh](./commands/push-blueprint.sh).
 
 
@@ -105,7 +103,7 @@ with the component version embedding the blueprint as a local blob.
 
 #### Component Version with External Resource  
 A file system representation of a component version containing the resource through an external reference is shown
-[here](./component-archive/v2-external).  The corresponding component-descriptor describing that component version is
+[here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/external-blueprint/component-archive/v2-external). The corresponding component-descriptor describing that component version is
 stored as a top-level file. The component descriptor contains only a single _resource_ with the `name: blueprint`. This
 resource has an _access_ of `type: ociArtifact` that contains a reference to the previously uploaded image.  Besides the
 component-descriptor, there is a directory called blobs at the top-level. This is where the local blobs of a embedded
@@ -114,7 +112,7 @@ through an external reference, this directory is empty.
 
 #### Component Version with Local Resource  
 A file system representation of a component version containing the resource as a local blob is shown
-[here](./component-archive/v2-local).  Again, the corresponding component-descriptor describing that component version
+[here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/external-blueprint/component-archive/v2-local).  Again, the corresponding component-descriptor describing that component version
 is stored as a top-level file. Exactly as before, the component descriptor contains only a single _resource_ with the
 `name: blueprint`. But now, this resource has an _access_ of `type: localBlob`. Instead of an `imageReference`, this
 _access_ of `type: localBlob` has a `localReference`. This is the sha256 hash value of the blueprint. If you open the
