@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/open-component-model/ocm/pkg/mime"
 	"os"
 	"strings"
@@ -209,30 +210,46 @@ func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []ma
 // which can be used by the deployers to fetch the resource content.
 func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (string, error) {
 	return func(args ...interface{}) (string, error) {
-		if args == nil {
-			return "", errors.New("unable to provide key for empty relative artifact reference")
-		}
-		if len(args) > 1 {
-			return "", errors.New("this function only requires a single argument, but multiple were provided")
-		}
-
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
 		if !ok {
 			return "", errors.New("unable to use this function without useOCM set to true")
 		}
 		compvers := ocmlibCv.GetOCMObject()
 
+		if args == nil {
+			return "", errors.New("unable to provide key for empty relative artifact reference")
+		}
+		if len(args) > 1 {
+			return "", errors.New(fmt.Sprintf("this function requires 1 argument, but %v were provided", len(args)))
+		}
 		resourceRefStr, ok := args[0].(string)
 		if !ok {
 			return "", errors.New("unable to assert the first argument as string")
 		}
-		resourceRef := v1.ResourceReference{}
-		err := runtime.DefaultYAMLEncoding.Unmarshal([]byte(resourceRefStr), &resourceRef)
-		if err != nil {
-			return "", fmt.Errorf("unable to unmarshal argument into a relative resource reference: %w", err)
+
+		resourceRef := &v1.ResourceReference{}
+		if strings.HasPrefix(resourceRefStr, "cd://") {
+			// assume that the resource is specified through a path expression
+			resourceRefUri, err := cdutils.ParseURI(resourceRefStr)
+			if err != nil {
+				return "", fmt.Errorf("failed to parse argument into URI: %w", err)
+			}
+			resourceRef, err = resourceRefUri.AsRelativeResourceReference()
+		} else {
+			// assume that the resource is specified through a relative artifact reference
+			// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references)
+			err := runtime.DefaultYAMLEncoding.Unmarshal([]byte(resourceRefStr), resourceRef)
+			if err != nil {
+				return "", fmt.Errorf("failed to unmarshal argument into a relative resource reference: %w", err)
+			}
 		}
 
-		resource, resourceCv, err := utils.ResolveResourceReference(compvers, resourceRef, nil)
+		// if we ever migrate to an approach where a webserver fetches the resources for the deployers, instead
+		// of passing the global id to the deployers, we should merely parse the relative reference to the deployer,
+		// which the deployer would forward to the webserver and the webserver determines the root component to resolve
+		// this reference by watching the installation (this way, we would ensure that the deployer can only get
+		// resources from its legitimate component)
+		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, nil)
 		if err != nil {
 			return "", fmt.Errorf("unable to resolve relative resource reference: %w", err)
 		}
