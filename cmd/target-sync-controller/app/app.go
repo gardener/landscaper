@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
@@ -56,6 +57,7 @@ func (o *options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
+		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
 	}
 
 	data, err := os.ReadFile(o.landscaperKubeconfigPath)

@@ -7,7 +7,9 @@ package app
 import (
 	"context"
 	"fmt"
+	"k8s.io/utils/pointer"
 	"os"
+	"time"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
@@ -85,6 +87,7 @@ func (o *Options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
+		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
 	}
 
 	//TODO: investigate whether this is used with an uncached client
