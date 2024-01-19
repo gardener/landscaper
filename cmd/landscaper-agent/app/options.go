@@ -9,16 +9,14 @@ import (
 	goflag "flag"
 	"fmt"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"time"
-
 	"k8s.io/utils/ptr"
-
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	"github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -71,7 +69,7 @@ func (o *options) Complete() error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		SyncPeriod:         ptr.To[time.Duration](time.Hour * 24 * 1000),
+		Cache:              cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
 	}
 
 	hostRestConfig, err := ctrl.GetConfig()

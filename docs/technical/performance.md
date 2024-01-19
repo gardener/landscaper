@@ -137,6 +137,14 @@ the execution of modified items for several minutes. Therefore, the frequency of
 days, such that this should not happen anymore, because the pods are usually restarted before at least during the regular 
 updates.
 
+## Reduce impact of unintended complete reconciliations
+
+Sometimes about 15 minute after a restart, all watched objects are reconciled again, though there were no modifications.
+Currently, we have no explanation for this behaviour of the controller runtime, and it is unclear how often this happens. 
+By improving the startup cache, storing all finished objects ([see](https://github.com/gardener/landscaper/pull/953)), 
+such load peaks could be handled withing less than one minute for about 20.000 objects. 
+
+
 
 
 

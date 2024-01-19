@@ -10,10 +10,9 @@ import (
 	goflag "flag"
 	"fmt"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"time"
-
 	"k8s.io/utils/ptr"
-
 	flag "github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
 	v1 "k8s.io/api/core/v1"
@@ -23,7 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
-
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -85,7 +83,7 @@ func (o *DefaultOptions) Complete() error {
 	opts := manager.Options{
 		LeaderElection:     false,
 		MetricsBindAddress: "0", // disable the metrics serving by default
-		SyncPeriod:         ptr.To[time.Duration](time.Hour * 24 * 1000),
+		Cache:              cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
 	}
 
 	hostRestConfig, err := ctrl.GetConfig()

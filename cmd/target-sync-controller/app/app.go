@@ -8,25 +8,17 @@ import (
 	"context"
 	"fmt"
 	"os"
-
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"k8s.io/utils/ptr"
-
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"k8s.io/client-go/tools/clientcmd"
-
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
 	lsutils "github.com/gardener/landscaper/pkg/utils"
-
 	"time"
-
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
-
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	lsconfig "github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
@@ -64,7 +56,7 @@ func (o *options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		SyncPeriod:         ptr.To[time.Duration](time.Hour * 24 * 1000),
+		Cache:              cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
 	}
 
 	data, err := os.ReadFile(o.landscaperKubeconfigPath)

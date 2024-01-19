@@ -182,9 +182,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, c.callerName)
 	defer c.workerCounter.Exit()
 
+	startMessage := "startup-di"
+
 	if c.finishedObjectCache.IsContained(req) {
 		cachedMetadata := lsutil.EmptyDeployItemMetadata()
 		if err := read_write_layer.GetMetaData(ctx, c.lsCachedClient, req.NamespacedName, cachedMetadata, read_write_layer.R000095); err != nil {
+			logger.Info(startMessage + "1")
 			if apierrors.IsNotFound(err) {
 				logger.Debug(err.Error())
 				return reconcile.Result{}, nil
@@ -192,10 +195,13 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 
-		if c.finishedObjectCache.IsFinishedAndRemove(cachedMetadata) {
+		if c.finishedObjectCache.IsFinishedOrRemove(cachedMetadata) {
+			logger.Info(startMessage + "2")
 			return reconcile.Result{}, nil
 		}
 	}
+
+	logger.Info(startMessage + "3")
 
 	metadata := lsutil.EmptyDeployItemMetadata()
 	if err := read_write_layer.GetMetaData(ctx, c.lsUncachedClient, req.NamespacedName, metadata, read_write_layer.R000042); err != nil {
