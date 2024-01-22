@@ -6,12 +6,18 @@ package helmdeployer
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
 	"k8s.io/utils/ptr"
+	"helm.sh/helm/v3/pkg/registry"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
@@ -223,6 +229,45 @@ func HelmDeployerTests(f *framework.Framework) {
 			})
 		})
 
+		Context("private registry", func() {
+			It("should access a helm chart from on private registry and deploy it", func() {
+				file, err := os.Open(f.RegistryCAPath)
+				Expect(err).To(BeNil())
+
+				b, err := io.ReadAll(file)
+				Expect(err).To(BeNil())
+
+				certPool := x509.NewCertPool()
+				certPool.AppendCertsFromPEM(b)
+
+				transport := &http.Transport{
+					TLSClientConfig: &tls.Config{
+						RootCAs: certPool,
+					},
+				}
+				httpClient := &http.Client{Transport: transport}
+
+				helmClient, err := registry.NewClient(
+					registry.ClientOptCredentialsFile(f.RegistryConfigPath),
+					registry.ClientOptHTTPClient(httpClient))
+				Expect(err).To(BeNil())
+
+				image, err := os.Open(filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart.tgz"))
+				Expect(err).To(BeNil())
+
+				imageData, err := io.ReadAll(image)
+				Expect(err).To(BeNil())
+
+				pushResult, err := helmClient.Push(imageData, f.RegistryBasePath+"/privreg-test-chart:1.0.0")
+				Expect(err).To(BeNil())
+				Expect(pushResult).ToNot(BeNil())
+
+				pullResult, err := helmClient.Pull(f.RegistryBasePath + "/privreg-test-chart:1.0.0")
+				Expect(err).To(BeNil())
+				Expect(pullResult).ToNot(BeNil())
+			})
+
+		})
 	})
 }
 

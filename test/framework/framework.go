@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -118,6 +119,10 @@ type Framework struct {
 	// RegistryConfig defines the oci registry config file.
 	// It is expected that the configfile contains exactly one server.
 	RegistryConfig *configfile.ConfigFile
+
+	RegistryConfigPath string
+
+	RegistryCAPath string
 	// RegistryBasePath defines the base path for the configured registry.
 	// The base path is used to construct references for artifacts.
 	RegistryBasePath string
@@ -164,6 +169,9 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 	}
 
 	if len(cfg.DockerConfigPath) != 0 {
+		f.RegistryConfigPath = cfg.DockerConfigPath
+		f.RegistryCAPath = filepath.Join(filepath.Dir(cfg.DockerConfigPath), "cacerts.crt")
+
 		data, err := os.ReadFile(cfg.DockerConfigPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read docker config file: %w", err)

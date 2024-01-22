@@ -12,6 +12,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/utils/pointer"
+
 	flag "github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
 	v1 "k8s.io/api/core/v1"

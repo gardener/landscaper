@@ -11,6 +11,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/utils/pointer"
+
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/tools/clientcmd"
