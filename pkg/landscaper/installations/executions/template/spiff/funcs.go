@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
-	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 	"github.com/open-component-model/ocm/pkg/mime"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -122,6 +121,15 @@ func spiffResolveResources(cd *types.ComponentDescriptor) func(arguments []inter
 	}
 }
 
+// getResourceKeyGoFunc returns a function that resolves a relative resource reference
+// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references).
+// Its input is either a relative artifact reference in the format described by ocm or a file-path like expression
+// like cd://componentReferences/referenceName1/componentReferences/referenceName2/resources/resourceName1 as defined
+// here pkg/landscaper/registry/components/cdutils/uri.go.
+// Based on an ocm component version given as input parameter, it constructs the global identity of this resource
+// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/01-model/03-elements-sub.md#identifiers) and
+// returns a base64 encoded string representation of that global identity. This base64 encoded string acts as key
+// which can be used by the deployers to fetch the resource content.
 func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 		info := dynaml.DefaultInfo()
@@ -130,7 +138,7 @@ func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}
 			return info.Error("unable to provide key for empty relative artifact reference")
 		}
 		if len(arguments) > 1 {
-			return info.Error("this function only requires a single argument, but multiple were provided")
+			return info.Error(fmt.Sprintf("this function requires 1 argument, but %v were provided", len(arguments)))
 		}
 
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
@@ -139,18 +147,26 @@ func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}
 		}
 		compvers := ocmlibCv.GetOCMObject()
 
-		resourceRefData, err := spiffyaml.ValueToJSON(arguments[0])
-		if err != nil {
+		var resourceRefStr string
+		if ref, ok := arguments[0].(string); ok {
+			resourceRefStr = ref
+		} else if resourceRefData, err := spiffyaml.ValueToJSON(arguments[0]); err == nil {
+			resourceRefStr = string(resourceRefData)
+		} else {
 			return info.Error("unable to parse input")
 		}
 
-		resourceRef := v1.ResourceReference{}
-		err = runtime.DefaultYAMLEncoding.Unmarshal(resourceRefData, &resourceRef)
+		resourceRef, err := common.ParseResourceReference(resourceRefStr)
 		if err != nil {
-			return info.Error("unable to unmarshal argument into a relative resource reference: %w", err)
+			return info.Error(err)
 		}
 
-		resource, resourceCv, err := utils.ResolveResourceReference(compvers, resourceRef, nil)
+		// if we ever migrate to an approach where a webserver fetches the resources for the deployers, instead
+		// of passing the global id to the deployers, we should merely parse the relative reference to the deployer,
+		// which the deployer would forward to the webserver and the webserver determines the root component to resolve
+		// this reference by watching the installation (this way, we would ensure that the deployer can only get
+		// resources from its legitimate component)
+		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, nil)
 		if err != nil {
 			return info.Error("unable to resolve relative resource reference: %w", err)
 		}
@@ -174,6 +190,9 @@ func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}
 	}
 }
 
+// getResourceContentGoFunc returns a function that resolves a relative resource reference
+// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references),
+// based on an ocm component version given as input parameter and returns the content of the corresponding resource.
 func spiffGetResourceContent(cv model.ComponentVersion) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 		info := dynaml.DefaultInfo()
@@ -191,18 +210,21 @@ func spiffGetResourceContent(cv model.ComponentVersion) func(arguments []interfa
 		}
 		compvers := ocmlibCv.GetOCMObject()
 
-		resourceRefData, err := spiffyaml.ValueToJSON(arguments[0])
-		if err != nil {
+		var resourceRefStr string
+		if ref, ok := arguments[0].(string); ok {
+			resourceRefStr = ref
+		} else if resourceRefData, err := spiffyaml.ValueToJSON(arguments[0]); err == nil {
+			resourceRefStr = string(resourceRefData)
+		} else {
 			return info.Error("unable to parse input")
 		}
 
-		resourceRef := v1.ResourceReference{}
-		err = runtime.DefaultYAMLEncoding.Unmarshal(resourceRefData, &resourceRef)
+		resourceRef, err := common.ParseResourceReference(resourceRefStr)
 		if err != nil {
-			return info.Error("unable to unmarshal argument into a relative resource reference: %w", err)
+			return info.Error(err)
 		}
 
-		resource, _, err := utils.ResolveResourceReference(compvers, resourceRef, nil)
+		resource, _, err := utils.ResolveResourceReference(compvers, *resourceRef, nil)
 		if err != nil {
 			return info.Error("unable to resolve relative resource reference: %w", err)
 		}
