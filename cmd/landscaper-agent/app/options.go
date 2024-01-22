@@ -8,10 +8,9 @@ import (
 	"errors"
 	goflag "flag"
 	"fmt"
+	"k8s.io/utils/pointer"
 	"os"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"time"
 
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -21,7 +20,9 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
 )
 
 type options struct {
@@ -69,31 +70,31 @@ func (o *options) Complete() error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		NewClient:          lsutils.NewUncachedClient(lsutils.LsHostClientBurstDefault, lsutils.LsHostClientQpsDefault),
+		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
 	}
+
 	hostRestConfig, err := ctrl.GetConfig()
 	if err != nil {
 		return fmt.Errorf("unable to get host kubeconfig: %w", err)
 	}
+	hostRestConfig = lsutils.RestConfigWithModifiedClientRequestRestrictions(log, hostRestConfig, lsutils.LsHostClientBurstDefault, lsutils.LsHostClientQpsDefault)
+
 	o.HostMgr, err = ctrl.NewManager(hostRestConfig, opts)
 	if err != nil {
-		return fmt.Errorf("unable to setup manager")
+		return fmt.Errorf("unable to setup host manager")
 	}
 
 	data, err := os.ReadFile(o.landscaperKubeconfigPath)
 	if err != nil {
 		return fmt.Errorf("unable to read landscaper kubeconfig from %s: %w", o.landscaperKubeconfigPath, err)
 	}
-	client, err := clientcmd.NewClientConfigFromBytes(data)
-	if err != nil {
-		return fmt.Errorf("unable to build landscaper cluster client from %s: %w", o.landscaperKubeconfigPath, err)
-	}
-	lsRestConfig, err := client.ClientConfig()
-	if err != nil {
-		return fmt.Errorf("unable to build landscaper cluster rest client from %s: %w", o.landscaperKubeconfigPath, err)
-	}
 
-	opts.NewClient = lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault)
+	lsRestConfig, err := clientcmd.RESTConfigFromKubeConfig(data)
+	if err != nil {
+		return fmt.Errorf("unable to build landscaper cluster rest client for agent: %w", err)
+	}
+	lsRestConfig = lsutils.RestConfigWithModifiedClientRequestRestrictions(log, lsRestConfig, lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault)
+
 	o.LsMgr, err = ctrl.NewManager(lsRestConfig, opts)
 	if err != nil {
 		return fmt.Errorf("unable to setup manager")

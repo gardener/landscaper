@@ -7,7 +7,9 @@ package app
 import (
 	"context"
 	"fmt"
+	"k8s.io/utils/pointer"
 	"os"
+	"time"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
@@ -85,7 +87,7 @@ func (o *Options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		NewClient:          lsutils.NewUncachedClient(burst, qps),
+		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
 	}
 
 	//TODO: investigate whether this is used with an uncached client
@@ -97,7 +99,10 @@ func (o *Options) run(ctx context.Context) error {
 		opts.MetricsBindAddress = fmt.Sprintf(":%d", o.Config.Metrics.Port)
 	}
 
-	hostMgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
+	hostRestConfig := ctrl.GetConfigOrDie()
+	hostRestConfig = lsutils.RestConfigWithModifiedClientRequestRestrictions(setupLogger, hostRestConfig, burst, qps)
+
+	hostMgr, err := ctrl.NewManager(hostRestConfig, opts)
 	if err != nil {
 		return fmt.Errorf("unable to setup manager: %w", err)
 	}
@@ -108,20 +113,15 @@ func (o *Options) run(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("unable to read landscaper kubeconfig from %s: %w", o.landscaperKubeconfigPath, err)
 		}
-		client, err := clientcmd.NewClientConfigFromBytes(data)
-		if err != nil {
-			return fmt.Errorf("unable to build landscaper cluster client from %s: %w", o.landscaperKubeconfigPath, err)
-		}
-		lsConfig, err := client.ClientConfig()
-		if err != nil {
-			return fmt.Errorf("unable to build landscaper cluster rest client from %s: %w", o.landscaperKubeconfigPath, err)
-		}
 
-		opts.MetricsBindAddress = "0"
+		lsRestConfig, err := clientcmd.RESTConfigFromKubeConfig(data)
+		if err != nil {
+			return fmt.Errorf("unable to build landscaper cluster rest client: %w", err)
+		}
 		burst, qps = lsutils.GetResourceClientRequestRestrictions(setupLogger)
-		opts.NewClient = lsutils.NewUncachedClient(burst, qps)
+		lsRestConfig = lsutils.RestConfigWithModifiedClientRequestRestrictions(setupLogger, lsRestConfig, burst, qps)
 
-		lsMgr, err = ctrl.NewManager(lsConfig, opts)
+		lsMgr, err = ctrl.NewManager(lsRestConfig, opts)
 		if err != nil {
 			return fmt.Errorf("unable to setup landscaper cluster manager from %s: %w", o.landscaperKubeconfigPath, err)
 		}
@@ -130,17 +130,33 @@ func (o *Options) run(ctx context.Context) error {
 	metrics.RegisterMetrics(controllerruntimeMetrics.Registry)
 	ctrlLogger := o.Log.WithName("controllers")
 
-	if os.Getenv("LANDSCAPER_MODE") == "central-landscaper" {
-		return o.startCentralLandscaper(ctx, lsMgr, hostMgr, ctrlLogger, setupLogger)
-	} else {
-		return o.startMainController(ctx, lsMgr, hostMgr, ctrlLogger, setupLogger)
+	if err := o.ensureCRDs(ctx, lsMgr); err != nil {
+		return err
+	}
+	if lsMgr != hostMgr {
+		if err := o.ensureCRDs(ctx, hostMgr); err != nil {
+			return err
+		}
+	}
+	install.Install(lsMgr.GetScheme())
+
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient, err := lsutils.ClientsFromManagers(lsMgr, hostMgr)
+	if err != nil {
+		return err
 	}
 
+	if os.Getenv("LANDSCAPER_MODE") == "central-landscaper" {
+		return o.startCentralLandscaper(ctx, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+			lsMgr, hostMgr, ctrlLogger, setupLogger)
+	} else {
+		return o.startMainController(ctx, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+			lsMgr, hostMgr, ctrlLogger, setupLogger)
+	}
 }
 
-func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manager.Manager,
-	ctrlLogger, setupLogger logging.Logger) error {
-	install.Install(lsMgr.GetScheme())
+func (o *Options) startMainController(ctx context.Context,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	lsMgr, hostMgr manager.Manager, ctrlLogger, setupLogger logging.Logger) error {
 
 	store, err := blueprint.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
 	if err != nil {
@@ -148,11 +164,13 @@ func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manage
 	}
 	blueprint.SetStore(store)
 
-	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config, "installations"); err != nil {
+	if err := installationsctrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		ctrlLogger, lsMgr, o.Config, "installations"); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr, hostMgr, o.Config); err != nil {
+	if err := executionactrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+		ctrlLogger, lsMgr, hostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
@@ -181,27 +199,16 @@ func (o *Options) startMainController(ctx context.Context, lsMgr, hostMgr manage
 	return eg.Wait()
 }
 
-func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr manager.Manager,
-	ctrlLogger, setupLogger logging.Logger) error {
+func (o *Options) startCentralLandscaper(ctx context.Context,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	lsMgr, hostMgr manager.Manager, ctrlLogger, setupLogger logging.Logger) error {
 
-	if err := o.ensureCRDs(ctx, lsMgr); err != nil {
-		return err
-	}
-
-	if lsMgr != hostMgr {
-		if err := o.ensureCRDs(ctx, hostMgr); err != nil {
-			return err
-		}
-	}
-
-	install.Install(lsMgr.GetScheme())
-
-	if err := contextctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config); err != nil {
+	if err := contextctrl.AddControllerToManager(lsUncachedClient, lsCachedClient, ctrlLogger, lsMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup context controller: %w", err)
 	}
 
 	if !o.Config.DeployerManagement.Disable {
-		if err := deployers.AddControllersToManager(ctrlLogger, lsMgr, o.Config); err != nil {
+		if err := deployers.AddControllersToManager(lsUncachedClient, lsCachedClient, ctrlLogger, lsMgr, o.Config); err != nil {
 			return fmt.Errorf("unable to setup deployer controllers: %w", err)
 		}
 		if !o.Config.DeployerManagement.Agent.Disable {
@@ -217,11 +224,12 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 					},
 				},
 			)
-			if err := agent.AddToManager(ctx, o.Log, lsMgr, hostMgr, agentConfig, "landscaper-helm"); err != nil {
+			if err := agent.AddToManager(ctx, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+				o.Log, lsMgr, hostMgr, agentConfig, "landscaper-helm"); err != nil {
 				return fmt.Errorf("unable to setup default agent: %w", err)
 			}
 		}
-		if err := o.DeployInternalDeployers(ctx, lsMgr); err != nil {
+		if err := o.DeployInternalDeployers(ctx, lsUncachedClient); err != nil {
 			return err
 		}
 
@@ -236,21 +244,22 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 		}
 	}
 
-	if err := deployitemctrl.AddControllerToManager(ctrlLogger,
+	if err := deployitemctrl.AddControllerToManager(lsUncachedClient, lsCachedClient,
+		ctrlLogger,
 		lsMgr,
 		o.Config.Controllers.DeployItems,
 		o.Config.DeployItemTimeouts.Pickup); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 
-	if err := targetsync.AddControllerToManagerForTargetSyncs(ctrlLogger, lsMgr); err != nil {
+	if err := targetsync.AddControllerToManagerForTargetSyncs(lsUncachedClient, lsCachedClient, ctrlLogger, lsMgr); err != nil {
 		return fmt.Errorf("unable to register target sync controller: %w", err)
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		healthChecker := healthcheck.NewHealthChecker(o.Config.LsDeployments, hostMgr.GetClient())
+		healthChecker := healthcheck.NewHealthChecker(o.Config.LsDeployments, hostUncachedClient)
 		if err := healthChecker.StartPeriodicalHealthCheck(ctx, ctrlLogger); err != nil {
 			return err
 		}
@@ -258,13 +267,13 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 	})
 
 	eg.Go(func() error {
-		lockCleaner := lock.NewLockCleaner(lsMgr.GetClient())
+		lockCleaner := lock.NewLockCleaner(lsUncachedClient)
 		lockCleaner.StartPeriodicalSyncObjectCleanup(ctx, ctrlLogger)
 		return nil
 	})
 
 	eg.Go(func() error {
-		monitor := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostMgr.GetClient())
+		monitor := monitoring.NewMonitor(lsutils.GetCurrentPodNamespace(), hostUncachedClient)
 		monitor.StartMonitoring(ctx, ctrlLogger)
 		return nil
 	})
@@ -293,15 +302,9 @@ func (o *Options) startCentralLandscaper(ctx context.Context, lsMgr, hostMgr man
 }
 
 // DeployInternalDeployers automatically deploys configured deployers using the new Deployer registrations.
-func (o *Options) DeployInternalDeployers(ctx context.Context, mgr manager.Manager) error {
-	directClient, err := client.New(mgr.GetConfig(), client.Options{
-		Scheme: mgr.GetScheme(),
-	})
-	if err != nil {
-		return fmt.Errorf("unable to create direct client: %q", err)
-	}
+func (o *Options) DeployInternalDeployers(ctx context.Context, lsUncachedClient client.Client) error {
 	ctx = logging.NewContext(ctx, logging.Wrap(ctrl.Log.WithName("deployerManagement")))
-	return o.Deployer.DeployInternalDeployers(ctx, directClient, o.Config)
+	return o.Deployer.DeployInternalDeployers(ctx, lsUncachedClient, o.Config)
 }
 
 func (o *Options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {

@@ -8,6 +8,12 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
+	clientlib "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -40,19 +46,22 @@ var _ = Describe("Simple", func() {
 	BeforeEach(func() {
 		var err error
 
-		op := operation.NewOperation(testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		op := operation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024), testenv.Client)
 
-		instActuator = instctlr.NewTestActuator(*op, testenv.Client, logging.Discard(), clock.RealClock{}, &config.LandscaperConfiguration{
-			Registry: config.RegistryConfiguration{
-				Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
-			},
-		}, "test-inst4-"+testutils.GetNextCounter())
+		instActuator = instctlr.NewTestActuator(testenv.Client, testenv.Client, testenv.Client, *op, logging.Discard(),
+			clock.RealClock{}, &config.LandscaperConfiguration{
+				Registry: config.RegistryConfiguration{
+					Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
+				},
+			}, "test-inst4-"+testutils.GetNextCounter())
 
-		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, testenv.Client, api.LandscaperScheme,
+		execActuator, err = execctlr.NewController(testenv.Client, testenv.Client, testenv.Client, testenv.Client, logging.Discard(), api.LandscaperScheme,
 			record.NewFakeRecorder(1024), 1000, false, "exec-test-"+testutils.GetNextCounter())
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,
+		mockActuator, err = mockctlr.NewController(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
+			utils.NewFinishedObjectCache(),
+			logging.Discard(), api.LandscaperScheme,
 			record.NewFakeRecorder(1024), mockv1alpha1.Configuration{}, "test-simple"+testutils.GetNextCounter())
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -110,19 +119,17 @@ var _ = Describe("Simple", func() {
 		Expect(exec.Status.ExecutionPhase).To(Equal(lsv1alpha1.ExecutionPhases.Progressing))
 		Expect(exec.Status.JobID).To(Equal(jobID))
 		Expect(exec.Status.JobIDFinished).To(BeEmpty())
-		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
+		deployItems, err := read_write_layer.ListManagedDeployItems(ctx, testenv.Client, clientlib.ObjectKeyFromObject(exec), read_write_layer.R000000)
+		Expect(err).To(BeNil())
+		Expect(deployItems.Items).To(HaveLen(1))
 
-		diList := &lsv1alpha1.DeployItemList{}
-		Expect(testenv.Client.List(ctx, diList)).ToNot(HaveOccurred())
-		Expect(diList.Items).To(HaveLen(1))
-		diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
-		di := &lsv1alpha1.DeployItem{}
-		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).To(Succeed())
+		di := &deployItems.Items[0]
 		Expect(di.Status.Phase).To(BeEmpty())
 		Expect(di.Status.GetJobID()).To(Equal(jobID))
 		Expect(di.Status.JobIDFinished).To(BeEmpty())
 
 		// reconcile deploy item
+		diReq := testutils.Request(di.Name, di.Namespace)
 		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 

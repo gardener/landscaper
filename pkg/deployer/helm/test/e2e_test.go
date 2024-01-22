@@ -10,6 +10,8 @@ import (
 
 	"k8s.io/utils/ptr"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -51,19 +53,17 @@ var _ = Describe("Helm Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		deployer, err := helmctrl.NewDeployer(
+		deployer, err := helmctrl.NewDeployer(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			logging.Discard(),
-			testenv.Client,
-			testenv.Client,
 			helmv1alpha1.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl := deployerlib.NewController(
-			testenv.Client,
+			testenv.Client, testenv.Client, testenv.Client, testenv.Client,
+			utils.NewFinishedObjectCache(),
 			api.LandscaperScheme,
 			record.NewFakeRecorder(1024),
-			testenv.Client,
 			api.LandscaperScheme,
 			deployerlib.DeployerArgs{
 				Type:     helmctrl.Type,

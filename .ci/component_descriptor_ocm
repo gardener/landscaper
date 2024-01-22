@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+SOURCE_PATH="$(dirname $0)/.."
+REPOSITORY_CONTEXT="europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper"
+
+# install make
+if ! which make 1>/dev/null; then
+  echo "> Installing make ..."
+  apk add make 1>/dev/null
+fi
+
+# install ocm cli
+if ! which ocm 1>/dev/null; then
+  curl -s https://ocm.software/install.sh | bash
+fi
+
+# start docker daemon
+launch-dockerd.sh
+
+# configure credentials
+mkdir -p "$HOME/.docker"
+gardener-ci docker cfg --image "${REPOSITORY_CONTEXT}" > $HOME/.docker/config.json
+
+pushd ${SOURCE_PATH}
+make build-resources
+popd

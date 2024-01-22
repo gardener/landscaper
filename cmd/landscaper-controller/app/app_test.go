@@ -97,7 +97,7 @@ var _ = Describe("Landscaper Controller", func() {
 			opts.Config.DeployerManagement.Namespace = state.Namespace
 			opts.Config.DeployerManagement.Agent.Namespace = state.Namespace
 
-			Expect(opts.DeployInternalDeployers(ctx, mgr)).To(Succeed())
+			Expect(opts.DeployInternalDeployers(ctx, mgr.GetClient())).To(Succeed())
 
 			reg := &lsv1alpha1.DeployerRegistration{}
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("container", ""), reg)).To(Succeed())
@@ -116,7 +116,7 @@ var _ = Describe("Landscaper Controller", func() {
 			opts.Config.DeployerManagement.Namespace = state.Namespace
 			opts.Config.DeployerManagement.Agent.Namespace = state.Namespace
 
-			Expect(opts.DeployInternalDeployers(ctx, mgr)).To(Succeed())
+			Expect(opts.DeployInternalDeployers(ctx, mgr.GetClient())).To(Succeed())
 
 			reg := &lsv1alpha1.DeployerRegistration{}
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("helm", ""), reg)).To(Succeed())
@@ -145,7 +145,7 @@ var _ = Describe("Landscaper Controller", func() {
 				},
 			}
 
-			Expect(opts.DeployInternalDeployers(ctx, mgr)).To(Succeed())
+			Expect(opts.DeployInternalDeployers(ctx, mgr.GetClient())).To(Succeed())
 
 			reg := &lsv1alpha1.DeployerRegistration{}
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("mock", ""), reg)).To(Succeed())
@@ -185,7 +185,7 @@ somekey: someval
 				"other":  lsv1alpha1.NewAnyJSON([]byte("true")),
 			}
 
-			Expect(opts.DeployInternalDeployers(ctx, mgr)).To(Succeed())
+			Expect(opts.DeployInternalDeployers(ctx, mgr.GetClient())).To(Succeed())
 
 			reg = &lsv1alpha1.DeployerRegistration{}
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKey("mock", ""), reg)).To(Succeed())

@@ -32,10 +32,8 @@ const (
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type "landscaper.gardener.cloud/container".
-func NewDeployer(log logging.Logger,
-	lsKubeClient client.Client,
-	hostKubeClient client.Client,
-	directHostClient client.Client,
+func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	log logging.Logger,
 	config containerv1alpha1.Configuration) (*deployer, error) {
 
 	var sharedCache cache.Cache
@@ -50,30 +48,33 @@ func NewDeployer(log logging.Logger,
 	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
-		log:              log,
-		lsClient:         lsKubeClient,
-		hostClient:       hostKubeClient,
-		directHostClient: directHostClient,
-		config:           config,
-		sharedCache:      sharedCache,
-		hooks:            extension.ReconcileExtensionHooks{},
+		lsUncachedClient:   lsUncachedClient,
+		lsCachedClient:     lsCachedClient,
+		hostUncachedClient: hostUncachedClient,
+		hostCachedClient:   hostCachedClient,
+		log:                log,
+		config:             config,
+		sharedCache:        sharedCache,
+		hooks:              extension.ReconcileExtensionHooks{},
 	}
 	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
 	return dep, nil
 }
 
 type deployer struct {
-	log              logging.Logger
-	lsClient         client.Client
-	hostClient       client.Client
-	directHostClient client.Client
-	config           containerv1alpha1.Configuration
-	sharedCache      cache.Cache
-	hooks            extension.ReconcileExtensionHooks
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+
+	log         logging.Logger
+	config      containerv1alpha1.Configuration
+	sharedCache cache.Cache
+	hooks       extension.ReconcileExtensionHooks
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
-	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache, rt)
+	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, lsCtx, d.sharedCache, rt)
 	if err != nil {
 		return err
 	}
@@ -82,7 +83,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 }
 
 func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
-	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache, rt)
+	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, lsCtx, d.sharedCache, rt)
 	if err != nil {
 		return err
 	}
@@ -101,7 +102,7 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
 	// TODO: parse provider configuration directly and do not init the container helper struct
-	containerOp, err := New(d.lsClient, d.hostClient, d.directHostClient, d.config, di, nil, d.sharedCache, nil)
+	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, nil, d.sharedCache, nil)
 	if err != nil {
 		return nil, err
 	}

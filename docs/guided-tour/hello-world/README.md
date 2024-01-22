@@ -4,7 +4,7 @@ In this example, we use the Landscaper to deploy a simple Helm chart.
 
 For prerequisites, see [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour#prerequisites-and-basic-definitions).
 
-Our [hello-world Helm chart](chart/hello-world) is minimalistic on purpose, in order to concentrate on Landscaper rather than Helm features. Therefore, the chart only deploys a ConfigMap. We have uploaded the chart to a [public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0) from where the Landscaper reads it during the deployment.
+Our [hello-world Helm chart](https://github.com/gardener/landscaper/tree/Updated-Links-for-docu-generation/docs/guided-tour/hello-world/chart/hello-world) is minimalistic on purpose, in order to concentrate on Landscaper rather than Helm features. Therefore, the chart only deploys a ConfigMap. We have uploaded the chart to a [public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0) from where the Landscaper reads it during the deployment.
 
 ## Procedure
 
@@ -24,11 +24,11 @@ First of all, we need to create two custom resources:
 
 Alternative (which requires the [Landscaper CLI](https://github.com/gardener/landscapercli)):
 
-1. In your [commands/settings file](./commands/settings), specify 
+1. In your [commands/settings file](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/hello-world/commands/settings), specify 
    - the path to the kubeconfig of your Landscaper resource cluster and
    - the path to the kubeconfig of your target cluster.
 
-2. Run script [commands/apply-target-and-installation.sh](./commands/apply-target-and-installation.sh).
+2. Run script [commands/apply-target-and-installation.sh](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/hello-world/commands/apply-target-and-installation.sh).
 
 ## Landscaper Processes the Installation
 
@@ -112,7 +112,7 @@ There is also the possibility to let Landscaper add this annotation automaticall
 reconciliation of an Installation. For more details see 
 [here](../../usage/Installations.md#automatic-reconciliationprocessing-of-installations).
 
-With the annotation `landscaper.gardener.cloud/reconcile-if-changed: true`, Installations are automatically processed
+With the annotation `landscaper.gardener.cloud/reconcile-if-changed: "true"`, Installations are automatically processed
 only if their `spec` was changed and a new `generation` created. For more details see
 [here](../../usage/Installations.md#automatic-reconciliationprocessing-of-installations-if-spec-was-changed).
 

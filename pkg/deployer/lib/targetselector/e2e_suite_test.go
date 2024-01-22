@@ -87,19 +87,21 @@ var _ = Describe("E2E", func() {
 		defaultContext.Namespace = state.Namespace
 		testutils.ExpectNoError(state.Create(ctx, defaultContext))
 
-		ctrl, err := mock.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
-			TargetSelector: []lsv1alpha1.TargetSelector{
-				{
-					Annotations: []lsv1alpha1.Requirement{
-						{
-							Key:      AnnotationKey,
-							Operator: selection.Equals,
-							Values:   []string{AnnotationValue},
+		ctrl, err := mock.NewController(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
+			utils.NewFinishedObjectCache(),
+			logging.Discard(), api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
+				TargetSelector: []lsv1alpha1.TargetSelector{
+					{
+						Annotations: []lsv1alpha1.Requirement{
+							{
+								Key:      AnnotationKey,
+								Operator: selection.Equals,
+								Values:   []string{AnnotationValue},
+							},
 						},
 					},
 				},
-			},
-		}, "test-e2e"+testutils.GetNextCounter())
+			}, "test-e2e"+testutils.GetNextCounter())
 		testutils.ExpectNoError(err)
 
 		testutils.ShouldReconcile(ctx, ctrl, kutil.ReconcileRequestFromObject(di))
@@ -137,19 +139,21 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, di))
 
-		ctrl, err := mock.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
-			TargetSelector: []lsv1alpha1.TargetSelector{
-				{
-					Annotations: []lsv1alpha1.Requirement{
-						{
-							Key:      AnnotationKey,
-							Operator: selection.Equals,
-							Values:   []string{"someother"},
+		ctrl, err := mock.NewController(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
+			utils.NewFinishedObjectCache(),
+			logging.Discard(), api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
+				TargetSelector: []lsv1alpha1.TargetSelector{
+					{
+						Annotations: []lsv1alpha1.Requirement{
+							{
+								Key:      AnnotationKey,
+								Operator: selection.Equals,
+								Values:   []string{"someother"},
+							},
 						},
 					},
 				},
-			},
-		}, "test-annot"+testutils.GetNextCounter())
+			}, "test-annot"+testutils.GetNextCounter())
 		testutils.ExpectNoError(err)
 
 		testutils.ShouldReconcile(ctx, ctrl, kutil.ReconcileRequestFromObject(di))

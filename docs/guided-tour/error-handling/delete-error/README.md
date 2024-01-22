@@ -64,5 +64,5 @@ landscaper-cli installations force-delete -n example hello-world
 
 > Note: It is **not recommended** to use this approach if you have a successful Installation and want to remove just the Installation, without
 uninstalling the deployed components on the target cluster. In such a situation, the annotation
-`landscaper.gardener.cloud/delete-without-unstall: true` should be used.
+`landscaper.gardener.cloud/delete-without-uninstall: true` should be used.
 

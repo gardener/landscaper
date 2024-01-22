@@ -9,26 +9,36 @@ import (
 	"errors"
 	goflag "flag"
 	"fmt"
+	"k8s.io/utils/pointer"
 	"os"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"time"
 
 	flag "github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/pkg/api"
-
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // DefaultOptions defines all default deployer options.
 type DefaultOptions struct {
+	LsUncachedClient   client.Client
+	LsCachedClient     client.Client
+	HostUncachedClient client.Client
+	HostCachedClient   client.Client
+
 	configPath   string
 	LsKubeconfig string
 
@@ -37,6 +47,8 @@ type DefaultOptions struct {
 	HostMgr manager.Manager
 
 	decoder runtime.Decoder
+
+	FinishedObjectCache *lsutils.FinishedObjectCache
 }
 
 // NewDefaultOptions creates new default options for a deployer.
@@ -63,6 +75,7 @@ func (o *DefaultOptions) Complete() error {
 	log = log.WithName("deployer")
 	o.Log = log
 	ctrl.SetLogger(log.Logr())
+	ctx := logging.NewContext(context.Background(), o.Log)
 
 	hostAndResourceClusterDifferent := len(o.LsKubeconfig) != 0
 
@@ -71,16 +84,18 @@ func (o *DefaultOptions) Complete() error {
 	opts := manager.Options{
 		LeaderElection:     false,
 		MetricsBindAddress: "0", // disable the metrics serving by default
-		NewClient:          lsutils.NewUncachedClient(burst, qps),
+		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
 	}
 
-	restConfig, err := ctrl.GetConfig()
+	hostRestConfig, err := ctrl.GetConfig()
 	if err != nil {
 		return fmt.Errorf("unable to get host kubeconfig: %w", err)
 	}
-	o.HostMgr, err = ctrl.NewManager(restConfig, opts)
+	hostRestConfig = lsutils.RestConfigWithModifiedClientRequestRestrictions(log, hostRestConfig, burst, qps)
+
+	o.HostMgr, err = ctrl.NewManager(hostRestConfig, opts)
 	if err != nil {
-		return fmt.Errorf("unable to setup manager")
+		return fmt.Errorf("unable to setup host manager")
 	}
 	o.LsMgr = o.HostMgr
 
@@ -89,25 +104,68 @@ func (o *DefaultOptions) Complete() error {
 		if err != nil {
 			return fmt.Errorf("unable to read landscaper kubeconfig from %s: %w", o.LsKubeconfig, err)
 		}
-		client, err := clientcmd.NewClientConfigFromBytes(data)
-		if err != nil {
-			return fmt.Errorf("unable to build landscaper cluster client from %s: %w", o.LsKubeconfig, err)
-		}
-		restConfig, err := client.ClientConfig()
-		if err != nil {
-			return fmt.Errorf("unable to build landscaper cluster rest client from %s: %w", o.LsKubeconfig, err)
-		}
 
+		lsRestConfig, err := clientcmd.RESTConfigFromKubeConfig(data)
+		if err != nil {
+			return fmt.Errorf("unable to build landscaper cluster rest client: %w", err)
+		}
 		burst, qps = lsutils.GetResourceClientRequestRestrictions(log)
-		opts.NewClient = lsutils.NewUncachedClient(burst, qps)
+		lsRestConfig = lsutils.RestConfigWithModifiedClientRequestRestrictions(log, lsRestConfig, burst, qps)
 
-		o.LsMgr, err = ctrl.NewManager(restConfig, opts)
+		o.LsMgr, err = ctrl.NewManager(lsRestConfig, opts)
 		if err != nil {
-			return fmt.Errorf("unable to setup manager")
+			return fmt.Errorf("unable to setup ls manager")
 		}
 	}
 
 	lsinstall.Install(o.LsMgr.GetScheme())
+
+	o.LsUncachedClient, o.LsCachedClient, o.HostUncachedClient, o.HostCachedClient, err = lsutils.ClientsFromManagers(o.LsMgr, o.HostMgr)
+	if err != nil {
+		return err
+	}
+
+	if err := o.prepareFinishedObjectCache(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *DefaultOptions) prepareFinishedObjectCache(ctx context.Context) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+
+	o.FinishedObjectCache = lsutils.NewFinishedObjectCache()
+	namespaces := &v1.NamespaceList{}
+	if err := read_write_layer.ListNamespaces(ctx, o.LsUncachedClient, namespaces, read_write_layer.R000093); err != nil {
+		return err
+	}
+
+	perfTotal := lsutils.StartPerformanceMeasurement(&log, "prepare finished object for dis")
+	defer perfTotal.Stop()
+
+	for _, namespace := range namespaces.Items {
+		perf := lsutils.StartPerformanceMeasurement(&log, "prepare finished object cache for dis: fetch from namespace "+namespace.Name)
+
+		diList := &lsv1alpha1.DeployItemList{}
+		if err := read_write_layer.ListDeployItems(ctx, o.LsUncachedClient, diList, read_write_layer.R000094,
+			client.InNamespace(namespace.Name)); err != nil {
+			return err
+		}
+
+		perf.Stop()
+
+		perf = lsutils.StartPerformanceMeasurement(&log, "prepare finished object cache for dis: add for namespace "+namespace.Name)
+
+		for diIndex := range diList.Items {
+			di := &diList.Items[diIndex]
+			if lib.IsDeployItemFinished(di) {
+				o.FinishedObjectCache.Add(&di.ObjectMeta)
+			}
+		}
+
+		perf.Stop()
+	}
 
 	return nil
 }

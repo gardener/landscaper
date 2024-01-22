@@ -10,11 +10,15 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+
+	clientlib "sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -90,8 +94,8 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, mock_inst))
 
 			By("verify that deploy items have been created")
-			dummy_inst_di := &lsv1alpha1.DeployItem{}
-			mock_inst_di := &lsv1alpha1.DeployItem{}
+			var dummy_inst_di *lsv1alpha1.DeployItem
+			var mock_inst_di *lsv1alpha1.DeployItem
 			Eventually(func() (bool, error) {
 				// fetch installations
 				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(dummy_inst), dummy_inst)
@@ -104,24 +108,29 @@ func TimeoutTestsForNewReconcile(f *framework.Framework) {
 				}
 				// check for executions
 				dummy_exec := &lsv1alpha1.Execution{}
-				mock_exec := &lsv1alpha1.Execution{}
 				err = f.Client.Get(ctx, dummy_inst.Status.ExecutionReference.NamespacedName(), dummy_exec)
-				if err != nil || dummy_exec.Status.DeployItemReferences == nil || len(dummy_exec.Status.DeployItemReferences) == 0 {
+				if err != nil {
 					return false, err
 				}
+
+				dummyDeployItems, err := read_write_layer.ListManagedDeployItems(ctx, f.Client, clientlib.ObjectKeyFromObject(dummy_exec), read_write_layer.R000000)
+				if err != nil || len(dummyDeployItems.Items) == 0 {
+					return false, err
+				}
+				dummy_inst_di = &dummyDeployItems.Items[0]
+
+				mock_exec := &lsv1alpha1.Execution{}
 				err = f.Client.Get(ctx, mock_inst.Status.ExecutionReference.NamespacedName(), mock_exec)
-				if err != nil || mock_exec.Status.DeployItemReferences == nil || len(mock_exec.Status.DeployItemReferences) == 0 {
-					return false, err
-				}
-				// check executions for deploy item
-				err = f.Client.Get(ctx, dummy_exec.Status.DeployItemReferences[0].Reference.NamespacedName(), dummy_inst_di)
 				if err != nil {
 					return false, err
 				}
-				err = f.Client.Get(ctx, mock_exec.Status.DeployItemReferences[0].Reference.NamespacedName(), mock_inst_di)
-				if err != nil {
+
+				mockDeployItems, err := read_write_layer.ListManagedDeployItems(ctx, f.Client, clientlib.ObjectKeyFromObject(mock_exec), read_write_layer.R000086)
+				if err != nil || len(mockDeployItems.Items) == 0 {
 					return false, err
 				}
+				mock_inst_di = &mockDeployItems.Items[0]
+
 				// return true if both deploy items could be fetched
 				return true, err
 			}, waitingForDeployItems, resyncTime).Should(BeTrue(), "unable to fetch deploy items")

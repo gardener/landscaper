@@ -9,18 +9,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lserror "github.com/gardener/landscaper/apis/errors"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 const (
@@ -37,15 +36,10 @@ type checkObjectFunc func(*unstructured.Unstructured) error
 
 type ObjectsToWatchFunc func() ([]*unstructured.Unstructured, error)
 
-// InterruptionChecker is the interface to check for interrupts during the readiness check.
-type InterruptionChecker interface {
-	Check(context.Context) error
-}
-
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
 func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient client.Client,
-	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker InterruptionChecker, operation string) error {
+	getObjects ObjectsToWatchFunc, fn checkObjectFunc, interruptionChecker interruption.InterruptionChecker, operation string) error {
 	var (
 		try     int32 = 1
 		err     error

@@ -6,21 +6,24 @@ For prerequisites, see [here](../../README.md#prerequisites-and-basic-definition
 
 The example uses the following resources:
 
-- a blueprint, which you can find [locally](./blueprint), and 
+- a blueprint, which you can find [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/blueprints/echo-server/blueprint/blueprint.yaml), and 
   uploaded [in an OCI registry](https://eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/echo-server),
-- a Helm chart which you can also find [locally](./blueprint) and
+- a Helm chart which you can also find [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/echo-server/chart/echo-server) and
   uploaded [in an OCI registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server),
 - the Docker image [hashicorp/http-echo](https://hub.docker.com/r/hashicorp/http-echo) as an external resource.
 
-You can find the file system representations of the extended component versions [here](./component-archive/). 
-It is an advantage to have them all in one place, in a standard format. 
-Otherwise, you would have to search images spread somewhere in charts, perhaps even mixed with some templating.
-Moreover, the component versions can be used by other tools for example for transport or signing. 
+All of these resources are described/bundled in a so-called _component-archive_. You can find the file system representations of the extended component versions [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/echo-server/component-archive).
 
+
+Describing required resources in a standard format (for which we use the "Open Component Model") has several advantages. This Guided Tour can not go into all the details about that model, so you might want to read about the core concepts, the benefits and the available tools on the official website under [https://ocm.software](https://ocm.software).
+
+
+Without a consistent description for your component and its technical resources, you would have to search images spread somewhere in charts, perhaps even mixed with some templating.
+Moreover, such standardized component version descriptor files can be used by other tools to perform other lifecycle management activities like consistent transports into other environments or to do signing/verification of software components.
 
 ## OCI Image Resource in the Component Descriptor
 
-The [echo-server Helm chart](./chart/echo-server) in this example consists of a `Deployment` and a `Service`.
+The [echo-server Helm chart](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/echo-server/chart/echo-server) in this example consists of a `Deployment` and a `Service`.
 The `Deployment` uses a container image. However, instead of a hard-coded image reference in
 the [deployment.yaml](./chart/echo-server/templates/deployment.yaml), we rather maintain the image reference in the
 component descriptor. In detail, the connection is the following:

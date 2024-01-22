@@ -12,11 +12,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	apiconfig "github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/pkg/components/registries"
-
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -25,14 +20,17 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	"sigs.k8s.io/yaml"
 
+	apiconfig "github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 )
@@ -49,7 +47,7 @@ var _ = Describe("TemplateDeployExecutions", func() {
 	Context("GoTemplate", func() {
 		testdataDir := filepath.Join("./testdata", "gotemplate")
 		runTestSuite(testdataDir, sharedTestdataDir)
-		runTestSuiteGoTemplate(testdataDir, sharedTestdataDir)
+		runTestSuiteGoTemplate(testdataDir)
 	})
 
 	Context("Spiff", func() {
@@ -58,11 +56,11 @@ var _ = Describe("TemplateDeployExecutions", func() {
 		testdataDirText := filepath.Join(testdataDir, "text")
 		Context("YAML", func() {
 			runTestSuite(testdataDirYAML, sharedTestdataDir)
-			runTestSuiteSpiff(testdataDirYAML, sharedTestdataDir)
+			runTestSuiteSpiff(testdataDirYAML)
 		})
 		Context("Text", func() {
 			runTestSuite(testdataDirText, sharedTestdataDir)
-			runTestSuiteSpiff(testdataDirText, sharedTestdataDir)
+			runTestSuiteSpiff(testdataDirText)
 		})
 	})
 
@@ -752,52 +750,6 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			}))
 		})
 
-		It("should generate an image vector", func() {
-			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-12.yaml"))
-			Expect(err).ToNot(HaveOccurred())
-			exec := make([]lsv1alpha1.TemplateExecutor, 0)
-			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
-
-			blue := &lsv1alpha1.Blueprint{}
-			blue.DeployExecutions = exec
-			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
-
-			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
-			Expect(err).ToNot(HaveOccurred())
-			cd := &types.ComponentDescriptor{}
-			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
-			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
-			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
-
-			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
-				template.NewBlueprintExecutionOptions(
-					nil,
-					&blueprints.Blueprint{Info: blue, Fs: nil},
-					componentVersion,
-					&model.ComponentVersionList{},
-					nil)))
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res).To(HaveLen(1))
-
-			config := make(map[string]interface{})
-			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
-
-			result, err := os.ReadFile(filepath.Join(sharedTestdataDir, "result-12.yaml"))
-			Expect(err).ToNot(HaveOccurred())
-			resultString := string(result)
-
-			entries := []string{"imageVectorOverWrite1", "imageVectorOverWrite2", "imageVectorOverWrite3"}
-
-			for _, nextEntry := range entries {
-				imageMap, ok := config[nextEntry].(map[string]interface{})
-				Expect(ok).To(BeTrue())
-				imageVector, err := yaml.Marshal(imageMap)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(string(imageVector)).To(BeIdenticalTo(resultString))
-			}
-		})
-
 		It("should use a parsed oci ref to template", func() {
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-13.yaml"))
 			Expect(err).ToNot(HaveOccurred())
@@ -884,7 +836,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 	})
 }
 
-func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
+func runTestSuiteGoTemplate(testdataDir string) {
 	var (
 		stateHandler template.GenericStateHandler
 
@@ -899,20 +851,13 @@ func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
 
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
-			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
-			Expect(err).ToNot(HaveOccurred())
-			cd := &types.ComponentDescriptor{}
-			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
-			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
-			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
-
 			res, err := op.TemplateDeployExecutions(
 				template.NewDeployExecutionOptions(
 					template.NewBlueprintExecutionOptions(
 						nil,
 						&blueprints.Blueprint{Info: blue, Fs: nil},
-						componentVersion,
-						&model.ComponentVersionList{},
+						nil,
+						nil,
 						imports)))
 
 			return res, err
@@ -1057,7 +1002,7 @@ line 10:11
 	})
 }
 
-func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
+func runTestSuiteSpiff(testdataDir string) {
 	var stateHandler template.GenericStateHandler
 
 	BeforeEach(func() {
@@ -1083,20 +1028,13 @@ func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
 			}
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
-			cdRaw, err := os.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
-			Expect(err).ToNot(HaveOccurred())
-			cd := &types.ComponentDescriptor{}
-			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
-			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
-			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
-
 			res, err := op.TemplateDeployExecutions(
 				template.NewDeployExecutionOptions(
 					template.NewBlueprintExecutionOptions(
 						nil,
 						&blueprints.Blueprint{Info: blue, Fs: nil},
-						componentVersion,
-						&model.ComponentVersionList{},
+						nil,
+						nil,
 						map[string]interface{}{
 							"config": map[string]interface{}{
 								"verbosity": 10,

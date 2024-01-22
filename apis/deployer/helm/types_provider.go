@@ -77,6 +77,14 @@ type ProviderConfiguration struct {
 	// HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true.
 	// +optional
 	HelmDeploymentConfig *HelmDeploymentConfiguration `json:"helmDeploymentConfig,omitempty"`
+
+	// DeletionGroups defines the order in which objects are deleted. Only relevant if HelmDeployment is false.
+	// +optional
+	DeletionGroups []managedresource.DeletionGroupDefinition `json:"deletionGroups,omitempty"`
+
+	// DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.
+	// +optional
+	DeletionGroupsDuringUpdate []managedresource.DeletionGroupDefinition `json:"deletionGroupsDuringUpdate,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.

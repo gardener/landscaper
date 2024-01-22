@@ -142,7 +142,7 @@ func GetRegistryPullSecretsFromContext(lsCtx *lsv1alpha1.Context) []lsv1alpha1.O
 }
 
 func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem,
-	lsClient client.Client, lsEventRecorder record.EventRecorder) error {
+	lsClient client.Client, lsEventRecorder record.EventRecorder, finishedObjectCache *lsutil.FinishedObjectCache) error {
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	lsutil.SetLastError(&deployItem.Status, lserrors.TryUpdateLsError(deployItem.Status.GetLastError(), err))

@@ -58,7 +58,8 @@ rules:
 - apiGroups:
     - ""
   resources:
-    - "pods"
+    - namespaces
+    - pods
   verbs:
     - get
     - watch

@@ -15,16 +15,10 @@ import (
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"time"
 
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
-
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
-
-	"github.com/gardener/component-spec/bindings-go/ctf"
-	imagevector "github.com/gardener/image-vector/pkg"
 	"github.com/mandelsoft/spiff/dynaml"
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
@@ -32,7 +26,9 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 
@@ -53,7 +49,6 @@ func LandscaperSpiffFuncs(blueprint *blueprints.Blueprint, functions spiffing.Fu
 	functions.RegisterFunction("getResourceKey", spiffGetResourceKey(componentVersion))
 	functions.RegisterFunction("getResourceContent", spiffGetResourceContent(componentVersion))
 	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList, ocmSchemaVersion))
-	functions.RegisterFunction("generateImageOverwrite", spiffGenerateImageOverwrite(cd, cdList))
 	functions.RegisterFunction("parseOCIRef", parseOCIReference)
 	functions.RegisterFunction("ociRefRepo", getOCIReferenceRepository)
 	functions.RegisterFunction("ociRefVersion", getOCIReferenceVersion)
@@ -285,80 +280,6 @@ func spiffResolveComponent(cd *types.ComponentDescriptor, cdList *types.Componen
 		if err != nil {
 			return info.Error(err.Error())
 		}
-		result, err := binding.Flow(node, false)
-		if err != nil {
-			return info.Error(err.Error())
-		}
-
-		return result.Value(), info, true
-	}
-}
-
-func spiffGenerateImageOverwrite(cd *types.ComponentDescriptor, cdList *types.ComponentDescriptorList) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
-	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
-		info := dynaml.DefaultInfo()
-
-		internalCd := cd
-		internalComponents := cdList
-
-		if len(arguments) > 2 {
-			return info.Error("Too many arguments for generateImageOverwrite.")
-		}
-
-		if len(arguments) >= 1 {
-			data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments[0], ""))
-			if err != nil {
-				return info.Error(err.Error())
-			}
-
-			internalCd = &types.ComponentDescriptor{}
-			if err := yaml.Unmarshal(data, internalCd); err != nil {
-				return info.Error(err.Error())
-			}
-		}
-
-		if len(arguments) == 2 {
-			componentsData, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments[1], ""))
-			if err != nil {
-				return info.Error(err.Error())
-			}
-
-			internalComponents = &types.ComponentDescriptorList{}
-			if err := yaml.Unmarshal(componentsData, internalComponents); err != nil {
-				return info.Error(err.Error())
-			}
-		}
-
-		if internalCd == nil {
-			return info.Error("No component descriptor is defined.")
-		}
-
-		if internalComponents == nil {
-			return info.Error("No component descriptor list is defined.")
-		}
-
-		cdResolver, err := ctf.NewListResolver(cdList)
-		if err != nil {
-			return info.Error("list component resolver could not be build: %s", err.Error())
-		}
-
-		vector, err := imagevector.GenerateImageOverwrite(context.TODO(), cdResolver, internalCd, imagevector.GenerateImageOverwriteOptions{
-			Components: internalComponents,
-		})
-		if err != nil {
-			return info.Error(err.Error())
-		}
-
-		data, err := yaml.Marshal(vector)
-		if err != nil {
-			return info.Error(err.Error())
-		}
-
-		node, err := spiffyaml.Parse("", data)
-		if err != nil {
-			return info.Error(err.Error())
-		}
-
 		result, err := binding.Flow(node, false)
 		if err != nil {
 			return info.Error(err.Error())

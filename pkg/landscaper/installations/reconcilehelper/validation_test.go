@@ -48,7 +48,7 @@ var _ = Describe("Validation", func() {
 		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
-		operation, err := lsoperation.NewBuilder().Client(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(context.Background())
+		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(context.Background())
 		Expect(err).ToNot(HaveOccurred())
 		op = &installations.Operation{
 			Operation: operation,
@@ -197,9 +197,10 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessors := rh.FetchPredecessors()
+			predecessors, err := rh.FetchPredecessors()
+			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(inInstE.GetInstallation(), predecessors)
+			predecessorMap, err := rh.GetPredecessors(predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = rh.AllPredecessorsFinished(inInstE.GetInstallation(), predecessorMap)
@@ -235,10 +236,10 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessors := rh.FetchPredecessors()
+			predecessors, err := rh.FetchPredecessors()
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(inInstD.GetInstallation(), predecessors)
+			predecessorMap, err := rh.GetPredecessors(predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
@@ -285,10 +286,10 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessors := rh.FetchPredecessors()
+			predecessors, err := rh.FetchPredecessors()
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(inInstD.GetInstallation(), predecessors)
+			predecessorMap, err := rh.GetPredecessors(predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
@@ -332,68 +333,16 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessors := rh.FetchPredecessors()
+			predecessors, err := rh.FetchPredecessors()
+			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(inInstD.GetInstallation(), predecessors)
+			predecessorMap, err := rh.GetPredecessors(predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 		})
-	})
-
-	Context("ImportsUpToDate", func() {
-
-		It("should succeed if all imports are up-to-date", func() {
-			ctx := context.Background()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
-			Expect(err).ToNot(HaveOccurred())
-			Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
-
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
-			Expect(err).ToNot(HaveOccurred())
-			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
-
-			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
-			Expect(err).ToNot(HaveOccurred())
-			op.Inst = inInstB
-			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
-
-			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(err).ToNot(HaveOccurred())
-			utd, err := rh.ImportsUpToDate()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(utd).To(BeTrue())
-		})
-
-		It("should fail if an import has changed", func() {
-			ctx := context.Background()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
-			Expect(err).ToNot(HaveOccurred())
-			Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
-
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
-			Expect(err).ToNot(HaveOccurred())
-			inInstA.GetInstallation().Status.ConfigGeneration = "updated"
-			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
-
-			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
-			Expect(err).ToNot(HaveOccurred())
-			op.Inst = inInstB
-			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
-
-			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(err).ToNot(HaveOccurred())
-			utd, err := rh.ImportsUpToDate()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(utd).To(BeFalse())
-		})
-
 	})
 
 })

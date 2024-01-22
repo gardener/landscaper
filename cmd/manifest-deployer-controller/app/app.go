@@ -37,9 +37,14 @@ func NewManifestDeployerControllerCommand(ctx context.Context) *cobra.Command {
 
 func (o *options) run(ctx context.Context) error {
 	o.DeployerOptions.Log.Info("Starting Manifest Deployer", lc.KeyVersion, version.Get().GitVersion)
-	if err := manifestctlr.AddDeployerToManager(o.DeployerOptions.Log, o.DeployerOptions.LsMgr,
+	if err := manifestctlr.AddDeployerToManager(
+		o.DeployerOptions.LsUncachedClient, o.DeployerOptions.LsCachedClient, o.DeployerOptions.HostUncachedClient, o.DeployerOptions.HostCachedClient,
+		o.DeployerOptions.FinishedObjectCache,
+		o.DeployerOptions.Log, o.DeployerOptions.LsMgr,
 		o.DeployerOptions.HostMgr, o.Config, "manifest"); err != nil {
-		return fmt.Errorf("unable to setup helm controller")
+		return fmt.Errorf("unable to setup manifest controller")
 	}
+
+	o.DeployerOptions.Log.Info("Starting manifest deployer manager")
 	return o.DeployerOptions.StartManagers(ctx)
 }

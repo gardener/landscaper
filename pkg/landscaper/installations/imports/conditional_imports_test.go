@@ -7,6 +7,8 @@ package imports_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils/landscaper"
+
 	"github.com/gardener/landscaper/apis/config"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -58,7 +60,7 @@ var _ = Describe("ConditionalImports", func() {
 		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
-		operation, err := lsoperation.NewBuilder().Client(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(context.Background())
+		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(context.Background())
 		Expect(err).ToNot(HaveOccurred())
 		op = &installations.Operation{
 			Operation: operation,
@@ -80,13 +82,17 @@ var _ = Describe("ConditionalImports", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		Expect(imports.NewConstructor(op).Construct(ctx, nil)).To(Succeed())
 		// create subinstallation
-		utils.ExpectNoError(subInstOp.Ensure(ctx))
-		Expect(conInst.GetInstallation().Status.InstallationReferences).NotTo(BeEmpty())
+		utils.ExpectNoError(subInstOp.Ensure(ctx, nil))
+		subinsts, err := landscaper.GetSubInstallationsOfInstallation(ctx, fakeClient, conInst.GetInstallation())
+		utils.ExpectNoError(err)
+		Expect(len(subinsts) > 0).To(BeTrue())
+
 		subinst := &lsv1alpha1.Installation{}
 		found := false
-		for _, sir := range conInst.GetInstallation().Status.InstallationReferences { // fetch subinstallation from client
-			if sir.Name == "subinst-import" {
-				utils.ExpectNoError(fakeClient.Get(ctx, sir.Reference.NamespacedName(), subinst))
+		for i := range subinsts { // fetch subinstallation from client
+			name := subinsts[i].Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+			if name == "subinst-import" {
+				subinst = subinsts[i]
 				found = true
 				break
 			}
@@ -131,13 +137,17 @@ var _ = Describe("ConditionalImports", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		Expect(imports.NewConstructor(op).Construct(ctx, nil)).To(Succeed())
 		// create subinstallation
-		utils.ExpectNoError(subInstOp.Ensure(ctx))
-		Expect(conInst.GetInstallation().Status.InstallationReferences).NotTo(BeEmpty())
+		utils.ExpectNoError(subInstOp.Ensure(ctx, nil))
+		subinsts, err := landscaper.GetSubInstallationsOfInstallation(ctx, fakeClient, conInst.GetInstallation())
+		utils.ExpectNoError(err)
+		Expect(len(subinsts) > 0).To(BeTrue())
+
 		subinst := &lsv1alpha1.Installation{}
 		found := false
-		for _, sir := range conInst.GetInstallation().Status.InstallationReferences { // fetch subinstallation from client
-			if sir.Name == "subinst-import" {
-				utils.ExpectNoError(fakeClient.Get(ctx, sir.Reference.NamespacedName(), subinst))
+		for i := range subinsts { // fetch subinstallation from client
+			name := subinsts[i].Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+			if name == "subinst-import" {
+				subinst = subinsts[i]
 				found = true
 				break
 			}

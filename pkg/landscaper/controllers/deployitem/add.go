@@ -7,6 +7,8 @@ package deployitem
 import (
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -19,8 +21,9 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
-func AddControllerToManager(logger logging.Logger,
-	mgr manager.Manager,
+func AddControllerToManager(lsUncachedClient, lsCachedClient client.Client,
+	logger logging.Logger,
+	lsMgr manager.Manager,
 	config config.DeployItemsController,
 	deployItemPickupTimeout *lscore.Duration) error {
 
@@ -30,9 +33,9 @@ func AddControllerToManager(logger logging.Logger,
 		"numberOfWorkerThreads", config.CommonControllerConfig.Workers)
 
 	a, err := NewController(
+		lsUncachedClient, lsCachedClient,
 		log,
-		mgr.GetClient(),
-		mgr.GetScheme(),
+		lsMgr.GetScheme(),
 		deployItemPickupTimeout,
 		config.CommonControllerConfig.Workers,
 	)
@@ -40,7 +43,7 @@ func AddControllerToManager(logger logging.Logger,
 		return err
 	}
 
-	return builder.ControllerManagedBy(mgr).
+	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.OnlyMetadata).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).

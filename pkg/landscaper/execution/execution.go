@@ -44,10 +44,10 @@ func NewOperation(op *operation.Operation, exec *lsv1alpha1.Execution, forceReco
 	}
 }
 
-func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
+func (o *Operation) UpdateDeployItems(ctx context.Context, deployItemCache *lsv1alpha1.DeployItemCache) lserrors.LsError {
 	op := "UpdateDeployItems"
 
-	executionItems, orphaned, lsErr := o.getDeployItems(ctx)
+	executionItems, orphaned, lsErr := o.getDeployItems(ctx, deployItemCache)
 	if lsErr != nil {
 		return lsErr
 	}
@@ -56,11 +56,23 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 		return lserrors.NewWrappedError(err, op, "CleanupOrphanedDeployItems", err.Error())
 	}
 
+	activePairs := []lsv1alpha1.DiNamePair{}
 	for _, item := range executionItems {
-		lsErr := o.updateDeployItem(ctx, *item)
+		nextDiNamePair, lsErr := o.updateDeployItem(ctx, *item)
 		if lsErr != nil {
 			return lsErr
 		}
+		activePairs = append(activePairs, *nextDiNamePair)
+	}
+
+	orphanedNames := []string{}
+	for i := range orphaned {
+		orphanedNames = append(orphanedNames, orphaned[i].Name)
+	}
+
+	o.exec.Status.DeployItemCache = &lsv1alpha1.DeployItemCache{
+		ActiveDIs:   activePairs,
+		OrphanedDIs: orphanedNames,
 	}
 
 	return nil
@@ -69,7 +81,7 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassification, lserrors.LsError) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "TriggerDeployItems")
 
-	items, orphaned, lsErr := o.getDeployItems(ctx)
+	items, orphaned, lsErr := o.getDeployItems(ctx, o.exec.Status.DeployItemCache)
 	if lsErr != nil {
 		return nil, lsErr
 	}
@@ -130,7 +142,7 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 
 	op := "TriggerDeployItemsForDelete"
 
-	items, _, lsErr := o.getDeployItems(ctx)
+	items, _, lsErr := o.getDeployItems(ctx, o.exec.Status.DeployItemCache)
 	if lsErr != nil {
 		return nil, lsErr
 	}
@@ -143,7 +155,7 @@ func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployIte
 	// If all deploy items have been successfully deleted, remove the finalizer of the execution
 	if classification.AllSucceeded() {
 		controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
-		err := o.Writer().UpdateExecution(ctx, read_write_layer.W000096, o.exec)
+		err := o.WriterToLsUncachedClient().UpdateExecution(ctx, read_write_layer.W000096, o.exec)
 		if err != nil {
 			return classification, lserrors.NewWrappedError(err, op, "RemoveFinalizer", err.Error())
 		}
@@ -180,7 +192,7 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 
 	key := kutil.ObjectKeyFromObject(di)
 	di = &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di, read_write_layer.R000034); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, o.LsUncachedClient(), key, di, read_write_layer.R000034); err != nil {
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 	}
 
@@ -188,7 +200,7 @@ func (o *Operation) triggerDeployItem(ctx context.Context, di *lsv1alpha1.Deploy
 	di.Status.TransitionTimes = utils.NewTransitionTimes()
 	now := metav1.Now()
 	di.Status.JobIDGenerationTime = &now
-	if err := o.Writer().UpdateDeployItemStatus(ctx, writeId, di); err != nil {
+	if err := o.WriterToLsUncachedClient().UpdateDeployItemStatus(ctx, writeId, di); err != nil {
 		return lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
 	}
 
@@ -211,7 +223,7 @@ func (o *Operation) skipUninstall(ctx context.Context, di *lsv1alpha1.DeployItem
 	}
 
 	targetSyncs := &lsv1alpha1.TargetSyncList{}
-	if err := read_write_layer.ListTargetSyncs(ctx, o.Client(), targetSyncs, read_write_layer.R000069,
+	if err := read_write_layer.ListTargetSyncs(ctx, o.LsUncachedClient(), targetSyncs, read_write_layer.R000069,
 		client.InNamespace(di.GetNamespace())); err != nil {
 		msg := fmt.Sprintf("unable to retrieve targetsync object for namespace%s", di.GetNamespace())
 		return false, lserrors.NewWrappedError(err, op, msg, err.Error())
@@ -223,7 +235,7 @@ func (o *Operation) skipUninstall(ctx context.Context, di *lsv1alpha1.DeployItem
 	tgs := targetSyncs.Items[0]
 
 	sourceClientProvider := clusters.NewDefaultSourceClientProvider()
-	shootClient, err := sourceClientProvider.GetSourceShootClient(ctx, &tgs, o.Client())
+	shootClient, err := sourceClientProvider.GetSourceShootClient(ctx, &tgs, o.LsUncachedClient())
 	if err != nil {
 		return false, lserrors.NewError(op, "GetSourceShootClient", "failed to get shoot client for skipUninstall")
 	}
@@ -241,13 +253,13 @@ func (o *Operation) removeFinalizerFromDeployItem(ctx context.Context, di *lsv1a
 
 	key := kutil.ObjectKeyFromObject(di)
 	di = &lsv1alpha1.DeployItem{}
-	if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di, read_write_layer.R000031); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, o.LsUncachedClient(), key, di, read_write_layer.R000031); err != nil {
 		return lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
 	}
 
 	updated := controllerutil.RemoveFinalizer(di, lsv1alpha1.LandscaperFinalizer)
 	if updated {
-		if err := o.Writer().UpdateDeployItem(ctx, read_write_layer.W000033, di); err != nil {
+		if err := o.WriterToLsUncachedClient().UpdateDeployItem(ctx, read_write_layer.W000033, di); err != nil {
 			return lserrors.NewWrappedError(err, op, "UpdateDeployItem", err.Error())
 		}
 	}
@@ -255,10 +267,12 @@ func (o *Operation) removeFinalizerFromDeployItem(ctx context.Context, di *lsv1a
 	return nil
 }
 
-func (o *Operation) getDeployItems(ctx context.Context) ([]*executionItem, []lsv1alpha1.DeployItem, lserrors.LsError) {
+func (o *Operation) getDeployItems(ctx context.Context,
+	deployItemCache *lsv1alpha1.DeployItemCache) ([]*executionItem, []*lsv1alpha1.DeployItem, lserrors.LsError) {
+
 	op := "getDeployItems"
 
-	managedItems, err := o.ListManagedDeployItems(ctx)
+	managedItems, err := o.ListManagedDeployItems(ctx, read_write_layer.R000037, deployItemCache)
 	if err != nil {
 		return nil, nil, lserrors.NewWrappedError(err, op, "ListManagedDeployItems", err.Error())
 	}
@@ -272,7 +286,7 @@ func (o *Operation) UpdateStatus(ctx context.Context, updatedConditions ...lsv1a
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions, updatedConditions...)
-	if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000032, o.exec); err != nil {
+	if err := o.WriterToLsUncachedClient().UpdateExecutionStatus(ctx, read_write_layer.W000032, o.exec); err != nil {
 		logger.Error(err, "unable to set installation status")
 		return err
 	}
@@ -292,7 +306,7 @@ func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values in
 		return err
 	}
 
-	if _, err := o.Writer().CreateOrUpdateDataObject(ctx, read_write_layer.W000075, raw, func() error {
+	if _, err := o.WriterToLsUncachedClient().CreateOrUpdateDataObject(ctx, read_write_layer.W000075, raw, func() error {
 		if err := controllerutil.SetOwnerReference(o.exec, raw, api.LandscaperScheme); err != nil {
 			return err
 		}

@@ -72,3 +72,7 @@ You can find a list of error messages and corresponding solutions [here](./error
 ## Templating
 
 [14. Templating: Accessing Component Descriptors ](./templating/components)
+
+## Optimization
+
+[15. Optimization Hints ](../usage/Optimization.md)

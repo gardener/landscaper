@@ -29,20 +29,57 @@ type Scope struct {
 	// Name is the name of the current installation's context.
 	// By default, it is the source name of the parent.
 	Name string
+	// current installation
+	inst *lsv1alpha1.Installation
 	// Parent is the installation is encompassed in.
 	// Parents are handled separately as installation have access to the same imports as their parent.
 	Parent *InstallationAndImports
 	// Siblings are installations with the same parent.
 	// The installation has access to the exports of these components
-	Siblings []*InstallationAndImports
+	siblings []*InstallationAndImports
 	// External describes the external installation context that contains
 	// context specific configuration.
 	External ExternalContext
 }
 
+func (s *Scope) GetSiblings(ctx context.Context, kubeClient client.Client) ([]*InstallationAndImports, error) {
+	if s.siblings != nil {
+		return s.siblings, nil
+	}
+
+	var parent *lsv1alpha1.Installation = nil
+	if s.Parent != nil {
+		parent = s.Parent.GetInstallation()
+	}
+
+	siblingInstallations, err := GetSiblings(ctx, kubeClient, s.inst, parent)
+	if err != nil {
+		return nil, err
+	}
+
+	// set optional default repository context
+	for _, inst := range siblingInstallations {
+		if inst.Spec.ComponentDescriptor != nil &&
+			inst.Spec.ComponentDescriptor.Reference != nil &&
+			inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
+			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = s.External.RepositoryContext
+		}
+	}
+
+	siblings := CreateInternalInstallationBases(siblingInstallations...)
+
+	if siblings == nil {
+		s.siblings = []*InstallationAndImports{}
+	} else {
+		s.siblings = siblings
+	}
+
+	return s.siblings, nil
+}
+
 // SetInstallationContext determines the current context and updates the operation context.
 func (o *Operation) SetInstallationContext(ctx context.Context) error {
-	newCtx, err := GetInstallationContext(ctx, o.Client(), o.Inst.GetInstallation())
+	newCtx, err := GetInstallationContext(ctx, o.LsUncachedClient(), o.Inst.GetInstallation())
 	if err != nil {
 		return err
 	}
@@ -56,7 +93,8 @@ func (o *Operation) SetInstallationContext(ctx context.Context) error {
 func GetInstallationContext(ctx context.Context,
 	kubeClient client.Client,
 	inst *lsv1alpha1.Installation) (*Scope, error) {
-	parentInst, siblingInstallations, err := GetParentAndSiblings(ctx, kubeClient, inst)
+
+	parentInst, err := GetParent(ctx, kubeClient, inst)
 	if err != nil {
 		return nil, err
 	}
@@ -66,25 +104,15 @@ func GetInstallationContext(ctx context.Context,
 		return nil, err
 	}
 
-	// set optional default repository context
-	for _, inst := range siblingInstallations {
-		if inst.Spec.ComponentDescriptor != nil &&
-			inst.Spec.ComponentDescriptor.Reference != nil &&
-			inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
-			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = externalCtx.RepositoryContext
-		}
-	}
-
 	ctxName := ""
 	if parentInst != nil {
 		ctxName = lsv1alpha1helper.DataObjectSourceFromInstallation(parentInst)
 	}
 
 	return &Scope{
-		Name:   ctxName,
-		Parent: CreateInternalInstallationBase(parentInst),
-		// siblings are all encompassed installation of the parent installation
-		Siblings: CreateInternalInstallationBases(siblingInstallations...),
+		Name:     ctxName,
+		inst:     inst,
+		Parent:   CreateInternalInstallationBase(parentInst),
 		External: externalCtx,
 	}, nil
 }
@@ -143,18 +171,6 @@ func (c *ExternalContext) RegistryPullSecrets() []lsv1alpha1.ObjectReference {
 // The visible context consists of the installation's parent and siblings.
 // The context is later used to validate and get imported data.
 func GetParentAndSiblings(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (parent *lsv1alpha1.Installation, siblings []*lsv1alpha1.Installation, err error) {
-	if IsRootInstallation(inst) {
-		// get all root object as siblings
-		filter := func(a lsv1alpha1.Installation) bool {
-			return a.Name == inst.Name
-		}
-		rootInstallations, err := GetRootInstallations(ctx, kubeClient, filter, client.InNamespace(inst.Namespace))
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, rootInstallations, err
-	}
-
 	// get the parent by owner reference
 	parent, err = GetParent(ctx, kubeClient, inst)
 	if err != nil {
@@ -162,14 +178,36 @@ func GetParentAndSiblings(ctx context.Context, kubeClient client.Client, inst *l
 	}
 
 	// siblings are all encompassed installation of the parent installation
-	siblings, err = ListSubinstallations(ctx, kubeClient, parent, func(found *lsv1alpha1.Installation) bool {
-		return inst.Name == found.Name
-	})
+	siblings, err = GetSiblings(ctx, kubeClient, inst, parent)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return parent, siblings, nil
+}
+
+func GetSiblings(ctx context.Context, kubeClient client.Client, inst, parent *lsv1alpha1.Installation) (siblings []*lsv1alpha1.Installation, err error) {
+	if IsRootInstallation(inst) {
+		// get all root object as siblings
+		filter := func(a lsv1alpha1.Installation) bool {
+			return a.Name == inst.Name
+		}
+		rootInstallations, err := GetRootInstallations(ctx, kubeClient, filter, client.InNamespace(inst.Namespace))
+		if err != nil {
+			return nil, err
+		}
+		return rootInstallations, err
+	}
+
+	// siblings are all encompassed installation of the parent installation
+	siblings, err = ListSubinstallations(ctx, kubeClient, parent, parent.Status.SubInstCache, read_write_layer.R000006, func(found *lsv1alpha1.Installation) bool {
+		return inst.Name == found.Name
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return siblings, nil
 }
 
 // GetParent returns the parent of an installation.

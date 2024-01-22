@@ -47,31 +47,33 @@ import (
 )
 
 // AddControllerToManagerForTargetSyncs adds the controller to the manager
-func AddControllerToManagerForTargetSyncs(logger logging.Logger, mgr manager.Manager) error {
+func AddControllerToManagerForTargetSyncs(lsUncachedClient, lsCachedClient client.Client, logger logging.Logger, lsMgr manager.Manager) error {
 	log := logger.Reconciles("targetSync", "TargetSync")
-	ctrl := NewTargetSyncController(log, mgr.GetClient(), clusters.NewDefaultSourceClientProvider())
+	ctrl := NewTargetSyncController(lsUncachedClient, lsCachedClient, log, clusters.NewDefaultSourceClientProvider())
 
 	predicates := builder.WithPredicates(predicate.Or(predicate.LabelChangedPredicate{},
 		predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))
 
-	return builder.ControllerManagedBy(mgr).
-		For(&lsv1alpha1.TargetSync{}, predicates).
+	return builder.ControllerManagedBy(lsMgr).
+		For(&lsv1alpha1.TargetSync{}, predicates, builder.OnlyMetadata).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(ctrl)
 }
 
 // TargetSyncController is the TargetSync controller
 type TargetSyncController struct {
+	lsUncachedClient     client.Client
+	lsCachedClient       client.Client
 	log                  logging.Logger
-	targetClient         client.Client
 	sourceClientProvider clusters.SourceClientProvider
 }
 
 // NewTargetSyncController returns a new TargetSync controller
-func NewTargetSyncController(logger logging.Logger, targetClient client.Client, p clusters.SourceClientProvider) reconcile.Reconciler {
+func NewTargetSyncController(lsUncachedClient, lsCachedClient client.Client, logger logging.Logger, p clusters.SourceClientProvider) reconcile.Reconciler {
 	return &TargetSyncController{
+		lsUncachedClient:     lsUncachedClient,
+		lsCachedClient:       lsCachedClient,
 		log:                  logger,
-		targetClient:         targetClient,
 		sourceClientProvider: p,
 	}
 }
@@ -81,7 +83,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
 
 	targetSync := &lsv1alpha1.TargetSync{}
-	if err := c.targetClient.Get(ctx, req.NamespacedName, targetSync); err != nil {
+	if err := c.lsUncachedClient.Get(ctx, req.NamespacedName, targetSync); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info(err.Error())
 			return reconcile.Result{}, nil
@@ -93,7 +95,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	// set finalizer
 	if targetSync.DeletionTimestamp.IsZero() && !kutils.HasFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
-		if err := c.targetClient.Update(ctx, targetSync); err != nil {
+		if err := c.lsUncachedClient.Update(ctx, targetSync); err != nil {
 			logger.Error(err, "adding finalizer to targetsync object failed")
 			return reconcile.Result{Requeue: true}, nil
 		}
@@ -137,7 +139,7 @@ func (c *TargetSyncController) removeReconcileAnnotation(ctx context.Context, ta
 	if helper.HasOperation(targetSync.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		logger.Debug("remove reconcile annotation from target sync")
 		delete(targetSync.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := c.targetClient.Update(ctx, targetSync); err != nil {
+		if err := c.lsUncachedClient.Update(ctx, targetSync); err != nil {
 			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateTargetSync", err.Error())
 		}
 	}
@@ -158,7 +160,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 		err = fmt.Errorf("more than one TargetSync object in the same namespace is not allowed")
 		errors = append(errors, err)
 	} else {
-		sourceClient, restConfig, err := c.sourceClientProvider.GetSourceClient(ctx, targetSync, c.targetClient, nil)
+		sourceClient, restConfig, err := c.sourceClientProvider.GetSourceClient(ctx, targetSync, c.lsUncachedClient, nil)
 		if err != nil {
 			utils.LogHelper{}.LogErrorButNotFoundAsInfo(ctx, err, "fetching source client for targetsync object failed")
 			errors = append(errors, err)
@@ -183,7 +185,7 @@ func (c *TargetSyncController) handleReconcile(ctx context.Context, targetSync *
 	targetSync.Status.ObservedGeneration = targetSync.GetGeneration()
 	targetSync.Status.LastUpdateTime = &now
 
-	if err = c.targetClient.Status().Update(ctx, targetSync); err != nil {
+	if err = c.lsUncachedClient.Status().Update(ctx, targetSync); err != nil {
 		logger.Error(err, "updating status at the end of reconcile of targetsync object failed")
 		return err
 	}
@@ -208,7 +210,7 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 		targetSync.Status.ObservedGeneration = targetSync.GetGeneration()
 		targetSync.Status.LastUpdateTime = &now
 
-		if internalErr := c.targetClient.Status().Update(ctx, targetSync); err != nil {
+		if internalErr := c.lsUncachedClient.Status().Update(ctx, targetSync); err != nil {
 			logger.Error(err, "updating status with error for deleting targetsync object failed")
 			return internalErr
 		}
@@ -218,7 +220,7 @@ func (c *TargetSyncController) handleDelete(ctx context.Context, targetSync *lsv
 
 	logger.Info("deleting targetsync object: removing finalizer")
 	controllerutil.RemoveFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
-	if err := c.targetClient.Update(ctx, targetSync); err != nil {
+	if err := c.lsUncachedClient.Update(ctx, targetSync); err != nil {
 		logger.Error(err, "removing finalizer for deleting targetsync object failed")
 		return lserrors.NewWrappedError(err, "handleDelete", "RemoveFinalizer", err.Error())
 	}
@@ -285,7 +287,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 			return errors
 		}
 
-		shootClient, err := c.sourceClientProvider.GetSourceShootClient(ctx, targetSync, c.targetClient)
+		shootClient, err := c.sourceClientProvider.GetSourceShootClient(ctx, targetSync, c.lsUncachedClient)
 		if err != nil {
 			logger.Error(err, "failed to get shoot client for targetsync")
 			errors = append(errors, err)
@@ -334,7 +336,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 			// do not delete the secret to the source namespace
 			if !c.isTargetSyncSecret(nextOldTarget.Spec.SecretRef.Name, targetSync) {
 				secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
-				if err := c.targetClient.Delete(ctx, &secret); err != nil {
+				if err := c.lsUncachedClient.Delete(ctx, &secret); err != nil {
 					msg := fmt.Sprintf("deleting old secret %s of targetsync object failed", client.ObjectKeyFromObject(&secret).String())
 					logger.Error(err, msg)
 					errors = append(errors, err)
@@ -342,7 +344,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 			}
 
 			target := lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: targetSync.Namespace, Name: key}}
-			if err := c.targetClient.Delete(ctx, &target); err != nil {
+			if err := c.lsUncachedClient.Delete(ctx, &target); err != nil {
 				msg := fmt.Sprintf("deleting old target %s of targetsync object failed", client.ObjectKeyFromObject(&target).String())
 				logger.Error(err, msg)
 				errors = append(errors, err)
@@ -408,7 +410,7 @@ func (c *TargetSyncController) isRenewalOfShortLivedKubeconfigDue(ctx context.Co
 		ObjectMeta: controllerruntime.ObjectMeta{Name: targetName, Namespace: targetNamespace},
 	}
 
-	err = c.targetClient.Get(ctx, client.ObjectKeyFromObject(oldTarget), oldTarget)
+	err = c.lsUncachedClient.Get(ctx, client.ObjectKeyFromObject(oldTarget), oldTarget)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info("targetsync for shoot is due for the first time")
@@ -440,7 +442,7 @@ func (c *TargetSyncController) createOrUpdateTarget(ctx context.Context, targetS
 		ObjectMeta: controllerruntime.ObjectMeta{Name: targetName, Namespace: targetSync.Namespace},
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, c.targetClient, newTarget, func() error {
+	_, err := controllerruntime.CreateOrUpdate(ctx, c.lsUncachedClient, newTarget, func() error {
 		newTarget.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
@@ -476,7 +478,7 @@ func (c *TargetSyncController) createOrUpdateSecret(ctx context.Context, targetS
 		ObjectMeta: controllerruntime.ObjectMeta{Name: secret.Name, Namespace: targetSync.Namespace},
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, c.targetClient, newSecret, func() error {
+	_, err := controllerruntime.CreateOrUpdate(ctx, c.lsUncachedClient, newSecret, func() error {
 		newSecret.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
@@ -500,7 +502,7 @@ func (c *TargetSyncController) createOrUpdateSecretForShoot(ctx context.Context,
 		return err
 	}
 
-	_, err = controllerruntime.CreateOrUpdate(ctx, c.targetClient, newSecret, func() error {
+	_, err = controllerruntime.CreateOrUpdate(ctx, c.lsUncachedClient, newSecret, func() error {
 		newSecret.ObjectMeta.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
@@ -518,7 +520,7 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	secrets := &corev1.SecretList{}
-	if err := read_write_layer.ListSecrets(ctx, c.targetClient, secrets, read_write_layer.R000065,
+	if err := read_write_layer.ListSecrets(ctx, c.lsUncachedClient, secrets, read_write_layer.R000065,
 		client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "listing secrets for deleting targetsync object failed")
@@ -529,7 +531,7 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 		if !c.isTargetSyncSecret(secret.Name, targetSync) {
 			secretLogger := logger.WithValues(lc.KeyResource, client.ObjectKeyFromObject(&secret).String())
 			secretLogger.Info("deleting secret whose targetsync object is being deleted")
-			if err := c.targetClient.Delete(ctx, &secret); err != nil {
+			if err := c.lsUncachedClient.Delete(ctx, &secret); err != nil {
 				secretLogger.Error(err, "failed to delete secret whose targetsync object is being deleted")
 				return err
 			}
@@ -537,7 +539,7 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	}
 
 	targets := &lsv1alpha1.TargetList{}
-	if err := read_write_layer.ListTargets(ctx, c.targetClient, targets, read_write_layer.R000066,
+	if err := read_write_layer.ListTargets(ctx, c.lsUncachedClient, targets, read_write_layer.R000066,
 		client.InNamespace(targetSync.Namespace),
 		client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "listing targets for deleting targetsync object failed")
@@ -547,7 +549,7 @@ func (c *TargetSyncController) removeTargetsAndSecrets(ctx context.Context, targ
 	for _, target := range targets.Items {
 		targetLogger := logger.WithValues(lc.KeyResource, client.ObjectKeyFromObject(&target).String())
 		targetLogger.Info("deleting target whose targetsync object is being deleted")
-		if err := c.targetClient.Delete(ctx, &target); err != nil {
+		if err := c.lsUncachedClient.Delete(ctx, &target); err != nil {
 			targetLogger.Error(err, "failed to delete target whose targetsync object is being deleted")
 			return err
 		}
@@ -560,7 +562,7 @@ func (c *TargetSyncController) fetchTargetSyncs(ctx context.Context, targetSync 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targetSyncs := &lsv1alpha1.TargetSyncList{}
-	if err := read_write_layer.ListTargetSyncs(ctx, c.targetClient, targetSyncs, read_write_layer.R000067,
+	if err := read_write_layer.ListTargetSyncs(ctx, c.lsUncachedClient, targetSyncs, read_write_layer.R000067,
 		client.InNamespace(targetSync.Namespace)); err != nil {
 		logger.Error(err, "targetsync failed: could not fetch targetsync list")
 		return nil, err
@@ -573,7 +575,7 @@ func (c *TargetSyncController) fetchOldTargets(ctx context.Context, targetSync *
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targets := &lsv1alpha1.TargetList{}
-	if err := read_write_layer.ListTargets(ctx, c.targetClient, targets, read_write_layer.R000068,
+	if err := read_write_layer.ListTargets(ctx, c.lsUncachedClient, targets, read_write_layer.R000068,
 		client.InNamespace(targetSync.Namespace), client.MatchingLabels{labelKeyTargetSync: labelValueOk}); err != nil {
 		logger.Error(err, "targetsync failed: old targets could not be fetched")
 		return nil, err
@@ -642,7 +644,7 @@ func (c *TargetSyncController) fetchSecretAndKubeconfigObject(ctx context.Contex
 		Name:      targetSync.Spec.SecretRef.Name,
 	}
 
-	if err := c.targetClient.Get(ctx, secretKey, secret); err != nil {
+	if err := c.lsUncachedClient.Get(ctx, secretKey, secret); err != nil {
 		return nil, nil, err
 	}
 
@@ -679,7 +681,7 @@ func (c *TargetSyncController) rotateTokenInSecret(ctx context.Context, targetSy
 
 	secret.Data[targetSync.Spec.SecretRef.Key] = kubeconfigBytes
 
-	if err := c.targetClient.Update(ctx, secret); err != nil {
+	if err := c.lsUncachedClient.Update(ctx, secret); err != nil {
 		return err
 	}
 

@@ -65,7 +65,7 @@ func ImportExecutionsTests(f *framework.Framework) {
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
 			By("Check deployitem")
-			dis, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
+			dis, err := utils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
 			Expect(dis).To(HaveLen(1))
 			di := dis[0]

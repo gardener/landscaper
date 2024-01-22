@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 
@@ -348,4 +350,26 @@ func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Envir
 	di.ObjectMeta = old.ObjectMeta
 	ExpectNoError(testenv.Client.Patch(ctx, di, client.MergeFrom(old)))
 	return di
+}
+
+func GetDeployItemsOfInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.DeployItem, error) {
+	if inst.Status.ExecutionReference == nil {
+		return nil, fmt.Errorf("no execution reference defined for the installation %s", client.ObjectKeyFromObject(inst).String())
+	}
+	exec := &lsv1alpha1.Execution{}
+	if err := read_write_layer.GetExecution(ctx, kubeClient, inst.Status.ExecutionReference.NamespacedName(), exec,
+		read_write_layer.R000023); err != nil {
+		return nil, err
+	}
+
+	deployItems, err := read_write_layer.ListManagedDeployItems(ctx, kubeClient, client.ObjectKeyFromObject(exec), read_write_layer.R000084)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*lsv1alpha1.DeployItem, 0)
+	for i := range deployItems.Items {
+		items = append(items, &deployItems.Items[i])
+	}
+	return items, nil
 }

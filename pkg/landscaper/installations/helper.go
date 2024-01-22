@@ -181,45 +181,6 @@ func GetDataImport(ctx context.Context,
 	return do, owner, nil
 }
 
-// GetTargets returns all targets and import references defined by a target import.
-func GetTargets(ctx context.Context,
-	kubeClient client.Client,
-	contextName string,
-	inst *lsv1alpha1.Installation,
-	targetImport lsv1alpha1.TargetImport) ([]*dataobjects.TargetExtension, []string, error) {
-	var targets []*dataobjects.TargetExtension
-	var targetImportReferences []string
-	if len(targetImport.Target) != 0 {
-		target, err := GetTargetImport(ctx, kubeClient, contextName, inst, targetImport)
-		if err != nil {
-			return nil, nil, fmt.Errorf("%s: unable to get target for '%s': %w", targetImport.Name, targetImport.Name, err)
-		}
-		targets = []*dataobjects.TargetExtension{target}
-		targetImportReferences = []string{targetImport.Target}
-	} else if targetImport.Targets != nil {
-		tl, err := GetTargetListImportByNames(ctx, kubeClient, contextName, inst, targetImport)
-		if err != nil {
-			return nil, nil, fmt.Errorf("%s: unable to get targetlist for '%s': %w", targetImport.Name, targetImport.Name, err)
-		}
-		if len(tl.GetTargetExtensions()) != len(targetImport.Targets) {
-			return nil, nil, fmt.Errorf("%s: targetlist size mismatch: %d targets were expected but %d were fetched from the cluster",
-				targetImport.Name, len(targetImport.Targets), len(tl.GetTargetExtensions()))
-		}
-		targets = tl.GetTargetExtensions()
-		targetImportReferences = targetImport.Targets
-	} else if len(targetImport.TargetListReference) != 0 {
-		tl, err := GetTargetListImportBySelector(ctx, kubeClient, contextName, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, targetImport, true)
-		if err != nil {
-			return nil, nil, fmt.Errorf("%s: unable to get targetlist for '%s': %w", targetImport.Name, targetImport.Name, err)
-		}
-		targets = tl.GetTargetExtensions()
-		targetImportReferences = []string{targetImport.TargetListReference}
-	} else {
-		return nil, nil, fmt.Errorf("invalid target import '%s': one of target, targets, or targetListRef must be specified", targetImport.Name)
-	}
-	return targets, targetImportReferences, nil
-}
-
 // GetTargetImport fetches the target import from the cluster.
 func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *lsv1alpha1.Installation, targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetExtension, error) {
 	targetName := targetImport.Target

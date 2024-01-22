@@ -13,11 +13,11 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	mock_client "github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock"
+	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 )
 
 func createUnstructuredPod() *unstructured.Unstructured {
@@ -83,13 +83,6 @@ var _ = Describe("IsObjectReady", func() {
 	})
 })
 
-type MockInterruptionChecker struct {
-}
-
-func (c *MockInterruptionChecker) Check(_ context.Context) error {
-	return nil
-}
-
 var _ = Describe("WaitForObjectsReady", func() {
 	var (
 		ctrl       *gomock.Controller
@@ -130,7 +123,9 @@ var _ = Describe("WaitForObjectsReady", func() {
 		err := WaitForObjectsReady(ctx, 20*time.Second, fakeClient,
 			getObjectsFunc,
 			checkObjectsFunc,
-			&MockInterruptionChecker{}, "test")
+			interruption.NewIgnoreInterruptionChecker(),
+			"test",
+		)
 
 		Expect(err).ToNot(HaveOccurred())
 	})

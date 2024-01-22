@@ -1069,6 +1069,20 @@ AutomaticReconcile
 <p>AutomaticReconcile allows to configure automatically repeated reconciliations.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>optimization</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Optimization">
+Optimization
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optimization contains settings to improve execution performance.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1207,6 +1221,20 @@ map[string]..AnyJSON
 It is expected to contain a key for every blueprint-defined data export.
 Missing keys will be defaulted to their respective data export.
 Example: namespace: (( blueprint.exports.namespace ))</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>optimization</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Optimization">
+Optimization
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optimization contains settings to improve execution performance.</p>
 </td>
 </tr>
 </tbody>
@@ -2712,6 +2740,47 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemCache">DeployItemCache
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
+</p>
+<p>
+<p>DeployItemCache contains the existing deploy items</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>activeDIs</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DiNamePair">
+[]DiNamePair
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>orphanedDIs</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemPhase">DeployItemPhase
 (<code>string</code> alias)</p></h3>
 <p>
@@ -3397,6 +3466,45 @@ Error
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DiNamePair">DiNamePair
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemCache">DeployItemCache</a>)
+</p>
+<p>
+<p>DiNamePair contains the spec name and the real name of a deploy item</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>specName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>objectName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Duration">Duration
 </h3>
 <p>
@@ -3790,16 +3898,16 @@ only used for operation purpose.</p>
 </tr>
 <tr>
 <td>
-<code>deployItemRefs</code></br>
+<code>deployItemCache</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.VersionedNamedObjectReference">
-[]VersionedNamedObjectReference
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemCache">
+DeployItemCache
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>DeployItemReferences contain the state of all deploy items.</p>
+<p>DeployItemCache contains the currently existing deploy item belonging to the execution. If nil undefined.</p>
 </td>
 </tr>
 <tr>
@@ -4549,6 +4657,20 @@ AutomaticReconcile
 <p>AutomaticReconcile allows to configure automatically repeated reconciliations.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>optimization</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Optimization">
+Optimization
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optimization contains settings to improve execution performance.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus
@@ -4632,16 +4754,16 @@ string
 </tr>
 <tr>
 <td>
-<code>installationRefs</code></br>
+<code>subInstCache</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.NamedObjectReference">
-[]NamedObjectReference
+<a href="#landscaper.gardener.cloud/v1alpha1.SubInstCache">
+SubInstCache
 </a>
 </em>
 </td>
 <td>
-<p>InstallationReferences contain all references to sub-components
-that are created based on the component definition.</p>
+<em>(Optional)</em>
+<p>SubInstCache contains the currently existing sub installations belonging to the execution. If nil undefined.</p>
 </td>
 </tr>
 <tr>
@@ -4941,10 +5063,6 @@ string
 <h3 id="landscaper.gardener.cloud/v1alpha1.NamedObjectReference">NamedObjectReference
 </h3>
 <p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
-</p>
-<p>
 <p>NamedObjectReference is a named reference to a specific resource.</p>
 </p>
 <table>
@@ -5072,6 +5190,46 @@ the shoot cluster resources</p>
 (<code>string</code> alias)</p></h3>
 <p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.Optimization">Optimization
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplate">InstallationTemplate</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>)
+</p>
+<p>
+<p>Optimization contains settings to improve execution preformance</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>hasNoSiblingImports</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>hasNoSiblingExports</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.RemoteBlueprintReference">RemoteBlueprintReference
 </h3>
 <p>
@@ -5413,6 +5571,86 @@ SecretLabelSelectorRef
 <em>(Optional)</em>
 <p>Selects a key from multiple secrets in the installations&rsquo;s namespace
 that matches the given labels.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.SubInstCache">SubInstCache
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+<p>SubInstCache contains the existing sub installations</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>activeSubs</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SubNamePair">
+[]SubNamePair
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>orphanedSubs</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.SubNamePair">SubNamePair
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SubInstCache">SubInstCache</a>)
+</p>
+<p>
+<p>DiNamePair contains the spec name and the real name of a deploy item</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>specName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>objectName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -6442,10 +6680,6 @@ ObjectReference
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.VersionedNamedObjectReference">VersionedNamedObjectReference
 </h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
-</p>
 <p>
 <p>VersionedNamedObjectReference is a named reference to a object with its last observed resource generation.
 This struct is used by status fields.</p>

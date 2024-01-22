@@ -8,7 +8,7 @@ By default, the helm deployer checks the health of the deployed resources. See [
 
 **Index**:
 - [Provider Configuration](#provider-configuration)
-- [Provider Status](#status)
+- [Provider Status](#provider-status)
 - [Deployer Configuration](#deployer-configuration)
 
 ## Provider Configuration
@@ -180,11 +180,19 @@ spec:
     chart:
       ...
 
-    # specifies that only the rendered manifests are applied
+    # Specifies that only the rendered manifests are applied
     helmDeployment: false
+
+    # Optional. Allows to customize the deletion behaviour for a manifest-only deployment
+    deletionGroups: []
+    # Optional. Allows to customize the deletion behaviour during update for a manifest-only deployment
+    deletionGroupsDuringUpdate: []
 ```
 
-### Status
+The deletion behaviour for a manifest-only deployment is described in 
+[Deletion of Manifest and Manifest-Only Helm DeployItems](./manifest_deletion.md).
+
+## Provider Status
 
 This section describes the provider specific status of the resource.
 

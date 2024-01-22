@@ -20,7 +20,6 @@ import (
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -371,18 +370,15 @@ func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, 
 		o.log.Logfln("wait for cluster is ready")
 		shoot, getError := gardenClient.Get(ctx, clusterName, metav1.GetOptions{})
 		if getError != nil {
-			if errors.IsNotFound(getError) {
-				o.log.Logfln("is not found")
-				return false, nil
-			}
-
-			return false, getError
+			o.log.Logfln("failed to get cluster status: failed to get shoot: %w", err)
+			return false, nil
 		}
 
 		// check conditions (maybe .lastOperation.state == "Succeeded" suffices?)
 		jp := jsonpath.New("conditions")
 		if err := jp.Parse("{.status.conditions}"); err != nil {
-			return false, fmt.Errorf("failed to get cluster status: template parsing failed: %w", err)
+			o.log.Logfln("failed to get cluster status: template parsing failed: %w", err)
+			return false, nil
 		}
 
 		result, err := jp.FindResults(shoot.Object)

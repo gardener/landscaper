@@ -1,0 +1,217 @@
+components:
+  - name: github.com/gardener/landscaper/helm-deployer
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        version: ${VERSION}
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: github.com/gardener/landscaper
+    resources:
+      - name: helm-deployer-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./helm-deployer/blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: helm-deployer-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${HELM_DEPLOYER_CHART_PATH}
+          repository: charts/helm-deployer
+      - name: helm-deployer-image
+        type: ociImage
+        input:
+          type: docker
+          path: helm-deployer-controller:${VERSION}
+          repository: images/helm-deployer-controller
+
+  - name: github.com/gardener/landscaper/manifest-deployer
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        version: ${VERSION}
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: github.com/gardener/landscaper
+    resources:
+      - name: manifest-deployer-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./manifest-deployer/blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: manifest-deployer-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${MANIFEST_DEPLOYER_CHART_PATH}
+          repository: charts/manifest-deployer
+      - name: manifest-deployer-image
+        type: ociImage
+        input:
+          type: docker
+          path: manifest-deployer-controller:${VERSION}
+          repository: images/manifest-deployer-controller
+
+  - name: github.com/gardener/landscaper/container-deployer
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        version: ${VERSION}
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: github.com/gardener/landscaper
+    resources:
+      - name: container-deployer-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./container-deployer/blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: container-deployer-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${CONTAINER_DEPLOYER_CHART_PATH}
+          repository: charts/container-deployer
+      - name: container-deployer-image
+        type: ociImage
+        input:
+          type: docker
+          path: container-deployer-controller:${VERSION}
+          repository: images/container-deployer-controller
+      - name: container-init-image
+        type: ociImage
+        input:
+          type: docker
+          path: container-deployer-init:${VERSION}
+          repository: images/container-deployer-init
+      - name: container-wait-image
+        type: ociImage
+        input:
+          type: docker
+          path: container-deployer-wait:${VERSION}
+          repository: images/container-deployer-wait
+
+  - name: github.com/gardener/landscaper/mock-deployer
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        version: ${VERSION}
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: github.com/gardener/landscaper
+    resources:
+      - name: mock-deployer-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./mock-deployer/blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: mock-deployer-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${MOCK_DEPLOYER_CHART_PATH}
+          repository: charts/mock-deployer
+      - name: mock-deployer-image
+        type: ociImage
+        input:
+          type: docker
+          path: mock-deployer-controller:${VERSION}
+          repository: images/mock-deployer-controller
+
+  - name: github.com/gardener/landscaper
+    version: ${VERSION}
+    provider:
+      name: ${PROVIDER}
+    sources:
+      - name: main
+        type: git
+        access:
+          type: github
+          commit: ${COMMIT_SHA}
+          ref: refs/tags/${VERSION}
+          repoUrl: github.com/gardener/landscaper
+    componentReferences:
+      - name: helm-deployer
+        componentName: github.com/gardener/landscaper/helm-deployer
+        version: ${VERSION}
+      - name: manifest-deployer
+        componentName: github.com/gardener/landscaper/manifest-deployer
+        version: ${VERSION}
+      - name: container-deployer
+        componentName: github.com/gardener/landscaper/container-deployer
+        version: ${VERSION}
+      - name: mock-deployer
+        componentName: github.com/gardener/landscaper/mock-deployer
+        version: ${VERSION}
+    resources:
+      - name: landscaper-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${LANDSCAPER_CHART_PATH}
+          repository: charts/landscaper
+      - name: landscaper-controller-rbac-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${LANDSCAPER_CONTROLLER_RBAC_CHART_PATH}
+          repository: charts/landscaper-controller-rbac
+      - name: landscaper-controller-deployment-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${LANDSCAPER_CONTROLLER_DEPLOYMENT_CHART_PATH}
+          repository: charts/landscaper-controller-deployment
+      - name: landscaper-agent-chart
+        type: helm.io/chart
+        input:
+          type: helm
+          path: ${LANDSCAPER_AGENT_CHART_PATH}
+          repository: charts/landscaper-agent
+      - name: landscaper-controller
+        type: ociImage
+        input:
+          type: docker
+          path: landscaper-controller:${VERSION}
+          repository: images/landscaper-controller
+      - name: landscaper-webhooks-server
+        type: ociImage
+        input:
+          type: docker
+          path: landscaper-webhooks-server:${VERSION}
+          repository: images/landscaper-webhooks-server
+      - name: landscaper-agent
+        type: ociImage
+        input:
+          type: docker
+          path: landscaper-agent:${VERSION}
+          repository: images/landscaper-agent

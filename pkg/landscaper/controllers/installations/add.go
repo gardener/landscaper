@@ -5,7 +5,10 @@
 package installations
 
 import (
+	"context"
 	"fmt"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/pkg/utils/lock"
 
@@ -21,8 +24,11 @@ import (
 )
 
 // AddControllerToManager register the installation Controller in a manager.
-func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config *config.LandscaperConfiguration, callerName string) error {
+func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	logger logging.Logger, lsMgr manager.Manager, config *config.LandscaperConfiguration, callerName string) error {
+
 	log := logger.Reconciles("installation", "Installation")
+	ctx := logging.NewContext(context.Background(), log)
 
 	lockingEnabled := lock.IsLockingEnabledForMainControllers(config)
 
@@ -30,10 +36,9 @@ func AddControllerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manage
 		"numberOfWorkerThreads", config.Controllers.Installations.CommonControllerConfig.Workers,
 		"lockingEnabled", lockingEnabled)
 
-	a, err := NewController(
-		hostMgr.GetClient(),
+	a, err := NewController(ctx,
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		log,
-		lsMgr.GetClient(),
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
 		config,

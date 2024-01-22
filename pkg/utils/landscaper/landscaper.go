@@ -121,44 +121,22 @@ func WaitForDeployItemToFinish(
 	return nil
 }
 
-// GetDeployItemsOfInstallation returns all direct deploy items of the installation.
-// It does not return deploy items of subinstllations
-// todo: for further tests create recursive installation navigator
-// e.g. Navigator(inst).GetSubinstallation(name).GetDeployItems()
-func GetDeployItemsOfInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.DeployItem, error) {
-	if inst.Status.ExecutionReference == nil {
-		return nil, errors.New("no execution reference defined for the installation")
-	}
-	exec := &lsv1alpha1.Execution{}
-	if err := read_write_layer.GetExecution(ctx, kubeClient, inst.Status.ExecutionReference.NamespacedName(), exec,
-		read_write_layer.R000023); err != nil {
+// GetSubInstallationsOfInstallation returns the direct subinstallations of a installation.
+func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, error) {
+	installationList := &lsv1alpha1.InstallationList{}
+
+	if err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, read_write_layer.R000033,
+		client.InNamespace(inst.Namespace),
+		client.MatchingLabels{
+			lsv1alpha1.EncompassedByLabel: inst.Name,
+		}); err != nil {
 		return nil, err
 	}
 
-	items := make([]*lsv1alpha1.DeployItem, 0)
-	for _, ref := range exec.Status.DeployItemReferences {
-		item := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, kubeClient, ref.Reference.NamespacedName(),
-			item, read_write_layer.R000033); err != nil {
-			return nil, fmt.Errorf("unable to find deploy item %q: %w", ref.Name, err)
-		}
-		items = append(items, item)
-	}
-	return items, nil
-}
-
-// GetSubInstallationsOfInstallation returns the direct subinstallations of a installation.
-func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, error) {
 	list := make([]*lsv1alpha1.Installation, 0)
-	if len(inst.Status.InstallationReferences) == 0 {
-		return list, nil
-	}
 
-	for _, ref := range inst.Status.InstallationReferences {
-		inst := &lsv1alpha1.Installation{}
-		if err := read_write_layer.GetInstallation(ctx, kubeClient, ref.Reference.NamespacedName(), inst, read_write_layer.R000006); err != nil {
-			return nil, fmt.Errorf("unable to find installation %q: %w", ref.Name, err)
-		}
+	for i := range installationList.Items {
+		inst := &installationList.Items[i]
 		list = append(list, inst)
 	}
 	return list, nil

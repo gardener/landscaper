@@ -33,7 +33,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	BeforeEach(func() {
 		var err error
 
-		deployItemController, err = dictrl.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme,
+		deployItemController, err = dictrl.NewController(testenv.Client, testenv.Client, logging.Discard(), api.LandscaperScheme,
 			&testPickupTimeoutDuration, 1000)
 		Expect(err).ToNot(HaveOccurred())
 	})

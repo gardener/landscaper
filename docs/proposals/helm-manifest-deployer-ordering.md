@@ -91,9 +91,12 @@ deployItems:
       kind: ProviderConfiguration
       ...
       deletionGroups:
-        - predefinedResourceGroup: namespaced-resources
-        - predefinedResourceGroup: cluster-scoped-resources     # does not include the crds
-        - predefinedResourceGroup: crds
+        - predefinedResourceGroup: 
+            type: namespaced-resources
+        - predefinedResourceGroup: 
+            type: cluster-scoped-resources     # does not include the crds
+        - predefinedResourceGroup: 
+            type: crds
 ```
 
 Note that you can omit the section `deletionGroups` only if you accept the exact default behaviour.
@@ -106,25 +109,25 @@ In this example, the deletion of CRDs is skipped:
 
 ```yaml
 deletionGroups:
-  - predefinedResourceGroup: namespaced-resources
-  - predefinedResourceGroup: cluster-scoped-resources
+  - predefinedResourceGroup: 
+      type: namespaced-resources
+  - predefinedResourceGroup: 
+      type: cluster-scoped-resources
 ```
 
 ### Specific Resources
 
-If you want to specify a deletion group specifying the deletion of particular resource types you could use the
+If you want to specify a deletion group specifying the deletion of particular resource types you can use the
 following syntax where you specify the types of the objects which should be deleted in that deletion group:
 
 ```yaml
 deletionGroups:
-  - resources:
-    - group:   ...
-      version: ...
-      kind:    ...
-    - group:   ...
-      version: ...
-      kind:    ...
-    ...
+  - customResourceGroup:
+      resources:
+        - apiVersion: ...
+          kind:    ...
+        - apiVersion: ...
+          kind:    ...
 ```
 
 ##### Example: delete certain resources first
@@ -135,24 +138,26 @@ cluster scoped resources and the CDRs are deleted.
 
 ```yaml
 deletionGroups:
-  - resources:
-    - group:   ""
-      version: "v1"
-      kind:    "configmaps"
-    - group:   ""
-      version: "v1"
-      kind:    "secrets"
-  - predefinedResourceGroup: namespaced-resources
-  - resources:
-    - group:   ""
-      version: "v1"
-      kind:    "namespaces"
-  - predefinedResourceGroup: cluster-scoped-resources
-  - predefinedResourceGroup: crds
+  - customResourceGroup:
+      resources:
+        - apiVersion: "v1"
+          kind: "configmaps"
+        - apiVersion: "v1"
+          kind: "secrets"
+  - predefinedResourceGroup: 
+      type: namespaced-resources
+  - customResourceGroup:
+      resources:
+        - apiVersion: "v1"
+          kind: "namespaces"
+  - predefinedResourceGroup: 
+      type: cluster-scoped-resources
+  - predefinedResourceGroup: 
+      type: crds
 ```
 
-Every item of the list `deletionGroups` must contain exactly one of `resources` or `predefinedResourceGroup` to
-define a set of resources.
+Every item of the list `deletionGroups` must contain exactly one of `predefinedResourceGroup` or `customResourceGroup`
+to define a set of resources.
 
 ##### Example: delete CRs first
 
@@ -162,13 +167,16 @@ before they remove the finalizers from the CRs.
 
 ```yaml
 deletionGroups:
-  - resources:
-    - group:   <group of CR>
-      version: <version of CR>"
-      kind:    <kind of CR>
-  - predefinedResourceGroup: namespaced-resources
-  - predefinedResourceGroup: cluster-scoped-resources
-  - predefinedResourceGroup: crds
+  - customResourceGroup:
+      resources:
+        - apiVersion: <apiVersion of CR>"
+          kind:       <kind of CR>
+  - predefinedResourceGroup: 
+      type: namespaced-resources
+  - predefinedResourceGroup: 
+      type: cluster-scoped-resources
+  - predefinedResourceGroup: 
+      type: crds
 ```
 
 ### Force Delete
@@ -183,17 +191,18 @@ In this example, the `force-delete` mode is enabled for config maps and cluster-
 
 ```yaml
 deletionGroups:
-  - resources:
-    - group:   ""
-      version: "v1"
-      kind:    "configmaps"
-    force-delete:
-      enabled: true
-  - predefinedResourceGroup: namespaced-resources
-  - predefinedResourceGroup: cluster-scoped-resources
-    force-delete:
-      enabled: true
-  - predefinedResourceGroup: crds
+  - customResourceGroup:
+      resources:
+        - apiVersion: v1
+          kind: configmaps
+      force-delete: true
+  - predefinedResourceGroup: 
+      type: namespaced-resources
+  - predefinedResourceGroup: 
+      type: cluster-scoped-resources
+      force-delete: true
+  - predefinedResourceGroup: 
+      type: crds
 ```
 
 ### Deleting all Resources
@@ -201,29 +210,31 @@ deletionGroups:
 In the current deletion process only objects deployed by the chart are removed. This is also the default behaviour
 for the new approach. 
 
-You can change this behaviour by specifying `seletor.all=true` and all objects of that type are removed. Later 
-the selector could be extended by rules for namespaces, labels, object names etc. to allow more elaborated deletion rules.
+You can change this behaviour by specifying `deleteAllResources: true` and all objects of that type are removed. Later 
+the selector can be extended by rules for namespaces, labels, object names etc. to allow more elaborated deletion rules.
 
 This approach allows to delete also objects which where not directly created by the Chart but e.g. by some operators or 
 jobs which itself where deployed by the Chart.
 
 ##### Example: delete resources outside the chart
 
-In this example, all custom resources of a certain group-version-kind are deleted in the beginning. Because of the
-selector `all: true`, all resources of that group-version-kind are deleted, regardless whether they were deployed by
-the chart or not.
+In this example, all custom resources of a certain apiVersion and kind are deleted in the beginning. Because of the
+selector `deleteAllResources: true`, all resources of that apiVersion and kind are deleted, regardless whether
+they were deployed by the chart or not.
 
 ```yaml
 deletionGroups:
-  - resources:
-    - group:   "my.group"
-      version: "v1"
-      kind:    "mycustomresources"
-      selector:
-        all: true
-  - predefinedResourceGroup: namespaced-resources
-  - predefinedResourceGroup: cluster-scoped-resources
-  - predefinedResourceGroup: crds
+  - customResourceGroup:
+      resources:
+        - apiVersion: v1
+          kind: mycustomresource
+      deleteAllResources: true
+  - predefinedResourceGroup: 
+      type: namespaced-resources
+  - predefinedResourceGroup: 
+      type: cluster-scoped-resources
+  - predefinedResourceGroup: 
+      type: crds
 ```
 
 ### General Structure of deletion groups
@@ -232,33 +243,53 @@ The general syntax of deletion groups is:
 
 ```yaml
 deletionGroups:
-  - predefinedResourceGroup: ( "namespaced-resources" | "cluster-scoped-resources" | "crds" )
-    force-delete:
-      enabled: <true/false>
-  - resources:
-    - group:   ...
-      version: ...
-      kind:    ...
-      selector:
-        all: <true/false>
-    force-delete:
-      enabled: <true/false>
+  - predefinedResourceGroup: 
+      type: ("namespaced-resources" | "cluster-scoped-resources" | "crds" | "empty")
+      force-delete: (true | false)
+  - customResourceGroup:
+      resources:
+        - apiVersion: ...
+          kind:       ...
+      deleteAllResources: (true | false)
+      force-delete: (true | false)
 ```
 
-The field `deletionGroups` is a list. Its items have the following fields:
+#### Deletion groups
 
-- **predefinedResourceGroup:** this field is optional, but exactly one of `resources` or `predefinedResourceGroup` must
-  be set. The field has type field with the allowed values:
-    - `namespaced-resources`
-    - `cluster-scoped-resources`
-    - `crds`
+The provider configuration of a manifest-helm or manifest DeployItem has an optional field `deletionGroups`.
+It is a list whose items are objects with the fields:
 
-- **resources:** this field is optional, but exactly one of `resources` or `predefinedResourceGroup` must be set.
-  The field is a list. Each item must have fields `group`, `version`, `kind` to specify a type of resources.
-  Optionally, a `selector` can be specified; currently, only the selector `all: true` is supported to indicate that
-  resources should be deleted even if they were not deployed by the chart.
+- `predefinedResourceGroup`, optional, of type [predefined resource group](#predefined-resource-group).
+- `customResourceGroup`, optional, of type [custom resource group](#custom-resource-group) 
 
-- **force-delete:** this field is optional. It is an object with field `enabled: (true | false )`.
+In each item, exactly one of the two fields must be set.
+
+#### Predefined resource group
+
+A predefined resource group is an object with the following fields:
+
+- `type`, required, of type string. The supported values are:
+  - `namespaced-resources`
+  - `cluster-scoped-resources`
+  - `crds`
+  - `empty`
+
+- `forceDelete`, optional, of type boolean, with default value `false`.
+
+#### Custom resource group
+
+A `customResourceGroup` is an object with the following fields:
+
+- `resources`, required, a list as described in [resources of a custom resource group](#resources-of-a-custom-resource-group).
+- `forceDelete`, optional, of type boolean, with default value `false`.
+- `deleteAllResources`, optional, of type boolean, with default value `false`.
+
+#### Resources of a custom resource group
+
+The resources of a custom resource group are a list. Each item is an object with the following fields: 
+
+- `apiVersion`, required, of type string.
+- `kind`, required, of type string.
 
 > Maybe later we need a field `excludedResources` to express something like: all namespaced resources except configmaps.
 

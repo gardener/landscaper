@@ -159,6 +159,7 @@ type ReadID string
 
 const (
 	// Constants to identify different read operations. Every constant must be used only once.
+	R000000 ReadID = "r000000" // for tests
 	R000001 ReadID = "r000001"
 	R000002 ReadID = "r000002"
 	R000003 ReadID = "r000003"
@@ -239,6 +240,36 @@ const (
 	R000078 ReadID = "r000078"
 	R000079 ReadID = "r000079"
 	R000080 ReadID = "r000080"
+	R000081 ReadID = "r000081"
+	R000082 ReadID = "r000082"
+	R000083 ReadID = "r000083"
+	R000084 ReadID = "r000084"
+	R000085 ReadID = "r000085"
+	R000086 ReadID = "r000086"
+	R000087 ReadID = "r000087"
+	R000088 ReadID = "r000088"
+	R000089 ReadID = "r000089"
+	R000090 ReadID = "r000090"
+	R000091 ReadID = "r000091"
+	R000092 ReadID = "r000092"
+	R000093 ReadID = "r000093"
+	R000094 ReadID = "r000094"
+	R000095 ReadID = "r000095"
+	R000096 ReadID = "r000096"
+	R000097 ReadID = "r000097"
+	R000098 ReadID = "r000098"
+	R000099 ReadID = "r000099"
+	R000100 ReadID = "r000100"
+	R000101 ReadID = "r000101"
+	R000102 ReadID = "r000102"
+	R000103 ReadID = "r000103"
+	R000104 ReadID = "r000104"
+	R000105 ReadID = "r000105"
+	R000106 ReadID = "r000106"
+	R000107 ReadID = "r000107"
+	R000108 ReadID = "r000108"
+	R000109 ReadID = "r000109"
+	R000110 ReadID = "r000110"
 )
 
 const (

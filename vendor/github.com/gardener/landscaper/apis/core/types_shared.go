@@ -349,3 +349,21 @@ func (r VersionedResourceReference) ObjectMeta() cdv2.ObjectMeta {
 		Version: r.Version,
 	}
 }
+
+// DeployItemCache contains the existing deploy items
+type DeployItemCache struct {
+	ActiveDIs   []DiNamePair `json:"activeDIs,omitempty"`
+	OrphanedDIs []string     `json:"orphanedDIs,omitempty"`
+}
+
+// DiNamePair contains the spec name and the real name of a deploy item
+type DiNamePair struct {
+	SpecName   string `json:"specName,omitempty"`
+	ObjectName string `json:"objectName,omitempty"`
+}
+
+// Optimization contains settings to improve execution preformance
+type Optimization struct {
+	HasNoSiblingImports bool `json:"hasNoSiblingImports,omitempty"`
+	HasNoSiblingExports bool `json:"hasNoSiblingExports,omitempty"`
+}

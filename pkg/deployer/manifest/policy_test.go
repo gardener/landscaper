@@ -147,7 +147,6 @@ var _ = Describe("Policy", func() {
 			cmRes := &corev1.ConfigMap{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(configMap), cmRes)).To(Succeed())
 
-			Expect(m.Delete(ctx)).To(HaveOccurred())
 			Expect(m.Delete(ctx)).To(Succeed())
 
 			cmRes = &corev1.ConfigMap{}
@@ -227,7 +226,6 @@ var _ = Describe("Policy", func() {
 			cmRes := &corev1.ConfigMap{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(configMap), cmRes)).To(Succeed())
 
-			Expect(m.Delete(ctx)).To(HaveOccurred())
 			Expect(m.Delete(ctx)).To(Succeed())
 
 			cmRes = &corev1.ConfigMap{}
@@ -366,7 +364,6 @@ var _ = Describe("Policy", func() {
 			cmRes := &corev1.ConfigMap{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(configMap), cmRes)).To(Succeed())
 
-			Expect(m.Delete(ctx)).To(HaveOccurred())
 			Expect(m.Delete(ctx)).To(Succeed())
 
 			cmRes = &corev1.ConfigMap{}

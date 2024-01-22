@@ -27,11 +27,11 @@ func (c *Container) Delete(ctx context.Context) error {
 		}
 	}
 
-	if err := CleanupRBAC(ctx, c.DeployItem, c.hostClient, c.Configuration.Namespace); err != nil {
+	if err := CleanupRBAC(ctx, c.DeployItem, c.hostUncachedClient, c.Configuration.Namespace); err != nil {
 		return lserrors.NewWrappedError(err,
 			"Delete", "CleanupRBAC", err.Error())
 	}
-	if err := CleanupDeployItem(ctx, c.DeployItem, c.lsClient, c.directHostClient, c.Configuration.Namespace); err != nil {
+	if err := CleanupDeployItem(ctx, c.DeployItem, c.lsUncachedClient, c.hostUncachedClient, c.Configuration.Namespace); err != nil {
 		return lserrors.NewWrappedError(err,
 			"Delete", "CleanupDeployItem", err.Error())
 	}

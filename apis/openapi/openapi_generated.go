@@ -111,6 +111,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Default":                                            schema_landscaper_apis_core_v1alpha1_Default(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger":                                 schema_landscaper_apis_core_v1alpha1_DependentToTrigger(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItem":                                         schema_landscaper_apis_core_v1alpha1_DeployItem(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache":                                    schema_landscaper_apis_core_v1alpha1_DeployItemCache(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemList":                                     schema_landscaper_apis_core_v1alpha1_DeployItemList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemSpec":                                     schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemStatus":                                   schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref),
@@ -121,6 +122,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationList":                           schema_landscaper_apis_core_v1alpha1_DeployerRegistrationList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationSpec":                           schema_landscaper_apis_core_v1alpha1_DeployerRegistrationSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationStatus":                         schema_landscaper_apis_core_v1alpha1_DeployerRegistrationStatus(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.DiNamePair":                                         schema_landscaper_apis_core_v1alpha1_DiNamePair(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Duration":                                           schema_landscaper_apis_core_v1alpha1_Duration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Environment":                                        schema_landscaper_apis_core_v1alpha1_Environment(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.EnvironmentList":                                    schema_landscaper_apis_core_v1alpha1_EnvironmentList(ref),
@@ -153,6 +155,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference":                               schema_landscaper_apis_core_v1alpha1_NamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference":                                    schema_landscaper_apis_core_v1alpha1_ObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.OnDeleteConfig":                                     schema_landscaper_apis_core_v1alpha1_OnDeleteConfig(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.Optimization":                                       schema_landscaper_apis_core_v1alpha1_Optimization(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.RemoteBlueprintReference":                           schema_landscaper_apis_core_v1alpha1_RemoteBlueprintReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Requirement":                                        schema_landscaper_apis_core_v1alpha1_Requirement(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ResolvedTarget":                                     schema_landscaper_apis_core_v1alpha1_ResolvedTarget(ref),
@@ -161,6 +164,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference":                                    schema_landscaper_apis_core_v1alpha1_SecretReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.StaticDataSource":                                   schema_landscaper_apis_core_v1alpha1_StaticDataSource(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.StaticDataValueFrom":                                schema_landscaper_apis_core_v1alpha1_StaticDataValueFrom(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.SubInstCache":                                       schema_landscaper_apis_core_v1alpha1_SubInstCache(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.SubNamePair":                                        schema_landscaper_apis_core_v1alpha1_SubNamePair(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SubinstallationTemplate":                            schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SucceededReconcile":                                 schema_landscaper_apis_core_v1alpha1_SucceededReconcile(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SyncObject":                                         schema_landscaper_apis_core_v1alpha1_SyncObject(ref),
@@ -233,11 +238,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.Configuration":                             schema_apis_deployer_mock_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.ProviderConfiguration":                     schema_apis_deployer_mock_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec":       schema_apis_deployer_utils_continuousreconcile_ContinuousReconcileSpec(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.CustomResourceGroup":               schema_apis_deployer_utils_managedresource_CustomResourceGroup(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition":           schema_apis_deployer_utils_managedresource_DeletionGroupDefinition(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export":                            schema_apis_deployer_utils_managedresource_Export(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports":                           schema_apis_deployer_utils_managedresource_Exports(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference":               schema_apis_deployer_utils_managedresource_FromObjectReference(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.ManagedResourceStatus":             schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest":                          schema_apis_deployer_utils_managedresource_Manifest(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.PredefinedResourceGroup":           schema_apis_deployer_utils_managedresource_PredefinedResourceGroup(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.ResourceType":                      schema_apis_deployer_utils_managedresource_ResourceType(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.CustomReadinessCheckConfiguration": schema_apis_deployer_utils_readinesschecks_CustomReadinessCheckConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.LabelSelectorSpec":                 schema_apis_deployer_utils_readinesschecks_LabelSelectorSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration":       schema_apis_deployer_utils_readinesschecks_ReadinessCheckConfiguration(ref),
@@ -4292,6 +4301,48 @@ func schema_landscaper_apis_core_v1alpha1_DeployItem(ref common.ReferenceCallbac
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_DeployItemCache(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DeployItemCache contains the existing deploy items",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"activeDIs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.DiNamePair"),
+									},
+								},
+							},
+						},
+					},
+					"orphanedDIs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.DiNamePair"},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_DeployItemList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4870,6 +4921,31 @@ func schema_landscaper_apis_core_v1alpha1_DeployerRegistrationStatus(ref common.
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_DiNamePair(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DiNamePair contains the spec name and the real name of a deploy item",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"specName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"objectName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_Duration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5308,18 +5384,10 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
 						},
 					},
-					"deployItemRefs": {
+					"deployItemCache": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeployItemReferences contain the state of all deploy items.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference"),
-									},
-								},
-							},
+							Description: "DeployItemCache contains the currently existing deploy item belonging to the execution. If nil undefined.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache"),
 						},
 					},
 					"execGenerations": {
@@ -5373,7 +5441,7 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -5927,12 +5995,18 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile"),
 						},
 					},
+					"optimization": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optimization contains settings to improve execution performance.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"),
+						},
+					},
 				},
 				Required: []string{"blueprint"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"},
 	}
 }
 
@@ -5993,18 +6067,10 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							},
 						},
 					},
-					"installationRefs": {
+					"subInstCache": {
 						SchemaProps: spec.SchemaProps{
-							Description: "InstallationReferences contain all references to sub-components that are created based on the component definition.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference"),
-									},
-								},
-							},
+							Description: "SubInstCache contains the currently existing sub installations belonging to the execution. If nil undefined.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SubInstCache"),
 						},
 					},
 					"executionRef": {
@@ -6078,7 +6144,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.SubInstCache", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -6160,12 +6226,18 @@ func schema_landscaper_apis_core_v1alpha1_InstallationTemplate(ref common.Refere
 							},
 						},
 					},
+					"optimization": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optimization contains settings to improve execution performance.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"),
+						},
+					},
 				},
 				Required: []string{"name", "blueprint"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"},
 	}
 }
 
@@ -6458,6 +6530,31 @@ func schema_landscaper_apis_core_v1alpha1_OnDeleteConfig(ref common.ReferenceCal
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_Optimization(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Optimization contains settings to improve execution preformance",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"hasNoSiblingImports": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"hasNoSiblingExports": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_RemoteBlueprintReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6713,6 +6810,73 @@ func schema_landscaper_apis_core_v1alpha1_StaticDataValueFrom(ref common.Referen
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_SubInstCache(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SubInstCache contains the existing sub installations",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"activeSubs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.SubNamePair"),
+									},
+								},
+							},
+						},
+					},
+					"orphanedSubs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.SubNamePair"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_SubNamePair(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DiNamePair contains the spec name and the real name of a deploy item",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"specName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"objectName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6798,12 +6962,18 @@ func schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref common.Ref
 							},
 						},
 					},
+					"optimization": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optimization contains settings to improve execution performance.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"),
+						},
+					},
 				},
 				Required: []string{"name", "blueprint"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"},
 	}
 }
 
@@ -9138,12 +9308,40 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration"),
 						},
 					},
+					"deletionGroups": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroups defines the order in which objects are deleted. Only relevant if HelmDeployment is false.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
+					"deletionGroupsDuringUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"chart", "name", "namespace", "createNamespace"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
@@ -9464,11 +9662,39 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports"),
 						},
 					},
+					"deletionGroups": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroups defines the order in which objects are deleted.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
+					"deletionGroupsDuringUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -9722,11 +9948,39 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec"),
 						},
 					},
+					"deletionGroups": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroups defines the order in which objects are deleted.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
+					"deletionGroupsDuringUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.DeletionGroupDefinition", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
@@ -9910,6 +10164,69 @@ func schema_apis_deployer_utils_continuousreconcile_ContinuousReconcileSpec(ref 
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_CustomResourceGroup(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.ResourceType"),
+									},
+								},
+							},
+						},
+					},
+					"forceDelete": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"deleteAllResources": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.ResourceType"},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_DeletionGroupDefinition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"predefinedResourceGroup": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.PredefinedResourceGroup"),
+						},
+					},
+					"customResourceGroup": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.CustomResourceGroup"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/deployer/utils/managedresource.CustomResourceGroup", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.PredefinedResourceGroup"},
 	}
 }
 
@@ -10126,6 +10443,82 @@ func schema_apis_deployer_utils_managedresource_Manifest(ref common.ReferenceCal
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_PredefinedResourceGroup(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"forceDelete": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_ResourceType(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"names": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"namespaces": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

@@ -292,6 +292,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*DeployItemCache)(nil), (*core.DeployItemCache)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_DeployItemCache_To_core_DeployItemCache(a.(*DeployItemCache), b.(*core.DeployItemCache), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.DeployItemCache)(nil), (*DeployItemCache)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_DeployItemCache_To_v1alpha1_DeployItemCache(a.(*core.DeployItemCache), b.(*DeployItemCache), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*DeployItemList)(nil), (*core.DeployItemList)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_DeployItemList_To_core_DeployItemList(a.(*DeployItemList), b.(*core.DeployItemList), scope)
 	}); err != nil {
@@ -389,6 +399,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.DeployerRegistrationStatus)(nil), (*DeployerRegistrationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationStatus(a.(*core.DeployerRegistrationStatus), b.(*DeployerRegistrationStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*DiNamePair)(nil), (*core.DiNamePair)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_DiNamePair_To_core_DiNamePair(a.(*DiNamePair), b.(*core.DiNamePair), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.DiNamePair)(nil), (*DiNamePair)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_DiNamePair_To_v1alpha1_DiNamePair(a.(*core.DiNamePair), b.(*DiNamePair), scope)
 	}); err != nil {
 		return err
 	}
@@ -702,6 +722,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*Optimization)(nil), (*core.Optimization)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Optimization_To_core_Optimization(a.(*Optimization), b.(*core.Optimization), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.Optimization)(nil), (*Optimization)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_Optimization_To_v1alpha1_Optimization(a.(*core.Optimization), b.(*Optimization), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*RemoteBlueprintReference)(nil), (*core.RemoteBlueprintReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_RemoteBlueprintReference_To_core_RemoteBlueprintReference(a.(*RemoteBlueprintReference), b.(*core.RemoteBlueprintReference), scope)
 	}); err != nil {
@@ -779,6 +809,26 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.StaticDataValueFrom)(nil), (*StaticDataValueFrom)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(a.(*core.StaticDataValueFrom), b.(*StaticDataValueFrom), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*SubInstCache)(nil), (*core.SubInstCache)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_SubInstCache_To_core_SubInstCache(a.(*SubInstCache), b.(*core.SubInstCache), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.SubInstCache)(nil), (*SubInstCache)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_SubInstCache_To_v1alpha1_SubInstCache(a.(*core.SubInstCache), b.(*SubInstCache), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*SubNamePair)(nil), (*core.SubNamePair)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_SubNamePair_To_core_SubNamePair(a.(*SubNamePair), b.(*core.SubNamePair), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.SubNamePair)(nil), (*SubNamePair)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_SubNamePair_To_v1alpha1_SubNamePair(a.(*core.SubNamePair), b.(*SubNamePair), scope)
 	}); err != nil {
 		return err
 	}
@@ -1719,6 +1769,28 @@ func Convert_core_DeployItem_To_v1alpha1_DeployItem(in *core.DeployItem, out *De
 	return autoConvert_core_DeployItem_To_v1alpha1_DeployItem(in, out, s)
 }
 
+func autoConvert_v1alpha1_DeployItemCache_To_core_DeployItemCache(in *DeployItemCache, out *core.DeployItemCache, s conversion.Scope) error {
+	out.ActiveDIs = *(*[]core.DiNamePair)(unsafe.Pointer(&in.ActiveDIs))
+	out.OrphanedDIs = *(*[]string)(unsafe.Pointer(&in.OrphanedDIs))
+	return nil
+}
+
+// Convert_v1alpha1_DeployItemCache_To_core_DeployItemCache is an autogenerated conversion function.
+func Convert_v1alpha1_DeployItemCache_To_core_DeployItemCache(in *DeployItemCache, out *core.DeployItemCache, s conversion.Scope) error {
+	return autoConvert_v1alpha1_DeployItemCache_To_core_DeployItemCache(in, out, s)
+}
+
+func autoConvert_core_DeployItemCache_To_v1alpha1_DeployItemCache(in *core.DeployItemCache, out *DeployItemCache, s conversion.Scope) error {
+	out.ActiveDIs = *(*[]DiNamePair)(unsafe.Pointer(&in.ActiveDIs))
+	out.OrphanedDIs = *(*[]string)(unsafe.Pointer(&in.OrphanedDIs))
+	return nil
+}
+
+// Convert_core_DeployItemCache_To_v1alpha1_DeployItemCache is an autogenerated conversion function.
+func Convert_core_DeployItemCache_To_v1alpha1_DeployItemCache(in *core.DeployItemCache, out *DeployItemCache, s conversion.Scope) error {
+	return autoConvert_core_DeployItemCache_To_v1alpha1_DeployItemCache(in, out, s)
+}
+
 func autoConvert_v1alpha1_DeployItemList_To_core_DeployItemList(in *DeployItemList, out *core.DeployItemList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
 	out.Items = *(*[]core.DeployItem)(unsafe.Pointer(&in.Items))
@@ -2019,6 +2091,28 @@ func Convert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationSta
 	return autoConvert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationStatus(in, out, s)
 }
 
+func autoConvert_v1alpha1_DiNamePair_To_core_DiNamePair(in *DiNamePair, out *core.DiNamePair, s conversion.Scope) error {
+	out.SpecName = in.SpecName
+	out.ObjectName = in.ObjectName
+	return nil
+}
+
+// Convert_v1alpha1_DiNamePair_To_core_DiNamePair is an autogenerated conversion function.
+func Convert_v1alpha1_DiNamePair_To_core_DiNamePair(in *DiNamePair, out *core.DiNamePair, s conversion.Scope) error {
+	return autoConvert_v1alpha1_DiNamePair_To_core_DiNamePair(in, out, s)
+}
+
+func autoConvert_core_DiNamePair_To_v1alpha1_DiNamePair(in *core.DiNamePair, out *DiNamePair, s conversion.Scope) error {
+	out.SpecName = in.SpecName
+	out.ObjectName = in.ObjectName
+	return nil
+}
+
+// Convert_core_DiNamePair_To_v1alpha1_DiNamePair is an autogenerated conversion function.
+func Convert_core_DiNamePair_To_v1alpha1_DiNamePair(in *core.DiNamePair, out *DiNamePair, s conversion.Scope) error {
+	return autoConvert_core_DiNamePair_To_v1alpha1_DiNamePair(in, out, s)
+}
+
 func autoConvert_v1alpha1_Duration_To_core_Duration(in *Duration, out *core.Duration, s conversion.Scope) error {
 	out.Duration = time.Duration(in.Duration)
 	return nil
@@ -2266,7 +2360,7 @@ func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionS
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
-	out.DeployItemReferences = *(*[]core.VersionedNamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
+	out.DeployItemCache = (*core.DeployItemCache)(unsafe.Pointer(in.DeployItemCache))
 	out.ExecutionGenerations = *(*[]core.ExecutionGeneration)(unsafe.Pointer(&in.ExecutionGenerations))
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
@@ -2286,7 +2380,7 @@ func autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execu
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*Error)(unsafe.Pointer(in.LastError))
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
-	out.DeployItemReferences = *(*[]VersionedNamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
+	out.DeployItemCache = (*DeployItemCache)(unsafe.Pointer(in.DeployItemCache))
 	out.ExecutionGenerations = *(*[]ExecutionGeneration)(unsafe.Pointer(&in.ExecutionGenerations))
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
@@ -2582,6 +2676,7 @@ func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installa
 	}
 	out.ExportDataMappings = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.ExportDataMappings))
 	out.AutomaticReconcile = (*core.AutomaticReconcile)(unsafe.Pointer(in.AutomaticReconcile))
+	out.Optimization = (*core.Optimization)(unsafe.Pointer(in.Optimization))
 	return nil
 }
 
@@ -2605,6 +2700,7 @@ func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.Ins
 	}
 	out.ExportDataMappings = *(*map[string]AnyJSON)(unsafe.Pointer(&in.ExportDataMappings))
 	out.AutomaticReconcile = (*AutomaticReconcile)(unsafe.Pointer(in.AutomaticReconcile))
+	out.Optimization = (*Optimization)(unsafe.Pointer(in.Optimization))
 	return nil
 }
 
@@ -2619,7 +2715,7 @@ func autoConvert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *Inst
 	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
 	out.ConfigGeneration = in.ConfigGeneration
 	out.Imports = *(*[]core.ImportStatus)(unsafe.Pointer(&in.Imports))
-	out.InstallationReferences = *(*[]core.NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
+	out.SubInstCache = (*core.SubInstCache)(unsafe.Pointer(in.SubInstCache))
 	out.ExecutionReference = (*core.ObjectReference)(unsafe.Pointer(in.ExecutionReference))
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
@@ -2643,7 +2739,7 @@ func autoConvert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in *core
 	out.LastError = (*Error)(unsafe.Pointer(in.LastError))
 	out.ConfigGeneration = in.ConfigGeneration
 	out.Imports = *(*[]ImportStatus)(unsafe.Pointer(&in.Imports))
-	out.InstallationReferences = *(*[]NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
+	out.SubInstCache = (*SubInstCache)(unsafe.Pointer(in.SubInstCache))
 	out.ExecutionReference = (*ObjectReference)(unsafe.Pointer(in.ExecutionReference))
 	out.JobID = in.JobID
 	out.JobIDFinished = in.JobIDFinished
@@ -2674,6 +2770,7 @@ func autoConvert_v1alpha1_InstallationTemplate_To_core_InstallationTemplate(in *
 		return err
 	}
 	out.ExportDataMappings = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.ExportDataMappings))
+	out.Optimization = (*core.Optimization)(unsafe.Pointer(in.Optimization))
 	return nil
 }
 
@@ -2695,6 +2792,7 @@ func autoConvert_core_InstallationTemplate_To_v1alpha1_InstallationTemplate(in *
 		return err
 	}
 	out.ExportDataMappings = *(*map[string]AnyJSON)(unsafe.Pointer(&in.ExportDataMappings))
+	out.Optimization = (*Optimization)(unsafe.Pointer(in.Optimization))
 	return nil
 }
 
@@ -2909,6 +3007,28 @@ func Convert_core_OnDeleteConfig_To_v1alpha1_OnDeleteConfig(in *core.OnDeleteCon
 	return autoConvert_core_OnDeleteConfig_To_v1alpha1_OnDeleteConfig(in, out, s)
 }
 
+func autoConvert_v1alpha1_Optimization_To_core_Optimization(in *Optimization, out *core.Optimization, s conversion.Scope) error {
+	out.HasNoSiblingImports = in.HasNoSiblingImports
+	out.HasNoSiblingExports = in.HasNoSiblingExports
+	return nil
+}
+
+// Convert_v1alpha1_Optimization_To_core_Optimization is an autogenerated conversion function.
+func Convert_v1alpha1_Optimization_To_core_Optimization(in *Optimization, out *core.Optimization, s conversion.Scope) error {
+	return autoConvert_v1alpha1_Optimization_To_core_Optimization(in, out, s)
+}
+
+func autoConvert_core_Optimization_To_v1alpha1_Optimization(in *core.Optimization, out *Optimization, s conversion.Scope) error {
+	out.HasNoSiblingImports = in.HasNoSiblingImports
+	out.HasNoSiblingExports = in.HasNoSiblingExports
+	return nil
+}
+
+// Convert_core_Optimization_To_v1alpha1_Optimization is an autogenerated conversion function.
+func Convert_core_Optimization_To_v1alpha1_Optimization(in *core.Optimization, out *Optimization, s conversion.Scope) error {
+	return autoConvert_core_Optimization_To_v1alpha1_Optimization(in, out, s)
+}
+
 func autoConvert_v1alpha1_RemoteBlueprintReference_To_core_RemoteBlueprintReference(in *RemoteBlueprintReference, out *core.RemoteBlueprintReference, s conversion.Scope) error {
 	out.ResourceName = in.ResourceName
 	return nil
@@ -3091,6 +3211,50 @@ func autoConvert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(in *co
 // Convert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom is an autogenerated conversion function.
 func Convert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(in *core.StaticDataValueFrom, out *StaticDataValueFrom, s conversion.Scope) error {
 	return autoConvert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(in, out, s)
+}
+
+func autoConvert_v1alpha1_SubInstCache_To_core_SubInstCache(in *SubInstCache, out *core.SubInstCache, s conversion.Scope) error {
+	out.ActiveSubs = *(*[]core.SubNamePair)(unsafe.Pointer(&in.ActiveSubs))
+	out.OrphanedSubs = *(*[]string)(unsafe.Pointer(&in.OrphanedSubs))
+	return nil
+}
+
+// Convert_v1alpha1_SubInstCache_To_core_SubInstCache is an autogenerated conversion function.
+func Convert_v1alpha1_SubInstCache_To_core_SubInstCache(in *SubInstCache, out *core.SubInstCache, s conversion.Scope) error {
+	return autoConvert_v1alpha1_SubInstCache_To_core_SubInstCache(in, out, s)
+}
+
+func autoConvert_core_SubInstCache_To_v1alpha1_SubInstCache(in *core.SubInstCache, out *SubInstCache, s conversion.Scope) error {
+	out.ActiveSubs = *(*[]SubNamePair)(unsafe.Pointer(&in.ActiveSubs))
+	out.OrphanedSubs = *(*[]string)(unsafe.Pointer(&in.OrphanedSubs))
+	return nil
+}
+
+// Convert_core_SubInstCache_To_v1alpha1_SubInstCache is an autogenerated conversion function.
+func Convert_core_SubInstCache_To_v1alpha1_SubInstCache(in *core.SubInstCache, out *SubInstCache, s conversion.Scope) error {
+	return autoConvert_core_SubInstCache_To_v1alpha1_SubInstCache(in, out, s)
+}
+
+func autoConvert_v1alpha1_SubNamePair_To_core_SubNamePair(in *SubNamePair, out *core.SubNamePair, s conversion.Scope) error {
+	out.SpecName = in.SpecName
+	out.ObjectName = in.ObjectName
+	return nil
+}
+
+// Convert_v1alpha1_SubNamePair_To_core_SubNamePair is an autogenerated conversion function.
+func Convert_v1alpha1_SubNamePair_To_core_SubNamePair(in *SubNamePair, out *core.SubNamePair, s conversion.Scope) error {
+	return autoConvert_v1alpha1_SubNamePair_To_core_SubNamePair(in, out, s)
+}
+
+func autoConvert_core_SubNamePair_To_v1alpha1_SubNamePair(in *core.SubNamePair, out *SubNamePair, s conversion.Scope) error {
+	out.SpecName = in.SpecName
+	out.ObjectName = in.ObjectName
+	return nil
+}
+
+// Convert_core_SubNamePair_To_v1alpha1_SubNamePair is an autogenerated conversion function.
+func Convert_core_SubNamePair_To_v1alpha1_SubNamePair(in *core.SubNamePair, out *SubNamePair, s conversion.Scope) error {
+	return autoConvert_core_SubNamePair_To_v1alpha1_SubNamePair(in, out, s)
 }
 
 func autoConvert_v1alpha1_SubinstallationTemplate_To_core_SubinstallationTemplate(in *SubinstallationTemplate, out *core.SubinstallationTemplate, s conversion.Scope) error {

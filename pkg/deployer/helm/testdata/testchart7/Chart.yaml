@@ -1,0 +1,6 @@
+apiVersion: v2
+name: test-deletiongroups-01
+description: Chart to test deletion groups
+type: application
+version: 0.1.1
+appVersion: 1.2.4

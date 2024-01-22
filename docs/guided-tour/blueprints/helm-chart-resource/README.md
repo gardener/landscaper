@@ -24,8 +24,7 @@ Therefore, we will now modify the previous example as follows:
 
 ## The Component Version
 
-You can find the file system representations of the extended component versions [here](./component-archive), and
-in the OCI registry [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource).
+You can find the file system representations of the extended component versions [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/helm-chart-resource/component-archive/v2-external), and in the OCI registry [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource).
 
 The list of resources of the component descriptor within the component version has two entries now, one for the 
 blueprint and one for the Helm chart. The entry for the Helm chart has the name `hello-world-chart` and contains the 

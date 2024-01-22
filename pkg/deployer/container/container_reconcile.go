@@ -57,7 +57,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			"Reconcile", "FetchRunningPod", err.Error())
 	}
 
-	lsWriter := read_write_layer.NewWriter(c.lsClient)
+	lsWriter := read_write_layer.NewWriter(c.lsUncachedClient)
 
 	// do nothing if the pod is still running
 	if pod != nil {
@@ -89,7 +89,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 		// before we start syncing lets read the current deploy item from the server
 		oldDeployItem := &lsv1alpha1.DeployItem{}
-		if err := read_write_layer.GetDeployItem(ctx, c.lsClient, kutil.ObjectKey(c.DeployItem.GetName(),
+		if err := read_write_layer.GetDeployItem(ctx, c.lsUncachedClient, kutil.ObjectKey(c.DeployItem.GetName(),
 			c.DeployItem.GetNamespace()), oldDeployItem, read_write_layer.R000027); err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "FetchDeployItem", err.Error())
@@ -112,7 +112,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				operationName, "ParseAndSyncSecrets", err.Error())
 		}
 		// ensure new pod
-		serviceAccountSecrets, err := EnsureServiceAccounts(ctx, c.directHostClient, c.DeployItem, c.Configuration.Namespace, defaultLabels)
+		serviceAccountSecrets, err := EnsureServiceAccounts(ctx, c.hostUncachedClient, c.DeployItem, c.Configuration.Namespace, defaultLabels)
 		if err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "EnsurePodRBAC", err.Error())
@@ -152,7 +152,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				operationName, "PodGeneration", err.Error())
 		}
 
-		if err := c.hostClient.Create(ctx, pod); err != nil {
+		if err := c.hostUncachedClient.Create(ctx, pod); err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "CreatePod", err.Error())
 		}
@@ -477,7 +477,7 @@ func (c *Container) syncSecrets(ctx context.Context,
 	authSecret.Name = secretName
 	authSecret.Namespace = c.Configuration.Namespace
 	authSecret.Type = corev1.SecretTypeDockerConfigJson
-	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, authSecret, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostUncachedClient, authSecret, func() error {
 		InjectDefaultLabels(authSecret, defaultLabels)
 		kutil.SetMetaDataLabel(&authSecret.ObjectMeta, container.ContainerDeployerTypeLabel, "registry-pull-secret")
 		authSecret.Data = map[string][]byte{
@@ -522,7 +522,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 	for _, secretRef := range secretRefs {
 		secret := &corev1.Secret{}
 
-		err := c.lsClient.Get(ctx, secretRef.NamespacedName(), secret)
+		err := c.lsUncachedClient.Get(ctx, secretRef.NamespacedName(), secret)
 		if err != nil {
 			log.Debug("Unable to get auth config from secret, skipping", lc.KeyResource, secretRef.NamespacedName().String(), lc.KeyError, err.Error())
 		}
@@ -626,7 +626,7 @@ func (c *Container) SyncConfiguration(ctx context.Context, defaultLabels map[str
 	secret := &corev1.Secret{}
 	secret.Name = ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
 	secret.Namespace = c.Configuration.Namespace
-	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, secret, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostUncachedClient, secret, func() error {
 		InjectDefaultLabels(secret, defaultLabels)
 		kutil.SetMetaDataLabel(&secret.ObjectMeta, container.ContainerDeployerTypeLabel, "configuration")
 		secret.Data = map[string][]byte{
@@ -644,7 +644,7 @@ func (c *Container) SyncTarget(ctx context.Context, defaultLabels map[string]str
 	secret := &corev1.Secret{}
 	secret.Name = TargetSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
 	secret.Namespace = c.Configuration.Namespace
-	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, secret, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostUncachedClient, secret, func() error {
 		InjectDefaultLabels(secret, defaultLabels)
 		kutil.SetMetaDataLabel(&secret.ObjectMeta, container.ContainerDeployerTypeLabel, "target")
 		data, err := json.Marshal(c.Target)
@@ -667,7 +667,7 @@ func (c *Container) SyncExport(ctx context.Context) error {
 	log.Debug("Sync export to landscaper cluster")
 	secret := &corev1.Secret{}
 	key := kutil.ObjectKey(ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.Configuration.Namespace)
-	if err := c.directHostClient.Get(ctx, key, secret); err != nil {
+	if err := c.hostUncachedClient.Get(ctx, key, secret); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("No export found for deploy item", "deployitem", key.String())
 			return nil
@@ -678,7 +678,7 @@ func (c *Container) SyncExport(ctx context.Context) error {
 	expSecret := &corev1.Secret{}
 	expSecret.Name = DeployItemExportSecretName(c.DeployItem.Name)
 	expSecret.Namespace = c.DeployItem.Namespace
-	if _, err := controllerutil.CreateOrUpdate(ctx, c.lsClient, expSecret, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.lsUncachedClient, expSecret, func() error {
 		expSecret.Data = secret.Data
 		return controllerutil.SetControllerReference(c.DeployItem, expSecret, api.LandscaperScheme)
 	}); err != nil {
@@ -695,5 +695,5 @@ func (c *Container) SyncExport(ctx context.Context) error {
 
 // CleanupPod cleans up a pod that was started with the container deployer.
 func (c *Container) CleanupPod(ctx context.Context, pod *corev1.Pod) error {
-	return CleanupPod(ctx, c.hostClient, pod, c.Configuration.DebugOptions != nil && c.Configuration.DebugOptions.KeepPod)
+	return CleanupPod(ctx, c.hostUncachedClient, pod, c.Configuration.DebugOptions != nil && c.Configuration.DebugOptions.KeepPod)
 }

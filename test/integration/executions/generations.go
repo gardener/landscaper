@@ -12,6 +12,10 @@ import (
 	"path/filepath"
 	"time"
 
+	clientlib "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -68,13 +72,17 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			di := &lsv1alpha1.DeployItem{}
 			Eventually(func() (bool, error) {
 				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)
-				if err != nil || len(exec.Status.DeployItemReferences) == 0 {
-					return false, err
-				}
-				err = f.Client.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), di)
 				if err != nil {
 					return false, err
 				}
+
+				deployItems, err := read_write_layer.ListManagedDeployItems(ctx, f.Client, clientlib.ObjectKeyFromObject(exec), read_write_layer.R000000)
+				if err != nil || len(deployItems.Items) == 0 {
+					return false, err
+				}
+
+				di = &deployItems.Items[0]
+
 				return true, nil
 			}, timeoutTime, resyncTime).Should(BeTrue(), "unable to fetch deployitem")
 
@@ -89,7 +97,6 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 
 			oldExGen := exec.Generation
 			oldDIGen := di.Generation
-			Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(oldDIGen))
 			Expect(exec.Status.ExecutionGenerations[0].ObservedGeneration).To(Equal(oldExGen))
 
 			mockConfig := &mockv1alpha1.ProviderConfiguration{}
@@ -144,7 +151,6 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			Expect(exec.Generation).To(BeNumerically(">", oldExGen))
 			Expect(di.Generation).To(BeNumerically(">", oldDIGen))
 			Expect(exec.Status.ExecutionGenerations[0].ObservedGeneration).To(Equal(exec.Generation))
-			Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(di.Generation))
 
 			By("delete execution")
 			utils.ExpectNoError(utils.DeleteExecutionForNewReconcile(ctx, f.Client, exec, 2*time.Minute))

@@ -82,8 +82,9 @@ type ExecutionStatus struct {
 	// +optional
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 
-	// DeployItemReferences contain the state of all deploy items.
-	DeployItemReferences []VersionedNamedObjectReference `json:"deployItemRefs,omitempty"`
+	// DeployItemCache contains the currently existing deploy item belonging to the execution. If nil undefined.
+	// +optional
+	DeployItemCache *DeployItemCache `json:"deployItemCache,omitempty"`
 
 	// ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem.
 	// So in this case, the observedGeneration refers to the executions generation.

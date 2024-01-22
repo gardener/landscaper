@@ -35,6 +35,12 @@ type ProviderConfiguration struct {
 	// Exports describe the exports from the templated manifests that should be exported by the helm deployer.
 	// +optional
 	Exports *managedresource.Exports `json:"exports,omitempty"`
+	// DeletionGroups defines the order in which objects are deleted.
+	// +optional
+	DeletionGroups []managedresource.DeletionGroupDefinition `json:"deletionGroups,omitempty"`
+	// DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.
+	// +optional
+	DeletionGroupsDuringUpdate []managedresource.DeletionGroupDefinition `json:"deletionGroupsDuringUpdate,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.

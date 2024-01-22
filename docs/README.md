@@ -18,6 +18,7 @@
 - [Deployer Resource Health-/Readiness Checks](deployer/healthchecks.md)
 - [Helm Deployer](deployer/helm.md)
 - [Kubernetes Manifest Deployer](deployer/manifest.md)
+- [Deletion of Manifest and Manifest-Only Helm DeployItems](deployer/manifest_deletion.md)
 - [Mock Deployer](deployer/mock.md)
 
 ## Development
@@ -67,6 +68,7 @@
 - [JSONSchema](usage/JSONSchema.md)
 - [Landscaper Cli Usage](usage/LandscaperCli.md)
 - [Configuring the Landscaper Logs](usage/Logging.md)
+- [Optimization](usage/Optimization.md)
 - [Repository Context](usage/RepositoryContext.md)
 - [Skipping the Uninstallation of an Application](usage/SkipUninstall.md)
 - [TargetList Imports](usage/TargetLists.md)

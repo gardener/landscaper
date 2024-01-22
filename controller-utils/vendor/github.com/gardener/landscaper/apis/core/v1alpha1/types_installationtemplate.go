@@ -44,6 +44,10 @@ type InstallationTemplate struct {
 	// Example: namespace: (( blueprint.exports.namespace ))
 	// +optional
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
+
+	// Optimization contains settings to improve execution performance.
+	// +optional
+	Optimization *Optimization `json:"optimization,omitempty"`
 }
 
 // InstallationTemplateList is a list of installation templates.

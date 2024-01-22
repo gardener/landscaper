@@ -41,14 +41,14 @@ var _ = Describe("EnvironmentController Reconcile Test", func() {
 		ctx = context.Background()
 		lsConfig = &config.LandscaperConfiguration{}
 		envController = deployers.NewEnvironmentController(
+			testenv.Client, testenv.Client,
 			logging.Discard(),
-			testenv.Client,
 			api.LandscaperScheme,
 			lsConfig,
 		)
 		regController = deployers.NewDeployerRegistrationController(
+			testenv.Client, testenv.Client,
 			logging.Discard(),
-			testenv.Client,
 			api.LandscaperScheme,
 			lsConfig,
 		)

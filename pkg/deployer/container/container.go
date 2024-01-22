@@ -41,15 +41,12 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 
 // Container is the internal representation of a DeployItem of Type Container
 type Container struct {
-	lsClient client.Client
-	// hostClient is a cached client that is used to interact with the host cluster
-	// The host cluster is the cluster where the pods are executed.
-	// This client is only used for the pod resource.
-	hostClient client.Client
-	// directHostClient is non-cached client that directly interact with the apiserver.
-	// it is mainly used for secret and rbac resources
-	directHostClient client.Client
-	Configuration    containerv1alpha1.Configuration
+	lsUncachedClient   client.Client
+	lsCachedClient     client.Client
+	hostUncachedClient client.Client
+	hostCachedClient   client.Client
+
+	Configuration containerv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Context               *lsv1alpha1.Context
@@ -64,9 +61,7 @@ type Container struct {
 }
 
 // New creates a new internal container item
-func New(lsClient,
-	hostClient,
-	directHostClient client.Client,
+func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	config containerv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
 	lsCtx *lsv1alpha1.Context,
@@ -96,9 +91,10 @@ func New(lsClient,
 	}
 
 	return &Container{
-		lsClient:              lsClient,
-		hostClient:            hostClient,
-		directHostClient:      directHostClient,
+		lsUncachedClient:      lsUncachedClient,
+		lsCachedClient:        lsCachedClient,
+		hostUncachedClient:    hostUncachedClient,
+		hostCachedClient:      hostCachedClient,
 		Configuration:         config,
 		DeployItem:            item,
 		Context:               lsCtx,

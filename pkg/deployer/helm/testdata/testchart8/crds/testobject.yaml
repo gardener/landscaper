@@ -1,0 +1,26 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: testobjects.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: TestObject
+    listKind: TestObjectList
+    singular: testobject
+    plural: testobjects
+    shortNames:
+      - to
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            data:
+              type: string
+          required:
+            - data
+      served: true
+      storage: true

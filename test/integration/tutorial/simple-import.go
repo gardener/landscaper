@@ -91,7 +91,7 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 			// wait for installation to finish
 			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 2*time.Minute))
 
-			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
+			deployItems, err := utils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
 			Expect(deployItems).To(HaveLen(1))
 			Expect(deployItems[0].Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Succeeded))

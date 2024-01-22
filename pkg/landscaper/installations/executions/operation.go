@@ -57,10 +57,10 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.GetInstallation().Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
-		KubeClient: o.Client(),
+		KubeClient: o.LsUncachedClient(),
 		Inst:       inst.GetInstallation(),
 	}
-	targetResolver := genericresolver.New(o.Client())
+	targetResolver := genericresolver.New(o.LsUncachedClient())
 	tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(
@@ -166,7 +166,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		return err2
 	}
 
-	if _, err := o.Writer().CreateOrUpdateExecution(ctx, read_write_layer.W000022, exec, func() error {
+	if _, err := o.WriterToLsUncachedClient().CreateOrUpdateExecution(ctx, read_write_layer.W000022, exec, func() error {
 		exec.Spec.Context = inst.GetInstallation().Spec.Context
 		exec.Spec.DeployItems = versionedDeployItemTemplateList
 

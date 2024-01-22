@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
@@ -142,6 +143,7 @@ var _ = Describe("", func() {
 			Key(state.Namespace, "myitem").
 			ProviderConfig(manifestConfig).
 			Target(target.Namespace, target.Name).
+			WithTimeout(12 * time.Second).
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
@@ -154,17 +156,28 @@ var _ = Describe("", func() {
 		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
 		Expect(cm.Annotations).ToNot(HaveKeyWithValue("to-be-deleted", "True"))
 
-		Expect(m.Delete(ctx)).ToNot(Succeed())
-		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
-		Expect(cm.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
-		Expect(cm.ObjectMeta.DeletionTimestamp).ToNot(BeNil())
+		// We delete the deployitem. This should add a before-delete annotation and a deletion timestamp at the deployed
+		// configmap. A finalizer prevents that the configmap vanishes. This allows us to check the configmap in
+		// parallel. As soon as the before-delete annotation and a deletion timestamp are there, we remove
+		// the finalizer, so that the deletion can finish. (The Delete method does not return until the deployitem is
+		// gone or the timeout is reached.)
+		go func() {
+			defer GinkgoRecover()
+			Eventually(func(g Gomega) {
+				obj := &corev1.ConfigMap{}
+				g.Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), obj)).To(Succeed())
+				g.Expect(obj.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
+				g.Expect(obj.DeletionTimestamp.IsZero()).To(BeFalse())
 
-		cm.ObjectMeta.Finalizers = nil
-		Expect(state.Client.Update(ctx, cm)).To(Succeed())
+				obj.ObjectMeta.Finalizers = nil
+				g.Expect(state.Client.Update(ctx, obj)).To(Succeed())
+			}, 10*time.Second, time.Second).Should(Succeed())
+		}()
 
-		Eventually(func() error {
-			return m.Delete(ctx)
-		}, 1*time.Second).WithTimeout(1 * time.Minute).Should(Succeed())
+		Expect(m.Delete(ctx)).To(Succeed())
+
+		err = state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)
+		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "configmap should be deleted")
 	})
 
 	It("should add before delete annotations when manifest is being deleted (with additional annotations)", func() {
@@ -221,18 +234,24 @@ var _ = Describe("", func() {
 		Expect(cm.Annotations).ToNot(HaveKeyWithValue("to-be-deleted", "True"))
 		Expect(cm.Annotations).To(HaveKeyWithValue("always", "True"))
 
-		Expect(m.Delete(ctx)).ToNot(Succeed())
-		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
-		Expect(cm.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
-		Expect(cm.Annotations).To(HaveKeyWithValue("always", "True"))
-		Expect(cm.ObjectMeta.DeletionTimestamp).ToNot(BeNil())
+		go func() {
+			defer GinkgoRecover()
+			Eventually(func(g Gomega) {
+				obj := &corev1.ConfigMap{}
+				g.Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), obj)).To(Succeed())
+				g.Expect(obj.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
+				g.Expect(obj.Annotations).To(HaveKeyWithValue("always", "True"))
+				g.Expect(obj.DeletionTimestamp.IsZero()).To(BeFalse())
 
-		cm.ObjectMeta.Finalizers = nil
-		Expect(state.Client.Update(ctx, cm)).To(Succeed())
+				obj.ObjectMeta.Finalizers = nil
+				g.Expect(state.Client.Update(ctx, obj)).To(Succeed())
+			}, 10*time.Second, time.Second).Should(Succeed())
+		}()
 
-		Eventually(func() error {
-			return m.Delete(ctx)
-		}, 1*time.Second).WithTimeout(1 * time.Minute).Should(Succeed())
+		Expect(m.Delete(ctx)).To(Succeed())
+
+		err = state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)
+		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "configmap should be deleted")
 	})
 
 	It("should add before create annotations when manifest is being created", func() {
@@ -515,23 +534,22 @@ var _ = Describe("", func() {
 		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(&cmList.Items[1]), cm)).To(Succeed())
 		Expect(cm.Data).To(HaveKeyWithValue("key1", "val1"))
 
-		Expect(m.Delete(ctx)).ToNot(Succeed())
+		go func() {
+			defer GinkgoRecover()
+			Eventually(func(g Gomega) {
+				for _, cmListItem := range cmList.Items {
+					obj := &corev1.ConfigMap{}
+					Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(&cmListItem), obj)).To(Succeed())
+					g.Expect(obj.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
+					g.Expect(obj.DeletionTimestamp.IsZero()).To(BeFalse())
 
-		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(&cmList.Items[0]), cm)).To(Succeed())
-		Expect(cm.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
-		Expect(cm.ObjectMeta.DeletionTimestamp).ToNot(BeNil())
-		cm.ObjectMeta.Finalizers = nil
-		Expect(state.Client.Update(ctx, cm)).To(Succeed())
+					obj.ObjectMeta.Finalizers = nil
+					g.Expect(state.Client.Update(ctx, obj)).To(Succeed())
+				}
+			}, time.Minute, time.Second).Should(Succeed())
+		}()
 
-		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(&cmList.Items[1]), cm)).To(Succeed())
-		Expect(cm.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
-		Expect(cm.ObjectMeta.DeletionTimestamp).ToNot(BeNil())
-		cm.ObjectMeta.Finalizers = nil
-		Expect(state.Client.Update(ctx, cm)).To(Succeed())
-
-		Eventually(func() error {
-			return m.Delete(ctx)
-		}, 1*time.Second).WithTimeout(1 * time.Minute).Should(Succeed())
+		Expect(m.Delete(ctx)).To(Succeed())
 	})
 
 	It("should deploy an empty configmap list", func() {

@@ -7,7 +7,6 @@ package subinstallations
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,7 +28,7 @@ import (
 )
 
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.
-func (o *Operation) Ensure(ctx context.Context) error {
+func (o *Operation) Ensure(ctx context.Context, subInstCache *lsv1alpha1.SubInstCache) error {
 	var (
 		inst = o.Inst.GetInstallation()
 		cond = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
@@ -37,7 +36,7 @@ func (o *Operation) Ensure(ctx context.Context) error {
 
 	o.CurrentOperation = string(lsv1alpha1.EnsureSubInstallationsCondition)
 
-	subInstallations, err := o.GetSubInstallations(ctx, inst)
+	subInstallations, err := o.GetSubInstallations(ctx, inst, subInstCache, read_write_layer.R000092)
 	if err != nil {
 		return err
 	}
@@ -66,17 +65,24 @@ func (o *Operation) Ensure(ctx context.Context) error {
 	}
 
 	// delete removed subreferences
-	_, err = o.cleanupOrphanedSubInstallations(ctx, subInstallations, installationTmpl)
+	orphaned, err := o.cleanupOrphanedSubInstallations(ctx, subInstallations, installationTmpl)
 	if err != nil {
 		return err
 	}
 
-	if err := o.createOrUpdateSubinstallations(ctx, subInstallations, installationTmpl); err != nil {
+	subinsts, err := o.createOrUpdateSubinstallations(ctx, subInstallations, installationTmpl)
+	if err != nil {
 		return err
+	}
+
+	inst.Status.SubInstCache = &lsv1alpha1.SubInstCache{
+		ActiveSubs:   subinsts,
+		OrphanedSubs: orphaned,
 	}
 
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		"InstallationsInstalled", "All Installations are successfully installed")
+
 	return o.UpdateInstallationStatus(ctx, inst, read_write_layer.W000018, cond)
 }
 
@@ -99,16 +105,17 @@ func isOptionalParentImport(impRef string, impDefs lsv1alpha1.ImportDefinitionLi
 }
 
 // GetSubInstallations returns a map of all subinstallations indexed by the unique blueprint ref name.
-func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation) (map[string]*lsv1alpha1.Installation, error) {
+func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation,
+	subInstCache *lsv1alpha1.SubInstCache, readID read_write_layer.ReadID) (map[string]*lsv1alpha1.Installation, error) {
+
 	var (
 		cond             = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		subInstallations = map[string]*lsv1alpha1.Installation{}
 
 		// track all found subinstallations to track if some installations were deleted
-		updatedSubInstallationStates = make([]lsv1alpha1.NamedObjectReference, 0)
 	)
 
-	installations, err := o.ListSubinstallations(ctx)
+	installations, err := o.ListSubinstallations(ctx, subInstCache, readID)
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"SubInstallationsNotFound", "Unable to list subinstallations")
@@ -119,38 +126,26 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 	for _, inst := range installations {
 		name, ok := inst.Annotations[lsv1alpha1.SubinstallationNameAnnotation]
 		if !ok {
-			// todo: remove after some deprecation period.
-			name, ok = getSubinstallationNameByReference(o.Inst.GetInstallation().Status.InstallationReferences, inst.Namespace, inst.Name)
-			if !ok {
-				err := fmt.Errorf("dangling installation found %s", inst.Name)
-				return nil, o.NewError(err, "DanglingSubinstallation", err.Error())
-			}
+			err := fmt.Errorf("dangling installation found %s", inst.Name)
+			return nil, o.NewError(err, "DanglingSubinstallation", err.Error())
 		}
 		subInstallations[name] = inst
-		updatedSubInstallationStates = append(updatedSubInstallationStates, lsv1alpha1.NamedObjectReference{
-			Name: name,
-			Reference: lsv1alpha1.ObjectReference{
-				Name:      inst.Name,
-				Namespace: inst.Namespace,
-			},
-		})
 	}
 
 	// update the sub components if installations changed
-	inst.Status.InstallationReferences = updatedSubInstallationStates
 	return subInstallations, nil
 }
 
 func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 	subInstallations map[string]*lsv1alpha1.Installation,
-	installationTmpl []*lsv1alpha1.InstallationTemplate) (bool, error) {
+	installationTmpl []*lsv1alpha1.InstallationTemplate) ([]string, error) {
 
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(o.Inst.GetInstallation()).String()})
 
 	var (
-		inst    = o.Inst.GetInstallation()
-		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
-		deleted = false
+		inst     = o.Inst.GetInstallation()
+		cond     = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
+		orphaned = []string{}
 	)
 
 	for defName, subInst := range subInstallations {
@@ -158,20 +153,22 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 			continue
 		}
 
+		orphaned = append(orphaned, subInst.Name)
+
 		// delete installation
 		logger.Info("delete orphaned installation", "name", subInst.Name)
 
 		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteIgnoreSuccessors, "true")
 
-		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000015, subInst); err != nil {
+		if err := o.WriterToLsUncachedClient().UpdateInstallation(ctx, read_write_layer.W000015, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
 
-			return deleted, o.NewError(err, "UpdateInstallationDeleteIgnoreSuccessors", err.Error())
+			return nil, o.NewError(err, "UpdateInstallationDeleteIgnoreSuccessors", err.Error())
 		}
 
-		if err := o.Writer().DeleteInstallation(ctx, read_write_layer.W000021, subInst); err != nil {
+		if err := o.WriterToLsUncachedClient().DeleteInstallation(ctx, read_write_layer.W000021, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -179,11 +176,10 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 				"InstallationNotDeleted", fmt.Sprintf("Sub Installation %s cannot be deleted", subInst.Name))
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
 			_ = o.CreateEventFromCondition(ctx, inst, cond)
-			return deleted, o.NewError(err, "InstallationNotDeleted", err.Error())
+			return nil, o.NewError(err, "InstallationNotDeleted", err.Error())
 		}
-		deleted = true
 	}
-	return deleted, nil
+	return orphaned, nil
 }
 
 // getInstallationTemplates returns all installation templates defined by the referenced blueprint.
@@ -191,10 +187,10 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 	var instTmpls []*lsv1alpha1.InstallationTemplate
 	if len(o.Inst.GetBlueprint().Info.SubinstallationExecutions) != 0 {
 		templateStateHandler := template.KubernetesStateHandler{
-			KubeClient: o.Client(),
+			KubeClient: o.LsUncachedClient(),
 			Inst:       o.Inst.GetInstallation(),
 		}
-		targetResolver := genericresolver.New(o.Client())
+		targetResolver := genericresolver.New(o.LsUncachedClient())
 		tmpl := template.New(gotemplate.New(templateStateHandler, targetResolver), spiff.New(templateStateHandler, targetResolver))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
@@ -221,14 +217,17 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 
 func (o *Operation) createOrUpdateSubinstallations(ctx context.Context,
 	subInstallations map[string]*lsv1alpha1.Installation,
-	installationTmpl []*lsv1alpha1.InstallationTemplate) error {
+	installationTmpl []*lsv1alpha1.InstallationTemplate) ([]lsv1alpha1.SubNamePair, error) {
+
+	subNamePairs := []lsv1alpha1.SubNamePair{}
+
 	if len(installationTmpl) == 0 {
 		// do nothing
-		return nil
+		return nil, nil
 	}
 
 	if _, err := dependencies.CheckForCyclesAndDuplicateExports(installationTmpl, false); err != nil {
-		return err
+		return nil, nil
 	}
 
 	for _, subInstTmpl := range installationTmpl {
@@ -236,16 +235,22 @@ func (o *Operation) createOrUpdateSubinstallations(ctx context.Context,
 		if subInst != nil && !subInst.ObjectMeta.DeletionTimestamp.IsZero() {
 			// if a subinstallation was deleted, the deletion failed and it should be created again
 			// in such a situation the subinstallation must be removed first
-			return fmt.Errorf("an installation %s should be created which is currently under deletion", subInst.Name)
+			return nil, fmt.Errorf("an installation %s should be created which is currently under deletion", subInst.Name)
 		}
 
-		_, err := o.createOrUpdateNewInstallation(ctx, o.Inst.GetInstallation(), subInstTmpl, subInst)
+		subInst, err := o.createOrUpdateNewInstallation(ctx, o.Inst.GetInstallation(), subInstTmpl, subInst)
 		if err != nil {
 			err = fmt.Errorf("unable to create installation for %s: %w", subInstTmpl.Name, err)
-			return o.NewError(err, "CreateOrUpdateInstallation", err.Error())
+			return nil, o.NewError(err, "CreateOrUpdateInstallation", err.Error())
 		}
+
+		name := subInst.Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+		subNamePairs = append(subNamePairs, lsv1alpha1.SubNamePair{
+			SpecName:   name,
+			ObjectName: subInst.Name,
+		})
 	}
-	return nil
+	return subNamePairs, nil
 }
 
 func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
@@ -275,7 +280,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		return nil, err
 	}
 
-	_, err = o.Writer().CreateOrUpdateInstallation(ctx, read_write_layer.W000001, subInst, func() error {
+	_, err = o.WriterToLsUncachedClient().CreateOrUpdateInstallation(ctx, read_write_layer.W000001, subInst, func() error {
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
 		}
@@ -293,6 +298,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 			ImportDataMappings:  subInstTmpl.ImportDataMappings,
 			Exports:             subInstTmpl.Exports,
 			ExportDataMappings:  subInstTmpl.ExportDataMappings,
+			Optimization:        subInstTmpl.Optimization,
 		}
 
 		o.Scheme().Default(subInst)
@@ -307,37 +313,5 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		return nil, errors.Wrapf(err, "unable to create installation for %s", subInstTmpl.Name)
 	}
 
-	oldStatus := inst.Status.DeepCopy()
-	// update or create installation reference
-	var installationReference *lsv1alpha1.NamedObjectReference = nil
-	for _, ref := range inst.Status.InstallationReferences {
-		if ref.Name == subInstTmpl.Name {
-			ref.Reference.Name = subInst.Name
-			ref.Reference.Namespace = subInst.Namespace
-			installationReference = &ref
-			break
-		}
-	}
-
-	if installationReference == nil {
-		inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, lsv1alpha1helper.NewInstallationReferenceState(subInstTmpl.Name, subInst))
-	}
-
-	if !reflect.DeepEqual(oldStatus, &inst.Status) {
-		if err := o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000017, inst); err != nil {
-			return nil, errors.Wrapf(err, "unable to add new installation for %s to state", subInstTmpl.Name)
-		}
-	}
-
 	return subInst, nil
-}
-
-// getSubinstallationNameByReference returns the name of subinstallation by the refernce
-func getSubinstallationNameByReference(refs []lsv1alpha1.NamedObjectReference, namespace, name string) (string, bool) {
-	for _, ref := range refs {
-		if ref.Reference.Namespace == namespace && ref.Reference.Name == name {
-			return ref.Name, true
-		}
-	}
-	return "", false
 }
