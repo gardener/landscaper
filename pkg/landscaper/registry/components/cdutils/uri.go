@@ -12,11 +12,12 @@ import (
 	"path"
 	"strings"
 
+	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 )
 
 const Scheme = "cd"

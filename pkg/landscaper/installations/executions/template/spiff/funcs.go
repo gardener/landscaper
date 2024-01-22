@@ -9,11 +9,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"time"
+
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 	"github.com/open-component-model/ocm/pkg/mime"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"time"
+
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
 
 	"github.com/mandelsoft/spiff/dynaml"
 	"github.com/mandelsoft/spiff/spiffing"

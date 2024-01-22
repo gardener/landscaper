@@ -3,8 +3,9 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"strings"
+
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
@@ -162,6 +163,9 @@ func ParseResourceReference(ref string) (*v1.ResourceReference, error) {
 			return nil, fmt.Errorf("failed to parse argument into URI: %w", err)
 		}
 		resourceRef, err = resourceRefUri.AsRelativeResourceReference()
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		// assume that the resource is specified through a relative artifact reference
 		// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references)

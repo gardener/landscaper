@@ -8,9 +8,10 @@ import (
 	"errors"
 	goflag "flag"
 	"fmt"
-	"k8s.io/utils/pointer"
 	"os"
 	"time"
+
+	"k8s.io/utils/ptr"
 
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -70,7 +71,7 @@ func (o *options) Complete() error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
+		SyncPeriod:         ptr.To[time.Duration](time.Hour * 24 * 1000),
 	}
 
 	hostRestConfig, err := ctrl.GetConfig()

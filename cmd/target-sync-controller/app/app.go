@@ -19,11 +19,11 @@ import (
 
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
+
 	"github.com/spf13/cobra"
-	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -64,7 +64,7 @@ func (o *options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
+		SyncPeriod:         ptr.To[time.Duration](time.Hour * 24 * 1000),
 	}
 
 	data, err := os.ReadFile(o.landscaperKubeconfigPath)

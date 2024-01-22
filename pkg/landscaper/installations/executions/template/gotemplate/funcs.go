@@ -11,11 +11,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/open-component-model/ocm/pkg/mime"
 	"os"
 	"strings"
 	gotmpl "text/template"
 	"time"
+
+	"github.com/open-component-model/ocm/pkg/mime"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -210,7 +211,7 @@ func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (
 			return "", errors.New("unable to provide key for empty relative artifact reference")
 		}
 		if len(args) > 1 {
-			return "", errors.New(fmt.Sprintf("this function requires 1 argument, but %v were provided", len(args)))
+			return "", fmt.Errorf("this function requires 1 argument, but %v were provided", len(args))
 		}
 
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)

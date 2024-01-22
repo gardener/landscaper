@@ -9,9 +9,10 @@ import (
 	"errors"
 	goflag "flag"
 	"fmt"
-	"k8s.io/utils/pointer"
 	"os"
 	"time"
+
+	"k8s.io/utils/ptr"
 
 	flag "github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
@@ -84,7 +85,7 @@ func (o *DefaultOptions) Complete() error {
 	opts := manager.Options{
 		LeaderElection:     false,
 		MetricsBindAddress: "0", // disable the metrics serving by default
-		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
+		SyncPeriod:         ptr.To[time.Duration](time.Hour * 24 * 1000),
 	}
 
 	hostRestConfig, err := ctrl.GetConfig()

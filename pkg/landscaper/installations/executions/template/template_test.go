@@ -7,10 +7,11 @@ package template_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/open-component-model/ocm/pkg/runtime"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/open-component-model/ocm/pkg/runtime"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"

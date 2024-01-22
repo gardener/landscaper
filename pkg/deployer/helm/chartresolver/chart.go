@@ -10,11 +10,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
 	"github.com/open-component-model/ocm/pkg/helm/loader"
-	"net/http"
 
 	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
