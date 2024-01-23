@@ -231,14 +231,14 @@ func HelmDeployerTests(f *framework.Framework) {
 
 		Context("private registry", func() {
 			It("should access a helm chart from on private registry and deploy it", func() {
-				file, err := os.Open(f.RegistryCAPath)
+				certFile, err := os.Open(f.RegistryCAPath)
 				Expect(err).To(BeNil())
 
-				b, err := io.ReadAll(file)
+				certData, err := io.ReadAll(certFile)
 				Expect(err).To(BeNil())
 
 				certPool := x509.NewCertPool()
-				certPool.AppendCertsFromPEM(b)
+				certPool.AppendCertsFromPEM(certData)
 
 				transport := &http.Transport{
 					TLSClientConfig: &tls.Config{
@@ -252,17 +252,17 @@ func HelmDeployerTests(f *framework.Framework) {
 					registry.ClientOptHTTPClient(httpClient))
 				Expect(err).To(BeNil())
 
-				image, err := os.Open(filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart.tgz"))
+				imageFile, err := os.Open(filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart.tgz"))
 				Expect(err).To(BeNil())
 
-				imageData, err := io.ReadAll(image)
+				imageData, err := io.ReadAll(imageFile)
 				Expect(err).To(BeNil())
 
-				pushResult, err := helmClient.Push(imageData, f.RegistryBasePath+"/privreg-test-chart:1.0.0")
+				pushResult, err := helmClient.Push(imageData, f.RegistryBasePath+"/test-chart:v0.1.0")
 				Expect(err).To(BeNil())
 				Expect(pushResult).ToNot(BeNil())
 
-				pullResult, err := helmClient.Pull(f.RegistryBasePath + "/privreg-test-chart:1.0.0")
+				pullResult, err := helmClient.Pull(f.RegistryBasePath + "/test-chart:v0.1.0")
 				Expect(err).To(BeNil())
 				Expect(pullResult).ToNot(BeNil())
 			})
