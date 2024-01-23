@@ -8872,14 +8872,15 @@ func schema_apis_deployer_helm_v1alpha1_Chart(ref common.ReferenceCallback) comm
 					"resourceRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ResourceKey defines a key that can be given to a corresponding API in order to fetch the content of the resource defined in the blueprint",
-							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ResourceRef"),
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ResourceRef"},
+			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference"},
 	}
 }
 

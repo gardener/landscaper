@@ -112,7 +112,7 @@ type Chart struct {
 	// ResourceKey defines a key that can be given to a corresponding API in order to fetch the content of the resource
 	// defined in the blueprint
 	// +optional
-	ResourceRef *ResourceRef `json:"resourceRef,omitempty"`
+	ResourceRef string `json:"resourceRef,omitempty"`
 }
 
 type ResourceRef struct {

@@ -81,11 +81,6 @@ func (in *Chart) DeepCopyInto(out *Chart) {
 		*out = new(HelmChartRepo)
 		**out = **in
 	}
-	if in.ResourceRef != nil {
-		in, out := &in.ResourceRef, &out.ResourceRef
-		*out = new(ResourceRef)
-		**out = **in
-	}
 	return
 }
 

@@ -70,13 +70,13 @@ func GetChart(ctx context.Context,
 		return nil, errors.New("chart.fromResource is no longer supported")
 	}
 
-	if chartConfig.ResourceRef != nil {
+	if chartConfig.ResourceRef != "" {
 		return getChartFromResourceRef(ctx, chartConfig.ResourceRef, contextObj, lsClient)
 	}
 	return nil, NoChartDefinedError
 }
 
-func getChartFromResourceRef(ctx context.Context, resourceRef *helmv1alpha1.ResourceRef, lsCtx *lsv1alpha1.Context,
+func getChartFromResourceRef(ctx context.Context, resourceRef string, lsCtx *lsv1alpha1.Context,
 	lsClient client.Client) (_ *chart.Chart, err error) {
 
 	octx := ocm.New(datacontext.MODE_EXTENDED)
@@ -111,7 +111,7 @@ func getChartFromResourceRef(ctx context.Context, resourceRef *helmv1alpha1.Reso
 	}
 
 	// Business Logic
-	key, err := base64.StdEncoding.DecodeString(resourceRef.Key)
+	key, err := base64.StdEncoding.DecodeString(resourceRef)
 	if err != nil {
 		return nil, err
 	}
