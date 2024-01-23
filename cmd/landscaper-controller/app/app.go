@@ -7,9 +7,10 @@ package app
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/pointer"
 	"os"
 	"time"
+
+	"k8s.io/utils/pointer"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"

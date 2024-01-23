@@ -9,9 +9,10 @@ import (
 	"errors"
 	goflag "flag"
 	"fmt"
-	"k8s.io/utils/pointer"
 	"os"
 	"time"
+
+	"k8s.io/utils/pointer"
 
 	flag "github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
