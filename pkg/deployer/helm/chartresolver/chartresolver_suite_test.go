@@ -163,7 +163,7 @@ var _ = Describe("GetChart", func() {
 	})
 
 	Context("From OCM Resource Ref", func() {
-		FIt("should resolve a chart from a local ocm resource", func() {
+		It("should resolve a chart from a local ocm resource", func() {
 			ctx := logging.NewContext(context.Background(), logging.Discard())
 			defer ctx.Done()
 
