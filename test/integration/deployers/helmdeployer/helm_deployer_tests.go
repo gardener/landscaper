@@ -230,6 +230,37 @@ func HelmDeployerTests(f *framework.Framework) {
 		})
 
 		Context("private registry", func() {
+			It("should deny access without credentials", func() {
+				certFile, err := os.Open(f.RegistryCAPath)
+				Expect(err).To(BeNil())
+
+				certData, err := io.ReadAll(certFile)
+				Expect(err).To(BeNil())
+
+				certPool := x509.NewCertPool()
+				certPool.AppendCertsFromPEM(certData)
+
+				transport := &http.Transport{
+					TLSClientConfig: &tls.Config{
+						RootCAs: certPool,
+					},
+				}
+				httpClient := &http.Client{Transport: transport}
+
+				helmClient, err := registry.NewClient(
+					registry.ClientOptHTTPClient(httpClient))
+				Expect(err).To(BeNil())
+
+				imageFile, err := os.Open(filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart.tgz"))
+				Expect(err).To(BeNil())
+
+				imageData, err := io.ReadAll(imageFile)
+				Expect(err).To(BeNil())
+
+				pushResult, err := helmClient.Push(imageData, f.RegistryBasePath+"/test-chart:v0.1.0")
+				Expect(err).ToNot(BeNil())
+				Expect(pushResult).To(BeNil())
+			})
 			It("should access a helm chart from on private registry and deploy it", func() {
 				certFile, err := os.Open(f.RegistryCAPath)
 				Expect(err).To(BeNil())
