@@ -248,6 +248,7 @@ func autoConvert_v1alpha1_Chart_To_helm_Chart(in *Chart, out *helm.Chart, s conv
 	out.FromResource = (*helm.RemoteChartReference)(unsafe.Pointer(in.FromResource))
 	out.Archive = (*helm.ArchiveAccess)(unsafe.Pointer(in.Archive))
 	out.HelmChartRepo = (*helm.HelmChartRepo)(unsafe.Pointer(in.HelmChartRepo))
+	out.ResourceRef = in.ResourceRef
 	return nil
 }
 
@@ -261,6 +262,7 @@ func autoConvert_helm_Chart_To_v1alpha1_Chart(in *helm.Chart, out *Chart, s conv
 	out.FromResource = (*RemoteChartReference)(unsafe.Pointer(in.FromResource))
 	out.Archive = (*ArchiveAccess)(unsafe.Pointer(in.Archive))
 	out.HelmChartRepo = (*HelmChartRepo)(unsafe.Pointer(in.HelmChartRepo))
+	out.ResourceRef = in.ResourceRef
 	return nil
 }
 

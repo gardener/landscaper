@@ -19,13 +19,13 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	ocmcommon "github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
+	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/helm/identity"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -123,7 +123,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	}
 
 	// set credentials from pull secrets
-	if err := addSecretCredsToCredContext(secrets, registryAccess.octx); err != nil {
+	if err := AddSecretCredsToCredContext(secrets, registryAccess.octx); err != nil {
 		return nil, err
 	}
 
@@ -147,7 +147,7 @@ func (f *Factory) NewHelmRepoResource(ctx context.Context, helmChartRepo *helmv1
 			}
 
 			for _, a := range repoCredentials.Auths {
-				id := identity.GetConsumerId(provider.repourl, "")
+				id := helmid.GetConsumerId(provider.repourl, "")
 				provider.ocictx.CredentialsContext().SetCredentialsForConsumer(id, &CredentialSource{
 					lsClient:  lsClient,
 					auth:      a,
@@ -158,6 +158,13 @@ func (f *Factory) NewHelmRepoResource(ctx context.Context, helmChartRepo *helmv1
 	}
 
 	return provider, nil
+}
+func NewHelmCredentialSource(lsClient client.Client, auth helmv1alpha1.Auth, namespace string) *CredentialSource {
+	return &CredentialSource{
+		lsClient:  lsClient,
+		auth:      auth,
+		namespace: namespace,
+	}
 }
 
 type CredentialSource struct {
@@ -177,11 +184,11 @@ func (c *CredentialSource) Credentials(ctx credentials.Context, _ ...credentials
 	}
 
 	props := ocmcommon.Properties{
-		identity.ATTR_USERNAME: username,
-		identity.ATTR_PASSWORD: password,
+		helmid.ATTR_USERNAME: username,
+		helmid.ATTR_PASSWORD: password,
 	}
 	if c.auth.CustomCAData != "" {
-		props[identity.ATTR_CERTIFICATE_AUTHORITY] = c.auth.CustomCAData
+		props[helmid.ATTR_CERTIFICATE_AUTHORITY] = c.auth.CustomCAData
 	}
 	return credentials.NewCredentials(props), nil
 }
@@ -216,7 +223,7 @@ func (f *Factory) NewHelmOCIResource(ctx context.Context,
 	}
 
 	// set credentials from pull secrets
-	if err = addSecretCredsToCredContext(registryPullSecrets, provider.ocictx); err != nil {
+	if err = AddSecretCredsToCredContext(registryPullSecrets, provider.ocictx); err != nil {
 		return nil, err
 	}
 
@@ -241,7 +248,7 @@ func addConfigFileCredsToCredContext(fs vfs.FileSystem, filePaths []string, prov
 	return nil
 }
 
-func addSecretCredsToCredContext(secrets []corev1.Secret, provider credentials.ContextProvider) error {
+func AddSecretCredsToCredContext(secrets []corev1.Secret, provider credentials.ContextProvider) error {
 	credctx := provider.CredentialsContext()
 	cfgctx := credctx.ConfigContext()
 

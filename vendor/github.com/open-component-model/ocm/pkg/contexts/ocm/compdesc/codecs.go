@@ -81,7 +81,7 @@ var DefaultYAMLCodec = CodecWrapper{
 }
 
 // DefaultJSONCodec implements Codec interface with the json decoder encoder.
-var DefaultJSONLCodec = CodecWrapper{
+var DefaultJSONCodec = CodecWrapper{
 	Decoder:       DecoderFunc(json.Unmarshal),
 	StrictDecoder: StrictDecoderFunc(json.Unmarshal),
 	Encoder:       EncoderFunc(json.Marshal),

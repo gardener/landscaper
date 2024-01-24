@@ -5,6 +5,8 @@
 package grammar
 
 import (
+	"strings"
+
 	. "github.com/open-component-model/ocm/pkg/regex"
 )
 
@@ -217,3 +219,11 @@ var (
 	// identifier value, anchored at start and end of string.
 	AnchoredIdentifierRegexp = Anchored(IdentifierRegexp)
 )
+
+func SplitTypeSpec(t string) (string, string) {
+	i := strings.Index(t, "+")
+	if i < 0 {
+		return t, ""
+	}
+	return t[:i], t[i+1:]
+}

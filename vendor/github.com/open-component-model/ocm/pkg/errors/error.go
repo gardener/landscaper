@@ -38,6 +38,8 @@ func As(err error, target any) bool {
 	return false
 }
 
+// Is checks for a concrete error object
+// along the error chain.
 func Is(err error, target error) bool {
 	if target == nil || err == nil {
 		return err == target
@@ -60,6 +62,8 @@ func Is(err error, target error) bool {
 	return false
 }
 
+// IsA checks for an error of a dedicated type
+// along the error chain.
 func IsA(err error, target error) bool {
 	if target == nil {
 		return err == target
@@ -107,8 +111,8 @@ func NewEf(cause error, msg string, args ...interface{}) error {
 }
 
 func Wrapf(err error, msg string, args ...interface{}) error {
-	if err == nil {
-		return nil
+	if err == nil || msg == "" {
+		return err
 	}
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)

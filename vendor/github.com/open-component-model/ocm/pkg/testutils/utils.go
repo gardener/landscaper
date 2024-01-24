@@ -55,6 +55,11 @@ func Must2[T any, V any](a T, b V, err error) (T, V) {
 	return a, b
 }
 
+func Must3[T, U, V any](a T, b U, c V, err error) (T, U, V) {
+	ExpectWithOffset(1, err).To(Succeed())
+	return a, b, c
+}
+
 type result[T any] struct {
 	res T
 	err error
@@ -99,7 +104,7 @@ func MustBeSuccessfulWithOffset(offset int, err error) {
 }
 
 func MustFailWithMessage(err error, msg string) {
-	ExpectWithOffset(1, err).NotTo(BeNil())
+	ExpectWithOffset(1, err).To(HaveOccurred())
 	ExpectWithOffset(1, err.Error()).To(Equal(msg))
 }
 

@@ -36,6 +36,7 @@ This matcher works on the following properties:
 
 - *<code>`+ID_TYPE+`</code>* (required if set in pattern): the identity type 
 - *<code>`+ID_HOSTNAME+`</code>* (required if set in pattern): the hostname of a server
+- *<code>`+ID_SCHEME+`</code>* (optional): the URL scheme of a server
 - *<code>`+ID_PORT+`</code>* (optional): the port of a server
 - *<code>`+ID_PATHPREFIX+`</code>* (optional): a path prefix to match. The 
   element with the most matching path components is selected (separator is <code>/</code>).
@@ -45,37 +46,37 @@ This matcher works on the following properties:
 var Matcher = IdentityMatcher("")
 
 func IdentityMatcher(identityType string) cpi.IdentityMatcher {
-	return func(pattern, cur, id cpi.ConsumerIdentity) bool {
-		if pattern[ID_TYPE] != "" && pattern[ID_TYPE] != id[ID_TYPE] {
+	return func(request, cur, id cpi.ConsumerIdentity) bool {
+		if request[ID_TYPE] != "" && request[ID_TYPE] != id[ID_TYPE] {
 			return false
 		}
 
-		if identityType != "" && pattern[ID_TYPE] != "" && identityType != pattern[ID_TYPE] {
+		if identityType != "" && request[ID_TYPE] != "" && identityType != request[ID_TYPE] {
 			return false
 		}
 
-		if pattern[ID_HOSTNAME] != "" && id[ID_HOSTNAME] != "" && pattern[ID_HOSTNAME] != id[ID_HOSTNAME] {
+		if request[ID_HOSTNAME] != "" && id[ID_HOSTNAME] != "" && request[ID_HOSTNAME] != id[ID_HOSTNAME] {
 			return false
 		}
 
-		if pattern[ID_PORT] != "" {
-			if id[ID_PORT] != "" && id[ID_PORT] != pattern[ID_PORT] {
+		if request[ID_PORT] != "" {
+			if id[ID_PORT] != "" && id[ID_PORT] != request[ID_PORT] {
 				return false
 			}
 		}
 
-		if pattern[ID_SCHEME] != "" {
-			if id[ID_SCHEME] != "" && id[ID_SCHEME] != pattern[ID_SCHEME] {
+		if request[ID_SCHEME] != "" {
+			if id[ID_SCHEME] != "" && id[ID_SCHEME] != request[ID_SCHEME] {
 				return false
 			}
 		}
 
-		if pattern[ID_PATHPREFIX] != "" {
+		if request[ID_PATHPREFIX] != "" {
 			if id[ID_PATHPREFIX] != "" {
-				if len(id[ID_PATHPREFIX]) > len(pattern[ID_PATHPREFIX]) {
+				if len(id[ID_PATHPREFIX]) > len(request[ID_PATHPREFIX]) {
 					return false
 				}
-				pcomps := strings.Split(pattern[ID_PATHPREFIX], "/")
+				pcomps := strings.Split(request[ID_PATHPREFIX], "/")
 				icomps := strings.Split(id[ID_PATHPREFIX], "/")
 				if len(icomps) > len(pcomps) {
 					return false
@@ -100,10 +101,10 @@ func IdentityMatcher(identityType string) cpi.IdentityMatcher {
 		if cur[ID_HOSTNAME] == "" && id[ID_HOSTNAME] != "" {
 			return true
 		}
-		if cur[ID_PORT] == "" && (id[ID_PORT] != "" && pattern[ID_PORT] != "") {
+		if cur[ID_PORT] == "" && (id[ID_PORT] != "" && request[ID_PORT] != "") {
 			return true
 		}
-		if cur[ID_SCHEME] == "" && (id[ID_SCHEME] != "" && pattern[ID_SCHEME] != "") {
+		if cur[ID_SCHEME] == "" && (id[ID_SCHEME] != "" && request[ID_SCHEME] != "") {
 			return true
 		}
 

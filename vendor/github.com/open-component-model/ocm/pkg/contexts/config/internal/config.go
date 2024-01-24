@@ -7,6 +7,7 @@ package internal
 import (
 	"fmt"
 
+	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
@@ -35,5 +36,19 @@ func (c *ConfigurationList) AddConfig(cfg Config) error {
 
 	c.Configurations = append(c.Configurations, g)
 
+	return nil
+}
+
+func (c *ConfigurationList) AddConfigData(ctx Context, data []byte) error {
+	cfg, err := ctx.GetConfigForData(data, nil)
+	if err != nil {
+		return errors.Wrapf(err, "invalid config specification")
+	}
+	g, err := ToGenericConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("unable to convert config to generic: %w", err)
+	}
+
+	c.Configurations = append(c.Configurations, g)
 	return nil
 }

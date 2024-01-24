@@ -12,6 +12,8 @@ import (
 	"path"
 	"strings"
 
+	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
@@ -217,4 +219,33 @@ func (u *URI) GetResource(cd model.ComponentVersion, repositoryContext *types.Un
 		}
 	}
 	return nil, nil, fmt.Errorf("unable to find resource %q", u.Raw)
+}
+
+func (u *URI) AsRelativeResourceReference() (*v1.ResourceReference, error) {
+	resourceReference := &v1.ResourceReference{
+		Resource:      nil,
+		ReferencePath: []v1.Identity{},
+	}
+
+	for i, elem := range u.Path {
+		isLast := len(u.Path) == i+1
+		switch elem.Keyword {
+		case ComponentReferences:
+			id := v1.Identity{"name": elem.Value}
+			resourceReference.ReferencePath = append(resourceReference.ReferencePath, id)
+			if isLast {
+				return nil, fmt.Errorf("the selector seems to target a component but a resource is requested")
+			}
+		case Resources:
+			id := v1.Identity{"name": elem.Value}
+			resourceReference.Resource = id
+			if !isLast {
+				return nil, fmt.Errorf("the selector seems to contain more path segments after a resource")
+			}
+			return resourceReference, nil
+		default:
+			return nil, fmt.Errorf("unknown keyword %s", elem.Keyword)
+		}
+	}
+	return nil, fmt.Errorf("unable to find resource %q", u.Raw)
 }

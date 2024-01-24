@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -61,7 +61,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 
 	var deployErr error
 
-	shouldUseRealHelmDeployer := pointer.BoolDeref(h.ProviderConfiguration.HelmDeployment, true)
+	shouldUseRealHelmDeployer := ptr.Deref[bool](h.ProviderConfiguration.HelmDeployment, true)
 
 	if shouldUseRealHelmDeployer {
 		// Apply helm install/upgrade. Afterwards get the list of deployed resources by helm get release.

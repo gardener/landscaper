@@ -18,9 +18,11 @@ func init() {
 	hpi.Register(New())
 }
 
-// Value is the minimal structure of values usable with the merge algorithm.
-type Value = map[string]Entry
-type Entry = interface{}
+type (
+	// Value is the minimal structure of values usable with the merge algorithm.
+	Value = map[string]Entry
+	Entry = interface{}
+)
 
 func New() hpi.Handler {
 	return hpi.New(ALGORITHM, desc, merge)

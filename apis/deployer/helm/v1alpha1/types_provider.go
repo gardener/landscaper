@@ -109,6 +109,14 @@ type Chart struct {
 	// HelmChartRepo defines a reference to a chart in a helm chart repo.
 	// +optional
 	HelmChartRepo *HelmChartRepo `json:"helmChartRepo,omitempty"`
+	// ResourceKey defines a key that can be given to a corresponding API in order to fetch the content of the resource
+	// defined in the blueprint
+	// +optional
+	ResourceRef string `json:"resourceRef,omitempty"`
+}
+
+type ResourceRef struct {
+	Key string `json:"key,omitempty"`
 }
 
 // HelmChartRepo defines a reference to a chart in a helm chart repo

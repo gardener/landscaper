@@ -9,7 +9,7 @@ private key.
 
 It must has the field `url` with the desired server address.
 
-The required credentials are taken from the crednetials context
+The required credentials are taken from the credentials context
 using the consumer id `Signingserver.gardener.cloud`.
 If uses a hostpath matcher using the identity attrutes `scheme`, `hostname`,
 `port` and `pathprefix` derived from the given server URL.

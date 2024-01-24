@@ -23,7 +23,7 @@ type (
 	AccessSpec                       = internal.AccessSpec
 	GenericAccessSpec                = internal.GenericAccessSpec
 	HintProvider                     = internal.HintProvider
-	AccessMethod                     = internal.AccessMethod
+	AccessMethod                     = internal.AccessMethodImpl
 	AccessType                       = internal.AccessType
 	DataAccess                       = internal.DataAccess
 	BlobAccess                       = internal.BlobAccess

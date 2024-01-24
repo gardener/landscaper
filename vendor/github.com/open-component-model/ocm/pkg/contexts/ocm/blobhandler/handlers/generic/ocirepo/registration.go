@@ -66,7 +66,7 @@ func (r *RegistrationHandler) RegisterByName(handler string, ctx cpi.Context, co
 
 func (r *RegistrationHandler) GetHandlers(ctx cpi.Context) registrations.HandlerInfos {
 	return registrations.NewLeafHandlerInfo("downloading OCI artifacts", `
-The <code>ociArtifacts</code> downloader is able to to download OCI artifacts
+The <code>ociArtifacts</code> downloader is able to download OCI artifacts
 as artifact archive according to the OCI distribution spec.
 The following artifact media types are supported:
 `+listformat.FormatList("", artdesc.ArchiveBlobTypes()...)+`

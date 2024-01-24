@@ -5,7 +5,7 @@
 package builder
 
 import (
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
@@ -14,7 +14,7 @@ const T_OCILAYER = "oci layer"
 
 type ociLayer struct {
 	base
-	blob accessio.BlobAccess
+	blob blobaccess.BlobAccess
 }
 
 func (r *ociLayer) Type() string {

@@ -5,13 +5,13 @@
 package ocm
 
 import (
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type BlobSink interface {
-	AddBlob(blob accessio.BlobAccess) (string, error)
+	AddBlob(blob blobaccess.BlobAccess) (string, error)
 }
 
 // StorageContext is the context information passed for Blobhandler
@@ -27,14 +27,14 @@ type DefaultStorageContext struct {
 	Payload interface{}
 }
 
-func New(repo cpi.Repository, vers cpi.ComponentVersionAccess, access BlobSink, impltyp string, payload ...interface{}) StorageContext {
+func New(repo cpi.Repository, compname string, access BlobSink, impltyp string, payload ...interface{}) StorageContext {
 	return &DefaultStorageContext{
-		DefaultStorageContext: *cpi.NewDefaultStorageContext(repo, vers, cpi.ImplementationRepositoryType{cpi.CONTEXT_TYPE, impltyp}),
+		DefaultStorageContext: *cpi.NewDefaultStorageContext(repo, compname, cpi.ImplementationRepositoryType{cpi.CONTEXT_TYPE, impltyp}),
 		Sink:                  access,
 		Payload:               utils.Optional(payload...),
 	}
 }
 
-func (c *DefaultStorageContext) AddBlob(blob accessio.BlobAccess) (string, error) {
+func (c *DefaultStorageContext) AddBlob(blob blobaccess.BlobAccess) (string, error) {
 	return c.Sink.AddBlob(blob)
 }

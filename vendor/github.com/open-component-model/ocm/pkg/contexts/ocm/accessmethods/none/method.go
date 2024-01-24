@@ -8,7 +8,7 @@ import (
 	"io"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -21,9 +21,9 @@ const (
 )
 
 func init() {
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](Type, cpi.WithDescription("dummy resource with no access")))
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](TypeV1))
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](LegacyType))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](Type, accspeccpi.WithDescription("dummy resource with no access")))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](TypeV1))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](LegacyType))
 }
 
 // New creates a new OCIBlob accessor.
@@ -40,17 +40,17 @@ type AccessSpec struct {
 	runtime.ObjectVersionedType `json:",inline"`
 }
 
-var _ cpi.AccessSpec = (*AccessSpec)(nil)
+var _ accspeccpi.AccessSpec = (*AccessSpec)(nil)
 
-func (a *AccessSpec) Describe(ctx cpi.Context) string {
+func (a *AccessSpec) Describe(ctx accspeccpi.Context) string {
 	return "none"
 }
 
-func (s *AccessSpec) IsLocal(context cpi.Context) bool {
+func (s *AccessSpec) IsLocal(context accspeccpi.Context) bool {
 	return false
 }
 
-func (s *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
+func (s *AccessSpec) GlobalAccessSpec(ctx accspeccpi.Context) accspeccpi.AccessSpec {
 	return nil
 }
 
@@ -58,11 +58,11 @@ func (s *AccessSpec) GetMimeType() string {
 	return ""
 }
 
-func (s *AccessSpec) AccessMethod(access cpi.ComponentVersionAccess) (cpi.AccessMethod, error) {
-	return &accessMethod{spec: s}, nil
+func (s *AccessSpec) AccessMethod(access accspeccpi.ComponentVersionAccess) (accspeccpi.AccessMethod, error) {
+	return accspeccpi.AccessMethodForImplementation(&accessMethod{spec: s}, nil)
 }
 
-func (s *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVersionAccess) string {
+func (s *AccessSpec) GetInexpensiveContentVersionIdentity(access accspeccpi.ComponentVersionAccess) string {
 	return ""
 }
 
@@ -72,13 +72,17 @@ type accessMethod struct {
 	spec *AccessSpec
 }
 
-var _ cpi.AccessMethod = (*accessMethod)(nil)
+var _ accspeccpi.AccessMethodImpl = (*accessMethod)(nil)
+
+func (_ *accessMethod) IsLocal() bool {
+	return false
+}
 
 func (m *accessMethod) GetKind() string {
 	return Type
 }
 
-func (m *accessMethod) AccessSpec() cpi.AccessSpec {
+func (m *accessMethod) AccessSpec() accspeccpi.AccessSpec {
 	return m.spec
 }
 

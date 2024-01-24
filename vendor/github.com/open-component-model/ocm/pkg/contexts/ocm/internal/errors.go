@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	KIND_COMPONENT        = errors.KIND_COMPONENT
 	KIND_COMPONENTVERSION = "component version"
 	KIND_RESOURCE         = "component resource"
 	KIND_SOURCE           = "component source"

@@ -222,6 +222,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderStatus":                            schema_apis_deployer_helm_v1alpha1_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteArchiveAccess":                       schema_apis_deployer_helm_v1alpha1_RemoteArchiveAccess(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference":                      schema_apis_deployer_helm_v1alpha1_RemoteChartReference(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ResourceRef":                               schema_apis_deployer_helm_v1alpha1_ResourceRef(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Configuration":                         schema_apis_deployer_manifest_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Controller":                            schema_apis_deployer_manifest_v1alpha1_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration":                   schema_apis_deployer_manifest_v1alpha1_ExportConfiguration(ref),
@@ -8868,6 +8869,13 @@ func schema_apis_deployer_helm_v1alpha1_Chart(ref common.ReferenceCallback) comm
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo"),
 						},
 					},
+					"resourceRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ResourceKey defines a key that can be given to a corresponding API in order to fetch the content of the resource defined in the blueprint",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -9434,6 +9442,24 @@ func schema_apis_deployer_helm_v1alpha1_RemoteChartReference(ref common.Referenc
 		},
 		Dependencies: []string{
 			"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"},
+	}
+}
+
+func schema_apis_deployer_helm_v1alpha1_ResourceRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

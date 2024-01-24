@@ -11,7 +11,7 @@ import (
 	"github.com/opencontainers/image-spec/specs-go"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 )
 
 type Manifest ociv1.Manifest
@@ -48,13 +48,13 @@ func (m *Manifest) MimeType() string {
 	return ArtifactMimeType(m.MediaType, MediaTypeImageManifest, legacy)
 }
 
-func (m *Manifest) ToBlobAccess() (accessio.BlobAccess, error) {
+func (m *Manifest) ToBlobAccess() (blobaccess.BlobAccess, error) {
 	m.MediaType = m.MimeType()
 	data, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
-	return accessio.BlobAccessForData(m.MediaType, data), nil
+	return blobaccess.ForData(m.MediaType, data), nil
 }
 
 func (m *Manifest) SetAnnotation(name, value string) {

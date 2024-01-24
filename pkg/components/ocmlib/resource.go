@@ -99,7 +99,11 @@ func (r *Resource) GetCachingIdentity(ctx context.Context) string {
 	if err != nil {
 		return ""
 	}
-	return spec.GetInexpensiveContentVersionIdentity(r.resourceAccess.ComponentVersion())
+	cv, err := r.resourceAccess.GetComponentVersion()
+	if err != nil {
+		return ""
+	}
+	return spec.GetInexpensiveContentVersionIdentity(cv)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -67,3 +67,7 @@ var (
 			Optional(Literal(VersionSeparator), Capture(VersionRegexp))),
 	)
 )
+
+func SplitTypeSpec(t string) (string, string) {
+	return grammar.SplitTypeSpec(t)
+}

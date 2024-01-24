@@ -16,7 +16,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
@@ -48,7 +48,7 @@ func NewStateAccess(access oci.ManifestAccess, compat ...bool) accessobj.StateAc
 	}
 }
 
-func (s *StateAccess) Get() (accessio.BlobAccess, error) {
+func (s *StateAccess) Get() (blobaccess.BlobAccess, error) {
 	mediaType := s.access.GetDescriptor().Config.MediaType
 	switch mediaType {
 	case componentmapping.ComponentDescriptorConfigMimeType,
@@ -62,10 +62,10 @@ func (s *StateAccess) Get() (accessio.BlobAccess, error) {
 	}
 }
 
-func (s *StateAccess) get() (accessio.BlobAccess, error) {
+func (s *StateAccess) get() (blobaccess.BlobAccess, error) {
 	var config ComponentDescriptorConfig
 
-	data, err := accessio.BlobData(s.access.GetConfigBlob())
+	data, err := blobaccess.BlobData(s.access.GetConfigBlob())
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (s *StateAccess) get() (accessio.BlobAccess, error) {
 			return nil, err
 		}
 		s.layerMedia = config.ComponentDescriptorLayer.MediaType
-		return accessio.BlobAccessForData(componentmapping.ComponentDescriptorYAMLMimeType, data), nil
+		return blobaccess.ForData(componentmapping.ComponentDescriptorYAMLMimeType, data), nil
 	default:
 		return nil, errors.ErrInvalid("config mediatype", config.ComponentDescriptorLayer.MediaType)
 	}
@@ -175,7 +175,7 @@ func (s *StateAccess) Put(data []byte) error {
 		return err
 	}
 	s.layerMedia = arch.MimeType()
-	configblob := accessio.BlobAccessForData(mediaType, configdata)
+	configblob := blobaccess.ForData(mediaType, configdata)
 	err = s.access.AddBlob(configblob)
 	if err != nil {
 		return err
@@ -218,7 +218,7 @@ func (s *StateAccess) writeComponentDescriptorTar(data []byte) (cpi.BlobAccess, 
 	if err := tw.Close(); err != nil {
 		return nil, errors.Newf("unable to close tar writer: %s", err)
 	}
-	return accessio.BlobAccessForData(media, buf.Bytes()), nil
+	return blobaccess.ForData(media, buf.Bytes()), nil
 }
 
 // ComponentDescriptorConfig is a Component-Descriptor OCI configuration that is used to store the reference to the

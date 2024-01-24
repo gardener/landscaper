@@ -15,8 +15,18 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
+// These constants describe identity attributes predefined by the
+// model used to identify elements (resources, sources and references)
+// in a component version.
 const (
-	SystemIdentityName    = "name"
+	// SystemIdentityName is the name attribute of an element in
+	// a component version. It is always present.
+	SystemIdentityName = "name"
+	// SystemIdentityVersion is the version attribute optionally
+	// added to the identity of an element in a component version.
+	// It is required, if the name and the other explicitly defined
+	// extra identity attributes are not unique for a dedicated
+	// kind of element in the context of a component version.
 	SystemIdentityVersion = "version"
 )
 

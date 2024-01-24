@@ -10,7 +10,7 @@ import (
 	"runtime"
 
 	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/consts"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/extraid"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/resourcetypes"
 	"github.com/open-component-model/ocm/pkg/utils"
 	"github.com/open-component-model/ocm/pkg/utils/selector"
@@ -303,8 +303,8 @@ func ByAccessMethod(name string) ResourceSelector {
 func ForExecutable(name string) ResourceSelector {
 	return ResourceSelectorFunc(func(obj ResourceSelectionContext) (bool, error) {
 		return obj.Name == name && obj.Type == resourcetypes.EXECUTABLE && obj.ExtraIdentity != nil &&
-			obj.ExtraIdentity[consts.ExecutableOperatingSystem] == runtime.GOOS &&
-			obj.ExtraIdentity[consts.ExecutableArchitecture] == runtime.GOARCH, nil
+			obj.ExtraIdentity[extraid.ExecutableOperatingSystem] == runtime.GOOS &&
+			obj.ExtraIdentity[extraid.ExecutableArchitecture] == runtime.GOARCH, nil
 	})
 }
 

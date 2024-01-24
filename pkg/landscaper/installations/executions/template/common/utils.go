@@ -3,9 +3,13 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
+	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
 	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -148,4 +152,27 @@ func ConvertCompDescV2ToMapCd(cd cdv2.ComponentDescriptor, ocmSchemaVersion stri
 		return nil, err
 	}
 	return mapCd, nil
+}
+
+func ParseResourceReference(ref string) (*v1.ResourceReference, error) {
+	resourceRef := &v1.ResourceReference{}
+	if strings.HasPrefix(ref, "cd://") {
+		// assume that the resource is specified through a path expression
+		resourceRefUri, err := cdutils.ParseURI(ref)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse argument into URI: %w", err)
+		}
+		resourceRef, err = resourceRefUri.AsRelativeResourceReference()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// assume that the resource is specified through a relative artifact reference
+		// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references)
+		err := runtime.DefaultYAMLEncoding.Unmarshal([]byte(ref), resourceRef)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal argument into a relative resource reference: %w", err)
+		}
+	}
+	return resourceRef, nil
 }

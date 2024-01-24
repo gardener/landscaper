@@ -8,8 +8,8 @@ import (
 	"github.com/docker/cli/cli/config/configfile"
 	dockercred "github.com/docker/cli/cli/config/credentials"
 
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/oci/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
-	"github.com/open-component-model/ocm/pkg/contexts/oci/identity"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 

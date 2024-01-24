@@ -4,7 +4,7 @@
 
 - name: one
   type: Spiff
-  template:
+  template: |
     deployItems:
       - name: test
         type: landscaper.gardener.cloud/mock

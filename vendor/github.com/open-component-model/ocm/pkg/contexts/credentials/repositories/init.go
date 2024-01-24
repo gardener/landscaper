@@ -11,4 +11,5 @@ import (
 	_ "github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/gardenerconfig"
 	_ "github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/memory"
 	_ "github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/memory/config"
+	_ "github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/vault"
 )

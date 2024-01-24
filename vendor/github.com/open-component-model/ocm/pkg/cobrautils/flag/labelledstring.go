@@ -31,12 +31,12 @@ func (i *labelledStringValue) String() string {
 }
 
 func (i *labelledStringValue) Set(s string) error {
-	idx := strings.Index(s, "=")
-	if idx <= 0 {
+	name, value, found := strings.Cut(s, "=")
+	if !found {
 		return fmt.Errorf("expected <name>=<value>")
 	}
-	i.Name = s[:idx]
-	i.Value = s[idx+1:]
+	i.Name = name
+	i.Value = value
 	return nil
 }
 

@@ -12,6 +12,24 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/mandelsoft/filepath/pkg/filepath"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
+	"github.com/open-component-model/ocm/pkg/helm/loader"
+
+	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/open-component-model/ocm/pkg/finalizer"
+	"github.com/open-component-model/ocm/pkg/runtime"
+	"sigs.k8s.io/yaml"
+
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
@@ -51,7 +69,95 @@ func GetChart(ctx context.Context,
 	if chartConfig.FromResource != nil {
 		return nil, errors.New("chart.fromResource is no longer supported")
 	}
+
+	if chartConfig.ResourceRef != "" {
+		return getChartFromResourceRef(ctx, chartConfig.ResourceRef, contextObj, lsClient)
+	}
 	return nil, NoChartDefinedError
+}
+
+func getChartFromResourceRef(ctx context.Context, resourceRef string, lsCtx *lsv1alpha1.Context,
+	lsClient client.Client) (_ *chart.Chart, err error) {
+
+	octx := ocm.New(datacontext.MODE_EXTENDED)
+
+	// Credential Handling
+	// resolve all credentials from registry pull secrets
+	registryPullSecretRefs := lib.GetRegistryPullSecretsFromContext(lsCtx)
+	registryPullSecrets, err := kutil.ResolveSecrets(ctx, lsClient, registryPullSecretRefs)
+	if err != nil {
+		return nil, fmt.Errorf("error resolving secrets: %w", err)
+	}
+
+	err = ocmlib.AddSecretCredsToCredContext(registryPullSecrets, octx)
+	if err != nil {
+		return nil, err
+	}
+
+	// resolve all credentials for helm chart repositories
+	if lsCtx != nil && lsCtx.Configurations != nil {
+		if rawAuths, ok := lsCtx.Configurations[helmv1alpha1.HelmChartRepoCredentialsKey]; ok {
+			repoCredentials := helmv1alpha1.HelmChartRepoCredentials{}
+			err := yaml.Unmarshal(rawAuths.RawMessage, &repoCredentials)
+			if err != nil {
+				return nil, lserrors.NewWrappedError(err, "NewHelmChartRepoClient", "ParsingAuths", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+			}
+
+			for _, a := range repoCredentials.Auths {
+				id := helmid.GetConsumerId(a.URL, "")
+				octx.CredentialsContext().SetCredentialsForConsumer(id, ocmlib.NewHelmCredentialSource(lsClient, a, lsCtx.Namespace))
+			}
+		}
+	}
+
+	// Business Logic
+	key, err := base64.StdEncoding.DecodeString(resourceRef)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: implement a MUX so this could deal with multiple kinds of requests
+	globalId := model.GlobalResourceIdentity{}
+	err = runtime.DefaultYAMLEncoding.Unmarshal(key, &globalId)
+	if err != nil {
+		return nil, err
+	}
+
+	spec, err := octx.RepositorySpecForConfig(lsCtx.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
+	if err != nil {
+		return nil, err
+	}
+
+	var finalize finalizer.Finalizer
+	defer finalize.FinalizeWithErrorPropagation(&err)
+
+	repo, err := spec.Repository(octx, nil)
+	if err != nil {
+		return nil, err
+	}
+	finalize.Close(repo)
+
+	compvers, err := repo.LookupComponentVersion(globalId.ComponentIdentity.Name, globalId.ComponentIdentity.Version)
+	if err != nil {
+		return nil, err
+	}
+	finalize.Close(compvers)
+
+	res, err := compvers.GetResource(globalId.ResourceIdentity)
+	if err != nil {
+		return nil, err
+	}
+
+	fs := memoryfs.New()
+	path, err := download.DownloadResource(octx, res, filepath.Join("/", "chart"), download.WithFileSystem(fs))
+	if err != nil {
+		return nil, err
+	}
+	chart, err := loader.Load(path, fs)
+	if err != nil {
+		return nil, err
+	}
+	return chart, nil
 }
 
 func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Chart, error) {

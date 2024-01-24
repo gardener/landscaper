@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/gardener/landscaper/pkg/utils"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -15,7 +17,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -93,7 +94,7 @@ var _ = Describe("Helm Deployer", func() {
 			string(targettypes.KubernetesClusterTargetType),
 			targettypes.KubernetesClusterTargetConfig{
 				Kubeconfig: targettypes.ValueRef{
-					StrVal: pointer.String(string(kubeconfigBytes)),
+					StrVal: ptr.To[string](string(kubeconfigBytes)),
 				},
 			},
 		)
@@ -102,7 +103,7 @@ var _ = Describe("Helm Deployer", func() {
 
 		// create helm provider config
 		providerConfig := &helmv1alpha1.ProviderConfiguration{}
-		providerConfig.HelmDeployment = pointer.Bool(false)
+		providerConfig.HelmDeployment = ptr.To[bool](false)
 		providerConfig.Chart.Ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 		providerConfig.Name = "ingress-test"
 		providerConfig.Namespace = state.Namespace

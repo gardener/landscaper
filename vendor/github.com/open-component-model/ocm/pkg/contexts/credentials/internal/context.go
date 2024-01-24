@@ -90,8 +90,10 @@ func DefinedForContext(ctx context.Context) (Context, bool) {
 	return nil, ok
 }
 
+type _InternalContext = datacontext.InternalContext
+
 type _context struct {
-	datacontext.InternalContext
+	_InternalContext
 
 	sharedattributes         datacontext.AttributesContext
 	updater                  cfgcpi.Updater
@@ -102,6 +104,18 @@ type _context struct {
 
 var _ Context = &_context{}
 
+// gcWrapper is used as garbage collectable
+// wrapper for a context implementation
+// to establish a runtime finalizer.
+type gcWrapper struct {
+	datacontext.GCWrapper
+	*_context
+}
+
+func (w *gcWrapper) SetContext(c *_context) {
+	w._context = c
+}
+
 func newContext(configctx config.Context, reposcheme RepositoryTypeScheme, consumerMatchers IdentityMatcherRegistry, delegates datacontext.Delegates) Context {
 	c := &_context{
 		sharedattributes:         configctx.AttributesContext(),
@@ -109,9 +123,9 @@ func newContext(configctx config.Context, reposcheme RepositoryTypeScheme, consu
 		consumerIdentityMatchers: consumerMatchers,
 		consumerProviders:        newConsumerProviderRegistry(),
 	}
-	c.InternalContext = datacontext.NewContextBase(c, CONTEXT_TYPE, key, configctx.GetAttributes(), delegates)
+	c._InternalContext = datacontext.NewContextBase(c, CONTEXT_TYPE, key, configctx.GetAttributes(), delegates)
 	c.updater = cfgcpi.NewUpdater(configctx, c)
-	return c
+	return datacontext.FinalizedContext[gcWrapper](c)
 }
 
 func (c *_context) CredentialsContext() Context {

@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- name: one
+  type: Spiff
+  template:
+    deployItems:
+    - name: resource-key-yaml
+      type: landscaper.gardener.cloud/mock
+      config:
+        content: (( getResourceContent("cd://componentReferences/leaf-reference/resources/myconfig") ))

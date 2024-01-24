@@ -92,3 +92,7 @@ func (c *ComponentVersion) GetResource(name string, identity map[string]string) 
 
 	return NewResource(resources[0]), nil
 }
+
+func (c *ComponentVersion) GetOCMObject() ocm.ComponentVersionAccess {
+	return c.componentVersionAccess
+}

@@ -29,7 +29,7 @@ type RepositorySpec struct {
 	runtime.ObjectVersionedType `json:",inline"`
 	accessio.StandardOptions    `json:",inline"`
 
-	// FileFormat is the format of the repository file
+	// FilePath is the file for the repository in the filesystem..
 	FilePath string `json:"filePath"`
 	// AccessMode can be set to request readonly access or creation
 	AccessMode accessobj.AccessMode `json:"accessMode,omitempty"`

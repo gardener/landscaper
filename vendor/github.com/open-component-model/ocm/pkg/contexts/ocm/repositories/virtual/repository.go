@@ -5,42 +5,38 @@
 package virtual
 
 import (
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/repocpi"
 )
 
-type _RepositoryImplBase = cpi.RepositoryImplBase
-
 type RepositoryImpl struct {
-	_RepositoryImplBase
+	bridge repocpi.RepositoryBridge
+	ctx    cpi.Context
 	access Access
 	nonref cpi.Repository
 }
 
-var _ cpi.RepositoryImpl = (*RepositoryImpl)(nil)
+var _ repocpi.RepositoryImpl = (*RepositoryImpl)(nil)
 
 func NewRepository(ctx cpi.Context, acc Access) cpi.Repository {
 	impl := &RepositoryImpl{
-		_RepositoryImplBase: *cpi.NewRepositoryImplBase(ctx.OCMContext()),
-		access:              acc,
+		ctx:    ctx,
+		access: acc,
 	}
-	impl.nonref = cpi.NewNoneRefRepositoryView(impl)
-	r := cpi.NewRepository(impl, "OCM repo[Simple]")
-	return r
+	return repocpi.NewRepository(impl, "OCM repo[Simple]")
 }
-
-/*
-func (r *RepositoryImpl) GetConsumerId(uctx ...credentials.UsageContext) credentials.ConsumerIdentity {
-	return nil
-}
-
-func (r *RepositoryImpl) GetIdentityMatcher() string {
-	return ""
-}
-*/
 
 func (r *RepositoryImpl) Close() error {
 	return r.access.Close()
+}
+
+func (r *RepositoryImpl) SetBridge(base repocpi.RepositoryBridge) {
+	r.bridge = base
+	r.nonref = repocpi.NewNoneRefRepositoryView(base)
+}
+
+func (r *RepositoryImpl) GetContext() cpi.Context {
+	return r.ctx
 }
 
 func (r *RepositoryImpl) GetSpecification() cpi.RepositorySpec {
@@ -58,15 +54,6 @@ func (r *RepositoryImpl) ExistsComponentVersion(name string, version string) (bo
 	return r.access.ExistsComponentVersion(name, version)
 }
 
-func (r *RepositoryImpl) LookupComponent(name string) (cpi.ComponentAccess, error) {
+func (r *RepositoryImpl) LookupComponent(name string) (*repocpi.ComponentAccessInfo, error) {
 	return newComponentAccess(r, name, true)
-}
-
-func (r *RepositoryImpl) LookupComponentVersion(name string, version string) (cpi.ComponentVersionAccess, error) {
-	c, err := newComponentAccess(r, name, false)
-	if err != nil {
-		return nil, err
-	}
-	defer accessio.PropagateCloseTemporary(&err, c) // temporary component object not exposed.
-	return c.LookupVersion(version)
 }

@@ -20,6 +20,7 @@ package vfs
 
 import (
 	"io"
+	"io/fs"
 	"os"
 	"time"
 )
@@ -29,6 +30,7 @@ const PathSeparatorString = "/"
 
 type FileMode = os.FileMode
 type FileInfo = os.FileInfo
+type DirEntry = fs.DirEntry
 
 const ModePerm = os.ModePerm
 
@@ -77,17 +79,17 @@ type FileSystem interface {
 
 	// Mkdir creates a directory in the filesystem, return an error if any
 	// happens.
-	Mkdir(name string, perm os.FileMode) error
+	Mkdir(name string, perm FileMode) error
 
 	// MkdirAll creates a directory path and all parents that does not exist
 	// yet.
-	MkdirAll(path string, perm os.FileMode) error
+	MkdirAll(path string, perm FileMode) error
 
 	// Open opens a file, returning it or an error, if any happens.
 	Open(name string) (File, error)
 
 	// OpenFile opens a file using the given flags and the given mode.
-	OpenFile(name string, flags int, perm os.FileMode) (File, error)
+	OpenFile(name string, flags int, perm FileMode) (File, error)
 
 	// Remove removes a file identified by name, returning an error, if any
 	// happens.
@@ -102,13 +104,13 @@ type FileSystem interface {
 
 	// Stat returns a FileInfo describing the named file, or an error, if any
 	// happens.
-	Stat(name string) (os.FileInfo, error)
+	Stat(name string) (FileInfo, error)
 
 	// Lstat returns a FileInfo describing the named file, or an error, if any
 	// happens.
 	// If the file is a symbolic link, the returned FileInfo
 	// describes the symbolic link. Lstat makes no attempt to follow the link.
-	Lstat(name string) (os.FileInfo, error)
+	Lstat(name string) (FileInfo, error)
 
 	// Create a symlink if supported
 	Symlink(oldname, newname string) error
@@ -120,7 +122,7 @@ type FileSystem interface {
 	Name() string
 
 	// Chmod changes the mode of the named file to mode.
-	Chmod(name string, mode os.FileMode) error
+	Chmod(name string, mode FileMode) error
 
 	// Chtimes changes the access and modification times of the named file
 	Chtimes(name string, atime time.Time, mtime time.Time) error
@@ -152,9 +154,10 @@ type File interface {
 	io.WriterAt
 
 	Name() string
-	Readdir(count int) ([]os.FileInfo, error)
+	ReadDir(count int) ([]DirEntry, error)
+	Readdir(count int) ([]FileInfo, error)
 	Readdirnames(n int) ([]string, error)
-	Stat() (os.FileInfo, error)
+	Stat() (FileInfo, error)
 	Sync() error
 	Truncate(size int64) error
 	WriteString(s string) (ret int, err error)
@@ -189,9 +192,9 @@ type VFS interface {
 	IsDir(path string) (bool, error)
 	IsFile(path string) (bool, error)
 
-	ReadDir(path string) ([]os.FileInfo, error)
+	ReadDir(path string) ([]FileInfo, error)
 	ReadFile(path string) ([]byte, error)
-	WriteFile(path string, data []byte, mode os.FileMode) error
+	WriteFile(path string, data []byte, mode FileMode) error
 	TempFile(dir, prefix string) (File, error)
 	TempDir(dir, prefix string) (string, error)
 }

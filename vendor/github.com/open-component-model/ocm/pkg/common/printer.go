@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/mandelsoft/logging"
@@ -23,6 +24,12 @@ func Flush(o interface{}) error {
 	}
 	return nil
 }
+
+var (
+	StdoutPrinter = NewPrinter(os.Stdout)
+	StderrPrinter = NewPrinter(os.Stderr)
+	NonePrinter   = NewPrinter(nil)
+)
 
 type Printer interface {
 	io.Writer

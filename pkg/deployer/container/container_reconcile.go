@@ -22,7 +22,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -223,7 +223,7 @@ func (c *Container) collectAndSetPodStatus(pod *corev1.Pod, updateLastSuccessful
 	c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
 	var jobID *string
 	if updateLastSuccessfulJobID {
-		jobID = pointer.String(c.DeployItem.Status.JobID)
+		jobID = ptr.To[string](c.DeployItem.Status.JobID)
 	}
 	if err := setStatusFromPod(pod, c.ProviderStatus, jobID); err != nil {
 		return err

@@ -5,6 +5,7 @@
 package finalizer
 
 import (
+	"fmt"
 	"io"
 	"strings"
 	"sync"
@@ -150,6 +151,16 @@ func Calling3V[T, U, V any](f func(arg1 T, arg2 U, arg3 V), arg1 T, arg2 U, arg3
 func (f *Finalizer) Close(c io.Closer, msg ...string) *Finalizer {
 	if c != nil {
 		f.With(c.Close, msg...)
+	}
+	return f
+}
+
+// Closef will finalize the given object by calling
+// its Close function when the finalizer is finalized
+// and annotates an error with the given formatted message.
+func (f *Finalizer) Closef(c io.Closer, msg string, args ...interface{}) *Finalizer {
+	if c != nil {
+		f.With(c.Close, fmt.Sprintf(msg, args...))
 	}
 	return f
 }

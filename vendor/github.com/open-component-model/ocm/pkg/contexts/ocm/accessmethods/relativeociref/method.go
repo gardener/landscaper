@@ -8,7 +8,8 @@ import (
 	"fmt"
 
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/ociartifact"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -21,11 +22,11 @@ const (
 )
 
 func init() {
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](Type))
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](TypeV1))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](Type))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](TypeV1))
 }
 
-var _ cpi.HintProvider = (*AccessSpec)(nil)
+var _ accspeccpi.HintProvider = (*AccessSpec)(nil)
 
 // New creates a new localFilesystemBlob accessor.
 func New(ref string) *AccessSpec {
@@ -43,19 +44,19 @@ type AccessSpec struct {
 	Reference string `json:"reference"`
 }
 
-func (a *AccessSpec) Describe(context cpi.Context) string {
+func (a *AccessSpec) Describe(context accspeccpi.Context) string {
 	return fmt.Sprintf("local OCI artifact %s", a.Reference)
 }
 
-func (a *AccessSpec) IsLocal(context cpi.Context) bool {
+func (a *AccessSpec) IsLocal(context accspeccpi.Context) bool {
 	return true
 }
 
-func (a *AccessSpec) GlobalAccessSpec(context cpi.Context) cpi.AccessSpec {
+func (a *AccessSpec) GlobalAccessSpec(context accspeccpi.Context) accspeccpi.AccessSpec {
 	return nil
 }
 
-func (a *AccessSpec) AccessMethod(access cpi.ComponentVersionAccess) (cpi.AccessMethod, error) {
+func (a *AccessSpec) AccessMethod(access accspeccpi.ComponentVersionAccess) (accspeccpi.AccessMethod, error) {
 	return access.AccessMethod(a)
 }
 
@@ -70,7 +71,7 @@ func (a *AccessSpec) GetDigest() (string, bool) {
 	return "", false
 }
 
-func (a *AccessSpec) GetInexpensiveContentVersionIdentity(cv cpi.ComponentVersionAccess) string {
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(cv accspeccpi.ComponentVersionAccess) string {
 	d, ok := a.GetDigest()
 	if ok {
 		return d
@@ -80,4 +81,20 @@ func (a *AccessSpec) GetInexpensiveContentVersionIdentity(cv cpi.ComponentVersio
 
 func (a *AccessSpec) GetReferenceHint(cv internal.ComponentVersionAccess) string {
 	return a.Reference
+}
+
+func (a *AccessSpec) GetOCIReference(cv accspeccpi.ComponentVersionAccess) (string, error) {
+	if cv == nil {
+		return "", fmt.Errorf("component version required to determine OCI reference")
+	}
+	m, err := a.AccessMethod(cv)
+	if err != nil {
+		return "", err
+	}
+	defer m.Close()
+
+	if o, ok := accspeccpi.GetAccessMethodImplementation(m).(ociartifact.OCIArtifactReferenceProvider); ok {
+		return o.GetOCIReference(nil)
+	}
+	return "", nil
 }

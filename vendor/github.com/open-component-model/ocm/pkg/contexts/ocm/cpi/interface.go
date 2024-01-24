@@ -54,8 +54,7 @@ type (
 	AccessSpecDecoder                = internal.AccessSpecDecoder
 	GenericAccessSpec                = internal.GenericAccessSpec
 	AccessMethod                     = internal.AccessMethod
-	AccessMethodSupport              = internal.AccessMethodSupport
-	AccessType                       = internal.AccessType
+	AccessProvider                   = internal.AccessProvider
 	AccessTypeProvider               = internal.AccessTypeProvider
 	AccessTypeScheme                 = internal.AccessTypeScheme
 	DataAccess                       = internal.DataAccess
@@ -72,8 +71,11 @@ type (
 	ComponentReference               = internal.ComponentReference
 )
 
+type ArtifactAccess[M any] internal.ArtifactAccess[M]
+
 type (
 	BlobHandler                  = internal.BlobHandler
+	BlobHandlerProvider          = internal.BlobHandlerProvider
 	BlobHandlerOption            = internal.BlobHandlerOption
 	BlobHandlerOptions           = internal.BlobHandlerOptions
 	BlobHandlerKey               = internal.BlobHandlerKey
@@ -106,6 +108,10 @@ func FromProvider(p ContextProvider) Context {
 
 func NewBlobHandlerOptions(olist ...BlobHandlerOption) *BlobHandlerOptions {
 	return internal.NewBlobHandlerOptions(olist...)
+}
+
+func DefaultBlobHandlerProvider(ctx Context) BlobHandlerProvider {
+	return internal.DefaultBlobHandlerProvider(ctx)
 }
 
 func New() Context {
@@ -219,20 +225,13 @@ func RepositoryPrefix(spec RepositorySpec) string {
 // artifacts.
 type HintProvider internal.HintProvider
 
-func ArtifactNameHint(spec AccessSpec, cv ComponentVersionAccess) string {
-	if h, ok := spec.(HintProvider); ok {
-		return h.GetReferenceHint(cv)
-	}
-	return ""
-}
+// GlobalAccessProvider is able to provide a non-local access specification.
+type GlobalAccessProvider internal.GlobalAccessProvider
 
 // provide context interface for other files to avoid diffs in imports.
 var (
 	newStrictRepositoryTypeScheme = internal.NewStrictRepositoryTypeScheme
 	defaultRepositoryTypeScheme   = internal.DefaultRepositoryTypeScheme
-
-	newStrictAccessTypeScheme = internal.NewStrictAccessTypeScheme
-	defaultAccessTypeScheme   = internal.DefaultAccessTypeScheme
 )
 
 func WrapContextProvider(ctx LocalContextProvider) ContextProvider {

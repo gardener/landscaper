@@ -10,7 +10,7 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localblob"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
@@ -20,19 +20,19 @@ const (
 	TypeV1 = Type + runtime.VersionSeparator + "v1"
 )
 
-var versions = cpi.NewAccessTypeVersionScheme(Type)
+var versions = accspeccpi.NewAccessTypeVersionScheme(Type)
 
 func init() {
-	Must(versions.Register(cpi.NewAccessSpecTypeByConverter[*localblob.AccessSpec, *AccessSpec](Type, &converterV1{})))
-	Must(versions.Register(cpi.NewAccessSpecTypeByConverter[*localblob.AccessSpec, *AccessSpec](TypeV1, &converterV1{})))
-	cpi.RegisterAccessTypeVersions(versions)
+	Must(versions.Register(accspeccpi.NewAccessSpecTypeByConverter[*localblob.AccessSpec, *AccessSpec](Type, &converterV1{})))
+	Must(versions.Register(accspeccpi.NewAccessSpecTypeByConverter[*localblob.AccessSpec, *AccessSpec](TypeV1, &converterV1{})))
+	accspeccpi.RegisterAccessTypeVersions(versions)
 }
 
 // New creates a new LocalOCIBlob accessor.
 // Deprecated: Use LocalBlob.
 func New(digest digest.Digest) *localblob.AccessSpec {
 	return &localblob.AccessSpec{
-		InternalVersionedTypedObject: runtime.NewInternalVersionedTypedObject[cpi.AccessSpec](versions, Type),
+		InternalVersionedTypedObject: runtime.NewInternalVersionedTypedObject[accspeccpi.AccessSpec](versions, Type),
 		LocalReference:               digest.String(),
 	}
 }
@@ -67,7 +67,7 @@ func (_ converterV1) ConvertFrom(in *localblob.AccessSpec) (*AccessSpec, error) 
 
 func (_ converterV1) ConvertTo(in *AccessSpec) (*localblob.AccessSpec, error) {
 	return &localblob.AccessSpec{
-		InternalVersionedTypedObject: runtime.NewInternalVersionedTypedObject[cpi.AccessSpec](versions, in.Type),
+		InternalVersionedTypedObject: runtime.NewInternalVersionedTypedObject[accspeccpi.AccessSpec](versions, in.Type),
 		LocalReference:               in.Digest.String(),
 		MediaType:                    "",
 	}, nil

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/google/uuid"
@@ -14,7 +16,6 @@ import (
 	"github.com/onsi/gomega/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -120,7 +121,7 @@ var _ = Describe("Deletion Manager", func() {
 			Namespace:                  state.Namespace,
 			CreateNamespace:            false,
 			Values:                     valuesRaw,
-			HelmDeployment:             pointer.Bool(false),
+			HelmDeployment:             ptr.To[bool](false),
 			DeletionGroups:             deletionGroups,
 			DeletionGroupsDuringUpdate: deletionGroupsDuringUpdate,
 		}

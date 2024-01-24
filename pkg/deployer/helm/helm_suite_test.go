@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -749,7 +750,7 @@ var _ = Describe("Template", func() {
 				Namespace:       testNamespaceName,
 				Chart:           chartAccess,
 				CreateNamespace: false,
-				HelmDeployment:  pointer.Bool(true),
+				HelmDeployment:  ptr.To[bool](true),
 			}
 			item, err := helm.NewDeployItemBuilder().
 				Key(state.Namespace, "myitem").
@@ -880,7 +881,7 @@ var _ = Describe("Template", func() {
 				Name:            "test",
 				Namespace:       "some-namespace",
 				CreateNamespace: true,
-				HelmDeployment:  pointer.Bool(false),
+				HelmDeployment:  ptr.To[bool](false),
 			}
 			item, err := helm.NewDeployItemBuilder().
 				Key(state.Namespace, "helm-timeout-test-2").

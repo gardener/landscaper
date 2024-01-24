@@ -10,7 +10,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
@@ -48,7 +48,7 @@ func (a *artifactBase) blob() (cpi.BlobAccess, error) {
 	return a.state.GetBlob()
 }
 
-func (a *artifactBase) Blob() (accessio.BlobAccess, error) {
+func (a *artifactBase) Blob() (cpi.BlobAccess, error) {
 	d, ok := a.state.GetState().(artdesc.BlobDescriptorSource)
 	if !ok {
 		return nil, fmt.Errorf("failed to assert type %T to artdesc.BlobDescriptorSource", a.state.GetState())
@@ -60,7 +60,7 @@ func (a *artifactBase) Blob() (accessio.BlobAccess, error) {
 	if err != nil {
 		return nil, err
 	}
-	return accessio.BlobWithMimeType(d.MimeType(), blob), nil
+	return blobaccess.WithMimeType(d.MimeType(), blob), nil
 }
 
 func (a *artifactBase) Digest() digest.Digest {

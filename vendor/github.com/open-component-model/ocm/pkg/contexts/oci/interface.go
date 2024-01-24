@@ -7,14 +7,14 @@ package oci
 import (
 	"context"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/internal"
 )
 
 const (
 	KIND_OCIARTIFACT = internal.KIND_OCIARTIFACT
-	KIND_MEDIATYPE   = accessio.KIND_MEDIATYPE
-	KIND_BLOB        = accessio.KIND_BLOB
+	KIND_MEDIATYPE   = blobaccess.KIND_MEDIATYPE
+	KIND_BLOB        = blobaccess.KIND_BLOB
 )
 
 const CONTEXT_TYPE = internal.CONTEXT_TYPE
@@ -60,7 +60,7 @@ func DefinedForContext(ctx context.Context) (Context, bool) {
 }
 
 func IsErrBlobNotFound(err error) bool {
-	return accessio.IsErrBlobNotFound(err)
+	return blobaccess.IsErrBlobNotFound(err)
 }
 
 func ToGenericRepositorySpec(spec RepositorySpec) (*GenericRepositorySpec, error) {

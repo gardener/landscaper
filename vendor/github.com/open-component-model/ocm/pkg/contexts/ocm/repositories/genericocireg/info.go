@@ -7,8 +7,8 @@ package genericocireg
 import (
 	"encoding/json"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/ociutils"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg/componentmapping"
@@ -33,7 +33,7 @@ func (h handler) Info(m cpi.ManifestAccess, config []byte) interface{} {
 		Description: "component version",
 	}
 	acc := NewStateAccess(m)
-	data, err := accessio.BlobData(acc.Get())
+	data, err := blobaccess.BlobData(acc.Get())
 	if err != nil {
 		info.Error = "cannot read component descriptor: " + err.Error()
 		return info
@@ -51,7 +51,7 @@ func (h handler) Info(m cpi.ManifestAccess, config []byte) interface{} {
 func (h handler) Description(pr common.Printer, m cpi.ManifestAccess, config []byte) {
 	pr.Printf("component version:\n")
 	acc := NewStateAccess(m)
-	data, err := accessio.BlobData(acc.Get())
+	data, err := blobaccess.BlobData(acc.Get())
 	if err != nil {
 		pr.Printf("  cannot read component descriptor: %s\n", err.Error())
 		return

@@ -8,14 +8,15 @@ import (
 	. "github.com/open-component-model/ocm/pkg/exception"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
 const TypeV1 = Type + runtime.VersionSeparator + "v1"
 
 func initV1() {
-	Must(versions.Register(cpi.NewAccessSpecTypeByConverter[*AccessSpec, *AccessSpecV1](TypeV1, &converterV1{}, cpi.WithFormatSpec(formatV1))))
-	Must(versions.Register(cpi.NewAccessSpecTypeByConverter[*AccessSpec, *AccessSpecV1](LegacyTypeV1, &converterV1{}, cpi.WithFormatSpec(formatV1))))
+	Must(versions.Register(accspeccpi.NewAccessSpecTypeByConverter[*AccessSpec, *AccessSpecV1](TypeV1, &converterV1{}, accspeccpi.WithFormatSpec(formatV1))))
+	Must(versions.Register(accspeccpi.NewAccessSpecTypeByConverter[*AccessSpec, *AccessSpecV1](LegacyTypeV1, &converterV1{}, accspeccpi.WithFormatSpec(formatV1))))
 
 	formats.Register(TypeV1, runtime.NewConvertedVersion[cpi.AccessSpec, *AccessSpec, *AccessSpecV1](&converterV1{}))
 	formats.Register(LegacyTypeV1, runtime.NewConvertedVersion[cpi.AccessSpec, *AccessSpec, *AccessSpecV1](&converterV1{}))

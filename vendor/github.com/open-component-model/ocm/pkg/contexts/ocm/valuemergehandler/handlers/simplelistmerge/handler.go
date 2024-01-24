@@ -16,9 +16,11 @@ func init() {
 	hpi.Register(New())
 }
 
-// Value is the minimal structure of values usable with the merge algorithm.
-type Value = []Entry
-type Entry = interface{}
+type (
+	// Value is the minimal structure of values usable with the merge algorithm.
+	Value = []Entry
+	Entry = interface{}
+)
 
 func New() hpi.Handler {
 	return hpi.New(ALGORITHM, desc, merge)
@@ -37,7 +39,7 @@ func merge(ctx hpi.Context, c *Config, lv Value, tv *Value) (bool, error) {
 outer:
 	for _, le := range lv {
 		for _, te := range *tv {
-			if reflect.DeepEqual(le, te) {
+			if equal(c, le, te) {
 				continue outer
 			}
 		}
@@ -45,4 +47,21 @@ outer:
 		modified = true
 	}
 	return modified, nil
+}
+
+func equal(c *Config, le, te Entry) bool {
+	if c == nil || len(c.IgnoredFields) == 0 {
+		return reflect.DeepEqual(le, te)
+	}
+
+	if lm, ok := le.(map[string]interface{}); ok {
+		if tm, ok := te.(map[string]interface{}); ok {
+			for _, n := range c.IgnoredFields {
+				delete(lm, n)
+				delete(tm, n)
+			}
+			return reflect.DeepEqual(lm, tm)
+		}
+	}
+	return reflect.DeepEqual(le, te)
 }

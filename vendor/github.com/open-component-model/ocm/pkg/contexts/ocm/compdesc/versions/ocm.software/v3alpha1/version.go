@@ -13,9 +13,11 @@ import (
 )
 
 const (
-	SchemaVersion = "v3alpha1"
-	GroupVersion  = metav1.GROUP + "/" + SchemaVersion
-	Kind          = metav1.KIND
+	SchemaVersion = GroupVersion
+
+	VersionName  = "v3alpha1"
+	GroupVersion = metav1.GROUP + "/" + VersionName
+	Kind         = metav1.KIND
 )
 
 func init() {
@@ -27,7 +29,7 @@ type DescriptorVersion struct{}
 var _ compdesc.Scheme = (*DescriptorVersion)(nil)
 
 func (v *DescriptorVersion) GetVersion() string {
-	return GroupVersion
+	return SchemaVersion
 }
 
 func (v *DescriptorVersion) Decode(data []byte, opts *compdesc.DecodeOptions) (compdesc.ComponentDescriptorVersion, error) {
@@ -190,7 +192,7 @@ func (v *DescriptorVersion) ConvertFrom(in *compdesc.ComponentDescriptor) (compd
 	}
 	out := &ComponentDescriptor{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: GroupVersion,
+			APIVersion: SchemaVersion,
 			Kind:       Kind,
 		},
 		ObjectMeta:         *in.ObjectMeta.Copy(),

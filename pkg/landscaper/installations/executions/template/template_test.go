@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/open-component-model/ocm/pkg/runtime"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -506,6 +508,156 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				map[string]interface{}{"name": "example.com/landscaper-component-v2-ref1"},
 				map[string]interface{}{"name": "example.com/landscaper-component-v3alpha1-ref2"},
 			}))
+		})
+
+		It("should get resource key for given relative resource reference", func() {
+			// Preparation to conveniently be able to access the respective component versions
+			ctx := context.Background()
+			repositoryContext := &cdv2.UnstructuredTypedObject{}
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-32.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
+
+			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
+				template.NewBlueprintExecutionOptions(
+					nil,
+					&blueprints.Blueprint{Info: blue, Fs: nil},
+					componentVersion,
+					nil,
+					nil,
+				),
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config["key"]).ToNot(BeEmpty())
+		})
+
+		It("should get resource key for given relative resource path", func() {
+			// Preparation to conveniently be able to access the respective component versions
+			ctx := context.Background()
+			repositoryContext := &cdv2.UnstructuredTypedObject{}
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-34.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
+
+			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
+				template.NewBlueprintExecutionOptions(
+					nil,
+					&blueprints.Blueprint{Info: blue, Fs: nil},
+					componentVersion,
+					nil,
+					nil,
+				),
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config["key"]).ToNot(BeEmpty())
+		})
+
+		It("should get resource content for given relative resource reference", func() {
+			// Preparation to conveniently be able to access the respective component versions
+			ctx := context.Background()
+			repositoryContext := &cdv2.UnstructuredTypedObject{}
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-33.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
+
+			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
+				template.NewBlueprintExecutionOptions(
+					nil,
+					&blueprints.Blueprint{Info: blue, Fs: nil},
+					componentVersion,
+					nil,
+					nil,
+				),
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config["content"]).ToNot(BeEmpty())
+			data, err := runtime.DefaultYAMLEncoding.Marshal(res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data).ToNot(BeNil())
+		})
+
+		It("should get resource content for given relative resource path", func() {
+			// Preparation to conveniently be able to access the respective component versions
+			ctx := context.Background()
+			repositoryContext := &cdv2.UnstructuredTypedObject{}
+			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+
+			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-35.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
+
+			res, err := op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
+				template.NewBlueprintExecutionOptions(
+					nil,
+					&blueprints.Blueprint{Info: blue, Fs: nil},
+					componentVersion,
+					nil,
+					nil,
+				),
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config["content"]).ToNot(BeEmpty())
+			data, err := runtime.DefaultYAMLEncoding.Marshal(res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data).ToNot(BeNil())
 		})
 
 		It("should throw an error when the template tries to template a undefined value", func() {

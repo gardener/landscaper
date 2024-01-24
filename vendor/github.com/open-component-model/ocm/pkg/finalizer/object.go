@@ -85,8 +85,9 @@ func (r *RuntimeFinalizationRecoder) IsFinalized(objs ...ObjectIdentity) bool {
 }
 
 type RuntimeFinalizer struct {
-	id       ObjectIdentity
-	recorder *RuntimeFinalizationRecoder
+	id         ObjectIdentity
+	recorder   *RuntimeFinalizationRecoder
+	finalizers []func() error
 }
 
 func fi(o *RuntimeFinalizer) {
@@ -107,7 +108,16 @@ func (f *RuntimeFinalizer) finalize() {
 	if f.recorder != nil {
 		f.recorder.Record(f.id)
 		f.recorder = nil
+		for _, e := range f.finalizers {
+			if e != nil {
+				e()
+			}
+		}
 	}
+}
+
+func (f *RuntimeFinalizer) AddFinalizer(fi ...func() error) {
+	f.finalizers = append(f.finalizers, fi...)
 }
 
 type RecorderProvider interface {

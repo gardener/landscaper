@@ -8,8 +8,8 @@ import (
 	"github.com/mandelsoft/filepath/pkg/filepath"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/signingattr"
-	"github.com/open-component-model/ocm/pkg/signing"
 	"github.com/open-component-model/ocm/pkg/signing/handlers/rsa"
+	"github.com/open-component-model/ocm/pkg/signing/signutils"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
@@ -30,7 +30,7 @@ func (e *Environment) ReadRSAKeyPair(name, path string) {
 	if ok, _ := e.Exists(filepath.Join(path, "rsa.pub")); ok {
 		pubbytes, err := e.ReadFile(filepath.Join(path, "rsa.pub"))
 		e.failOn(err)
-		pub, err := signing.ParsePublicKey(pubbytes)
+		pub, err := signutils.ParsePublicKey(pubbytes)
 		e.failOn(err)
 		reg.RegisterPublicKey(name, pub)
 		pubfound = true
@@ -38,7 +38,7 @@ func (e *Environment) ReadRSAKeyPair(name, path string) {
 	if ok, _ := e.Exists(filepath.Join(path, "rsa.priv")); ok {
 		privbytes, err := e.ReadFile(filepath.Join(path, "rsa.priv"))
 		e.failOn(err)
-		priv, err := signing.ParsePrivateKey(privbytes)
+		priv, err := signutils.ParsePrivateKey(privbytes)
 		e.failOn(err)
 		reg.RegisterPrivateKey(name, priv)
 		if !pubfound {

@@ -166,13 +166,26 @@ func (s *SignatureSpec) ConvertToSigning() *signing.Signature {
 	}
 }
 
+// TimestampSpec provides a timestamp and the
+// appropriate pem encoded TSA value.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
+type TimestampSpec struct {
+	// Value contains the PEM encoded TSA value.
+	Value string     `json:"value"`
+	Time  *Timestamp `json:"time,omitempty"`
+
+	// later, we can add other storage kind, like localBlob.
+}
+
 // Signature defines a digest and corresponding signature, identifiable by name.
 // +k8s:deepcopy-gen=true
 // +k8s:openapi-gen=true
 type Signature struct {
-	Name      string        `json:"name"`
-	Digest    DigestSpec    `json:"digest"`
-	Signature SignatureSpec `json:"signature"`
+	Name      string         `json:"name"`
+	Digest    DigestSpec     `json:"digest"`
+	Signature SignatureSpec  `json:"signature"`
+	Timestamp *TimestampSpec `json:"timestamp,omitempty"`
 }
 
 // Copy provides a copy of the signature data.

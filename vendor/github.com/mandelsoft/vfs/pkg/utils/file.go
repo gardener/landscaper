@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"sort"
 	"time"
@@ -84,6 +85,19 @@ func (f *File) Stat() (os.FileInfo, error) {
 
 func (f *File) Sync() error {
 	return nil
+}
+
+func (f *File) ReadDir(count int) (files []fs.DirEntry, err error) {
+	o, err := f.Readdir(count)
+
+	if err != nil {
+		return nil, err
+	}
+	r := make([]fs.DirEntry, len(o), len(o))
+	for i, v := range o {
+		r[i] = fs.FileInfoToDirEntry(v)
+	}
+	return r, nil
 }
 
 func (f *File) Readdir(count int) (files []os.FileInfo, err error) {

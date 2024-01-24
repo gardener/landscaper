@@ -10,37 +10,55 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localblob"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/refmgmt"
 )
 
 type localBlobAccessMethod struct {
 	lock      sync.Mutex
-	data      accessio.DataAccess
+	err       error
+	data      blobaccess.DataAccess
 	spec      *localblob.AccessSpec
 	namespace oci.NamespaceAccess
 	artifact  oci.ArtifactAccess
 }
 
-var _ cpi.AccessMethod = (*localBlobAccessMethod)(nil)
+var _ accspeccpi.AccessMethodImpl = (*localBlobAccessMethod)(nil)
 
-func newLocalBlobAccessMethod(a *localblob.AccessSpec, ns oci.NamespaceAccess, art oci.ArtifactAccess) *localBlobAccessMethod {
-	return &localBlobAccessMethod{
+func newLocalBlobAccessMethod(a *localblob.AccessSpec, ns oci.NamespaceAccess, art oci.ArtifactAccess, ref refmgmt.ExtendedAllocatable) (accspeccpi.AccessMethod, error) {
+	return accspeccpi.AccessMethodForImplementation(newLocalBlobAccessMethodImpl(a, ns, art, ref))
+}
+
+func newLocalBlobAccessMethodImpl(a *localblob.AccessSpec, ns oci.NamespaceAccess, art oci.ArtifactAccess, ref refmgmt.ExtendedAllocatable) (*localBlobAccessMethod, error) {
+	m := &localBlobAccessMethod{
 		spec:      a,
 		namespace: ns,
 		artifact:  art,
 	}
+	ref.BeforeCleanup(refmgmt.CleanupHandlerFunc(m.cache))
+	return m, nil
+}
+
+func (m *localBlobAccessMethod) cache() {
+	if m.artifact != nil {
+		_, m.err = m.getBlob()
+	}
+}
+
+func (_ *localBlobAccessMethod) IsLocal() bool {
+	return true
 }
 
 func (m *localBlobAccessMethod) GetKind() string {
 	return m.spec.GetKind()
 }
 
-func (m *localBlobAccessMethod) AccessSpec() cpi.AccessSpec {
+func (m *localBlobAccessMethod) AccessSpec() accspeccpi.AccessSpec {
 	return m.spec
 }
 
@@ -48,6 +66,8 @@ func (m *localBlobAccessMethod) Close() error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	m.artifact = nil
+	m.namespace = nil
 	if m.data != nil {
 		tmp := m.data
 		m.data = nil
@@ -56,7 +76,7 @@ func (m *localBlobAccessMethod) Close() error {
 	return nil
 }
 
-func (m *localBlobAccessMethod) getBlob() (cpi.DataAccess, error) {
+func (m *localBlobAccessMethod) getBlob() (blobaccess.DataAccess, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -89,7 +109,7 @@ func (m *localBlobAccessMethod) Reader() (io.ReadCloser, error) {
 }
 
 func (m *localBlobAccessMethod) Get() ([]byte, error) {
-	return accessio.BlobData(m.getBlob())
+	return blobaccess.BlobData(m.getBlob())
 }
 
 func (m *localBlobAccessMethod) MimeType() string {

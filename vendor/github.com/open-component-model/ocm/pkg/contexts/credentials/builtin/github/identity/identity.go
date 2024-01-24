@@ -47,6 +47,12 @@ This matcher is a hostpath matcher.`,
 		attrs)
 }
 
+func PATCredentials(pat string) cpi.Credentials {
+	return cpi.DirectCredentials{
+		ATTR_TOKEN: pat,
+	}
+}
+
 func GetConsumerId(serverurl string, repo ...string) cpi.ConsumerIdentity {
 	host := GITHUB
 	port := ""

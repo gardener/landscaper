@@ -5,7 +5,7 @@
 package builder
 
 import (
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
@@ -15,7 +15,7 @@ type ocmSource struct {
 
 	meta   compdesc.SourceMeta
 	access compdesc.AccessSpec
-	blob   accessio.BlobAccess
+	blob   blobaccess.BlobAccess
 }
 
 const T_OCMSOURCE = "source"

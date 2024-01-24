@@ -7,16 +7,16 @@ package helm
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"sync"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/common/accessio"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/helm"
-	"github.com/open-component-model/ocm/pkg/helm/identity"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
@@ -27,8 +27,8 @@ const (
 )
 
 func init() {
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](Type, cpi.WithDescription(usage)))
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](TypeV1, cpi.WithFormatSpec(formatV1), cpi.WithConfigHandler(ConfigHandler())))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](Type, accspeccpi.WithDescription(usage)))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](TypeV1, accspeccpi.WithFormatSpec(formatV1), accspeccpi.WithConfigHandler(ConfigHandler())))
 }
 
 // New creates a new Helm Chart accessor for helm repositories.
@@ -60,45 +60,45 @@ type AccessSpec struct {
 	Keyring string `json:"keyring,omitempty"`
 }
 
-var _ cpi.AccessSpec = (*AccessSpec)(nil)
+var _ accspeccpi.AccessSpec = (*AccessSpec)(nil)
 
-func (a *AccessSpec) Describe(ctx cpi.Context) string {
+func (a *AccessSpec) Describe(ctx accspeccpi.Context) string {
 	return fmt.Sprintf("Helm chart %s:%s in repository %s", a.GetChartName(), a.GetVersion(), a.HelmRepository)
 }
 
-func (s *AccessSpec) IsLocal(context cpi.Context) bool {
+func (a *AccessSpec) IsLocal(ctx accspeccpi.Context) bool {
 	return false
 }
 
-func (s *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
-	return s
+func (a *AccessSpec) GlobalAccessSpec(ctx accspeccpi.Context) accspeccpi.AccessSpec {
+	return a
 }
 
-func (s *AccessSpec) GetMimeType() string {
+func (a *AccessSpec) GetMimeType() string {
 	return helm.ChartMediaType
 }
 
-func (s *AccessSpec) AccessMethod(access cpi.ComponentVersionAccess) (cpi.AccessMethod, error) {
-	return &accessMethod{comp: access, spec: s}, nil
+func (a *AccessSpec) AccessMethod(access accspeccpi.ComponentVersionAccess) (accspeccpi.AccessMethod, error) {
+	return accspeccpi.AccessMethodForImplementation(&accessMethod{comp: access, spec: a}, nil)
 }
 
-func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVersionAccess) string {
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access accspeccpi.ComponentVersionAccess) string {
 	return ""
 	// TODO: research possibilities with provenance file
 }
 
 ///////////////////
 
-func (s *AccessSpec) GetVersion() string {
-	parts := strings.Split(s.HelmChart, ":")
+func (a *AccessSpec) GetVersion() string {
+	parts := strings.Split(a.HelmChart, ":")
 	if len(parts) > 1 {
 		return parts[1]
 	}
-	return s.Version
+	return a.Version
 }
 
-func (s *AccessSpec) GetChartName() string {
-	parts := strings.Split(s.HelmChart, ":")
+func (a *AccessSpec) GetChartName() string {
+	parts := strings.Split(a.HelmChart, ":")
 	return parts[0]
 }
 
@@ -106,20 +106,24 @@ func (s *AccessSpec) GetChartName() string {
 
 type accessMethod struct {
 	lock sync.Mutex
-	blob accessio.BlobAccess
-	comp cpi.ComponentVersionAccess
+	blob blobaccess.BlobAccess
+	comp accspeccpi.ComponentVersionAccess
 	spec *AccessSpec
 
 	acc helm.ChartAccess
 }
 
-var _ cpi.AccessMethod = (*accessMethod)(nil)
+var _ accspeccpi.AccessMethodImpl = (*accessMethod)(nil)
+
+func (_ *accessMethod) IsLocal() bool {
+	return false
+}
 
 func (m *accessMethod) GetKind() string {
 	return Type
 }
 
-func (m *accessMethod) AccessSpec() cpi.AccessSpec {
+func (m *accessMethod) AccessSpec() accspeccpi.AccessSpec {
 	return m.spec
 }
 
@@ -135,18 +139,18 @@ func (m *accessMethod) Close() error {
 }
 
 func (m *accessMethod) Get() ([]byte, error) {
-	return accessio.BlobData(m.getBlob())
+	return blobaccess.BlobData(m.getBlob())
 }
 
 func (m *accessMethod) Reader() (io.ReadCloser, error) {
-	return accessio.BlobReader(m.getBlob())
+	return blobaccess.BlobReader(m.getBlob())
 }
 
 func (m *accessMethod) MimeType() string {
 	return helm.ChartMediaType
 }
 
-func (m *accessMethod) getBlob() (cpi.BlobAccess, error) {
+func (m *accessMethod) getBlob() (blobaccess.BlobAccess, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -171,7 +175,7 @@ func (m *accessMethod) getBlob() (cpi.BlobAccess, error) {
 		return nil, errors.ErrInvalid("helm chart", m.spec.HelmChart)
 	}
 
-	acc, err := helm.DownloadChart(common.NewPrinter(os.Stdout), m.comp.GetContext(), name, vers, m.spec.HelmRepository,
+	acc, err := helm.DownloadChart(common.NonePrinter, m.comp.GetContext(), name, vers, m.spec.HelmRepository,
 		helm.WithCredentials(identity.GetCredentials(m.comp.GetContext(), m.spec.HelmRepository, m.spec.GetChartName())),
 		helm.WithKeyring([]byte(m.spec.Keyring)),
 		helm.WithRootCert([]byte(m.spec.CACert)))
@@ -184,4 +188,12 @@ func (m *accessMethod) getBlob() (cpi.BlobAccess, error) {
 	}
 	m.acc = acc
 	return m.blob, nil
+}
+
+func (m *accessMethod) GetConsumerId(uctx ...credentials.UsageContext) credentials.ConsumerIdentity {
+	return identity.GetConsumerId(m.spec.HelmRepository, m.spec.GetChartName())
+}
+
+func (m *accessMethod) GetIdentityMatcher() string {
+	return identity.CONSUMER_TYPE
 }

@@ -61,6 +61,6 @@ type Comparable[K any] interface {
 
 func KeyList[K Comparable[K], V any](m map[K]V) []K {
 	s := maps.Keys(m)
-	slices.SortFunc(s, func(a, b K) bool { return a.Compare(b) < 0 })
+	slices.SortFunc(s, func(a, b K) int { return a.Compare(b) })
 	return s
 }

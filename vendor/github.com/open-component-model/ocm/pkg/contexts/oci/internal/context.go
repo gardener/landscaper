@@ -71,8 +71,10 @@ func DefinedForContext(ctx context.Context) (Context, bool) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+type _InternalContext = datacontext.InternalContext
+
 type _context struct {
-	datacontext.Context
+	_InternalContext
 	updater cfgcpi.Updater
 
 	sharedattributes datacontext.AttributesContext
@@ -85,6 +87,18 @@ type _context struct {
 
 var _ Context = &_context{}
 
+// gcWrapper is used as garbage collectable
+// wrapper for a context implementation
+// to establish a runtime finalizer.
+type gcWrapper struct {
+	datacontext.GCWrapper
+	*_context
+}
+
+func (w *gcWrapper) SetContext(c *_context) {
+	w._context = c
+}
+
 func newContext(credctx credentials.Context, reposcheme RepositoryTypeScheme, specHandlers RepositorySpecHandlers, delegates datacontext.Delegates) Context {
 	c := &_context{
 		sharedattributes:     credctx.AttributesContext(),
@@ -93,9 +107,9 @@ func newContext(credctx credentials.Context, reposcheme RepositoryTypeScheme, sp
 		specHandlers:         specHandlers,
 		aliases:              map[string]RepositorySpec{},
 	}
-	c.Context = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.ConfigContext().GetAttributes(), delegates)
+	c._InternalContext = datacontext.NewContextBase(c, CONTEXT_TYPE, key, credctx.ConfigContext().GetAttributes(), delegates)
 	c.updater = cfgcpi.NewUpdater(credctx.ConfigContext(), c)
-	return c
+	return datacontext.FinalizedContext[gcWrapper](c)
 }
 
 func (c *_context) OCIContext() Context {

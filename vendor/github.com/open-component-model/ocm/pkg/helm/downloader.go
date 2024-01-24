@@ -5,6 +5,7 @@
 package helm
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/mandelsoft/filepath/pkg/filepath"
@@ -18,11 +19,11 @@ import (
 
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/directcreds"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	ocihelm "github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/helm"
 	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/helm/identity"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
 
@@ -34,6 +35,9 @@ type chartDownloader struct {
 }
 
 func DownloadChart(out common.Printer, ctx oci.ContextProvider, ref, version, repourl string, opts ...Option) (ChartAccess, error) {
+	if version == "" {
+		return nil, fmt.Errorf("version required")
+	}
 	repourl = strings.TrimSuffix(repourl, "/")
 
 	acc, err := newTempChartAccess(osfs.New())

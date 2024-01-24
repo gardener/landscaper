@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 
+	"sigs.k8s.io/yaml"
+
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
@@ -32,6 +34,20 @@ func ProtoType(proto interface{}) (reflect.Type, error) {
 		return nil, errors.Newf("prototype %q must be a struct", t)
 	}
 	return t, nil
+}
+
+func ToYAML(data interface{}) ([]byte, error) {
+	var m interface{}
+
+	if bytes, ok := data.([]byte); ok {
+		err := yaml.Unmarshal(bytes, &m)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		m = data
+	}
+	return yaml.Marshal(m)
 }
 
 func TypedObjectFactory(proto TypedObject) func() TypedObject {

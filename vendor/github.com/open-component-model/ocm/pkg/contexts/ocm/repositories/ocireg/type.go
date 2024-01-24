@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/open-component-model/ocm/pkg/contexts/oci/repositories/ocireg"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
@@ -53,4 +54,9 @@ func NewRepositorySpec(baseURL string, metas ...*ComponentRepositoryMeta) *Repos
 
 func NewComponentRepositoryMeta(subPath string, mapping ...ComponentNameMapping) *ComponentRepositoryMeta {
 	return genericocireg.NewComponentRepositoryMeta(subPath, utils.OptionalDefaulted(OCIRegistryURLPathMapping, mapping...))
+}
+
+func NewRepository(ctx cpi.ContextProvider, baseURL string, metas ...*ComponentRepositoryMeta) (cpi.Repository, error) {
+	spec := NewRepositorySpec(baseURL, metas...)
+	return ctx.OCMContext().RepositoryForSpec(spec)
 }

@@ -8,7 +8,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/helm"
 )
 
@@ -24,11 +24,11 @@ func (l *accessLoader) Close() error {
 	return l.access.Close()
 }
 
-func (l *accessLoader) ChartArchive() (accessio.TemporaryBlobAccess, error) {
+func (l *accessLoader) ChartArchive() (blobaccess.BlobAccess, error) {
 	return l.access.Chart()
 }
 
-func (l *accessLoader) ChartArtefactSet() (accessio.TemporaryBlobAccess, error) {
+func (l *accessLoader) ChartArtefactSet() (blobaccess.BlobAccess, error) {
 	return l.access.ArtefactSet()
 }
 

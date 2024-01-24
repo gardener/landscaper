@@ -1,0 +1,6 @@
+type: yaml-config
+config:
+  value1: val1
+  value2:
+    subvalue1: val1
+    subvalue2: val2

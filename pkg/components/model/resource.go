@@ -7,6 +7,8 @@ package model
 import (
 	"context"
 
+	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
@@ -39,4 +41,14 @@ type TypedResourceProvider interface {
 type TypedResourceContent struct {
 	Type     string
 	Resource interface{}
+}
+
+type GlobalResourceIdentity struct {
+	ComponentIdentity ComponentIdentity `json:"component"`
+	ResourceIdentity  v1.Identity       `json:"resource"`
+}
+
+type ComponentIdentity struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }

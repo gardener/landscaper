@@ -18,7 +18,9 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/internal"
 	gardenercfgcpi "github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/gardenerconfig/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/gardenerconfig/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
@@ -42,6 +44,8 @@ type Repository struct {
 	fs                        vfs.FileSystem
 }
 
+var _ cpi.ConsumerIdentityProvider = (*Repository)(nil)
+
 func NewRepository(ctx cpi.Context, url string, configType gardenercfgcpi.ConfigType, cipher Cipher, key []byte, propagateConsumerIdentity bool) (*Repository, error) {
 	r := &Repository{
 		ctx:                       ctx,
@@ -59,6 +63,18 @@ func NewRepository(ctx cpi.Context, url string, configType gardenercfgcpi.Config
 }
 
 var _ cpi.Repository = &Repository{}
+
+func (r *Repository) GetConsumerId(uctx ...internal.UsageContext) internal.ConsumerIdentity {
+	id, err := identity.GetConsumerId(r.url)
+	if err != nil {
+		return nil
+	}
+	return id
+}
+
+func (r *Repository) GetIdentityMatcher() string {
+	return identity.CONSUMER_TYPE
+}
 
 func (r *Repository) ExistsCredentials(name string) (bool, error) {
 	r.lock.RLock()

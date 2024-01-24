@@ -8,21 +8,28 @@ import (
 	"context"
 	"fmt"
 	"os"
+
+	"k8s.io/utils/ptr"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
+	"k8s.io/client-go/tools/clientcmd"
+
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+
 	"time"
 
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
+
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	lsconfig "github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/landscaper/controllers/targetsync"
 	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
-	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/version"
 )
 
@@ -57,7 +64,7 @@ func (o *options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		SyncPeriod:         pointer.Duration(time.Hour * 24 * 1000),
+		SyncPeriod:         ptr.To[time.Duration](time.Hour * 24 * 1000),
 	}
 
 	data, err := os.ReadFile(o.landscaperKubeconfigPath)
@@ -105,8 +112,8 @@ func (o *options) run(ctx context.Context) error {
 func (o *options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {
 	ctx = logging.NewContext(ctx, logging.Wrap(ctrl.Log.WithName("crdManager")))
 	crdConfig := lsconfig.CrdManagementConfiguration{
-		DeployCustomResourceDefinitions: pointer.Bool(true),
-		ForceUpdate:                     pointer.Bool(true),
+		DeployCustomResourceDefinitions: ptr.To[bool](true),
+		ForceUpdate:                     ptr.To[bool](true),
 	}
 
 	lsConfig := lsconfig.LandscaperConfiguration{

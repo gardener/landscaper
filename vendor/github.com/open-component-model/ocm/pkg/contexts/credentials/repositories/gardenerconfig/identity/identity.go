@@ -5,10 +5,14 @@
 package identity
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/identity/hostpath"
 	"github.com/open-component-model/ocm/pkg/listformat"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const CONSUMER_TYPE = "Buildcredentials" + common.OCM_TYPE_GROUP_SUFFIX
@@ -42,4 +46,19 @@ func init() {
 It matches the <code>`+CONSUMER_TYPE+`</code> consumer type and additionally acts like
 the <code>`+hostpath.IDENTITY_TYPE+`</code> type.`,
 		attrs)
+}
+
+func GetConsumerId(configURL string) (cpi.ConsumerIdentity, error) {
+	parsedURL, err := utils.ParseURL(configURL)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse url: %w", err)
+	}
+
+	id := cpi.NewConsumerIdentity(CONSUMER_TYPE)
+	id.SetNonEmptyValue(ID_HOSTNAME, parsedURL.Host)
+	id.SetNonEmptyValue(ID_SCHEME, parsedURL.Scheme)
+	id.SetNonEmptyValue(ID_PATHPREFIX, strings.Trim(parsedURL.Path, "/"))
+	id.SetNonEmptyValue(ID_PORT, parsedURL.Port())
+
+	return id, nil
 }

@@ -1,0 +1,15 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/landscaper-component
+  provider:
+    name: internal
+  version: 1.0.0
+repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+spec:
+  references:
+    - name: referenced-landscaper-component
+      version: 1.0.0
+      componentName: example.com/referenced-landscaper-component

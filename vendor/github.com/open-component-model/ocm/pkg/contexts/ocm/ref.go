@@ -12,6 +12,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/grammar"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const (
@@ -37,24 +38,33 @@ func ParseRepo(ref string) (UniformRepositorySpec, error) {
 		if match == nil {
 			return UniformRepositorySpec{}, errors.ErrInvalid(KIND_OCM_REFERENCE, ref)
 		}
+		h := string(match[1])
+		t, _ := grammar.SplitTypeSpec(h)
 		return cpi.HandleRef(UniformRepositorySpec{
-			Type:            string(match[1]),
+			Type:            t,
+			TypeHint:        h,
 			Info:            string(match[2]),
 			CreateIfMissing: create,
 		})
 	}
+	h := string(match[1])
+	t, _ := grammar.SplitTypeSpec(h)
 	return cpi.HandleRef(UniformRepositorySpec{
-		Type:            string(match[1]),
+		Type:            t,
+		TypeHint:        h,
 		Host:            string(match[2]),
 		SubPath:         string(match[3]),
 		CreateIfMissing: create,
 	})
 }
 
-func ParseRepoToSpec(ctx Context, ref string) (RepositorySpec, error) {
+func ParseRepoToSpec(ctx Context, ref string, create ...bool) (RepositorySpec, error) {
 	uni, err := ParseRepo(ref)
 	if err != nil {
 		return nil, errors.ErrInvalidWrap(err, KIND_REPOSITORYSPEC, ref)
+	}
+	if !uni.CreateIfMissing {
+		uni.CreateIfMissing = utils.Optional(create...)
 	}
 	repoSpec, err := ctx.MapUniformRepositorySpec(&uni)
 	if err != nil {
@@ -86,9 +96,12 @@ func ParseRef(ref string) (RefSpec, error) {
 			return RefSpec{}, errors.ErrInvalid(KIND_OCM_REFERENCE, ref)
 		}
 		v = string(match[4])
+		h := string(match[1])
+		t, _ := grammar.SplitTypeSpec(h)
 		spec = RefSpec{
 			UniformRepositorySpec{
-				Type:            string(match[1]),
+				Type:            t,
+				TypeHint:        h,
 				Info:            string(match[2]),
 				CreateIfMissing: create,
 			},
@@ -99,9 +112,12 @@ func ParseRef(ref string) (RefSpec, error) {
 		}
 	} else {
 		v = string(match[5])
+		h := string(match[1])
+		t, _ := grammar.SplitTypeSpec(h)
 		spec = RefSpec{
 			UniformRepositorySpec{
-				Type:            string(match[1]),
+				Type:            t,
+				TypeHint:        h,
 				Host:            string(match[2]),
 				SubPath:         string(match[3]),
 				CreateIfMissing: create,

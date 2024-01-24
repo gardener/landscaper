@@ -10,6 +10,7 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 )
@@ -51,14 +52,14 @@ func (c *dockerSource) Unref() error {
 	return c.src.Close()
 }
 
-func (d *dockerSource) GetBlobData(digest digest.Digest) (int64, accessio.DataAccess, error) {
+func (d *dockerSource) GetBlobData(digest digest.Digest) (int64, blobaccess.DataAccess, error) {
 	info := d.img.ConfigInfo()
 	if info.Digest == digest {
 		data, err := d.img.ConfigBlob(dummyContext)
 		if err != nil {
 			return -1, nil, err
 		}
-		return info.Size, accessio.DataAccessForBytes(data), nil
+		return info.Size, blobaccess.DataAccessForBytes(data), nil
 	}
 	info.Digest = ""
 	for _, l := range d.img.LayerInfos() {

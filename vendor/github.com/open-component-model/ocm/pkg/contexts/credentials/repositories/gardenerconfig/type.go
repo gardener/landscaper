@@ -6,13 +6,12 @@ package gardenerconfig
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/internal"
 	gardenercfgcpi "github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/gardenerconfig/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/gardenerconfig/identity"
 	"github.com/open-component-model/ocm/pkg/runtime"
-	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const (
@@ -33,6 +32,8 @@ type RepositorySpec struct {
 	Cipher                      Cipher                    `json:"cipher"`
 	PropagateConsumerIdentity   bool                      `json:"propagateConsumerIdentity"`
 }
+
+var _ cpi.ConsumerIdentityProvider = (*RepositorySpec)(nil)
 
 // NewRepositorySpec creates a new memory RepositorySpec.
 func NewRepositorySpec(url string, configType gardenercfgcpi.ConfigType, cipher Cipher, propagateConsumerIdentity bool) *RepositorySpec {
@@ -64,17 +65,23 @@ func (a *RepositorySpec) Repository(ctx cpi.Context, creds cpi.Credentials) (cpi
 	return repos.GetRepository(ctx, a.URL, a.ConfigType, a.Cipher, key, a.PropagateConsumerIdentity)
 }
 
-func getKey(cctx cpi.Context, configURL string) ([]byte, error) {
-	parsedURL, err := utils.ParseURL(configURL)
+func (a *RepositorySpec) GetConsumerId(uctx ...internal.UsageContext) internal.ConsumerIdentity {
+	id, err := identity.GetConsumerId(a.URL)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse url: %w", err)
+		return nil
 	}
+	return id
+}
 
-	id := cpi.NewConsumerIdentity(identity.CONSUMER_TYPE)
-	id.SetNonEmptyValue(identity.ID_HOSTNAME, parsedURL.Host)
-	id.SetNonEmptyValue(identity.ID_SCHEME, parsedURL.Scheme)
-	id.SetNonEmptyValue(identity.ID_PATHPREFIX, strings.Trim(parsedURL.Path, "/"))
-	id.SetNonEmptyValue(identity.ID_PORT, parsedURL.Port())
+func (a *RepositorySpec) GetIdentityMatcher() string {
+	return identity.CONSUMER_TYPE
+}
+
+func getKey(cctx cpi.Context, configURL string) ([]byte, error) {
+	id, err := identity.GetConsumerId(configURL)
+	if err != nil {
+		return nil, err
+	}
 
 	creds, err := cpi.CredentialsForConsumer(cctx, id)
 	if err != nil {

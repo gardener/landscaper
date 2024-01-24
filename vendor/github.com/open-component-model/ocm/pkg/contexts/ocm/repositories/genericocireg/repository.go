@@ -11,11 +11,11 @@ import (
 	"path"
 	"strings"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	ocicpi "github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/repocpi"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg/componentmapping"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/utils"
@@ -29,7 +29,7 @@ func GetOCIRepository(r cpi.Repository) ocicpi.Repository {
 	if o, ok := r.(OCIBasedRepository); ok {
 		return o.OCIRepository()
 	}
-	impl, err := cpi.GetRepositoryImplementation(r)
+	impl, err := repocpi.GetRepositoryImplementation(r)
 	if err != nil {
 		return nil
 	}
@@ -39,29 +39,39 @@ func GetOCIRepository(r cpi.Repository) ocicpi.Repository {
 	return nil
 }
 
-type _RepositoryImplBase = cpi.RepositoryImplBase
-
 type RepositoryImpl struct {
-	_RepositoryImplBase
+	bridge  repocpi.RepositoryBridge
+	ctx     cpi.Context
 	meta    ComponentRepositoryMeta
 	nonref  cpi.Repository
 	ocirepo oci.Repository
 }
 
 var (
-	_ cpi.RepositoryImpl                   = (*RepositoryImpl)(nil)
+	_ repocpi.RepositoryImpl               = (*RepositoryImpl)(nil)
 	_ credentials.ConsumerIdentityProvider = (*RepositoryImpl)(nil)
 )
 
-func NewRepository(ctx cpi.Context, meta *ComponentRepositoryMeta, ocirepo oci.Repository) (cpi.Repository, error) {
+func NewRepository(ctx cpi.Context, meta *ComponentRepositoryMeta, ocirepo oci.Repository) cpi.Repository {
 	impl := &RepositoryImpl{
-		_RepositoryImplBase: *cpi.NewRepositoryImplBase(ctx.OCMContext()),
-		meta:                *DefaultComponentRepositoryMeta(meta),
-		ocirepo:             ocirepo,
+		ctx:     ctx,
+		meta:    *DefaultComponentRepositoryMeta(meta),
+		ocirepo: ocirepo,
 	}
-	impl.nonref = cpi.NewNoneRefRepositoryView(impl)
-	r := cpi.NewRepository(impl, "OCM repo[OCI]")
-	return r, nil
+	return repocpi.NewRepository(impl, "OCM repo[OCI]")
+}
+
+func (r *RepositoryImpl) Close() error {
+	return r.ocirepo.Close()
+}
+
+func (r *RepositoryImpl) SetBridge(base repocpi.RepositoryBridge) {
+	r.bridge = base
+	r.nonref = repocpi.NewNoneRefRepositoryView(base)
+}
+
+func (r *RepositoryImpl) GetContext() cpi.Context {
+	return r.ctx
 }
 
 func (r *RepositoryImpl) GetConsumerId(uctx ...credentials.UsageContext) credentials.ConsumerIdentity {
@@ -80,10 +90,6 @@ func (r *RepositoryImpl) GetIdentityMatcher() string {
 		return p.GetIdentityMatcher()
 	}
 	return ""
-}
-
-func (r *RepositoryImpl) Close() error {
-	return r.ocirepo.Close()
 }
 
 func (r *RepositoryImpl) OCIRepository() ocicpi.Repository {
@@ -169,17 +175,8 @@ func (r *RepositoryImpl) ExistsComponentVersion(name string, version string) (bo
 	return false, nil
 }
 
-func (r *RepositoryImpl) LookupComponent(name string) (cpi.ComponentAccess, error) {
+func (r *RepositoryImpl) LookupComponent(name string) (*repocpi.ComponentAccessInfo, error) {
 	return newComponentAccess(r, name, true)
-}
-
-func (r *RepositoryImpl) LookupComponentVersion(name string, version string) (cpi.ComponentVersionAccess, error) {
-	c, err := newComponentAccess(r, name, false)
-	if err != nil {
-		return nil, err
-	}
-	defer accessio.PropagateCloseTemporary(&err, c) // temporary component object not exposed.
-	return c.LookupVersion(version)
 }
 
 func (r *RepositoryImpl) MapComponentNameToNamespace(name string) (string, error) {

@@ -40,6 +40,7 @@ func CheckFile(kind string, createHint string, forcedType bool, path string, fs 
 			return mapErr(forcedType, err)
 		}
 		defer file.Close()
+		forcedType = false
 		r, _, err := compression.AutoDecompress(file)
 		if err != nil {
 			return mapErr(forcedType, err)
@@ -63,6 +64,12 @@ func CheckFile(kind string, createHint string, forcedType bool, path string, fs 
 			}
 		}
 	} else {
+		if forcedType {
+			entries, err := vfs.ReadDir(fs, path)
+			if err == nil && len(entries) > 0 {
+				forcedType = false
+			}
+		}
 		if ok, err := vfs.FileExists(fs, filepath.Join(path, descriptorname)); !ok || err != nil {
 			if err != nil {
 				return mapErr(forcedType, err)

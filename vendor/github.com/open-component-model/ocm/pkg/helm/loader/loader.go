@@ -9,21 +9,23 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/helm"
+	"github.com/open-component-model/ocm/pkg/iotools"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type Loader interface {
-	ChartArchive() (accessio.TemporaryBlobAccess, error)
-	ChartArtefactSet() (accessio.TemporaryBlobAccess, error)
+	ChartArchive() (blobaccess.BlobAccess, error)
+	ChartArtefactSet() (blobaccess.BlobAccess, error)
 	Chart() (*chart.Chart, error)
 	Provenance() ([]byte, error)
 
 	Close() error
 }
 
-type nopCloser = accessio.NopCloser
+type nopCloser = iotools.NopCloser
 
 type vfsLoader struct {
 	nopCloser
@@ -34,18 +36,18 @@ type vfsLoader struct {
 func VFSLoader(path string, fss ...vfs.FileSystem) Loader {
 	return &vfsLoader{
 		path: path,
-		fs:   accessio.FileSystem(fss...),
+		fs:   utils.FileSystem(fss...),
 	}
 }
 
-func (l *vfsLoader) ChartArchive() (accessio.TemporaryBlobAccess, error) {
+func (l *vfsLoader) ChartArchive() (blobaccess.BlobAccess, error) {
 	if ok, err := vfs.IsFile(l.fs, l.path); !ok || err != nil {
 		return nil, err
 	}
-	return accessio.TemporaryBlobAccessForBlob(accessio.BlobAccessForFile(helm.ChartMediaType, l.path, l.fs)), nil
+	return blobaccess.ForFile(helm.ChartMediaType, l.path, l.fs), nil
 }
 
-func (l *vfsLoader) ChartArtefactSet() (accessio.TemporaryBlobAccess, error) {
+func (l *vfsLoader) ChartArtefactSet() (blobaccess.BlobAccess, error) {
 	return nil, nil
 }
 

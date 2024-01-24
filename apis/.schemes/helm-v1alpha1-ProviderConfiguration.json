@@ -484,6 +484,10 @@
         "ref": {
           "description": "Ref defines the reference to a helm chart in a oci repository.",
           "type": "string"
+        },
+        "resourceRef": {
+          "description": "ResourceKey defines a key that can be given to a corresponding API in order to fetch the content of the resource defined in the blueprint",
+          "type": "string"
         }
       }
     },

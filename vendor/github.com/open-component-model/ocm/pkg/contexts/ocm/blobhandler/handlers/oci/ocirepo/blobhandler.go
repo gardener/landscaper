@@ -13,7 +13,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
@@ -29,6 +29,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/attrs/mapocirepoattr"
 	storagecontext "github.com/open-component-model/ocm/pkg/contexts/ocm/blobhandler/handlers/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/generics"
 )
@@ -42,9 +43,11 @@ func init() {
 		cpi.RegisterBlobHandler(NewArtifactHandler(OCIRegBaseFunction), cpi.ForRepo(oci.CONTEXT_TYPE, ocireg.ShortType),
 			cpi.ForMimeType(mime))
 	}
-	cpi.RegisterBlobHandler(NewBlobHandler(OCIRegBaseFunction), cpi.ForRepo(oci.CONTEXT_TYPE, ocireg.Type))
-	cpi.RegisterBlobHandler(NewBlobHandler(OCIRegBaseFunction), cpi.ForRepo(oci.CONTEXT_TYPE, ocireg.LegacyType))
-	cpi.RegisterBlobHandler(NewBlobHandler(OCIRegBaseFunction), cpi.ForRepo(oci.CONTEXT_TYPE, ocireg.ShortType))
+	/*
+		cpi.RegisterBlobHandler(NewBlobHandler(OCIRegBaseFunction), cpi.ForRepo(oci.CONTEXT_TYPE, ocireg.Type))
+		cpi.RegisterBlobHandler(NewBlobHandler(OCIRegBaseFunction), cpi.ForRepo(oci.CONTEXT_TYPE, ocireg.LegacyType))
+		cpi.RegisterBlobHandler(NewBlobHandler(OCIRegBaseFunction), cpi.ForRepo(oci.CONTEXT_TYPE, ocireg.ShortType))
+	*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +90,7 @@ func (b *blobHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, globa
 		"mediatype", blob.MimeType(),
 		"hint", hint,
 	}
-	if m, ok := blob.(accessio.AnnotatedBlobAccess[cpi.AccessMethod]); ok {
+	if m, ok := blob.(blobaccess.AnnotatedBlobAccess[accspeccpi.AccessMethodView]); ok {
 		cpi.BlobHandlerLogger(ctx.GetContext()).Debug("oci blob handler with ocm access source",
 			generics.AppendedSlice[any](values, "sourcetype", m.Source().AccessSpec().GetType())...,
 		)
@@ -150,17 +153,19 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 
 	keep := keepblobattr.Get(ctx.GetContext())
 
-	if m, ok := blob.(accessio.AnnotatedBlobAccess[cpi.AccessMethod]); ok {
+	if m, ok := blob.(blobaccess.AnnotatedBlobAccess[accspeccpi.AccessMethodView]); ok {
 		// prepare for optimized point to point implementation
 		log.Debug("oci artifact handler with ocm access source",
 			generics.AppendedSlice[any](values, "sourcetype", m.Source().AccessSpec().GetType())...,
 		)
-		if ocimeth, ok := m.Source().(ociartifact.AccessMethod); !keep && ok {
-			art, _, err = ocimeth.GetArtifact(&finalizer)
+		if ocimeth, ok := m.Source().Unwrap().(ociartifact.AccessMethodImpl); !keep && ok {
+			art, _, err = ocimeth.GetArtifact()
 			if err != nil {
 				return nil, errors.Wrapf(err, "cannot access source artifact")
 			}
-			defer art.Close()
+			if art != nil {
+				defer art.Close()
+			}
 		}
 	} else {
 		log.Debug("oci artifact handler", values...)
@@ -181,7 +186,11 @@ func (b *artifactHandler) StoreBlob(blob cpi.BlobAccess, artType, hint string, g
 		namespace = ocictx.Namespace
 	} else {
 		prefix := cpi.RepositoryPrefix(ctx.TargetComponentRepository().GetSpecification())
-		i := strings.LastIndex(hint, ":")
+		i := strings.LastIndex(hint, "@")
+		if i >= 0 {
+			hint = hint[:i] // remove digest
+		}
+		i = strings.LastIndex(hint, ":")
 		if i > 0 {
 			version = hint[i:]
 			tag = version[1:] // remove colon

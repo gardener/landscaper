@@ -17,11 +17,13 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/accspeccpi"
 	"github.com/open-component-model/ocm/pkg/errors"
+	"github.com/open-component-model/ocm/pkg/iotools"
 	"github.com/open-component-model/ocm/pkg/mime"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -37,8 +39,8 @@ const (
 )
 
 func init() {
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](Type, cpi.WithDescription(usage)))
-	cpi.RegisterAccessType(cpi.NewAccessSpecType[*AccessSpec](TypeV1, cpi.WithFormatSpec(formatV1), cpi.WithConfigHandler(ConfigHandler())))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](Type, accspeccpi.WithDescription(usage)))
+	accspeccpi.RegisterAccessType(accspeccpi.NewAccessSpecType[*AccessSpec](TypeV1, accspeccpi.WithFormatSpec(formatV1), accspeccpi.WithConfigHandler(ConfigHandler())))
 }
 
 // AccessSpec describes the access for a NPM registry.
@@ -53,7 +55,7 @@ type AccessSpec struct {
 	Version string `json:"version"`
 }
 
-var _ cpi.AccessSpec = (*AccessSpec)(nil)
+var _ accspeccpi.AccessSpec = (*AccessSpec)(nil)
 
 // New creates a new NPM registry access spec version v1.
 func New(registry, pkg, version string) *AccessSpec {
@@ -65,19 +67,19 @@ func New(registry, pkg, version string) *AccessSpec {
 	}
 }
 
-func (a *AccessSpec) Describe(ctx cpi.Context) string {
+func (a *AccessSpec) Describe(ctx accspeccpi.Context) string {
 	return fmt.Sprintf("NPM package %s:%s in registry %s", a.Package, a.Version, a.Registry)
 }
 
-func (_ *AccessSpec) IsLocal(cpi.Context) bool {
+func (_ *AccessSpec) IsLocal(accspeccpi.Context) bool {
 	return false
 }
 
-func (a *AccessSpec) GlobalAccessSpec(ctx cpi.Context) cpi.AccessSpec {
+func (a *AccessSpec) GlobalAccessSpec(ctx accspeccpi.Context) accspeccpi.AccessSpec {
 	return a
 }
 
-func (a *AccessSpec) GetReferenceHint(cv cpi.ComponentVersionAccess) string {
+func (a *AccessSpec) GetReferenceHint(cv accspeccpi.ComponentVersionAccess) string {
 	return a.Package + ":" + a.Version
 }
 
@@ -85,11 +87,11 @@ func (_ *AccessSpec) GetType() string {
 	return Type
 }
 
-func (a *AccessSpec) AccessMethod(c cpi.ComponentVersionAccess) (cpi.AccessMethod, error) {
-	return newMethod(c, a)
+func (a *AccessSpec) AccessMethod(c accspeccpi.ComponentVersionAccess) (accspeccpi.AccessMethod, error) {
+	return accspeccpi.AccessMethodForImplementation(newMethod(c, a))
 }
 
-func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVersionAccess) string {
+func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access accspeccpi.ComponentVersionAccess) string {
 	meta, _ := a.getPackageMeta(access.GetContext())
 	if meta != nil {
 		return meta.Dist.Shasum
@@ -97,7 +99,7 @@ func (a *AccessSpec) GetInexpensiveContentVersionIdentity(access cpi.ComponentVe
 	return ""
 }
 
-func (a *AccessSpec) getPackageMeta(ctx cpi.Context) (*meta, error) {
+func (a *AccessSpec) getPackageMeta(ctx accspeccpi.Context) (*meta, error) {
 	url := a.Registry + path.Join("/", a.Package, a.Version)
 	r, err := reader(url, vfsattr.Get(ctx))
 	if err != nil {
@@ -120,8 +122,8 @@ func (a *AccessSpec) getPackageMeta(ctx cpi.Context) (*meta, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func newMethod(c cpi.ComponentVersionAccess, a *AccessSpec) (cpi.AccessMethod, error) {
-	factory := func() (accessio.BlobAccess, error) {
+func newMethod(c accspeccpi.ComponentVersionAccess, a *AccessSpec) (accspeccpi.AccessMethodImpl, error) {
+	factory := func() (blobaccess.BlobAccess, error) {
 		meta, err := a.getPackageMeta(c.GetContext())
 		if err != nil {
 			return nil, err
@@ -137,13 +139,13 @@ func newMethod(c cpi.ComponentVersionAccess, a *AccessSpec) (cpi.AccessMethod, e
 				if err != nil {
 					return nil, err
 				}
-				return accessio.VerifyingReaderWithHash(r, crypto.SHA1, meta.Dist.Shasum), nil
+				return iotools.VerifyingReaderWithHash(r, crypto.SHA1, meta.Dist.Shasum), nil
 			}
 		}
-		acc := accessio.DataAccessForReaderFunction(f, meta.Dist.Tarball)
+		acc := blobaccess.DataAccessForReaderFunction(f, meta.Dist.Tarball)
 		return accessobj.CachedBlobAccessForWriter(c.GetContext(), mime.MIME_TGZ, accessio.NewDataAccessWriter(acc)), nil
 	}
-	return cpi.NewDefaultMethod(c, a, mime.MIME_TGZ, factory), nil
+	return accspeccpi.NewDefaultMethodImpl(c, a, "", mime.MIME_TGZ, factory), nil
 }
 
 type meta struct {

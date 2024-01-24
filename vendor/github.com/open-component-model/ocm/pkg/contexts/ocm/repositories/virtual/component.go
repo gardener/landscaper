@@ -5,33 +5,47 @@
 package virtual
 
 import (
-	"fmt"
-
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/support"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi/repocpi"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
-type _ComponentAccessImplBase = cpi.ComponentAccessImplBase
-
 type componentAccessImpl struct {
-	_ComponentAccessImplBase
+	bridge repocpi.ComponentAccessBridge
+
 	repo *RepositoryImpl
 	name string
 }
 
-func newComponentAccess(repo *RepositoryImpl, name string, main bool) (cpi.ComponentAccess, error) {
-	base, err := cpi.NewComponentAccessImplBase(repo.GetContext(), name, repo)
-	if err != nil {
-		return nil, err
-	}
+var _ repocpi.ComponentAccessImpl = (*componentAccessImpl)(nil)
+
+func newComponentAccess(repo *RepositoryImpl, name string, main bool) (*repocpi.ComponentAccessInfo, error) {
 	impl := &componentAccessImpl{
-		_ComponentAccessImplBase: *base,
-		repo:                     repo,
-		name:                     name,
+		repo: repo,
+		name: name,
 	}
-	return cpi.NewComponentAccess(impl, "OCM component[Simple]"), nil
+	return &repocpi.ComponentAccessInfo{impl, "OCM component[Simple]", main}, nil
+}
+
+func (c *componentAccessImpl) Close() error {
+	return nil
+}
+
+func (c *componentAccessImpl) SetBridge(base repocpi.ComponentAccessBridge) {
+	c.bridge = base
+}
+
+func (c *componentAccessImpl) GetParentBridge() repocpi.RepositoryViewManager {
+	return c.repo.bridge
+}
+
+func (c *componentAccessImpl) GetContext() cpi.Context {
+	return c.repo.GetContext()
+}
+
+func (c *componentAccessImpl) GetName() string {
+	return c.name
 }
 
 func (c *componentAccessImpl) ListVersions() ([]string, error) {
@@ -46,7 +60,7 @@ func (c *componentAccessImpl) IsReadOnly() bool {
 	return c.repo.access.IsReadOnly()
 }
 
-func (c *componentAccessImpl) LookupVersion(version string) (cpi.ComponentVersionAccess, error) {
+func (c *componentAccessImpl) LookupVersion(version string) (*repocpi.ComponentVersionAccessInfo, error) {
 	ok, err := c.HasVersion(version)
 	if err != nil {
 		return nil, err
@@ -54,38 +68,10 @@ func (c *componentAccessImpl) LookupVersion(version string) (cpi.ComponentVersio
 	if !ok {
 		return nil, cpi.ErrComponentVersionNotFoundWrap(err, c.name, version)
 	}
-	v, err := c._ComponentAccessImplBase.View()
-	if err != nil {
-		return nil, err
-	}
-	defer v.Close()
-
 	return newComponentVersionAccess(c, version, true)
 }
 
-func (c *componentAccessImpl) AddVersion(access cpi.ComponentVersionAccess) error {
-	if access.GetName() != c.GetName() {
-		return errors.ErrInvalid("component name", access.GetName())
-	}
-	cont, err := support.GetComponentVersionContainer(access)
-	if err != nil {
-		return fmt.Errorf("cannot add component version: component version access %s not created for target", access.GetName()+":"+access.GetVersion())
-	}
-	mine, ok := cont.(*ComponentVersionContainer)
-	if !ok || mine.comp != c {
-		return fmt.Errorf("cannot add component version: component version access %s not created for target", access.GetName()+":"+access.GetVersion())
-	}
-	mine.impl.EnablePersistence()
-	return mine.impl.Update(false)
-}
-
-func (c *componentAccessImpl) NewVersion(version string, overrides ...bool) (cpi.ComponentVersionAccess, error) {
-	v, err := c.View(false)
-	if err != nil {
-		return nil, err
-	}
-	defer v.Close()
-
+func (c *componentAccessImpl) NewVersion(version string, overrides ...bool) (*repocpi.ComponentVersionAccessInfo, error) {
 	override := utils.Optional(overrides...)
 	ok, err := c.HasVersion(version)
 	if err == nil && ok {

@@ -18,7 +18,7 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -145,7 +145,7 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 
 	config := targettypes.KubernetesClusterTargetConfig{
 		Kubeconfig: targettypes.ValueRef{
-			StrVal: pointer.String(string(data)),
+			StrVal: ptr.To[string](string(data)),
 		},
 	}
 	data, err = json.Marshal(config)
@@ -332,7 +332,7 @@ func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Envir
 		string(targettypes.KubernetesClusterTargetType),
 		targettypes.KubernetesClusterTargetConfig{
 			Kubeconfig: targettypes.ValueRef{
-				StrVal: pointer.String(string(kubeconfigBytes)),
+				StrVal: ptr.To[string](string(kubeconfigBytes)),
 			},
 		},
 	)

@@ -23,8 +23,6 @@ func init() {
 	cpi.RegisterRepositorySpecHandler(h, "ctf")
 	for _, f := range SupportedFormats() {
 		cpi.RegisterRepositorySpecHandler(h, string(f))
-		cpi.RegisterRepositorySpecHandler(h, "ctf+"+string(f))
-		cpi.RegisterRepositorySpecHandler(h, ctf.Type+"+"+string(f))
 	}
 }
 

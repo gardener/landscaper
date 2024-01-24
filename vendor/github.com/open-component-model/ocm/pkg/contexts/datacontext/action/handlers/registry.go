@@ -18,7 +18,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/generics"
 	"github.com/open-component-model/ocm/pkg/registrations"
-	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/semverutils"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
@@ -145,7 +145,7 @@ func (r *registry) Register(h ActionHandler, olist ...Option) error {
 		versions = r.types.SupportedActionVersions(opts.Action)
 	}
 	versions = slices.Clone(versions)
-	if err := runtime.SortVersions(versions); err != nil {
+	if err := semverutils.SortVersions(versions); err != nil {
 		return errors.Wrapf(err, "invalid version set")
 	}
 	reg := &registration{
@@ -222,8 +222,8 @@ func MatchVersion(possible []string, avail []string) string {
 	p := slices.Clone(possible)
 	a := slices.Clone(avail)
 
-	runtime.SortVersions(p)
-	runtime.SortVersions(a)
+	semverutils.SortVersions(p)
+	semverutils.SortVersions(a)
 	f := ""
 	for _, v := range p {
 		for _, c := range a {

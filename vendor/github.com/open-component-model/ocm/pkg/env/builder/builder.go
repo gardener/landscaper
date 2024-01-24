@@ -9,6 +9,7 @@ import (
 	"github.com/modern-go/reflect2"
 	"github.com/onsi/ginkgo/v2"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
@@ -59,7 +60,7 @@ type state struct {
 	ocm_acc     *compdesc.AccessSpec
 	ocm_modopts *ocm.ModificationOptions
 
-	blob *accessio.BlobAccess
+	blob *blobaccess.BlobAccess
 	hint *string
 
 	oci_repo          oci.Repository
@@ -201,32 +202,6 @@ func (b *Builder) Configure(funcs ...func()) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-const T_BLOBACCESS = "blob access"
-
-func (b *Builder) BlobStringData(mime string, data string) {
-	b.expect(b.blob, T_BLOBACCESS)
-	if b.ocm_acc != nil && *b.ocm_acc != nil {
-		b.fail("access already set")
-	}
-	*(b.blob) = accessio.BlobAccessForData(mime, []byte(data))
-}
-
-func (b *Builder) BlobData(mime string, data []byte) {
-	b.expect(b.blob, T_BLOBACCESS)
-	if b.ocm_acc != nil && *b.ocm_acc != nil {
-		b.fail("access already set")
-	}
-	*(b.blob) = accessio.BlobAccessForData(mime, data)
-}
-
-func (b *Builder) BlobFromFile(mime string, path string) {
-	b.expect(b.blob, T_BLOBACCESS)
-	if b.ocm_acc != nil && *b.ocm_acc != nil {
-		b.fail("access already set")
-	}
-	*(b.blob) = accessio.BlobAccessForFile(mime, path, b.FileSystem())
-}
 
 func (b *Builder) Hint(hint string) {
 	b.expect(b.hint, T_OCMACCESS)

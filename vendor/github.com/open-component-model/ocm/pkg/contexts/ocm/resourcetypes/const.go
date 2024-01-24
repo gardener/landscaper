@@ -18,6 +18,8 @@ const (
 	// HELM_CHART describes a helm chart, either stored as OCI artifact or as tar
 	// blob (tar media type).
 	HELM_CHART = "helmChart"
+	// NPM_PACKAGE describes an NPM package.
+	NPM_PACKAGE = "npmPackage"
 	// BLUEPRINT describes a Gardener Landscaper blueprint which is an artifact used in its installations describing
 	// how to deploy a software component.
 	BLUEPRINT        = "landscaper.gardener.cloud/blueprint"

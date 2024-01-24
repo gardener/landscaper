@@ -10,7 +10,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/internal"
 )
@@ -74,8 +74,8 @@ func UniformRepositorySpecForHostURL(typ string, host string) *UniformRepository
 
 const (
 	KIND_OCIARTIFACT = internal.KIND_OCIARTIFACT
-	KIND_MEDIATYPE   = accessio.KIND_MEDIATYPE
-	KIND_BLOB        = accessio.KIND_BLOB
+	KIND_MEDIATYPE   = blobaccess.KIND_MEDIATYPE
+	KIND_BLOB        = blobaccess.KIND_BLOB
 )
 
 func ErrUnknownArtifact(name, version string) error {
@@ -83,11 +83,11 @@ func ErrUnknownArtifact(name, version string) error {
 }
 
 func ErrBlobNotFound(digest digest.Digest) error {
-	return accessio.ErrBlobNotFound(digest)
+	return blobaccess.ErrBlobNotFound(digest)
 }
 
 func IsErrBlobNotFound(err error) bool {
-	return accessio.IsErrBlobNotFound(err)
+	return blobaccess.IsErrBlobNotFound(err)
 }
 
 // provide context interface for other files to avoid diffs in imports.

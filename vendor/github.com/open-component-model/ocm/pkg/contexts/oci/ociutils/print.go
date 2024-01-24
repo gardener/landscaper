@@ -11,8 +11,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/compression"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
@@ -34,7 +34,7 @@ func PrintArtifact(pr common.Printer, art cpi.ArtifactAccess, listFiles bool) {
 }
 
 func PrintManifest(pr common.Printer, m cpi.ManifestAccess, listFiles bool) {
-	data, err := accessio.BlobData(m.Blob())
+	data, err := blobaccess.BlobData(m.Blob())
 	if err != nil {
 		pr.Printf("descriptor: invalid: %s\n", err)
 	} else {
@@ -47,7 +47,7 @@ func PrintManifest(pr common.Printer, m cpi.ManifestAccess, listFiles bool) {
 	pr.Printf("  size:        %d\n", man.Config.Size)
 
 	printAnnotations(pr.AddGap("  "), man.Annotations)
-	config, err := accessio.BlobData(m.GetBlob(man.Config.Digest))
+	config, err := blobaccess.BlobData(m.GetBlob(man.Config.Digest))
 	if err != nil {
 		pr.Printf("  error getting config blob: %s\n", err.Error())
 	} else {
@@ -71,7 +71,7 @@ func PrintManifest(pr common.Printer, m cpi.ManifestAccess, listFiles bool) {
 	}
 }
 
-func PrintLayer(pr common.Printer, blob accessio.BlobAccess, listFiles bool) {
+func PrintLayer(pr common.Printer, blob blobaccess.BlobAccess, listFiles bool) {
 	reader, err := blob.Reader()
 	if err != nil {
 		pr.Printf("cannot read blob: %s\n", err.Error())

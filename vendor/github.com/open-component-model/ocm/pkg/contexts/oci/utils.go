@@ -7,6 +7,8 @@ package oci
 import (
 	"fmt"
 
+	ociidentity "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/oci/identity"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/grammar"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -36,4 +38,12 @@ func IsIntermediate(spec RepositorySpec) bool {
 
 func IsUnknown(r RepositorySpec) bool {
 	return runtime.IsUnknown(r)
+}
+
+func GetConsumerIdForRef(ref string) (cpi.ConsumerIdentity, error) {
+	r, err := ParseRef(ref)
+	if err != nil {
+		return nil, err
+	}
+	return ociidentity.GetConsumerId(r.Host, r.Repository), nil
 }

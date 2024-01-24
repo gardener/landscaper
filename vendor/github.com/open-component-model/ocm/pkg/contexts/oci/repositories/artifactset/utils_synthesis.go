@@ -9,10 +9,10 @@ import (
 
 	. "github.com/open-component-model/ocm/pkg/finalizer"
 
-	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/artdesc"
@@ -24,14 +24,13 @@ import (
 const SynthesizedBlobFormat = "+tar+gzip"
 
 type ArtifactBlob interface {
-	accessio.TemporaryFileSystemBlobAccess
+	blobaccess.BlobAccess
 }
 
 type Producer func(set *ArtifactSet) (string, error)
 
 func SythesizeArtifactSet(producer Producer) (ArtifactBlob, error) {
-	fs := osfs.New()
-	temp, err := accessio.NewTempFile(fs, "", "artifactblob*.tgz")
+	temp, err := blobaccess.NewTempFile("", "artifactblob*.tgz")
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +115,7 @@ type ArtifactFactory func(set *ArtifactSet) (digest.Digest, string, error)
 type ArtifactIterator func() (ArtifactFactory, bool, error)
 
 // ArtifactFeedback is called after an artifact has successfully be added.
-type ArtifactFeedback func(blob accessio.BlobAccess, art cpi.ArtifactAccess) error
+type ArtifactFeedback func(blob blobaccess.BlobAccess, art cpi.ArtifactAccess) error
 
 // ArtifactTransferCreator provides an ArtifactFactory transferring the given artifact.
 func ArtifactTransferCreator(art cpi.ArtifactAccess, finalizer *Finalizer, feedback ...ArtifactFeedback) ArtifactFactory {

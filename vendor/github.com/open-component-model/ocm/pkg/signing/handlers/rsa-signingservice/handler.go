@@ -5,7 +5,6 @@
 package rsa_signingservice
 
 import (
-	"crypto"
 	"fmt"
 
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
@@ -42,8 +41,8 @@ func (h Handler) Algorithm() string {
 	return Algorithm
 }
 
-func (h Handler) Sign(cctx credentials.Context, digest string, hash crypto.Hash, issuer string, key interface{}) (signature *signing.Signature, err error) {
-	privateKey, err := PrivateKey(key)
+func (h Handler) Sign(cctx credentials.Context, digest string, sctx signing.SigningContext) (signature *signing.Signature, err error) {
+	privateKey, err := PrivateKey(sctx.GetPrivateKey())
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid signing server access configuration")
 	}
@@ -51,7 +50,7 @@ func (h Handler) Sign(cctx credentials.Context, digest string, hash crypto.Hash,
 	if err != nil {
 		return nil, err
 	}
-	return server.Sign(cctx, h.Algorithm(), hash, digest, issuer, key)
+	return server.Sign(cctx, h.Algorithm(), sctx.GetHash(), digest, sctx)
 }
 
 func PrivateKey(k interface{}) (*Key, error) {

@@ -25,7 +25,6 @@ type (
 	TypeInfo interface {
 		TypeGetter
 	}
-	_TypeInfo = TypeInfo
 )
 
 type (

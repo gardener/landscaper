@@ -41,6 +41,7 @@ const (
 	FormatTar       FileFormat = "tar"
 	FormatTGZ       FileFormat = "tgz"
 	FormatDirectory FileFormat = "directory"
+	FormatNone      FileFormat = ""
 )
 
 var suffixes = map[FileFormat]string{
@@ -77,18 +78,24 @@ func GetFormatsFor[T any](fileFormats map[FileFormat]T) []string {
 	return list
 }
 
-func FileFormatForType(t string) FileFormat {
+// FileFormatForTypeSpec returns the format hint provided
+// by a type specification.The format hint is an optional
+// suffix separated by a +.
+func FileFormatForTypeSpec(t string) FileFormat {
 	i := strings.Index(t, "+")
 	if i < 0 {
-		return FileFormat(t)
+		return ""
 	}
 	return FileFormat(t[i+1:])
 }
 
-func TypeForType(t string) string {
+// TypeForTypeSpec returns the pure type info provided
+// by a type specification.The format hint is an optional
+// suffix separated by a +.
+func TypeForTypeSpec(t string) string {
 	i := strings.Index(t, "+")
 	if i < 0 {
-		return ""
+		return t
 	}
 	return t[:i]
 }

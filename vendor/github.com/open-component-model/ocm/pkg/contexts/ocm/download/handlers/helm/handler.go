@@ -2,14 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package blob
+package helm
 
 import (
 	"io"
 	"strings"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	helmregistry "helm.sh/helm/v3/pkg/registry"
 
+	"github.com/open-component-model/ocm/pkg/blobaccess"
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/common/accessio"
 	"github.com/open-component-model/ocm/pkg/common/accessobj"
@@ -32,18 +34,27 @@ func init() {
 	registry.Register(&Handler{}, registry.ForArtifactType(TYPE))
 }
 
-func (h Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string, fs vfs.FileSystem) (_ bool, _ string, err error) {
-	var finalize finalizer.Finalizer
-	defer finalize.FinalizeWithErrorPropagationf(&err, "downloading helm chart")
-
-	meth, err := racc.AccessMethod()
-	if err != nil {
-		return false, "", err
-	}
-	finalize.Close(meth)
-	if mime.BaseType(meth.MimeType()) != mime.BaseType(artdesc.MediaTypeImageManifest) {
+func (h Handler) fromArchive(p common.Printer, meth cpi.AccessMethod, path string, fs vfs.FileSystem) (_ bool, _ string, err error) {
+	basetype := mime.BaseType(helmregistry.ChartLayerMediaType)
+	if mime.BaseType(meth.MimeType()) != basetype {
 		return false, "", nil
 	}
+
+	chart := path
+	if !strings.HasSuffix(chart, ".tgz") {
+		chart += ".tgz"
+	}
+	err = write(p, meth, chart, fs)
+	if err != nil {
+		return true, "", err
+	}
+	return true, chart, nil
+}
+
+func (h Handler) fromOCIArtifact(p common.Printer, meth cpi.AccessMethod, path string, fs vfs.FileSystem) (_ bool, _ string, err error) {
+	var finalize finalizer.Finalizer
+	defer finalize.FinalizeWithErrorPropagationf(&err, "from OCI artifact")
+
 	rd, err := meth.Reader()
 	if err != nil {
 		return true, "", err
@@ -59,14 +70,30 @@ func (h Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string
 		return true, "", err
 	}
 	finalize.Close(art)
-	if path == "" {
-		path = racc.Meta().GetName()
-	}
 	chart, _, err := download(p, art, path, fs)
 	if err != nil {
 		return true, "", err
 	}
 	return true, chart, nil
+}
+
+func (h Handler) Download(p common.Printer, racc cpi.ResourceAccess, path string, fs vfs.FileSystem) (_ bool, _ string, err error) {
+	var finalize finalizer.Finalizer
+	defer finalize.FinalizeWithErrorPropagationf(&err, "downloading helm chart")
+
+	if path == "" {
+		path = racc.Meta().GetName()
+	}
+
+	meth, err := racc.AccessMethod()
+	if err != nil {
+		return false, "", err
+	}
+	finalize.Close(meth)
+	if mime.BaseType(meth.MimeType()) != mime.BaseType(artdesc.MediaTypeImageManifest) {
+		return h.fromArchive(p, meth, path, fs)
+	}
+	return h.fromOCIArtifact(p, meth, path, fs)
 }
 
 func download(p common.Printer, art oci.ArtifactAccess, path string, fs vfs.FileSystem) (chart, prov string, err error) {
@@ -107,7 +134,7 @@ func download(p common.Printer, art oci.ArtifactAccess, path string, fs vfs.File
 	return chart, prov, err
 }
 
-func write(p common.Printer, blob accessio.BlobAccess, path string, fs vfs.FileSystem) (err error) {
+func write(p common.Printer, blob blobaccess.DataReader, path string, fs vfs.FileSystem) (err error) {
 	var finalize finalizer.Finalizer
 	defer finalize.FinalizeWithErrorPropagation(&err)
 

@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -341,14 +342,14 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 	pod.Labels[container.ContainerDeployerDeployItemGenerationLabel] = strconv.Itoa(int(opts.DeployItemGeneration))
 	pod.Finalizers = []string{container.ContainerDeployerFinalizer}
 
-	pod.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+	pod.Spec.AutomountServiceAccountToken = ptr.To[bool](false)
 	pod.Spec.RestartPolicy = corev1.RestartPolicyNever
-	pod.Spec.TerminationGracePeriodSeconds = pointer.Int64(300)
+	pod.Spec.TerminationGracePeriodSeconds = ptr.To[int64](300)
 	pod.Spec.Volumes = volumes
 	pod.Spec.SecurityContext = &corev1.PodSecurityContext{
-		RunAsUser:  pointer.Int64(1000),
-		RunAsGroup: pointer.Int64(3000),
-		FSGroup:    pointer.Int64(2000),
+		RunAsUser:  ptr.To[int64](1000),
+		RunAsGroup: ptr.To[int64](3000),
+		FSGroup:    ptr.To[int64](2000),
 	}
 	pod.Spec.InitContainers = []corev1.Container{initContainer}
 	pod.Spec.Containers = []corev1.Container{mainContainer, waitContainer}

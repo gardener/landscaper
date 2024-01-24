@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
@@ -68,7 +68,7 @@ func (c *TokenClient) GetServiceAccountToken(ctx context.Context, serviceAccount
 
 	tokenRequest := &authenticationv1.TokenRequest{
 		Spec: authenticationv1.TokenRequestSpec{
-			ExpirationSeconds: pointer.Int64(expirationSeconds),
+			ExpirationSeconds: ptr.To[int64](expirationSeconds),
 		},
 	}
 

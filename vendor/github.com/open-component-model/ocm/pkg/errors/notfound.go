@@ -29,3 +29,11 @@ func IsErrNotFoundKind(err error, kind string) bool {
 	}
 	return uerr.kind == kind
 }
+
+func IsErrNotFoundElem(err error, kind, elem string) bool {
+	var uerr *NotFoundError
+	if err == nil || !As(err, &uerr) {
+		return false
+	}
+	return uerr.kind == kind && uerr.elem != nil && *uerr.elem == elem
+}

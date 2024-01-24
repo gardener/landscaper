@@ -7,6 +7,7 @@ package ocm
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/ctf"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,17 +49,16 @@ func AssureTargetRepository(session Session, ctx Context, targetref string, opts
 	if err != nil {
 		return nil, err
 	}
-	if ref.Type != "" {
-		format = accessio.FileFormat(ref.Type)
+	if ref.TypeHint == "" {
+		ref.TypeHint = archive
 	}
-	if archive != "" && format != "" {
+	if format != "" && ref.TypeHint != "" && !strings.Contains(ref.TypeHint, "+") {
 		for _, f := range ctf.SupportedFormats() {
 			if f == format {
-				ref.Type = archive + "+" + format.String()
+				ref.TypeHint += "+" + format.String()
 			}
 		}
 	}
-	ref.TypeHint = archive
 	ref.CreateIfMissing = true
 	target, err := session.DetermineRepositoryBySpec(ctx, &ref)
 	if err != nil {
@@ -70,7 +71,7 @@ func AssureTargetRepository(session Session, ctx Context, targetref string, opts
 		if ref.Type == "" {
 			return nil, fmt.Errorf("ctf format type required to create ctf")
 		}
-		target, err = ctf.Create(ctx, accessobj.ACC_CREATE, ref.Info, 0o770, accessio.PathFileSystem(accessio.FileSystem(fs)))
+		target, err = ctf.Create(ctx, accessobj.ACC_CREATE, ref.Info, 0o770, accessio.PathFileSystem(utils.FileSystem(fs)))
 		if err != nil {
 			return nil, err
 		}
@@ -84,22 +85,11 @@ type AccessMethodSource = cpi.AccessMethodSource
 // ResourceReader gets a Reader for a given resource/source access.
 // It provides a Reader handling the Close contract for the access method
 // by connecting the access method's Close method to the Readers Close method .
+// Deprecated: use ocmutils.GetResourceReader.
+// It must be deprecated because of the support of free-floating ReSourceAccess
+// implementations, they not necessarily provide an AccessMethod.
 func ResourceReader(s AccessMethodSource) (io.ReadCloser, error) {
 	return cpi.ResourceReader(s)
-}
-
-// ResourceMimeReader gets a Reader for a given resource/source access.
-// It provides a Reader handling the Close contract for the access method
-// by connecting the access method's Close method to the Readers Close method.
-// Additionally, the mime type is returned.
-func ResourceMimeReader(s AccessMethodSource) (io.ReadCloser, string, error) {
-	return cpi.ResourceMimeReader(s)
-}
-
-// ResourceData extracts the data for a given resource/source access.
-// It handles the Close contract for the access method for a singular use.
-func ResourceData(s AccessMethodSource) ([]byte, error) {
-	return cpi.ResourceData(s)
 }
 
 func IsIntermediate(spec RepositorySpec) bool {
@@ -123,4 +113,18 @@ func IsUnknownAccessSpec(s AccessSpec) bool {
 
 func WrapContextProvider(ctx LocalContextProvider) ContextProvider {
 	return internal.WrapContextProvider(ctx)
+}
+
+func ReferenceHint(spec AccessSpec, cv ComponentVersionAccess) string {
+	if h, ok := spec.(internal.HintProvider); ok {
+		return h.GetReferenceHint(cv)
+	}
+	return ""
+}
+
+func GlobalAccess(spec AccessSpec, ctx Context) AccessSpec {
+	if h, ok := spec.(internal.GlobalAccessProvider); ok {
+		return h.GlobalAccessSpec(ctx)
+	}
+	return nil
 }

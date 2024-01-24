@@ -7,6 +7,7 @@ package gotemplate
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,20 +16,30 @@ import (
 	gotmpl "text/template"
 	"time"
 
-	"github.com/Masterminds/sprig/v3"
+	"github.com/open-component-model/ocm/pkg/mime"
+
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	"github.com/open-component-model/ocm/pkg/runtime"
+
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
+	"github.com/gardener/landscaper/pkg/components/cnudie"
+
+	"github.com/Masterminds/sprig/v3"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 
@@ -70,6 +81,8 @@ func LandscaperTplFuncMap(blueprint *blueprints.Blueprint,
 		"ociRefVersion": getOCIReferenceVersion,
 		"resolve":       resolveArtifactFunc(componentVersion),
 
+		"getResourceKey":       getResourceKeyGoFunc(componentVersion),
+		"getResourceContent":   getResourceContentGoFunc(componentVersion),
 		"getResource":          getResourceGoFunc(cd),
 		"getResources":         getResourcesGoFunc(cd),
 		"getComponent":         getComponentGoFunc(cd, cdList, ocmSchemaVersion),
@@ -180,6 +193,124 @@ func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []ma
 			panic(err)
 		}
 		return parsedResources
+	}
+}
+
+// getResourceKeyGoFunc returns a function that resolves a relative resource reference
+// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references).
+// Its input is either a relative artifact reference in the format described by ocm or a file-path like expression
+// like cd://componentReferences/referenceName1/componentReferences/referenceName2/resources/resourceName1 as defined
+// here pkg/landscaper/registry/components/cdutils/uri.go.
+// Based on an ocm component version given as input parameter, it constructs the global identity of this resource
+// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/01-model/03-elements-sub.md#identifiers) and
+// returns a base64 encoded string representation of that global identity. This base64 encoded string acts as key
+// which can be used by the deployers to fetch the resource content.
+func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (string, error) {
+	return func(args ...interface{}) (string, error) {
+		if args == nil {
+			return "", errors.New("unable to provide key for empty relative artifact reference")
+		}
+		if len(args) > 1 {
+			return "", fmt.Errorf("this function requires 1 argument, but %v were provided", len(args))
+		}
+
+		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
+		if !ok {
+			return "", errors.New("unable to use this function without useOCM set to true")
+		}
+		compvers := ocmlibCv.GetOCMObject()
+
+		resourceRefStr, ok := args[0].(string)
+		if !ok {
+			return "", errors.New("unable to assert the first argument as string")
+		}
+
+		resourceRef, err := common.ParseResourceReference(resourceRefStr)
+		if err != nil {
+			return "", err
+		}
+
+		// if we ever migrate to an approach where a webserver fetches the resources for the deployers, instead
+		// of passing the global id to the deployers, we should merely parse the relative reference to the deployer,
+		// which the deployer would forward to the webserver and the webserver determines the root component to resolve
+		// this reference by watching the installation (this way, we would ensure that the deployer can only get
+		// resources from its legitimate component)
+		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, nil)
+		if err != nil {
+			return "", fmt.Errorf("unable to resolve relative resource reference: %w", err)
+		}
+
+		globalId := model.GlobalResourceIdentity{
+			ComponentIdentity: model.ComponentIdentity{
+				Name:    resourceCv.GetName(),
+				Version: resourceCv.GetVersion(),
+			},
+			ResourceIdentity: resource.Meta().GetIdentity(resourceCv.GetDescriptor().Resources),
+		}
+
+		globalIdData, err := runtime.DefaultYAMLEncoding.Marshal(globalId)
+		if err != nil {
+			return "", fmt.Errorf("unable to marshal global resource identity: %w", err)
+		}
+
+		Key := base64.StdEncoding.EncodeToString(globalIdData)
+
+		return Key, nil
+	}
+}
+
+// getResourceContentGoFunc returns a function that resolves a relative resource reference
+// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references),
+// based on an ocm component version given as input parameter and returns the content of the corresponding resource.
+func getResourceContentGoFunc(cv model.ComponentVersion) func(args ...interface{}) (string, error) {
+	return func(args ...interface{}) (string, error) {
+		if args == nil {
+			return "", errors.New("unable to provide key for empty relative artifact reference")
+		}
+		if len(args) > 1 {
+			return "", errors.New("this function only requires a single argument, but multiple were provided")
+		}
+
+		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
+		if !ok {
+			return "", errors.New("unable to use this function without useOCM set to true")
+		}
+		compvers := ocmlibCv.GetOCMObject()
+
+		resourceRefStr, ok := args[0].(string)
+		if !ok {
+			return "", errors.New("unable to assert the first argument as string")
+		}
+
+		resourceRef, err := common.ParseResourceReference(resourceRefStr)
+		if err != nil {
+			return "", err
+		}
+
+		resource, _, err := utils.ResolveResourceReference(compvers, *resourceRef, nil)
+		if err != nil {
+			return "", fmt.Errorf("unable to resolve relative resource reference: %w", err)
+		}
+
+		m, err := resource.AccessMethod()
+		if err != nil {
+			return "", fmt.Errorf("unable to get access method for resource: %w", err)
+		}
+
+		data, err := m.Get()
+		if err != nil {
+			return "", fmt.Errorf("unable to read resource content: %w", err)
+		}
+
+		var out string
+		switch m.MimeType() {
+		case mime.MIME_OCTET:
+			out = base64.StdEncoding.EncodeToString(data)
+		default:
+			out = string(data)
+		}
+
+		return out, nil
 	}
 }
 
