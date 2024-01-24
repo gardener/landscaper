@@ -30,13 +30,6 @@ The list of resources of the component descriptor within the component version h
 blueprint and one for the Helm chart. The entry for the Helm chart has the name `hello-world-chart` and contains the 
 address in the OCI registry.
 
-> **_NOTE:_** Adding resources other than the blueprints as local blobs to the component version is not
-> supported by the landscaper, yet.  
-> This is because the deployers currently fetch the image based on the
-> access information templated into the deploy item (as shown below) without knowledge of a corresponding
-> component version. This information is not sufficient to resolve local blobs.
-
-
 ## Referencing the Helm Chart
 The deploy execution in the [blueprint](./blueprint/blueprint.yaml) can be modified so that it references a specific
 resource from the component with a *resource key*.
@@ -63,7 +56,8 @@ chart:
 As this function uses [ocm](https://ocm.software/) to fetch the corresponding resource, you can even switch the
 storage technology (more often referred to as access type in the context of ocm) - thus, e.g. store the helm chart in a
 helm repository instead of an oci registry - without having to adjust the blueprint (You will of course have to adjust
-the access in the corresponding component version).
+the access in the corresponding component version). It even allows you to store your helm chart as a local blob as part
+of the component!
 
 > **_DEPRECATED_:** The following explains how this use case has typically been covered before the `getResourceKey()` 
 > templating function has been introduced.
