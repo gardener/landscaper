@@ -239,12 +239,6 @@ func (c *ComponentVersionContainer) evalLayer(s compdesc.AccessSpec) (compdesc.A
 		}
 		d = &artdesc.Descriptor{Digest: digest.Digest(a.LocalReference), MediaType: a.GetMimeType()}
 	}
-	if a, ok := spec.(*localblob.AccessSpec); ok {
-		if ok, _ := artdesc.IsDigest(a.LocalReference); !ok {
-			return s, 0, errors.ErrInvalid("digest", a.LocalReference)
-		}
-		d = &artdesc.Descriptor{Digest: digest.Digest(a.LocalReference), MediaType: a.GetMimeType()}
-	}
 	if d != nil {
 		// find layer
 		layers := c.manifest.GetDescriptor().Layers

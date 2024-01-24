@@ -293,8 +293,10 @@ func (m *accessMethod) getArtifact() error {
 		art, err := m.repo.LookupArtifact(m.ref.Repository, m.ref.Version())
 		m.finalizer.Close(art, "artifact for accessing %s", m.reference)
 		m.art, m.err = art, err
-		m.mime = artdesc.ToContentMediaType(m.art.GetDescriptor().MimeType()) + artifactset.SynthesizedBlobFormat
-		m.digest = art.Digest()
+		if art != nil {
+			m.mime = artdesc.ToContentMediaType(m.art.GetDescriptor().MimeType()) + artifactset.SynthesizedBlobFormat
+			m.digest = art.Digest()
+		}
 	}
 	return m.err
 }

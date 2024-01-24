@@ -22,7 +22,9 @@ func (in *ComponentDescriptor) DeepCopyInto(out *ComponentDescriptor) {
 	if in.Signatures != nil {
 		in, out := &in.Signatures, &out.Signatures
 		*out = make(v1.Signatures, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.NestedDigests != nil {
 		in, out := &in.NestedDigests, &out.NestedDigests

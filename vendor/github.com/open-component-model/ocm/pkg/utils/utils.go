@@ -330,7 +330,11 @@ func OptionalDefaultedBool(def bool, list ...bool) bool {
 // based on optionally specified explicit value(s).
 // The default value is to enable the option (true).
 func GetOptionFlag(list ...bool) bool {
-	return OptionalDefaultedBool(len(list) == 0, list...)
+	return OptionalDefaultedBool(true, list...)
+}
+
+func IsNil(o interface{}) bool {
+	return reflect2.IsNil(o)
 }
 
 // Must expect a result to be provided without error.

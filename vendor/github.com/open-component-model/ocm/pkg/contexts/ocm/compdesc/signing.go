@@ -13,16 +13,19 @@ import (
 	metav1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/signing"
+	"github.com/open-component-model/ocm/pkg/signing/signutils"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const (
-	KIND_HASH_ALGORITHM   = "hash algorithm"
-	KIND_SIGN_ALGORITHM   = "signing algorithm"
-	KIND_NORM_ALGORITHM   = "normalization algorithm"
-	KIND_VERIFY_ALGORITHM = "signature verification algorithm"
-	KIND_PUBLIC_KEY       = "public key"
-	KIND_PRIVATE_KEY      = "private key"
-	KIND_SIGNATURE        = "signature"
+	KIND_HASH_ALGORITHM   = signutils.KIND_HASH_ALGORITHM
+	KIND_SIGN_ALGORITHM   = signutils.KIND_SIGN_ALGORITHM
+	KIND_NORM_ALGORITHM   = signutils.KIND_NORM_ALGORITHM
+	KIND_VERIFY_ALGORITHM = signutils.KIND_VERIFY_ALGORITHM
+	KIND_PUBLIC_KEY       = signutils.KIND_PUBLIC_KEY
+	KIND_PRIVATE_KEY      = signutils.KIND_PRIVATE_KEY
+	KIND_SIGNATURE        = signutils.KIND_SIGNATURE
+	KIND_DIGEST           = signutils.KIND_DIGEST
 )
 
 // IsNormalizeable checks if componentReferences and resources contain digest.
@@ -66,6 +69,62 @@ func Hash(cd *ComponentDescriptor, normAlgo string, hash hash.Hash) (string, err
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
+type CompDescDigest struct {
+	normAlgo   string
+	hashAlgo   string
+	normalized []byte
+	digest     string
+}
+
+type CompDescDigests struct {
+	cd      *ComponentDescriptor
+	digests []*CompDescDigest
+}
+
+func NewCompDescDigests(cd *ComponentDescriptor) *CompDescDigests {
+	return &CompDescDigests{
+		cd: cd,
+	}
+}
+
+func (d *CompDescDigests) Descriptor() *ComponentDescriptor {
+	return d.cd
+}
+
+func (d *CompDescDigests) Get(normAlgo string, hasher signing.Hasher) ([]byte, string, error) {
+	var normalized []byte
+
+	for _, e := range d.digests {
+		if e.normAlgo == normAlgo {
+			normalized = e.normalized
+			if e.hashAlgo == hasher.Algorithm() {
+				return e.normalized, e.digest, nil
+			}
+		}
+	}
+
+	var err error
+	if normalized == nil {
+		normalized, err = Normalize(d.cd, normAlgo)
+		if err != nil {
+			return nil, "", fmt.Errorf("failed normalising component descriptor %w", err)
+		}
+	}
+	hash := hasher.Create()
+	if _, err = hash.Write(normalized); err != nil {
+		return nil, "", fmt.Errorf("failed hashing the normalisedComponentDescriptorJson: %w", err)
+	}
+
+	e := &CompDescDigest{
+		normAlgo:   normAlgo,
+		hashAlgo:   hasher.Algorithm(),
+		normalized: normalized,
+		digest:     hex.EncodeToString(hash.Sum(nil)),
+	}
+	d.digests = append(d.digests, e)
+	return normalized, e.digest, nil
+}
+
 func NormHash(cd *ComponentDescriptor, normAlgo string, hash hash.Hash) ([]byte, string, error) {
 	if hash == nil {
 		return nil, metav1.NoDigest, nil
@@ -85,13 +144,26 @@ func NormHash(cd *ComponentDescriptor, normAlgo string, hash hash.Hash) ([]byte,
 
 // Sign signs the given component-descriptor with the signer.
 // The component-descriptor has to contain digests for componentReferences and resources.
-func Sign(cctx credentials.Context, cd *ComponentDescriptor, privateKey interface{}, signer signing.Signer, hasher signing.Hasher, signatureName, issuer string) error {
+func Sign(cctx credentials.Context, cd *ComponentDescriptor, privateKey signutils.GenericPrivateKey, signer signing.Signer, hasher signing.Hasher, signatureName, issuer string) error {
 	digest, err := Hash(cd, JsonNormalisationV1, hasher.Create())
 	if err != nil {
 		return fmt.Errorf("failed getting hash for cd: %w", err)
 	}
 
-	signature, err := signer.Sign(cctx, digest, hasher.Crypto(), issuer, privateKey)
+	iss, err := signutils.ParseDN(issuer)
+	if err != nil {
+		return err
+	}
+
+	sctx := &signing.DefaultSigningContext{
+		Hash:       hasher.Crypto(),
+		PrivateKey: privateKey,
+		PublicKey:  nil,
+		RootCerts:  nil,
+		Issuer:     iss,
+	}
+
+	signature, err := signer.Sign(cctx, digest, sctx)
 	if err != nil {
 		return fmt.Errorf("failed signing hash of normalised component descriptor, %w", err)
 	}
@@ -116,7 +188,7 @@ func Sign(cctx credentials.Context, cd *ComponentDescriptor, privateKey interfac
 // Verify verifies the signature (selected by signatureName) and hash of the component-descriptor (as specified in the signature).
 // Does NOT resolve resources or referenced component-descriptors.
 // Returns error if verification fails.
-func Verify(cd *ComponentDescriptor, registry signing.Registry, signatureName string) error {
+func Verify(cd *ComponentDescriptor, registry signing.Registry, signatureName string, rootCA ...signutils.GenericCertificatePool) error {
 	// find matching signature
 	matchingSignature := cd.SelectSignatureByName(signatureName)
 	if matchingSignature == nil {
@@ -135,7 +207,13 @@ func Verify(cd *ComponentDescriptor, registry signing.Registry, signatureName st
 		return errors.ErrUnknown(KIND_HASH_ALGORITHM, matchingSignature.Digest.HashAlgorithm)
 	}
 	// Verify author of signature
-	err := verifier.Verify(matchingSignature.Digest.Value, hasher.Crypto(), matchingSignature.ConvertToSigning(), publicKey)
+	sctx := &signing.DefaultSigningContext{
+		Hash:      hasher.Crypto(),
+		PublicKey: publicKey,
+		RootCerts: utils.Optional(rootCA),
+		Issuer:    registry.GetIssuer(signatureName),
+	}
+	err := verifier.Verify(matchingSignature.Digest.Value, matchingSignature.ConvertToSigning(), sctx)
 	if err != nil {
 		return fmt.Errorf("failed verifying: %w", err)
 	}

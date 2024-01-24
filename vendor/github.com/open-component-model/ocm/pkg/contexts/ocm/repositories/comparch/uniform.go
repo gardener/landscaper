@@ -11,14 +11,23 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
 )
 
+const AltType = "ca"
+
 func init() {
 	h := &repospechandler{}
 	cpi.RegisterRepositorySpecHandler(h, "")
 	cpi.RegisterRepositorySpecHandler(h, Type)
-	cpi.RegisterRepositorySpecHandler(h, "ca")
+	cpi.RegisterRepositorySpecHandler(h, AltType)
+	for _, f := range GetFormats() {
+		cpi.RegisterRepositorySpecHandler(h, f)
+	}
 }
 
 type repospechandler struct{}
+
+func explicit(t string) bool {
+	return t == Type || t == AltType
+}
 
 func (h *repospechandler) MapReference(ctx cpi.Context, u *cpi.UniformRepositorySpec) (cpi.RepositorySpec, error) {
 	path := u.Info
@@ -35,7 +44,7 @@ func (h *repospechandler) MapReference(ctx cpi.Context, u *cpi.UniformRepository
 	if !u.CreateIfMissing {
 		hint = ""
 	}
-	create, ok, err := accessobj.CheckFile(Type, hint, accessio.TypeForTypeSpec(typ) == Type, path, fs, ComponentDescriptorFileName)
+	create, ok, err := accessobj.CheckFile(Type, hint, explicit(accessio.TypeForTypeSpec(u.Type)), path, fs, ComponentDescriptorFileName)
 	if !ok || (err != nil && typ == "") {
 		if err != nil {
 			return nil, err

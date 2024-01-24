@@ -57,7 +57,8 @@ func (h Handler) Algorithm() string {
 }
 
 // Sign implements the signing functionality.
-func (h Handler) Sign(cctx credentials.Context, digest string, hash crypto.Hash, issuer string, key interface{}) (*signing.Signature, error) {
+func (h Handler) Sign(cctx credentials.Context, digest string, sctx signing.SigningContext) (*signing.Signature, error) {
+	hash := sctx.GetHash()
 	// exit immediately if hash alg is not SHA-256, rekor doesn't currently support other hash functions
 	if hash != crypto.SHA256 {
 		return nil, fmt.Errorf("cannot sign using sigstore. rekor only supports SHA-256 digests: %s provided", hash.String())
@@ -176,12 +177,12 @@ func (h Handler) Sign(cctx credentials.Context, digest string, hash crypto.Hash,
 		Value:     base64.StdEncoding.EncodeToString(data),
 		MediaType: MediaType,
 		Algorithm: Algorithm,
-		Issuer:    issuer,
+		Issuer:    "",
 	}, nil
 }
 
 // Verify checks the signature, returns an error on verification failure.
-func (h Handler) Verify(digest string, hash crypto.Hash, sig *signing.Signature, key interface{}) (err error) {
+func (h Handler) Verify(digest string, sig *signing.Signature, sctx signing.SigningContext) (err error) {
 	ctx := context.Background()
 
 	data, err := base64.StdEncoding.DecodeString(sig.Value)

@@ -311,7 +311,7 @@ func (f *fileBasedAccess) Get() (blobaccess.BlobAccess, error) {
 		return nil, err
 	}
 	if !ok {
-		return nil, errors.ErrNotFoundWrap(vfs.ErrNotExist, "file", f.path)
+		return nil, errors.ErrNotFoundWrap(vfs.ErrNotExist, "file", f.path, f.filesystem.Name())
 	}
 	return blobaccess.ForFile(f.mimeType, f.path, f.filesystem), nil
 }

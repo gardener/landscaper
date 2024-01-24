@@ -11,6 +11,8 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/internal"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/vault/identity"
 	"github.com/open-component-model/ocm/pkg/optionutils"
 	"github.com/open-component-model/ocm/pkg/runtime"
 )
@@ -31,6 +33,8 @@ type RepositorySpec struct {
 	ServerURL                   string `json:"serverURL"`
 	Options                     `json:",inline"`
 }
+
+var _ cpi.ConsumerIdentityProvider = (*RepositorySpec)(nil)
 
 // NewRepositorySpec creates a new memory RepositorySpec.
 func NewRepositorySpec(url string, opts ...Option) *RepositorySpec {
@@ -67,4 +71,16 @@ func (a *RepositorySpec) GetKey() cpi.ProviderIdentity {
 		return cpi.ProviderIdentity(data)
 	}
 	return cpi.ProviderIdentity(spec.ServerURL)
+}
+
+func (a *RepositorySpec) GetConsumerId(uctx ...internal.UsageContext) internal.ConsumerIdentity {
+	id, err := identity.GetConsumerId(a.ServerURL, a.Namespace, a.SecretsEngine, a.Path)
+	if err != nil {
+		return nil
+	}
+	return id
+}
+
+func (a *RepositorySpec) GetIdentityMatcher() string {
+	return identity.CONSUMER_TYPE
 }

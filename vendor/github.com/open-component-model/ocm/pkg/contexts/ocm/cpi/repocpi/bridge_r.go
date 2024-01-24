@@ -11,6 +11,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/refmgmt"
 	"github.com/open-component-model/ocm/pkg/refmgmt/resource"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 type ComponentAccessInfo struct {
@@ -42,6 +43,8 @@ type repositoryBridge struct {
 	impl RepositoryImpl
 }
 
+var _ utils.Unwrappable = (*repositoryBridge)(nil)
+
 func newRepositoryBridge(impl RepositoryImpl, kind string, closer ...io.Closer) RepositoryBridge {
 	base := resource.NewSimpleResourceImplBase[cpi.Repository](closer...)
 	b := &repositoryBridge{
@@ -64,6 +67,10 @@ func (b *repositoryBridge) Close() error {
 
 func (b *repositoryBridge) GetContext() cpi.Context {
 	return b.ctx
+}
+
+func (b *repositoryBridge) Unwrap() interface{} {
+	return b.impl
 }
 
 func (b *repositoryBridge) GetSpecification() cpi.RepositorySpec {

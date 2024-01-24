@@ -7,10 +7,31 @@ package ocm
 import (
 	"sync"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/internal"
 	"github.com/open-component-model/ocm/pkg/errors"
 )
+
+type DedicatedResolver []ComponentVersionAccess
+
+var _ ComponentVersionResolver = (*DedicatedResolver)(nil)
+
+func NewDedicatedResolver(cv ...ComponentVersionAccess) ComponentVersionResolver {
+	return DedicatedResolver(slices.Clone(cv))
+}
+
+func (d DedicatedResolver) LookupComponentVersion(name string, version string) (ComponentVersionAccess, error) {
+	for _, cv := range d {
+		if cv.GetName() == name && cv.GetVersion() == version {
+			return cv.Dup()
+		}
+	}
+	return nil, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 type CompoundResolver struct {
 	lock      sync.RWMutex
@@ -43,7 +64,7 @@ func (c *CompoundResolver) LookupComponentVersion(name string, version string) (
 		if err == nil && cv != nil {
 			return cv, nil
 		}
-		if !errors.IsErrNotFoundKind(err, KIND_COMPONENTVERSION) {
+		if !errors.IsErrNotFoundKind(err, KIND_COMPONENTVERSION) && !errors.IsErrNotFoundKind(err, KIND_COMPONENT) {
 			return nil, err
 		}
 	}

@@ -8,16 +8,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/pkg/components/registries"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
-	"github.com/open-component-model/ocm/pkg/runtime"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/open-component-model/ocm/pkg/runtime"
+
+	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/pkg/components/registries"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 
@@ -181,6 +183,7 @@ var _ = Describe("GetChart", func() {
 
 			getResourceKey := templateFuncs["getResourceKey"].(func(args ...interface{}) (string, error))
 			resourceRef, err := getResourceKey(`cd://componentReferences/referenced-landscaper-component/resources/chart`)
+			Expect(err).To(BeNil())
 			chartAccess := &helmv1alpha1.Chart{
 				ResourceRef: resourceRef,
 			}
@@ -191,6 +194,7 @@ var _ = Describe("GetChart", func() {
 			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{
 				ContextConfiguration: lsv1alpha1.ContextConfiguration{RepositoryContext: un},
 			}, nil, nil, nil)
+			Expect(err).To(BeNil())
 			Expect(chart).ToNot(BeNil())
 		})
 	})

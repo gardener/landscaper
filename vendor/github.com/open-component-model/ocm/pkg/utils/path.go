@@ -16,6 +16,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/errors"
 )
 
+// ResolvePath handles the ~ notation for the home directory.
 func ResolvePath(path string) (string, error) {
 	if strings.HasPrefix(path, "~"+string(os.PathSeparator)) {
 		home := os.Getenv("HOME")

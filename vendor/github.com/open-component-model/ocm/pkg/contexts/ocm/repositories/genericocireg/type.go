@@ -6,6 +6,7 @@ package genericocireg
 
 import (
 	"encoding/json"
+	"path"
 
 	"github.com/sirupsen/logrus"
 
@@ -13,8 +14,10 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/repositories/ocireg"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/genericocireg/componentmapping"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 // ComponentNameMapping describes the method that is used to map the "Component Name", "Component Version"-tuples
@@ -99,6 +102,7 @@ var (
 	_ cpi.PrefixProvider                   = (*RepositorySpec)(nil)
 	_ cpi.IntermediateRepositorySpecAspect = (*RepositorySpec)(nil)
 	_ json.Marshaler                       = (*RepositorySpec)(nil)
+	_ credentials.ConsumerIdentityProvider = (*RepositorySpec)(nil)
 )
 
 func NewRepositorySpec(spec oci.RepositorySpec, meta *ComponentRepositoryMeta) *RepositorySpec {
@@ -163,6 +167,18 @@ func (s *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentia
 		return nil, err
 	}
 	return NewRepository(ctx, &s.ComponentRepositoryMeta, r), nil
+}
+
+func (s *RepositorySpec) GetConsumerId(uctx ...credentials.UsageContext) credentials.ConsumerIdentity {
+	prefix := s.SubPath
+	if c, ok := utils.Optional(uctx...).(credentials.StringUsageContext); ok {
+		prefix = path.Join(prefix, componentmapping.ComponentDescriptorNamespace, c.String())
+	}
+	return credentials.GetProvidedConsumerId(s.RepositorySpec, credentials.StringUsageContext(prefix))
+}
+
+func (s *RepositorySpec) GetIdentityMatcher() string {
+	return credentials.GetProvidedIdentityMatcher(s.RepositorySpec)
 }
 
 func DefaultComponentRepositoryMeta(meta *ComponentRepositoryMeta) *ComponentRepositoryMeta {

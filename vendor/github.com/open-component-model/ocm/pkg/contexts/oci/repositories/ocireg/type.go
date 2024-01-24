@@ -12,8 +12,10 @@ import (
 	"github.com/containerd/containerd/reference"
 
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
+	"github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/oci/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/oci/cpi"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	"github.com/open-component-model/ocm/pkg/utils"
 )
 
 const (
@@ -50,7 +52,10 @@ type RepositorySpec struct {
 	LegacyTypes *bool  `json:"legacyTypes,omitempty"`
 }
 
-var _ cpi.RepositorySpec = (*RepositorySpec)(nil)
+var (
+	_ cpi.RepositorySpec                   = (*RepositorySpec)(nil)
+	_ credentials.ConsumerIdentityProvider = (*RepositorySpec)(nil)
+)
 
 // NewRepositorySpec creates a new RepositorySpec.
 func NewRepositorySpec(baseURL string) *RepositorySpec {
@@ -79,7 +84,7 @@ func (a *RepositorySpec) UniformRepositorySpec() *cpi.UniformRepositorySpec {
 	return cpi.UniformRepositorySpecForHostURL(Type, a.BaseURL)
 }
 
-func (a *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentials) (cpi.Repository, error) {
+func (a *RepositorySpec) getInfo(creds credentials.Credentials) (*RepositoryInfo, error) {
 	var u *url.URL
 	info := &RepositoryInfo{}
 	legacy := false
@@ -116,5 +121,28 @@ func (a *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentia
 	info.Creds = creds
 	info.Legacy = legacy
 
+	return info, nil
+}
+
+func (a *RepositorySpec) Repository(ctx cpi.Context, creds credentials.Credentials) (cpi.Repository, error) {
+	info, err := a.getInfo(creds)
+	if err != nil {
+		return nil, err
+	}
 	return NewRepository(ctx, a, info)
+}
+
+func (a *RepositorySpec) GetConsumerId(uctx ...credentials.UsageContext) credentials.ConsumerIdentity {
+	info, err := a.getInfo(nil)
+	if err != nil {
+		return nil
+	}
+	if c, ok := utils.Optional(uctx...).(credentials.StringUsageContext); ok {
+		return identity.GetConsumerId(info.Locator, c.String())
+	}
+	return identity.GetConsumerId(info.Locator, "")
+}
+
+func (a *RepositorySpec) GetIdentityMatcher() string {
+	return identity.CONSUMER_TYPE
 }

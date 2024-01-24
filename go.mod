@@ -22,7 +22,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
-	github.com/open-component-model/ocm v0.4.3
+	github.com/open-component-model/ocm v0.6.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc5
 	github.com/pkg/errors v0.9.1
@@ -51,7 +51,6 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-	github.com/open-component-model/ocm => github.com/open-component-model/ocm v0.3.0-rc.1.0.20231129170201-106672038fa3
 )
 
 require (

@@ -22,6 +22,7 @@ import (
 var ErrTempVersion = repocpi.ErrTempVersion
 
 const (
+	KIND_COMPONENT          = internal.KIND_COMPONENT
 	KIND_COMPONENTVERSION   = internal.KIND_COMPONENTVERSION
 	KIND_COMPONENTREFERENCE = "component reference"
 	KIND_RESOURCE           = internal.KIND_RESOURCE

@@ -1250,7 +1250,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/open-component-model/ocm v0.4.3 => github.com/open-component-model/ocm v0.3.0-rc.1.0.20231129170201-106672038fa3
+# github.com/open-component-model/ocm v0.6.0
 ## explicit; go 1.21
 github.com/open-component-model/ocm/pkg/blobaccess
 github.com/open-component-model/ocm/pkg/blobaccess/bpi
@@ -1445,6 +1445,7 @@ github.com/open-component-model/ocm/pkg/signing/hasher/sha256
 github.com/open-component-model/ocm/pkg/signing/hasher/sha512
 github.com/open-component-model/ocm/pkg/signing/norm/entry
 github.com/open-component-model/ocm/pkg/signing/norm/jcs
+github.com/open-component-model/ocm/pkg/signing/signutils
 github.com/open-component-model/ocm/pkg/testutils
 github.com/open-component-model/ocm/pkg/utils
 github.com/open-component-model/ocm/pkg/utils/selector
@@ -2789,4 +2790,3 @@ sigs.k8s.io/yaml/goyaml.v2
 # github.com/gardener/landscaper/apis => ./apis
 # github.com/gardener/landscaper/controller-utils => ./controller-utils
 # github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
-# github.com/open-component-model/ocm => github.com/open-component-model/ocm v0.3.0-rc.1.0.20231129170201-106672038fa3

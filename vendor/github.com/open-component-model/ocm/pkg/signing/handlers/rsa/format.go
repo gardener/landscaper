@@ -8,17 +8,16 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
 	"io"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/utils"
 )
 
-func GetPublicKey(key interface{}) (*rsa.PublicKey, []string, error) {
+func GetPublicKey(key interface{}) (*rsa.PublicKey, *pkix.Name, error) {
 	var err error
 	if data, ok := key.([]byte); ok {
 		key, err = ParseKey(data)
@@ -33,11 +32,7 @@ func GetPublicKey(key interface{}) (*rsa.PublicKey, []string, error) {
 		return &k.PublicKey, nil, nil
 	case *x509.Certificate:
 		if p, ok := k.PublicKey.(*rsa.PublicKey); ok {
-			names := slices.Clone(k.DNSNames)
-			if k.Issuer.CommonName != "" {
-				names = append(names, k.Issuer.CommonName)
-			}
-			return p, names, nil
+			return p, &k.Subject, nil
 		}
 		return nil, nil, fmt.Errorf("unknown key public key %T in certificate", k)
 	default:

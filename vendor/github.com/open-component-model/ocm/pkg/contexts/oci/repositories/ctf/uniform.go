@@ -28,6 +28,15 @@ func (h *repospechandler) MapReference(ctx cpi.Context, u *cpi.UniformRepository
 	return MapReference(ctx, u)
 }
 
+func explicit(t string) bool {
+	for _, f := range SupportedFormats() {
+		if t == string(f) {
+			return true
+		}
+	}
+	return t == Type || t == AltType
+}
+
 func MapReference(ctx cpi.Context, u *cpi.UniformRepositorySpec) (cpi.RepositorySpec, error) {
 	path := u.Info
 	if u.Info == "" {
@@ -43,7 +52,7 @@ func MapReference(ctx cpi.Context, u *cpi.UniformRepositorySpec) (cpi.Repository
 	if !u.CreateIfMissing {
 		hint = ""
 	}
-	create, ok, err := accessobj.CheckFile(Type, hint, accessio.TypeForTypeSpec(typ) == Type, path, fs, ArtifactIndexFileName)
+	create, ok, err := accessobj.CheckFile(Type, hint, explicit(accessio.TypeForTypeSpec(u.Type)), path, fs, ArtifactIndexFileName)
 	if !ok || (err != nil && typ == "") {
 		if err != nil {
 			return nil, err
