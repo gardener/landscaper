@@ -74,6 +74,12 @@ func (s *payloadSigner) PublicHeader() Headers {
 var signers = make(map[jwa.SignatureAlgorithm]Signer)
 var muSigner = &sync.Mutex{}
 
+func removeSigner(alg jwa.SignatureAlgorithm) {
+	muSigner.Lock()
+	defer muSigner.Unlock()
+	delete(signers, alg)
+}
+
 func makeSigner(alg jwa.SignatureAlgorithm, key interface{}, public, protected Headers) (*payloadSigner, error) {
 	muSigner.Lock()
 	signer, ok := signers[alg]
@@ -469,6 +475,19 @@ func (e *verifyError) As(target interface{}) bool {
 		}
 	}
 	return false
+}
+
+// IsVerificationError returns true if the error came from the verification part of the
+// jws.Verify function, allowing you to check if the error is a result of actual
+// verification failure.
+//
+// For example, if the error happened while fetching a key
+// from a datasource, feeding that error should to this function return false, whereas
+// a failure to compute the signature for whatever reason would be a verification error
+// and returns true.
+func IsVerificationError(err error) bool {
+	var ve *verifyError
+	return errors.As(err, &ve)
 }
 
 // get the value of b64 header field.

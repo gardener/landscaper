@@ -1023,8 +1023,8 @@ github.com/lestrrat-go/httprc
 ## explicit; go 1.13
 github.com/lestrrat-go/iter/arrayiter
 github.com/lestrrat-go/iter/mapiter
-# github.com/lestrrat-go/jwx/v2 v2.0.16
-## explicit; go 1.16
+# github.com/lestrrat-go/jwx/v2 v2.0.19
+## explicit; go 1.18
 github.com/lestrrat-go/jwx/v2/cert
 github.com/lestrrat-go/jwx/v2/internal/base64
 github.com/lestrrat-go/jwx/v2/internal/ecutil
