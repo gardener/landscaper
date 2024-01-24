@@ -146,7 +146,7 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 			return false, false, lserrors.NewWrappedError(err, op, "UpdateInstallation", err.Error())
 		}
 
-		if inst.Spec.Optimization == nil || inst.Spec.Optimization.HasNoSiblingImports {
+		if inst.Spec.Optimization == nil || !inst.Spec.Optimization.HasNoSiblingImports {
 			// touch siblings to speed up processing
 			// a potential improvement is to only touch siblings exporting data for the current installation but this would
 			// result in more complex coding and should only be done if the current approach results in performance problems

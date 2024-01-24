@@ -247,9 +247,11 @@
       "type": "object",
       "properties": {
         "hasNoSiblingExports": {
+          "description": "set this on true if the installation does not export data to its siblings or has no siblings at all",
           "type": "boolean"
         },
         "hasNoSiblingImports": {
+          "description": "set this on true if the installation does not import data from its siblings or has no siblings at all",
           "type": "boolean"
         }
       }

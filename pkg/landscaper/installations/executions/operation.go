@@ -176,6 +176,10 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 		}
 
+		if exec.CreationTimestamp.IsZero() && exec.DeletionTimestamp.IsZero() {
+			controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
+		}
+
 		if err := controllerutil.SetControllerReference(inst.GetInstallation(), exec, api.LandscaperScheme); err != nil {
 			return err
 		}

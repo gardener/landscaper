@@ -281,6 +281,10 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	}
 
 	_, err = o.WriterToLsUncachedClient().CreateOrUpdateInstallation(ctx, read_write_layer.W000001, subInst, func() error {
+		if subInst.CreationTimestamp.IsZero() && subInst.DeletionTimestamp.IsZero() {
+			controllerutil.AddFinalizer(subInst, lsv1alpha1.LandscaperFinalizer)
+		}
+
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
 		}

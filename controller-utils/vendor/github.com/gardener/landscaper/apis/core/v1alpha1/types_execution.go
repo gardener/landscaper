@@ -190,11 +190,6 @@ type ExecutionStatus struct {
 	// +optional
 	DeployItemCache *DeployItemCache `json:"deployItemCache,omitempty"`
 
-	// ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem.
-	// So in this case, the observedGeneration refers to the executions generation.
-	// +optional
-	ExecutionGenerations []ExecutionGeneration `json:"execGenerations,omitempty"`
-
 	// JobID is the ID of the current working request.
 	JobID string `json:"jobID,omitempty"`
 
@@ -211,14 +206,6 @@ type ExecutionStatus struct {
 	// TransitionTimes contains timestamps of status transitions
 	// +optional
 	TransitionTimes *TransitionTimes `json:"transitionTimes,omitempty"`
-}
-
-// ExecutionGeneration links a deployitem to the generation of the execution when it was applied.
-type ExecutionGeneration struct {
-	// Name is the name of the deployitem this generation refers to.
-	Name string `json:"name"`
-	// ObservedGeneration stores the generation which the execution had when it last applied the referenced deployitem.
-	ObservedGeneration int64 `json:"observedGeneration"`
 }
 
 // DeployItemTemplateList is a list of deploy item templates
