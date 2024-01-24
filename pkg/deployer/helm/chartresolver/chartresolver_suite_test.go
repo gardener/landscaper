@@ -8,6 +8,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/pkg/components/registries"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +28,19 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	utils "github.com/gardener/landscaper/test/utils"
+)
+
+var (
+	componentReference = `
+{
+  "repositoryContext": {
+    "type": "local",
+    "filePath": "./"
+  },
+  "componentName": "example.com/landscaper-component",
+  "version": "1.0.0"
+}
+`
 )
 
 func TestConfig(t *testing.T) {
@@ -139,6 +158,41 @@ var _ = Describe("GetChart", func() {
 			Expect(err.Error()).To(ContainSubstring(http.StatusText(401)))
 		})
 
+	})
+
+	Context("From OCM Resource Ref", func() {
+		FIt("should resolve a chart from a local ocm resource", func() {
+			ctx := logging.NewContext(context.Background(), logging.Discard())
+			defer ctx.Done()
+
+			// Setup Test
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+				&config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"}, nil, nil)
+			Expect(err).To(BeNil())
+
+			cdref := &lsv1alpha1.ComponentDescriptorReference{}
+			Expect(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref)).To(BeNil())
+			cv, err := registry.GetComponentVersion(ctx, cdref)
+			Expect(err).To(BeNil())
+			Expect(cv).ToNot(BeNil())
+
+			templateFuncs, err := gotemplate.LandscaperTplFuncMap(&blueprints.Blueprint{}, cv, nil, nil)
+			Expect(err).To(BeNil())
+
+			getResourceKey := templateFuncs["getResourceKey"].(func(args ...interface{}) (string, error))
+			resourceRef, err := getResourceKey(`cd://componentReferences/referenced-landscaper-component/resources/chart`)
+			chartAccess := &helmv1alpha1.Chart{
+				ResourceRef: resourceRef,
+			}
+			un := &cdv2.UnstructuredTypedObject{}
+			Expect(un.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./testdata/ocmrepo"}`))).To(BeNil())
+
+			// Test
+			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{
+				ContextConfiguration: lsv1alpha1.ContextConfiguration{RepositoryContext: un},
+			}, nil, nil, nil)
+			Expect(chart).ToNot(BeNil())
+		})
 	})
 
 })

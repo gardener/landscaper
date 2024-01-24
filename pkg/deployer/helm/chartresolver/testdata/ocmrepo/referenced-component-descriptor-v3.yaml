@@ -1,0 +1,20 @@
+apiVersion: ocm.software/v3alpha1
+kind: ComponentVersion
+metadata:
+  name: example.com/referenced-landscaper-component
+  provider:
+    name: internal
+  version: 1.0.0
+repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+spec:
+  resources:
+    - name: chart
+      type: helmChart
+      version: 1.0.0
+      relation: local
+      access:
+        type: localBlob
+        localReference: chart-0.1.0.tgz
+        mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
