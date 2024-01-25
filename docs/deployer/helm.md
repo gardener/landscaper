@@ -272,9 +272,23 @@ The full example can be found
 [here](https://github.com/gardener/landscaper-examples/tree/master/helm-deployer/real-helm-deployment).
 
 #### Specifying a helm chart via component descriptor
+Alternatively, the provider configuration can reference a resource in the component. An explanation of the current 
+idiomatic way to do this can be found in the guided tour [here](../guided-tour/blueprints/helm-chart-resource/README.md).
+The approach shown below is deprecated.
+
+> **_DEPRECATED:__** This use case can be covered with the `getResourceKey()` templating function in a more convenient
+> way.
 
 Alternatively, the provider configuration can reference a resource in the component descriptor.
 Repository URL, chart name, and chart version are then specified in that resource in the component descriptor. 
+
+> **_NOTE_:** The `helmChartRepository` access type shown in the component descriptor below and used in the templating
+> here, does not exist in the ocm.   
+> Instead, ocm supports an access type `helm`, as specified in the spec
+> [here](https://github.com/open-component-model/ocm-spec/blob/main/doc/04-extensions/02-access-types/helm.md).
+> Thus, if you switch from this deprecated solution to the current one (using the `getResourceKey` templating function),
+> be aware that you **HAVE TO** specify the access as access type `helm` with the corresponding properties as specified
+> in the referred ocm spec.
 
 Provider configuration:
 
