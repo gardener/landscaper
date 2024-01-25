@@ -128,6 +128,13 @@ Let us mention a variation of this example. Above, we have stored our Helm chart
 Of course, you can also store your Helm chart in a Helm chart repository. In that case, the entry in the component 
 descriptor would have the following format:
 
+> **_NOTE_:** The helm access type `helmChartRepository`, as shown below, does not exist in the ocm. Instead, ocm
+> supports an access type `helm`, as specified in the spec 
+> [here](https://github.com/open-component-model/ocm-spec/blob/main/doc/04-extensions/02-access-types/helm.md).
+> Thus, if you switch from this deprecated solution to the current one (using the `getResourceKey` templating function),
+> be aware that you **HAVE TO** specify the access as access type `helm` with the corresponding properties as specified
+> in the referred ocm spec.
+
 ```yaml
   resources:
     - name: example-chart
