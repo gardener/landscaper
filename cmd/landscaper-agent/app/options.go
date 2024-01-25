@@ -9,14 +9,16 @@ import (
 	goflag "flag"
 	"fmt"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"time"
-	"k8s.io/utils/ptr"
+
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
