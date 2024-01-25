@@ -36,18 +36,16 @@ spec:
     kind: ProviderConfiguration
     
     chart:
-      ref: myrepo.example.com/charts/nginx-ingress:0.5.2 # helm oci ref
-      fromResource: # will fetch the helm chart from component descriptor resource of type helm chart
-#       inline: # define an inline component descriptor instead of referencing a remote
-        ref:
-          repositoryContext:
-            type: ociRegistry
-            baseUrl: my-repo
-          componentName: github.com/gardener/landscaper
-          version: v0.3.0
-        resourceName: my-helm-chart
+      # This section describes where to find the helm chart. Either ref of archive but not both are allowed.
+      # Below you find a third possibility to reference a helm chart stored in a helm chart repository.
+      
+      # Reference to a helm chart stored in an OCI registry as an OCI artefact.
+      # see https://helm.sh/blog/storing-charts-in-oci/
+      ref: myrepo.example.com/charts/nginx-ingress:0.5.2 
+      
+      # base64 encoded helm chart tar.gz
       archive:
-        raw: "" # base64 encoded helm chart tar.gz
+        raw: "" 
 
     # settings for the different helm 3 operations 
     helmDeploymentConfig:
