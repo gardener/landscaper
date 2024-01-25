@@ -26,8 +26,7 @@ deployExecutions:
             createNamespace: true
 
             chart:
-              {{ $chartResource := getResource .cd "name" "hello-world-chart" }}
-              ref: {{ $chartResource.access.imageReference }}
+              resourceRef: {{ getResourceKey `cd://resources/helm-chart` }}
 
             values:
               testData: hello

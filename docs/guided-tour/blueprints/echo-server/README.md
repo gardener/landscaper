@@ -12,33 +12,36 @@ The example uses the following resources:
   uploaded [in an OCI registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server),
 - the Docker image [hashicorp/http-echo](https://hub.docker.com/r/hashicorp/http-echo) as an external resource.
 
-All of these resources are described/bundled in a so-called _component-archive_. You can find the file system representations of the extended component versions [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/echo-server/component-archive).
+All of these resources are bundled in a component. The component's configuration file is shown 
+[here](./config-files/components.yaml).
 
+Describing required resources in a standard format (for which we use the "Open Component Model") has several advantages.
+This Guided Tour can not go into all the details about that model, so you might want to read about the core concepts, 
+the benefits and the available tools on the official website under [https://ocm.software](https://ocm.software).
 
-Describing required resources in a standard format (for which we use the "Open Component Model") has several advantages. This Guided Tour can not go into all the details about that model, so you might want to read about the core concepts, the benefits and the available tools on the official website under [https://ocm.software](https://ocm.software).
+Without a consistent description for your component and its technical resources, you would have to search images spread 
+somewhere in charts, perhaps even mixed with some templating. Moreover, such standardized components can be used by 
+other tools to perform other lifecycle management activities like consistent transports into other environments or to do
+signing/verification of software components.
 
+## OCI Image Resource in the Component
 
-Without a consistent description for your component and its technical resources, you would have to search images spread somewhere in charts, perhaps even mixed with some templating.
-Moreover, such standardized component version descriptor files can be used by other tools to perform other lifecycle management activities like consistent transports into other environments or to do signing/verification of software components.
-
-## OCI Image Resource in the Component Descriptor
-
-The [echo-server Helm chart](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/echo-server/chart/echo-server) in this example consists of a `Deployment` and a `Service`.
+The [echo-server helm chart](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/echo-server/chart/echo-server) in this example consists of a `Deployment` and a `Service`.
 The `Deployment` uses a container image. However, instead of a hard-coded image reference in
 the [deployment.yaml](./chart/echo-server/templates/deployment.yaml), we rather maintain the image reference in the
-component descriptor. In detail, the connection is the following:
+component. In detail, the connection is the following:
 
-- The [component descriptor](./component-archive/v2-external/component-descriptor.yaml) contains a resource with name 
-  `echo-server-image` and areference to the actual image:
+- The [component](./component-archive/v2-external/component-descriptor.yaml) contains a resource with name 
+  `echo-server-image` and a reference to the actual image:
  
   ```yaml
-  name: echo-server-image
-  type: ociImage
-  version: v0.2.3
-  relation: external
-  access:
-    type: ociRegistry
-    imageReference: hashicorp/http-echo:0.2.3
+  resources:
+  - name: echo-server-image
+    type: ociImage
+    version: v0.2.3
+    access:
+      type: ociArtifact
+      imageReference: hashicorp/http-echo:0.2.3
   ```
 
 - The [blueprint](./blueprint/blueprint.yaml) contains a template for a `DeployItem`. Part of this is a 
@@ -58,13 +61,18 @@ component descriptor. In detail, the connection is the following:
     image: hashicorp/http-echo:0.2.3
   ```
 
-- Finally, the [deployment.yaml](./chart/echo-server/templates/deployment.yaml) of the chart takes the image from the 
+- Finally, the [deployment.yaml](./chart/echo-server/templates/deployment.yaml) template of the chart takes the image from the 
   Helm values:
 
   ```yaml
   containers:
     - image: {{ .Values.image }}
   ```
+  
+> **_NOTE:_** Since Kubernetes does not support OCM (yet ;) ), we need the *oci reference* of the container image, here.
+> Consequently, to actually use this component with landscaper, the container image that has to be deployed in a pod 
+> cannot be embedded into the component as a local blob (though it make sense to do so, as an intermediate step during 
+> transport of the component).
 
 
 ## Procedure
