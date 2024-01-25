@@ -121,9 +121,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, "executions")
 	defer c.workerCounter.Exit()
 
+	startMessage := "startup-exec"
+
 	if c.finishedObjectCache.IsContained(req) {
 		cachedMetadata := lsutil.EmptyExecutionMetadata()
 		if err := read_write_layer.GetMetaData(ctx, c.lsCachedClient, req.NamespacedName, cachedMetadata, read_write_layer.R000101); err != nil {
+			logger.Info(startMessage + "1")
 			if apierrors.IsNotFound(err) {
 				logger.Debug(err.Error())
 				return reconcile.Result{}, nil
@@ -131,10 +134,13 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			return lsutil.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 
-		if c.finishedObjectCache.IsFinishedAndRemove(cachedMetadata) {
+		if c.finishedObjectCache.IsFinishedOrRemove(cachedMetadata) {
+			logger.Info(startMessage + "2")
 			return reconcile.Result{}, nil
 		}
 	}
+
+	logger.Info(startMessage + "3")
 
 	if c.lockingEnabled {
 		metadata := lsutil.EmptyExecutionMetadata()
@@ -467,6 +473,8 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 		if lsErr == nil {
 			return lserrors.NewWrappedError(err, "setExecutionPhaseAndUpdate", "UpdateExecutionStatus", err.Error())
 		}
+	} else if isExecFinished(exec) {
+		c.finishedObjectCache.AddSynchonized(&exec.ObjectMeta)
 	}
 
 	return lsErr

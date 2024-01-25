@@ -22,38 +22,50 @@ func NewFinishedObjectCache() *FinishedObjectCache {
 }
 
 func (c *FinishedObjectCache) Add(m *metav1.ObjectMeta) {
-	nameResourceVersion, ok := c.namespaceObjects[m.Namespace]
 
-	if !ok {
-		nameResourceVersion = map[string]string{}
-		c.namespaceObjects[m.Namespace] = nameResourceVersion
+	if !m.DeletionTimestamp.IsZero() {
+		return
 	}
 
-	nameResourceVersion[m.Name] = m.ResourceVersion
+	namespaceResourceVersions, ok := c.namespaceObjects[m.Namespace]
+
+	if !ok {
+		namespaceResourceVersions = map[string]string{}
+		c.namespaceObjects[m.Namespace] = namespaceResourceVersions
+	}
+
+	namespaceResourceVersions[m.Name] = m.ResourceVersion
 }
 
-func (c *FinishedObjectCache) IsFinishedAndRemove(m *metav1.PartialObjectMetadata) bool {
+func (c *FinishedObjectCache) AddSynchonized(m *metav1.ObjectMeta) {
 	c.rwLock.Lock()
 	defer c.rwLock.Unlock()
 
-	nameResourceVersion, ok := c.namespaceObjects[m.Namespace]
+	c.Add(m)
+}
+
+func (c *FinishedObjectCache) IsFinishedOrRemove(m *metav1.PartialObjectMetadata) bool {
+	c.rwLock.Lock()
+	defer c.rwLock.Unlock()
+
+	namespaceResourceVersions, ok := c.namespaceObjects[m.Namespace]
 
 	if !ok {
 		return false
 	}
 
-	resourceVersion, ok := nameResourceVersion[m.Name]
+	resourceVersion, ok := namespaceResourceVersions[m.Name]
 	if !ok {
 		return false
-	}
-
-	delete(nameResourceVersion, m.Name)
-
-	if len(c.namespaceObjects[m.Namespace]) == 0 {
-		delete(c.namespaceObjects, m.Namespace)
 	}
 
 	if m.ResourceVersion != resourceVersion {
+		delete(namespaceResourceVersions, m.Name)
+
+		if len(namespaceResourceVersions) == 0 {
+			delete(c.namespaceObjects, m.Namespace)
+		}
+
 		return false
 	}
 
@@ -64,12 +76,12 @@ func (c *FinishedObjectCache) IsContained(req reconcile.Request) bool {
 	c.rwLock.RLock()
 	defer c.rwLock.RUnlock()
 
-	nameResourceVersion, ok := c.namespaceObjects[req.Namespace]
+	namespaceResourceVersions, ok := c.namespaceObjects[req.Namespace]
 
 	if !ok {
 		return false
 	}
 
-	_, ok = nameResourceVersion[req.Name]
+	_, ok = namespaceResourceVersions[req.Name]
 	return ok
 }

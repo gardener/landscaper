@@ -182,6 +182,8 @@ func HandleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployI
 			if err == nil {
 				return err2
 			}
+		} else if finishedObjectCache != nil && IsDeployItemFinished(deployItem) {
+			finishedObjectCache.AddSynchonized(&deployItem.ObjectMeta)
 		}
 	}
 

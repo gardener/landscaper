@@ -176,9 +176,12 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c.workerCounter.EnterWithLog(logger, 70, "installations")
 	defer c.workerCounter.Exit()
 
+	startMessage := "startup-inst"
+
 	if c.finishedObjectCache.IsContained(req) {
 		cachedMetadata := utils.EmptyInstallationMetadata()
 		if err := read_write_layer.GetMetaData(ctx, c.lsCachedClient, req.NamespacedName, cachedMetadata, read_write_layer.R000098); err != nil {
+			logger.Info(startMessage + "1")
 			if apierrors.IsNotFound(err) {
 				logger.Debug(err.Error())
 				return reconcile.Result{}, nil
@@ -186,10 +189,13 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			return utils.LogHelper{}.LogStandardErrorAndGetReconcileResult(ctx, err)
 		}
 
-		if c.finishedObjectCache.IsFinishedAndRemove(cachedMetadata) {
+		if c.finishedObjectCache.IsFinishedOrRemove(cachedMetadata) {
+			logger.Info(startMessage + "2")
 			return reconcile.Result{}, nil
 		}
 	}
+
+	logger.Info(startMessage + "3")
 
 	if c.lockingEnabled {
 		metadata := utils.EmptyInstallationMetadata()
@@ -448,6 +454,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		inst.Status.PhaseTransitionTime = &now
 	}
 	inst.Status.InstallationPhase = phase
+
 	if phase.IsFinal() {
 		inst.Status.JobIDFinished = inst.Status.JobID
 		inst.Status.TransitionTimes = utils.SetFinishedTransitionTime(inst.Status.TransitionTimes)
@@ -492,6 +499,8 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		}
 
 		return lsError
+	} else if isInstFinished(inst) {
+		c.finishedObjectCache.AddSynchonized(&inst.ObjectMeta)
 	}
 
 	return lsError
