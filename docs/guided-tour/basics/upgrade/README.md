@@ -16,7 +16,7 @@ First, we deploy the original hello-world helm chart:
 
 1. Add the kubeconfig of your target cluster to your [target.yaml](installation/target.yaml) at the specified location.
 
-2. On the Landscaper resource cluster, create a namespace `example` and apply your [target.yaml](installation/target.yaml) and [installation.yaml](installation/installation.yaml):
+2. On the Landscaper resource cluster, create a namespace `example` and apply your [target.yaml](installation/target.yaml) and [installation.yaml](installation/installation-1.0.0.yaml):
    
    ```shell
    kubectl create ns example
