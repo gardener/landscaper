@@ -10,6 +10,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"io"
 	"net/http"
 	"os"
@@ -231,6 +232,7 @@ func HelmDeployerTests(f *framework.Framework) {
 
 		Context("private registry", func() {
 			It("should deny access without credentials", func() {
+				// Test 1: registry is in fact private
 				certFile, err := os.Open(f.RegistryCAPath)
 				Expect(err).To(BeNil())
 
@@ -261,7 +263,8 @@ func HelmDeployerTests(f *framework.Framework) {
 				Expect(err).ToNot(BeNil())
 				Expect(pushResult).To(BeNil())
 			})
-			It("should access a helm chart from on private registry and deploy it", func() {
+			FIt("should access a helm chart from on private registry and deploy it", func() {
+				// Before Suite
 				certFile, err := os.Open(f.RegistryCAPath)
 				Expect(err).To(BeNil())
 
@@ -293,9 +296,114 @@ func HelmDeployerTests(f *framework.Framework) {
 				Expect(err).To(BeNil())
 				Expect(pushResult).ToNot(BeNil())
 
+				// Test 2: helm chart exists in registry
 				pullResult, err := helmClient.Pull(f.RegistryBasePath + "/test-chart:v0.1.0")
 				Expect(err).To(BeNil())
 				Expect(pullResult).ToNot(BeNil())
+
+				// Test 3 (Main): deployer can access helm chart on private registry
+				dockerconfigFile, err := os.Open(f.RegistryConfigPath)
+				Expect(err).To(BeNil())
+				Expect(dockerconfigFile).ToNot(BeNil())
+
+				dockerconfigData, err := io.ReadAll(dockerconfigFile)
+				Expect(err).To(BeNil())
+				Expect(dockerconfigData).ToNot(BeNil())
+
+				// Setup Secret
+				secret := &corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "private-registry-key",
+						Namespace: "private-registry",
+					},
+					Immutable: nil,
+					Type:      "kubernetes.io/dockerconfigjson",
+					Data:      map[string][]byte{".dockerconfigjson": dockerconfigData},
+				}
+
+				// Setup Namespace
+				namespace := &corev1.Namespace{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Namespace",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "private-registry",
+					},
+					Spec:   corev1.NamespaceSpec{},
+					Status: corev1.NamespaceStatus{},
+				}
+				// Setup Target
+				target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, "private-registry", "target", f.RestConfig, true)
+				Expect(err).To(BeNil())
+				Expect(target).ToNot(BeNil())
+
+				// Setup RepositoryContext
+				repoCtx := &cdv2.UnstructuredTypedObject{}
+				Expect(repoCtx.UnmarshalJSON([]byte(fmt.Sprintf(`{"type": "OCIRegistry", "baseUrl": "%s"}`, f.RegistryBasePath)))).To(BeNil())
+				lsCtx := &lsv1alpha1.Context{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: lsv1alpha1.SchemeGroupVersion.String(),
+						Kind:       "Context",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "private-registry-context",
+						Namespace: "private-registry",
+					},
+					ContextConfiguration: lsv1alpha1.ContextConfiguration{
+						RepositoryContext:   repoCtx,
+						UseOCM:              true,
+						RegistryPullSecrets: []corev1.LocalObjectReference{{Name: "private-registry-key"}},
+					},
+				}
+
+				// Setup DeployItem
+				config := &helmv1alpha1.ProviderConfiguration{
+					Name:           "privreg-deploy-item",
+					Namespace:      "private-registry",
+					HelmDeployment: pointer.Bool(true),
+					Values:         nil,
+					Chart:          helmv1alpha1.Chart{Ref: f.RegistryBasePath + "/test-chart:v0.1.0"},
+					Exports:        nil,
+				}
+
+				rawProviderConfig, err := helper.ProviderConfigurationToRawExtension(config)
+				Expect(err).NotTo(HaveOccurred())
+
+				deployItem := &lsv1alpha1.DeployItem{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: lsv1alpha1.SchemeGroupVersion.String(),
+						Kind:       "DeployItem",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "private-registry-deploy-item",
+						Namespace: "private-registry",
+					},
+					Spec: lsv1alpha1.DeployItemSpec{
+						Timeout:       &lsv1alpha1.Duration{Duration: 30 * time.Second},
+						Configuration: rawProviderConfig,
+						Target: &lsv1alpha1.ObjectReference{
+							Name:      target.Name,
+							Namespace: target.Namespace,
+						},
+						Type: helm.Type,
+					},
+				}
+
+				Expect(state.Create(ctx, namespace)).To(BeNil())
+				Expect(state.Create(ctx, target)).To(BeNil())
+				Expect(state.Create(ctx, secret)).To(BeNil())
+				Expect(state.Create(ctx, lsCtx)).To(BeNil())
+				Expect(state.Create(ctx, deployItem)).To(BeNil())
+
+				Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(deployItem), deployItem)).To(Succeed())
+				Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, deployItem, metav1.Now())).To(Succeed())
+				By("Waiting for the DeployItem to succeed")
+				Expect(lsutils.WaitForDeployItemToFinish(ctx, f.Client, deployItem, lsv1alpha1.DeployItemPhases.Succeeded, 1*time.Minute)).To(BeNil())
 			})
 
 		})
