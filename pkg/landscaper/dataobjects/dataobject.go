@@ -43,6 +43,7 @@ type Metadata struct {
 	Key        string
 	Hash       string
 	Index      *int
+	JobID      string
 }
 
 // generateHash returns the internal data generation function for dataobjects or targets.
@@ -134,6 +135,11 @@ func SetMetadataFromObject(objAcc metav1.Object, meta Metadata) {
 	} else {
 		delete(labels, lsv1alpha1.DataObjectIndexLabel)
 	}
+	if len(meta.JobID) != 0 {
+		labels[lsv1alpha1.DataObjectJobIDLabel] = meta.JobID
+	} else {
+		delete(labels, lsv1alpha1.DataObjectJobIDLabel)
+	}
 
 	objAcc.SetLabels(labels)
 
@@ -167,6 +173,11 @@ func (do *DataObject) SetContext(ctx string) *DataObject {
 // SetNamespace sets the namespace for the given data object.
 func (do *DataObject) SetNamespace(ns string) *DataObject {
 	do.Metadata.Namespace = ns
+	return do
+}
+
+func (do *DataObject) SetJobID(jobID string) *DataObject {
+	do.Metadata.JobID = jobID
 	return do
 }
 

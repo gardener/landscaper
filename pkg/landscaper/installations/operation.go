@@ -546,7 +546,8 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 		SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).
 		SetContext(src).
 		SetKey(importDef.Name).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
-		SetData(importData)
+		SetData(importData).
+		SetJobID(o.Inst.GetInstallation().Status.JobID)
 	raw, err := do.Build()
 	if err != nil {
 		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
@@ -588,7 +589,8 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 		SetContext(src).
 		SetKey(importDef.Name).
 		SetIndex(nil).
-		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
+		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
+		SetJobID(o.Inst.GetInstallation().Status.JobID)
 
 	targetForUpdate := &lsv1alpha1.Target{}
 	targetExtension.ApplyNameAndNamespace(targetForUpdate)
@@ -631,7 +633,8 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 			SetContext(src).
 			SetKey(importDef.Name).
 			SetIndex(ptr.To[int](i)).
-			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
+			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
+			SetJobID(o.Inst.GetInstallation().Status.JobID)
 	}
 
 	targets, err := targetExtensionList.Build(importDef.Name)

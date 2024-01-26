@@ -58,6 +58,11 @@ func (t *TargetExtension) SetContext(ctx string) *TargetExtension {
 	return t
 }
 
+func (t *TargetExtension) SetJobID(jobID string) *TargetExtension {
+	t.metadata.JobID = jobID
+	return t
+}
+
 // SetNamespace sets the namespace for the given data object.
 func (t *TargetExtension) SetNamespace(ns string) *TargetExtension {
 	t.metadata.Namespace = ns

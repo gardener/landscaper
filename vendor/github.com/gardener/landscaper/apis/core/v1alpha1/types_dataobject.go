@@ -38,6 +38,9 @@ const DataObjectSourceLabel = "data.landscaper.gardener.cloud/source"
 // DataObjectIndexLabel defines the name of the annotation that specifies the index of the dataobject (for list-type imports)
 const DataObjectIndexLabel = "data.landscaper.gardener.cloud/index"
 
+// DataObjectJobIDLabel defines the job ID under which a data object was created.
+const DataObjectJobIDLabel = "data.landscaper.gardener.cloud/jobid"
+
 // DataObjectHashAnnotation defines the name of the annotation that specifies the hash of the data.
 const DataObjectHashAnnotation = "data.landscaper.gardener.cloud/hash"
 

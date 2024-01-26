@@ -232,9 +232,6 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 
 	// cleanup
 	newCleaner := NewDataObjectAndTargetCleaner(inst, c.LsUncachedClient())
-	if err := newCleaner.CleanupContext(ctx); err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error()), nil
-	}
 	if err := newCleaner.CleanupExports(ctx); err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "CleanupExports", err.Error()), nil
 	}
@@ -364,6 +361,12 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 	}
 
 	if len(subInstsToDelete) == 0 {
+		// all orphaned removed
+		newCleaner := NewDataObjectAndTargetCleaner(inst, c.LsUncachedClient())
+		if err := newCleaner.CleanupContext(ctx); err != nil {
+			return nil, lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error())
+		}
+
 		return nil, nil
 	}
 
