@@ -43,6 +43,7 @@ type Imports struct {
 	DataObjects map[string]*dataobjects.DataObject
 	Targets     map[string]*dataobjects.TargetExtension
 	TargetLists map[string]*dataobjects.TargetExtensionList
+	TargetMaps  map[string]*dataobjects.TargetMapExtension
 }
 
 func (imps *Imports) All() []*dataobjects.Imported {
@@ -82,6 +83,10 @@ func (c *Constructor) LoadImports(ctx context.Context) (*Imports, error) {
 	if err != nil {
 		return nil, err
 	}
+	imps.TargetMaps, err = c.GetImportedTargetMaps(ctx) // returns a map mapping logical names to target maps
+	if err != nil {
+		return nil, err
+	}
 	return imps, nil
 }
 
@@ -107,13 +112,15 @@ func (c *Constructor) Construct(ctx context.Context, imps *Imports) error {
 	}
 
 	// add additional imports and targets
-	imports, err := c.constructImports(inst.GetBlueprint().Info.Imports, imps.DataObjects, imps.Targets, imps.TargetLists, templatedDataMappings, fldPath)
+	imports, err := c.constructImports(inst.GetBlueprint().Info.Imports, imps.DataObjects, imps.Targets,
+		imps.TargetLists, imps.TargetMaps, templatedDataMappings, fldPath)
 	if err != nil {
 		return err
 	}
 
 	c.SetTargetImports(imps.Targets)
 	c.SetTargetListImports(imps.TargetLists)
+	c.SetTargetMapImports(imps.TargetMaps)
 
 	inst.SetImports(imports)
 	return nil
@@ -125,6 +132,7 @@ func (c *Constructor) constructImports(
 	importedDataObjects map[string]*dataobjects.DataObject,
 	importedTargets map[string]*dataobjects.TargetExtension,
 	importedTargetLists map[string]*dataobjects.TargetExtensionList,
+	importedTargetMaps map[string]*dataobjects.TargetMapExtension,
 	templatedDataMappings map[string]interface{},
 	fldPath *field.Path) (map[string]interface{}, error) {
 
@@ -167,7 +175,7 @@ func (c *Constructor) constructImports(
 			}
 			if len(def.ConditionalImports) > 0 {
 				// recursively check conditional imports
-				conditionalImports, err := c.constructImports(def.ConditionalImports, importedDataObjects, importedTargets, importedTargetLists, templatedDataMappings, defPath)
+				conditionalImports, err := c.constructImports(def.ConditionalImports, importedDataObjects, importedTargets, importedTargetLists, importedTargetMaps, templatedDataMappings, defPath)
 				if err != nil {
 					return nil, err
 				}
@@ -225,6 +233,35 @@ func (c *Constructor) constructImports(
 				}
 				if def.TargetType != targetType {
 					return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: type of the element at position %d of the imported targetlist is %s but expected %s", defPath.String(), i, targetType, def.TargetType)
+				}
+			}
+			continue
+		case lsv1alpha1.ImportTypeTargetMap:
+			if val, ok := importedTargetMaps[def.Name]; ok {
+				imports[def.Name], err = val.GetData()
+				if err != nil {
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported target cannot be parsed", defPath.String())
+				}
+			}
+			data, ok := imports[def.Name]
+			if !ok {
+				if def.Required != nil && !*def.Required {
+					continue // don't throw an error if the import is not required
+				}
+				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeTargetMap)
+			}
+
+			var targetType string
+			mapData, ok := data.(map[string]interface{})
+			if !ok {
+				return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: targetmap import is not a map", defPath.String())
+			}
+			for targetMapKey, elem := range mapData {
+				if err := jsonpath.GetValue(".spec.type", elem, &targetType); err != nil {
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: element at position %s of the imported targetmap does not match the expected target template schema", defPath.String(), targetMapKey)
+				}
+				if def.TargetType != targetType {
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: type of the element at position %s of the imported targetmap is %s but expected %s", defPath.String(), targetMapKey, targetType, def.TargetType)
 				}
 			}
 			continue

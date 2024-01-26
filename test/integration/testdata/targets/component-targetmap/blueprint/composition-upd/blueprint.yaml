@@ -1,0 +1,22 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+imports:
+  - name: namespace
+    type: data
+    schema:
+      type: string
+  - name: configs
+    type: data
+    schema:
+      type: object
+  - name: blueCluster
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+  - name: yellowCluster
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+subinstallations:
+  - file: /subinst.yaml

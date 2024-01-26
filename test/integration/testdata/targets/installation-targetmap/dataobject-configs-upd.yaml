@@ -1,0 +1,12 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  name: do-configs
+  namespace: cu-example
+data:
+  blue:
+    cpu: 100m
+    memory: 100Mi
+  yellow:
+    cpu: 140m
+    memory: 140Mi

@@ -58,6 +58,11 @@ func (t *TargetExtension) SetContext(ctx string) *TargetExtension {
 	return t
 }
 
+func (t *TargetExtension) SetJobID(jobID string) *TargetExtension {
+	t.metadata.JobID = jobID
+	return t
+}
+
 // SetNamespace sets the namespace for the given data object.
 func (t *TargetExtension) SetNamespace(ns string) *TargetExtension {
 	t.metadata.Namespace = ns
@@ -85,6 +90,11 @@ func (t *TargetExtension) SetKey(key string) *TargetExtension {
 // SetIndex sets the index (for list-type objects)
 func (t *TargetExtension) SetIndex(idx *int) *TargetExtension {
 	t.metadata.Index = idx
+	return t
+}
+
+func (t *TargetExtension) SetTargetMapKey(targetMapKey *string) *TargetExtension {
+	t.metadata.TargetMapKey = targetMapKey
 	return t
 }
 

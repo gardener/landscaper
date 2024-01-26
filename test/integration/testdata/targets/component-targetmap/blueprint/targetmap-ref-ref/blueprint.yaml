@@ -1,0 +1,25 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+imports:
+  - name: namespace
+    type: data
+    schema:
+      type: string
+  - name: configs2
+    type: data
+    schema:
+      type: object
+  - name: referencedBlueprint
+    type: data
+    schema:
+      type: string
+  - name: clusters2
+    type: targetMap
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+subinstallationExecutions:
+  - name: subinst-executions
+    type: GoTemplate
+    file: /subinst-execution.yaml

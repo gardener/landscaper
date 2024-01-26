@@ -109,6 +109,19 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context,
 				rawTarget := ti.GetTargetExtensions()[*elem.Target.Index].GetTarget()
 				target.Name = rawTarget.Name
 				target.Namespace = rawTarget.Namespace
+			} else if elem.Target.Key != nil {
+				// targetmap import
+				ti := o.GetTargetMapImport(elem.Target.Import)
+				if ti == nil {
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "targetmap import %q not found", elem.Target.Import)
+				}
+				targetExt, ok := ti.GetTargetExtensions()[*elem.Target.Key]
+				if !ok || targetExt == nil {
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "key %q not found in targetmap import %q", *elem.Target.Key, elem.Target.Import)
+				}
+				rawTarget := targetExt.GetTarget()
+				target.Name = rawTarget.Name
+				target.Namespace = rawTarget.Namespace
 			} else if len(elem.Target.Import) > 0 {
 				// single target import reference
 				t := o.GetTargetImport(elem.Target.Import)

@@ -603,6 +603,12 @@ spec:
                             Exactly one of Target, Targets, and TargetListReference
                             has to be specified.
                           type: string
+                        targetMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        targetMapRef:
+                          type: string
                         targets:
                           description: Targets is a list of in-cluster target objects.
                             Exactly one of Target, Targets, and TargetListReference

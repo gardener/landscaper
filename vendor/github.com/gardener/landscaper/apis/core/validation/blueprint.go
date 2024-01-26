@@ -10,11 +10,10 @@ import (
 	"regexp"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/validation"
-
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/gardener/landscaper/apis/core"
@@ -22,7 +21,7 @@ import (
 )
 
 var landscaperScheme = runtime.NewScheme()
-var IsIndexedRegex = regexp.MustCompile(`(?P<imp>.*)\[(?P<idx>[1-9]?[0-9]*)\]$`)
+var IsIndexedRegex = regexp.MustCompile(`(?P<imp>.*)\[(?P<idx>.*)\]$`)
 
 func init() {
 	coreinstall.Install(landscaperScheme)
@@ -264,6 +263,7 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 		blueprintDataImports       = sets.NewString()
 		blueprintTargetImports     = sets.NewString()
 		blueprintTargetListImports = sets.NewString()
+		blueprintTargetMapImports  = sets.NewString()
 	)
 
 	for _, bImport := range blueprintImportDefs {
@@ -275,6 +275,8 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 				blueprintTargetImports.Insert(bImport.Name)
 			case core.ImportTypeTargetList:
 				blueprintTargetListImports.Insert(bImport.Name)
+			case core.ImportTypeTargetMap:
+				blueprintTargetMapImports.Insert(bImport.Name)
 			}
 		} else {
 			// fallback to old logic
@@ -336,7 +338,7 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 			} else {
 				exportedTargets[target.Target] = targetPath.String()
 			}
-			if blueprintTargetImports.Has(target.Target) || blueprintTargetListImports.Has(target.Target) {
+			if blueprintTargetImports.Has(target.Target) || blueprintTargetListImports.Has(target.Target) || blueprintTargetMapImports.Has(target.Target) {
 				allErrs = append(allErrs, field.Forbidden(targetPath, "export is imported by its parent"))
 			}
 		}
@@ -360,6 +362,19 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 					Path:         impPath,
 					IsListImport: true,
 				})
+			} else if target.TargetMap != nil {
+				for k2, t2 := range target.TargetMap {
+					importedTargets = append(importedTargets, Import{
+						Name: t2,
+						Path: impPath.Child("targets").Key(k2),
+					})
+				}
+			} else if len(target.TargetMapReference) != 0 {
+				importedTargets = append(importedTargets, Import{
+					Name:              target.TargetMapReference,
+					Path:              impPath,
+					IsTargetMapImport: true,
+				})
 			}
 			// invalid definition if no if matches, but this is validated at another point already
 		}
@@ -372,43 +387,48 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 	}
 
 	// validate that all imported values are either satisfied by the blueprint or by another sibling
-	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintDataImports, nil, sets.StringKeySet(exportedDataObjects), importedDataObjects)...)
-	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintTargetImports, blueprintTargetListImports, sets.StringKeySet(exportedTargets), importedTargets)...)
+	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintDataImports, nil, nil, sets.StringKeySet(exportedDataObjects), importedDataObjects)...)
+	allErrs = append(allErrs, ValidateSatisfiedImports(blueprintTargetImports, blueprintTargetListImports, blueprintTargetMapImports, sets.StringKeySet(exportedTargets), importedTargets)...)
 
 	return allErrs
 }
 
 // Import defines a internal import struct for validation.
 type Import struct {
-	Name         string
-	Path         *field.Path
-	IsListImport bool
+	Name              string
+	Path              *field.Path
+	IsListImport      bool
+	IsTargetMapImport bool
 }
 
 // ValidateSatisfiedImports validates that all imports are satisfied.
-func ValidateSatisfiedImports(blueprintImports, blueprintListImports, exports sets.String, imports []Import) field.ErrorList { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
+func ValidateSatisfiedImports(blueprintImports, blueprintListImports, blueprintMapImports, exports sets.String, imports []Import) field.ErrorList { //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 	allErrs := field.ErrorList{}
 	for _, imp := range imports {
-		if len(blueprintListImports) > 0 { // no need to check for references to elements from targetlist imports, if there aren't any targetlist imports
+		if len(blueprintListImports) > 0 || len(blueprintMapImports) > 0 { // no need to check for references to elements from targetlist/map imports, if there aren't any targetlist/map imports
 			if imp.IsListImport {
 				if !blueprintListImports.Has(imp.Name) {
 					allErrs = append(allErrs, field.NotFound(imp.Path, "import not satisfied"))
 				}
 				continue
 			}
-			isIndexed, impName, _, err := IsIndexed(imp.Name)
-			if err != nil {
-				allErrs = append(allErrs, field.Invalid(imp.Path, imp.Name, err.Error()))
+
+			if imp.IsTargetMapImport {
+				if !blueprintMapImports.Has(imp.Name) {
+					allErrs = append(allErrs, field.NotFound(imp.Path, "import not satisfied"))
+				}
 				continue
 			}
+
+			isIndexed, impName := IsIndexed(imp.Name)
 			if isIndexed {
-				if !blueprintListImports.Has(impName) {
+				if !blueprintListImports.Has(impName) && !blueprintMapImports.Has(impName) {
 					allErrs = append(allErrs, field.NotFound(imp.Path, "import not satisfied"))
 				}
 				continue
 			}
 		}
-		if imp.IsListImport || !exports.Has(imp.Name) && !blueprintImports.Has(imp.Name) {
+		if imp.IsListImport || imp.IsTargetMapImport || (!exports.Has(imp.Name) && !blueprintImports.Has(imp.Name)) {
 			allErrs = append(allErrs, field.NotFound(imp.Path, "import not satisfied"))
 		}
 	}

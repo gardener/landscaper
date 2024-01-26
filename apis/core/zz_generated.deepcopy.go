@@ -2466,6 +2466,13 @@ func (in *TargetImport) DeepCopyInto(out *TargetImport) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.TargetMap != nil {
+		in, out := &in.TargetMap, &out.TargetMap
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

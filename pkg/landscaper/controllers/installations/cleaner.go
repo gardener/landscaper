@@ -3,6 +3,10 @@ package installations
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -37,7 +41,7 @@ func (c *DataObjectAndTargetCleaner) CleanupExports(ctx context.Context) error {
 		return err
 	}
 
-	if err := c.deleteDataObjects(ctx, doList.Items); err != nil {
+	if err := c.deleteDataObjects(ctx, doList.Items, false); err != nil {
 		return err
 	}
 
@@ -51,7 +55,7 @@ func (c *DataObjectAndTargetCleaner) CleanupExports(ctx context.Context) error {
 		return err
 	}
 
-	if err := c.deleteTargets(ctx, targetList.Items); err != nil {
+	if err := c.deleteTargets(ctx, targetList.Items, false); err != nil {
 		return err
 	}
 
@@ -69,10 +73,6 @@ func (c *DataObjectAndTargetCleaner) CleanupContext(ctx context.Context) error {
 		return err
 	}
 
-	if err := c.deleteDataObjects(ctx, doList.Items); err != nil {
-		return err
-	}
-
 	targetList := &lsv1alpha1.TargetList{}
 	if err := read_write_layer.ListTargets(ctx, c.client, targetList, read_write_layer.R000063,
 		client.InNamespace(c.installation.Namespace),
@@ -82,29 +82,42 @@ func (c *DataObjectAndTargetCleaner) CleanupContext(ctx context.Context) error {
 		return err
 	}
 
-	if err := c.deleteTargets(ctx, targetList.Items); err != nil {
-		return err
-	}
+	isNewDeletion := utils.CheckIfNewContextDeletion(doList, targetList)
 
+	if isNewDeletion {
+		if err := c.deleteDataObjects(ctx, doList.Items, true); err != nil {
+			return err
+		}
+
+		if err := c.deleteTargets(ctx, targetList.Items, true); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (c *DataObjectAndTargetCleaner) deleteDataObjects(ctx context.Context, dataObjects []lsv1alpha1.DataObject) error {
+func (c *DataObjectAndTargetCleaner) deleteDataObjects(ctx context.Context, dataObjects []lsv1alpha1.DataObject,
+	checkJobID bool) error {
 	for i := range dataObjects {
 		do := &dataObjects[i]
-		if err := read_write_layer.NewWriter(c.client).DeleteDataObject(ctx, read_write_layer.W000014, do); err != nil {
-			return err
+		if !checkJobID || !kubernetes.HasLabelWithValue(&do.ObjectMeta, lsv1alpha1.DataObjectJobIDLabel, c.installation.Status.JobID) {
+			if err := read_write_layer.NewWriter(c.client).DeleteDataObject(ctx, read_write_layer.W000014, do); err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func (c *DataObjectAndTargetCleaner) deleteTargets(ctx context.Context, targets []lsv1alpha1.Target) error {
+func (c *DataObjectAndTargetCleaner) deleteTargets(ctx context.Context, targets []lsv1alpha1.Target,
+	checkJobID bool) error {
 	for i := range targets {
 		target := &targets[i]
-		if err := read_write_layer.NewWriter(c.client).DeleteTarget(ctx, read_write_layer.W000011, target); err != nil {
-			return err
+		if !checkJobID || !kubernetes.HasLabelWithValue(&target.ObjectMeta, lsv1alpha1.DataObjectJobIDLabel, c.installation.Status.JobID) {
+			if err := read_write_layer.NewWriter(c.client).DeleteTarget(ctx, read_write_layer.W000011, target); err != nil {
+				return err
+			}
 		}
 	}
 

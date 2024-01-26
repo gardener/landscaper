@@ -1,0 +1,18 @@
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: inst-{{ .imports.referencedBlueprint }}
+
+    blueprint:
+      ref: cd://resources/{{ .imports.referencedBlueprint }}
+
+    imports:
+      data:
+        - name: namespace
+          dataRef: namespace
+        - name: configs
+          dataRef: configs1
+      targets:
+        - name: clusters
+          targetMapRef: clusters1

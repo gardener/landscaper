@@ -1,0 +1,42 @@
+subinstallations:
+{{ range $key, $config := .imports.configsEC }}
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: exporter-{{ $key }}
+
+    blueprint:
+      ref: cd://resources/blueprint-exporter
+
+    imports:
+      targets:
+        - name: clusterIn
+          target: clusterEC
+
+    exports:
+      targets:
+        - name: clusterOut
+          target: cluster-{{ $key }}
+{{ end }}
+
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: multiple-subinst
+
+    blueprint:
+      ref: cd://resources/blueprint-multiple-subinst
+
+    imports:
+      targets:
+        - name: clusters
+          targetMap:
+            {{ range $key, $config := .imports.configsEC }}
+              {{ $key }}: cluster-{{ $key }}
+            {{- end }}
+      data:
+        - name: namespace
+          dataRef: namespace
+        - name: configs
+          dataRef: configsEC
+

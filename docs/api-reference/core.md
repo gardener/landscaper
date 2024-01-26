@@ -5778,6 +5778,28 @@ string
 Exactly one of Target, Targets, and TargetListReference has to be specified.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>targetMap</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>targetMapRef</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.TargetSelector">TargetSelector

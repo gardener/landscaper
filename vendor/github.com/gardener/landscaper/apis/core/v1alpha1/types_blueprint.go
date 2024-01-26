@@ -26,6 +26,9 @@ const ImportTypeTarget = ImportType("target")
 // ImportTypeTargetList is the import type for targetlist imports
 const ImportTypeTargetList = ImportType("targetList")
 
+// ImportTypeTargetMap is the import type for targetmap imports
+const ImportTypeTargetMap = ImportType("targetMap")
+
 // ExportTypeData is the export type for data exports
 const ExportTypeData = ExportType(ImportTypeData)
 
