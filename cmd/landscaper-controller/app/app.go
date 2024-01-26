@@ -10,8 +10,6 @@ import (
 	"os"
 	"time"
 
-	"k8s.io/utils/pointer"
-
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"

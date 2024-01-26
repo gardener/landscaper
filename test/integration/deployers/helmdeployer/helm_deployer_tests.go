@@ -10,15 +10,16 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
-	"k8s.io/utils/ptr"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
 	"helm.sh/helm/v3/pkg/registry"
+	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
@@ -230,9 +231,28 @@ func HelmDeployerTests(f *framework.Framework) {
 			})
 		})
 
-		Context("private registry", func() {
-			It("should deny access without credentials", func() {
-				// Test 1: registry is in fact private
+		Context("private registry", Ordered, func() {
+			// The following test should run ordered, as check and prepare several prerequisites (registry is actually
+			// private, the image required for the test is actually uploaded, ...) before running the actual test
+			// (helm deployer deploying an image from a private registry).
+			var imageData []byte
+			var httpclient *http.Client
+
+			var ns *corev1.Namespace
+			var target *lsv1alpha1.Target
+			var secret *corev1.Secret
+			var lsctx *lsv1alpha1.Context
+			var di *lsv1alpha1.DeployItem
+
+			BeforeAll(func() {
+				var err error
+				By("configure http client and data")
+				imageFile, err := os.Open(filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart.tgz"))
+				Expect(err).To(BeNil())
+
+				imageData, err = io.ReadAll(imageFile)
+				Expect(err).To(BeNil())
+
 				certFile, err := os.Open(f.RegistryCAPath)
 				Expect(err).To(BeNil())
 
@@ -247,61 +267,9 @@ func HelmDeployerTests(f *framework.Framework) {
 						RootCAs: certPool,
 					},
 				}
-				httpClient := &http.Client{Transport: transport}
+				httpclient = &http.Client{Transport: transport}
 
-				helmClient, err := registry.NewClient(
-					registry.ClientOptHTTPClient(httpClient))
-				Expect(err).To(BeNil())
-
-				imageFile, err := os.Open(filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart.tgz"))
-				Expect(err).To(BeNil())
-
-				imageData, err := io.ReadAll(imageFile)
-				Expect(err).To(BeNil())
-
-				pushResult, err := helmClient.Push(imageData, f.RegistryBasePath+"/test-chart:v0.1.0")
-				Expect(err).ToNot(BeNil())
-				Expect(pushResult).To(BeNil())
-			})
-			FIt("should access a helm chart from on private registry and deploy it", func() {
-				// Before Suite
-				certFile, err := os.Open(f.RegistryCAPath)
-				Expect(err).To(BeNil())
-
-				certData, err := io.ReadAll(certFile)
-				Expect(err).To(BeNil())
-
-				certPool := x509.NewCertPool()
-				certPool.AppendCertsFromPEM(certData)
-
-				transport := &http.Transport{
-					TLSClientConfig: &tls.Config{
-						RootCAs: certPool,
-					},
-				}
-				httpClient := &http.Client{Transport: transport}
-
-				helmClient, err := registry.NewClient(
-					registry.ClientOptCredentialsFile(f.RegistryConfigPath),
-					registry.ClientOptHTTPClient(httpClient))
-				Expect(err).To(BeNil())
-
-				imageFile, err := os.Open(filepath.Join(f.RootPath, "test", "integration", "deployers", "helmdeployer", "testdata", "01", "chart.tgz"))
-				Expect(err).To(BeNil())
-
-				imageData, err := io.ReadAll(imageFile)
-				Expect(err).To(BeNil())
-
-				pushResult, err := helmClient.Push(imageData, f.RegistryBasePath+"/test-chart:v0.1.0")
-				Expect(err).To(BeNil())
-				Expect(pushResult).ToNot(BeNil())
-
-				// Test 2: helm chart exists in registry
-				pullResult, err := helmClient.Pull(f.RegistryBasePath + "/test-chart:v0.1.0")
-				Expect(err).To(BeNil())
-				Expect(pullResult).ToNot(BeNil())
-
-				// Test 3 (Main): deployer can access helm chart on private registry
+				By("configure kubernetes objects")
 				dockerconfigFile, err := os.Open(f.RegistryConfigPath)
 				Expect(err).To(BeNil())
 				Expect(dockerconfigFile).ToNot(BeNil())
@@ -310,8 +278,7 @@ func HelmDeployerTests(f *framework.Framework) {
 				Expect(err).To(BeNil())
 				Expect(dockerconfigData).ToNot(BeNil())
 
-				// Setup Secret
-				secret := &corev1.Secret{
+				secret = &corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
 						Kind:       "Secret",
@@ -325,8 +292,7 @@ func HelmDeployerTests(f *framework.Framework) {
 					Data:      map[string][]byte{".dockerconfigjson": dockerconfigData},
 				}
 
-				// Setup Namespace
-				namespace := &corev1.Namespace{
+				ns = &corev1.Namespace{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
 						Kind:       "Namespace",
@@ -337,15 +303,14 @@ func HelmDeployerTests(f *framework.Framework) {
 					Spec:   corev1.NamespaceSpec{},
 					Status: corev1.NamespaceStatus{},
 				}
-				// Setup Target
-				target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, "private-registry", "target", f.RestConfig, true)
+
+				target, err = utils.BuildInternalKubernetesTarget(ctx, f.Client, "private-registry", "target", f.RestConfig, true)
 				Expect(err).To(BeNil())
 				Expect(target).ToNot(BeNil())
 
-				// Setup RepositoryContext
 				repoCtx := &cdv2.UnstructuredTypedObject{}
 				Expect(repoCtx.UnmarshalJSON([]byte(fmt.Sprintf(`{"type": "OCIRegistry", "baseUrl": "%s"}`, f.RegistryBasePath)))).To(BeNil())
-				lsCtx := &lsv1alpha1.Context{
+				lsctx = &lsv1alpha1.Context{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: lsv1alpha1.SchemeGroupVersion.String(),
 						Kind:       "Context",
@@ -360,21 +325,47 @@ func HelmDeployerTests(f *framework.Framework) {
 						RegistryPullSecrets: []corev1.LocalObjectReference{{Name: "private-registry-key"}},
 					},
 				}
+			})
 
-				// Setup DeployItem
+			It("registry is private (denies access without credentials)", func() {
+				By("configure helm client without credentials")
+				helmClient, err := registry.NewClient(
+					registry.ClientOptHTTPClient(httpclient))
+				Expect(err).To(BeNil())
+
+				By("push with helm client without credentials (expect access denied)")
+				pushResult, err := helmClient.Push(imageData, f.RegistryBasePath+"/test-chart:v0.1.0")
+				Expect(err).ToNot(BeNil())
+				Expect(pushResult).To(BeNil())
+			})
+			It("registry contains image (upload succeeds)", func() {
+				By("configure helm client with credentials")
+				helmClient, err := registry.NewClient(
+					registry.ClientOptCredentialsFile(f.RegistryConfigPath),
+					registry.ClientOptHTTPClient(httpclient))
+				Expect(err).To(BeNil())
+
+				By("push with helm client with credentials (expect push to succeed)")
+				pushResult, err := helmClient.Push(imageData, f.RegistryBasePath+"/test-chart:v0.1.0")
+				Expect(err).To(BeNil())
+				Expect(pushResult).ToNot(BeNil())
+			})
+
+			testFunc := func(realHelmDeployer bool) {
+
+				By("configure deploy item")
 				config := &helmv1alpha1.ProviderConfiguration{
 					Name:           "privreg-deploy-item",
 					Namespace:      "private-registry",
-					HelmDeployment: pointer.Bool(true),
+					HelmDeployment: ptr.To[bool](realHelmDeployer),
 					Values:         nil,
 					Chart:          helmv1alpha1.Chart{Ref: f.RegistryBasePath + "/test-chart:v0.1.0"},
 					Exports:        nil,
 				}
-
 				rawProviderConfig, err := helper.ProviderConfigurationToRawExtension(config)
 				Expect(err).NotTo(HaveOccurred())
 
-				deployItem := &lsv1alpha1.DeployItem{
+				di = &lsv1alpha1.DeployItem{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: lsv1alpha1.SchemeGroupVersion.String(),
 						Kind:       "DeployItem",
@@ -384,26 +375,58 @@ func HelmDeployerTests(f *framework.Framework) {
 						Namespace: "private-registry",
 					},
 					Spec: lsv1alpha1.DeployItemSpec{
-						Timeout:       &lsv1alpha1.Duration{Duration: 30 * time.Second},
-						Configuration: rawProviderConfig,
+						Timeout: &lsv1alpha1.Duration{Duration: 30 * time.Second},
 						Target: &lsv1alpha1.ObjectReference{
 							Name:      target.Name,
 							Namespace: target.Namespace,
 						},
-						Type: helm.Type,
+						Type:          helm.Type,
+						Configuration: rawProviderConfig,
 					},
 				}
 
-				Expect(state.Create(ctx, namespace)).To(BeNil())
-				Expect(state.Create(ctx, target)).To(BeNil())
-				Expect(state.Create(ctx, secret)).To(BeNil())
-				Expect(state.Create(ctx, lsCtx)).To(BeNil())
-				Expect(state.Create(ctx, deployItem)).To(BeNil())
+				// create local copies of the variables since they are used multiple times and would be altered by
+				// kubernetes during the create operation
+				localns := *ns
+				localtarget := *target
+				localsecret := *secret
+				locallsctx := *lsctx
+				localdi := *di
 
-				Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(deployItem), deployItem)).To(Succeed())
-				Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, deployItem, metav1.Now())).To(Succeed())
-				By("Waiting for the DeployItem to succeed")
-				Expect(lsutils.WaitForDeployItemToFinish(ctx, f.Client, deployItem, lsv1alpha1.DeployItemPhases.Succeeded, 1*time.Minute)).To(BeNil())
+				By("creating kubernetes objects")
+				Expect(state.Create(ctx, &localns)).To(BeNil())
+				Expect(state.Create(ctx, &localtarget)).To(BeNil())
+				Expect(state.Create(ctx, &localsecret)).To(BeNil())
+				Expect(state.Create(ctx, &locallsctx)).To(BeNil())
+				Expect(state.Create(ctx, &localdi)).To(BeNil())
+
+				By("update job id of deploy item to trigger reconciliation")
+				Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+				Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+
+				By("waiting for the deploy item to succeed")
+				Expect(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 1*time.Minute)).To(BeNil())
+				cm := &corev1.ConfigMap{}
+				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", "private-registry"), cm)).To(Succeed())
+				Expect(cm.Data["key"]).To(Equal("value"))
+
+				By("removing the deploy item")
+				utils.ExpectNoError(f.Client.Delete(ctx, di))
+				// Set a new jobID to trigger a reconcile of the deploy item
+				Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+				Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+
+				utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, di, 2*time.Minute))
+
+				Expect(state.CleanupState(ctx, envtest.WaitForDeletion(true))).To(BeNil())
+			}
+
+			It("deploy deploy item with chart in private registry (real helm deployer)", func() {
+				testFunc(true)
+			})
+
+			It("deploy deploy item with chart in private registry (templating and manifest apply)", func() {
+				testFunc(false)
 			})
 
 		})
