@@ -4,7 +4,7 @@
 
 REPO_ROOT                                      := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VERSION                                        := $(shell cat $(REPO_ROOT)/VERSION)
-EFFECTIVE_VERSION                              := $(VERSION)-$(shell git rev-parse HEAD)
+EFFECTIVE_VERSION                              := $(shell $(REPO_ROOT)/hack/get-version.sh)
 
 REGISTRY                                       := europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper
 DOCKER_BUILDER_NAME := "ls-multiarch"
