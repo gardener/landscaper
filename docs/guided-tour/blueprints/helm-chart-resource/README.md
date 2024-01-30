@@ -22,8 +22,8 @@ Turns out, essentially the same technique can be used to reference helm charts f
 this, we have to:
 - Extend the resources contained in our [component](../external-blueprint/config-files/components.yaml) by a *helm 
 chart*. 
-- Modify the blueprint so that it references the *helm chart* resource in the component instead of directly referencing
-the oci image location.
+- Modify the [blueprint](../external-blueprint/blueprint/blueprint.yaml) so that it references the *helm chart* resource in the component 
+instead of directly referencing the oci image location.
 
 The *component configuration file* for the component with the extended resources is shown [here](./config-files/components.yaml):
 
@@ -48,6 +48,33 @@ components:
           type: ociArtifact
           imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
 ```
+
+If your helm chart is stored in a *helm chart repository* instead of an oci registry, the *component configuration file* 
+for the component with the extended resources would look like this:
+
+```yaml
+components:
+  - name: github.com/gardener/landscaper-examples/guided-tour/helm-chart-resource
+    version: 2.0.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint
+        type: landscaper.gardener.cloud/blueprint
+        version: 1.0.0
+        access:
+          type: ociArtifact
+          # notice that this has to be a reference to the updated blueprint
+          imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/helm-chart-resource:1.0.0
+      - name: helm-chart
+        type: helm.io/chart
+        version: 1.0.0
+        access:
+          type: helm
+          helmChart: hello-world:1.0.0
+          helmRepository: https://example.helm.repo.com/landscaper
+```
+
 
 Again, if you were to prefer to embed the blueprint and the helm chart in the component as a local blob, instead of an 
 `access:...`, you would have to specify an `input:...` as demonstrated [here](./config-files/local-blob-components.yaml). 

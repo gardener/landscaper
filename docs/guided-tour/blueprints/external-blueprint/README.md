@@ -20,7 +20,7 @@ You can find the blueprint for the current example [here](https://github.com/gar
 We have uploaded the blueprint
 [here](https://eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint) into an OCI
 registry, from where the Landscaper can access it. You can find the commands, which we have used to upload the blueprint
-in this script: [commands/push-blueprint.sh](./commands/push-blueprint.sh).
+in this script: [commands/blueprint.sh](./commands/blueprint.sh).
 
 
 ## Components
