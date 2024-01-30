@@ -48,6 +48,9 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) (*
 	}
 
 	if _, err := o.WriterToLsUncachedClient().CreateOrUpdateDeployItem(ctx, read_write_layer.W000036, item.DeployItem, func() error {
+		if item.DeployItem.CreationTimestamp.IsZero() && item.DeployItem.DeletionTimestamp.IsZero() {
+			controllerutil.AddFinalizer(item.DeployItem, lsv1alpha1.LandscaperFinalizer)
+		}
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
 		item.DeployItem.Spec.Context = o.exec.Spec.Context
@@ -64,17 +67,6 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) (*
 		return nil, lserrors.NewWrappedError(err, op, msg, err.Error())
 	}
 
-	ref := lsv1alpha1.VersionedNamedObjectReference{}
-	ref.Name = item.Info.Name
-	ref.Reference.Name = item.DeployItem.Name
-	ref.Reference.Namespace = item.DeployItem.Namespace
-	ref.Reference.ObservedGeneration = item.DeployItem.Generation
-
-	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
-	if err := o.WriterToLsUncachedClient().UpdateExecutionStatus(ctx, read_write_layer.W000034, o.exec); err != nil {
-		msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
-		return nil, lserrors.NewWrappedError(err, op, msg, err.Error())
-	}
 	return &lsv1alpha1.DiNamePair{
 		SpecName:   item.Info.Name,
 		ObjectName: item.DeployItem.Name,
@@ -160,23 +152,4 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem)
 		return nil, err
 	}
 	return data, nil
-}
-
-func setExecutionGeneration(objects []lsv1alpha1.ExecutionGeneration, name string, gen int64) []lsv1alpha1.ExecutionGeneration {
-	for i, ref := range objects {
-		if ref.Name == name {
-			objects[i].ObservedGeneration = gen
-			return objects
-		}
-	}
-	return append(objects, lsv1alpha1.ExecutionGeneration{Name: name, ObservedGeneration: gen})
-}
-
-func removeExecutionGeneration(objects []lsv1alpha1.ExecutionGeneration, name string) []lsv1alpha1.ExecutionGeneration {
-	for i, ref := range objects {
-		if ref.Name == name {
-			return append(objects[:i], objects[i+1:]...)
-		}
-	}
-	return objects
 }

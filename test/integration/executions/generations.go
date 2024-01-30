@@ -97,7 +97,6 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 
 			oldExGen := exec.Generation
 			oldDIGen := di.Generation
-			Expect(exec.Status.ExecutionGenerations[0].ObservedGeneration).To(Equal(oldExGen))
 
 			mockConfig := &mockv1alpha1.ProviderConfiguration{}
 			utils.ExpectNoError(json.Unmarshal(di.Spec.Configuration.Raw, mockConfig))
@@ -150,7 +149,6 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			By("verify that generations and observed generations behave as expected")
 			Expect(exec.Generation).To(BeNumerically(">", oldExGen))
 			Expect(di.Generation).To(BeNumerically(">", oldDIGen))
-			Expect(exec.Status.ExecutionGenerations[0].ObservedGeneration).To(Equal(exec.Generation))
 
 			By("delete execution")
 			utils.ExpectNoError(utils.DeleteExecutionForNewReconcile(ctx, f.Client, exec, 2*time.Minute))

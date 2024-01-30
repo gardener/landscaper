@@ -281,18 +281,6 @@ func (o *Operation) getDeployItems(ctx context.Context,
 	return executionItems, orphaned, nil
 }
 
-// UpdateStatus updates the status of a execution
-func (o *Operation) UpdateStatus(ctx context.Context, updatedConditions ...lsv1alpha1.Condition) error {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
-
-	o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions, updatedConditions...)
-	if err := o.WriterToLsUncachedClient().UpdateExecutionStatus(ctx, read_write_layer.W000032, o.exec); err != nil {
-		logger.Error(err, "unable to set installation status")
-		return err
-	}
-	return nil
-}
-
 // CreateOrUpdateExportReference creates or updates a dataobject from a object reference
 func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values interface{}) error {
 	do := dataobjects.New().
@@ -319,5 +307,5 @@ func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values in
 		Name:      raw.Name,
 		Namespace: raw.Namespace,
 	}
-	return o.UpdateStatus(ctx)
+	return nil
 }

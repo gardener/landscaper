@@ -380,6 +380,8 @@ type DiNamePair struct {
 
 // Optimization contains settings to improve execution preformance
 type Optimization struct {
+	// set this on true if the installation does not import data from its siblings or has no siblings at all
 	HasNoSiblingImports bool `json:"hasNoSiblingImports,omitempty"`
+	// set this on true if the installation does not export data to its siblings or has no siblings at all
 	HasNoSiblingExports bool `json:"hasNoSiblingExports,omitempty"`
 }

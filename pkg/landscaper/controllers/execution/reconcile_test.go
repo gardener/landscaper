@@ -7,15 +7,16 @@ package execution_test
 import (
 	"context"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -93,9 +94,13 @@ var _ = Describe("Reconcile", func() {
 		testutils.ExpectNoError(testenv.Client.Delete(ctx, exec))
 
 		// reconcile execution and check that objects are gone
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+		controllerutil.RemoveFinalizer(di, lsv1alpha1.LandscaperFinalizer)
+		Expect(testenv.Client.Update(ctx, di)).To(Succeed())
 		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 		Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
 		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
+
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))).To(BeTrue(), "expect the deploy item to be deleted")
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))).To(BeTrue(), "expect the execution to be deleted")
 	})
@@ -272,7 +277,6 @@ var _ = Describe("Reconcile", func() {
 			deployItems, err := read_write_layer.ListManagedDeployItems(ctx, testenv.Client, client.ObjectKeyFromObject(exec), read_write_layer.R000000)
 			Expect(err).To(BeNil())
 			Expect(deployItems.Items).To(HaveLen(3))
-			Expect(exec.Status.ExecutionGenerations).To(HaveLen(1))
 
 			// Check that the first deploy item di-a is not deleted
 			di := state.DeployItems[state.Namespace+"/di-a"]

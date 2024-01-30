@@ -129,7 +129,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.EnvironmentSpec":                                    schema_landscaper_apis_core_v1alpha1_EnvironmentSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Error":                                              schema_landscaper_apis_core_v1alpha1_Error(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Execution":                                          schema_landscaper_apis_core_v1alpha1_Execution(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration":                                schema_landscaper_apis_core_v1alpha1_ExecutionGeneration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionList":                                      schema_landscaper_apis_core_v1alpha1_ExecutionList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionSpec":                                      schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionStatus":                                    schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref),
@@ -5221,36 +5220,6 @@ func schema_landscaper_apis_core_v1alpha1_Execution(ref common.ReferenceCallback
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_ExecutionGeneration(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ExecutionGeneration links a deployitem to the generation of the execution when it was applied.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name is the name of the deployitem this generation refers to.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"observedGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ObservedGeneration stores the generation which the execution had when it last applied the referenced deployitem.",
-							Default:     0,
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-				},
-				Required: []string{"name", "observedGeneration"},
-			},
-		},
-	}
-}
-
 func schema_landscaper_apis_core_v1alpha1_ExecutionList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5390,20 +5359,6 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache"),
 						},
 					},
-					"execGenerations": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem. So in this case, the observedGeneration refers to the executions generation.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration"),
-									},
-								},
-							},
-						},
-					},
 					"jobID": {
 						SchemaProps: spec.SchemaProps{
 							Description: "JobID is the ID of the current working request.",
@@ -5441,7 +5396,7 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemCache", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -6539,14 +6494,16 @@ func schema_landscaper_apis_core_v1alpha1_Optimization(ref common.ReferenceCallb
 				Properties: map[string]spec.Schema{
 					"hasNoSiblingImports": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
+							Description: "set this on true if the installation does not import data from its siblings or has no siblings at all",
+							Type:        []string{"boolean"},
+							Format:      "",
 						},
 					},
 					"hasNoSiblingExports": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
+							Description: "set this on true if the installation does not export data to its siblings or has no siblings at all",
+							Type:        []string{"boolean"},
+							Format:      "",
 						},
 					},
 				},

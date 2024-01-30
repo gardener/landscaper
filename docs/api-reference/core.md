@@ -99,7 +99,7 @@ e.g. &ldquo;<a href="https://json-schema.org/draft/2019-09/schema&quot;">https:/
 <code>localTypes</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.JSONSchemaDefinition">
-map[string]..JSONSchemaDefinition
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition
 </a>
 </em>
 </td>
@@ -1012,7 +1012,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -1043,7 +1043,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -1180,7 +1180,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -1211,7 +1211,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -2522,7 +2522,7 @@ Note that the type information is used to determine the secret key and the type 
 <code>configurations</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -2978,8 +2978,8 @@ Error
 <td>
 <code>lastErrors</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.*..Error">
-[]*..Error
+<a href="#landscaper.gardener.cloud/v1alpha1.*github.com/gardener/landscaper/apis/core/v1alpha1.Error">
+[]*github.com/gardener/landscaper/apis/core/v1alpha1.Error
 </a>
 </em>
 </td>
@@ -3375,7 +3375,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -3719,47 +3719,6 @@ string
 <p>
 <p>ErrorCode is a string alias.</p>
 </p>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionGeneration">ExecutionGeneration
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
-</p>
-<p>
-<p>ExecutionGeneration links a deployitem to the generation of the execution when it was applied.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>name</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Name is the name of the deployitem this generation refers to.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>observedGeneration</code></br>
-<em>
-int64
-</em>
-</td>
-<td>
-<p>ObservedGeneration stores the generation which the execution had when it last applied the referenced deployitem.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionPhase">ExecutionPhase
 (<code>string</code> alias)</p></h3>
 <p>
@@ -3908,21 +3867,6 @@ DeployItemCache
 <td>
 <em>(Optional)</em>
 <p>DeployItemCache contains the currently existing deploy item belonging to the execution. If nil undefined.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>execGenerations</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionGeneration">
-[]ExecutionGeneration
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem.
-So in this case, the observedGeneration refers to the executions generation.</p>
 </td>
 </tr>
 <tr>
@@ -4600,7 +4544,7 @@ InstallationImports
 <code>importDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -4631,7 +4575,7 @@ InstallationExports
 <code>exportDataMappings</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]..AnyJSON
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -5216,6 +5160,7 @@ bool
 </em>
 </td>
 <td>
+<p>set this on true if the installation does not import data from its siblings or has no siblings at all</p>
 </td>
 </tr>
 <tr>
@@ -5226,6 +5171,7 @@ bool
 </em>
 </td>
 <td>
+<p>set this on true if the installation does not export data to its siblings or has no siblings at all</p>
 </td>
 </tr>
 </tbody>
