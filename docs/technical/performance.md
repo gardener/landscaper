@@ -147,8 +147,3 @@ such load peaks could be handled withing less than one minute for about 20.000 o
 
 
 
-
-
-
-
-
