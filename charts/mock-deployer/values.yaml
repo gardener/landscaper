@@ -34,7 +34,7 @@ deployer:
       qps: 40
 
 image:
-  repository: eu.gcr.io/gardener-project/landscaper/mock-deployer-controller
+  repository: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/mock-deployer/images/mock-deployer-controller
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   #tag: ""

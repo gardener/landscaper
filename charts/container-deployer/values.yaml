@@ -19,10 +19,10 @@ deployer:
 #  identity: ""
 #  namespace: ""
   initContainer:
-    repository: eu.gcr.io/gardener-project/landscaper/container-deployer-init
+    repository: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-init
 #    tag: "latest"
   waitContainer:
-    repository: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
+    repository: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-wait
 #    tag: "latest"
 #  defaultImage:
 #    repository: ubuntu
@@ -59,7 +59,7 @@ deployer:
 replicaCount: 1
 
 image:
-  repository: eu.gcr.io/gardener-project/landscaper/container-deployer-controller
+  repository: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-controller
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   # tag: ""

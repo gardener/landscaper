@@ -45,7 +45,7 @@ deployer:
 replicaCount: 1
 
 image:
-  repository: eu.gcr.io/gardener-project/landscaper/manifest-deployer-controller
+  repository: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/manifest-deployer/images/manifest-deployer-controller
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   # tag: ""
