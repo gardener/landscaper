@@ -95,4 +95,4 @@ tolerations: []
 
 affinity: {}
 
-useOCMLib: false
+useOCMLib: true
