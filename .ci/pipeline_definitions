@@ -86,7 +86,7 @@ landscaper:
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
-          output_dir: 'integration_test_ocm'
+          output_dir: 'integration_test'
     pull-request:
       steps:
         integration_test:
@@ -123,7 +123,7 @@ landscaper:
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
-          output_dir: 'integration_test_ocm'
+          output_dir: 'integration_test'
         update_release:
           inputs:
             INTEGRATION_TEST_CNUDIE_PATH: integration_test_cnudie_path
