@@ -16,7 +16,7 @@ set -o pipefail
 PR_ID=$1
 export PR_ID
 
-USE_OCM_LIB=$2
+USE_OCM_LIB=true
 export USE_OCM_LIB
 
 SOURCE_PATH="$(dirname $0)/.."

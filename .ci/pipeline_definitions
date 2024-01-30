@@ -78,20 +78,9 @@ landscaper:
               - committers
               - codeowners
       steps:
-        integration_test_cnudie:
+        integration_test:
           execute:
           - integration-test
-          - false
-          trait_depends:
-          - publish
-          depends:
-          - ocm_build_and_publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
-          output_dir: 'integration_test_cnudie'
-        integration_test_ocm:
-          execute:
-          - integration-test
-          - true
           trait_depends:
           - publish
           depends:
@@ -100,24 +89,14 @@ landscaper:
           output_dir: 'integration_test_ocm'
     pull-request:
       steps:
-        integration_test_cnudie:
+        integration_test:
           trait_depends:
           - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
           execute:
-          - integration-test-new
-          - false
-        integration_test_ocm:
-          trait_depends:
-          - publish
-          depends:
-          - ocm_build_and_publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
-          execute:
-          - integration-test-new
-          - true
+          - integration-test-pr
       traits:
         pull-request: ~
         draft_release: ~
@@ -136,20 +115,9 @@ landscaper:
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
-        integration_test_cnudie:
+        integration_test:
           execute:
           - integration-test
-          - false
-          trait_depends:
-          - publish
-          depends:
-          - ocm_build_and_publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
-          output_dir: 'integration_test_cnudie'
-        integration_test_ocm:
-          execute:
-          - integration-test
-          - true
           trait_depends:
           - publish
           depends:
@@ -165,5 +133,4 @@ landscaper:
           trait_depends:
           - release
           depends:
-          - integration_test_cnudie
-          - integration_test_ocm
+          - integration_test
