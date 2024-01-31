@@ -41,9 +41,6 @@ const (
 	// prPrefix is the second part of shoot clusters used for integration tests
 	prPrefix = "pr"
 
-	ocmlibIdentifier = "o"
-	cnudieIdentifier = "c"
-
 	localStartPrefix = namePrefix + prPrefix + "0-"
 	headUpdatePrefix = namePrefix + prPrefix + "1-"
 
