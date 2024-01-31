@@ -265,7 +265,7 @@ func (o *ShootClusterManager) checkAndDeleteExistingTestShoots(ctx context.Conte
 }
 
 func (o *ShootClusterManager) generateShootName() string {
-	return namePrefix + "-" + prPrefix + o.prID + "-" + strconv.Itoa(rng.Intn(9000)+1000)
+	return namePrefix + prPrefix + o.prID + "-" + strconv.Itoa(rng.Intn(9000)+1000)
 }
 
 func (o *ShootClusterManager) matchesNamePattern(name string) bool {
