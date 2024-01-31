@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -648,11 +650,12 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	for i, target := range targets {
-		if _, err := o.WriterToLsUncachedClient().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000072, target, func() error {
+		tmpTarget := &lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: target.Namespace, Name: target.Name}}
+		if _, err := o.WriterToLsUncachedClient().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000072, tmpTarget, func() error {
 			if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), target, api.LandscaperScheme); err != nil {
 				return err
 			}
-			return targetExtensionList.Apply(target, i)
+			return targetExtensionList.Apply(tmpTarget, i)
 		}); err != nil {
 			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
