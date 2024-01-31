@@ -12,51 +12,9 @@ landscaper:
         inject_effective_version: true
       component_descriptor:
         ocm_repository: landscaper
-      publish:
-        dockerimages:
-          landscaper-controller:
-            registry: 'gcr-readwrite'
-            target: 'landscaper-controller'
-            image: eu.gcr.io/gardener-project/landscaper/landscaper-controller
-          landscaper-webhooks-server:
-            registry: 'gcr-readwrite'
-            target: 'landscaper-webhooks-server'
-            image: eu.gcr.io/gardener-project/landscaper/landscaper-webhooks-server
-          landscaper-agent:
-            registry: 'gcr-readwrite'
-            target: 'landscaper-agent'
-            image: eu.gcr.io/gardener-project/landscaper/landscaper-agent
-          helm-deployer-controller:
-            registry: 'gcr-readwrite'
-            target: 'helm-deployer-controller'
-            image: eu.gcr.io/gardener-project/landscaper/helm-deployer-controller
-          manifest-deployer-controller:
-            registry: 'gcr-readwrite'
-            target: 'manifest-deployer-controller'
-            image: eu.gcr.io/gardener-project/landscaper/manifest-deployer-controller
-          container-deployer-controller:
-            registry: 'gcr-readwrite'
-            target: 'container-deployer-controller'
-            image: eu.gcr.io/gardener-project/landscaper/container-deployer-controller
-          container-deployer-init:
-            registry: 'gcr-readwrite'
-            target: 'container-deployer-init'
-            image: eu.gcr.io/gardener-project/landscaper/container-deployer-init
-          container-deployer-wait:
-            registry: 'gcr-readwrite'
-            target: 'container-deployer-wait'
-            image: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
-          mock-deployer-controller:
-            registry: 'gcr-readwrite'
-            target: 'mock-deployer-controller'
-            image: eu.gcr.io/gardener-project/landscaper/mock-deployer-controller
-
     steps:
       verify:
         image: 'golang:1.21.5'
-      publish-helm-charts:
-        depends:
-        - verify
       ocm_build_and_publish:
         privilege_mode: privileged
         trait_depends:
@@ -81,8 +39,6 @@ landscaper:
         integration_test:
           execute:
           - integration-test
-          trait_depends:
-          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
@@ -90,8 +46,6 @@ landscaper:
     pull-request:
       steps:
         integration_test:
-          trait_depends:
-          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
@@ -118,8 +72,6 @@ landscaper:
         integration_test:
           execute:
           - integration-test
-          trait_depends:
-          - publish
           depends:
           - ocm_build_and_publish
           image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'

@@ -75,7 +75,7 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	}
 
 	if obj.DeployerManagement.DeployerRepositoryContext == nil {
-		defaultCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
+		defaultCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper", ""))
 		obj.DeployerManagement.DeployerRepositoryContext = &defaultCtx
 	}
 }

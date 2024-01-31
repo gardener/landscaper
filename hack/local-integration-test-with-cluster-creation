@@ -78,12 +78,11 @@ echo "Config directory: ${TMP}"
   $MAX_NUM_CLUSTERS \
   $NUM_CLUSTERS_START_DELETE_OLDEST \
   $DURATION_FOR_CLUSTER_DELETION \
-  $PR_ID \
-  $USE_OCM_LIB
+  $PR_ID
 
 KUBECONFIG_PATH=$TMP/kubeconfig.yaml
 echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
 
-./hack/local-integration-test $KUBECONFIG_PATH $VERSION $USE_OCM_LIB
+./hack/local-integration-test $KUBECONFIG_PATH $VERSION
 
 ./hack/int-test-helper/delete-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
