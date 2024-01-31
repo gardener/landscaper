@@ -245,7 +245,7 @@ func HelmDeployerTests(f *framework.Framework) {
 
 			var ns *corev1.Namespace
 			var target *lsv1alpha1.Target
-			var secret *corev1.Secret
+			var credsecret *corev1.Secret
 			var lsctx *lsv1alpha1.Context
 			var di *lsv1alpha1.DeployItem
 
@@ -283,7 +283,34 @@ func HelmDeployerTests(f *framework.Framework) {
 				Expect(err).To(BeNil())
 				Expect(dockerconfigData).ToNot(BeNil())
 
-				secret = &corev1.Secret{
+				authcfg, err := f.RegistryConfig.GetAuthConfig(f.RegistryBasePath)
+				Expect(err).To(BeNil())
+				Expect(authcfg).ToNot(BeNil())
+
+				secretData := []byte(fmt.Sprintf(`{
+	"type": "credentials.config.ocm.software",
+    "consumers": [
+        {
+            "identity": {
+                "type": "OCIRegistry",
+                "hostname": %q,
+            },
+            "credentials": [
+                {
+                    "type": "Credentials",
+                    "properties": {
+                        "username": %q,
+                        "password": %q,
+                        "certificateAuthority": %q
+                    }
+                }
+            ]
+        }
+    ]
+}
+`, f.RegistryBasePath, authcfg.Username, authcfg.Password, certData))
+
+				credsecret = &corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
 						Kind:       "Secret",
@@ -293,8 +320,8 @@ func HelmDeployerTests(f *framework.Framework) {
 						Namespace: "private-registry",
 					},
 					Immutable: nil,
-					Type:      "kubernetes.io/dockerconfigjson",
-					Data:      map[string][]byte{".dockerconfigjson": dockerconfigData},
+					Type:      "Opaque",
+					Data:      map[string][]byte{".ocmcredentialconfig": secretData},
 				}
 
 				ns = &corev1.Namespace{
@@ -394,14 +421,14 @@ func HelmDeployerTests(f *framework.Framework) {
 				// kubernetes during the create operation
 				localns := *ns
 				localtarget := *target
-				localsecret := *secret
+				localcredsecret := *credsecret
 				locallsctx := *lsctx
 				localdi := *di
 
 				By("creating kubernetes objects")
 				Expect(state.Create(ctx, &localns)).To(BeNil())
 				Expect(state.Create(ctx, &localtarget)).To(BeNil())
-				Expect(state.Create(ctx, &localsecret)).To(BeNil())
+				Expect(state.Create(ctx, &localcredsecret)).To(BeNil())
 				Expect(state.Create(ctx, &locallsctx)).To(BeNil())
 				Expect(state.Create(ctx, &localdi)).To(BeNil())
 
