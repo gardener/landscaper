@@ -20,37 +20,58 @@ You can find the blueprint for the current example [here](https://github.com/gar
 We have uploaded the blueprint
 [here](https://eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint) into an OCI
 registry, from where the Landscaper can access it. You can find the commands, which we have used to upload the blueprint
-in this script: [commands/push-blueprint.sh](./commands/push-blueprint.sh).
+in this script: [commands/blueprint.sh](./commands/blueprint.sh).
 
 
-## Components and Component Descriptors
+## Components
 
 > **_NOTE:_** **To follow along the following section, be sure to set the `useOCM: true` feature switch in the 
 > values.yaml, as shown [here](https://github.com/gardener/landscaper/blob/master/docs/installation/install-landscaper-controller.md#configuration-through-valuesyaml).**
 
-An Installation may reference its blueprints via so-called
-[component-descriptors](../../../concepts/Glossary.md#_component-descriptor_).  A component descriptor describes a
-component, or rather, a specific component version. In general, a component version is a container for all required
-resources for the deployment of a specific version of an application or software system. In this example, the
-application is the hello-world application deployable with the landscaper through an external blueprint. Thereby, the
-external blueprint is the only resource required for the deployment and thus, the only resource contained in the
-component version. A component version may either contain a resource through referencing it at an external location 
-(such as an OCI registry) or through embedding it as a local blob. A quick introduction to this concepts can be found at
-the end of this section. 
+To consume the blueprint from such a referencable location, it has to be contained in a component.
 
-The [component descriptor](./component-archive/v2-external/component-descriptor.yaml) of the component version used for
-the current example references the above uploaded blueprint in the corresponding OCI registry. Furthermore, we have
-uploaded the component version itself [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/external-blueprint).
-You find the commands which we have used to create and upload the component version in this script:
-[commands/upload-component-version.sh](./commands/upload-component-version.sh).
+A component is a concept introduced by the [Open Component Model](https://github.com/open-component-model/ocm). In
+short, technically, a component consists of a *component-descriptor* and a number of *blobs* 
+(= arbitrary binary objects).  
+The file system representation of our component used for this example is shown [here](./components/component). 
+The *component-descriptor* describes the overall component. As you can see in the *component-descriptor*, the component
+only contains a single resource - the *blueprint*. And we reference that blueprint at an external location, the *OCI
+registry*.  
 
-For more information about components and related concepts, refer to the [documentation of the
-ocm project](https://ocm.software/).
+Alternatively, instead of referencing the blueprint at an external location, we could have embedded it in the
+component as a so-called local blob. Then, the *blob* directory in the file system representation would not have been 
+empty. It would have contained the blueprint (typically as a tar archive), as demonstrated 
+[here](./components/local-blob-component).
 
+The most convenient way to generate such components is through corresponding *component configuration files*. The
+*component configuration file* used to create the component for this example is shown 
+[here](./config-files/components.yaml): 
+
+```yaml
+components:
+  - name: github.com/gardener/landscaper-examples/guided-tour/external-blueprint
+    version: 2.0.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint
+        type: landscaper.gardener.cloud/blueprint
+        version: 1.0.0
+        access:
+          type: ociArtifact
+          imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/external-blueprint:1.0.0
+```
+
+If you were to prefer to embed the blueprint in the component as a local blob, instead of an `access:...`, you would have to
+specify an `input:...` as demonstrated [here](./config-files/local-blob-components.yaml). The commands used to create the actual component based on the *component configuration file* and to upload this
+component to an OCI registry can be found [here](./commands/component.sh).
+
+>**Tip:** If you need the same resource in multiple components, instead of copy-pasting, you might want to use 
+> [*resource configuration files*](https://ocm.software/docs/guides/getting-started-with-ocm/#using-a-resources-file).
 
 ## Referencing the Blueprint in the Installation
 
-The [Installation](./installation/installation.yaml) references the component descriptor and blueprint as follows:  
+The [Installation](./installation/installation.yaml) references the component and blueprint as follows:  
 
 ```yaml 
 context: landscaper-examples
@@ -75,7 +96,7 @@ blueprint:
 - The [component descriptor](./component-archive/v2-external/component-descriptor.yaml) contains a list of resources,
   each of which has a name. Field `blueprint.ref.resourceName` in the Installation specifies the name of the blueprint
   resource in the component descriptor. Thereby, it is completely transparent for the installation whether the component
-  version references the blueprint as an external resource or embeds it as a local blob. 
+  references the blueprint as an external resource or embeds it as a local blob. 
 
 
 ## Procedure
@@ -93,46 +114,6 @@ kubectl create ns example
 kubectl apply -f <path to context.yaml> 
 kubectl apply -f <path to target.yaml>
 kubectl apply -f <path to installation.yaml> 
-```
-
-## Remark on Resources contained in a Component Version
-As previously mentioned, a component version may either contain a resource through referencing it at an external 
-location (such as an OCI registry) or through embedding it as a local blob. To make this concept more tangible, this
-section compares the file system representations of the component version referencing the blueprint in the OCI registry
-with the component version embedding the blueprint as a local blob.
-
-#### Component Version with External Resource  
-A file system representation of a component version containing the resource through an external reference is shown
-[here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/external-blueprint/component-archive/v2-external). The corresponding component-descriptor describing that component version is
-stored as a top-level file. The component descriptor contains only a single _resource_ with the `name: blueprint`. This
-resource has an _access_ of `type: ociArtifact` that contains a reference to the previously uploaded image.  Besides the
-component-descriptor, there is a directory called blobs at the top-level. This is where the local blobs of a embedded
-resource would be located. Since the blueprint is the only resource of this component version and it is contained
-through an external reference, this directory is empty.
-
-#### Component Version with Local Resource  
-A file system representation of a component version containing the resource as a local blob is shown
-[here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/external-blueprint/component-archive/v2-local).  Again, the corresponding component-descriptor describing that component version
-is stored as a top-level file. Exactly as before, the component descriptor contains only a single _resource_ with the
-`name: blueprint`. But now, this resource has an _access_ of `type: localBlob`. Instead of an `imageReference`, this
-_access_ of `type: localBlob` has a `localReference`. This is the sha256 hash value of the blueprint. If you open the
-blob directory here, you will see that it contains a file with exactly that name. Furthermore, this _access_ has a field
-`mediaType`, which provides information about the format in which the blueprint is stored, here that it is archived
-and compressed (tar+gzip). The _access_ of `type: ociArtifact` did not need to provide this information since the
-`ociArtifact` format is determined through the oci standard and the format of the contents of the oci artifact is
-described within the artifact itself.
-
-These file system representations of component versions can then be uploaded to an OCI registry.
-
-Again, the commands used to create and upload the above component versions can be found
-[here](./commands/upload-component-version.sh).  
-If you want to inspect the uploaded component version (e.g. to find out 
-whether we really have uploaded the one with the external resource), you can do so using the following command:
-
-```shell 
-ocm download componentversion \
-  eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/external-blueprint:2.0.0 \
-  -O component-archive 
 ```
 
 ## References 
