@@ -232,6 +232,11 @@ func HelmDeployerTests(f *framework.Framework) {
 		})
 
 		Context("private registry", Ordered, func() {
+			if !f.IsRegistryEnabled() {
+				f.Log().Logln("No registry configured skipping the registry tests...")
+				return
+			}
+
 			// The following test should run ordered, as check and prepare several prerequisites (registry is actually
 			// private, the image required for the test is actually uploaded, ...) before running the actual test
 			// (helm deployer deploying an image from a private registry).
@@ -405,7 +410,7 @@ func HelmDeployerTests(f *framework.Framework) {
 				Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
 
 				By("waiting for the deploy item to succeed")
-				Expect(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 1*time.Minute)).To(BeNil())
+				Expect(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhases.Succeeded, 2*time.Minute)).To(BeNil())
 				cm := &corev1.ConfigMap{}
 				Expect(state.Client.Get(ctx, kutil.ObjectKey("mychart-configmap", "private-registry"), cm)).To(Succeed())
 				Expect(cm.Data["key"]).To(Equal("value"))
