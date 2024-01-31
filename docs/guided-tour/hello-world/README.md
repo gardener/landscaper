@@ -21,6 +21,7 @@ First of all, we need to create two custom resources:
    kubectl apply -f <path to target.yaml>
    kubectl apply -f <path to installation.yaml>
    ```
+Please note: In case you are using a Landscaper instance managed by Landscaper-as-a-Service, you cannot create a namespace directly. Instead, you have to follow the procedure described [here](https://github.com/gardener/landscaper-service/blob/main/docs/usage/Namespaceregistration.md).
 
 Alternative (which requires the [Landscaper CLI](https://github.com/gardener/landscapercli)):
 
