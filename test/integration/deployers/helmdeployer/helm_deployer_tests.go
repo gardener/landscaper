@@ -232,7 +232,7 @@ func HelmDeployerTests(f *framework.Framework) {
 			})
 		})
 
-		FContext("private registry", Ordered, func() {
+		Context("private registry", Ordered, func() {
 			if !f.IsRegistryEnabled() {
 				f.Log().Logln("No registry configured skipping the registry tests...")
 				return
