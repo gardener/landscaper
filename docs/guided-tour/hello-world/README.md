@@ -14,6 +14,12 @@ First of all, we need to create two custom resources:
 
 1. Add the kubeconfig of your target cluster to your [target.yaml](installation/target.yaml) at the specified location.
 
+   > **Note:**  
+   > If your target cluster is a Gardener Shoot cluster, it is **not** possible to use an oidc / gardenlogin kubeconfig in a Target.  
+   > If you have only such a kubeconfig, see 
+   > ["Constructing a Target Resource"](https://github.com/gardener/landscaper/blob/master/docs/guided-tour//targets/README.md)
+   > how to construct a kubeconfig and a Target, that you can use with the Landscaper.
+
 2. On the Landscaper resource cluster, create a namespace `example` and apply your [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
    
    ```shell
