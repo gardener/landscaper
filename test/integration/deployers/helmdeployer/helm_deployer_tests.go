@@ -294,16 +294,16 @@ func HelmDeployerTests(f *framework.Framework) {
         {
             "identity": {
                 "type": "OCIRegistry",
-                "hostname": "%s",
-				"port": %s,
+                "hostname": %q,
+				"port": %q,
             },
             "credentials": [
                 {
                     "type": "Credentials",
                     "properties": {
-                        "username": "%s",
-                        "password": "%s",
-                        "certificateAuthority": "%s"
+                        "username": %q,
+                        "password": %q,
+                        "certificateAuthority": %q,
                     }
                 }
             ]
