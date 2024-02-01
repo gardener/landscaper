@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -294,6 +295,7 @@ func HelmDeployerTests(f *framework.Framework) {
             "identity": {
                 "type": "OCIRegistry",
                 "hostname": "%s",
+				"port": %s,
             },
             "credentials": [
                 {
@@ -308,7 +310,7 @@ func HelmDeployerTests(f *framework.Framework) {
         }
     ]
 }
-`, f.RegistryBasePath, authcfg.Username, authcfg.Password, certData))
+`, strings.Split(f.RegistryBasePath, ":")[0], strings.Split(f.RegistryBasePath, ":")[1], authcfg.Username, authcfg.Password, certData))
 
 				credsecret = &corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
