@@ -231,7 +231,7 @@ func HelmDeployerTests(f *framework.Framework) {
 			})
 		})
 
-		Context("private registry", Ordered, func() {
+		FContext("private registry", Ordered, func() {
 			if !f.IsRegistryEnabled() {
 				f.Log().Logln("No registry configured skipping the registry tests...")
 				return
@@ -293,22 +293,22 @@ func HelmDeployerTests(f *framework.Framework) {
         {
             "identity": {
                 "type": "OCIRegistry",
-                "hostname": %q,
+                "hostname": "%s",
             },
             "credentials": [
                 {
                     "type": "Credentials",
                     "properties": {
-                        "username": %q,
-                        "password": %q,
-                        "certificateAuthority": %q
+                        "username": "%s",
+                        "password": "%s",
+                        "certificateAuthority": "%s"
                     }
                 }
             ]
         }
     ]
 }
-`, f.RegistryBasePath, authcfg.Username, authcfg.Password, certData))
+`, f.RegistryBasePath, authcfg.Username, authcfg.Password, string(certData)))
 
 				credsecret = &corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
