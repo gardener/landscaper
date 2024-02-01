@@ -308,7 +308,7 @@ func HelmDeployerTests(f *framework.Framework) {
         }
     ]
 }
-`, f.RegistryBasePath, authcfg.Username, authcfg.Password, string(certData)))
+`, f.RegistryBasePath, authcfg.Username, authcfg.Password, certData))
 
 				credsecret = &corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
@@ -412,6 +412,7 @@ func HelmDeployerTests(f *framework.Framework) {
 							Name:      target.Name,
 							Namespace: target.Namespace,
 						},
+						Context:       "private-registry-context",
 						Type:          helm.Type,
 						Configuration: rawProviderConfig,
 					},
