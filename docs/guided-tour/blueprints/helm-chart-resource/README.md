@@ -14,6 +14,9 @@ Using this oci reference, the landscaper is able to fetch the helm chart and dep
 
 ## Referencing the Helm Chart with a Component
 
+>**_CAUTION_**: Specifying the *Repository Context* directly in the *Installation* is **deprecated**. In order to be able to
+> use this feature, the *Repository Context* has to be specified in the Landscaper *[Context](../../../usage/Context.md)*. 
+
 In the [previous section](../external-blueprint/README.md), the concept of components was introduced, as an alternative
 means to reference the blueprints in the installation instead of having to write the blueprints directly inline into the
 installation (as it was done in the [first several examples](../../hello-world/installation/installation.yaml)). 
