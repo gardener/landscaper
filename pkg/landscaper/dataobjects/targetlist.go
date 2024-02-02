@@ -6,6 +6,7 @@ package dataobjects
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -77,7 +78,7 @@ func (tl TargetExtensionList) Build(tlName string) ([]*lsv1alpha1.Target, error)
 	for i := 0; i < len(newTL); i++ {
 		tar := tl.targetExtensions[i]
 		newTarget := &lsv1alpha1.Target{}
-		newTarget.Name = lsv1alpha1helper.GenerateDataObjectNameWithIndex(tar.GetMetadata().Context, tar.GetMetadata().Key, i)
+		newTarget.Name = generateTargetName(tar.GetMetadata().Context, tar.GetMetadata().Key, tar.GetTarget().Name)
 		newTarget.Namespace = tar.GetMetadata().Namespace
 		if tar.GetTarget() != nil {
 			newTarget.Spec = tar.GetTarget().Spec
@@ -98,11 +99,15 @@ func (tl TargetExtensionList) Build(tlName string) ([]*lsv1alpha1.Target, error)
 // Apply applies data and metadata to a existing target (except owner references).
 func (tl TargetExtensionList) Apply(raw *lsv1alpha1.Target, index int) error {
 	t := tl.targetExtensions[index]
-	raw.Name = lsv1alpha1helper.GenerateDataObjectNameWithIndex(t.GetMetadata().Context, t.GetMetadata().Key, index)
+	raw.Name = generateTargetName(t.GetMetadata().Context, t.GetMetadata().Key, t.GetTarget().Name)
 	raw.Namespace = t.GetMetadata().Namespace
 	raw.Spec = t.GetTarget().Spec
 	SetMetadataFromObject(raw, t.GetMetadata())
 	return nil
+}
+
+func generateTargetName(context string, name string, targetName string) string {
+	return lsv1alpha1helper.GenerateDataObjectName(context, fmt.Sprintf("%s[%s]", name, targetName))
 }
 
 // Imported interface
