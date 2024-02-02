@@ -81,6 +81,14 @@ func getChartFromResourceRef(ctx context.Context, resourceRef string, lsCtx *lsv
 
 	octx := ocm.New(datacontext.MODE_EXTENDED)
 
+	if lsCtx == nil {
+		return nil, fmt.Errorf("landscaper context cannot be nil")
+	}
+	if lsCtx.RepositoryContext == nil || lsCtx.RepositoryContext.Raw == nil {
+		return nil, fmt.Errorf("landscaper context %s/%s does not specify a repository context but has"+
+			" to specify a repository context to resolve resource from an ocm reference", lsCtx.Namespace, lsCtx.Name)
+	}
+
 	// Credential Handling
 	// resolve all credentials from registry pull secrets
 	registryPullSecretRefs := lib.GetRegistryPullSecretsFromContext(lsCtx)
