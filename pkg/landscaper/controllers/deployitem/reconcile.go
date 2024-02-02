@@ -22,9 +22,20 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
-func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
 	logger := con.log.StartReconcile(req)
 	ctx = logging.NewContext(ctx, logger)
+
+	result = reconcile.Result{}
+	defer lsutil.HandlePanics(ctx, &result)
+
+	result, err = con.reconcile(ctx, req)
+
+	return result, err
+}
+
+func (con *controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	con.workerCounter.EnterWithLog(logger, 70, "di-timeout")
 	defer con.workerCounter.Exit()

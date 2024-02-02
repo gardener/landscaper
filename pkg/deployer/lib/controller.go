@@ -176,8 +176,19 @@ func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCac
 	}
 }
 
-func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
+func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
+	_, ctx = logging.MustStartReconcileFromContext(ctx, req, nil)
+
+	result = reconcile.Result{}
+	defer lsutil.HandlePanics(ctx, &result)
+
+	result, err = c.innerReconcile(ctx, req)
+
+	return result, err
+}
+
+func (c *controller) innerReconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	c.workerCounter.EnterWithLog(logger, 70, c.callerName)
 	defer c.workerCounter.Exit()
