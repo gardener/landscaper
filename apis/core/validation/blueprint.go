@@ -22,7 +22,7 @@ import (
 )
 
 var landscaperScheme = runtime.NewScheme()
-var IsIndexedRegex = regexp.MustCompile(`(?P<imp>.*)\[(?P<idx>[1-9]?[0-9]*)\]$`)
+var IsIndexedRegex = regexp.MustCompile(`(?P<imp>.*)\[(?P<idx>.*)\]$`)
 
 func init() {
 	coreinstall.Install(landscaperScheme)
