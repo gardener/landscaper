@@ -99,8 +99,6 @@ func (tl TargetExtensionList) Build(tlName string) ([]*lsv1alpha1.Target, error)
 // Apply applies data and metadata to a existing target (except owner references).
 func (tl TargetExtensionList) Apply(raw *lsv1alpha1.Target, index int) error {
 	t := tl.targetExtensions[index]
-	raw.Name = generateTargetName(t.GetMetadata().Context, t.GetMetadata().Key, t.GetTarget().Name)
-	raw.Namespace = t.GetMetadata().Namespace
 	raw.Spec = t.GetTarget().Spec
 	SetMetadataFromObject(raw, t.GetMetadata())
 	return nil
