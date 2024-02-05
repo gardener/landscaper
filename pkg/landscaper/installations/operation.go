@@ -653,7 +653,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 	for i, target := range targets {
 		tmpTarget := &lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: target.Namespace, Name: target.Name}}
 		if _, err := o.WriterToLsUncachedClient().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000072, tmpTarget, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), target, api.LandscaperScheme); err != nil {
+			if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), tmpTarget, api.LandscaperScheme); err != nil {
 				return err
 			}
 			return targetExtensionList.Apply(tmpTarget, i)
