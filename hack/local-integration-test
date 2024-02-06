@@ -26,7 +26,6 @@ set -o pipefail
 
 KUBECONFIG_PATH=$1
 VERSION=$2
-USE_OCM_LIB=$3
 
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
@@ -44,5 +43,5 @@ echo "Config directory: ${TMP}"
 
 ./hack/int-test-helper/install-missing-software
 ./hack/int-test-helper/create-registry $KUBECONFIG_PATH $TMP
-./hack/int-test-helper/install-landscaper $KUBECONFIG_PATH ${VERSION} $TMP $USE_OCM_LIB
+./hack/int-test-helper/install-landscaper $KUBECONFIG_PATH ${VERSION} $TMP
 ./hack/int-test-helper/run-tests $KUBECONFIG_PATH $TMP/docker.config ${VERSION}

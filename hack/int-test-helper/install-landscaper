@@ -11,7 +11,6 @@ set -o pipefail
 KUBECONFIG_PATH=$1
 VERSION=$2
 TMP=$3
-USE_OCM_LIB=$4
 
 SOURCE_PATH="$(dirname $0)/../.."
 cd "${SOURCE_PATH}"
@@ -59,7 +58,7 @@ landscaper:
     deployItemTimeouts:
       pickup: 30s
       abort: 30s
-    useOCMLib: $USE_OCM_LIB
+    useOCMLib: true
 " > $TMP/values.yaml
 
 touch $TMP/registry-values.yaml
@@ -81,7 +80,7 @@ fi
 
 echo "Pull landscaper helm chart"
 export HELM_EXPERIMENTAL_OCI=1
-helm pull oci://eu.gcr.io/gardener-project/landscaper/charts/landscaper --version $VERSION --untar --destination $TMP_GEN
+helm pull oci://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/charts/landscaper --version $VERSION --untar --destination $TMP_GEN
 
 echo "Upgrade landscaper"
 helm upgrade --kubeconfig=$KUBECONFIG_PATH --install --wait --create-namespace -n ls-system \

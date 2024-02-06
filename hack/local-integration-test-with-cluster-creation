@@ -49,7 +49,6 @@ GARDENER_KUBECONFIG_PATH=$1
 NAMESPACE=$2
 VERSION=$3
 PR_ID=$4
-USE_OCM_LIB=$5
 
 MAX_NUM_CLUSTERS=20
 NUM_CLUSTERS_START_DELETE_OLDEST=15
@@ -64,7 +63,6 @@ echo "Source path: ${SOURCE_PATH}"
 echo "Gardener kubeconfig path: ${GARDENER_KUBECONFIG_PATH}"
 echo "Shoot cluster namespace: ${NAMESPACE}"
 echo "Landscaper version: ${VERSION}"
-echo "Use OCM Lib ${USE_OCM_LIB}"
 
 TMP="${SOURCE_PATH}/tmp-int-test-cluster"
 rm -f -r $TMP
@@ -78,12 +76,11 @@ echo "Config directory: ${TMP}"
   $MAX_NUM_CLUSTERS \
   $NUM_CLUSTERS_START_DELETE_OLDEST \
   $DURATION_FOR_CLUSTER_DELETION \
-  $PR_ID \
-  $USE_OCM_LIB
+  $PR_ID
 
 KUBECONFIG_PATH=$TMP/kubeconfig.yaml
 echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
 
-./hack/local-integration-test $KUBECONFIG_PATH $VERSION $USE_OCM_LIB
+./hack/local-integration-test $KUBECONFIG_PATH $VERSION
 
 ./hack/int-test-helper/delete-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP

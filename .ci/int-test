@@ -16,16 +16,12 @@ set -o pipefail
 PR_ID=$1
 export PR_ID
 
-USE_OCM_LIB=true
-export USE_OCM_LIB
-
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 export SOURCE_PATH
 
 echo "Starting Landscaper integration tests in $SOURCE_PATH"
-echo " with use_ocm_lib $USE_OCM_LIB"
 
 # install bash for the get version command
 if ! which bash 1>/dev/null; then

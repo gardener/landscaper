@@ -30,7 +30,7 @@ agent:
 #  landscaperNamespace: "" # namespace of installations for the default deployer (helm, manifest ...)
 
 image:
-  repository: eu.gcr.io/gardener-project/landscaper/landscaper-agent
+  repository: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-agent
   pullPolicy: IfNotPresent
    # Overrides the image tag whose default is the chart appVersion.
 #  tag: ""

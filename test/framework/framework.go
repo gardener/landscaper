@@ -47,7 +47,7 @@ var (
 
 // OpenSourceRepositoryContext is the base url of the repository context for the gardener open source components.
 // There all landscaper blueprints/components are available.
-const OpenSourceRepositoryContext = "eu.gcr.io/gardener-project/development"
+const OpenSourceRepositoryContext = "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper"
 
 type Options struct {
 	fs                             *flag.FlagSet

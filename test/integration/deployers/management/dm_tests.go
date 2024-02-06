@@ -235,7 +235,7 @@ func DeployerManagementTests(f *framework.Framework) {
 			}
 			numOfEnvironments := previousEnvironments.Len()
 
-			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
+			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper", ""))
 			testutil.ExpectNoError(err)
 			reg := &lsv1alpha1.DeployerRegistration{}
 			reg.Name = "test-deployer"

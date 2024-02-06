@@ -1,25 +1,7 @@
 #!/bin/bash
 
-# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -o errexit
-set -o nounset
-set -o pipefail
-
-SOURCE_PATH="$(dirname $0)/.."
-CHART_REPO="eu.gcr.io/gardener-project/landscaper/charts/"
-
-echo -n "Updating helm chart version"
-${SOURCE_PATH}/hack/update-helm-chart-version.sh
-
-echo -n "Creating helm charts"
-$SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/landscaper
-$SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/landscaper/charts/rbac
-$SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/landscaper/charts/landscaper
-$SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/landscaper-agent
-$SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/container-deployer
-$SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/helm-deployer
-$SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/manifest-deployer
-$SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/mock-deployer
+echo "dummy"

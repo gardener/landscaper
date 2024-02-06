@@ -15,14 +15,12 @@ MAX_NUM_CLUSTERS=$4
 NUM_CLUSTERS_START_DELETE_OLDEST=$5
 DURATION_FOR_CLUSTER_DELETION=$6
 PR_ID=$7
-USE_OCM_LIB=$8
 
 SOURCE_PATH="$(dirname $0)/../.."
 cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 
 echo "Run create Gardener shoot cluster in ${SOURCE_PATH}"
-echo " with use-ocm-lib ${USE_OCM_LIB}"
 
 go run -mod=vendor ./hack/testcluster shootcluster create \
     --kubeconfig=$GARDENER_KUBECONFIG_PATH \
@@ -31,5 +29,4 @@ go run -mod=vendor ./hack/testcluster shootcluster create \
     --max-num-cluster=$MAX_NUM_CLUSTERS \
     --num-clusters-start-delete-oldest=$NUM_CLUSTERS_START_DELETE_OLDEST \
     --duration-for-cluster-deletion=$DURATION_FOR_CLUSTER_DELETION \
-    --pr-id=$PR_ID \
-    --use-ocm-lib=$USE_OCM_LIB
+    --pr-id=$PR_ID

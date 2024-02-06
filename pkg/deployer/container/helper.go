@@ -24,7 +24,7 @@ func DefaultConfiguration(obj *containerv1alpha1.Configuration) {
 		if version == "0.0.0-dev" {
 			version = "latest"
 		}
-		obj.InitContainer.Image = fmt.Sprintf("eu.gcr.io/gardener-project/landscaper/container-deployer-init:%s", version)
+		obj.InitContainer.Image = fmt.Sprintf("europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-init:%s", version)
 	}
 	if len(obj.WaitContainer.Image) == 0 {
 		version := lsversion.Get().GitVersion
@@ -32,7 +32,7 @@ func DefaultConfiguration(obj *containerv1alpha1.Configuration) {
 		if version == "0.0.0-dev" {
 			version = "latest"
 		}
-		obj.WaitContainer.Image = fmt.Sprintf("eu.gcr.io/gardener-project/landscaper/container-deployer-wait:%s", version)
+		obj.WaitContainer.Image = fmt.Sprintf("europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/container-deployer/images/container-deployer-wait:%s", version)
 	}
 }
 
