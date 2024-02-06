@@ -25,6 +25,8 @@ const (
 	LsHostClientQpsDefault       = 20
 	LsResourceClientBurstDefault = 60
 	LsResourceClientQpsDefault   = 40
+
+	DataObjectOriginalName = "data.landscaper.gardener.cloud/originalName"
 )
 
 func GetCurrentPodName() string {

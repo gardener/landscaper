@@ -7,7 +7,7 @@ package dataobjects
 import (
 	"encoding/json"
 	"fmt"
-
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -100,7 +100,17 @@ func (tl TargetExtensionList) Build(tlName string) ([]*lsv1alpha1.Target, error)
 func (tl TargetExtensionList) Apply(raw *lsv1alpha1.Target, index int) error {
 	t := tl.targetExtensions[index]
 	raw.Spec = t.GetTarget().Spec
+
 	SetMetadataFromObject(raw, t.GetMetadata())
+
+	if kutil.HasLabel(t.GetTarget(), utils.DataObjectOriginalName) {
+		originalName := t.GetTarget().GetLabels()[utils.DataObjectOriginalName]
+		kutil.SetMetaDataLabel(raw, utils.DataObjectOriginalName, originalName)
+	} else {
+		originalName := t.GetTarget().Name
+		kutil.SetMetaDataLabel(raw, utils.DataObjectOriginalName, originalName)
+	}
+
 	return nil
 }
 
