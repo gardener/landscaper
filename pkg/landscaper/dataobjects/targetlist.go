@@ -7,8 +7,10 @@ package dataobjects
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/pkg/errors"
+
+	"github.com/gardener/landscaper/pkg/utils"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

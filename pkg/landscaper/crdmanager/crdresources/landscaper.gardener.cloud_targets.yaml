@@ -24,6 +24,9 @@ spec:
     - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/key']
       name: Key
       type: string
+    - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/originalName']
+      name: Orig
+      type: string
     - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/index']
       name: Idx
       type: string
