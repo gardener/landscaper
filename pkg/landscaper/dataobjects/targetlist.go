@@ -90,6 +90,15 @@ func (tl TargetExtensionList) Build(tlName string) ([]*lsv1alpha1.Target, error)
 			}
 		}
 		SetMetadataFromObject(newTarget, tar.GetMetadata())
+
+		if kutil.HasLabel(tar.GetTarget(), utils.DataObjectOriginalName) {
+			originalName := tar.GetTarget().GetLabels()[utils.DataObjectOriginalName]
+			kutil.SetMetaDataLabel(newTarget, utils.DataObjectOriginalName, originalName)
+		} else {
+			originalName := tar.GetTarget().Name
+			kutil.SetMetaDataLabel(newTarget, utils.DataObjectOriginalName, originalName)
+		}
+
 		tar.SetTarget(newTarget)
 		newTL[i] = newTarget
 	}
@@ -105,9 +114,6 @@ func (tl TargetExtensionList) Apply(raw *lsv1alpha1.Target, index int) error {
 
 	if kutil.HasLabel(t.GetTarget(), utils.DataObjectOriginalName) {
 		originalName := t.GetTarget().GetLabels()[utils.DataObjectOriginalName]
-		kutil.SetMetaDataLabel(raw, utils.DataObjectOriginalName, originalName)
-	} else {
-		originalName := t.GetTarget().Name
 		kutil.SetMetaDataLabel(raw, utils.DataObjectOriginalName, originalName)
 	}
 
