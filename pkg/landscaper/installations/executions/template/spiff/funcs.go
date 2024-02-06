@@ -11,23 +11,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
-	"github.com/open-component-model/ocm/pkg/mime"
-	"github.com/open-component-model/ocm/pkg/runtime"
-
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
-
 	"github.com/mandelsoft/spiff/dynaml"
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	"github.com/open-component-model/ocm/pkg/mime"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
@@ -506,6 +505,33 @@ func getOidcKubeconfigSpiffFunc(targetResolver targetresolver.TargetResolver) dy
 		}
 
 		return kcfg, info, true
+	}
+}
+
+func getOriginalNameSpiffFunc() dynaml.Function {
+	return func(args []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+		info := dynaml.DefaultInfo()
+		if len(args) != 1 {
+			return info.Error("templating function getOriginalName expects 1 argument: target")
+		}
+
+		targetObj := args[0]
+		targetBytes, err := spiffyaml.Marshal(spiffyaml.NewNode(targetObj, ""))
+		if err != nil {
+			return info.Error("templating function getOriginalName expects a target object as 1st argument: error during marshaling: %w", err)
+		}
+
+		target := &lsv1alpha1.Target{}
+		err = yaml.Unmarshal(targetBytes, target)
+		if err != nil {
+			return info.Error("templating function getOriginalName expects a target object as 1st argument: error during unmarshaling: %w", err)
+		}
+
+		if kubernetes.HasLabel(target, lsv1alpha1.DataObjectOriginalNameLabel) {
+			return target.GetLabels()[lsv1alpha1.DataObjectOriginalNameLabel], info, true
+		} else {
+			return target.GetName(), info, true
+		}
 	}
 }
 
