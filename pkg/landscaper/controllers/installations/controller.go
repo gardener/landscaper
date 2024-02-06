@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gardener/landscaper/pkg/components/registries"
-
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +30,7 @@ import (
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
 	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
+	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
@@ -170,8 +169,19 @@ type Controller struct {
 	locker              lock.Locker
 }
 
-func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
+func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
+	_, ctx = c.log.StartReconcileAndAddToContext(ctx, req)
+
+	result = reconcile.Result{}
+	defer utils.HandlePanics(ctx, &result)
+
+	result, err = c.reconcile(ctx, req)
+
+	return result, err
+}
+
+func (c *Controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	c.workerCounter.EnterWithLog(logger, 70, "installations")
 	defer c.workerCounter.Exit()

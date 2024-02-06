@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -114,9 +113,20 @@ func prepareFinishedObjectCache(ctx context.Context, lsUncachedClient client.Cli
 	return finishedObjectCache, nil
 }
 
-func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
 	logger := c.log.StartReconcile(req)
 	ctx = logging.NewContext(ctx, logger)
+
+	result = reconcile.Result{}
+	defer lsutil.HandlePanics(ctx, &result)
+
+	result, err = c.reconcile(ctx, req)
+
+	return result, err
+}
+
+func (c *controller) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	c.workerCounter.EnterWithLog(logger, 70, "executions")
 	defer c.workerCounter.Exit()

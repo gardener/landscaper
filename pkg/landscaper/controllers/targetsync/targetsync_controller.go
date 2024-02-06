@@ -79,8 +79,20 @@ func NewTargetSyncController(lsUncachedClient, lsCachedClient client.Client, log
 }
 
 // Reconcile reconciles requests for TargetSyncs
-func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger, ctx := c.log.StartReconcileAndAddToContext(ctx, req)
+func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
+	_, ctx = c.log.StartReconcileAndAddToContext(ctx, req)
+
+	result = reconcile.Result{}
+	defer utils.HandlePanics(ctx, &result)
+
+	result, err = c.reconcile(ctx, req)
+
+	return result, err
+}
+
+// Reconcile reconciles requests for TargetSyncs
+func (c *TargetSyncController) reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	targetSync := &lsv1alpha1.TargetSync{}
 	if err := c.lsUncachedClient.Get(ctx, req.NamespacedName, targetSync); err != nil {
