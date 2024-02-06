@@ -58,6 +58,7 @@ func LandscaperSpiffFuncs(blueprint *blueprints.Blueprint, functions spiffing.Fu
 	functions.RegisterFunction("getServiceAccountKubeconfig", getServiceAccountKubeconfigSpiffFunc(targetResolver, false))
 	functions.RegisterFunction("getServiceAccountKubeconfigWithExpirationTimestamp", getServiceAccountKubeconfigSpiffFunc(targetResolver, true))
 	functions.RegisterFunction("getOidcKubeconfig", getOidcKubeconfigSpiffFunc(targetResolver))
+	functions.RegisterFunction("getOriginalName", getOriginalNameSpiffFunc())
 
 	return nil
 }
