@@ -16,30 +16,25 @@ import (
 	gotmpl "text/template"
 	"time"
 
-	"github.com/open-component-model/ocm/pkg/mime"
-
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
-	"github.com/open-component-model/ocm/pkg/runtime"
-
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
-
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
-
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
-	"github.com/gardener/landscaper/pkg/components/cnudie"
-
 	"github.com/Masterminds/sprig/v3"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	"github.com/open-component-model/ocm/pkg/mime"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 
@@ -93,6 +88,8 @@ func LandscaperTplFuncMap(blueprint *blueprints.Blueprint,
 		"getServiceAccountKubeconfig":                        getServiceAccountKubeconfigGoFunc(targetResolver),
 		"getServiceAccountKubeconfigWithExpirationTimestamp": getServiceAccountKubeconfigWithExpirationTimestampGoFunc(targetResolver),
 		"getOidcKubeconfig":                                  getOidcKubeconfigGoFunc(targetResolver),
+
+		"getOriginalName": getOriginalName,
 	}
 
 	return funcs, nil
@@ -556,6 +553,30 @@ func getOidcKubeconfigGoFunc(targetResolver targetresolver.TargetResolver) func(
 
 		ctx := context.Background()
 		return clusters.BuildOIDCKubeconfig(ctx, issuerURL, clientID, target, targetResolver)
+	}
+}
+
+func getOriginalName(args ...interface{}) (string, error) {
+	if len(args) != 1 {
+		return "", fmt.Errorf("templating function getOriginalName expects 1 argument: target")
+	}
+
+	targetObj := args[0]
+	targetBytes, err := json.Marshal(targetObj)
+	if err != nil {
+		return "", fmt.Errorf("templating function getOriginalName expects a target object as 1st argument: error during marshaling: %w", err)
+	}
+
+	target := &v1alpha1.Target{}
+	err = json.Unmarshal(targetBytes, target)
+	if err != nil {
+		return "", fmt.Errorf("templating function getOriginalName expects a target object as 1st argument: error during unmarshaling: %w", err)
+	}
+
+	if kubernetes.HasLabel(target, v1alpha1.DataObjectOriginalNameLabel) {
+		return target.GetLabels()[v1alpha1.DataObjectOriginalNameLabel], nil
+	} else {
+		return target.GetName(), nil
 	}
 }
 
