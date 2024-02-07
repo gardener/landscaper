@@ -225,8 +225,7 @@ func GetTargetListImportBySelector(
 	contextName string,
 	inst *lsv1alpha1.Installation,
 	selector map[string]string,
-	targetImport lsv1alpha1.TargetImport,
-	restrictToImport bool) (*dataobjects.TargetExtensionList, error) {
+	targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetExtensionList, error) {
 	targets := &lsv1alpha1.TargetList{}
 	// construct label selector
 	contextSelector := labels.NewSelector()
@@ -237,6 +236,13 @@ func GetTargetListImportBySelector(
 			return nil, fmt.Errorf("unable to construct label selector: %w", err)
 		}
 		contextSelector = contextSelector.Add(*r)
+
+		r, err = labels.NewRequirement(lsv1alpha1.DataObjectJobIDLabel, selection.Equals, []string{inst.Status.JobID})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+
 	} else {
 		// top-level targets probably don't have an empty context set, so check for non-existence of the label
 		r, err := labels.NewRequirement(lsv1alpha1.DataObjectContextLabel, selection.DoesNotExist, nil)
@@ -253,14 +259,12 @@ func GetTargetListImportBySelector(
 		}
 		contextSelector = contextSelector.Add(*r)
 	}
-	if restrictToImport {
-		// add further labels to ensure that only targets imported by that installation are selected
-		r, err := labels.NewRequirement(lsv1alpha1.DataObjectSourceTypeLabel, selection.Equals, []string{string(lsv1alpha1.ImportDataObjectSourceType)})
-		if err != nil {
-			return nil, fmt.Errorf("unable to construct label selector: %w", err)
-		}
-		contextSelector = contextSelector.Add(*r)
+	// add further labels to ensure that only targets imported by that installation are selected
+	r, err := labels.NewRequirement(lsv1alpha1.DataObjectSourceTypeLabel, selection.Equals, []string{string(lsv1alpha1.ImportDataObjectSourceType)})
+	if err != nil {
+		return nil, fmt.Errorf("unable to construct label selector: %w", err)
 	}
+	contextSelector = contextSelector.Add(*r)
 
 	if err := read_write_layer.ListTargets(ctx, kubeClient, targets, read_write_layer.R000072,
 		client.InNamespace(inst.Namespace), &client.ListOptions{LabelSelector: contextSelector}); err != nil {

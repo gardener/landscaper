@@ -362,11 +362,6 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 
 	if len(subInstsToDelete) == 0 {
 		// all orphaned removed
-		newCleaner := NewDataObjectAndTargetCleaner(inst, c.LsUncachedClient())
-		if err := newCleaner.CleanupContext(ctx); err != nil {
-			return nil, lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error())
-		}
-
 		return nil, nil
 	}
 
@@ -475,10 +470,13 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 }
 
 func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
-
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
-
 	currentOperation := "handlePhaseCompleting"
+
+	newCleaner := NewDataObjectAndTargetCleaner(inst, c.LsUncachedClient())
+	if err := newCleaner.CleanupContext(ctx); err != nil {
+		return nil, lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error())
+	}
 
 	instOp, imps, importsHash, _, fatalError, fatalError2 := c.init(ctx, inst)
 

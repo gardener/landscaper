@@ -334,7 +334,7 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		} else if len(def.TargetListReference) != 0 {
 			// TargetListReference is converted to a label selector internally
 			tl, err = GetTargetListImportBySelector(ctx, o.LsUncachedClient(), o.Context().Name, o.Inst.GetInstallation(),
-				map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def, true)
+				map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def)
 		} else {
 			// Invalid target
 			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
