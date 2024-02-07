@@ -79,14 +79,19 @@ func GetChart(ctx context.Context,
 func getChartFromResourceRef(ctx context.Context, resourceRef string, lsCtx *lsv1alpha1.Context,
 	lsClient client.Client) (_ *chart.Chart, err error) {
 
+	op := "getChartFromResourceRef"
+
 	octx := ocm.New(datacontext.MODE_EXTENDED)
 
 	if lsCtx == nil {
-		return nil, fmt.Errorf("landscaper context cannot be nil")
+		return nil, lserrors.NewError(op, "NoContext", "landscaper context cannot be nil", lsv1alpha1.ErrorForInfoOnly,
+			lsv1alpha1.ErrorConfigurationProblem)
 	}
-	if lsCtx.RepositoryContext == nil || lsCtx.RepositoryContext.Raw == nil {
-		return nil, fmt.Errorf("landscaper context %s/%s does not specify a repository context but has"+
+
+	if lsCtx == nil || lsCtx.RepositoryContext == nil || lsCtx.RepositoryContext.Raw == nil {
+		msg := fmt.Sprintf("landscaper context %s/%s does not specify a repository context but has"+
 			" to specify a repository context to resolve resource from an ocm reference", lsCtx.Namespace, lsCtx.Name)
+		return nil, lserrors.NewError(op, "NoContext", msg, lsv1alpha1.ErrorForInfoOnly, lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	// Credential Handling

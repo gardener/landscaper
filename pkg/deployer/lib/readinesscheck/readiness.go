@@ -90,7 +90,8 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, kubeClient 
 
 	if wait.Interrupted(err) {
 		msg := fmt.Sprintf("timeout at: %q", checkpoint)
-		return lserror.NewWrappedError(err, "WaitForObjectsReady", lsv1alpha1.ProgressingTimeoutReason, msg, lsv1alpha1.ErrorTimeout)
+		return lserror.NewWrappedError(err, "WaitForObjectsReady", lsv1alpha1.ProgressingTimeoutReason, msg,
+			lsv1alpha1.ErrorTimeout, lsv1alpha1.ErrorForInfoOnly)
 	}
 
 	return err
