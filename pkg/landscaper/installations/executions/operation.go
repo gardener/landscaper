@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -91,18 +93,27 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 				Name:      elem.Target.Name,
 				Namespace: o.Inst.GetInstallation().Namespace,
 			}
-			if elem.Target.Index != nil {
+			if elem.Target.OriginalName != nil {
 				// targetlist import reference
 				ti := o.GetTargetListImport(elem.Target.Import)
 				if ti == nil {
 					return nil, o.deployItemSpecificationError(cond, elem.Name, "targetlist import %q not found", elem.Target.Import)
 				}
-				if *elem.Target.Index < 0 || *elem.Target.Index >= len(ti.GetTargetExtensions()) {
-					return nil, o.deployItemSpecificationError(cond, elem.Name, "index %d out of bounds", *elem.Target.Index)
+
+				var foundTarget *lsv1alpha1.Target
+				for _, targetExt := range ti.GetTargetExtensions() {
+					target := targetExt.GetTarget()
+					if utils.GetOriginalName(target) == *elem.Target.OriginalName {
+						foundTarget = target
+						break
+					}
 				}
-				rawTarget := ti.GetTargetExtensions()[*elem.Target.Index].GetTarget()
-				target.Name = rawTarget.Name
-				target.Namespace = rawTarget.Namespace
+				if foundTarget == nil {
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "original name not found %s", *elem.Target.OriginalName)
+				}
+
+				target.Name = foundTarget.Name
+				target.Namespace = foundTarget.Namespace
 			} else if len(elem.Target.Import) > 0 {
 				// single target import reference
 				t := o.GetTargetImport(elem.Target.Import)

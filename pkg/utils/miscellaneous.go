@@ -12,6 +12,10 @@ import (
 	"os"
 	"path/filepath"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 
@@ -157,6 +161,14 @@ func SetExclusiveOwnerReference(owner client.Object, obj client.Object) (error, 
 		}
 	}
 	return nil, controllerutil.SetOwnerReference(owner, obj, api.LandscaperScheme)
+}
+
+func GetOriginalName(obj metav1.Object) string {
+	if kutil.HasLabel(obj, lsv1alpha1.DataObjectOriginalNameLabel) {
+		return obj.GetLabels()[lsv1alpha1.DataObjectOriginalNameLabel]
+	} else {
+		return obj.GetName()
+	}
 }
 
 func SetLastError(deployItemStatus *lsv1alpha1.DeployItemStatus, err *lsv1alpha1.Error) {

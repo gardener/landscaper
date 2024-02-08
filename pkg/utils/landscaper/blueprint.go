@@ -223,7 +223,7 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 				Name:      elem.Target.Name,
 				Namespace: input.Installation.Namespace,
 			}
-			if elem.Target.Index != nil {
+			if elem.Target.OriginalName != nil {
 				// targetlist import reference
 				raw := imports[elem.Target.Import]
 				imp := input.Blueprint.GetImportByName(elem.Target.Import)
@@ -240,14 +240,27 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 				if !ok {
 					return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
 				}
-				if *elem.Target.Index < 0 || *elem.Target.Index >= len(val) {
-					return nil, nil, deployItemSpecificationError(elem.Name, "index %d out of bounds", *elem.Target.Index)
+
+				var ta map[string]interface{}
+				for _, t := range val {
+					origName, ok, err := unstructured.NestedString(t, "metadata", "labels", lsv1alpha1.DataObjectOriginalNameLabel)
+					if err != nil {
+						return nil, nil, deployItemSpecificationError(elem.Name, "invalid original name for import %q", elem.Target.Import)
+					}
+					if ok && origName == *elem.Target.OriginalName {
+						ta = t
+						break
+					}
 				}
-				name, _, err := unstructured.NestedString(val[*elem.Target.Index], "metadata", "name")
+				if ta == nil {
+					return nil, nil, deployItemSpecificationError(elem.Name, "original name not found for import %q", elem.Target.OriginalName)
+				}
+
+				name, _, err := unstructured.NestedString(ta, "metadata", "name")
 				if err != nil {
 					return nil, nil, err
 				}
-				namespace, _, _ := unstructured.NestedString(val[*elem.Target.Index], "metadata", "namespace")
+				namespace, _, _ := unstructured.NestedString(ta, "metadata", "namespace")
 				target.Name = name
 				target.Namespace = namespace
 			} else if len(elem.Target.Import) > 0 {
