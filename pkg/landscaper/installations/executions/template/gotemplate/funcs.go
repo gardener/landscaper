@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	utils2 "github.com/gardener/landscaper/pkg/utils"
 	"os"
 	"strings"
 	gotmpl "text/template"
@@ -26,7 +27,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
@@ -573,11 +573,7 @@ func getOriginalName(args ...interface{}) (string, error) {
 		return "", fmt.Errorf("templating function getOriginalName expects a target object as 1st argument: error during unmarshaling: %w", err)
 	}
 
-	if kubernetes.HasLabel(target, v1alpha1.DataObjectOriginalNameLabel) {
-		return target.GetLabels()[v1alpha1.DataObjectOriginalNameLabel], nil
-	} else {
-		return target.GetName(), nil
-	}
+	return utils2.GetOriginalName(target), nil
 }
 
 func toInt64(value interface{}) (int64, error) {

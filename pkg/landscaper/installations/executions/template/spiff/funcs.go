@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	utils2 "github.com/gardener/landscaper/pkg/utils"
 	"time"
 
 	"github.com/mandelsoft/spiff/dynaml"
@@ -22,7 +23,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
@@ -528,11 +528,7 @@ func getOriginalNameSpiffFunc() dynaml.Function {
 			return info.Error("templating function getOriginalName expects a target object as 1st argument: error during unmarshaling: %w", err)
 		}
 
-		if kubernetes.HasLabel(target, lsv1alpha1.DataObjectOriginalNameLabel) {
-			return target.GetLabels()[lsv1alpha1.DataObjectOriginalNameLabel], info, true
-		} else {
-			return target.GetName(), info, true
-		}
+		return utils2.GetOriginalName(target), info, true
 	}
 }
 
