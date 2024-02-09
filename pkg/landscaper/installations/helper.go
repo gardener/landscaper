@@ -7,6 +7,7 @@ package installations
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/utils"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -203,13 +204,14 @@ func GetTargetListImportByNames(
 	inst *lsv1alpha1.Installation,
 	targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetExtensionList, error) {
 	targets := make([]lsv1alpha1.Target, len(targetImport.Targets))
-	for i, targetName := range targetImport.Targets {
+	for i, originalName := range targetImport.Targets {
 		// get deploy item from current context
 		raw := &lsv1alpha1.Target{}
-		targetName = lsv1alpha1helper.GenerateDataObjectName(contextName, targetName)
+		targetName := lsv1alpha1helper.GenerateDataObjectName(contextName, originalName)
 		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Namespace), raw); err != nil {
 			return nil, err
 		}
+		kubernetes.SetMetaDataLabel(raw, utils.DataObjectOriginalName, originalName)
 		targets[i] = *raw
 	}
 	targetExtensionList := dataobjects.NewTargetExtensionList(targets, &targetImport)
