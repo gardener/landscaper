@@ -41,14 +41,14 @@ landscaper:
           - integration-test
           depends:
           - ocm_build_and_publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
+          image: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/integration-test:1.21.5-alpine3.18'
           output_dir: 'integration_test'
     pull-request:
       steps:
         integration_test:
           depends:
           - ocm_build_and_publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
+          image: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/integration-test:1.21.5-alpine3.18'
           execute:
           - integration-test-pr
       traits:
@@ -74,7 +74,7 @@ landscaper:
           - integration-test
           depends:
           - ocm_build_and_publish
-          image: 'eu.gcr.io/gardener-project/landscaper-service/integration-test:1.21.5-alpine3.18'
+          image: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/integration-test:1.21.5-alpine3.18'
           output_dir: 'integration_test'
         update_release:
           inputs:
