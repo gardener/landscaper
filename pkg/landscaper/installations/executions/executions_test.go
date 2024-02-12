@@ -118,5 +118,4 @@ var _ = Describe("DeployItemExecutions", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(Equal("invalid deployitem specification \"myDi\": target import \"targetListImp\" not found"))
 	})
-
 })
