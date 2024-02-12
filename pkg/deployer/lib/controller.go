@@ -352,7 +352,12 @@ func (c *controller) buildResult(ctx context.Context, phase lsv1alpha1.DeployIte
 
 	if lsError != nil {
 		logger, _ := logging.FromContextOrNew(ctx, nil)
-		logger.Error(lsError, "reconcile deploy item")
+
+		if lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorForInfoOnly) {
+			logger.Info(lsError.Error())
+		} else {
+			logger.Error(lsError, "reconcile deploy item")
+		}
 	}
 
 	if phase.IsFinal() {

@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
@@ -145,6 +146,9 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		h.Configuration.OCI,
 		h.SharedCache)
 	if err != nil {
+		if h.isDownloadInfoError(err) {
+			return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error(), lsv1alpha1.ErrorForInfoOnly)
+		}
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error())
 	}
 
@@ -164,7 +168,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 	values, err = chartutil.ToRenderValues(ch, values, options, nil)
 	if err != nil {
 		return nil, nil, nil, nil, lserrors.NewWrappedError(
-			err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+			err, currOp, "PrepareHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	files, err := engine.RenderWithClient(ch, values, restConfig)
@@ -249,4 +253,11 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 		return restConfig, kubeClient, clientset, nil
 	}
 	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
+}
+
+func (h *Helm) isDownloadInfoError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "no chart name found") ||
+		(strings.Contains(msg, "cannot get chart repository") && strings.Contains(msg, "could not find protocol handler for")) ||
+		(strings.Contains(msg, "cannot download repository index for") && strings.Contains(msg, "404 Not Found"))
 }

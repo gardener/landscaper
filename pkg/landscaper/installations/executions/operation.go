@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -53,7 +55,11 @@ func New(op *installations.Operation) *ExecutionOperation {
 	}
 }
 
-func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst *installations.InstallationImportsAndBlueprint) (core.DeployItemTemplateList, error) {
+func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context,
+	inst *installations.InstallationImportsAndBlueprint) (core.DeployItemTemplateList, error) {
+
+	op := "RenderDeployItemTemplates"
+
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.GetInstallation().Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
@@ -74,7 +80,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
-		return nil, fmt.Errorf("RenderDeployItemTemplates - unable to template executions: %w", err)
+		return nil, lserrors.NewWrappedError(err, op, "Template", "unable to template executions", lsv1alpha1.ErrorForInfoOnly)
 	}
 
 	if len(executions) == 0 {
