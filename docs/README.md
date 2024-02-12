@@ -71,8 +71,7 @@
 - [Optimization](usage/Optimization.md)
 - [Repository Context](usage/RepositoryContext.md)
 - [Skipping the Uninstallation of an Application](usage/SkipUninstall.md)
-- [TargetList Imports](usage/TargetLists.md)
-- [TargetSyncs](usage/TargetSyncs.md)
+- [TargetSync Objects ](usage/TargetSyncs.md)
 - [Targets](usage/Targets.md)
 - [Templating](usage/Templating.md)
 

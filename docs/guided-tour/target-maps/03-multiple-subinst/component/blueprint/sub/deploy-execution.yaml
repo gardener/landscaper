@@ -1,0 +1,21 @@
+deployItems:
+  - name: di-{{ .imports.instanceName }}
+    type: landscaper.gardener.cloud/kubernetes-manifest
+
+    target:
+      import: cluster
+
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: multiple-subinst-{{ .imports.instanceName }}
+              namespace: {{ .imports.namespace }}
+            data:
+              {{- .imports.config | toYaml | nindent 14 }}

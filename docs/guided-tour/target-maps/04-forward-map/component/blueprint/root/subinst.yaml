@@ -1,0 +1,20 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+
+name: compose-map-exec-sub
+
+blueprint:
+  ref: cd://resources/blueprint-sub
+
+imports:
+  targets:
+    - name: redSubCluster
+      target: redRootCluster
+    - name: blueSubCluster
+      target: blueRootCluster
+    - name: greenSubCluster
+      target: greenRootCluster
+
+  data:
+    - name: namespace
+      dataRef: namespace

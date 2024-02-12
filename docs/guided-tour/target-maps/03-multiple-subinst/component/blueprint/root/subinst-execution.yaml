@@ -1,0 +1,27 @@
+subinstallations:
+{{ $rootconfig := .imports.rootconfig }}
+{{ range $key, $target := .imports.rootclusters }}
+{{ $config := index $rootconfig $key }}
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: multiple-subinst-sub-{{ $key }}
+
+    blueprint:
+      ref: cd://resources/blueprint-sub
+
+    imports:
+      targets:
+        - name: cluster
+          target: rootclusters[{{ $key }}]
+
+      data:
+        - name: namespace
+          dataRef: namespace
+
+    importDataMappings:
+      instanceName: {{ $key }}
+      config:
+        {{- $config | toYaml | nindent 8 }}
+
+{{ end }}
