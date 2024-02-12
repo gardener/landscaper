@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	utils2 "github.com/gardener/landscaper/pkg/utils"
 	"os"
 	"strings"
 	gotmpl "text/template"
@@ -35,6 +34,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 
@@ -573,7 +573,7 @@ func getOriginalName(args ...interface{}) (string, error) {
 		return "", fmt.Errorf("templating function getOriginalName expects a target object as 1st argument: error during unmarshaling: %w", err)
 	}
 
-	return utils2.GetOriginalName(target), nil
+	return lsutils.GetOriginalName(target), nil
 }
 
 func toInt64(value interface{}) (int64, error) {

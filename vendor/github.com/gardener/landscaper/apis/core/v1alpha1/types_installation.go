@@ -6,6 +6,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	"slices"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -608,7 +609,7 @@ func (inst *Installation) IsImportingData(name string) bool {
 // IsImportingTarget checks if the current component imports a target with the given name.
 func (inst *Installation) IsImportingTarget(name string) bool {
 	for _, def := range inst.Spec.Imports.Targets {
-		if def.Target == name {
+		if def.Target == name || slices.Contains(def.Targets, name) {
 			return true
 		}
 	}

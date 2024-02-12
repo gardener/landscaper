@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	utils2 "github.com/gardener/landscaper/pkg/utils"
 	"time"
 
 	"github.com/mandelsoft/spiff/dynaml"
@@ -30,6 +29,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 
@@ -528,7 +528,7 @@ func getOriginalNameSpiffFunc() dynaml.Function {
 			return info.Error("templating function getOriginalName expects a target object as 1st argument: error during unmarshaling: %w", err)
 		}
 
-		return utils2.GetOriginalName(target), info, true
+		return lsutils.GetOriginalName(target), info, true
 	}
 }
 

@@ -440,7 +440,11 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.GetInstallation())
 	for _, do := range dataExports {
-		do = do.SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		do = do.
+			SetNamespace(o.Inst.GetInstallation().Namespace).
+			SetSource(src).
+			SetContext(o.InstallationContextName()).
+			SetJobID(o.Inst.GetInstallation().Status.JobID)
 		raw, err := do.Build()
 		if err != nil {
 			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
@@ -467,7 +471,11 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 	}
 
 	for _, target := range targetExports {
-		target = target.SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		target = target.
+			SetNamespace(o.Inst.GetInstallation().Namespace).
+			SetSource(src).
+			SetContext(o.InstallationContextName()).
+			SetJobID(o.Inst.GetInstallation().Status.JobID)
 
 		targetForUpdate := &lsv1alpha1.Target{}
 		target.ApplyNameAndNamespace(targetForUpdate)
