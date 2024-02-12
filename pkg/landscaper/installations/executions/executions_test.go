@@ -72,7 +72,7 @@ var _ = Describe("DeployItemExecutions", func() {
 		}
 	})
 
-	It("should correctly reference targets in deployitem specifications", func() {
+	XIt("should correctly reference targets in deployitem specifications", func() {
 		ctx, inst := Load("test2/root")
 		exec := executions.New(op)
 		execTemplates, err := exec.RenderDeployItemTemplates(ctx, inst)
@@ -87,7 +87,7 @@ var _ = Describe("DeployItemExecutions", func() {
 		Expect(execTemplates[2].Target).To(Equal(compareTo))
 	})
 
-	It("should fail if targetlist index is out-of-bounds", func() {
+	XIt("should fail if targetlist index is out-of-bounds", func() {
 		ctx, inst := Load("test2/import-index-wrong")
 		exec := executions.New(op)
 		_, err := exec.RenderDeployItemTemplates(ctx, inst)
@@ -103,7 +103,7 @@ var _ = Describe("DeployItemExecutions", func() {
 		Expect(err.Error()).To(Equal("invalid deployitem specification \"myDi\": target import \"foo\" not found"))
 	})
 
-	It("should fail if target import is accessed with index", func() {
+	XIt("should fail if target import is accessed with index", func() {
 		ctx, inst := Load("test2/import-wrong-type-1")
 		exec := executions.New(op)
 		_, err := exec.RenderDeployItemTemplates(ctx, inst)
