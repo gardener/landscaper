@@ -231,7 +231,6 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
 		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
@@ -244,15 +243,13 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
-			configGen = inst.Status.ConfigGeneration
 		}
 
 		importStatus := lsv1alpha1.ImportStatus{
-			Name:             def.Name,
-			Type:             lsv1alpha1.DataImportStatusType,
-			DataRef:          def.DataRef,
-			SourceRef:        sourceRef,
-			ConfigGeneration: configGen,
+			Name:      def.Name,
+			Type:      lsv1alpha1.DataImportStatusType,
+			DataRef:   def.DataRef,
+			SourceRef: sourceRef,
 		}
 		if len(def.DataRef) != 0 {
 			importStatus.DataRef = def.DataRef
@@ -286,7 +283,6 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.GetTarget().ObjectMeta)
 		)
 		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
@@ -300,14 +296,12 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
-			configGen = inst.Status.ConfigGeneration
 		}
 		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:             def.Name,
-			Type:             lsv1alpha1.TargetImportStatusType,
-			Target:           def.Target,
-			SourceRef:        sourceRef,
-			ConfigGeneration: configGen,
+			Name:      def.Name,
+			Type:      lsv1alpha1.TargetImportStatusType,
+			Target:    def.Target,
+			SourceRef: sourceRef,
 		})
 	}
 
@@ -346,7 +340,6 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		for i, t := range tl.GetTargetExtensions() {
 			var (
 				sourceRef *lsv1alpha1.ObjectReference
-				configGen = dataobjects.ImportedBase(t).ComputeConfigGeneration()
 				owner     = kutil.GetOwner(t.GetTarget().ObjectMeta)
 			)
 			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
@@ -359,12 +352,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 						sourceRef.NamespacedName().String(), def.Name, err)
 				}
-				configGen = inst.Status.ConfigGeneration
 			}
 			tis[i] = lsv1alpha1.TargetImportStatus{
-				Target:           t.GetTarget().Name,
-				SourceRef:        sourceRef,
-				ConfigGeneration: configGen,
+				Target:    t.GetTarget().Name,
+				SourceRef: sourceRef,
 			}
 		}
 		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
@@ -413,27 +404,9 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	return installations, nil
 }
 
-// SetExportConfigGeneration returns the new export generation of the installation
-// based on its own generation and its context
-func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
-	// we have to set our config generation to the desired state
-
-	o.Inst.GetInstallation().Status.ConfigGeneration = ""
-	return o.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Inst.GetInstallation())
-}
-
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
 func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*dataobjects.DataObject, targetExports []*dataobjects.TargetExtension) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.CreateExportsCondition)
-
-	configGen, err := CreateGenerationHash(o.Inst.GetInstallation())
-	if err != nil {
-		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
-			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-				"CreateConfigHash",
-				fmt.Sprintf("unable to create config hash: %s", err.Error())))
-		return err
-	}
 
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.GetInstallation())
 	for _, do := range dataExports {
@@ -486,7 +459,6 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 	}
 
-	o.Inst.GetInstallation().Status.ConfigGeneration = configGen
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue, "DataObjectsCreated", "DataObjects successfully created")
 	return o.UpdateInstallationStatus(ctx, o.Inst.GetInstallation(), read_write_layer.W000057, cond)
 }
