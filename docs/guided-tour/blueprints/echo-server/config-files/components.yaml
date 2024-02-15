@@ -11,7 +11,7 @@ components:
           type: ociArtifact
           imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/echo-server:1.0.0
       - name: echo-server-chart
-        type: helm.io/chart
+        type: helmChart
         version: 1.0.0
         access:
           type: ociArtifact

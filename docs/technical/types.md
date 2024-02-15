@@ -128,7 +128,7 @@ resources:
 <table>
     <tr>
         <td>ResourceType</td>
-        <td> <code>helm.io/chart</code> (deprecated <code>helm</code>) </td>
+        <td> <code>helmChart</code> (deprecated <code>helm</code>, <code>helm.io/chart</code>) </td>
     </tr>
     <tr>
         <td>Access</td>
@@ -158,7 +158,7 @@ A blueprint blob is expected to be a gzipped tar that MUST contains the `bluepri
 
 **Standalone Artifact**:
 
-The helm deployer supports the default oci helm cartifact as created by the helm cli.
+The helm deployer supports the default oci helm artifact as created by the helm cli.
 For more information about the usage see the official [helm docs](https://helm.sh/docs/topics/registries/#where-are-my-charts)
 
 ```json
@@ -182,7 +182,7 @@ For more information about the usage see the official [helm docs](https://helm.s
 ```yaml
 resources:
 - name: my-helm-chart
-  type: helm.io/chart
+  type: helmChart
   access:
     type: ociRegistry
     imageReference: <oci artifact uri>

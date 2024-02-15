@@ -295,7 +295,7 @@ component:
   version: 'v0.1.0'
   ...
   resources:
-    - type: helm.io/chart
+    - type: helmChart
       name: nginx-chart
       version: 9.7.0
       relation: external
