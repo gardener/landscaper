@@ -360,18 +360,6 @@ type SecretLabelSelectorRef struct {
 	Key string `json:"key"`
 }
 
-// ImportStatusType defines the type of a import status.
-type ImportStatusType string
-
-const (
-	// DataImportStatusType is an ImportStatusType for data objects
-	DataImportStatusType ImportStatusType = "dataobject"
-	// TargetImportStatusType is an ImportStatusType for targets
-	TargetImportStatusType ImportStatusType = "target"
-	// TargetListImportStatusType is an ImportStatusType for target lists
-	TargetListImportStatusType ImportStatusType = "targetList"
-)
-
 // SubInstCache contains the existing sub installations
 type SubInstCache struct {
 	ActiveSubs   []SubNamePair `json:"activeSubs,omitempty"`

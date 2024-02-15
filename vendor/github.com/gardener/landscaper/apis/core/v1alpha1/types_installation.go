@@ -491,18 +491,6 @@ type SecretLabelSelectorRef struct {
 	Key string `json:"key"`
 }
 
-// ImportStatusType defines the type of a import status.
-type ImportStatusType string
-
-const (
-	// DataImportStatusType is an ImportStatusType for data objects
-	DataImportStatusType ImportStatusType = "dataobject"
-	// TargetImportStatusType is an ImportStatusType for targets
-	TargetImportStatusType ImportStatusType = "target"
-	// TargetListImportStatusType is an ImportStatusType for target lists
-	TargetListImportStatusType ImportStatusType = "targetList"
-)
-
 // MarshalJSON implements the json marshaling for a TargetImport
 // Why this is needed:
 //

@@ -4180,11 +4180,6 @@ Does only make sense for optional imports.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ImportStatusType">ImportStatusType
-(<code>string</code> alias)</p></h3>
-<p>
-<p>ImportStatusType defines the type of a import status.</p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ImportType">ImportType
 (<code>string</code> alias)</p></h3>
 <p>
