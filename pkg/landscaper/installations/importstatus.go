@@ -5,8 +5,6 @@
 package installations
 
 import (
-	"fmt"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
@@ -41,22 +39,4 @@ func (s *ImportStatus) GetStatus() []lsv1alpha1.ImportStatus {
 	}
 
 	return states
-}
-
-// GetData returns the import data status for the given key.
-func (s *ImportStatus) GetData(name string) (lsv1alpha1.ImportStatus, error) {
-	state, ok := s.Data[name]
-	if !ok {
-		return lsv1alpha1.ImportStatus{}, fmt.Errorf("import state %s not found", name)
-	}
-	return *state, nil
-}
-
-// GetTarget returns the import target state for the given key.
-func (s *ImportStatus) GetTarget(name string) (lsv1alpha1.ImportStatus, error) {
-	state, ok := s.Target[name]
-	if !ok {
-		return lsv1alpha1.ImportStatus{}, fmt.Errorf("import state %s not found", name)
-	}
-	return *state, nil
 }
