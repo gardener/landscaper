@@ -16,7 +16,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/clock"
@@ -99,11 +98,6 @@ var _ = Describe("Inline Component Descriptor", func() {
 		Expect(inst.Status.JobID).NotTo(BeEmpty())
 		Expect(inst.Status.JobIDFinished).To(BeEmpty())
 		Expect(inst.Status.ExecutionReference).ToNot(BeNil())
-		Expect(inst.Status.Imports).To(HaveLen(1))
-		Expect(inst.Status.Imports[0]).To(MatchFields(IgnoreExtras, Fields{
-			"Name": Equal("imp-a"),
-			"Type": Equal(lsv1alpha1.DataImportStatusType),
-		}))
 
 		jobID := inst.Status.JobID
 

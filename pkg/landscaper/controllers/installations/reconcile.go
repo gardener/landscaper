@@ -547,7 +547,6 @@ func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *install
 		return lserrors.NewWrappedError(err, currOp, "ReconcileExecution", err.Error())
 	}
 
-	inst.GetInstallation().Status.Imports = inst.ImportStatus().GetStatus()
 	return nil
 }
 

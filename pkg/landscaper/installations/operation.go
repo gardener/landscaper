@@ -260,8 +260,6 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 			configMapRef := lscutils.ConfigMapRefFromLocalRef(def.ConfigMapRef, o.Inst.GetInstallation().Namespace)
 			importStatus.ConfigMapRef = fmt.Sprintf("%s#%s", configMapRef.NamespacedName().String(), configMapRef.Key)
 		}
-
-		o.Inst.ImportStatus().Update(importStatus)
 	}
 
 	return dataObjects, nil
@@ -297,12 +295,6 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
 		}
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:      def.Name,
-			Type:      lsv1alpha1.TargetImportStatusType,
-			Target:    def.Target,
-			SourceRef: sourceRef,
-		})
 	}
 
 	return targets, nil
@@ -358,11 +350,6 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 				SourceRef: sourceRef,
 			}
 		}
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:    def.Name,
-			Type:    lsv1alpha1.TargetListImportStatusType,
-			Targets: tis,
-		})
 	}
 
 	return targets, nil
