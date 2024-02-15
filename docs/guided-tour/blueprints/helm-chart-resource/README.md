@@ -45,7 +45,7 @@ components:
           # notice that this has to be a reference to the updated blueprint
           imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/helm-chart-resource:1.0.0
       - name: helm-chart
-        type: helm.io/chart
+        type: helmChart
         version: 1.0.0
         access:
           type: ociArtifact
@@ -70,7 +70,7 @@ components:
           # notice that this has to be a reference to the updated blueprint
           imageReference: eu.gcr.io/gardener-project/landscaper/examples/blueprints/guided-tour/helm-chart-resource:1.0.0
       - name: helm-chart
-        type: helm.io/chart
+        type: helmChart
         version: 1.0.0
         access:
           type: helm
