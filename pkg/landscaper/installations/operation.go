@@ -22,7 +22,6 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	lscutils "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
@@ -244,22 +243,6 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
 		}
-
-		importStatus := lsv1alpha1.ImportStatus{
-			Name:      def.Name,
-			Type:      lsv1alpha1.DataImportStatusType,
-			DataRef:   def.DataRef,
-			SourceRef: sourceRef,
-		}
-		if len(def.DataRef) != 0 {
-			importStatus.DataRef = def.DataRef
-		} else if def.SecretRef != nil {
-			secretRef := lscutils.SecretRefFromLocalRef(def.SecretRef, o.Inst.GetInstallation().Namespace)
-			importStatus.SecretRef = fmt.Sprintf("%s#%s", secretRef.NamespacedName().String(), secretRef.Key)
-		} else if def.ConfigMapRef != nil {
-			configMapRef := lscutils.ConfigMapRefFromLocalRef(def.ConfigMapRef, o.Inst.GetInstallation().Namespace)
-			importStatus.ConfigMapRef = fmt.Sprintf("%s#%s", configMapRef.NamespacedName().String(), configMapRef.Key)
-		}
 	}
 
 	return dataObjects, nil
@@ -327,29 +310,6 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		}
 
 		targets[def.Name] = tl
-
-		tis := make([]lsv1alpha1.TargetImportStatus, len(tl.GetTargetExtensions()))
-		for i, t := range tl.GetTargetExtensions() {
-			var (
-				sourceRef *lsv1alpha1.ObjectReference
-				owner     = kutil.GetOwner(t.GetTarget().ObjectMeta)
-			)
-			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
-				sourceRef = &lsv1alpha1.ObjectReference{
-					Name:      owner.Name,
-					Namespace: o.Inst.GetInstallation().Namespace,
-				}
-				inst := &lsv1alpha1.Installation{}
-				if err := read_write_layer.GetInstallation(ctx, o.LsUncachedClient(), sourceRef.NamespacedName(), inst, read_write_layer.R000011); err != nil {
-					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
-						sourceRef.NamespacedName().String(), def.Name, err)
-				}
-			}
-			tis[i] = lsv1alpha1.TargetImportStatus{
-				Target:    t.GetTarget().Name,
-				SourceRef: sourceRef,
-			}
-		}
 	}
 
 	return targets, nil
