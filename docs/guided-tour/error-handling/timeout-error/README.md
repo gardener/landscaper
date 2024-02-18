@@ -1,10 +1,15 @@
-# Timeouts
+---
+title: Timeouts
+sidebar_position: 2
+---
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
+# Timeouts
 
 In this example, we will again deploy the Helm chart of the previous hello-world example. In order to demonstrate 
 another error situation, we have slightly changed the [Installation](./installation/installation.yaml): 
 It references chart version `0.0.5`, which does not exist.
+
+For prerequisites, see [here](../../README.md).
 
 ## Procedure
 
