@@ -1,3 +1,8 @@
+---
+title: Import Data Mappings
+sidebar_position: 2
+---
+
 # Import Data Mappings
 
 There are situations where the values in the `DataObjects` are structured differently than the import
