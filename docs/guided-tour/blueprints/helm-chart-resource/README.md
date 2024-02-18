@@ -1,6 +1,13 @@
+---
+title: Helm Chart Component
+sidebar_position: 2
+---
+
 # Helm Chart Resources in the Component
 
-For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+Let's look at an example in which a Helm Chart is referenced from a Component.
+
+For prerequisites see [here](../../README.md).
 
 ## Referencing the Helm Chart without a Component
 The blueprint of the previous examples reference the Helm chart directly like this:
