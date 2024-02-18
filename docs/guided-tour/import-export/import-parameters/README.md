@@ -1,3 +1,8 @@
+---
+title: Import Parameters
+sidebar_position: 1
+---
+
 # Import Parameters
 
 This example is a modification of the [Echo Server Example](../../blueprints/echo-server). 
