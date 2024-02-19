@@ -28,8 +28,6 @@ type ImportedBase interface {
 	// GetInClusterObjects is the same as GetInClusterObject, but for list-type imports
 	GetInClusterObjects() []client.Object
 	// ComputeConfigGeneration computes the config generation for the import to compare it to the one stored in the import status
-	ComputeConfigGeneration() string
-	// GetListItems is meant for list-type imports and returns all contained imports wrapped as ImportedBase
 	GetListItems() []ImportedBase
 	// GetImportReference returns the (non-hashed) name under which the imported object was exported. It is implemented for single-type imports only.
 	GetImportReference() string
@@ -100,23 +98,6 @@ func (imp *Imported) GetOwnerReferences() map[string]*metav1.OwnerReference {
 		res[obj.GetName()] = kutil.GetMainOwnerFromOwnerReferences(obj.GetOwnerReferences())
 	}
 	return res
-}
-
-// ComputeConfigGenerationForItem is the list-type import variant of ComputeConfigGeneration
-// it takes the name of an in-cluster object contained in the import as an argument
-// An empty string is returned if the object is not found in the imports
-func (imp *Imported) ComputeConfigGenerationForItem(objectName string) string {
-	if !imp.IsListTypeImport() {
-		return ""
-	}
-	items := imp.GetListItems()
-	for _, item := range items {
-		obj := item.GetInClusterObject()
-		if obj != nil && obj.GetName() == objectName {
-			return item.ComputeConfigGeneration()
-		}
-	}
-	return ""
 }
 
 // GetImportReferences is the list-type import implementation for GetImportReference()

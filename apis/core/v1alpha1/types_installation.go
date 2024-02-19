@@ -260,12 +260,6 @@ type InstallationStatus struct {
 	// LastError describes the last error that occurred.
 	LastError *Error `json:"lastError,omitempty"`
 
-	// ConfigGeneration is the generation of the exported values.
-	ConfigGeneration string `json:"configGeneration"`
-
-	// Imports contain the state of the imported values.
-	Imports []ImportStatus `json:"imports,omitempty"`
-
 	// SubInstCache contains the currently existing sub installations belonging to the execution. If nil undefined.
 	// +optional
 	SubInstCache *SubInstCache `json:"subInstCache,omitempty"`
@@ -495,59 +489,6 @@ type SecretLabelSelectorRef struct {
 
 	// The key of the secret to select from.  Must be a valid secret key.
 	Key string `json:"key"`
-}
-
-// ImportStatusType defines the type of a import status.
-type ImportStatusType string
-
-const (
-	// DataImportStatusType is an ImportStatusType for data objects
-	DataImportStatusType ImportStatusType = "dataobject"
-	// TargetImportStatusType is an ImportStatusType for targets
-	TargetImportStatusType ImportStatusType = "target"
-	// TargetListImportStatusType is an ImportStatusType for target lists
-	TargetListImportStatusType ImportStatusType = "targetList"
-)
-
-// TargetImportStatus
-type TargetImportStatus struct {
-	// Target is the name of the in-cluster target object.
-	Target string `json:"target,omitempty"`
-	// SourceRef is the reference to the installation from where the value is imported
-	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
-	// ConfigGeneration is the generation of the imported value.
-	ConfigGeneration string `json:"configGeneration,omitempty"`
-}
-
-// ImportStatus hold the state of a import.
-type ImportStatus struct {
-	// Name is the distinct identifier of the import.
-	// Can be either from data or target imports
-	Name string `json:"name"`
-	// Type defines the kind of import.
-	// Can be either DataObject, Target, or TargetList
-	Type ImportStatusType `json:"type"`
-	// Target is the name of the in-cluster target object.
-	// +optional
-	Target string `json:"target,omitempty"`
-	// TargetList is a list of import statuses for in-cluster target objects.
-	// +optional
-	Targets []TargetImportStatus `json:"targetList,omitempty"`
-	// DataRef is the name of the in-cluster data object.
-	// +optional
-	DataRef string `json:"dataRef,omitempty"`
-	// SecretRef is the name of the secret.
-	// +optional
-	SecretRef string `json:"secretRef,omitempty"`
-	// ConfigMapRef is the name of the imported configmap.
-	// +optional
-	ConfigMapRef string `json:"configMapRef,omitempty"`
-	// SourceRef is the reference to the installation from where the value is imported
-	// +optional
-	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
-	// ConfigGeneration is the generation of the imported value.
-	// +optional
-	ConfigGeneration string `json:"configGeneration,omitempty"`
 }
 
 // MarshalJSON implements the json marshaling for a TargetImport

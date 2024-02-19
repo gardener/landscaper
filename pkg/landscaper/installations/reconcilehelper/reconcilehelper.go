@@ -23,30 +23,16 @@ import (
 
 type ReconcileHelper struct {
 	*installations.Operation
-	ctx          context.Context
-	parent       *installations.InstallationImportsAndBlueprint   // parent installation or nil in case of a root installation
-	importStatus *installations.ImportStatus                      // we need to store the 'old' import status, as it is overwritten during import loading
-	siblingsNew  map[string]*installations.InstallationAndImports // all installations in the same namespace with the same parent, mapped by their names for faster lookup
-	imports      *imports.Imports                                 // struct containing the imports
+	ctx         context.Context
+	parent      *installations.InstallationImportsAndBlueprint   // parent installation or nil in case of a root installation
+	siblingsNew map[string]*installations.InstallationAndImports // all installations in the same namespace with the same parent, mapped by their names for faster lookup
+	imports     *imports.Imports                                 // struct containing the imports
 }
 
 func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*ReconcileHelper, error) {
 	rh := &ReconcileHelper{
 		ctx:       ctx,
 		Operation: op,
-	}
-
-	// copy import status
-	// This is somewhat ugly, maybe we can somehow refactor the updating of the import status out of the import loading methods?
-	rh.importStatus = &installations.ImportStatus{
-		Data:   make(map[string]*lsv1alpha1.ImportStatus, len(rh.Inst.ImportStatus().Data)),
-		Target: make(map[string]*lsv1alpha1.ImportStatus, len(rh.Inst.ImportStatus().Target)),
-	}
-	for k, v := range rh.Inst.ImportStatus().Data {
-		rh.importStatus.Data[k] = v.DeepCopy()
-	}
-	for k, v := range rh.Inst.ImportStatus().Target {
-		rh.importStatus.Target[k] = v.DeepCopy()
 	}
 
 	if err := rh.fetchParent(); err != nil {

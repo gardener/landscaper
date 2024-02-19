@@ -22,7 +22,6 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	lscutils "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
@@ -231,7 +230,6 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
 		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
@@ -244,27 +242,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
-			configGen = inst.Status.ConfigGeneration
 		}
-
-		importStatus := lsv1alpha1.ImportStatus{
-			Name:             def.Name,
-			Type:             lsv1alpha1.DataImportStatusType,
-			DataRef:          def.DataRef,
-			SourceRef:        sourceRef,
-			ConfigGeneration: configGen,
-		}
-		if len(def.DataRef) != 0 {
-			importStatus.DataRef = def.DataRef
-		} else if def.SecretRef != nil {
-			secretRef := lscutils.SecretRefFromLocalRef(def.SecretRef, o.Inst.GetInstallation().Namespace)
-			importStatus.SecretRef = fmt.Sprintf("%s#%s", secretRef.NamespacedName().String(), secretRef.Key)
-		} else if def.ConfigMapRef != nil {
-			configMapRef := lscutils.ConfigMapRefFromLocalRef(def.ConfigMapRef, o.Inst.GetInstallation().Namespace)
-			importStatus.ConfigMapRef = fmt.Sprintf("%s#%s", configMapRef.NamespacedName().String(), configMapRef.Key)
-		}
-
-		o.Inst.ImportStatus().Update(importStatus)
 	}
 
 	return dataObjects, nil
@@ -286,7 +264,6 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.GetTarget().ObjectMeta)
 		)
 		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
@@ -300,15 +277,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
-			configGen = inst.Status.ConfigGeneration
 		}
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:             def.Name,
-			Type:             lsv1alpha1.TargetImportStatusType,
-			Target:           def.Target,
-			SourceRef:        sourceRef,
-			ConfigGeneration: configGen,
-		})
 	}
 
 	return targets, nil
@@ -341,37 +310,6 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		}
 
 		targets[def.Name] = tl
-
-		tis := make([]lsv1alpha1.TargetImportStatus, len(tl.GetTargetExtensions()))
-		for i, t := range tl.GetTargetExtensions() {
-			var (
-				sourceRef *lsv1alpha1.ObjectReference
-				configGen = dataobjects.ImportedBase(t).ComputeConfigGeneration()
-				owner     = kutil.GetOwner(t.GetTarget().ObjectMeta)
-			)
-			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
-				sourceRef = &lsv1alpha1.ObjectReference{
-					Name:      owner.Name,
-					Namespace: o.Inst.GetInstallation().Namespace,
-				}
-				inst := &lsv1alpha1.Installation{}
-				if err := read_write_layer.GetInstallation(ctx, o.LsUncachedClient(), sourceRef.NamespacedName(), inst, read_write_layer.R000011); err != nil {
-					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
-						sourceRef.NamespacedName().String(), def.Name, err)
-				}
-				configGen = inst.Status.ConfigGeneration
-			}
-			tis[i] = lsv1alpha1.TargetImportStatus{
-				Target:           t.GetTarget().Name,
-				SourceRef:        sourceRef,
-				ConfigGeneration: configGen,
-			}
-		}
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:    def.Name,
-			Type:    lsv1alpha1.TargetListImportStatusType,
-			Targets: tis,
-		})
 	}
 
 	return targets, nil
@@ -413,27 +351,9 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	return installations, nil
 }
 
-// SetExportConfigGeneration returns the new export generation of the installation
-// based on its own generation and its context
-func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
-	// we have to set our config generation to the desired state
-
-	o.Inst.GetInstallation().Status.ConfigGeneration = ""
-	return o.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Inst.GetInstallation())
-}
-
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
 func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*dataobjects.DataObject, targetExports []*dataobjects.TargetExtension) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.CreateExportsCondition)
-
-	configGen, err := CreateGenerationHash(o.Inst.GetInstallation())
-	if err != nil {
-		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
-			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-				"CreateConfigHash",
-				fmt.Sprintf("unable to create config hash: %s", err.Error())))
-		return err
-	}
 
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.GetInstallation())
 	for _, do := range dataExports {
@@ -486,7 +406,6 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 	}
 
-	o.Inst.GetInstallation().Status.ConfigGeneration = configGen
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue, "DataObjectsCreated", "DataObjects successfully created")
 	return o.UpdateInstallationStatus(ctx, o.Inst.GetInstallation(), read_write_layer.W000057, cond)
 }

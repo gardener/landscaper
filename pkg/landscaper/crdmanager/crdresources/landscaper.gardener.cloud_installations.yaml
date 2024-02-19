@@ -700,9 +700,6 @@ spec:
                   - message
                   type: object
                 type: array
-              configGeneration:
-                description: ConfigGeneration is the generation of the exported values.
-                type: string
               dependentsToTrigger:
                 description: DependentsToTrigger lists dependent installations to
                   be triggered
@@ -726,83 +723,6 @@ spec:
                 required:
                 - name
                 type: object
-              imports:
-                description: Imports contain the state of the imported values.
-                items:
-                  description: ImportStatus hold the state of a import.
-                  properties:
-                    configGeneration:
-                      description: ConfigGeneration is the generation of the imported
-                        value.
-                      type: string
-                    configMapRef:
-                      description: ConfigMapRef is the name of the imported configmap.
-                      type: string
-                    dataRef:
-                      description: DataRef is the name of the in-cluster data object.
-                      type: string
-                    name:
-                      description: Name is the distinct identifier of the import.
-                        Can be either from data or target imports
-                      type: string
-                    secretRef:
-                      description: SecretRef is the name of the secret.
-                      type: string
-                    sourceRef:
-                      description: SourceRef is the reference to the installation
-                        from where the value is imported
-                      properties:
-                        name:
-                          description: Name is the name of the kubernetes object.
-                          type: string
-                        namespace:
-                          description: Namespace is the namespace of kubernetes object.
-                          type: string
-                      required:
-                      - name
-                      type: object
-                    target:
-                      description: Target is the name of the in-cluster target object.
-                      type: string
-                    targetList:
-                      description: TargetList is a list of import statuses for in-cluster
-                        target objects.
-                      items:
-                        description: TargetImportStatus
-                        properties:
-                          configGeneration:
-                            description: ConfigGeneration is the generation of the
-                              imported value.
-                            type: string
-                          sourceRef:
-                            description: SourceRef is the reference to the installation
-                              from where the value is imported
-                            properties:
-                              name:
-                                description: Name is the name of the kubernetes object.
-                                type: string
-                              namespace:
-                                description: Namespace is the namespace of kubernetes
-                                  object.
-                                type: string
-                            required:
-                            - name
-                            type: object
-                          target:
-                            description: Target is the name of the in-cluster target
-                              object.
-                            type: string
-                        type: object
-                      type: array
-                    type:
-                      description: Type defines the kind of import. Can be either
-                        DataObject, Target, or TargetList
-                      type: string
-                  required:
-                  - name
-                  - type
-                  type: object
-                type: array
               importsHash:
                 description: ImportsHash is the hash of the import data.
                 type: string
@@ -904,7 +824,6 @@ spec:
                 type: object
             required:
             - observedGeneration
-            - configGeneration
             type: object
         required:
         - spec

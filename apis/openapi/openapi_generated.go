@@ -136,7 +136,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.FailedReconcile":                                    schema_landscaper_apis_core_v1alpha1_FailedReconcile(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.FieldValueDefinition":                               schema_landscaper_apis_core_v1alpha1_FieldValueDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ImportDefinition":                                   schema_landscaper_apis_core_v1alpha1_ImportDefinition(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus":                                       schema_landscaper_apis_core_v1alpha1_ImportStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.InlineBlueprint":                                    schema_landscaper_apis_core_v1alpha1_InlineBlueprint(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Installation":                                       schema_landscaper_apis_core_v1alpha1_Installation(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports":                                schema_landscaper_apis_core_v1alpha1_InstallationExports(ref),
@@ -175,7 +174,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Target":                                             schema_landscaper_apis_core_v1alpha1_Target(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetExport":                                       schema_landscaper_apis_core_v1alpha1_TargetExport(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetImport":                                       schema_landscaper_apis_core_v1alpha1_TargetImport(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportStatus":                                 schema_landscaper_apis_core_v1alpha1_TargetImportStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetList":                                         schema_landscaper_apis_core_v1alpha1_TargetList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector":                                     schema_landscaper_apis_core_v1alpha1_TargetSelector(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSpec":                                         schema_landscaper_apis_core_v1alpha1_TargetSpec(ref),
@@ -5581,93 +5579,6 @@ func schema_landscaper_apis_core_v1alpha1_ImportDefinition(ref common.ReferenceC
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_ImportStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ImportStatus hold the state of a import.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name is the distinct identifier of the import. Can be either from data or target imports",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"type": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Type defines the kind of import. Can be either DataObject, Target, or TargetList",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"target": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Target is the name of the in-cluster target object.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"targetList": {
-						SchemaProps: spec.SchemaProps{
-							Description: "TargetList is a list of import statuses for in-cluster target objects.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportStatus"),
-									},
-								},
-							},
-						},
-					},
-					"dataRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DataRef is the name of the in-cluster data object.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"secretRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SecretRef is the name of the secret.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"configMapRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigMapRef is the name of the imported configmap.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"sourceRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SourceRef is the reference to the installation from where the value is imported",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
-						},
-					},
-					"configGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigGeneration is the generation of the imported value.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"name", "type"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportStatus"},
-	}
-}
-
 func schema_landscaper_apis_core_v1alpha1_InlineBlueprint(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6000,28 +5911,6 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
 						},
 					},
-					"configGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigGeneration is the generation of the exported values.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"imports": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Imports contain the state of the imported values.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus"),
-									},
-								},
-							},
-						},
-					},
 					"subInstCache": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SubInstCache contains the currently existing sub installations belonging to the execution. If nil undefined.",
@@ -6095,11 +5984,11 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"observedGeneration", "configGeneration"},
+				Required: []string{"observedGeneration"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ImportStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.SubInstCache", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcileStatus", "github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DependentToTrigger", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.SubInstCache", "github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -7289,41 +7178,6 @@ func schema_landscaper_apis_core_v1alpha1_TargetImport(ref common.ReferenceCallb
 				Required: []string{"name"},
 			},
 		},
-	}
-}
-
-func schema_landscaper_apis_core_v1alpha1_TargetImportStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "TargetImportStatus",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"target": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Target is the name of the in-cluster target object.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"sourceRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SourceRef is the reference to the installation from where the value is imported",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
-						},
-					},
-					"configGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigGeneration is the generation of the imported value.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
 	}
 }
 

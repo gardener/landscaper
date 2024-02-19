@@ -4180,148 +4180,6 @@ Does only make sense for optional imports.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
-</p>
-<p>
-<p>ImportStatus hold the state of a import.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>name</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Name is the distinct identifier of the import.
-Can be either from data or target imports</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>type</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatusType">
-ImportStatusType
-</a>
-</em>
-</td>
-<td>
-<p>Type defines the kind of import.
-Can be either DataObject, Target, or TargetList</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>target</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Target is the name of the in-cluster target object.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>targetList</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.TargetImportStatus">
-[]TargetImportStatus
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>TargetList is a list of import statuses for in-cluster target objects.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>dataRef</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>DataRef is the name of the in-cluster data object.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>secretRef</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>SecretRef is the name of the secret.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configMapRef</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ConfigMapRef is the name of the imported configmap.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>sourceRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-ObjectReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>SourceRef is the reference to the installation from where the value is imported</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configGeneration</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ConfigGeneration is the generation of the imported value.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ImportStatusType">ImportStatusType
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>)
-</p>
-<p>
-<p>ImportStatusType defines the type of a import status.</p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ImportType">ImportType
 (<code>string</code> alias)</p></h3>
 <p>
@@ -4670,30 +4528,6 @@ Error
 </td>
 <td>
 <p>LastError describes the last error that occurred.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configGeneration</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>ConfigGeneration is the generation of the exported values.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>imports</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">
-[]ImportStatus
-</a>
-</em>
-</td>
-<td>
-<p>Imports contain the state of the imported values.</p>
 </td>
 </tr>
 <tr>
@@ -5052,11 +4886,9 @@ ObjectReference
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.NamedObjectReference">NamedObjectReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">SecretReference</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.TargetImportStatus">TargetImportStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSelector">TargetSelector</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TypedObjectReference">TypedObjectReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.VersionedObjectReference">VersionedObjectReference</a>)
@@ -5944,60 +5776,6 @@ string
 <em>(Optional)</em>
 <p>TargetListReference can (only) be used to import a targetlist that has been imported by the parent installation.
 Exactly one of Target, Targets, and TargetListReference has to be specified.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.TargetImportStatus">TargetImportStatus
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>)
-</p>
-<p>
-<p>TargetImportStatus</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>target</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Target is the name of the in-cluster target object.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>sourceRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-ObjectReference
-</a>
-</em>
-</td>
-<td>
-<p>SourceRef is the reference to the installation from where the value is imported</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configGeneration</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>ConfigGeneration is the generation of the imported value.</p>
 </td>
 </tr>
 </tbody>
