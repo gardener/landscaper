@@ -3,6 +3,8 @@ title: Prerequisites
 sidebar_position: 1
 ---
 
+# Guided Tour
+
 ## Prerequisites and Basic Definitions
 
 - For all examples, you need a [running Landscaper instance](../installation/install-landscaper-controller.md).
