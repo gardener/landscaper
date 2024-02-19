@@ -1,8 +1,13 @@
+---
+title: Export Parameters
+sidebar_position: 3
+---
+
 # Export Parameters
 
-For prerequisites, see [here][1].
-
 This example illustrates export parameters of blueprints.
+
+For prerequisites, see [here][1].
 
 The blueprint in this example uses the manifest deployer to create a `ServiceAccount` and an associated `Secret` 
 of type `kubernetes.io/service-account-token`. Once the two objects are deployed on the target cluster, the 
@@ -202,7 +207,7 @@ To deploy the example follow the steps below:
 
 [Manifest Deployer][7]
 
-[1]: ../../README.md#prerequisites-and-basic-definitions  
+[1]: ../../README.md 
 [2]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#manually-create-a-long-lived-api-token-for-a-serviceaccount  
 [3]: ../../../usage/Blueprints.md#export-definitions
 [4]: ../../../usage/Blueprints.md#rendering

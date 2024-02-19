@@ -1,8 +1,13 @@
+---
+title: Deploying an Echo-Server as OCM Component
+sidebar_position: 3
+---
+
 # Echo Server Example
 
 In this example, we use the Landscaper to deploy an echo server.
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
+For prerequisites, see [here](../../README.md).
 
 The example uses the following resources:
 

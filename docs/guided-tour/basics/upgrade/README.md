@@ -1,9 +1,14 @@
-# Upgrading the Hello World Example
+---
+title: Upgrading Hello World
+sidebar_position: 1
+---
 
-For prerequisites see [here](../../README.md#prerequisites-and-basic-definitions).
+# Upgrading the Hello World Example
 
 In this example, we start by deploying the hello-world Helm chart in its original version `1.0.0`. 
 Afterwards, we will upgrade the Installation so that it deploys the newer version `1.0.1` of the chart.
+
+For prerequisites see [here](../../README.md).
 
 You can find the new Helm chart [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/basics/upgrade/chart/hello-world). It replaces the ConfigMap of the original chart version by
 a Secret. The new chart version can be found in our

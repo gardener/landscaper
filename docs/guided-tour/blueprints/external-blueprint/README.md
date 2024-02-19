@@ -1,9 +1,14 @@
+---
+title: External Blueprint
+sidebar_position: 1
+---
+
 # An Installation with an Externally Stored Blueprint
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
-
-In the following example, we will demonstrate how deployment procedures can be made reusable, such that they can be used
+In this example, we will demonstrate how deployment procedures can be made reusable, such that they can be used
 in several Installations.
+
+For prerequisites, see [here](../../README.md).
 
 The installations in the previous examples had two main parts: the import of a Target and a Blueprint. The Target
 defines on which cluster something should be deployed. The Blueprint defines the general deployment procedure. It is
