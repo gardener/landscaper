@@ -45,8 +45,8 @@ function getDocName() {
     fi
   fi
   if [[ -f "$filename" ]]; then
-    local firstline=$(cat "$filename" | head -n 1)
-    echo "${firstline#'# '}"
+    local firstheader=$(grep -m1 "#" "$filename")
+    echo "${firstheader#'# '}"
   fi
 }
 
