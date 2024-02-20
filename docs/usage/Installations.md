@@ -8,7 +8,7 @@ into the scope it is livining in. Additionally, the installation contains the
 state of its executed blueprint.
 
 The import values can be taken from _DataObjects_, _Targets_, _ConfigMaps_ or 
-_Secrets_found in the scope of the _Installation_.
+_Secrets_ found in the scope of the _Installation_.
 
 
 **Index**
