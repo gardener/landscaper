@@ -1,3 +1,8 @@
+---
+title: Deletion of Manifest and Manifest-Only Helm DeployItems
+sidebar_position: 6
+---
+
 # Deletion of Manifest and Manifest-Only Helm DeployItems
 
 This chapter is only relevant for:

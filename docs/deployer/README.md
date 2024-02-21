@@ -1,4 +1,8 @@
-# What is an Deployer?
+---
+title: Landscaper Deployer
+sidebar_position: 4
+---
+# What are Deployers ?
 
 The landscaper offloads most work to so called Deployers.
 These deployers are meant to have specific deploy, install and update logic.
@@ -7,10 +11,10 @@ These deployers are meant to have specific deploy, install and update logic.
 
 The following deployers are available out of the box with the Landscaper. Further deployer could be implemented and registered.
 
-- [Mock](mock.md)
-- [Helm](helm.md)
-- [Kubernetes Manifest](manifest.md)
-- [Container](container.md)
+- [Mock](mock)
+- [Helm](helm)
+- [Kubernetes Manifest](manifest)
+- [Container](container)
 
 
 ## Common Documentation

@@ -13,7 +13,7 @@
 
 ## Deployers
 
-- [What is an Deployer?](deployer/README.md)
+- [What are Deployers ?](deployer/README.md)
 - [Container Deployer](deployer/container.md)
 - [Deployer Resource Health-/Readiness Checks](deployer/healthchecks.md)
 - [Helm Deployer](deployer/helm.md)
