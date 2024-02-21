@@ -32,3 +32,53 @@ sidebar_position: 1
 > information on how to enable this for your own landscaper instance, set the corresponding flag in the configuration to
 > `true`, as shown [here](https://github.com/gardener/landscaper/blob/master/docs/installation/install-landscaper-controller.md#configuration-through-valuesyaml).
 > If you just want to follow along the tour, you should have the switch enabled!
+
+## How to follow the Tour
+
+In order to get the most out of it, you should be following the Guided Tour in this sequence:
+
+### A Hello World Example
+
+[1. Hello World Example](./hello-world)
+
+### Basics
+
+[2. Upgrading the Hello World Example](./basics/upgrade)
+
+[3. Manifest Deployer Example](./basics/manifest-deployer)
+
+[4. Multiple Deployments in One Installation](./basics/multiple-deployitems)
+
+### Recovering from Errors
+
+[5. Handling an Immediate Error](./error-handling/immediate-error)
+
+[6. Handling a Timeout Error](./error-handling/timeout-error)
+
+[7. Handling a Delete Error](./error-handling/delete-error)
+
+You can find a list of error messages and corresponding solutions [here](./error-handling/problem_analysis.md).
+
+### Blueprints and Components
+
+[8. An Installation with an Externally Stored Blueprint](./blueprints/external-blueprint)
+
+[9. Helm Chart Resources in the Component Descriptor](./blueprints/helm-chart-resource)
+
+[10. Echo Server Example](./blueprints/echo-server)
+
+### Imports and Exports
+
+[11. Import Parameters](./import-export/import-parameters)
+
+[12. Import Data Mappings](./import-export/import-data-mappings)
+
+[13. Export Parameters](./import-export/export-parameters)
+
+### Templating
+
+[14. Templating: Accessing Component Descriptors ](./templating/components)
+
+### Optimization
+
+[15. Optimization Hints ](../usage/Optimization.md)
