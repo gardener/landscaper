@@ -1,4 +1,11 @@
+---
+title: Installations
+sidebar_position: 2
+---
+
 # Installations
+
+## Definition
 
 _Installations_ are Kubernetes resources that represent concrete instantiations of
 [_Blueprints_](./Blueprints.md). The task of an _Installation_ is to provide
@@ -10,23 +17,6 @@ state of its executed blueprint.
 The import values can be taken from _DataObjects_, _Targets_, _ConfigMaps_ or 
 _Secrets_ found in the scope of the _Installation_.
 
-
-**Index**
-- [Installations](#installations)
-  - [Basic Structure](#basic-structure)
-  - [Context](#context) 
-  - [Component Descriptor](#component-descriptor) 
-  - [Blueprint](#blueprint)
-  - [Scopes](#scopes)
-  - [Imports](#imports)
-    - [Data Imports](#data-imports)
-    - [Target Imports](#target-imports)
-    - [Import Data Mappings](#import-data-mappings)
-  - [Exports](#exports)
-    - [Data Exports](#data-exports)
-    - [Target Exports](#target-exports)
-    - [Export Data Mappings](#export-data-mappings)
-  - [Operations](#operations)
 
 ## Basic Structure
 

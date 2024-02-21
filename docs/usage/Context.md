@@ -1,4 +1,11 @@
+---
+title: Context
+sidebar_position: 3
+---
+
 # Context
+
+## Definition
 
 A context is a configuration resource which could be referenced and used by different installations. It contains shared 
 configuration data for installations. This information includes the location of the component descriptors as well as 

@@ -1,3 +1,8 @@
+---
+title: Controlling the Landscaper via Annotations
+sidebar_position: 13
+---
+
 # Controlling the Landscaper via Annotations
 
 There are a few annotations which can be set on landscaper objects to influence the reconciliation flow.
@@ -70,5 +75,3 @@ afterwards a deletion of the installation has the following effect:
   deploy items such that they could be deleted.
 
 Note that you have to add the annotation **before** you delete the installation.
-
-

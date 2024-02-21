@@ -1,4 +1,11 @@
+---
+title: Targets
+sidebar_position: 5
+---
+
 # Targets
+
+## Definition
 
 Targets are a specific type of import and contain additional information that is interpreted by deployers.
 The concept of a Target is to define the environment where a deployer installs/deploys software.

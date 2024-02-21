@@ -1,5 +1,11 @@
+---
+title: Templating
+sidebar_position: 7
+---
+
 # Templating
 
+## Definition
 Landscaper uses templating to dynamically generate configurations based on a given data binding for various purposes. An example is the generation of deployitem manifests based on the imports of a blueprint. 
 The Landscaper supports multiple [template engines](#template-engines). Depending on the purpose, dedicated value bindings are provided as input for the templating. Templating is executed in so-called 'executions', defining the context for the templating. Landscaper uses executions for:
 - [**`deployExecutions`**](./Blueprints.md#deployitem-templates) for rendering deployitems
@@ -10,14 +16,7 @@ For each of these purposes, a list of executions can be specified. Every executi
 
 For detailed information of blueprints see the [Blueprint Docs](./Blueprints.md).
 
-- [Templating](#templating)
-    - [Template Execution](#template-execution)
-    - [State Handling](#state-handling)
-    - [Template Engines](#template-engines)
-      - [Go Template](#go-template)
-      - [Spiff](#spiff)
-
-### Template Execution
+## Template Execution
 
 Landscaper uses templating for various purposes, most prominently in the blueprint (e.g. for deployitem and export generation). The dedicated section in the respective manifests is always a list of template execution configurations. Each execution is defined by a set of attributes:
 - **`name`** *string*
@@ -53,7 +52,7 @@ deployExecutions:
       config: ...
 ```
 
-### Filesystem
+## Filesystem
 
 The blueprint's filesystem structure is accessible for the template engines as root file system.
 
@@ -85,12 +84,12 @@ The available bindings are described in the docs belonging to the resource the t
   ```
 
 
-### State Handling
+## State Handling
 
 Depending on the purpose of the execution, Landscaper supports state handling. An execution can provide information that should be kept among multiple evaluations of the execution (e.g. when the installation is updated). The mechanism, how the state is past to and read from an execution depends on its template engine.
 
 
-### Template Engines
+## Template Engines
 
 The Landscaper currently supports two template engines:
 - [**`GoTemplate`**](#go-template) [Go Template]((https://golang.org/pkg/text/template/)) enhanced with [sprig](http://masterminds.github.io/sprig/) functions.
@@ -101,7 +100,7 @@ Regardless of the chosen engine, the output is always expected to have the same 
 :warning: Note that OS functions are not available for security reasons.
 
 
-#### Go Template
+### Go Template
 
 The execution type to use for go templates is `GoTemplate`. As go templates are not valid YAML, they have to be provided as a string. Because this is typically a multi-line string, the `|` notation is mostly used.
 
@@ -116,7 +115,7 @@ The execution type to use for go templates is `GoTemplate`. As go templates are 
       config: {{ .imports.config }}
 ```
 
-##### Additional Functions
+#### Additional Functions
 
 The `GoTemplate` executor simply is standard [go template](https://golang.org/pkg/text/template/) enhanced with [sprig](http://masterminds.github.io/sprig/) functions.
 
@@ -235,7 +234,7 @@ The following additional functions are available:
   ```
 
 
-##### State
+#### State
 
 Old state is provided via an additional `state` binding. New state is taken from the `state` node of the rendered template, if it exists.
 
@@ -253,7 +252,7 @@ Old state is provided via an additional `state` binding. New state is taken from
 
 
 
-#### Spiff
+### Spiff
 
 The execution type to use for spiff templates is `Spiff`. The template can be provided as either YAML or text.
 

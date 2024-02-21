@@ -1,3 +1,8 @@
+---
+title: Landscaper Logs Configuration
+sidebar_position: 16
+---
+
 # Configuring the Landscaper Logs
 
 There are multiple flags which can be used to control the way in which the Landscaper prints its logs.
@@ -7,7 +12,7 @@ Two of them influence multiple settings at once:
   - **--dev**: Activates some features which are useful when developing on the Landscaper, which includes enabling callers and stacktraces, as well as defaulting the verbosity to `debug`.
 
 The other flags which influence the logging behavior are more fine-grained and modify only one characteristic each. If they are set, they will override potential defaults set by one of the flags above:
-  - **--disable-caller**: Whether printing the filename and line number of the code statement causing the log should disabled. Defaults to `true`. Influenced by the `--dev` flag.
+  - **--disable-caller**: Whether printing the filename and line number of the code statement causing the log should be disabled. Defaults to `true`. Influenced by the `--dev` flag.
   - **--disable-stacktrace**: Whether printing the stacktrace for logs on `error` level should be disabled. Defaults to `true`. Influenced by the `--dev` flag.
   - **--disable-timestamp**: Whether printing the timestamps should be disabled. Defaults to `false`. Influenced by the `--cli` flag.
   - **--format**: How the logging output should be formatted. Valid values are `text` and `json`. Default is `json`, but both, the `--cli` and the `--dev` flag will default this to `text`.
