@@ -199,6 +199,16 @@ func FromContextWithFallback(ctx context.Context, fallback Logger, keysAndValues
 	return log, ctx
 }
 
+// FromContextOrPanic tries to fetch a logger from the context.
+// If that fails, the function panics.
+func FromContextOrPanic(ctx context.Context) Logger {
+	log, err := FromContext(ctx)
+	if err != nil {
+		panic(fmt.Errorf("logger could not be fetched from context: %w", err))
+	}
+	return log
+}
+
 // NewContextWithDiscard adds a discard logger to the given context and returns the new context.
 func NewContextWithDiscard(ctx context.Context) context.Context {
 	return NewContext(ctx, Discard())
