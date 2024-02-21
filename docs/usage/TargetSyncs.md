@@ -1,7 +1,12 @@
-# TargetSync Objects 
+---
+title: TargetSyncs
+sidebar_position: 6
+---
 
-This chapter describes the custom resource *TargetSync*. With such a *TargetSync* object, it is possible to 
-automatically create `Targets` of type *landscaper.gardener.cloud/kubernetes-cluster*. Two variants are supported:
+# TargetSyncs 
+
+## Definition
+With such a *TargetSync* object, it is possible to automatically create `Targets` of type *landscaper.gardener.cloud/kubernetes-cluster*. Two variants are supported:
 
 - The targets are created and regularly rotated using the Gardener adminkubeconfig resource requests 
   ([see](https://github.com/gardener/gardener/blob/master/docs/usage/shoot_access.md)). Note that this approach only works for target shoot clusters which are managed by Gardener. Thereby, the shoot clusters do not require static access token.

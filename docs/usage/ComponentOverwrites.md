@@ -1,3 +1,8 @@
+---
+title: Component Overwrites
+sidebar_position: 14
+---
+
 # Component Overwrites
 
 When deploying applications using aggregated blueprints, their component descriptors reference multiple other components with blueprints.

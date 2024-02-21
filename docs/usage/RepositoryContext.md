@@ -1,4 +1,11 @@
+---
+title: Repository Context
+sidebar_position: 4
+---
+
 # Repository Context
+
+## Definition
 
 A repository context describes the access to a repository that is used to resolve component version references.
 It features the following fields:

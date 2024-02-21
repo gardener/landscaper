@@ -1,19 +1,29 @@
+---
+title: TargetList Imports
+sidebar_position: 8
+---
+
 # TargetList Imports
 
 While the Landscaper allows to import lists of Targets into Installations/Blueprints, it is not intuitively clear how they can be used. This documentation will provide a few examples for this. Please note that the provided example YAMLs often are redacted to show only the part of the spec which is of interest for demonstrating the usage of TargetList imports.
 
 **Index**:
-- [The Basics](#the-basics)
-  - [TargetList Import Declarations in Blueprints](#targetlist-import-declarations-in-blueprints)
-  - [TargetList Imports in Installations](#targetlist-imports-in-installations)
-  - [Referencing (Targets from) TargetList Imports](#referencing-targets-from-targetlist-imports)
-    - [In DeployItems](#in-deployitems)
-    - [In Nested Installations](#in-nested-installations)
-      - [Whole TargetList](#whole-targetlist)
+- [TargetList Imports](#targetlist-imports)
+  - [The Basics](#the-basics)
+    - [TargetList Import Declarations in Blueprints](#targetlist-import-declarations-in-blueprints)
+    - [TargetList Imports in Installations](#targetlist-imports-in-installations)
+    - [Referencing (Targets from) TargetList Imports](#referencing-targets-from-targetlist-imports)
+      - [In DeployItems](#in-deployitems)
+      - [In Nested Installations](#in-nested-installations)
+        - [Whole TargetList](#whole-targetlist)
       - [Single Target from TargetList](#single-target-from-targetlist)
-- [Usage Examples](#usage-examples)
-  - [One DeployItem per Target](#one-deployitem-per-target)
-  - [One Nested Installation per Target](#one-nested-installation-per-target)
+  - [Usage Examples](#usage-examples)
+    - [One DeployItem per Target](#one-deployitem-per-target)
+      - [GoTemplate](#gotemplate)
+      - [Spiff](#spiff)
+    - [One Nested Installation per Target](#one-nested-installation-per-target)
+      - [GoTemplate](#gotemplate-1)
+      - [Spiff](#spiff-1)
 
 
 ## The Basics

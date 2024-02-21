@@ -1,13 +1,15 @@
-# Landscaper Cli Usage
+---
+title: Landscaper CLI Usage
+sidebar_position: 17
+---
 
-- [Render Blueprints locally](#render-blueprints)
+# Landscaper CLI Usage
 
-
-### Render Blueprints
+## Render Blueprints
 
 During the execution of a blueprint with an installation, deployitems and subinstallation are created by the landscaper based on the imported values.
 
-The generated resources can be locally tested by using the landsacper cli and its `render` command.
+The generated resources can be locally tested by using the Landsacper CLI and its `render` command.
 
 ```shell script
 landscaper-cli blueprints render [path to blueprint directory]
@@ -52,7 +54,7 @@ The resources are written as files in the following directory structure to the g
     └── mysubinstallation
 ```
 
-#### Import Values
+### Import Values
 
 The imported values can be defined using value files and reference them via commandline flag `-f`.
 ```yaml
@@ -90,4 +92,3 @@ imports:
          kubeconfig: |
             apiVersion: ....
 ```
-

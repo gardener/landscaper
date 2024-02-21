@@ -1,3 +1,8 @@
+---
+title: Skip Uninstallation
+sidebar_position: 12
+---
+
 # Skipping the Uninstallation of an Application
 
 When you delete an Installation or remove a DeployItem from an Installation, normally, Landscaper will uninstall the 

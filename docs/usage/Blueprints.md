@@ -1,4 +1,11 @@
+---
+title: Blueprints
+sidebar_position: 1
+---
+
 # Blueprints
+
+## Definition
 
 A Blueprint is a parameterized description of how to deploy a specific component.
 
@@ -32,24 +39,6 @@ The blueprint definition (blueprint.yaml) describes
 - generation rules for deployitems
 - generation rules for export values
 - generation of nested installations
-
-
-**Index**:
-- [Blueprints](#blueprints)
-  - [Example](#example)
-  - [Import Definitions](#import-definitions)
-  - [Export Definitions](#export-definitions)
-  - [JSONSchema](#jsonschema)
-  - [Rendering](#rendering)
-    - [Import Values](#import-values)
-    - [DeployItems](#deployitems)
-    - [Export Values](#export-values)
-      - [Data Exports](#data-exports)
-      - [Target Exports](#target-exports)
-    - [Templated Installations](#templated-installations)
-  - [Nested Installations](#nested-installations)
-    - [Static Installations](#static-installations)
-    - [Templated Installations](#templated-installations)
 
 ## Example
 
