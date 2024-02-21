@@ -3,7 +3,7 @@ title: TargetSyncs
 sidebar_position: 6
 ---
 
-# TargetSyncs 
+# TargetSyncs
 
 ## Definition
 With such a *TargetSync* object, it is possible to automatically create `Targets` of type *landscaper.gardener.cloud/kubernetes-cluster*. Two variants are supported:
