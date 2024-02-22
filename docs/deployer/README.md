@@ -11,10 +11,10 @@ These deployers are meant to have specific deploy, install and update logic.
 
 The following deployers are available out of the box with the Landscaper. Further deployer could be implemented and registered.
 
-- [Mock](mock)
-- [Helm](helm)
-- [Kubernetes Manifest](manifest)
-- [Container](container)
+- [Mock](mock.md)
+- [Helm](helm.md)
+- [Kubernetes Manifest](manifest.md)
+- [Container](container.md)
 
 
 ## Common Documentation
