@@ -1,3 +1,8 @@
+---
+title: Helm Deployer
+sidebar_position: 1
+---
+
 # Helm Deployer
 
 The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. There are two
