@@ -610,7 +610,7 @@ github.com/gardener/component-spec/bindings-go/codec
 github.com/gardener/component-spec/bindings-go/ctf
 github.com/gardener/component-spec/bindings-go/oci
 github.com/gardener/component-spec/bindings-go/utils/selector
-# github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000 => ./apis
+# github.com/gardener/landscaper/apis v0.97.0 => ./apis
 ## explicit; go 1.21
 github.com/gardener/landscaper/apis/config
 github.com/gardener/landscaper/apis/config/install
@@ -648,7 +648,7 @@ github.com/gardener/landscaper/apis/errors
 github.com/gardener/landscaper/apis/mediatype
 github.com/gardener/landscaper/apis/schema
 github.com/gardener/landscaper/apis/utils
-# github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000 => ./controller-utils
+# github.com/gardener/landscaper/controller-utils v0.97.0 => ./controller-utils
 ## explicit; go 1.21
 github.com/gardener/landscaper/controller-utils/pkg/crdmanager
 github.com/gardener/landscaper/controller-utils/pkg/errors
