@@ -57,7 +57,12 @@
 					],
 					"compounds": []
 				}
-			}
+			},
+			"extensions": [
+				"ms-kubernetes-tools.vscode-kubernetes-tools",
+				"ms-azuretools.vscode-docker",
+				"golang.go"
+			]
 		}
 	},
 
