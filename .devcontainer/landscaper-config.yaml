@@ -1,0 +1,22 @@
+deployers:
+- container
+- helm
+- manifest
+- mock
+
+deployerManagement:
+  disable: false
+  agent:
+    disable: false
+
+useOCMLib: true
+
+# deployItemTimeouts:
+#   pickup: 10s
+#   abort: 10s
+#   progressingDefault: 1m
+
+crdManagement:
+  deployCrd: true
+  forceUpdate: true
+
