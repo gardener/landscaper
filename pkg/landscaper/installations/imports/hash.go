@@ -10,8 +10,7 @@ type importsHashes struct {
 	DataObjects              map[string]string
 	Targets                  map[string]string
 	TargetLists              map[string]string
-	ComponentDescriptors     map[string]string
-	ComponentDescriptorLists map[string]string
+	TargetMaps               map[string]string
 }
 
 func ComputeImportsHash(imps *Imports) (string, error) {
@@ -30,6 +29,11 @@ func ComputeImportsHash(imps *Imports) (string, error) {
 	impsHashes.TargetLists = make(map[string]string, len(imps.TargetLists))
 	for k, v := range imps.TargetLists {
 		impsHashes.TargetLists[k] = v.ComputeConfigGeneration()
+	}
+
+	impsHashes.TargetMaps = make(map[string]string, len(imps.TargetMaps))
+	for k, v := range imps.TargetMaps {
+		impsHashes.TargetMaps[k] = v.ComputeConfigGeneration()
 	}
 
 	impsHashesJson, err := json.Marshal(impsHashes)
