@@ -54,9 +54,9 @@ func NewTargetMapExtensionFromList(targets *lsv1alpha1.TargetList, def *lsv1alph
 	return &ext, nil
 }
 
-// GetData returns the targets as list of internal go maps.
+// GetData returns the targets as map[string]interface{}.
 func (m *TargetMapExtension) GetData() (map[string]interface{}, error) {
-	rawTargets := make(map[string]lsv1alpha1.Target)
+	rawTargets := make(map[string]lsv1alpha1.Target, len(m.targetExtensions))
 	for targetMapKey := range m.targetExtensions {
 		rawTargets[targetMapKey] = *m.targetExtensions[targetMapKey].GetTarget()
 	}

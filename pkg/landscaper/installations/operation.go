@@ -346,8 +346,6 @@ func (o *Operation) GetImportedTargetMaps(ctx context.Context) (map[string]*data
 		}
 
 		targetMaps[def.Name] = tm
-
-		// TODO targetmaps: update import status - why?
 	}
 
 	return targetMaps, nil
