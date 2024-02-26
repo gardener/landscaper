@@ -27,6 +27,9 @@ spec:
     - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/index']
       name: Idx
       type: string
+    - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/targetmapkey']
+      name: TMKey
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date

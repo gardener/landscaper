@@ -1,0 +1,20 @@
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: targetmap-ref
+
+    blueprint:
+      ref: cd://resources/blueprint-targetmap-ref
+
+    imports:
+      data:
+        - name: namespace
+          dataRef: namespace
+        - name: configs1
+          dataRef: configs2
+        - name: referencedBlueprint
+          dataRef: referencedBlueprint
+      targets:
+        - name: clusters1
+          targetMapRef: clusters2

@@ -7,7 +7,6 @@ package validation
 import (
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -110,20 +109,14 @@ func ValidateExactlyOneOf(fldPath *field.Path, input interface{}, configs ...str
 
 // IsIndexed checks whether a string is 'indexed'
 // A string is considered to be indexed if it ends with a pair of square brackets
-// containing an int within.
+// containing an int (the index in a target list) or a string (the key in a target map).
 // The first return value is true if the string is indexed.
 // The second return value contains the part before the square brackets, or the whole string if it is not indexed.
-// The third return value contains the index, if the string is indexed, or -1 otherwise.
-// The fourth return value contains an error, if the string is indexed but the index cannot be converted to an int. Because the regex already validates that there is a number between the brackets, this should actually never happen.
-func IsIndexed(ref string) (bool, string, int, error) {
+func IsIndexed(ref string) (bool, string) {
 	matches := IsIndexedRegex.FindStringSubmatch(ref)
 	if matches != nil {
 		name := matches[1]
-		idx, err := strconv.Atoi(matches[2])
-		if err != nil {
-			return true, "", -1, fmt.Errorf("unable to parse index to int for '%s': %w", ref, err)
-		}
-		return true, name, idx, nil
+		return true, name
 	}
-	return false, ref, -1, nil
+	return false, ref
 }

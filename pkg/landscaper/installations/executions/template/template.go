@@ -121,6 +121,9 @@ type TargetReference struct {
 
 	// +optional
 	Index *int `json:"index,omitempty"`
+
+	// +optional
+	Key *string `json:"key,omitempty"`
 }
 
 // DeployItemSpecification defines a execution element that is translated into a deployitem template for the execution object.

@@ -6,6 +6,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	"slices"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -393,6 +394,12 @@ type TargetImport struct {
 	// Exactly one of Target, Targets, and TargetListReference has to be specified.
 	// +optional
 	TargetListReference string `json:"targetListRef,omitempty"`
+
+	// +optional
+	TargetMap map[string]string `json:"targetMap,omitempty"`
+
+	// +optional
+	TargetMapReference string `json:"targetMapRef,omitempty"`
 }
 
 // TargetExport is a single target export.
@@ -501,16 +508,20 @@ type SecretLabelSelectorRef struct {
 func (ti TargetImport) MarshalJSON() ([]byte, error) {
 
 	type TargetImportWithTargets struct {
-		Name                string   `json:"name"`
-		Target              string   `json:"target,omitempty"`
-		Targets             []string `json:"targets"`
-		TargetListReference string   `json:"targetListRef,omitempty"`
+		Name                string            `json:"name"`
+		Target              string            `json:"target,omitempty"`
+		Targets             []string          `json:"targets"`
+		TargetListReference string            `json:"targetListRef,omitempty"`
+		TargetMap           map[string]string `json:"targetMap,omitempty"`
+		TargetMapReference  string            `json:"targetMapRef,omitempty"`
 	}
 	type TargetImportWithoutTargets struct {
-		Name                string   `json:"name"`
-		Target              string   `json:"target,omitempty"`
-		Targets             []string `json:"targets,omitempty"`
-		TargetListReference string   `json:"targetListRef,omitempty"`
+		Name                string            `json:"name"`
+		Target              string            `json:"target,omitempty"`
+		Targets             []string          `json:"targets,omitempty"`
+		TargetListReference string            `json:"targetListRef,omitempty"`
+		TargetMap           map[string]string `json:"targetMap,omitempty"`
+		TargetMapReference  string            `json:"targetMapRef,omitempty"`
 	}
 
 	if ti.Targets == nil {
@@ -549,7 +560,7 @@ func (inst *Installation) IsImportingData(name string) bool {
 // IsImportingTarget checks if the current component imports a target with the given name.
 func (inst *Installation) IsImportingTarget(name string) bool {
 	for _, def := range inst.Spec.Imports.Targets {
-		if def.Target == name {
+		if def.Target == name || slices.Contains(def.Targets, name) {
 			return true
 		}
 	}

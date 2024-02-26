@@ -1,0 +1,35 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: targetmaps-2-root
+  namespace: cu-example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+
+spec:
+  blueprint:
+    ref:
+      resourceName: blueprint-targetmap-ref
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper/integration-tests/targetmap
+      repositoryContext:
+        baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+        type: ociRegistry
+      version: "1.0.0"
+
+  imports:
+    targets:
+      - name: clusters1
+        targetMap:
+          red: red-cluster
+          blue: blue-cluster
+    data:
+      - name: namespace
+        dataRef: do-namespace
+      - name: configs1
+        dataRef: do-configs
+
+  importDataMappings:
+    referencedBlueprint: blueprint-multiple-items

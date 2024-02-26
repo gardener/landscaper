@@ -3384,6 +3384,8 @@ func autoConvert_v1alpha1_TargetImport_To_core_TargetImport(in *TargetImport, ou
 	out.Target = in.Target
 	out.Targets = *(*[]string)(unsafe.Pointer(&in.Targets))
 	out.TargetListReference = in.TargetListReference
+	out.TargetMap = *(*map[string]string)(unsafe.Pointer(&in.TargetMap))
+	out.TargetMapReference = in.TargetMapReference
 	return nil
 }
 
@@ -3397,6 +3399,8 @@ func autoConvert_core_TargetImport_To_v1alpha1_TargetImport(in *core.TargetImpor
 	out.Target = in.Target
 	out.Targets = *(*[]string)(unsafe.Pointer(&in.Targets))
 	out.TargetListReference = in.TargetListReference
+	out.TargetMap = *(*map[string]string)(unsafe.Pointer(&in.TargetMap))
+	out.TargetMapReference = in.TargetMapReference
 	return nil
 }
 

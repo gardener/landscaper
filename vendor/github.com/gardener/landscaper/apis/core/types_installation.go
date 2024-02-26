@@ -262,6 +262,12 @@ type TargetImport struct {
 	// Exactly one of Target, Targets, and TargetListReference has to be specified.
 	// +optional
 	TargetListReference string `json:"targetListRef,omitempty"`
+
+	// +optional
+	TargetMap map[string]string `json:"targetMap,omitempty"`
+
+	// +optional
+	TargetMapReference string `json:"targetMapRef,omitempty"`
 }
 
 // TargetExport is a single target export.

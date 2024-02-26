@@ -133,7 +133,7 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 		if imp.Name == "" {
 			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
 		}
-		allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx, imp, "Target", "Targets", "TargetListReference")...)
+		allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx, imp, "Target", "Targets", "TargetMap", "TargetMapReference", "TargetListReference")...)
 		if len(imp.Targets) > 0 {
 			for idx2, tg := range imp.Targets {
 				if len(tg) == 0 {

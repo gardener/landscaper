@@ -1,0 +1,25 @@
+deployItems:
+{{ $imports := .imports }}
+{{ range $key, $target := .imports.clusters }}
+  - name: item-{{ $key }}
+    type: landscaper.gardener.cloud/kubernetes-manifest
+
+    target:
+      import: clusters
+      key: {{ $key }}
+
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: cm-{{ $key }}
+              namespace: {{ $imports.namespace }}
+            data:
+              {{- index $imports.configs $key | toYaml | nindent 14 }}
+{{ end }}

@@ -1,0 +1,3 @@
+exports:
+  clusterOut:
+    {{- .imports.clusterIn.spec | toYaml | nindent 4 }}
