@@ -36,13 +36,13 @@ imports:
     type: string
 ```
 
-In general, we distinguish parameters of type `target`, `targetList`, and `data`.
+In general, we distinguish parameters of type `target`, `targetMap`, and `data`.
 
 To define target parameters more detailed, they have a `targetType`. However, currently there is only
 one supported target type, namely `landscaper.gardener.cloud/kubernetes-cluster`. A blueprint can import more than one
 target. For example, the inline blueprint
 [here](../../basics/multiple-deployitems/installation/installation.yaml)
-has two target imports. A parameter of type `targetList` allows to import a list of targets whose length is not 
+has two target imports. A parameter of type `targetMap` allows to import a list of targets whose length is not 
 specified by the blueprint.
 
 To define data parameters more precisely, they have a `schema`, i.e. a json schema that describes the structure 

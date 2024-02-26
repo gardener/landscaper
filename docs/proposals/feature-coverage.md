@@ -18,11 +18,6 @@ An import of type `target` can come from:
 - a Target that contains a kubeconfig
 - a Target that contains a Secret ref (not supported by the container deployer)
 
-An import of type `targetList` can come from
-
-- a list of `Target` objects
-- a `TargetListReference` (when a subinstallation gets a `TargetList` from its parent)
-
 
 #### Import Data Mapping
 
@@ -55,7 +50,7 @@ Update of imports:
 - adding a new import parameter
 - removing an import parameter
 - importing first from ConfigMap, and then from Secret (perhaps also switch between ConfigMap and DataObject etc.)
-- changing the name of a ConfigMap, Secrets, DataObject and TargetListReference
+- changing the name of a ConfigMap, Secrets, and DataObject
 
 
 

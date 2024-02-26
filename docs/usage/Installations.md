@@ -534,20 +534,15 @@ They are defined by the following fields:
   This field can be used to specify the name of the _Target_ object in the scope
   the installation is living in.
 
-  Exactly one of `target` or `targetList` must be given
+  Exactly one of `target` or `targetMap` must be given
 
-- **`targetList`** *string list (optional)*
+- **`targetMaps`** *string list (optional)*
 
-  This field can be used to specify a target list, that can match a [targetlist import](./Blueprints.md#import-definitions) 
-  of a blueprint. The value is a list of the names of the _Target_ objects with the given
-  name in the scope the installation is living in.
-
-  Exactly one of `target` or `targetList` must be given. `targets: []` counts as
-  specifying the `targets` field - an empty list is a valid value - while setting
-  it to nil (`targets: ~`) counts as not specifying it.
+  This field can be used to specify a target maps. More details could be found in the 
+  [guided tour](../guided-tour/README.md#target-maps).
 
 
-_Target_ and _TargetList_ imports must directly match the required target imports of the used blueprint.
+_Target_ and _TargetMaps_ imports must directly match the required target imports of the used blueprint.
 An explicit mapping is not possible.
 
 **Example**
@@ -557,10 +552,10 @@ imports:
   - name: my-target
     target: "target1"
 
-  - name: my-targetlist
+  - name: my-targetmap
     targets:
-    - "target1"
-    - "target2"
+    - target1: "target1"
+    - target2: "target2"
 ```
 
 
@@ -732,7 +727,7 @@ An export declaration uses the following fields:
   of an installation that should be created. For top-level installations the name
   must comply to the Kubernetes rules for object names.
 
-The export of target lists is not possible.
+The export of target maps is not possible.
 
 **Example**
 ```yaml

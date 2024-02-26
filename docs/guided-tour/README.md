@@ -35,7 +35,10 @@ sidebar_position: 1
 
 ## How to follow the Tour
 
-In order to get the most out of it, you should be following the Guided Tour in this sequence:
+The Guided Tour consists of several chapters, some of which build on each other. In order to get the most out of it, 
+you should be following the Guided Tour in this sequence. Another important point is, that this documentation
+is not optimal with respect to getting an overview about the used example resources in the Guided Tour. Therefore,
+it might be better to read it in the [original github repository](https://github.com/gardener/landscaper/tree/master/docs/guided-tour).
 
 ### A Hello World Example
 
@@ -79,6 +82,18 @@ You can find a list of error messages and corresponding solutions [here](./error
 
 [14. Templating: Accessing Component Descriptors ](./templating/components)
 
-### Optimization
+## Target Maps
 
-[15. Optimization Hints ](../usage/Optimization.md)
+[15. Target Maps: Multiple Deploy Items](./target-maps/01-multiple-deploy-items)
+
+[16. Target Maps: Target Map References](./target-maps/02-targetmap-ref)
+
+[17. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
+
+[18. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
+
+[19. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
+
+## Optimization
+
+[20. Optimization Hints ](../usage/Optimization.md)
