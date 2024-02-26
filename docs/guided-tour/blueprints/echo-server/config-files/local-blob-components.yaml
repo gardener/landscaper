@@ -12,7 +12,7 @@ components:
           compress: true
           mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
       - name: echo-server-chart
-        type: helm.io/chart
+        type: helmChart
         input:
           type: file
           path: ../chart/echo-server-1.0.0.tgz
