@@ -1,4 +1,4 @@
-# Multiple Subinstallations Example + Others
+# Multiple Subinstallations Example
 
 In this example, we show again how target maps can be used to deploy an artefact to a variable number of target clusters. 
 

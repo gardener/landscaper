@@ -90,8 +90,10 @@ You can find a list of error messages and corresponding solutions [here](./error
 
 [17. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
 
-[18. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
+[18. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
+
+[19. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
 
 ## Optimization
 
-[19. Optimization Hints ](../usage/Optimization.md)
+[20. Optimization Hints ](../usage/Optimization.md)

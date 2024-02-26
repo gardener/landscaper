@@ -1,11 +1,5 @@
 # Other Target Map Examples
 
-## Target Map on Subinstallation Level
-
-The example defined [here](../04-forward-map) deploys the same config maps on the target cluster as the others. The
-difference is that it imports 3 targets as standard targets and in this 
-[Subinstallation](../04-forward-map/component/blueprint/sub/subinst.yaml) it converts these into a target map.
-
 ## Iterate over Config
 
 In all examples about target maps so far, the iteration was done over the targets. Of course, it would have been also
