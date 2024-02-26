@@ -2,7 +2,7 @@
 REPO_BASE_URL=eu.gcr.io/gardener-project/landscaper/examples
 
 # path to the kubeconfig of the target cluster used in the target of the resource cluster
-TARGET_CLUSTER_KUBECONFIG_PATH="/Users/${USER}/tmp/kubes/kubeconfig.yaml"
+TARGET_CLUSTER_KUBECONFIG_PATH="/Users/${USER}/tmp/kubes/kubeconfig-canary-hubforplay-d040602-11.yaml"
 
 # namespace for the resources in the resource cluster of the Landscaper, e.g. the installations, target etc.
 NAMESPACE="cu-example"

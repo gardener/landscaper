@@ -48,10 +48,10 @@ Now you should see successful installations on your Landscaper resource cluster:
 ```
 kubectl get inst -n cu-example 
 NAME                               PHASE       EXECUTION                          AGE
-multiple-subinst                   Succeeded                                      17s
-multiple-subinst-sub-blue-hhdmz    Succeeded   multiple-subinst-sub-blue-hhdmz    16s
-multiple-subinst-sub-green-55nw2   Succeeded   multiple-subinst-sub-green-55nw2   16s
-multiple-subinst-sub-red-srm8g     Succeeded   multiple-subinst-sub-red-srm8g     16s
+multiple-subinst                   Completing                                      7s
+multiple-subinst-sub-blue-9nsp9    Succeeded    multiple-subinst-sub-blue-9nsp9    6s
+multiple-subinst-sub-green-wh74m   Succeeded    multiple-subinst-sub-green-wh74m   6s
+multiple-subinst-sub-red-tvrrm     Succeeded    multiple-subinst-sub-red-tvrrm     6s
 ```
 
 Let's have a deeper look into the resources of the example. The root Installation `multiple-subinst` is quite similar
@@ -88,13 +88,12 @@ particular targets are removed. Furthermore, the correct entry from the data is 
 
 Every Subinstallation creates one DeployItem to deploy one config map.
 
-Now you can see successful installations on your Landscaper resource cluster:
+You can see successful DeployItems on your Landscaper resource cluster with:
 
 ```
 kubectl get di -n cu-example                                                  
-NAME                                    TYPE                                            PHASE       EXPORTREF   AGE
-multiple-subinst                   Succeeded                                      17s
-multiple-subinst-sub-blue-hhdmz    Succeeded   multiple-subinst-sub-blue-hhdmz    16s
-multiple-subinst-sub-green-55nw2   Succeeded   multiple-subinst-sub-green-55nw2   16s
-multiple-subinst-sub-red-srm8g     Succeeded   multiple-subinst-sub-red-srm8g     16s
+NAME                                              TYPE                                            PHASE          AGE
+multiple-subinst-sub-blue-9nsp9-di-blue-rhf4p     landscaper.gardener.cloud/kubernetes-manifest   Succeeded      10s
+multiple-subinst-sub-green-wh74m-di-green-gt475   landscaper.gardener.cloud/kubernetes-manifest   Succeeded      10s
+multiple-subinst-sub-red-tvrrm-di-red-8wvf2       landscaper.gardener.cloud/kubernetes-manifest   Succeeded      10s
 ```
