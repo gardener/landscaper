@@ -7,10 +7,10 @@ import (
 )
 
 type importsHashes struct {
-	DataObjects              map[string]string
-	Targets                  map[string]string
-	TargetLists              map[string]string
-	TargetMaps               map[string]string
+	DataObjects map[string]string
+	Targets     map[string]string
+	TargetLists map[string]string
+	TargetMaps  map[string]string
 }
 
 func ComputeImportsHash(imps *Imports) (string, error) {

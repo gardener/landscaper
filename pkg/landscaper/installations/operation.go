@@ -560,6 +560,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 		SetContext(src).
 		SetKey(importDef.Name).
 		SetIndex(nil).
+		SetTargetMapKey(nil).
 		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
 		SetJobID(o.Inst.GetInstallation().Status.JobID)
 
@@ -604,6 +605,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 			SetContext(src).
 			SetKey(importDef.Name).
 			SetIndex(ptr.To[int](i)).
+			SetTargetMapKey(nil).
 			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
 			SetJobID(o.Inst.GetInstallation().Status.JobID)
 	}
@@ -659,6 +661,7 @@ func (o *Operation) createOrUpdateTargetMapImport(ctx context.Context, src strin
 		tar.SetNamespace(o.Inst.GetInstallation().Namespace).
 			SetContext(src).
 			SetKey(importDef.Name).
+			SetIndex(nil).
 			SetTargetMapKey(ptr.To(key)).
 			SetSource(src).
 			SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
