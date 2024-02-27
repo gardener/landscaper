@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
@@ -34,7 +34,7 @@ func SetDefaults_DefinitionImport(imports *ImportDefinitionList) {
 	for i := 0; i < len(*imports); i++ {
 		imp := &(*imports)[i]
 		if imp.Required == nil {
-			imp.Required = pointer.Bool(true)
+			imp.Required = ptr.To(true)
 		}
 		SetDefaults_DefinitionImport(&imp.ConditionalImports)
 		if imp.Schema != nil && len(imp.TargetType) != 0 {

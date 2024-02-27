@@ -9,19 +9,14 @@
 # .../hack/integration-test.py. The script requires an ID for $1 which is integrated in the name of the test shoot cluster.
 # The cluster name has the format it-pr$PR_ID-<4-digits>.
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
+
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 
 PR_ID=$1
 export PR_ID
 
-SOURCE_PATH="$(dirname $0)/.."
-cd "${SOURCE_PATH}"
-SOURCE_PATH="$(pwd)"
-export SOURCE_PATH
-
-echo "Starting Landscaper integration tests in $SOURCE_PATH"
+echo "Starting Landscaper integration tests in $PROJECT_ROOT"
 
 # install bash for the get version command
 if ! which bash 1>/dev/null; then
@@ -45,5 +40,5 @@ pip3 install -q gardener-cicd-libs
 VERSION="$(./hack/get-version.sh)"
 export VERSION
 
-./hack/integration-test.py
+"$PROJECT_ROOT/hack/integration-test.py"
 

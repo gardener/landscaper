@@ -4,44 +4,41 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
 
-echo "Landscaper release: starting .ci/release"
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 
-SOURCE_DIR="$(dirname $0)/.."
+source "$PROJECT_ROOT/.ci/ensure-go"
+"$PROJECT_ROOT/.ci/ensure-make"
 
-apk add --no-cache git make musl-dev curl gcompat
-GO_VERSION=1.21.5
-curl -LO https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz
-tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
+apk add --no-cache git musl-dev curl gcompat
 mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
 echo "Landscaper release: updating go.mod files"
 
 # update go.mod's internal dependency to local module so that it can be used by other repositories
-VERSION=$(cat ${SOURCE_DIR}/VERSION)
+VERSION=$(cat ${PROJECT_ROOT}/VERSION)
 
 # 0,/)/ only replaces the first ocurrence until the first dep block with ')' is reached
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/landscaper/apis ${VERSION}@}" \
-  ${SOURCE_DIR}/go.mod
+  ${PROJECT_ROOT}/go.mod
 
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/controller-utils .*@github.com/gardener/landscaper/controller-utils ${VERSION}@}" \
-  ${SOURCE_DIR}/go.mod
+  ${PROJECT_ROOT}/go.mod
 
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/landscaper/apis ${VERSION}@}" \
-  ${SOURCE_DIR}/controller-utils/go.mod
+  ${PROJECT_ROOT}/controller-utils/go.mod
 
 echo "Landscaper release: starting revendor"
 
-cd $SOURCE_DIR
-make revendor
+(
+  cd $PROJECT_ROOT
+  make revendor
+)
 
 echo "Landscaper release: finished revendor"
 
 # the helm chart versions need to be updated in the release step to reflect the change in the Git repository
-${SOURCE_DIR}/hack/update-helm-chart-version.sh
+${PROJECT_ROOT}/hack/update-helm-chart-version.sh
 
 echo "Landscaper release: finished .ci/release"

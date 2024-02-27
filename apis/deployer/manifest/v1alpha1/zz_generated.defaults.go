@@ -12,6 +12,8 @@ package v1alpha1
 
 import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
+
+	v1alpha1 "github.com/gardener/landscaper/apis/config/v1alpha1"
 )
 
 // RegisterDefaults adds defaulters functions to the given scheme.
@@ -25,6 +27,7 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 
 func SetObjectDefaults_Configuration(in *Configuration) {
 	SetDefaults_Configuration(in)
+	v1alpha1.SetDefaults_CommonControllerConfig(&in.Controller.CommonControllerConfig)
 }
 
 func SetObjectDefaults_ProviderConfiguration(in *ProviderConfiguration) {

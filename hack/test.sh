@@ -20,7 +20,7 @@ if [[ "${OSTYPE}" == "darwin"* ]]; then
   P_FLAG="-p=1"
 fi
 
-go test -mod=vendor -race -coverprofile=${PROJECT_ROOT}/coverage.main.out -covermode=atomic ${P_FLAG} \
+CGO_ENABLED=1 go test -race -coverprofile=${PROJECT_ROOT}/coverage.main.out -covermode=atomic ${P_FLAG} \
                     ${PROJECT_ROOT}/cmd/... \
                     ${PROJECT_ROOT}/pkg/... \
                     ${PROJECT_ROOT}/test/framework/... \

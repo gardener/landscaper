@@ -9,13 +9,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	lsschema "github.com/gardener/landscaper/apis/schema"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextval "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation"
 	"k8s.io/kube-openapi/pkg/common"
 	"k8s.io/kube-openapi/pkg/validation/spec"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // CustomResourceDefinition defines the internal representation of the custom resource.
@@ -60,15 +61,9 @@ func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResour
 	}
 
 	// remove metadata and apiversion fields
-	if _, ok := schema.Properties["metadata"]; ok {
-		delete(schema.Properties, "metadata")
-	}
-	if _, ok := schema.Properties["apiVersion"]; ok {
-		delete(schema.Properties, "apiVersion")
-	}
-	if _, ok := schema.Properties["kind"]; ok {
-		delete(schema.Properties, "kind")
-	}
+	delete(schema.Properties, "metadata")
+	delete(schema.Properties, "apiVersion")
+	delete(schema.Properties, "kind")
 	if err := g.resolveSchema(schema); err != nil {
 		return fmt.Errorf("unable to add dependencies: %w", err)
 	}
@@ -240,7 +235,7 @@ func ConvertSpecSchemaToApiextv1Schema(schema *spec.Schema) (*apiextv1.JSONSchem
 	if len(schema.Type) > 1 {
 		return &apiextv1.JSONSchemaProps{
 			Description:            schema.Description,
-			XPreserveUnknownFields: pointer.BoolPtr(true),
+			XPreserveUnknownFields: ptr.To(true),
 		}, nil
 	}
 
@@ -249,7 +244,7 @@ func ConvertSpecSchemaToApiextv1Schema(schema *spec.Schema) (*apiextv1.JSONSchem
 		return &apiextv1.JSONSchemaProps{
 			Type:                   "object",
 			Description:            schema.Description,
-			XPreserveUnknownFields: pointer.BoolPtr(true),
+			XPreserveUnknownFields: ptr.To(true),
 			XEmbeddedResource:      true,
 		}, nil
 	}
@@ -257,7 +252,7 @@ func ConvertSpecSchemaToApiextv1Schema(schema *spec.Schema) (*apiextv1.JSONSchem
 		return &apiextv1.JSONSchemaProps{
 			Type:                   "object",
 			Description:            schema.Description,
-			XPreserveUnknownFields: pointer.BoolPtr(true),
+			XPreserveUnknownFields: ptr.To(true),
 		}, nil
 	}
 	schemaProps := &apiextv1.JSONSchemaProps{

@@ -32,7 +32,7 @@ var CRDs = []lsschema.CustomResourceDefinitions{
 
 var (
 	schemaDir string
-	crdDir string
+	crdDir    string
 )
 
 func init() {

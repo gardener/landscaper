@@ -19,3 +19,6 @@ tmp-int-test-core
 coverage.*
 
 **/transport.tar
+
+go.work*
+bin/

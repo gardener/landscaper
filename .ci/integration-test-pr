@@ -8,9 +8,9 @@
 # In that case, the integration tests are executed by calling ./.ci/int-test. The parameter $PR_ID is integrated in the
 # test cluster name. The cluster name has the format it-pr$PR_ID-<4-digits>.
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
+
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 
 echo "check if integration tests should be started"
 
@@ -19,20 +19,18 @@ if ! which git 1>/dev/null; then
   apk add --no-cache --no-progress git
 fi
 
-SOURCE_PATH="$(dirname $0)/.."
-cd "${SOURCE_PATH}"
-SOURCE_PATH="$(pwd)"
-export SOURCE_PATH
+(
+  cd "$PROJECT_ROOT"
+  PR_ID=$(git config -f "$PROJECT_ROOT/.git/config" pullrequest.id)
+  echo "PR_ID: " $PR_ID
 
-PR_ID=$(git config -f "$SOURCE_PATH/.git/config" pullrequest.id)
-echo "PR_ID: " $PR_ID
+  GIT_COMMENT=$(git show -s --format=%s)
+  echo "git comment: " $GIT_COMMENT
 
-GIT_COMMENT=$(git show -s --format=%s)
-echo "git comment: " $GIT_COMMENT
-
-if git show -s --format=%s | grep run-int-tests; then
-    echo "integration tests should be started"
-    ./.ci/int-test $PR_ID
-else
-    echo "integration tests are skipped"
-fi
+  if git show -s --format=%s | grep run-int-tests; then
+      echo "integration tests should be started"
+      "$PROJECT_ROOT/.ci/int-test" $PR_ID
+  else
+      echo "integration tests are skipped"
+  fi
+)

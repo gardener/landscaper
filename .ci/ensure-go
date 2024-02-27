@@ -1,0 +1,21 @@
+#!/bin/bash -eu
+
+go_version="1.21.7"
+
+if ! which go 1>/dev/null; then
+  echo "> Installing go ..."
+  
+  arch=$(uname -m)
+  if [[ "$arch" == "x86_64" ]]; then
+    arch="amd64"
+  fi
+  os=$(uname | tr '[:upper:]' '[:lower:]')
+
+  (
+    set -euo pipefail
+    curl -sfL https://go.dev/dl/go${go_version}.${os}-${arch}.tar.gz --output /tmp/go.tar.gz
+    tar -C /usr/local -xzf /tmp/go.tar.gz
+  )
+
+  export PATH=$PATH:/usr/local/go/bin
+fi

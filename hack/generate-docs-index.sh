@@ -4,14 +4,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
 
-CURRENT_DIR=$(dirname $0)
-PROJECT_ROOT="${CURRENT_DIR}"/..
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 DOCS_FOLDER="${PROJECT_ROOT}/docs"
 METAFILE_NAME=".docnames"
+
+if [[ -z ${LOCALBIN:-} ]]; then
+  LOCALBIN="$PROJECT_ROOT/bin"
+fi
+if [[ -z ${JQ:-} ]]; then
+  JQ="$LOCALBIN/jq"
+fi
 
 doc_index_file=${1:-"$DOCS_FOLDER/README.md"}
 
@@ -25,7 +29,7 @@ function println() {
 function getDocFolderName() {
   local metafile="$1/$METAFILE_NAME"
   if [[ -f "$metafile" ]]; then
-    cat "$metafile" | jq -r '.header'
+    cat "$metafile" | $JQ -r '.header'
   fi
 }
 
@@ -38,7 +42,7 @@ function getDocName() {
   local metafile="$1/$METAFILE_NAME"
   local filename="$2"
   if [[ -f "$metafile" ]]; then
-    local overwrite="$(cat "$metafile" | jq -r '.overwrites[$name]' --arg name "$2")"
+    local overwrite="$(cat "$metafile" | $JQ -r '.overwrites[$name]' --arg name "$2")"
     if [[ "$overwrite" != "null" ]]; then
       echo "$overwrite"
       return

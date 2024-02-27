@@ -4,16 +4,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -e
+set -euo pipefail
 
-CURRENT_DIR=$(dirname $0)
-PROJECT_ROOT="${CURRENT_DIR}"/..
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 CHART_ROOT="${PROJECT_ROOT}/charts"
 
 if [[ -n $1 ]]; then
   EFFECTIVE_VERSION=$1
-elif [[ $EFFECTIVE_VERSION == "" ]]; then
-  EFFECTIVE_VERSION=$(cat $PROJECT_ROOT/VERSION)
+elif [[ -z ${EFFECTIVE_VERSION:-} ]]; then
+  EFFECTIVE_VERSION=$("$PROJECT_ROOT/hack/get-version.sh")
 fi
 
 CHARTLIST=$(find $CHART_ROOT -maxdepth 10 -type f -name "Chart.yaml")
