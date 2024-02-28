@@ -52,7 +52,32 @@
 							"env": {
 							  "KUBECONFIG": "/home/vscode/.kube/kubeconfig--minikube-local.yaml"
 							},
-							"dlvFlags": ["--check-go-version=false"]
+						  },
+						{
+							"name": "DCON: HelmDeployer Minikube debug",
+							"type": "go",
+							"request": "launch",
+							"mode": "debug",
+							"program": "${workspaceFolder}/cmd/landscaper-controller/main.go",
+							"args": [
+								"--config=${workspaceFolder}/.devcontainer/helm-deployer-config.yaml"
+							],
+							"env": {
+							  "KUBECONFIG": "/home/vscode/.kube/kubeconfig--minikube-local.yaml"
+							},
+						  },
+						{
+							"name": "DCON: ManifestDeployer Minikube debug",
+							"type": "go",
+							"request": "launch",
+							"mode": "debug",
+							"program": "${workspaceFolder}/cmd/manifest-deployer-controller/main.go",
+							"args": [
+								"--config=${workspaceFolder}/.devcontainer/landscaper-config.yaml" 
+							],
+							"env": {
+							  "KUBECONFIG": "/home/vscode/.kube/kubeconfig--minikube-local.yaml"
+							},
 						  },
 					],
 					"compounds": []

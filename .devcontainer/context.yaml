@@ -5,7 +5,7 @@ metadata:
   namespace: default
 
 repositoryContext:
-  baseUrl: localhost:5000
+  baseUrl: localhost:443
   type: ociRegistry
 
 useOCM: true
