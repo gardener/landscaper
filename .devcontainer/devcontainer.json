@@ -58,9 +58,9 @@
 							"type": "go",
 							"request": "launch",
 							"mode": "debug",
-							"program": "${workspaceFolder}/cmd/landscaper-controller/main.go",
+							"program": "${workspaceFolder}/cmd/helm-deployer-controller/main.go",
 							"args": [
-								"--config=${workspaceFolder}/.devcontainer/helm-deployer-config.yaml"
+								"--config=${workspaceFolder}/.devcontainer/landscaper-config.yaml", 
 							],
 							"env": {
 							  "KUBECONFIG": "/home/vscode/.kube/kubeconfig--minikube-local.yaml"
@@ -73,7 +73,7 @@
 							"mode": "debug",
 							"program": "${workspaceFolder}/cmd/manifest-deployer-controller/main.go",
 							"args": [
-								"--config=${workspaceFolder}/.devcontainer/landscaper-config.yaml" 
+								"--config=${workspaceFolder}/.devcontainer/landscaper-config.yaml", 
 							],
 							"env": {
 							  "KUBECONFIG": "/home/vscode/.kube/kubeconfig--minikube-local.yaml"

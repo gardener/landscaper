@@ -12,7 +12,7 @@ spec:
   componentDescriptor:
     ref:
       componentName: registry.local/sample/component
-      version: 1.0.0
+      version: v1.0.0
 
   blueprint:
     ref:
