@@ -29,8 +29,10 @@ components:
       - name: helm-deployer-image
         type: ociImage
         input:
-          type: docker
-          path: helm-deployer-controller:${VERSION}
+          type: dockermulti
+          variants:
+            - helm-deployer-controller:${VERSION}-linux-amd64
+            - helm-deployer-controller:${VERSION}-linux-arm64
           repository: images/helm-deployer-controller
 
   - name: github.com/gardener/landscaper/manifest-deployer
@@ -63,8 +65,10 @@ components:
       - name: manifest-deployer-image
         type: ociImage
         input:
-          type: docker
-          path: manifest-deployer-controller:${VERSION}
+          type: dockermulti
+          variants:
+            - manifest-deployer-controller:${VERSION}-linux-amd64
+            - manifest-deployer-controller:${VERSION}-linux-arm64
           repository: images/manifest-deployer-controller
 
   - name: github.com/gardener/landscaper/container-deployer
@@ -97,20 +101,26 @@ components:
       - name: container-deployer-image
         type: ociImage
         input:
-          type: docker
-          path: container-deployer-controller:${VERSION}
+          type: dockermulti
+          variants:
+            - container-deployer-controller:${VERSION}-linux-amd64
+            - container-deployer-controller:${VERSION}-linux-arm64
           repository: images/container-deployer-controller
       - name: container-init-image
         type: ociImage
         input:
-          type: docker
-          path: container-deployer-init:${VERSION}
+          type: dockermulti
+          variants:
+            - container-deployer-init:${VERSION}-linux-amd64
+            - container-deployer-init:${VERSION}-linux-arm64
           repository: images/container-deployer-init
       - name: container-wait-image
         type: ociImage
         input:
-          type: docker
-          path: container-deployer-wait:${VERSION}
+          type: dockermulti
+          variants:
+            - container-deployer-wait:${VERSION}-linux-amd64
+            - container-deployer-wait:${VERSION}-linux-arm64
           repository: images/container-deployer-wait
 
   - name: github.com/gardener/landscaper/mock-deployer
@@ -143,8 +153,10 @@ components:
       - name: mock-deployer-image
         type: ociImage
         input:
-          type: docker
-          path: mock-deployer-controller:${VERSION}
+          type: dockermulti
+          variants:
+            - mock-deployer-controller:${VERSION}-linux-amd64
+            - mock-deployer-controller:${VERSION}-linux-arm64
           repository: images/mock-deployer-controller
 
   - name: github.com/gardener/landscaper
@@ -200,18 +212,24 @@ components:
       - name: landscaper-controller
         type: ociImage
         input:
-          type: docker
-          path: landscaper-controller:${VERSION}
+          type: dockermulti
+          variants:
+            - landscaper-controller:${VERSION}-linux-amd64
+            - landscaper-controller:${VERSION}-linux-arm64
           repository: images/landscaper-controller
       - name: landscaper-webhooks-server
         type: ociImage
         input:
-          type: docker
-          path: landscaper-webhooks-server:${VERSION}
+          type: dockermulti
+          variants:
+            - landscaper-webhooks-server:${VERSION}-linux-amd64
+            - landscaper-webhooks-server:${VERSION}-linux-arm64
           repository: images/landscaper-webhooks-server
       - name: landscaper-agent
         type: ociImage
         input:
-          type: docker
-          path: landscaper-agent:${VERSION}
+          type: dockermulti
+          variants:
+            - landscaper-agent:${VERSION}-linux-amd64
+            - landscaper-agent:${VERSION}-linux-arm64
           repository: images/landscaper-agent
