@@ -5,15 +5,16 @@
 package validation
 
 import (
+	"regexp"
+
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
 	"github.com/gardener/landscaper/apis/core"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 )
 
 // InstallationNameMaxLength is the max allowed length of an installation name
@@ -21,6 +22,8 @@ const InstallationNameMaxLength = validation.DNS1123LabelMaxLength - len(helper.
 
 // InstallationGenerateNameMaxLength is the max length of an installation name minus the number of random characters kubernetes uses to generate a unique name
 const InstallationGenerateNameMaxLength = InstallationNameMaxLength - 5
+
+var targetMapKeyRegExp = regexp.MustCompile("^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$")
 
 // ValidateInstallation validates an Installation
 func ValidateInstallation(inst *core.Installation) field.ErrorList {
@@ -138,6 +141,19 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 			for idx2, tg := range imp.Targets {
 				if len(tg) == 0 {
 					allErrs = append(allErrs, field.Required(fldPathIdx.Child("targets").Index(idx2), "target must not be empty"))
+				}
+			}
+		}
+		if imp.TargetMap != nil {
+			for key, tg := range imp.TargetMap {
+				if !targetMapKeyRegExp.MatchString(key) {
+					allErrs = append(allErrs, field.Invalid(fldPathIdx.Child("targetMap").Key(key), key,
+						"key must contain only lower-case alphanumeric characters, dots, or dashes; " +
+						"it must begin and end with a lower-case alphanumeric character; " +
+						"it must not be empty, and not longer than 63 characters"))
+				}
+				if len(tg) == 0 {
+					allErrs = append(allErrs, field.Required(fldPathIdx.Child("targetMap").Key(key), "target must not be empty"))
 				}
 			}
 		}

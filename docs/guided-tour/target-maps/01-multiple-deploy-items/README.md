@@ -177,6 +177,15 @@ If you are using Subinstallations to create the DeployItems, this problem does n
 copied into an internal context for the Subinstallations and only deleted after the deletion of the corresponding
 Subinstallations. There are examples in this guided tour presenting such a solution.
 
+
+## Name Restrictions
+
+Each logical name (key) of a target map must comply with the following name restrictions:
+- a key must not be empty, and not longer than 63 characters,
+- it must contain only lower-case alphanumeric characters (`[a-z0-9]`), dashes (`-`), and dots (`.`),
+- it must begin and end with a lower-case alphanumeric character (`[a-z0-9]`).
+
+
 ## Removal of the test data
 
 You can remove the Installation, the context and targets by first executing [this](component/commands/delete-inst.sh) 

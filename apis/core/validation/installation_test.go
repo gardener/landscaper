@@ -5,12 +5,11 @@
 package validation_test
 
 import (
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	"github.com/gardener/landscaper/apis/core"
 	"github.com/gardener/landscaper/apis/core/validation"
@@ -403,6 +402,59 @@ var _ = Describe("Installation", func() {
 					"Detail": And(ContainSubstring("Target"), ContainSubstring("Targets"), ContainSubstring("TargetListReference")),
 				})))
 			}
+		})
+
+		It("should fail if a key in a targetmap is invalid", func() {
+			imp := core.InstallationImports{
+				Targets: []core.TargetImport{
+					{
+						Name: "foo",
+						TargetMap: map[string]string{
+							"testCluster1":   "test-cluster-1",
+							"test-cluster.2": "test-cluster-2", // valid
+							"testcluster3.":  "test-cluster-3",
+							"-testcluster4":  "test-cluster-4",
+							"":               "test-cluster-5",
+							"test_cluster6":  "test-cluster-6",
+							"testcluster00000000.000000000.000000000.000000000.000000000.007":  "test-cluster-7", // valid
+							"testcluster00000000.000000000.000000000.000000000.000000000.0008": "test-cluster-8",
+						},
+					},
+				},
+			}
+
+			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
+			Expect(allErrs).To(HaveLen(6))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("imports.targets[0].targetMap[testCluster1]"),
+				"Detail": ContainSubstring("alphanumeric"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("imports.targets[0].targetMap[testcluster3.]"),
+				"Detail": ContainSubstring("alphanumeric"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("imports.targets[0].targetMap[-testcluster4]"),
+				"Detail": ContainSubstring("alphanumeric"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("imports.targets[0].targetMap[]"),
+				"Detail": ContainSubstring("alphanumeric"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("imports.targets[0].targetMap[test_cluster6]"),
+				"Detail": ContainSubstring("alphanumeric"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("imports.targets[0].targetMap[testcluster00000000.000000000.000000000.000000000.000000000.0008]"),
+				"Detail": ContainSubstring("alphanumeric"),
+			}))))
 		})
 
 		It("should fail if secret imports contain empty values", func() {
