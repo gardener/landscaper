@@ -18,13 +18,8 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
-	scheme.AddTypeDefaultingFunc(&AgentConfiguration{}, func(obj interface{}) { SetObjectDefaults_AgentConfiguration(obj.(*AgentConfiguration)) })
 	scheme.AddTypeDefaultingFunc(&LandscaperConfiguration{}, func(obj interface{}) { SetObjectDefaults_LandscaperConfiguration(obj.(*LandscaperConfiguration)) })
 	return nil
-}
-
-func SetObjectDefaults_AgentConfiguration(in *AgentConfiguration) {
-	SetDefaults_AgentConfiguration(in)
 }
 
 func SetObjectDefaults_LandscaperConfiguration(in *LandscaperConfiguration) {
@@ -35,5 +30,4 @@ func SetObjectDefaults_LandscaperConfiguration(in *LandscaperConfiguration) {
 	SetDefaults_CommonControllerConfig(&in.Controllers.Contexts.CommonControllerConfig)
 	SetDefaults_BlueprintStore(&in.BlueprintStore)
 	SetDefaults_CrdManagementConfiguration(&in.CrdManagement)
-	SetObjectDefaults_AgentConfiguration(&in.DeployerManagement.Agent.AgentConfiguration)
 }

@@ -203,12 +203,6 @@ components:
           type: helm
           path: ${LANDSCAPER_CONTROLLER_DEPLOYMENT_CHART_PATH}
           repository: charts/landscaper-controller-deployment
-      - name: landscaper-agent-chart
-        type: helm.io/chart
-        input:
-          type: helm
-          path: ${LANDSCAPER_AGENT_CHART_PATH}
-          repository: charts/landscaper-agent
       - name: landscaper-controller
         type: ociImage
         input:
@@ -225,11 +219,3 @@ components:
             - landscaper-webhooks-server:${VERSION}-linux-amd64
             - landscaper-webhooks-server:${VERSION}-linux-arm64
           repository: images/landscaper-webhooks-server
-      - name: landscaper-agent
-        type: ociImage
-        input:
-          type: dockermulti
-          variants:
-            - landscaper-agent:${VERSION}-linux-amd64
-            - landscaper-agent:${VERSION}-linux-arm64
-          repository: images/landscaper-agent

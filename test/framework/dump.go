@@ -266,13 +266,6 @@ func (d *Dumper) DumpLandscaperResources(ctx context.Context) error {
 			d.FormatPodsWithSelector(ctx, 2, client.InNamespace(d.lsNamespace), client.MatchingLabels(deploy.Spec.Template.Labels)))
 	}
 
-	// dump deployer lcm resources
-	if err := d.DumpEnvironments(ctx); err != nil {
-		return err
-	}
-	if err := d.DumpDeployerRegistrations(ctx); err != nil {
-		return err
-	}
 	if err := d.dumpInstallationsInNamespace(ctx, d.lsNamespace); err != nil {
 		return err
 	}
@@ -302,48 +295,6 @@ func (d *Dumper) DumpLandscaperResources(ctx context.Context) error {
 			d.FormatPodsWithSelector(ctx, 2, client.InNamespace(d.lsNamespace), client.MatchingLabels(deploy.Spec.Template.Labels)))
 	}
 
-	return nil
-}
-
-// DumpEnvironments dumps all environments that are in the current system
-func (d *Dumper) DumpEnvironments(ctx context.Context) error {
-	envList := &lsv1alpha1.EnvironmentList{}
-	if err := d.kubeClient.List(ctx, envList); err != nil {
-		return fmt.Errorf("unable to list environments: %w", err)
-	}
-	for _, env := range envList.Items {
-		if err := DumpEnvironment(d.logger, &env); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// DumpEnvironment dumps information about the environment
-func DumpEnvironment(logger utils.Logger, env *lsv1alpha1.Environment) error {
-	logger.Logf("--- Environment %s\n", env.Name)
-	logger.Logf("%s\n", FormatAsYAML(env.Spec, 0))
-	return nil
-}
-
-// DumpDeployerRegistrations dumps all deployer registrations that are in the current system
-func (d *Dumper) DumpDeployerRegistrations(ctx context.Context) error {
-	drList := &lsv1alpha1.DeployerRegistrationList{}
-	if err := d.kubeClient.List(ctx, drList); err != nil {
-		return fmt.Errorf("unable to list environments: %w", err)
-	}
-	for _, dr := range drList.Items {
-		if err := DumpDeployerRegistration(d.logger, &dr); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// DumpDeployerRegistration dumps information about the deployer registration
-func DumpDeployerRegistration(logger utils.Logger, dr *lsv1alpha1.DeployerRegistration) error {
-	logger.Logf("--- Deployer Registration %s\n", dr.Name)
-	logger.Logf("%s\n", FormatAsYAML(dr.Spec, 0))
 	return nil
 }
 

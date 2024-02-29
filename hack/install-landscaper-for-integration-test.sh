@@ -32,7 +32,7 @@ fi
 
 if ! which kubectl 1>/dev/null; then
   echo "Kubectl is not installed, trying to install it..."
-  curl -LO https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl
+  curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl
   mv ./kubectl /usr/local/bin/kubectl
   chmod +x /usr/local/bin/kubectl
 fi
@@ -53,28 +53,16 @@ fi
 
 echo "> Installing Landscaper version ${VERSION}"
 
+tmp_dir="$(mktemp -d)"
+
 printf "
 landscaper:
   landscaper:
-    deployers:
-    - container
-    - helm
-    - manifest
-    - mock
-    deployersConfig:
-      Deployers:
-        container:
-          deployer:
-            verbosityLevel: debug
-        helm:
-          deployer:
-            verbosityLevel: debug
-        manifest:
-          deployer:
-            verbosityLevel: debug
     deployItemTimeouts:
       pickup: 30s
-" > /tmp/values.yaml
+      abort: 30s
+    useOCMLib: true
+" > "/${tmp_dir}/landscaper-values.yaml"
 
 touch /tmp/registry-values.yaml
 if [[ -f "$TM_SHARED_PATH/docker.config" ]]; then
@@ -86,8 +74,36 @@ landscaper:
       insecureSkipVerify: true
       secrets:
         default: $(cat "$TM_SHARED_PATH/docker.config")
-  " > /tmp/registry-values.yaml
+  " > "/${tmp_dir}/registry-values.yaml"
 fi
 
 export KUBECONFIG="${TM_KUBECONFIG_PATH}/${CLUSTER_NAME}.config"
-helm upgrade --install --create-namespace -n ls-system landscaper ./charts/landscaper -f /tmp/values.yaml -f /tmp/registry-values.yaml --set "landscaper.image.tag=${VERSION}"
+helm upgrade --install --create-namespace -n ls-system landscaper ./charts/landscaper -f "/${tmp_dir}/landscaper-values.yaml" -f "/${tmp_dir}/registry-values.yaml" --set "landscaper.image.tag=${VERSION}"
+
+landscaper_ready=false
+retries_left=20
+
+while [ "$landscaper_ready" = false ]; do
+  kubectl get customresourcedefinitions.apiextensions.k8s.io installations.landscaper.gardener.cloud
+  if [ "$?" = 0 ]; then
+    landscaper_ready=true
+  fi
+
+  if [ "retries_left" == 0 ]; then
+    >&2 echo "landscaper is not ready after max retries"
+    exit 1
+  fi
+
+  retries_left="$((${retries_left}-1))"
+  sleep 1
+done
+
+printf "
+deployer:
+  verbosityLevel: debug
+" > "/${tmp_dir}/deployer-values.yaml"
+
+helm upgrade --install -n ls-system manifest-deployer ./charts/manifest-deployer -f "/${tmp_dir}/deployer-values.yaml" --set "image.tag=${VERSION}"
+helm upgrade --install -n ls-system helm-deployer ./charts/helm-deployer -f "/${tmp_dir}/deployer-values.yaml" --set "image.tag=${VERSION}"
+helm upgrade --install -n ls-system container-deployer ./charts/container-deployer -f "/${tmp_dir}/deployer-values.yaml" --set "image.tag=${VERSION}"
+helm upgrade --install -n ls-system mock-deployer ./charts/mock-deployer -f "/${tmp_dir}/deployer-values.yaml" --set "image.tag=${VERSION}"

@@ -7,8 +7,6 @@ package v1alpha1
 import (
 	"time"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
@@ -36,9 +34,6 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	SetDefaults_CommonControllerConfig(&obj.Controllers.DeployItems.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&obj.Controllers.Contexts.CommonControllerConfig)
 
-	if len(obj.DeployerManagement.Namespace) == 0 {
-		obj.DeployerManagement.Namespace = "ls-system"
-	}
 	if obj.DeployItemTimeouts == nil {
 		obj.DeployItemTimeouts = &DeployItemTimeouts{}
 	}
@@ -56,27 +51,6 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 		// migrate the repository context to the new structure.
 		// The old location is ignored if a repository context is defined in the new location.
 		obj.Controllers.Contexts.Config.Default.RepositoryContext = obj.RepositoryContext
-	}
-
-	if obj.DeployerManagement.Disable {
-		obj.DeployerManagement.Agent.Disable = true
-	}
-	if len(obj.DeployerManagement.Agent.Name) == 0 {
-		obj.DeployerManagement.Agent.Name = "default"
-	}
-	if len(obj.DeployerManagement.Agent.Namespace) == 0 {
-		obj.DeployerManagement.Agent.Namespace = obj.DeployerManagement.Namespace
-	}
-	if len(obj.DeployerManagement.Agent.LandscaperNamespace) == 0 {
-		obj.DeployerManagement.Agent.LandscaperNamespace = obj.DeployerManagement.Namespace
-	}
-	if obj.DeployerManagement.Agent.OCI == nil {
-		obj.DeployerManagement.Agent.OCI = obj.Registry.OCI
-	}
-
-	if obj.DeployerManagement.DeployerRepositoryContext == nil {
-		defaultCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper", ""))
-		obj.DeployerManagement.DeployerRepositoryContext = &defaultCtx
 	}
 }
 
@@ -99,16 +73,6 @@ func SetDefaults_CommonControllerConfig(obj *CommonControllerConfig) {
 		obj.CacheSyncTimeout = &metav1.Duration{
 			Duration: 2 * time.Minute,
 		}
-	}
-}
-
-// SetDefaults_AgentConfiguration sets the defaults for the landscaper configuration.
-func SetDefaults_AgentConfiguration(obj *AgentConfiguration) {
-	if len(obj.Namespace) == 0 {
-		obj.Namespace = "ls-system"
-	}
-	if len(obj.LandscaperNamespace) == 0 {
-		obj.LandscaperNamespace = "ls-system"
 	}
 }
 
