@@ -1,10 +1,15 @@
-# Multiple Deploy Items Example
+---
+title: Deploying to Multiple Clusters
+sidebar_position: 1
+---
+
+# Example
 
 In this example, we show how target maps can be used to deploy an artefact to a variable number of target clusters. 
 
 For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
 
-## Example description
+## Description
 
 This example presents a component, which gets as input a map of targets and a data object containing
 configuration data for every input target. For every input target a DeployItem is created which deploys
@@ -12,13 +17,13 @@ a config map on the target cluster specified by one of the input targets. The da
 corresponding data provided as another import.
 
 The example component is stored 
-[here](eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-deploy-items). 
-If you want to upload the component to another registry, you can just adapt the [settings](component/commands/settings) 
-file and execute the component build and upload script [here](component/commands/component.sh).
+[here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-deploy-items). 
+If you want to upload the component to another registry, you can just adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/commands/settings) 
+file and execute the component build and upload script [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/commands/component.sh).
 
 The component itself is specified here:
   - [component configuration](component/components.yaml)
-  - [blueprints](component/blueprint) 
+  - [blueprints](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/blueprint) 
 
 ## Installing the example
 
