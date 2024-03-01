@@ -1,8 +1,12 @@
-# Other Target Map Examples
+---
+title: More Target Map Examples
+sidebar_position: 5
+---
+# More Target Map Examples
 
 ## Iterate over Config
 
-In all examples about target maps so far, the iteration was done over the targets. Of course, it would have been also
+In all examples about target maps so far, the iteration was done over the targets. It is also
 possible to iterate over the configuration data of the imported data object `config`.
 
 ## Importing Target with a Target Map from Siblings
@@ -10,9 +14,9 @@ possible to iterate over the configuration data of the imported data object `con
 It is also possible that different Targets from sibling Subinstallations can be imported by a Subinstallation
 using a Target Map. 
 
-The following example demonstrates the principal syntax. 
+The following example demonstrates the general syntax. 
 
-```
+```yaml
 subinstallations:
 {{ $rootconfig := .imports.rootconfig }}
 {{ range $key, $instanceConfig := $rootconfig }}
@@ -60,7 +64,7 @@ entry. Each of these Subinstallations exports a target `cluster-{{ $key }}`.
 
 The Subinstallation `compose-exports-importer` imports all exported targets as a targetMap:
 
-```
+```yaml
     imports:
       targets:
         - name: clusters

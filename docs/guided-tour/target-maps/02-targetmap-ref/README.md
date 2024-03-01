@@ -1,4 +1,8 @@
-# Multiple Deploy Items with Target Map Reference Example
+---
+title: Deploying to Multiple Clusters using one Subinstallation
+sidebar_position: 2
+---
+# Deploying to Multiple Clusters using a Subinstallation
 
 In this example, we show again how target maps can be used to deploy an artefact to a variable number of target clusters. 
 
@@ -16,13 +20,13 @@ configuration data for every input target. The import data are forwarded to a Su
 For every input target, the Subinstallation creates a DeployItem which deploys a config map with the right data.
 
 The example component is stored 
-[here](eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-targetmap-ref). 
-If you want to upload the component to another registry, you can just adapt the [settings](component/commands/settings) 
-file and execute the component build and upload script [here](component/commands/component.sh).
+[here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-targetmap-ref). 
+If you want to upload the component to another registry, you can just adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/02-targetmap-ref/component/commands/settings) 
+file and execute the component build and upload script [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/02-targetmap-ref/component/commands/component.sh).
 
 The component itself is specified here:
   - [component configuration](component/components.yaml)
-  - [blueprints](component/blueprint) 
+  - [blueprints](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/02-targetmap-ref/component/blueprint) 
 
 ## Installing the example
 
@@ -39,14 +43,14 @@ The procedure to install example is as follows:
   - a DataObject `config` containing the data for the different config maps which will be deployed on the different
     target clusters.
 
-The templates for these resources can be found [here](component/installation) and can be deployed with 
-this [script](component/commands/deploy-k8s-resources.sh). Adapt the [settings](component/commands/settings) file
+The templates for these resources can be found [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/02-targetmap-ref/component/installation) and can be deployed with 
+this [script](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/02-targetmap-ref/component/commands/deploy-k8s-resources.sh). Adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/02-targetmap-ref/component/commands/settings) file
 such that the entry `TARGET_CLUSTER_KUBECONFIG_PATH` points to the kubeconfig of the target cluster to which the
 config maps should be deployed.
 
 Now you can see successful installations on your Landscaper resource cluster:
 
-```
+```bash
 kubectl get inst -n cu-example 
 NAME                     PHASE       EXECUTION                AGE
 targetmap-ref            Succeeded                            20m
@@ -56,7 +60,7 @@ targetmapref-sub-pcz2g   Succeeded   targetmapref-sub-pcz2g   20m
 Let's have a deeper look into the resources of the example. The root Installation `targetmap-ref` contains as import 
 a target map importing three of the five deployed targets.  
 
-```
+```yaml
   imports:
   
     targets:
@@ -82,7 +86,7 @@ that the blueprint creates a [Subinstallation](component/blueprint/root/subinst.
 This Subinstallation just forwards the import data of the root Installation. For the imported target map it uses a 
 so-called target map reference:
 
-```
+```yaml
 imports:
   targets:
     - name: clusters                     # name of the target map reference
@@ -93,7 +97,7 @@ The Subinstallation uses another [blueprint](component/blueprint/sub/blueprint.y
 every target provided by the target map in its [deployExecution](component/blueprint/sub/deploy-execution.yaml). 
 Therefore, it iterates again over the target map with the following expression:
 
-```
+```yaml
 {{ range $key, $target := .imports.clusters }}
 ```
 
@@ -101,7 +105,7 @@ The rest is quite similar as for the [first target map example](../01-multiple-d
 
 The DeployItems on the Landscaper resource cluster looks as follows:
 
-```
+```bash
 kubectl get di -n cu-example                                                  
 NAME                                    TYPE                                            PHASE       EXPORTREF   AGE
 targetmapref-sub-pcz2g-di-blue-7jw4t    landscaper.gardener.cloud/kubernetes-manifest   Succeeded               59m
@@ -116,4 +120,3 @@ in the target maps. This is important because it gives these objects a name whic
 If you remove one target of the input data of the root Installation, the right Subinstallation/DeployItem can be deleted
 using the right target. Iterating over the target map and creating these names using some loop counter instead, might 
 change their name if one of the import targets is removed and the counter of all succeeding targets is reduced by one.
-
