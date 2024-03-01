@@ -5,11 +5,11 @@
 REPO_ROOT                                      := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VERSION                                        := $(shell cat $(REPO_ROOT)/VERSION)
 EFFECTIVE_VERSION                              := $(shell $(REPO_ROOT)/hack/get-version.sh)
+BUILD_OS                                       := "linux"
+BUILD_ARCH                                     := "amd64"
 
 REGISTRY                                       := europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper
 DOCKER_BUILDER_NAME := "ls-multiarch"
-DOCKER_PLATFORM_AMD64 := "linux/amd64"
-DOCKER_PLATFORM_ARM64 := "linux/arm64"
 
 DISABLE_CLEANUP := false
 
@@ -82,33 +82,31 @@ generate: generate-code format revendor generate-docs
 
 .PHONY: install
 install:
-	@EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) ./hack/install.sh
+	@EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) BUILD_OS=$(BUILD_OS) BUILD_ARCH=$(BUILD_ARCH) OUT_DIR=$(OUT_DIR) ./hack/install.sh
 
 .PHONY: docker-images
 docker-images:
-	@$(REPO_ROOT)/hack/prepare-docker-builder.sh
+	@echo "Building docker images for version $(EFFECTIVE_VERSION) / linux-amd64"
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t landscaper-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t landscaper-webhooks-server:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-webhooks-server .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t landscaper-agent:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-agent .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-init:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-init .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-wait:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-wait .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t helm-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target helm-deployer-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t manifest-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target manifest-deployer-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t mock-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target mock-deployer-controller .
 
-	@echo "Building docker images for version $(EFFECTIVE_VERSION) / $(DOCKER_PLATFORM_AMD64)"
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t landscaper-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-controller .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t landscaper-webhooks-server:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-webhooks-server .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t landscaper-agent:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-agent .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t container-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-controller .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t container-deployer-init:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-init .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t container-deployer-wait:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-wait .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t helm-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target helm-deployer-controller .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t manifest-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target manifest-deployer-controller .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_AMD64) -t mock-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target mock-deployer-controller .
-
-	@echo "Building docker images for version $(EFFECTIVE_VERSION) / $(DOCKER_PLATFORM_ARM64)"
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t landscaper-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-controller .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t landscaper-webhooks-server:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-webhooks-server .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t landscaper-agent:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-agent .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t container-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-controller .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t container-deployer-init:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-init .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t container-deployer-wait:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-wait .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t helm-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target helm-deployer-controller .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t manifest-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target manifest-deployer-controller .
-	@docker buildx build --builder $(DOCKER_BUILDER_NAME) --load --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(DOCKER_PLATFORM_ARM64) -t mock-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target mock-deployer-controller .
+	@echo "Building docker images for version $(EFFECTIVE_VERSION) / linux-arm64"
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t landscaper-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t landscaper-webhooks-server:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-webhooks-server .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t landscaper-agent:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-agent .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-init:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-init .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-wait:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-wait .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t helm-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target helm-deployer-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t manifest-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target manifest-deployer-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t mock-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target mock-deployer-controller .
 
 .PHONY: component
 component:
