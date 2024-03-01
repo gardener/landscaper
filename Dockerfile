@@ -9,8 +9,10 @@ WORKDIR /go/src/github.com/gardener/landscaper
 COPY . .
 
 ARG EFFECTIVE_VERSION
+ARG BUILD_OS
+ARG BUILD_ARCH
 
-RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
+RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION BUILD_OS=$BUILD_OS BUILD_ARCH=$BUILD_ARCH OUT_DIR="/go/bin"
 
 #### BASE ####
 FROM gcr.io/distroless/static-debian11:nonroot AS base
