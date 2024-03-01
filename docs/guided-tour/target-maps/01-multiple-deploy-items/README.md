@@ -3,7 +3,7 @@ title: Deploying to Multiple Clusters
 sidebar_position: 1
 ---
 
-# Example
+# Deploying to Multiple Clusters
 
 In this example, we show how target maps can be used to deploy an artefact to a variable number of target clusters. 
 
