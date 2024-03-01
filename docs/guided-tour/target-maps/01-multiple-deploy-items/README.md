@@ -58,7 +58,7 @@ Let's have a deeper look into the resources of the example. The root Installatio
 a target map importing three of the five deployed targets. An entry of the target map consists of a logical name (blue, green etc.)
 and the name of the k8s target object (cluster-blue, cluster-green etc.) 
 
-```
+```yaml
   imports:
   
     targets:
@@ -113,7 +113,7 @@ This allows
 
 On the Landscaper resource cluster you see the three DeployItems each with the corresponding color in its name:
 
-```
+```bash
 kubectl get di -n cu-example                     
 NAME                            TYPE                                            PHASE       EXPORTREF   AGE
 multiple-items-di-blue-jx5qc    landscaper.gardener.cloud/kubernetes-manifest   Succeeded               2d22h
@@ -123,7 +123,7 @@ multiple-items-di-red-8zn7r     landscaper.gardener.cloud/kubernetes-manifest   
 
 On the target cluster you see the deployed config maps with the corresponding color in their names:
 
-```
+```bash
 kubectl get cm -n example                                                          
 NAME                     DATA   AGE
 compose-map-exec-blue    1      21s
@@ -140,7 +140,7 @@ Assume you want to update your deployments such that instead of the config maps 
 `compose-map-exec-red`, `compose-map-exec-yellow` and `compose-map-exec-orange` are deployed. Therefore, you
 just have to adapt the import target map of you root installation as follows:
 
-```
+```yaml
   imports:
   
     targets:
@@ -160,7 +160,7 @@ just have to adapt the import target map of you root installation as follows:
 
 And you get your intended new set of config maps, whereby the config map `compose-map-exec-green` is deleted:
 
-```
+```bash
 kubectl get cm -n example                                                          
 NAME                     DATA   AGE
 compose-map-exec-blue    1      21s
