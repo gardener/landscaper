@@ -102,16 +102,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ClusterRestConfig)(nil), (*core.ClusterRestConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ClusterRestConfig_To_core_ClusterRestConfig(a.(*ClusterRestConfig), b.(*core.ClusterRestConfig), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.ClusterRestConfig)(nil), (*ClusterRestConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ClusterRestConfig_To_v1alpha1_ClusterRestConfig(a.(*core.ClusterRestConfig), b.(*ClusterRestConfig), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*ComponentDescriptorDefinition)(nil), (*core.ComponentDescriptorDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_ComponentDescriptorDefinition_To_core_ComponentDescriptorDefinition(a.(*ComponentDescriptorDefinition), b.(*core.ComponentDescriptorDefinition), scope)
 	}); err != nil {
@@ -352,56 +342,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*DeployerInstallationTemplate)(nil), (*core.DeployerInstallationTemplate)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DeployerInstallationTemplate_To_core_DeployerInstallationTemplate(a.(*DeployerInstallationTemplate), b.(*core.DeployerInstallationTemplate), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DeployerInstallationTemplate)(nil), (*DeployerInstallationTemplate)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DeployerInstallationTemplate_To_v1alpha1_DeployerInstallationTemplate(a.(*core.DeployerInstallationTemplate), b.(*DeployerInstallationTemplate), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DeployerRegistration)(nil), (*core.DeployerRegistration)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DeployerRegistration_To_core_DeployerRegistration(a.(*DeployerRegistration), b.(*core.DeployerRegistration), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DeployerRegistration)(nil), (*DeployerRegistration)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DeployerRegistration_To_v1alpha1_DeployerRegistration(a.(*core.DeployerRegistration), b.(*DeployerRegistration), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DeployerRegistrationList)(nil), (*core.DeployerRegistrationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DeployerRegistrationList_To_core_DeployerRegistrationList(a.(*DeployerRegistrationList), b.(*core.DeployerRegistrationList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DeployerRegistrationList)(nil), (*DeployerRegistrationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DeployerRegistrationList_To_v1alpha1_DeployerRegistrationList(a.(*core.DeployerRegistrationList), b.(*DeployerRegistrationList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DeployerRegistrationSpec)(nil), (*core.DeployerRegistrationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DeployerRegistrationSpec_To_core_DeployerRegistrationSpec(a.(*DeployerRegistrationSpec), b.(*core.DeployerRegistrationSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DeployerRegistrationSpec)(nil), (*DeployerRegistrationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DeployerRegistrationSpec_To_v1alpha1_DeployerRegistrationSpec(a.(*core.DeployerRegistrationSpec), b.(*DeployerRegistrationSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DeployerRegistrationStatus)(nil), (*core.DeployerRegistrationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DeployerRegistrationStatus_To_core_DeployerRegistrationStatus(a.(*DeployerRegistrationStatus), b.(*core.DeployerRegistrationStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DeployerRegistrationStatus)(nil), (*DeployerRegistrationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationStatus(a.(*core.DeployerRegistrationStatus), b.(*DeployerRegistrationStatus), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*DiNamePair)(nil), (*core.DiNamePair)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_DiNamePair_To_core_DiNamePair(a.(*DiNamePair), b.(*core.DiNamePair), scope)
 	}); err != nil {
@@ -419,36 +359,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.Duration)(nil), (*Duration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_Duration_To_v1alpha1_Duration(a.(*core.Duration), b.(*Duration), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*Environment)(nil), (*core.Environment)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_Environment_To_core_Environment(a.(*Environment), b.(*core.Environment), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.Environment)(nil), (*Environment)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_Environment_To_v1alpha1_Environment(a.(*core.Environment), b.(*Environment), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*EnvironmentList)(nil), (*core.EnvironmentList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_EnvironmentList_To_core_EnvironmentList(a.(*EnvironmentList), b.(*core.EnvironmentList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.EnvironmentList)(nil), (*EnvironmentList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_EnvironmentList_To_v1alpha1_EnvironmentList(a.(*core.EnvironmentList), b.(*EnvironmentList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*EnvironmentSpec)(nil), (*core.EnvironmentSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_EnvironmentSpec_To_core_EnvironmentSpec(a.(*EnvironmentSpec), b.(*core.EnvironmentSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.EnvironmentSpec)(nil), (*EnvironmentSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_EnvironmentSpec_To_v1alpha1_EnvironmentSpec(a.(*core.EnvironmentSpec), b.(*EnvironmentSpec), scope)
 	}); err != nil {
 		return err
 	}
@@ -872,16 +782,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*TLSClientConfig)(nil), (*core.TLSClientConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_TLSClientConfig_To_core_TLSClientConfig(a.(*TLSClientConfig), b.(*core.TLSClientConfig), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.TLSClientConfig)(nil), (*TLSClientConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_TLSClientConfig_To_v1alpha1_TLSClientConfig(a.(*core.TLSClientConfig), b.(*TLSClientConfig), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*Target)(nil), (*core.Target)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_Target_To_core_Target(a.(*Target), b.(*core.Target), scope)
 	}); err != nil {
@@ -1257,34 +1157,6 @@ func autoConvert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDa
 // Convert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDataValueFrom is an autogenerated conversion function.
 func Convert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDataValueFrom(in *core.BlueprintStaticDataValueFrom, out *BlueprintStaticDataValueFrom, s conversion.Scope) error {
 	return autoConvert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDataValueFrom(in, out, s)
-}
-
-func autoConvert_v1alpha1_ClusterRestConfig_To_core_ClusterRestConfig(in *ClusterRestConfig, out *core.ClusterRestConfig, s conversion.Scope) error {
-	out.Host = in.Host
-	out.APIPath = in.APIPath
-	if err := Convert_v1alpha1_TLSClientConfig_To_core_TLSClientConfig(&in.TLSClientConfig, &out.TLSClientConfig, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_ClusterRestConfig_To_core_ClusterRestConfig is an autogenerated conversion function.
-func Convert_v1alpha1_ClusterRestConfig_To_core_ClusterRestConfig(in *ClusterRestConfig, out *core.ClusterRestConfig, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ClusterRestConfig_To_core_ClusterRestConfig(in, out, s)
-}
-
-func autoConvert_core_ClusterRestConfig_To_v1alpha1_ClusterRestConfig(in *core.ClusterRestConfig, out *ClusterRestConfig, s conversion.Scope) error {
-	out.Host = in.Host
-	out.APIPath = in.APIPath
-	if err := Convert_core_TLSClientConfig_To_v1alpha1_TLSClientConfig(&in.TLSClientConfig, &out.TLSClientConfig, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_ClusterRestConfig_To_v1alpha1_ClusterRestConfig is an autogenerated conversion function.
-func Convert_core_ClusterRestConfig_To_v1alpha1_ClusterRestConfig(in *core.ClusterRestConfig, out *ClusterRestConfig, s conversion.Scope) error {
-	return autoConvert_core_ClusterRestConfig_To_v1alpha1_ClusterRestConfig(in, out, s)
 }
 
 func autoConvert_v1alpha1_ComponentDescriptorDefinition_To_core_ComponentDescriptorDefinition(in *ComponentDescriptorDefinition, out *core.ComponentDescriptorDefinition, s conversion.Scope) error {
@@ -1927,140 +1799,6 @@ func Convert_core_DeployerInformation_To_v1alpha1_DeployerInformation(in *core.D
 	return autoConvert_core_DeployerInformation_To_v1alpha1_DeployerInformation(in, out, s)
 }
 
-func autoConvert_v1alpha1_DeployerInstallationTemplate_To_core_DeployerInstallationTemplate(in *DeployerInstallationTemplate, out *core.DeployerInstallationTemplate, s conversion.Scope) error {
-	out.ComponentDescriptor = (*core.ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
-	if err := Convert_v1alpha1_BlueprintDefinition_To_core_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_InstallationImports_To_core_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
-		return err
-	}
-	out.ImportDataMappings = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.ImportDataMappings))
-	return nil
-}
-
-// Convert_v1alpha1_DeployerInstallationTemplate_To_core_DeployerInstallationTemplate is an autogenerated conversion function.
-func Convert_v1alpha1_DeployerInstallationTemplate_To_core_DeployerInstallationTemplate(in *DeployerInstallationTemplate, out *core.DeployerInstallationTemplate, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DeployerInstallationTemplate_To_core_DeployerInstallationTemplate(in, out, s)
-}
-
-func autoConvert_core_DeployerInstallationTemplate_To_v1alpha1_DeployerInstallationTemplate(in *core.DeployerInstallationTemplate, out *DeployerInstallationTemplate, s conversion.Scope) error {
-	out.ComponentDescriptor = (*ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
-	if err := Convert_core_BlueprintDefinition_To_v1alpha1_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
-		return err
-	}
-	if err := Convert_core_InstallationImports_To_v1alpha1_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
-		return err
-	}
-	out.ImportDataMappings = *(*map[string]AnyJSON)(unsafe.Pointer(&in.ImportDataMappings))
-	return nil
-}
-
-// Convert_core_DeployerInstallationTemplate_To_v1alpha1_DeployerInstallationTemplate is an autogenerated conversion function.
-func Convert_core_DeployerInstallationTemplate_To_v1alpha1_DeployerInstallationTemplate(in *core.DeployerInstallationTemplate, out *DeployerInstallationTemplate, s conversion.Scope) error {
-	return autoConvert_core_DeployerInstallationTemplate_To_v1alpha1_DeployerInstallationTemplate(in, out, s)
-}
-
-func autoConvert_v1alpha1_DeployerRegistration_To_core_DeployerRegistration(in *DeployerRegistration, out *core.DeployerRegistration, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1alpha1_DeployerRegistrationSpec_To_core_DeployerRegistrationSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_DeployerRegistrationStatus_To_core_DeployerRegistrationStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_DeployerRegistration_To_core_DeployerRegistration is an autogenerated conversion function.
-func Convert_v1alpha1_DeployerRegistration_To_core_DeployerRegistration(in *DeployerRegistration, out *core.DeployerRegistration, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DeployerRegistration_To_core_DeployerRegistration(in, out, s)
-}
-
-func autoConvert_core_DeployerRegistration_To_v1alpha1_DeployerRegistration(in *core.DeployerRegistration, out *DeployerRegistration, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_core_DeployerRegistrationSpec_To_v1alpha1_DeployerRegistrationSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_DeployerRegistration_To_v1alpha1_DeployerRegistration is an autogenerated conversion function.
-func Convert_core_DeployerRegistration_To_v1alpha1_DeployerRegistration(in *core.DeployerRegistration, out *DeployerRegistration, s conversion.Scope) error {
-	return autoConvert_core_DeployerRegistration_To_v1alpha1_DeployerRegistration(in, out, s)
-}
-
-func autoConvert_v1alpha1_DeployerRegistrationList_To_core_DeployerRegistrationList(in *DeployerRegistrationList, out *core.DeployerRegistrationList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]core.DeployerRegistration)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1alpha1_DeployerRegistrationList_To_core_DeployerRegistrationList is an autogenerated conversion function.
-func Convert_v1alpha1_DeployerRegistrationList_To_core_DeployerRegistrationList(in *DeployerRegistrationList, out *core.DeployerRegistrationList, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DeployerRegistrationList_To_core_DeployerRegistrationList(in, out, s)
-}
-
-func autoConvert_core_DeployerRegistrationList_To_v1alpha1_DeployerRegistrationList(in *core.DeployerRegistrationList, out *DeployerRegistrationList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]DeployerRegistration)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_core_DeployerRegistrationList_To_v1alpha1_DeployerRegistrationList is an autogenerated conversion function.
-func Convert_core_DeployerRegistrationList_To_v1alpha1_DeployerRegistrationList(in *core.DeployerRegistrationList, out *DeployerRegistrationList, s conversion.Scope) error {
-	return autoConvert_core_DeployerRegistrationList_To_v1alpha1_DeployerRegistrationList(in, out, s)
-}
-
-func autoConvert_v1alpha1_DeployerRegistrationSpec_To_core_DeployerRegistrationSpec(in *DeployerRegistrationSpec, out *core.DeployerRegistrationSpec, s conversion.Scope) error {
-	out.DeployItemTypes = *(*[]core.DeployItemType)(unsafe.Pointer(&in.DeployItemTypes))
-	if err := Convert_v1alpha1_DeployerInstallationTemplate_To_core_DeployerInstallationTemplate(&in.InstallationTemplate, &out.InstallationTemplate, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_DeployerRegistrationSpec_To_core_DeployerRegistrationSpec is an autogenerated conversion function.
-func Convert_v1alpha1_DeployerRegistrationSpec_To_core_DeployerRegistrationSpec(in *DeployerRegistrationSpec, out *core.DeployerRegistrationSpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DeployerRegistrationSpec_To_core_DeployerRegistrationSpec(in, out, s)
-}
-
-func autoConvert_core_DeployerRegistrationSpec_To_v1alpha1_DeployerRegistrationSpec(in *core.DeployerRegistrationSpec, out *DeployerRegistrationSpec, s conversion.Scope) error {
-	out.DeployItemTypes = *(*[]DeployItemType)(unsafe.Pointer(&in.DeployItemTypes))
-	if err := Convert_core_DeployerInstallationTemplate_To_v1alpha1_DeployerInstallationTemplate(&in.InstallationTemplate, &out.InstallationTemplate, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_DeployerRegistrationSpec_To_v1alpha1_DeployerRegistrationSpec is an autogenerated conversion function.
-func Convert_core_DeployerRegistrationSpec_To_v1alpha1_DeployerRegistrationSpec(in *core.DeployerRegistrationSpec, out *DeployerRegistrationSpec, s conversion.Scope) error {
-	return autoConvert_core_DeployerRegistrationSpec_To_v1alpha1_DeployerRegistrationSpec(in, out, s)
-}
-
-func autoConvert_v1alpha1_DeployerRegistrationStatus_To_core_DeployerRegistrationStatus(in *DeployerRegistrationStatus, out *core.DeployerRegistrationStatus, s conversion.Scope) error {
-	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
-	return nil
-}
-
-// Convert_v1alpha1_DeployerRegistrationStatus_To_core_DeployerRegistrationStatus is an autogenerated conversion function.
-func Convert_v1alpha1_DeployerRegistrationStatus_To_core_DeployerRegistrationStatus(in *DeployerRegistrationStatus, out *core.DeployerRegistrationStatus, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DeployerRegistrationStatus_To_core_DeployerRegistrationStatus(in, out, s)
-}
-
-func autoConvert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationStatus(in *core.DeployerRegistrationStatus, out *DeployerRegistrationStatus, s conversion.Scope) error {
-	out.LastError = (*Error)(unsafe.Pointer(in.LastError))
-	return nil
-}
-
-// Convert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationStatus is an autogenerated conversion function.
-func Convert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationStatus(in *core.DeployerRegistrationStatus, out *DeployerRegistrationStatus, s conversion.Scope) error {
-	return autoConvert_core_DeployerRegistrationStatus_To_v1alpha1_DeployerRegistrationStatus(in, out, s)
-}
-
 func autoConvert_v1alpha1_DiNamePair_To_core_DiNamePair(in *DiNamePair, out *core.DiNamePair, s conversion.Scope) error {
 	out.SpecName = in.SpecName
 	out.ObjectName = in.ObjectName
@@ -2101,88 +1839,6 @@ func autoConvert_core_Duration_To_v1alpha1_Duration(in *core.Duration, out *Dura
 // Convert_core_Duration_To_v1alpha1_Duration is an autogenerated conversion function.
 func Convert_core_Duration_To_v1alpha1_Duration(in *core.Duration, out *Duration, s conversion.Scope) error {
 	return autoConvert_core_Duration_To_v1alpha1_Duration(in, out, s)
-}
-
-func autoConvert_v1alpha1_Environment_To_core_Environment(in *Environment, out *core.Environment, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1alpha1_EnvironmentSpec_To_core_EnvironmentSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_Environment_To_core_Environment is an autogenerated conversion function.
-func Convert_v1alpha1_Environment_To_core_Environment(in *Environment, out *core.Environment, s conversion.Scope) error {
-	return autoConvert_v1alpha1_Environment_To_core_Environment(in, out, s)
-}
-
-func autoConvert_core_Environment_To_v1alpha1_Environment(in *core.Environment, out *Environment, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_core_EnvironmentSpec_To_v1alpha1_EnvironmentSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_Environment_To_v1alpha1_Environment is an autogenerated conversion function.
-func Convert_core_Environment_To_v1alpha1_Environment(in *core.Environment, out *Environment, s conversion.Scope) error {
-	return autoConvert_core_Environment_To_v1alpha1_Environment(in, out, s)
-}
-
-func autoConvert_v1alpha1_EnvironmentList_To_core_EnvironmentList(in *EnvironmentList, out *core.EnvironmentList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]core.Environment)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1alpha1_EnvironmentList_To_core_EnvironmentList is an autogenerated conversion function.
-func Convert_v1alpha1_EnvironmentList_To_core_EnvironmentList(in *EnvironmentList, out *core.EnvironmentList, s conversion.Scope) error {
-	return autoConvert_v1alpha1_EnvironmentList_To_core_EnvironmentList(in, out, s)
-}
-
-func autoConvert_core_EnvironmentList_To_v1alpha1_EnvironmentList(in *core.EnvironmentList, out *EnvironmentList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Environment)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_core_EnvironmentList_To_v1alpha1_EnvironmentList is an autogenerated conversion function.
-func Convert_core_EnvironmentList_To_v1alpha1_EnvironmentList(in *core.EnvironmentList, out *EnvironmentList, s conversion.Scope) error {
-	return autoConvert_core_EnvironmentList_To_v1alpha1_EnvironmentList(in, out, s)
-}
-
-func autoConvert_v1alpha1_EnvironmentSpec_To_core_EnvironmentSpec(in *EnvironmentSpec, out *core.EnvironmentSpec, s conversion.Scope) error {
-	if err := Convert_v1alpha1_TargetTemplate_To_core_TargetTemplate(&in.HostTarget, &out.HostTarget, s); err != nil {
-		return err
-	}
-	out.Namespace = in.Namespace
-	if err := Convert_v1alpha1_ClusterRestConfig_To_core_ClusterRestConfig(&in.LandscaperClusterRestConfig, &out.LandscaperClusterRestConfig, s); err != nil {
-		return err
-	}
-	out.TargetSelectors = *(*[]core.TargetSelector)(unsafe.Pointer(&in.TargetSelectors))
-	return nil
-}
-
-// Convert_v1alpha1_EnvironmentSpec_To_core_EnvironmentSpec is an autogenerated conversion function.
-func Convert_v1alpha1_EnvironmentSpec_To_core_EnvironmentSpec(in *EnvironmentSpec, out *core.EnvironmentSpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_EnvironmentSpec_To_core_EnvironmentSpec(in, out, s)
-}
-
-func autoConvert_core_EnvironmentSpec_To_v1alpha1_EnvironmentSpec(in *core.EnvironmentSpec, out *EnvironmentSpec, s conversion.Scope) error {
-	if err := Convert_core_TargetTemplate_To_v1alpha1_TargetTemplate(&in.HostTarget, &out.HostTarget, s); err != nil {
-		return err
-	}
-	out.Namespace = in.Namespace
-	if err := Convert_core_ClusterRestConfig_To_v1alpha1_ClusterRestConfig(&in.LandscaperClusterRestConfig, &out.LandscaperClusterRestConfig, s); err != nil {
-		return err
-	}
-	out.TargetSelectors = *(*[]TargetSelector)(unsafe.Pointer(&in.TargetSelectors))
-	return nil
-}
-
-// Convert_core_EnvironmentSpec_To_v1alpha1_EnvironmentSpec is an autogenerated conversion function.
-func Convert_core_EnvironmentSpec_To_v1alpha1_EnvironmentSpec(in *core.EnvironmentSpec, out *EnvironmentSpec, s conversion.Scope) error {
-	return autoConvert_core_EnvironmentSpec_To_v1alpha1_EnvironmentSpec(in, out, s)
 }
 
 func autoConvert_v1alpha1_Error_To_core_Error(in *Error, out *core.Error, s conversion.Scope) error {
@@ -3303,32 +2959,6 @@ func autoConvert_core_SyncObjectStatus_To_v1alpha1_SyncObjectStatus(in *core.Syn
 // Convert_core_SyncObjectStatus_To_v1alpha1_SyncObjectStatus is an autogenerated conversion function.
 func Convert_core_SyncObjectStatus_To_v1alpha1_SyncObjectStatus(in *core.SyncObjectStatus, out *SyncObjectStatus, s conversion.Scope) error {
 	return autoConvert_core_SyncObjectStatus_To_v1alpha1_SyncObjectStatus(in, out, s)
-}
-
-func autoConvert_v1alpha1_TLSClientConfig_To_core_TLSClientConfig(in *TLSClientConfig, out *core.TLSClientConfig, s conversion.Scope) error {
-	out.Insecure = in.Insecure
-	out.ServerName = in.ServerName
-	out.CAData = *(*[]byte)(unsafe.Pointer(&in.CAData))
-	out.NextProtos = *(*[]string)(unsafe.Pointer(&in.NextProtos))
-	return nil
-}
-
-// Convert_v1alpha1_TLSClientConfig_To_core_TLSClientConfig is an autogenerated conversion function.
-func Convert_v1alpha1_TLSClientConfig_To_core_TLSClientConfig(in *TLSClientConfig, out *core.TLSClientConfig, s conversion.Scope) error {
-	return autoConvert_v1alpha1_TLSClientConfig_To_core_TLSClientConfig(in, out, s)
-}
-
-func autoConvert_core_TLSClientConfig_To_v1alpha1_TLSClientConfig(in *core.TLSClientConfig, out *TLSClientConfig, s conversion.Scope) error {
-	out.Insecure = in.Insecure
-	out.ServerName = in.ServerName
-	out.CAData = *(*[]byte)(unsafe.Pointer(&in.CAData))
-	out.NextProtos = *(*[]string)(unsafe.Pointer(&in.NextProtos))
-	return nil
-}
-
-// Convert_core_TLSClientConfig_To_v1alpha1_TLSClientConfig is an autogenerated conversion function.
-func Convert_core_TLSClientConfig_To_v1alpha1_TLSClientConfig(in *core.TLSClientConfig, out *TLSClientConfig, s conversion.Scope) error {
-	return autoConvert_core_TLSClientConfig_To_v1alpha1_TLSClientConfig(in, out, s)
 }
 
 func autoConvert_v1alpha1_Target_To_core_Target(in *Target, out *core.Target, s conversion.Scope) error {

@@ -64,4 +64,15 @@ rules:
     - get
     - watch
     - list
+
+- apiGroups:
+  - ""
+  resources:
+  - "secrets"
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
 {{- end }}

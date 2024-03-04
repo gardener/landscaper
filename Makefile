@@ -15,7 +15,7 @@ DISABLE_CLEANUP := false
 
 .PHONY: install-requirements
 install-requirements:
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
+	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/elastic/crd-ref-docs
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
 	@go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 	@$(REPO_ROOT)/hack/install-requirements.sh
@@ -89,7 +89,6 @@ docker-images:
 	@echo "Building docker images for version $(EFFECTIVE_VERSION) / linux-amd64"
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t landscaper-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-controller .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t landscaper-webhooks-server:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-webhooks-server .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t landscaper-agent:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-agent .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-controller .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-init:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-init .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-wait:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-wait .
@@ -100,7 +99,6 @@ docker-images:
 	@echo "Building docker images for version $(EFFECTIVE_VERSION) / linux-arm64"
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t landscaper-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-controller .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t landscaper-webhooks-server:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-webhooks-server .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t landscaper-agent:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-agent .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-controller .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-init:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-init .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-wait:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-wait .

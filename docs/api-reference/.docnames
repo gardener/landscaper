@@ -1,6 +1,0 @@
-{
-  "header": "API Reference",
-  "overwrites": {
-    "core.md": "API Reference"
-  }
-}

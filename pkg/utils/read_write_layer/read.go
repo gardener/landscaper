@@ -115,12 +115,6 @@ func GetContext(ctx context.Context, c client.Reader, key client.ObjectKey, lsCo
 	return get(ctx, c, key, lsContext, readID, "context")
 }
 
-// read methods for env
-
-func GetEnv(ctx context.Context, c client.Reader, key client.ObjectKey, env *lsv1alpha1.Environment, readID ReadID) error {
-	return get(ctx, c, key, env, readID, "env")
-}
-
 // read methods for object
 func GetObject(ctx context.Context, c client.Reader, key client.ObjectKey, object client.Object, readID ReadID) error {
 	return get(ctx, c, key, object, readID, "object")
