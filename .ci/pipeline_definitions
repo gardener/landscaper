@@ -16,6 +16,7 @@ landscaper:
       verify:
         image: 'golang:1.21.5'
       ocm_build_and_publish:
+        image: europe-docker.pkg.dev/gardener-project/releases/cicd/job-image:1.2360.0
         privilege_mode: privileged
         trait_depends:
         - version
