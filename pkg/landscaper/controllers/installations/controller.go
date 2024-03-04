@@ -373,7 +373,9 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		if err != nil {
 			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
 		}
-		if err := c.ComponentsRegistry().VerifySignature(componentVersion, "Test"); err != nil {
+		signatureName := inst.Spec.Verification.SignatureName
+		publicKeyData := []byte(inst.Spec.Verification.PublicKey)
+		if err := op.ComponentsRegistry().VerifySignature(componentVersion, signatureName, publicKeyData); err != nil {
 			return nil, lserrors.NewWrappedError(err, currOp, "VerifySignature", err.Error())
 		}
 

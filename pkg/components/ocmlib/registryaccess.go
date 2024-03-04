@@ -79,7 +79,7 @@ func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion
 		return errors.New("failed casting componentVersion interface to ocm.ComponentVersion")
 	}
 
-	_, err = signing.VerifyComponentVersion(castedComponentVersion.GetOCMObject(), "acme-sig", signing.PublicKey("acme-sig", pubkey))
+	_, err = signing.VerifyComponentVersion(castedComponentVersion.GetOCMObject(), name, signing.PublicKey(name, pubkey))
 	if err != nil {
 		return fmt.Errorf("failed verifying signature: %w", err)
 	}
