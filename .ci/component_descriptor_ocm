@@ -19,11 +19,12 @@ if ! which make 1>/dev/null; then
 fi
 
 # install ocm cli
-#if ! which ocm 1>/dev/null; then
-#  curl -s https://ocm.software/install.sh | bash
-#fi
-
-curl -s https://ocm.software/install.sh | OCM_VERSION=0.6.0 bash
+OCM_VERSION=0.6.0
+if which ocm 1>/dev/null; then
+  curl -s https://ocm.software/install.sh | OCM_VERSION=${OCM_VERSION} bash -s "$(which ocm)"
+else
+  curl -s https://ocm.software/install.sh | OCM_VERSION=${OCM_VERSION} bash
+fi
 
 # start docker daemon
 launch-dockerd.sh
