@@ -21,7 +21,7 @@ fi
 # install ocm cli
 OCM_VERSION=0.6.0
 if which ocm 1>/dev/null; then
-  curl -s https://ocm.software/install.sh | OCM_VERSION=${OCM_VERSION} bash -s "$(which ocm)"
+  curl -s https://ocm.software/install.sh | OCM_VERSION=${OCM_VERSION} bash -s "$(dirname $(which ocm))"
 else
   curl -s https://ocm.software/install.sh | OCM_VERSION=${OCM_VERSION} bash
 fi
