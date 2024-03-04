@@ -12,6 +12,8 @@ import (
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/signing"
+	"github.com/open-component-model/ocm/pkg/signing/handlers/rsa"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 
@@ -64,6 +66,24 @@ func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) (mod
 		componentVersionAccess: cv,
 		componentDescriptorV2:  lscd,
 	}, nil
+}
+
+func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion, name string, pkeyData []byte) error {
+	pubkey, err := rsa.ParsePublicKey(pkeyData)
+	if err != nil {
+		return fmt.Errorf("failed parsing public key data: %w", err)
+	}
+
+	castedComponentVersion, ok := componentVersion.(*ComponentVersion)
+	if !ok {
+		return errors.New("failed casting componentVersion interface to ocm.ComponentVersion")
+	}
+
+	_, err = signing.VerifyComponentVersion(castedComponentVersion.GetOCMObject(), "acme-sig", signing.PublicKey("acme-sig", pubkey))
+	if err != nil {
+		return fmt.Errorf("failed verifying signature: %w", err)
+	}
+	return nil
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {

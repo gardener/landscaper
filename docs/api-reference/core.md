@@ -968,6 +968,18 @@ string
 </tr>
 <tr>
 <td>
+<code>verification</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Verification">
+Verification
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
 <code>componentDescriptor</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">
@@ -4500,6 +4512,18 @@ string
 </tr>
 <tr>
 <td>
+<code>verification</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Verification">
+Verification
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
 <code>componentDescriptor</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">
@@ -6620,6 +6644,54 @@ ObjectReference
 <p>
 (Members of <code>ObjectReference</code> are embedded into this type.)
 </p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.Verification">Verification
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>enabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>signatureName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>publicKey</code></br>
+<em>
+string
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>

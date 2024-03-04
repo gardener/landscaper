@@ -176,6 +176,8 @@ type InstallationSpec struct {
 	// +optional
 	Context string `json:"context,omitempty"`
 
+	Verification *Verification `json:"verification,omitempty"`
+
 	//ComponentDescriptor is a reference to the installation's component descriptor
 	// +optional
 	ComponentDescriptor *ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`
@@ -212,6 +214,12 @@ type InstallationSpec struct {
 	// Optimization contains settings to improve execution performance.
 	// +optional
 	Optimization *Optimization `json:"optimization,omitempty"`
+}
+
+type Verification struct {
+	Enabled       bool   `json:"enabled"`
+	SignatureName string `json:"signatureName"`
+	PublicKey     string `json:"publicKey"`
 }
 
 // AutomaticReconcile allows to configure automatically repeated reconciliations.

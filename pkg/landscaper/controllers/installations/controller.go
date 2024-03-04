@@ -367,6 +367,18 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
+	//TODO: verify deployment
+	if inst.Spec.Verification != nil && inst.Spec.Verification.Enabled {
+		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentDescriptorRef())
+		if err != nil {
+			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
+		}
+		if err := c.ComponentsRegistry().VerifySignature(componentVersion, "Test"); err != nil {
+			return nil, lserrors.NewWrappedError(err, currOp, "VerifySignature", err.Error())
+		}
+
+	}
+
 	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "ResolveBlueprint", err.Error())

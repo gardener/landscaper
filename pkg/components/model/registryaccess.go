@@ -13,6 +13,9 @@ import (
 
 type RegistryAccess interface {
 	GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
+
+	//TODO doc
+	VerifySignature(componentVersion ComponentVersion, name string, pkeyData []byte) error
 }
 
 // GetComponentVersionWithOverwriter is like registryAccess.GetComponentVersion, but applies the given overwrites first.

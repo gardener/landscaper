@@ -22,6 +22,12 @@ type RegistryAccess struct {
 
 var _ model.RegistryAccess = &RegistryAccess{}
 
+// VerifySignature is NOT supported in cnudie, only in OCM. Will always return error.
+// Check if ocm is used before calling this function.
+func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion, name string, pkeyData []byte) error {
+	return errors.New("VerifySignature is not supported in CNUDIE sbom")
+}
+
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (model.ComponentVersion, error) {
 	if cdRef == nil {
 		return nil, errors.New("component descriptor reference cannot be nil")

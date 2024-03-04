@@ -188,6 +188,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation":                                      schema_landscaper_apis_core_v1alpha1_TokenRotation(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes":                                    schema_landscaper_apis_core_v1alpha1_TransitionTimes(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference":                               schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.Verification":                                       schema_landscaper_apis_core_v1alpha1_Verification(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":                      schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedObjectReference":                           schema_landscaper_apis_core_v1alpha1_VersionedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":                         schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
@@ -5889,6 +5890,11 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 							Format:      "",
 						},
 					},
+					"verification": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Verification"),
+						},
+					},
 					"componentDescriptor": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ComponentDescriptor is a reference to the installation's component descriptor",
@@ -5961,7 +5967,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization", "github.com/gardener/landscaper/apis/core/v1alpha1.Verification"},
 	}
 }
 
@@ -7896,6 +7902,40 @@ func schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref common.Refere
 					},
 				},
 				Required: []string{"apiVersion", "kind", "name"},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_Verification(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Default: false,
+							Type:    []string{"boolean"},
+							Format:  "",
+						},
+					},
+					"signatureName": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"publicKey": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"enabled", "signatureName", "publicKey"},
 			},
 		},
 	}
