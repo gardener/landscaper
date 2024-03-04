@@ -131,6 +131,9 @@ type InstallationStatus struct {
 	// LastError describes the last error that occurred.
 	LastError *Error `json:"lastError,omitempty"`
 
+	// SubObjectErrors contains the errors of failed subobjects.
+	SubObjectErrors []SubObjectError `json:"subObjectErrors,omitempty"`
+
 	// SubInstCache contains the currently existing sub installations belonging to the execution. If nil undefined.
 	// +optional
 	SubInstCache *SubInstCache `json:"subInstCache,omitempty"`

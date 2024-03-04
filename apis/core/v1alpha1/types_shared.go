@@ -216,6 +216,16 @@ type Error struct {
 	Codes []ErrorCode `json:"codes,omitempty"`
 }
 
+type SubObjectError struct {
+	Error     Error       `json:"error,omitempty"`
+	SubObject []SubObject `json:"subObject,omitempty"`
+}
+
+type SubObject struct {
+	Type string `json:"type,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
 type Operation string
 
 const (
