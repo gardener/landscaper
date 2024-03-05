@@ -14,7 +14,7 @@ if [[ -z ${CODE_GEN_SCRIPT:-} ]]; then
   CODE_GEN_SCRIPT="$LOCALBIN/kube_codegen.sh"
 fi
 if [[ -z ${API_REF_GEN:-} ]]; then
-  API_REF_GEN="$LOCALBIN/gen-crd-api-reference-docs"
+  API_REF_GEN="$LOCALBIN/crd-ref-docs"
 fi
 if [[ -z ${MOCKGEN:-} ]]; then
   MOCKGEN="$LOCALBIN/mockgen"
@@ -80,11 +80,8 @@ echo "> Generating CRDs"
 go run "$PROJECT_ROOT/apis/hack/generate-schemes" --schema-dir "$PROJECT_ROOT/apis/.schemes" --crd-dir "$PROJECT_ROOT/pkg/landscaper/crdmanager/crdresources"
 
 echo
-echo "> Generating API ref"
-(
-  cd "$PROJECT_ROOT/apis/core/v1alpha1"
-  "$API_REF_GEN" -api-dir . -config "$PROJECT_ROOT/hack/api-reference/core-config.json" -template-dir "$PROJECT_ROOT/hack/api-reference/template" -out-file "$PROJECT_ROOT/docs/api-reference/core.md"
-)
+echo "> Generating API reference"
+"$API_REF_GEN" --renderer=markdown --source-path "$PROJECT_ROOT/apis/core/v1alpha1" --config "$PROJECT_ROOT/hack/api-reference/core-config.yaml" --output-path "$PROJECT_ROOT/docs/api-reference/core.md"
 
 echo
 echo "> Generating mock client"

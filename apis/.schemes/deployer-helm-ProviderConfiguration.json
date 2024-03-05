@@ -1,6 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "apis-core-AnyJSON": {
+      "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
+      "type": [
+        "object",
+        "string",
+        "number",
+        "array",
+        "boolean"
+      ]
+    },
     "apis-v2-ComponentDescriptor": {
       "description": "ComponentDescriptor defines a versioned component with a source and dependencies.",
       "type": "object",
@@ -386,16 +396,6 @@
       "description": "UnstructuredTypedObject describes a generic typed object.",
       "type": "object"
     },
-    "core-v1alpha1-AnyJSON": {
-      "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
-      "type": [
-        "object",
-        "string",
-        "number",
-        "array",
-        "boolean"
-      ]
-    },
     "core-v1alpha1-ComponentDescriptorReference": {
       "description": "ComponentDescriptorReference is the reference to a component descriptor. given an optional context.",
       "type": "object",
@@ -455,7 +455,7 @@
         }
       }
     },
-    "helm-v1alpha1-ArchiveAccess": {
+    "deployer-helm-ArchiveAccess": {
       "description": "ArchiveAccess defines the access for a helm chart as compressed archive.",
       "type": "object",
       "properties": {
@@ -465,25 +465,25 @@
         },
         "remote": {
           "description": "Remote defines the remote access for a helm chart as compressed archive.",
-          "$ref": "#/definitions/helm-v1alpha1-RemoteArchiveAccess"
+          "$ref": "#/definitions/deployer-helm-RemoteArchiveAccess"
         }
       }
     },
-    "helm-v1alpha1-Chart": {
+    "deployer-helm-Chart": {
       "description": "Chart defines the helm chart to render and apply.",
       "type": "object",
       "properties": {
         "archive": {
           "description": "Archive defines a compressed tarred helm chart as base64 encoded string.",
-          "$ref": "#/definitions/helm-v1alpha1-ArchiveAccess"
+          "$ref": "#/definitions/deployer-helm-ArchiveAccess"
         },
         "fromResource": {
           "description": "FromResource fetches the chart based on the resource's access method. The resource is defined as part of a component descriptor which is necessary to also handle local artifacts.",
-          "$ref": "#/definitions/helm-v1alpha1-RemoteChartReference"
+          "$ref": "#/definitions/deployer-helm-RemoteChartReference"
         },
         "helmChartRepo": {
           "description": "HelmChartRepo defines a reference to a chart in a helm chart repo.",
-          "$ref": "#/definitions/helm-v1alpha1-HelmChartRepo"
+          "$ref": "#/definitions/deployer-helm-HelmChartRepo"
         },
         "ref": {
           "description": "Ref defines the reference to a helm chart in a oci repository.",
@@ -495,7 +495,7 @@
         }
       }
     },
-    "helm-v1alpha1-HelmChartRepo": {
+    "deployer-helm-HelmChartRepo": {
       "description": "HelmChartRepo defines a reference to a chart in a helm chart repo",
       "type": "object",
       "properties": {
@@ -510,31 +510,31 @@
         }
       }
     },
-    "helm-v1alpha1-HelmDeploymentConfiguration": {
+    "deployer-helm-HelmDeploymentConfiguration": {
       "description": "HelmDeploymentConfiguration defines settings for a helm deployment.",
       "type": "object",
       "properties": {
         "install": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+            "$ref": "#/definitions/apis-core-AnyJSON"
           }
         },
         "uninstall": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+            "$ref": "#/definitions/apis-core-AnyJSON"
           }
         },
         "upgrade": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+            "$ref": "#/definitions/apis-core-AnyJSON"
           }
         }
       }
     },
-    "helm-v1alpha1-RemoteArchiveAccess": {
+    "deployer-helm-RemoteArchiveAccess": {
       "description": "RemoteArchiveAccess defines the remote access for a helm chart as compressed archive.",
       "type": "object",
       "properties": {
@@ -544,7 +544,7 @@
         }
       }
     },
-    "helm-v1alpha1-RemoteChartReference": {
+    "deployer-helm-RemoteChartReference": {
       "description": "RemoteChartReference defines a reference to a remote Helm chart through a Component-Descriptor",
       "type": "object",
       "required": [
@@ -837,7 +837,7 @@
       "type": "string"
     },
     "chart": {
-      "$ref": "#/definitions/helm-v1alpha1-Chart",
+      "$ref": "#/definitions/deployer-helm-Chart",
       "default": {},
       "description": "Chart defines helm chart to be templated and applied."
     },
@@ -883,7 +883,7 @@
       "type": "boolean"
     },
     "helmDeploymentConfig": {
-      "$ref": "#/definitions/helm-v1alpha1-HelmDeploymentConfiguration",
+      "$ref": "#/definitions/deployer-helm-HelmDeploymentConfiguration",
       "description": "HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true."
     },
     "kind": {
@@ -926,6 +926,6 @@
     "namespace",
     "createNamespace"
   ],
-  "title": "helm-v1alpha1-ProviderConfiguration",
+  "title": "deployer-helm-ProviderConfiguration",
   "type": "object"
 }

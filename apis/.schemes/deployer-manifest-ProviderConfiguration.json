@@ -1,6 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "core-v1alpha1-Duration": {
+      "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+      "type": "string"
+    },
     "core-v1alpha1-TypedObjectReference": {
       "description": "TypedObjectReference is a reference to a typed kubernetes object.",
       "type": "object",
@@ -35,6 +39,20 @@
     "pkg-runtime-RawExtension": {
       "description": "RawExtension is used to hold extensions in external versions.\n\nTo use this, make a field which has RawExtension as its type in your external, versioned struct, and Object in your internal struct. You also need to register your various plugin types.\n\n// Internal package:\n\n\ttype MyAPIObject struct {\n\t\truntime.TypeMeta `json:\",inline\"`\n\t\tMyPlugin runtime.Object `json:\"myPlugin\"`\n\t}\n\n\ttype PluginA struct {\n\t\tAOption string `json:\"aOption\"`\n\t}\n\n// External package:\n\n\ttype MyAPIObject struct {\n\t\truntime.TypeMeta `json:\",inline\"`\n\t\tMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n\t}\n\n\ttype PluginA struct {\n\t\tAOption string `json:\"aOption\"`\n\t}\n\n// On the wire, the JSON will look something like this:\n\n\t{\n\t\t\"kind\":\"MyAPIObject\",\n\t\t\"apiVersion\":\"v1\",\n\t\t\"myPlugin\": {\n\t\t\t\"kind\":\"PluginA\",\n\t\t\t\"aOption\":\"foo\",\n\t\t},\n\t}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into your external MyAPIObject. That causes the raw JSON to be stored, but not unpacked. The next step is to copy (using pkg/conversion) into the internal struct. The runtime package's DefaultScheme has conversion functions installed which will unpack the JSON stored in RawExtension, turning it into the correct object type, and storing it in the Object. (TODO: In the case where the object is of an unknown type, a runtime.Unknown object will be created and stored.)",
       "type": "object"
+    },
+    "utils-continuousreconcile-ContinuousReconcileSpec": {
+      "description": "ContinuousReconcileSpec represents the specification of a continuous reconcile schedule.",
+      "type": "object",
+      "properties": {
+        "cron": {
+          "description": "Cron is a standard crontab specification of the reconciliation schedule. Either Cron or Every has to be specified.",
+          "type": "string"
+        },
+        "every": {
+          "description": "Every specifies a delay after which the reconcile should happen. Either Cron or Every has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
     },
     "utils-managedresource-CustomResourceGroup": {
       "type": "object",
@@ -129,6 +147,36 @@
           "description": "Kind is the type of resource being referenced",
           "type": "string",
           "default": ""
+        }
+      }
+    },
+    "utils-managedresource-Manifest": {
+      "description": "Manifest defines a manifest that is managed by the deployer.",
+      "type": "object",
+      "properties": {
+        "annotateBeforeCreate": {
+          "description": "AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "annotateBeforeDelete": {
+          "description": "AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "manifest": {
+          "description": "Manifest defines the raw k8s manifest.",
+          "$ref": "#/definitions/pkg-runtime-RawExtension"
+        },
+        "policy": {
+          "description": "Policy defines the manage policy for that resource.",
+          "type": "string"
         }
       }
     },
@@ -282,11 +330,15 @@
       }
     }
   },
-  "description": "ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem",
+  "description": "ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem.",
   "properties": {
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "continuousReconcile": {
+      "$ref": "#/definitions/utils-continuousreconcile-ContinuousReconcileSpec",
+      "description": "ContinuousReconcile contains the schedule for continuous reconciliation."
     },
     "deletionGroups": {
       "description": "DeletionGroups defines the order in which objects are deleted.",
@@ -320,20 +372,22 @@
     "manifests": {
       "description": "Manifests contains a list of manifests that should be applied in the target cluster",
       "items": {
-        "$ref": "#/definitions/pkg-runtime-RawExtension"
+        "$ref": "#/definitions/utils-managedresource-Manifest",
+        "default": {}
       },
       "type": "array"
     },
-    "readinessChecks": {
+    "readiness": {
       "$ref": "#/definitions/utils-readinesschecks-ReadinessCheckConfiguration",
       "default": {},
       "description": "ReadinessChecks configures the readiness checks."
     },
     "updateStrategy": {
-      "description": "UpdateStrategy defines the strategy how the manifest are updated in the cluster. Defaults to \"update\".",
+      "default": "",
+      "description": "UpdateStrategy defines the strategy how the manifest are updated in the cluster.",
       "type": "string"
     }
   },
-  "title": "manifest-v1alpha1-ProviderConfiguration",
+  "title": "deployer-manifest-ProviderConfiguration",
   "type": "object"
 }

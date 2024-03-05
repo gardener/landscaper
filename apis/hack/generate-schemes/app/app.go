@@ -141,7 +141,7 @@ func ShouldCreateDefinition(exportNames []string, defName string) bool {
 }
 
 func prepareExportDir(exportDir string) error {
-	log.Printf("Prepate export dir %q", exportDir)
+	log.Printf("Prepare export dir %q", exportDir)
 	if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to to create export directory %q: %w", exportDir, err)
 	}

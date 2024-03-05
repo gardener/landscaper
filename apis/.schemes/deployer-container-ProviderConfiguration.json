@@ -569,6 +569,6 @@
       "type": "array"
     }
   },
-  "title": "container-v1alpha1-ProviderConfiguration",
+  "title": "deployer-container-ProviderConfiguration",
   "type": "object"
 }

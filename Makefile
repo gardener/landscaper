@@ -14,15 +14,6 @@ DOCKER_BUILDER_NAME := "ls-multiarch"
 DISABLE_CLEANUP := false
 ENVTEST_K8S_VERSION = 1.27
 
-<<<<<<< HEAD
-.PHONY: install-requirements
-install-requirements:
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/elastic/crd-ref-docs
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
-	@go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-	@$(REPO_ROOT)/hack/install-requirements.sh
-	@chmod +x $(REPO_ROOT)/apis/vendor/k8s.io/code-generator/*
-=======
 CODE_DIRS := $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/... $(REPO_ROOT)/hack/testcluster/... $(REPO_ROOT)/apis/... $(REPO_ROOT)/controller-utils/pkg/...
 
 ##@ General
@@ -32,7 +23,6 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Development
->>>>>>> 8a259bdfd (remove vendor folders (run-int-tests))
 
 .PHONY: revendor
 revendor: ## Runs 'go mod tidy' for all go modules in this repo.
@@ -134,8 +124,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 FORMATTER ?= $(LOCALBIN)/goimports
 LINTER ?= $(LOCALBIN)/golangci-lint
 OCM ?= $(LOCALBIN)/ocm
-HELM ?= $(LOCALBIN)/helm
-API_REF_GEN ?= $(LOCALBIN)/gen-crd-api-reference-docs
+API_REF_GEN ?= $(LOCALBIN)/crd-ref-docs
 MOCKGEN ?= $(LOCALBIN)/mockgen
 JQ ?= $(LOCALBIN)/jq
 REGISTRY_BINARY ?= $(LOCALBIN)/registry
@@ -145,7 +134,7 @@ CODE_GEN_VERSION ?= v0.29.1
 FORMATTER_VERSION ?= v0.16.0
 LINTER_VERSION ?= 1.55.2
 OCM_VERSION ?= 0.4.3
-HELM_VERSION ?= v3.13.2
+API_REF_GEN_VERSION ?= v0.0.10
 JQ_VERSION ?= 1.6
 
 .PHONY: localbin
@@ -184,10 +173,11 @@ ocm: localbin ## Install OCM CLI if necessary.
 	curl -sSfL https://ocm.software/install.sh | OCM_VERSION=$(OCM_VERSION) bash -s $(LOCALBIN) )
 
 .PHONY: api-ref-gen
-api-ref-gen: localbin ## Download api-ref-gen locally if necessary.
-	@test -s $(API_REF_GEN) || \
-	( echo "Installing API reference generator ..."; \
-	GOBIN=$(LOCALBIN) go install github.com/ahmetb/gen-crd-api-reference-docs@latest )
+api-ref-gen: localbin ## Download API reference generator locally if necessary.
+	@test -s $(API_REF_GEN) && test -s $(LOCALBIN)/crd-ref-docs_version && cat $(LOCALBIN)/crd-ref-docs_version | grep -q $(API_REF_GEN_VERSION) || \
+	( echo "Installing API reference generator $(API_REF_GEN_VERSION) ..."; \
+	GOBIN=$(LOCALBIN) go install github.com/elastic/crd-ref-docs@$(API_REF_GEN_VERSION) && \
+	echo $(API_REF_GEN_VERSION) > $(LOCALBIN)/crd-ref-docs_version )
 
 .PHONY: mockgen
 mockgen: localbin ## Download mockgen locally if necessary.
