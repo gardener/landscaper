@@ -7929,15 +7929,16 @@ func schema_landscaper_apis_core_v1alpha1_Verification(ref common.ReferenceCallb
 					},
 					"publicKey": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 				},
 				Required: []string{"enabled", "signatureName", "publicKey"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
 	}
 }
 

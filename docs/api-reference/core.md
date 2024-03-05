@@ -5414,6 +5414,10 @@ string
 <h3 id="landscaper.gardener.cloud/v1alpha1.SecretReference">SecretReference
 </h3>
 <p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Verification">Verification</a>)
+</p>
+<p>
 <p>SecretReference is reference to data in a secret.
 The secret can also be in a different namespace.</p>
 </p>
@@ -6688,7 +6692,9 @@ string
 <td>
 <code>publicKey</code></br>
 <em>
-string
+<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
+SecretReference
+</a>
 </em>
 </td>
 <td>
