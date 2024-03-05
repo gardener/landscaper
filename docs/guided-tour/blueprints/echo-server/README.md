@@ -17,7 +17,7 @@ The example uses the following resources:
   uploaded [in an OCI registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server),
 - the Docker image [hashicorp/http-echo](https://hub.docker.com/r/hashicorp/http-echo) as an external resource.
 
-All of these resources are bundled in a component. The component's configuration file is shown 
+All of these resources are bundled in a component version. The component versions's configuration file is shown 
 [here](./config-files/components.yaml).
 
 Describing required resources in a standard format (for which we use the "Open Component Model") has several advantages.
@@ -34,9 +34,9 @@ signing/verification of software components.
 The [echo-server helm chart](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/blueprints/echo-server/chart/echo-server) in this example consists of a `Deployment` and a `Service`.
 The `Deployment` uses a container image. However, instead of a hard-coded image reference in
 the [deployment.yaml](./chart/echo-server/templates/deployment.yaml), we rather maintain the image reference in the
-component. In detail, the connection is the following:
+component version. In detail, the connection is the following:
 
-- The [component](./component-archive/v2-external/component-descriptor.yaml) contains a resource with name 
+- The [component version](./component-archive/v2-external/component-descriptor.yaml) contains a resource with name 
   `echo-server-image` and a reference to the actual image:
  
   ```yaml
@@ -74,10 +74,10 @@ component. In detail, the connection is the following:
     - image: {{ .Values.image }}
   ```
   
-> **_NOTE:_** Since Kubernetes does not support OCM (yet ;) ), we need the *oci reference* of the container image, here.
-> Consequently, to actually use this component with landscaper, the container image that has to be deployed in a pod 
-> cannot be embedded into the component as a local blob (though it make sense to do so, as an intermediate step during 
-> transport of the component).
+> **_NOTE:_** Since Kubernetes does not support OCM, we need the *oci reference* of the container image, here.
+> Consequently, to actually use this component version with landscaper, the container image that has to be deployed in 
+> a pod cannot be embedded into the component as a local blob (though it make sense to do so, as an intermediate step 
+> during transport of the component).
 
 
 ## Procedure

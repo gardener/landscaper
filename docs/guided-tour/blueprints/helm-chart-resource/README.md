@@ -3,13 +3,14 @@ title: Helm Chart Component
 sidebar_position: 2
 ---
 
-# Helm Chart Resources in the Component
+# Helm Chart Resources in the Component Version
 
-Let's look at an example in which a Helm Chart is referenced from a Component.
+Let's look at an example in which a Helm Chart is referenced from a component version.
 
 For prerequisites see [here](../../README.md).
 
-## Referencing the Helm Chart without a Component
+## Referencing the Helm Chart without a Component Version
+
 The blueprint of the previous examples reference the Helm chart directly like this:
 
 ```yaml
@@ -17,25 +18,29 @@ chart:
   ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
 ```
 
-Using this oci reference, the landscaper is able to fetch the helm chart and deploy it correspondingly.
+Using this oci reference, the landscaper is able to fetch the helm chart and deploy it correspondingly. This approach 
+has the disadvantage, that the location of the chart is hidden in the blueprint which is an unknown resource type
+of OCM. Therefore, if OCM component versions are used for transport, scanning etc. such hidden artefact could not be 
+identified as part of the component version and are just skipped. A better approach is to specify such artefacts in 
+the component version itself such that they are known on the component level and just reference the artefacts in 
+the blueprint via their entries in the component descriptor of the component version. We will show this in the 
+following with the helm chart artefact.
 
 ## Referencing the Helm Chart with a Component
 
->**_CAUTION_**: Specifying the *Repository Context* directly in the *Installation* is **deprecated**. In order to be able to
-> use this feature, the *Repository Context* has to be specified in the Landscaper *[Context](../../../usage/Context.md)*. 
-
-In the [previous section](../external-blueprint/README.md), the concept of components was introduced, as an alternative
+In the [previous section](../external-blueprint/README.md), the concept of component versions was introduced, as an alternative
 means to reference the blueprints in the installation instead of having to write the blueprints directly inline into the
 installation (as it was done in the [first several examples](../../hello-world/installation/installation.yaml)). 
 
-Turns out, essentially the same technique can be used to reference helm charts from within a blueprint, as well. To do
+The same technique can be used to reference helm charts from within a blueprint, as well. To do
 this, we have to:
-- Extend the resources contained in our [component](../external-blueprint/config-files/components.yaml) by a *helm 
+- Extend the resources contained in our [component version](../external-blueprint/config-files/components.yaml) by a *helm 
 chart*. 
-- Modify the [blueprint](../external-blueprint/blueprint/blueprint.yaml) so that it references the *helm chart* resource in the component 
-instead of directly referencing the oci image location.
+- Modify the [blueprint](../external-blueprint/blueprint/blueprint.yaml) so that it references the *helm chart* resource 
+  in the component version instead of directly referencing the oci image location.
 
-The *component configuration file* for the component with the extended resources is shown [here](./config-files/components.yaml):
+The *component configuration file* for the component version with the extended resources is shown 
+[here](./config-files/components.yaml):
 
 ```yaml
 components:
@@ -85,8 +90,7 @@ components:
           helmRepository: https://example.helm.repo.com/landscaper
 ```
 
-
-Again, if you were to prefer to embed the blueprint and the helm chart in the component as a local blob, instead of an 
+Again, if you prefer to embed the blueprint and the helm chart in the component as a local blob, instead of an 
 `access:...`, you would have to specify an `input:...` as demonstrated [here](./config-files/local-blob-components.yaml). 
 The commands used to create the actual component based on the *component configuration file* and to upload this
 component to an OCI registry can be found [here](./commands/component.sh).
@@ -99,17 +103,9 @@ chart:
 ```
 
 This snippet shows a Go Templating function `getResourceKey` with a single input argument `cd://resources/helm-chart`.
-Generally, the input argument has to be of the following form:
-`cd://<keyword>/<value>/<keyword>/<value>/...`  
-with the **keywords** `componentReferences` and `resources`. Thereby, the input argument specifies a path expression
-based on the component referenced in the installation. Since in our case, the helm chart resource is part of the
-component referenced in our installation, no `componentReferences` have to be specified. 
-
-> **_NOTE:_** The result of the Go Templating with the `getResourceKey` is a key string. For now, this resource key is 
-> merely a base64 encoded global resource identity (= component name, component version and the resource identity, which 
-> consists at least of the resource name). This information might be useful for debugging purposes.  
-> **But since this will likely change in the future, for all intends and purposes BUT debugging, you should view the
-> *resource key* as an opaque key!**
+The input argument specifies the resource with the name `helm-chart` of the component descriptor of the component version. 
+The result of the Go Templating of this expression is the access data to the helm chart as specified in the component 
+descriptor.
 
 As this function uses [ocm](https://ocm.software/) to fetch the corresponding resource, you can even switch the
 storage technology (more often referred to as access type in the context of ocm) - thus, e.g. store the helm chart in a
@@ -118,7 +114,7 @@ the access in the corresponding component version).
 
 >**_NOTE:_** 
 > Theoretically, it is possible that the name of a *component reference* or a *resource* is not sufficient to uniquely
-> identify them within a component. The [ocm specification](https://github.com/open-component-model/ocm-spec/blob/main/doc/01-model/03-elements-sub.md#identifiers)  
+> identify them within a component version. The [ocm specification](https://github.com/open-component-model/ocm-spec/blob/main/doc/01-model/03-elements-sub.md#identifiers)  
 > defines that the identity of references as well as resources may optionally also contain a *version* and an 
 > *extraId entity* (see following [component configuration file](https://ocm.software/docs/guides/getting-started-with-ocm/#all-in-one) 
 > as an [example](./assets/components.yaml)).

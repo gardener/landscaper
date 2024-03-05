@@ -14,16 +14,16 @@ config maps with specific data to a variable number of target clusters, but it u
 
 ## Example description
 
-This example presents again a component, which gets as input a map of targets and a data object containing
+This example presents again a component version, which gets as input a map of targets and a data object containing
 configuration data for every input target. The import data are forwarded to a Subinstallation.  
 For every input target, the Subinstallation creates a DeployItem which deploys a config map with the right data.
 
-The example component is stored 
+The example component version is stored 
 [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-subinst). 
-If you want to upload the component to another registry, you can just adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/03-multiple-subinst/component/commands/settings) 
-file and execute the component build and upload script [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/03-multiple-subinst/component/commands/component.sh).
+If you want to upload the component version to another registry, you can just adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/03-multiple-subinst/component/commands/settings) 
+file and execute the component version build and upload script [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/03-multiple-subinst/component/commands/component.sh).
 
-The component itself is specified here:
+The component version itself is specified here:
   - [component configuration](component/components.yaml)
   - [blueprints](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/03-multiple-subinst/component/blueprint) 
 
