@@ -12,6 +12,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(realpath $(dirname $0)/..)"
+export PROJECT_ROOT
 
 PR_ID=$1
 export PR_ID
