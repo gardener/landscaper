@@ -15,11 +15,11 @@ source "$PROJECT_ROOT/.ci/ensure-go"
   cd "$PROJECT_ROOT"
   make format generate-docs
 
-  if [ -z "$(git status --porcelain=v1)" ]; then
+  git add "*.go" docs/README.md
+  if ! git status --porcelain=v1 | grep -e '^M\s\s' 1>/dev/null; then
     echo "nothing to commit"
     exit 0
   fi
 
-  git add "*.go" docs/README.md
   git commit -m "[ci skip] formatting and documentation index"
 )
