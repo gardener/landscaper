@@ -26,6 +26,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	lutil "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
@@ -374,7 +375,12 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
 		}
 		signatureName := inst.Spec.Verification.SignatureName
-		publicKeyData := []byte(inst.Spec.Verification.PublicKey)
+
+		_, publicKeyData, _, err := lutil.ResolveSecretReference(ctx, c.hostUncachedClient, &inst.Spec.Verification.PublicKeySecretReference)
+		if err != nil {
+			return nil, lserrors.NewWrappedError(err, currOp, "GetPublicKeyFromSecretReference", err.Error())
+		}
+
 		if err := op.ComponentsRegistry().VerifySignature(componentVersion, signatureName, publicKeyData); err != nil {
 			return nil, lserrors.NewWrappedError(err, currOp, "VerifySignature", err.Error())
 		}
