@@ -1,5 +1,5 @@
 # Path to the kubeconfig of the Landscaper resource cluster
-LS_DATA_KUBECONFIG=/Users/D040602/tmp/kubes_bkp/kubeconfig-canary-hubforplay-d040602-13.yaml
+LS_DATA_KUBECONFIG=...
 
 # Path to the kubeconfig of the target cluster
-TARGET_KUBECONFIG=/Users/D040602/tmp/kubes_bkp/kubeconfig-canary-hubforplay-d040602-13.yaml
+TARGET_KUBECONFIG=...
