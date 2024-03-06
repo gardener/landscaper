@@ -5,7 +5,8 @@
 landscaper:
   template: 'default'
   base_definition:
-    repo: ~
+    repo:
+      disable_ci_skip: True
     traits:
       version:
         preprocess: 'inject-commit-hash'

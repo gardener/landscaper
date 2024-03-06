@@ -20,6 +20,6 @@ source "$PROJECT_ROOT/.ci/ensure-go"
     exit 0
   fi
 
-  git add --all
+  git add "*.go" docs/README.md
   git commit -m "[ci skip] formatting and documentation index"
 )
