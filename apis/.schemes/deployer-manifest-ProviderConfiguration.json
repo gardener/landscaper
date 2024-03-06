@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "core-v1alpha1-Duration": {
+      "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+      "type": "string"
+    },
+    "core-v1alpha1-TypedObjectReference": {
+      "description": "TypedObjectReference is a reference to a typed kubernetes object.",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the type of resource being referenced",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "pkg-runtime-RawExtension": {
+      "description": "RawExtension is used to hold extensions in external versions.\n\nTo use this, make a field which has RawExtension as its type in your external, versioned struct, and Object in your internal struct. You also need to register your various plugin types.\n\n// Internal package:\n\n\ttype MyAPIObject struct {\n\t\truntime.TypeMeta `json:\",inline\"`\n\t\tMyPlugin runtime.Object `json:\"myPlugin\"`\n\t}\n\n\ttype PluginA struct {\n\t\tAOption string `json:\"aOption\"`\n\t}\n\n// External package:\n\n\ttype MyAPIObject struct {\n\t\truntime.TypeMeta `json:\",inline\"`\n\t\tMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n\t}\n\n\ttype PluginA struct {\n\t\tAOption string `json:\"aOption\"`\n\t}\n\n// On the wire, the JSON will look something like this:\n\n\t{\n\t\t\"kind\":\"MyAPIObject\",\n\t\t\"apiVersion\":\"v1\",\n\t\t\"myPlugin\": {\n\t\t\t\"kind\":\"PluginA\",\n\t\t\t\"aOption\":\"foo\",\n\t\t},\n\t}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into your external MyAPIObject. That causes the raw JSON to be stored, but not unpacked. The next step is to copy (using pkg/conversion) into the internal struct. The runtime package's DefaultScheme has conversion functions installed which will unpack the JSON stored in RawExtension, turning it into the correct object type, and storing it in the Object. (TODO: In the case where the object is of an unknown type, a runtime.Unknown object will be created and stored.)",
+      "type": "object"
+    },
+    "utils-continuousreconcile-ContinuousReconcileSpec": {
+      "description": "ContinuousReconcileSpec represents the specification of a continuous reconcile schedule.",
+      "type": "object",
+      "properties": {
+        "cron": {
+          "description": "Cron is a standard crontab specification of the reconciliation schedule. Either Cron or Every has to be specified.",
+          "type": "string"
+        },
+        "every": {
+          "description": "Every specifies a delay after which the reconcile should happen. Either Cron or Every has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
+    },
+    "utils-managedresource-CustomResourceGroup": {
+      "type": "object",
+      "properties": {
+        "deleteAllResources": {
+          "type": "boolean"
+        },
+        "forceDelete": {
+          "type": "boolean"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-managedresource-ResourceType"
+          }
+        }
+      }
+    },
+    "utils-managedresource-DeletionGroupDefinition": {
+      "type": "object",
+      "properties": {
+        "customResourceGroup": {
+          "$ref": "#/definitions/utils-managedresource-CustomResourceGroup"
+        },
+        "predefinedResourceGroup": {
+          "$ref": "#/definitions/utils-managedresource-PredefinedResourceGroup"
+        }
+      }
+    },
+    "utils-managedresource-Export": {
+      "description": "Export describes one export that is read from a resource.",
+      "type": "object",
+      "required": [
+        "key",
+        "jsonPath"
+      ],
+      "properties": {
+        "fromObjectRef": {
+          "description": "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
+          "$ref": "#/definitions/utils-managedresource-FromObjectReference"
+        },
+        "fromResource": {
+          "description": "FromResource specifies the name of the resource where the value should be read.",
+          "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+        },
+        "jsonPath": {
+          "description": "JSONPath is the jsonpath to look for a value. The JSONPath root is the referenced resource",
+          "type": "string",
+          "default": ""
+        },
+        "key": {
+          "description": "Key is the key that the value from JSONPath is exported to.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "utils-managedresource-Exports": {
+      "description": "Exports describes one export that is read from a resource.",
+      "type": "object",
+      "properties": {
+        "exports": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-managedresource-Export"
+          }
+        }
+      }
+    },
+    "utils-managedresource-FromObjectReference": {
+      "description": "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "jsonPath"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+          "type": "string",
+          "default": ""
+        },
+        "jsonPath": {
+          "description": "JSONPath is the jsonpath to look for a value. The JSONPath root is the referenced resource",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the type of resource being referenced",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "utils-managedresource-Manifest": {
+      "description": "Manifest defines a manifest that is managed by the deployer.",
+      "type": "object",
+      "properties": {
+        "annotateBeforeCreate": {
+          "description": "AnnotateBeforeCreate defines annotations that are being set before the manifest is being created.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "annotateBeforeDelete": {
+          "description": "AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "manifest": {
+          "description": "Manifest defines the raw k8s manifest.",
+          "$ref": "#/definitions/pkg-runtime-RawExtension"
+        },
+        "policy": {
+          "description": "Policy defines the manage policy for that resource.",
+          "type": "string"
+        }
+      }
+    },
+    "utils-managedresource-PredefinedResourceGroup": {
+      "type": "object",
+      "properties": {
+        "forceDelete": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "utils-managedresource-ResourceType": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "utils-readinesschecks-CustomReadinessCheckConfiguration": {
+      "description": "CustomReadinessCheckConfiguration contains the configuration for a custom readiness check",
+      "type": "object",
+      "required": [
+        "name",
+        "requirements"
+      ],
+      "properties": {
+        "disabled": {
+          "description": "Disabled deactivates this custom ReadinessCheck",
+          "type": "boolean"
+        },
+        "labelSelector": {
+          "description": "Labels are the labels used to identify multiple resources that can be identified by a unique set of labels",
+          "$ref": "#/definitions/utils-readinesschecks-LabelSelectorSpec"
+        },
+        "name": {
+          "description": "Name is the name of the ReadinessCheck",
+          "type": "string",
+          "default": ""
+        },
+        "requirements": {
+          "description": "Requirements is the actual readiness check which compares an object's property to a value",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-readinesschecks-RequirementSpec"
+          }
+        },
+        "resourceSelector": {
+          "description": "Resource is the resource for which the readiness check should be applied, used for single resources that can be identified by namespace and name",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+          }
+        }
+      }
+    },
+    "utils-readinesschecks-LabelSelectorSpec": {
+      "description": "LabelSelectorSpec contains paramters used to select objects by their labels",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "matchLabels"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the API version of the object to be selected by labels",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the Kind of the object to be selected by labels",
+          "type": "string",
+          "default": ""
+        },
+        "matchLabels": {
+          "description": "Labels are the labels used to identify multiple resources of the given kind",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "utils-readinesschecks-ReadinessCheckConfiguration": {
+      "description": "ReadinessCheckConfiguration contains the configuration for readiness checks.",
+      "type": "object",
+      "properties": {
+        "custom": {
+          "description": "CustomReadinessChecks is a set of custom readiness check configurations",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-readinesschecks-CustomReadinessCheckConfiguration"
+          }
+        },
+        "disableDefault": {
+          "description": "DisableDefault allows to disable the default readiness checks.",
+          "type": "boolean"
+        }
+      }
+    },
+    "utils-readinesschecks-RequirementSpec": {
+      "description": "RequirementSpec contains the requirements an object must meet to pass the custom readiness check",
+      "type": "object",
+      "required": [
+        "jsonPath",
+        "operator"
+      ],
+      "properties": {
+        "jsonPath": {
+          "description": "JsonPath is the path of the field of the Kubernetes object to be checked (without braces)",
+          "type": "string",
+          "default": ""
+        },
+        "operator": {
+          "description": "Operator is the operator that should be used for the check can be any of these Kubernetes selection operators: DoesNotExist, Exists, Equals, DoubleEquals, NotEquals, In, NotIn",
+          "type": "string",
+          "default": ""
+        },
+        "values": {
+          "description": "In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pkg-runtime-RawExtension"
+          }
+        }
+      }
+    }
+  },
+  "description": "ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem.",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "continuousReconcile": {
+      "$ref": "#/definitions/utils-continuousreconcile-ContinuousReconcileSpec",
+      "description": "ContinuousReconcile contains the schedule for continuous reconciliation."
+    },
+    "deletionGroups": {
+      "description": "DeletionGroups defines the order in which objects are deleted.",
+      "items": {
+        "$ref": "#/definitions/utils-managedresource-DeletionGroupDefinition",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "deletionGroupsDuringUpdate": {
+      "description": "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+      "items": {
+        "$ref": "#/definitions/utils-managedresource-DeletionGroupDefinition",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "exports": {
+      "$ref": "#/definitions/utils-managedresource-Exports",
+      "description": "Exports describe the exports from the templated manifests that should be exported by the helm deployer."
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "kubeconfig": {
+      "default": "",
+      "description": "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
+      "type": "string"
+    },
+    "manifests": {
+      "description": "Manifests contains a list of manifests that should be applied in the target cluster",
+      "items": {
+        "$ref": "#/definitions/utils-managedresource-Manifest",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "readiness": {
+      "$ref": "#/definitions/utils-readinesschecks-ReadinessCheckConfiguration",
+      "default": {},
+      "description": "ReadinessChecks configures the readiness checks."
+    },
+    "updateStrategy": {
+      "default": "",
+      "description": "UpdateStrategy defines the strategy how the manifest are updated in the cluster.",
+      "type": "string"
+    }
+  },
+  "title": "deployer-manifest-ProviderConfiguration",
+  "type": "object"
+}

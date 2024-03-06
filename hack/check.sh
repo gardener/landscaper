@@ -4,37 +4,69 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -e
+set -euo pipefail
+
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
+
+if [[ -z ${LOCALBIN:-} ]]; then
+  LOCALBIN="$PROJECT_ROOT/bin"
+fi
+if [[ -z ${LINTER:-} ]]; then
+  LINTER="$LOCALBIN/golangci-lint"
+fi
 
 GOLANGCI_LINT_CONFIG_FILE=""
 
+landscaper_module_paths=()
+apis_module_paths=()
+controller_utils_module_paths=()
 for arg in "$@"; do
   case $arg in
     --golangci-lint-config=*)
-    GOLANGCI_LINT_CONFIG_FILE="-c ${arg#*=}"
-    shift
-    ;;
+      GOLANGCI_LINT_CONFIG_FILE="-c ${arg#*=}"
+      shift
+      ;;
+    $PROJECT_ROOT/apis/*)
+      apis_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/apis" "$arg")")
+      ;;
+    $PROJECT_ROOT/controller-utils/*)
+      controller_utils_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/controller-utils" "$arg")")
+      ;;
+    *)
+      landscaper_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT" "$arg")")
+      ;;
   esac
 done
 
 echo "> Check"
 
-echo "Executing golangci-lint"
-golangci-lint run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m $@
+echo "apis module: ${apis_module_paths[@]}"
+(
+  cd "$PROJECT_ROOT/apis"
+  echo "  Executing golangci-lint"
+  "$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${apis_module_paths[@]}"
+  echo "  Executing go vet"
+  go vet "${apis_module_paths[@]}"
+)
 
-echo "Executing go vet"
-go vet -mod=vendor $@
+echo "controller-utils module: ${controller_utils_module_paths[@]}"
+(
+  cd "$PROJECT_ROOT/controller-utils"
+  echo "  Executing golangci-lint"
+  "$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${controller_utils_module_paths[@]}"
+  echo "  Executing go vet"
+  go vet "${controller_utils_module_paths[@]}"
+)
 
-echo "Executing gofmt"
-folders=()
-for f in $@; do
-  folders+=( "$(echo $f | sed 's/\(.*\)\/\.\.\./\1/')" )
-done
-unformatted_files="$(goimports -l -local=github.com/gardener/landscaper ${folders[*]})"
-if [[ "$unformatted_files" ]]; then
-  echo "Unformatted files detected:"
-  echo "$unformatted_files"
-  exit 1
+echo "root module: ${landscaper_module_paths[@]}"
+echo "  Executing golangci-lint"
+"$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${landscaper_module_paths[@]}"
+echo "  Executing go vet"
+go vet "${landscaper_module_paths[@]}"
+
+if [[ ${SKIP_FORMATTING_CHECK:-"false"} == "false" ]]; then
+  echo "Checking formatting"
+  "$PROJECT_ROOT/hack/format.sh" --verify "$@"
 fi
 
 echo "All checks successful"

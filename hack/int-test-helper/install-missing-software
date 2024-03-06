@@ -43,7 +43,7 @@ if ! command -v helm &> /dev/null
 then
     echo "Helm could not be found"
     echo "Try installing it..."
-    export DESIRED_VERSION="v3.8.1"
+    export DESIRED_VERSION="v3.13.2"
     curl -sS https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 

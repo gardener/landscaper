@@ -96,6 +96,10 @@
             "$ref": "#/definitions/apis-v2-ComponentReference"
           }
         },
+        "creationTime": {
+          "description": "CreationTime defines the datetime the component was created",
+          "type": "string"
+        },
         "labels": {
           "description": "Labels defines an optional set of additional labels describing the object.",
           "type": "array",
@@ -820,7 +824,6 @@
           "description": "In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.",
           "type": "array",
           "items": {
-            "default": {},
             "$ref": "#/definitions/pkg-runtime-RawExtension"
           }
         }

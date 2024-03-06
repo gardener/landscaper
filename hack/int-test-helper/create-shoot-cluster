@@ -22,7 +22,7 @@ SOURCE_PATH="$(pwd)"
 
 echo "Run create Gardener shoot cluster in ${SOURCE_PATH}"
 
-go run -mod=vendor ./hack/testcluster shootcluster create \
+go run ./hack/testcluster shootcluster create \
     --kubeconfig=$GARDENER_KUBECONFIG_PATH \
     --namespace=$NAMESPACE \
     --cluster-auth=$TMP \

@@ -8,13 +8,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gardener/landscaper/apis/hack/generate-schemes/generators"
-	lsschema "github.com/gardener/landscaper/apis/schema"
 	"github.com/go-openapi/jsonreference"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/kube-openapi/pkg/common"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 	"sigs.k8s.io/yaml"
+
+	"github.com/gardener/landscaper/apis/hack/generate-schemes/generators"
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 type (
@@ -140,7 +141,7 @@ func ShouldCreateDefinition(exportNames []string, defName string) bool {
 }
 
 func prepareExportDir(exportDir string) error {
-	log.Printf("Prepate export dir %q", exportDir)
+	log.Printf("Prepare export dir %q", exportDir)
 	if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to to create export directory %q: %w", exportDir, err)
 	}

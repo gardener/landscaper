@@ -10,7 +10,7 @@ import (
 )
 
 type PackageVersionName struct {
-	Name string
+	Name    string
 	Version string
 	Package string
 }
@@ -22,8 +22,8 @@ func ParsePackageVersionName(name string) PackageVersionName {
 	if len(splitName) < 2 {
 		panic(fmt.Errorf("a component name must consits of at least a package identifier and a name.version but got %s", name))
 	}
-	versionName := splitName[len(splitName) - 1]
-	packageName := splitName[len(splitName) - 2]
+	versionName := splitName[len(splitName)-1]
+	packageName := splitName[len(splitName)-2]
 
 	versionNameSplit := strings.Split(versionName, ".")
 	if len(versionNameSplit) != 2 {
@@ -31,7 +31,7 @@ func ParsePackageVersionName(name string) PackageVersionName {
 	}
 	return PackageVersionName{
 		Package: packageName,
-		Name: versionNameSplit[1],
+		Name:    versionNameSplit[1],
 		Version: versionNameSplit[0],
 	}
 }

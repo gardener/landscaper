@@ -1,0 +1,931 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "apis-core-AnyJSON": {
+      "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
+      "type": [
+        "object",
+        "string",
+        "number",
+        "array",
+        "boolean"
+      ]
+    },
+    "apis-v2-ComponentDescriptor": {
+      "description": "ComponentDescriptor defines a versioned component with a source and dependencies.",
+      "type": "object",
+      "required": [
+        "meta",
+        "component"
+      ],
+      "properties": {
+        "component": {
+          "description": "Spec contains the specification of the component.",
+          "default": {},
+          "$ref": "#/definitions/apis-v2-ComponentSpec"
+        },
+        "meta": {
+          "description": "Metadata specifies the schema version of the component.",
+          "default": {},
+          "$ref": "#/definitions/apis-v2-Metadata"
+        },
+        "signatures": {
+          "description": "Signatures contains a list of signatures for the ComponentDescriptor",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Signature"
+          }
+        }
+      }
+    },
+    "apis-v2-ComponentReference": {
+      "description": "ComponentReference describes the reference to another component in the registry.",
+      "type": "object",
+      "required": [
+        "name",
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "componentName": {
+          "description": "ComponentName describes the remote name of the referenced object",
+          "type": "string",
+          "default": ""
+        },
+        "digest": {
+          "description": "Digest is the optional digest of the referenced component.",
+          "$ref": "#/definitions/apis-v2-DigestSpec"
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-ComponentSpec": {
+      "description": "ComponentSpec defines a virtual component with a repository context, source and dependencies.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "repositoryContexts",
+        "provider",
+        "sources",
+        "componentReferences",
+        "resources"
+      ],
+      "properties": {
+        "componentReferences": {
+          "description": "ComponentReferences references component dependencies that can be resolved in the current context.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-ComponentReference"
+          }
+        },
+        "creationTime": {
+          "description": "CreationTime defines the datetime the component was created",
+          "type": "string"
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "provider": {
+          "description": "Provider defines the provider type of a component. It can be external or internal.",
+          "type": "string",
+          "default": ""
+        },
+        "repositoryContexts": {
+          "description": "RepositoryContexts defines the previous repositories of the component",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
+          }
+        },
+        "resources": {
+          "description": "Resources defines all resources that are created by the component and by a third party.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Resource"
+          }
+        },
+        "sources": {
+          "description": "Sources defines sources that produced the component",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Source"
+          }
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-DigestSpec": {
+      "description": "DigestSpec defines a digest.",
+      "type": "object",
+      "required": [
+        "hashAlgorithm",
+        "normalisationAlgorithm",
+        "value"
+      ],
+      "properties": {
+        "hashAlgorithm": {
+          "type": "string",
+          "default": ""
+        },
+        "normalisationAlgorithm": {
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Label": {
+      "description": "Label is a label that can be set on objects.",
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name is the unique name of the label.",
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "description": "Value is the json/yaml data of the label",
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "apis-v2-Metadata": {
+      "description": "Metadata defines the metadata of the component descriptor.",
+      "type": "object",
+      "required": [
+        "schemaVersion"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "description": "Version is the schema version of the component descriptor.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Resource": {
+      "description": "Resource describes a resource dependency of a component.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "type",
+        "access"
+      ],
+      "properties": {
+        "access": {
+          "description": "Access describes the type specific method to access the defined resource.",
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
+        },
+        "digest": {
+          "description": "Digest is the optional digest of the referenced resource.",
+          "$ref": "#/definitions/apis-v2-DigestSpec"
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "relation": {
+          "description": "Relation describes the relation of the resource to the component. Can be a local or external resource",
+          "type": "string"
+        },
+        "srcRef": {
+          "description": "SourceRef defines a list of source names. These names reference the sources defines in `component.sources`.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-SourceRef"
+          }
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Signature": {
+      "description": "Signature defines a digest and corresponding signature, identifyable by name.",
+      "type": "object",
+      "required": [
+        "name",
+        "digest",
+        "signature"
+      ],
+      "properties": {
+        "digest": {
+          "default": {},
+          "$ref": "#/definitions/apis-v2-DigestSpec"
+        },
+        "name": {
+          "type": "string",
+          "default": ""
+        },
+        "signature": {
+          "default": {},
+          "$ref": "#/definitions/apis-v2-SignatureSpec"
+        }
+      }
+    },
+    "apis-v2-SignatureSpec": {
+      "description": "SignatureSpec defines a signature.",
+      "type": "object",
+      "required": [
+        "algorithm",
+        "value",
+        "mediaType"
+      ],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "default": ""
+        },
+        "mediaType": {
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Source": {
+      "description": "Source is the definition of a component's source.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "type",
+        "access"
+      ],
+      "properties": {
+        "access": {
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-SourceRef": {
+      "description": "SourceRef defines a reference to a source",
+      "type": "object",
+      "properties": {
+        "identitySelector": {
+          "description": "IdentitySelector defines the identity that is used to match a source.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        }
+      }
+    },
+    "apis-v2-UnstructuredTypedObject": {
+      "description": "UnstructuredTypedObject describes a generic typed object.",
+      "type": "object"
+    },
+    "core-v1alpha1-ComponentDescriptorReference": {
+      "description": "ComponentDescriptorReference is the reference to a component descriptor. given an optional context.",
+      "type": "object",
+      "required": [
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "componentName": {
+          "description": "ComponentName defines the unique of the component containing the resource.",
+          "type": "string",
+          "default": ""
+        },
+        "repositoryContext": {
+          "description": "RepositoryContext defines the context of the component repository to resolve blueprints.",
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
+        },
+        "version": {
+          "description": "Version defines the version of the component.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-Duration": {
+      "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+      "type": "string"
+    },
+    "core-v1alpha1-TypedObjectReference": {
+      "description": "TypedObjectReference is a reference to a typed kubernetes object.",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the type of resource being referenced",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "deployer-helm-ArchiveAccess": {
+      "description": "ArchiveAccess defines the access for a helm chart as compressed archive.",
+      "type": "object",
+      "properties": {
+        "raw": {
+          "description": "Raw defines a compressed tarred helm chart as base64 encoded string.",
+          "type": "string"
+        },
+        "remote": {
+          "description": "Remote defines the remote access for a helm chart as compressed archive.",
+          "$ref": "#/definitions/deployer-helm-RemoteArchiveAccess"
+        }
+      }
+    },
+    "deployer-helm-Chart": {
+      "description": "Chart defines the helm chart to render and apply.",
+      "type": "object",
+      "properties": {
+        "archive": {
+          "description": "Archive defines a compressed tarred helm chart as base64 encoded string.",
+          "$ref": "#/definitions/deployer-helm-ArchiveAccess"
+        },
+        "fromResource": {
+          "description": "FromResource fetches the chart based on the resource's access method. The resource is defined as part of a component descriptor which is necessary to also handle local artifacts.",
+          "$ref": "#/definitions/deployer-helm-RemoteChartReference"
+        },
+        "helmChartRepo": {
+          "description": "HelmChartRepo defines a reference to a chart in a helm chart repo.",
+          "$ref": "#/definitions/deployer-helm-HelmChartRepo"
+        },
+        "ref": {
+          "description": "Ref defines the reference to a helm chart in a oci repository.",
+          "type": "string"
+        },
+        "resourceRef": {
+          "description": "ResourceKey defines a key that can be given to a corresponding API in order to fetch the content of the resource defined in the blueprint",
+          "type": "string"
+        }
+      }
+    },
+    "deployer-helm-HelmChartRepo": {
+      "description": "HelmChartRepo defines a reference to a chart in a helm chart repo",
+      "type": "object",
+      "properties": {
+        "helmChartName": {
+          "type": "string"
+        },
+        "helmChartRepoUrl": {
+          "type": "string"
+        },
+        "helmChartVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "deployer-helm-HelmDeploymentConfiguration": {
+      "description": "HelmDeploymentConfiguration defines settings for a helm deployment.",
+      "type": "object",
+      "properties": {
+        "install": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/apis-core-AnyJSON"
+          }
+        },
+        "uninstall": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/apis-core-AnyJSON"
+          }
+        },
+        "upgrade": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/apis-core-AnyJSON"
+          }
+        }
+      }
+    },
+    "deployer-helm-RemoteArchiveAccess": {
+      "description": "RemoteArchiveAccess defines the remote access for a helm chart as compressed archive.",
+      "type": "object",
+      "properties": {
+        "url": {
+          "description": "URL defines a compressed tarred helm chart that is fetched from a url.",
+          "type": "string"
+        }
+      }
+    },
+    "deployer-helm-RemoteChartReference": {
+      "description": "RemoteChartReference defines a reference to a remote Helm chart through a Component-Descriptor",
+      "type": "object",
+      "required": [
+        "resourceName"
+      ],
+      "properties": {
+        "inline": {
+          "description": "InlineDescriptorReference defines an inline component descriptor",
+          "$ref": "#/definitions/apis-v2-ComponentDescriptor"
+        },
+        "ref": {
+          "description": "ComponentDescriptorReference is the reference to a component descriptor",
+          "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorReference"
+        },
+        "resourceName": {
+          "description": "ResourceName is the name of the Helm chart as defined by a component descriptor.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "pkg-runtime-RawExtension": {
+      "description": "RawExtension is used to hold extensions in external versions.\n\nTo use this, make a field which has RawExtension as its type in your external, versioned struct, and Object in your internal struct. You also need to register your various plugin types.\n\n// Internal package:\n\n\ttype MyAPIObject struct {\n\t\truntime.TypeMeta `json:\",inline\"`\n\t\tMyPlugin runtime.Object `json:\"myPlugin\"`\n\t}\n\n\ttype PluginA struct {\n\t\tAOption string `json:\"aOption\"`\n\t}\n\n// External package:\n\n\ttype MyAPIObject struct {\n\t\truntime.TypeMeta `json:\",inline\"`\n\t\tMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n\t}\n\n\ttype PluginA struct {\n\t\tAOption string `json:\"aOption\"`\n\t}\n\n// On the wire, the JSON will look something like this:\n\n\t{\n\t\t\"kind\":\"MyAPIObject\",\n\t\t\"apiVersion\":\"v1\",\n\t\t\"myPlugin\": {\n\t\t\t\"kind\":\"PluginA\",\n\t\t\t\"aOption\":\"foo\",\n\t\t},\n\t}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into your external MyAPIObject. That causes the raw JSON to be stored, but not unpacked. The next step is to copy (using pkg/conversion) into the internal struct. The runtime package's DefaultScheme has conversion functions installed which will unpack the JSON stored in RawExtension, turning it into the correct object type, and storing it in the Object. (TODO: In the case where the object is of an unknown type, a runtime.Unknown object will be created and stored.)",
+      "type": "object"
+    },
+    "utils-continuousreconcile-ContinuousReconcileSpec": {
+      "description": "ContinuousReconcileSpec represents the specification of a continuous reconcile schedule.",
+      "type": "object",
+      "properties": {
+        "cron": {
+          "description": "Cron is a standard crontab specification of the reconciliation schedule. Either Cron or Every has to be specified.",
+          "type": "string"
+        },
+        "every": {
+          "description": "Every specifies a delay after which the reconcile should happen. Either Cron or Every has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
+    },
+    "utils-managedresource-CustomResourceGroup": {
+      "type": "object",
+      "properties": {
+        "deleteAllResources": {
+          "type": "boolean"
+        },
+        "forceDelete": {
+          "type": "boolean"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-managedresource-ResourceType"
+          }
+        }
+      }
+    },
+    "utils-managedresource-DeletionGroupDefinition": {
+      "type": "object",
+      "properties": {
+        "customResourceGroup": {
+          "$ref": "#/definitions/utils-managedresource-CustomResourceGroup"
+        },
+        "predefinedResourceGroup": {
+          "$ref": "#/definitions/utils-managedresource-PredefinedResourceGroup"
+        }
+      }
+    },
+    "utils-managedresource-Export": {
+      "description": "Export describes one export that is read from a resource.",
+      "type": "object",
+      "required": [
+        "key",
+        "jsonPath"
+      ],
+      "properties": {
+        "fromObjectRef": {
+          "description": "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
+          "$ref": "#/definitions/utils-managedresource-FromObjectReference"
+        },
+        "fromResource": {
+          "description": "FromResource specifies the name of the resource where the value should be read.",
+          "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+        },
+        "jsonPath": {
+          "description": "JSONPath is the jsonpath to look for a value. The JSONPath root is the referenced resource",
+          "type": "string",
+          "default": ""
+        },
+        "key": {
+          "description": "Key is the key that the value from JSONPath is exported to.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "utils-managedresource-Exports": {
+      "description": "Exports describes one export that is read from a resource.",
+      "type": "object",
+      "properties": {
+        "exports": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-managedresource-Export"
+          }
+        }
+      }
+    },
+    "utils-managedresource-FromObjectReference": {
+      "description": "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "jsonPath"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+          "type": "string",
+          "default": ""
+        },
+        "jsonPath": {
+          "description": "JSONPath is the jsonpath to look for a value. The JSONPath root is the referenced resource",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the type of resource being referenced",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "utils-managedresource-PredefinedResourceGroup": {
+      "type": "object",
+      "properties": {
+        "forceDelete": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "utils-managedresource-ResourceType": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "utils-readinesschecks-CustomReadinessCheckConfiguration": {
+      "description": "CustomReadinessCheckConfiguration contains the configuration for a custom readiness check",
+      "type": "object",
+      "required": [
+        "name",
+        "requirements"
+      ],
+      "properties": {
+        "disabled": {
+          "description": "Disabled deactivates this custom ReadinessCheck",
+          "type": "boolean"
+        },
+        "labelSelector": {
+          "description": "Labels are the labels used to identify multiple resources that can be identified by a unique set of labels",
+          "$ref": "#/definitions/utils-readinesschecks-LabelSelectorSpec"
+        },
+        "name": {
+          "description": "Name is the name of the ReadinessCheck",
+          "type": "string",
+          "default": ""
+        },
+        "requirements": {
+          "description": "Requirements is the actual readiness check which compares an object's property to a value",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-readinesschecks-RequirementSpec"
+          }
+        },
+        "resourceSelector": {
+          "description": "Resource is the resource for which the readiness check should be applied, used for single resources that can be identified by namespace and name",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+          }
+        }
+      }
+    },
+    "utils-readinesschecks-LabelSelectorSpec": {
+      "description": "LabelSelectorSpec contains paramters used to select objects by their labels",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "matchLabels"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the API version of the object to be selected by labels",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the Kind of the object to be selected by labels",
+          "type": "string",
+          "default": ""
+        },
+        "matchLabels": {
+          "description": "Labels are the labels used to identify multiple resources of the given kind",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "utils-readinesschecks-ReadinessCheckConfiguration": {
+      "description": "ReadinessCheckConfiguration contains the configuration for readiness checks.",
+      "type": "object",
+      "properties": {
+        "custom": {
+          "description": "CustomReadinessChecks is a set of custom readiness check configurations",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-readinesschecks-CustomReadinessCheckConfiguration"
+          }
+        },
+        "disableDefault": {
+          "description": "DisableDefault allows to disable the default readiness checks.",
+          "type": "boolean"
+        }
+      }
+    },
+    "utils-readinesschecks-RequirementSpec": {
+      "description": "RequirementSpec contains the requirements an object must meet to pass the custom readiness check",
+      "type": "object",
+      "required": [
+        "jsonPath",
+        "operator"
+      ],
+      "properties": {
+        "jsonPath": {
+          "description": "JsonPath is the path of the field of the Kubernetes object to be checked (without braces)",
+          "type": "string",
+          "default": ""
+        },
+        "operator": {
+          "description": "Operator is the operator that should be used for the check can be any of these Kubernetes selection operators: DoesNotExist, Exists, Equals, DoubleEquals, NotEquals, In, NotIn",
+          "type": "string",
+          "default": ""
+        },
+        "values": {
+          "description": "In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pkg-runtime-RawExtension"
+          }
+        }
+      }
+    }
+  },
+  "description": "ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "chart": {
+      "$ref": "#/definitions/deployer-helm-Chart",
+      "default": {},
+      "description": "Chart defines helm chart to be templated and applied."
+    },
+    "continuousReconcile": {
+      "$ref": "#/definitions/utils-continuousreconcile-ContinuousReconcileSpec",
+      "description": "ContinuousReconcile contains the schedule for continuous reconciliation."
+    },
+    "createNamespace": {
+      "default": false,
+      "description": "CreateNamespace configures the deployer to create the release namespace if not present. The behavior is similar to the \"helm install --create-namespace\"",
+      "type": "boolean"
+    },
+    "deletionGroups": {
+      "description": "DeletionGroups defines the order in which objects are deleted. Only relevant if HelmDeployment is false.",
+      "items": {
+        "$ref": "#/definitions/utils-managedresource-DeletionGroupDefinition",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "deletionGroupsDuringUpdate": {
+      "description": "DeletionGroupsDuringUpdate defines the order in which objects are deleted during an update.",
+      "items": {
+        "$ref": "#/definitions/utils-managedresource-DeletionGroupDefinition",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "exports": {
+      "$ref": "#/definitions/utils-managedresource-Exports",
+      "description": "Exports describe the exports from the templated manifests that should be exported by the helm deployer."
+    },
+    "exportsFromManifests": {
+      "description": "ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer. DEPRECATED",
+      "items": {
+        "$ref": "#/definitions/utils-managedresource-Export",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "helmDeployment": {
+      "description": "HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating. Default is true.",
+      "type": "boolean"
+    },
+    "helmDeploymentConfig": {
+      "$ref": "#/definitions/deployer-helm-HelmDeploymentConfiguration",
+      "description": "HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true."
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "kubeconfig": {
+      "default": "",
+      "description": "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
+      "type": "string"
+    },
+    "name": {
+      "default": "",
+      "description": "Name is the release name of the chart",
+      "type": "string"
+    },
+    "namespace": {
+      "default": "",
+      "description": "Namespace is the release namespace of the chart",
+      "type": "string"
+    },
+    "readinessChecks": {
+      "$ref": "#/definitions/utils-readinesschecks-ReadinessCheckConfiguration",
+      "default": {},
+      "description": "ReadinessChecks configures the readiness checks."
+    },
+    "updateStrategy": {
+      "description": "UpdateStrategy defines the strategy how the manifests are updated in the cluster. Defaults to \"update\".",
+      "type": "string"
+    },
+    "values": {
+      "description": "Values are the values that are used for templating.",
+      "format": "byte",
+      "type": "string"
+    }
+  },
+  "required": [
+    "chart",
+    "name",
+    "namespace",
+    "createNamespace"
+  ],
+  "title": "deployer-helm-ProviderConfiguration",
+  "type": "object"
+}

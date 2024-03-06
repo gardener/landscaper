@@ -8,8 +8,6 @@
 // +k8s:openapi-gen=true
 // +k8s:defaulter-gen=TypeMeta
 
-//go:generate crd-ref-docs --renderer=markdown --source-path . --config ../../../hack/api-reference/core-config.yaml --output-path ../../../docs/api-reference/core.md
-
 // Package v1alpha1 is a version of the API.
 // +groupName=landscaper.gardener.cloud
 package v1alpha1

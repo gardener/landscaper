@@ -4,15 +4,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -e
+set -euo pipefail
 
-CURRENT_DIR=$(dirname $0)
-PROJECT_ROOT="${CURRENT_DIR}"/..
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 
 echo "> Checking if documentation index needs changes"
 doc_index_file="$PROJECT_ROOT/docs/README.md"
 tmp_compare_file=$(mktemp)
-"$CURRENT_DIR/generate-docs-index.sh" "$tmp_compare_file" >/dev/null
+"$PROJECT_ROOT/hack/generate-docs-index.sh" "$tmp_compare_file" >/dev/null
 if ! cmp -s "$doc_index_file" "$tmp_compare_file"; then
   echo "The documentation index requires changes."
   echo "Please run 'make generate-docs' to update it."

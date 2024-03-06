@@ -16,8 +16,7 @@ Package v1alpha1 is the v1alpha1 version of the API.
 
 
 
-AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all
-it is correctly generated
+AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated
 
 _Appears in:_
 - [BlueprintStaticDataSource](#blueprintstaticdatasource)
@@ -45,8 +44,8 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `succeededReconcile` _[SucceededReconcile](#succeededreconcile)_ | SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations.<br /><br />If not set, no such automatically repeated reconciliations are triggered. |
-| `failedReconcile` _[FailedReconcile](#failedreconcile)_ | FailedReconcile allows to configure automatically repeated reconciliations for failed installations.<br /><br />If not set, no such automatically repeated reconciliations are triggered. |
+| `succeededReconcile` _[SucceededReconcile](#succeededreconcile)_ | SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations. If not set, no such automatically repeated reconciliations are triggered. |
+| `failedReconcile` _[FailedReconcile](#failedreconcile)_ | FailedReconcile allows to configure automatically repeated reconciliations for failed installations. If not set, no such automatically repeated reconciliations are triggered. |
 
 
 #### AutomaticReconcileStatus
@@ -91,8 +90,7 @@ _Appears in:_
 
 
 
-ComponentDescriptorDefinition defines the component descriptor that should be used
-for the installation
+ComponentDescriptorDefinition defines the component descriptor that should be used for the installation
 
 _Appears in:_
 - [InstallationSpec](#installationspec)
@@ -205,9 +203,7 @@ _Appears in:_
 
 
 
-Context is a resource that contains shared information of installations.
-This includes information about the repository context like the context itself or secrets to access the oci artifacts.
-But it can also contain deployer specific config.
+Context is a resource that contains shared information of installations. This includes information about the repository context like the context itself or secrets to access the oci artifacts. But it can also contain deployer specific config.
 
 _Appears in:_
 - [ContextList](#contextlist)
@@ -217,9 +213,9 @@ _Appears in:_
 | `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |
 | `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |
 | `useOCM` _boolean_ | UseOCM defines whether OCM is used to process installations that reference this context. |
-| `registryPullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core) array_ | RegistryPullSecrets defines a list of registry credentials that are used to<br /><br />pull blueprints, component descriptors and jsonschemas from the respective registry.<br /><br />For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/<br /><br />Note that the type information is used to determine the secret key and the type of the secret. |
-| `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key.<br /><br />The key should use a dns-like syntax to express the purpose and avoid conflicts. |
-| `componentVersionOverwrites` _string_ | ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object<br /><br />The overwrites object has to be in the same namespace as the context.<br /><br />If the string is empty, no overwrites will be used. |
+| `registryPullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core) array_ | RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret. |
+| `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key. The key should use a dns-like syntax to express the purpose and avoid conflicts. |
+| `componentVersionOverwrites` _string_ | ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object The overwrites object has to be in the same namespace as the context. If the string is empty, no overwrites will be used. |
 
 
 #### ContextConfiguration
@@ -235,9 +231,9 @@ _Appears in:_
 | --- | --- |
 | `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |
 | `useOCM` _boolean_ | UseOCM defines whether OCM is used to process installations that reference this context. |
-| `registryPullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core) array_ | RegistryPullSecrets defines a list of registry credentials that are used to<br /><br />pull blueprints, component descriptors and jsonschemas from the respective registry.<br /><br />For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/<br /><br />Note that the type information is used to determine the secret key and the type of the secret. |
-| `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key.<br /><br />The key should use a dns-like syntax to express the purpose and avoid conflicts. |
-| `componentVersionOverwrites` _string_ | ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object<br /><br />The overwrites object has to be in the same namespace as the context.<br /><br />If the string is empty, no overwrites will be used. |
+| `registryPullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core) array_ | RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret. |
+| `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key. The key should use a dns-like syntax to express the purpose and avoid conflicts. |
+| `componentVersionOverwrites` _string_ | ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object The overwrites object has to be in the same namespace as the context. If the string is empty, no overwrites will be used. |
 
 
 
@@ -348,10 +344,10 @@ _Appears in:_
 | Field | Description |
 | --- | --- |
 | `type` _[DeployItemType](#deployitemtype)_ | Type is the type of the deployer that should handle the item. |
-| `target` _[ObjectReference](#objectreference)_ | Target specifies an optional target of the deploy item.<br /><br />In most cases it contains the secrets to access a evironment.<br /><br />It is also used by the deployers to determine the ownernship. |
+| `target` _[ObjectReference](#objectreference)_ | Target specifies an optional target of the deploy item. In most cases it contains the secrets to access a evironment. It is also used by the deployers to determine the ownernship. |
 | `context` _string_ | Context defines the current context of the deployitem. |
 | `config` _[RawExtension](#rawextension)_ | Configuration contains the deployer type specific configuration. |
-| `timeout` _[Duration](#duration)_ | Timeout specifies how long the deployer may take to apply the deploy item.<br /><br />When the time is exceeded, the deploy item fails.<br /><br />Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).<br /><br />Defaults to ten minutes if not specified. |
+| `timeout` _[Duration](#duration)_ | Timeout specifies how long the deployer may take to apply the deploy item. When the time is exceeded, the deploy item fails. Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout). Defaults to ten minutes if not specified. |
 | `updateOnChangeOnly` _boolean_ | UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed. |
 | `onDelete` _[OnDeleteConfig](#ondeleteconfig)_ | OnDelete specifies particular setting when deleting a deploy item |
 
@@ -395,8 +391,7 @@ _Appears in:_
 
 
 
-DeployerInformation holds additional information about the deployer that
-has reconciled or is reconciling the deploy item.
+DeployerInformation holds additional information about the deployer that has reconciled or is reconciling the deploy item.
 
 _Appears in:_
 - [DeployItemStatus](#deployitemstatus)
@@ -503,10 +498,10 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `name` _string_ | Name defines the field name to search for the value and map to exports.<br /><br />Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
+| `name` _string_ | Name defines the field name to search for the value and map to exports. Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
 | `schema` _[JSONSchemaDefinition](#jsonschemadefinition)_ | Schema defines the imported value as jsonschema. |
 | `targetType` _string_ | TargetType defines the type of the imported target. |
-| `type` _[ExportType](#exporttype)_ | Type specifies which kind of object is being exported.<br /><br />This field should be set and will likely be mandatory in future. |
+| `type` _[ExportType](#exporttype)_ | Type specifies which kind of object is being exported. This field should be set and will likely be mandatory in future. |
 
 
 #### ExportDefinitionList
@@ -520,10 +515,10 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `name` _string_ | Name defines the field name to search for the value and map to exports.<br /><br />Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
+| `name` _string_ | Name defines the field name to search for the value and map to exports. Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
 | `schema` _[JSONSchemaDefinition](#jsonschemadefinition)_ | Schema defines the imported value as jsonschema. |
 | `targetType` _string_ | TargetType defines the type of the imported target. |
-| `type` _[ExportType](#exporttype)_ | Type specifies which kind of object is being exported.<br /><br />This field should be set and will likely be mandatory in future. |
+| `type` _[ExportType](#exporttype)_ | Type specifies which kind of object is being exported. This field should be set and will likely be mandatory in future. |
 
 
 #### ExportType
@@ -543,8 +538,7 @@ _Appears in:_
 
 
 
-FieldValueDefinition defines a im- or exported field.
-Either schema or target type have to be defined
+FieldValueDefinition defines a im- or exported field. Either schema or target type have to be defined
 
 _Appears in:_
 - [ExportDefinition](#exportdefinition)
@@ -552,7 +546,7 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `name` _string_ | Name defines the field name to search for the value and map to exports.<br /><br />Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
+| `name` _string_ | Name defines the field name to search for the value and map to exports. Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
 | `schema` _[JSONSchemaDefinition](#jsonschemadefinition)_ | Schema defines the imported value as jsonschema. |
 | `targetType` _string_ | TargetType defines the type of the imported target. |
 
@@ -568,13 +562,13 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `name` _string_ | Name defines the field name to search for the value and map to exports.<br /><br />Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
+| `name` _string_ | Name defines the field name to search for the value and map to exports. Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
 | `schema` _[JSONSchemaDefinition](#jsonschemadefinition)_ | Schema defines the imported value as jsonschema. |
 | `targetType` _string_ | TargetType defines the type of the imported target. |
-| `type` _[ImportType](#importtype)_ | Type specifies which kind of object is being imported.<br /><br />This field should be set and will likely be mandatory in future. |
-| `required` _boolean_ | Required specifies whether the import is required for the component to run.<br /><br />Defaults to true. |
+| `type` _[ImportType](#importtype)_ | Type specifies which kind of object is being imported. This field should be set and will likely be mandatory in future. |
+| `required` _boolean_ | Required specifies whether the import is required for the component to run. Defaults to true. |
 | `default` _[Default](#default)_ | Default sets a default value for the current import that is used if the key is not set. |
-| `imports` _[ImportDefinitionList](#importdefinitionlist)_ | ConditionalImports are Imports that are only valid if this imports is satisfied.<br /><br />Does only make sense for optional imports. |
+| `imports` _[ImportDefinitionList](#importdefinitionlist)_ | ConditionalImports are Imports that are only valid if this imports is satisfied. Does only make sense for optional imports. |
 
 
 #### ImportDefinitionList
@@ -589,13 +583,13 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `name` _string_ | Name defines the field name to search for the value and map to exports.<br /><br />Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
+| `name` _string_ | Name defines the field name to search for the value and map to exports. Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields |
 | `schema` _[JSONSchemaDefinition](#jsonschemadefinition)_ | Schema defines the imported value as jsonschema. |
 | `targetType` _string_ | TargetType defines the type of the imported target. |
-| `type` _[ImportType](#importtype)_ | Type specifies which kind of object is being imported.<br /><br />This field should be set and will likely be mandatory in future. |
-| `required` _boolean_ | Required specifies whether the import is required for the component to run.<br /><br />Defaults to true. |
+| `type` _[ImportType](#importtype)_ | Type specifies which kind of object is being imported. This field should be set and will likely be mandatory in future. |
+| `required` _boolean_ | Required specifies whether the import is required for the component to run. Defaults to true. |
 | `default` _[Default](#default)_ | Default sets a default value for the current import that is used if the key is not set. |
-| `imports` _[ImportDefinitionList](#importdefinitionlist)_ | ConditionalImports are Imports that are only valid if this imports is satisfied.<br /><br />Does only make sense for optional imports. |
+| `imports` _[ImportDefinitionList](#importdefinitionlist)_ | ConditionalImports are Imports that are only valid if this imports is satisfied. Does only make sense for optional imports. |
 
 
 #### ImportType
@@ -613,8 +607,7 @@ _Appears in:_
 
 _Underlying type:_ _[struct{Filesystem AnyJSON "json:\"filesystem\""}](#struct{filesystem-anyjson-"json:\"filesystem\""})_
 
-InlineBlueprint defines a inline blueprint with component descriptor and
-filesystem.
+InlineBlueprint defines a inline blueprint with component descriptor and filesystem.
 
 _Appears in:_
 - [BlueprintDefinition](#blueprintdefinition)
@@ -688,9 +681,9 @@ _Appears in:_
 | `componentDescriptor` _[ComponentDescriptorDefinition](#componentdescriptordefinition)_ | ComponentDescriptor is a reference to the installation's component descriptor |
 | `blueprint` _[BlueprintDefinition](#blueprintdefinition)_ | Blueprint is the resolved reference to the definition. |
 | `imports` _[InstallationImports](#installationimports)_ | Imports define the imported data objects and targets. |
-| `importDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ImportDataMappings contains a template for restructuring imports.<br /><br />It is expected to contain a key for every blueprint-defined data import.<br /><br />Missing keys will be defaulted to their respective data import.<br /><br />Example: namespace: (( installation.imports.namespace )) |
+| `importDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ImportDataMappings contains a template for restructuring imports. It is expected to contain a key for every blueprint-defined data import. Missing keys will be defaulted to their respective data import. Example: namespace: (( installation.imports.namespace )) |
 | `exports` _[InstallationExports](#installationexports)_ | Exports define the exported data objects and targets. |
-| `exportDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ExportDataMappings contains a template for restructuring exports.<br /><br />It is expected to contain a key for every blueprint-defined data export.<br /><br />Missing keys will be defaulted to their respective data export.<br /><br />Example: namespace: (( blueprint.exports.namespace )) |
+| `exportDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ExportDataMappings contains a template for restructuring exports. It is expected to contain a key for every blueprint-defined data export. Missing keys will be defaulted to their respective data export. Example: namespace: (( blueprint.exports.namespace )) |
 | `automaticReconcile` _[AutomaticReconcile](#automaticreconcile)_ | AutomaticReconcile allows to configure automatically repeated reconciliations. |
 | `optimization` _[Optimization](#optimization)_ | Optimization contains settings to improve execution performance. |
 
@@ -710,11 +703,11 @@ _Appears in:_
 | Field | Description |
 | --- | --- |
 | `name` _string_ | Name is the unique name of the step |
-| `blueprint` _[InstallationTemplateBlueprintDefinition](#installationtemplateblueprintdefinition)_ | Reference defines a reference to a Blueprint.<br /><br />The blueprint can reside in an OCI or other supported location. |
+| `blueprint` _[InstallationTemplateBlueprintDefinition](#installationtemplateblueprintdefinition)_ | Reference defines a reference to a Blueprint. The blueprint can reside in an OCI or other supported location. |
 | `imports` _[InstallationImports](#installationimports)_ | Imports define the imported data objects and targets. |
-| `importDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ImportDataMappings contains a template for restructuring imports.<br /><br />It is expected to contain a key for every blueprint-defined data import.<br /><br />Missing keys will be defaulted to their respective data import.<br /><br />Example: namespace: (( installation.imports.namespace )) |
+| `importDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ImportDataMappings contains a template for restructuring imports. It is expected to contain a key for every blueprint-defined data import. Missing keys will be defaulted to their respective data import. Example: namespace: (( installation.imports.namespace )) |
 | `exports` _[InstallationExports](#installationexports)_ | Exports define the exported data objects and targets. |
-| `exportDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ExportDataMappings contains a template for restructuring exports.<br /><br />It is expected to contain a key for every blueprint-defined data export.<br /><br />Missing keys will be defaulted to their respective data export.<br /><br />Example: namespace: (( blueprint.exports.namespace )) |
+| `exportDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ExportDataMappings contains a template for restructuring exports. It is expected to contain a key for every blueprint-defined data export. Missing keys will be defaulted to their respective data export. Example: namespace: (( blueprint.exports.namespace )) |
 | `optimization` _[Optimization](#optimization)_ | Optimization contains settings to improve execution performance. |
 
 
@@ -835,7 +828,7 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `skipUninstallIfClusterRemoved` _boolean_ | SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted.<br /><br />Works only in the context of an existing target sync object which is used to check the Garden project with<br /><br />the shoot cluster resources |
+| `skipUninstallIfClusterRemoved` _boolean_ | SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted. Works only in the context of an existing target sync object which is used to check the Garden project with the shoot cluster resources |
 
 
 
@@ -857,10 +850,7 @@ _Appears in:_
 
 
 
-Requirement contains values, a key, and an operator that relates the key and values.
-The zero value of Requirement is invalid.
-Requirement implements both set based match and exact match
-Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.
+Requirement contains values, a key, and an operator that relates the key and values. The zero value of Requirement is invalid. Requirement implements both set based match and exact match Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.
 
 _Appears in:_
 - [TargetSelector](#targetselector)
@@ -869,7 +859,7 @@ _Appears in:_
 | --- | --- |
 | `key` _string_ |  |
 | `operator` _[Operator](#operator)_ |  |
-| `values` _string array_ | In huge majority of cases we have at most one value here.<br /><br />It is generally faster to operate on a single-element slice<br /><br />than on a single-element map, so we have a slice here. |
+| `values` _string array_ | In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here. |
 
 
 
@@ -921,7 +911,7 @@ _Appears in:_
 | Field | Description |
 | --- | --- |
 | `secretKeyRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#secretkeyselector-v1-core)_ | Selects a key of a secret in the installations's namespace |
-| `secretLabelSelector` _[SecretLabelSelectorRef](#secretlabelselectorref)_ | Selects a key from multiple secrets in the installations's namespace<br /><br />that matches the given labels. |
+| `secretLabelSelector` _[SecretLabelSelectorRef](#secretlabelselectorref)_ | Selects a key from multiple secrets in the installations's namespace that matches the given labels. |
 
 
 #### SubInstCache
@@ -1012,8 +1002,7 @@ _Appears in:_
 
 
 
-Target defines a specific data object that defines target environment.
-Every deploy item can have a target which is used by the deployer to install the specific application.
+Target defines a specific data object that defines target environment. Every deploy item can have a target which is used by the deployer to install the specific application.
 
 _Appears in:_
 - [ResolvedTarget](#resolvedtarget)
@@ -1045,9 +1034,9 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `type` _[TargetType](#targettype)_ | Type is the type of the target that defines its data structure.<br /><br />The actual schema may be defined by a target type crd in the future. |
-| `config` _[AnyJSON](#anyjson)_ | Configuration contains the target type specific configuration.<br /><br />Exactly one of the fields Configuration and SecretRef must be set |
-| `secretRef` _[LocalSecretReference](#localsecretreference)_ | Reference to a secret containing the target type specific configuration.<br /><br />Exactly one of the fields Configuration and SecretRef must be set |
+| `type` _[TargetType](#targettype)_ | Type is the type of the target that defines its data structure. The actual schema may be defined by a target type crd in the future. |
+| `config` _[AnyJSON](#anyjson)_ | Configuration contains the target type specific configuration. Exactly one of the fields Configuration and SecretRef must be set |
+| `secretRef` _[LocalSecretReference](#localsecretreference)_ | Reference to a secret containing the target type specific configuration. Exactly one of the fields Configuration and SecretRef must be set |
 
 
 #### TargetSync
@@ -1081,10 +1070,10 @@ _Appears in:_
 | `sourceNamespace` _string_ | SourceNamespace describes the namespace from where the secrets should be synced |
 | `secretRef` _[LocalSecretReference](#localsecretreference)_ | SecretRef references the secret that contains the kubeconfig to the namespace of the secrets to be synced. |
 | `createTargetToSource` _boolean_ | CreateTargetToSource specifies if set on true, that also a target is created, which references the secret in SecretRef |
-| `targetToSourceName` _string_ | TargetToSourceName is the name of the target referencing the secret defined in SecretRef if CreateTargetToSource<br /><br />is set on true. If TargetToSourceName is empty SourceNamespace is used instead. |
-| `secretNameExpression` _string_ | SecretNameExpression defines the names of the secrets which should be synced via a regular expression according<br /><br />to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches<br /><br />all names.<br /><br />if not set no secrets are synced |
-| `shootNameExpression` _string_ | ShootNameExpression defines the names of shoot clusters for which targets with short living access data<br /><br />to the shoots are created via a regular expression according to https://github.com/google/re2/wiki/Syntax with<br /><br />the extension that * is also a valid expression and matches all names.<br /><br />if not set no targets for the shoots are created |
-| `tokenRotation` _[TokenRotation](#tokenrotation)_ | TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the<br /><br />secrets to sync. The token expires after 90 days and will be rotated every 60 days. |
+| `targetToSourceName` _string_ | TargetToSourceName is the name of the target referencing the secret defined in SecretRef if CreateTargetToSource is set on true. If TargetToSourceName is empty SourceNamespace is used instead. |
+| `secretNameExpression` _string_ | SecretNameExpression defines the names of the secrets which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches all names. if not set no secrets are synced |
+| `shootNameExpression` _string_ | ShootNameExpression defines the names of shoot clusters for which targets with short living access data to the shoots are created via a regular expression according to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches all names. if not set no targets for the shoots are created |
+| `tokenRotation` _[TokenRotation](#tokenrotation)_ | TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the secrets to sync. The token expires after 90 days and will be rotated every 60 days. |
 
 
 
@@ -1117,7 +1106,7 @@ _Appears in:_
 | `name` _string_ | Name is the unique name of the template |
 | `type` _[TemplateType](#templatetype)_ | Type describes the templating mechanism. |
 | `file` _string_ | File is the path to the template in the blueprint's content. |
-| `template` _[AnyJSON](#anyjson)_ | Template contains an optional inline template.<br /><br />The template has to be of string for go template<br /><br />and either a string or valid yaml/json for spiff. |
+| `template` _[AnyJSON](#anyjson)_ | Template contains an optional inline template. The template has to be of string for go template and either a string or valid yaml/json for spiff. |
 
 
 #### TemplateType
@@ -1172,8 +1161,7 @@ _Appears in:_
 
 
 
-VersionedObjectReference is a reference to a object with its last observed resource generation.
-This struct is used by status fields.
+VersionedObjectReference is a reference to a object with its last observed resource generation. This struct is used by status fields.
 
 _Appears in:_
 - [VersionedNamedObjectReference](#versionednamedobjectreference)

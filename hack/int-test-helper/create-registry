@@ -31,14 +31,14 @@ metadata:
 EOF
 
 echo "Cleanup registry"
-go run -mod=vendor ./hack/testcluster registry delete \
+go run ./hack/testcluster registry delete \
     --kubeconfig=$KUBECONFIG_PATH \
     --namespace=$REGISTRY_NS \
     --id=$ID \
     --timeout=10m
 
 echo "Create registry"
-go run -mod=vendor ./hack/testcluster registry create \
+go run ./hack/testcluster registry create \
     --kubeconfig=$KUBECONFIG_PATH \
     --namespace=$REGISTRY_NS \
     --id=$ID \

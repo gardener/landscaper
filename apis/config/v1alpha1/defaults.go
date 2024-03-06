@@ -9,7 +9,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
@@ -57,10 +57,10 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 // SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.
 func SetDefaults_CrdManagementConfiguration(obj *CrdManagementConfiguration) {
 	if obj.DeployCustomResourceDefinitions == nil {
-		obj.DeployCustomResourceDefinitions = pointer.Bool(true)
+		obj.DeployCustomResourceDefinitions = ptr.To(true)
 	}
 	if obj.ForceUpdate == nil {
-		obj.ForceUpdate = pointer.Bool(true)
+		obj.ForceUpdate = ptr.To(true)
 	}
 }
 

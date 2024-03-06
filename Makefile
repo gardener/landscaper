@@ -12,124 +12,187 @@ REGISTRY                                       := europe-docker.pkg.dev/sap-gcp-
 DOCKER_BUILDER_NAME := "ls-multiarch"
 
 DISABLE_CLEANUP := false
+ENVTEST_K8S_VERSION = 1.27
 
-.PHONY: install-requirements
-install-requirements:
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/elastic/crd-ref-docs
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
-	@go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-	@$(REPO_ROOT)/hack/install-requirements.sh
-	@chmod +x $(REPO_ROOT)/apis/vendor/k8s.io/code-generator/*
+CODE_DIRS := $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/... $(REPO_ROOT)/hack/testcluster/... $(REPO_ROOT)/apis/... $(REPO_ROOT)/controller-utils/pkg/...
+
+##@ General
+
+.PHONY: help
+help: ## Display this help.
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Development
 
 .PHONY: revendor
-revendor:
+revendor: ## Runs 'go mod tidy' for all go modules in this repo.
 	@$(REPO_ROOT)/hack/revendor.sh
-	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/revendor.sh
-	@cd $(REPO_ROOT)/controller-utils && $(REPO_ROOT)/hack/revendor.sh
-	@chmod +x $(REPO_ROOT)/apis/vendor/k8s.io/code-generator/*
 
 .PHONY: format
-format:
-	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/apis/config $(REPO_ROOT)/apis/core $(REPO_ROOT)/apis/deployer $(REPO_ROOT)/apis/errors $(REPO_ROOT)/apis/mediatype $(REPO_ROOT)/apis/openapi $(REPO_ROOT)/apis/schema $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd $(REPO_ROOT)/hack $(REPO_ROOT)/controller-utils/pkg
+format: goimports ## Runs the formatter.
+	@@FORMATTER=$(FORMATTER) $(REPO_ROOT)/hack/format.sh $(CODE_DIRS)
 
 .PHONY: check
-check: format
-	@$(REPO_ROOT)/hack/verify-docs-index.sh
-	@$(REPO_ROOT)/hack/check.sh --golangci-lint-config=./.golangci.yaml $(REPO_ROOT)/hack/testcluster/...
-	@$(REPO_ROOT)/hack/check.sh --golangci-lint-config=./.golangci.yaml $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
-	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/apis/config/... $(REPO_ROOT)/apis/core/... $(REPO_ROOT)/apis/deployer/... $(REPO_ROOT)/apis/errors/... $(REPO_ROOT)/apis/mediatype/... $(REPO_ROOT)/apis/openapi/... $(REPO_ROOT)/apis/schema/...
-	@cd $(REPO_ROOT)/controller-utils && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/controller-utils/pkg/...
+check: golangci-lint jq goimports ## Runs linter, 'go vet', and checks if the formatter has been run.
+	@test "$(SKIP_DOCS_INDEX_CHECK)" = "true" || \
+		JQ=$(JQ) $(REPO_ROOT)/hack/verify-docs-index.sh
+	@LINTER=$(LINTER) FORMATTER=$(FORMATTER) $(REPO_ROOT)/hack/check.sh --golangci-lint-config="$(REPO_ROOT)/.golangci.yaml" $(CODE_DIRS)
 
-.PHONY: setup-testenv
-setup-testenv:
-	@$(REPO_ROOT)/hack/setup-testenv.sh
+.PHONY: verify
+verify: check ## Alias for 'make check'.
+
+.PHONY: generate-code
+generate-code: code-gen api-ref-gen mockgen ## Runs code generation (deepcopy/conversion/defaulter functions, API reference, openAPI definitions, CRDs, mock clients).
+	@CODE_GEN_SCRIPT=$(CODE_GEN_SCRIPT) API_REF_GEN=$(API_REF_GEN) MOCKGEN=$(MOCKGEN) $(REPO_ROOT)/hack/generate-code.sh
+
+.PHONY: generate-docs
+generate-docs: jq ## Generates the documentation index.
+	@JQ=$(JQ) $(REPO_ROOT)/hack/generate-docs-index.sh
+
+.PHONY: generate # Runs code and docs generation and the formatter.
+generate: generate-code format generate-docs
+
+##@ Tests
 
 .PHONY: test
-test: setup-testenv
-	@$(REPO_ROOT)/hack/test.sh
-
+test: envtest registry ## Runs unit tests.
+	@KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(REPO_ROOT)/hack/test.sh
 
 .PHONY: integration-test
-integration-test:
+integration-test: ## Runs integration tests.
 	@$(REPO_ROOT)/hack/local-integration-test $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION) $(USE_OCM_LIB)
 
 .PHONY: integration-test-pure
-integration-test-pure:
+integration-test-pure: ## Runs integration tests without installing the Landscaper first.
 	@$(REPO_ROOT)/hack/local-integration-test-pure $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION)
 
 .PHONY: integration-test-with-cluster-creation
-integration-test-with-cluster-creation:
+integration-test-with-cluster-creation: ## Runs integration tests and creates a cluster first.
 	@$(REPO_ROOT)/hack/local-integration-test-with-cluster-creation $(KUBECONFIG_PATH) garden-laas $(EFFECTIVE_VERSION) 0 $(USE_OCM_LIB)
 
-.PHONY: verify
-verify: check
+##@ Build
 
-.PHONY: generate-code
-generate-code:
-	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/generate.sh ./... && cd $(REPO_ROOT)
-	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg... $(REPO_ROOT)/test... $(REPO_ROOT)/cmd...
+PLATFORMS ?= linux/arm64,linux/amd64
 
-.PHONY: generate-docs
-generate-docs:
-	@$(REPO_ROOT)/hack/generate-docs-index.sh
-
-.PHONY: generate
-generate: generate-code format revendor generate-docs
-
-#################################################################
-# Rules related to binary build, docker image build and release #
-#################################################################
-
-.PHONY: install
-install:
-	@EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) BUILD_OS=$(BUILD_OS) BUILD_ARCH=$(BUILD_ARCH) OUT_DIR=$(OUT_DIR) ./hack/install.sh
-
+.PHONY: build
+build: ## Build binaries for all os/arch combinations specified in PLATFORMS.
+	@PLATFORMS=$(PLATFORMS) COMPONENT=landscaper-controller $(REPO_ROOT)/hack/build.sh
+	@PLATFORMS=$(PLATFORMS) COMPONENT=landscaper-webhooks-server $(REPO_ROOT)/hack/build.sh
+	@PLATFORMS=$(PLATFORMS) COMPONENT=container-deployer-controller COMPONENT_MAIN_PATH=container-deployer/container-deployer-controller $(REPO_ROOT)/hack/build.sh
+	@PLATFORMS=$(PLATFORMS) COMPONENT=container-deployer-init COMPONENT_MAIN_PATH=container-deployer/container-deployer-init $(REPO_ROOT)/hack/build.sh
+	@PLATFORMS=$(PLATFORMS) COMPONENT=container-deployer-wait COMPONENT_MAIN_PATH=container-deployer/container-deployer-wait $(REPO_ROOT)/hack/build.sh
+	@PLATFORMS=$(PLATFORMS) COMPONENT=helm-deployer-controller $(REPO_ROOT)/hack/build.sh
+	@PLATFORMS=$(PLATFORMS) COMPONENT=manifest-deployer-controller $(REPO_ROOT)/hack/build.sh
+	@PLATFORMS=$(PLATFORMS) COMPONENT=mock-deployer-controller $(REPO_ROOT)/hack/build.sh
+	@PLATFORMS=$(PLATFORMS) COMPONENT=target-sync-controller $(REPO_ROOT)/hack/build.sh
+	
 .PHONY: docker-images
-docker-images:
-	@echo "Building docker images for version $(EFFECTIVE_VERSION) / linux-amd64"
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t landscaper-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-controller .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t landscaper-webhooks-server:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target landscaper-webhooks-server .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-controller .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-init:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-init .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t container-deployer-wait:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target container-deployer-wait .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t helm-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target helm-deployer-controller .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t manifest-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target manifest-deployer-controller .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="amd64" -t mock-deployer-controller:$(EFFECTIVE_VERSION)-linux-amd64 -f Dockerfile --target mock-deployer-controller .
-
-	@echo "Building docker images for version $(EFFECTIVE_VERSION) / linux-arm64"
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t landscaper-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-controller .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t landscaper-webhooks-server:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target landscaper-webhooks-server .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-controller .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-init:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-init .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t container-deployer-wait:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target container-deployer-wait .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t helm-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target helm-deployer-controller .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t manifest-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target manifest-deployer-controller .
-	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --build-arg BUILD_OS="linux" --build-arg BUILD_ARCH="arm64" -t mock-deployer-controller:$(EFFECTIVE_VERSION)-linux-arm64 -f Dockerfile --target mock-deployer-controller .
+docker-images: build ## Builds images for all controllers locally. The images are suffixed with -$OS-$ARCH
+	@PLATFORMS=$(PLATFORMS) $(REPO_ROOT)/hack/docker-build-multi.sh
 
 .PHONY: component
-component:
-	@$(REPO_ROOT)/hack/generate-cd.sh $(REGISTRY)
+component: ocm ## Builds and pushes the Component Descriptor. Also pushes the images and combines them into multi-platform images. Requires the docker images to have been built before.
+	@OCM=$(OCM) $(REPO_ROOT)/hack/generate-cd.sh $(REGISTRY)
 
-.PHONY: build-resources
+.PHONY: build-resources ## Wrapper for 'make docker-images component'.
 build-resources: docker-images component
 
-######################
-# Tutorial resources #
-######################
+##@ Tutorial Ressources
 
 .PHONY: upload-tutorial-resources
-upload-tutorial-resources:
-	@./hack/upload-tutorial-resources.sh
+upload-tutorial-resources: ## Uploads the resources that are referenced in the tutorial into a registry.
+	@$(REPO_ROOT)/hack/upload-tutorial-resources.sh
 
-######################
-# Local development  #
-######################
+##@ Local Development
 
 .PHONY: install-testcluster-cmd
-install-testcluster-cmd:
+install-testcluster-cmd: ## Installs a k3s test cluster.
 	@go install $(REPO_ROOT)/hack/testcluster
 
-
 .PHONY: start-webhooks
-start-webhooks:
+start-webhooks: ## Runs the webhooks locally.
 	@go run $(REPO_ROOT)/cmd/landscaper-webhooks-server -v 3 --kubeconfig=$(KUBECONFIG)
+
+##@ Build Dependencies
+
+## Location to install dependencies to
+LOCALBIN ?= $(REPO_ROOT)/bin
+
+## Tool Binaries
+CODE_GEN_SCRIPT ?= $(LOCALBIN)/kube_codegen.sh
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+FORMATTER ?= $(LOCALBIN)/goimports
+LINTER ?= $(LOCALBIN)/golangci-lint
+OCM ?= $(LOCALBIN)/ocm
+API_REF_GEN ?= $(LOCALBIN)/crd-ref-docs
+MOCKGEN ?= $(LOCALBIN)/mockgen
+JQ ?= $(LOCALBIN)/jq
+REGISTRY_BINARY ?= $(LOCALBIN)/registry
+
+## Tool Versions
+CODE_GEN_VERSION ?= v0.29.1
+FORMATTER_VERSION ?= v0.16.0
+LINTER_VERSION ?= 1.55.2
+OCM_VERSION ?= 0.4.3
+API_REF_GEN_VERSION ?= v0.0.10
+JQ_VERSION ?= 1.6
+
+.PHONY: localbin
+localbin: ## Creates the local bin folder, if it doesn't exist. Not meant to be called manually, used as requirement for the other tool commands.
+	@test -d $(LOCALBIN) || mkdir -p $(LOCALBIN)
+
+.PHONY: code-gen
+code-gen: localbin ## Download the code-gen script locally.
+	@test -s $(CODE_GEN_SCRIPT) || \
+	( echo "Downloading code generator script $(CODE_GEN_VERSION) ..."; \
+	curl -sfL "https://raw.githubusercontent.com/kubernetes/code-generator/$(CODE_GEN_VERSION)/kube_codegen.sh" --output "$(CODE_GEN_SCRIPT)" && chmod +x "$(CODE_GEN_SCRIPT)" )
+
+.PHONY: goimports
+goimports: localbin ## Download goimports locally if necessary. If wrong version is installed, it will be overwritten.
+	@test -s $(FORMATTER) && test -s $(LOCALBIN)/goimports_version && cat $(LOCALBIN)/goimports_version | grep -q $(FORMATTER_VERSION) || \
+	( echo "Installing goimports $(FORMATTER_VERSION) ..."; \
+	GOBIN=$(LOCALBIN) go install golang.org/x/tools/cmd/goimports@$(FORMATTER_VERSION) && \
+	echo $(FORMATTER_VERSION) > $(LOCALBIN)/goimports_version )
+
+.PHONY: golangci-lint
+golangci-lint: localbin ## Download golangci-lint locally if necessary. If wrong version is installed, it will be overwritten.
+	@test -s $(LINTER) && $(LINTER) --version | grep -q $(LINTER_VERSION) || \
+	( echo "Installing golangci-lint $(LINTER_VERSION) ..."; \
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) v$(LINTER_VERSION) )
+
+.PHONY: envtest
+envtest: localbin ## Download envtest-setup locally if necessary.
+	@test -s $(LOCALBIN)/setup-envtest || \
+	( echo "Installing setup-envtest ..."; \
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest )
+
+.PHONY: ocm
+ocm: localbin ## Install OCM CLI if necessary.
+	@test -s $(OCM) && $(OCM) --version | grep -q $(OCM_VERSION) || \
+	( echo "Installing OCM tooling $(OCM_VERSION) ..."; \
+	curl -sSfL https://ocm.software/install.sh | OCM_VERSION=$(OCM_VERSION) bash -s $(LOCALBIN) )
+
+.PHONY: api-ref-gen
+api-ref-gen: localbin ## Download API reference generator locally if necessary.
+	@test -s $(API_REF_GEN) && test -s $(LOCALBIN)/crd-ref-docs_version && cat $(LOCALBIN)/crd-ref-docs_version | grep -q $(API_REF_GEN_VERSION) || \
+	( echo "Installing API reference generator $(API_REF_GEN_VERSION) ..."; \
+	GOBIN=$(LOCALBIN) go install github.com/elastic/crd-ref-docs@$(API_REF_GEN_VERSION) && \
+	echo $(API_REF_GEN_VERSION) > $(LOCALBIN)/crd-ref-docs_version )
+
+.PHONY: mockgen
+mockgen: localbin ## Download mockgen locally if necessary.
+	@test -s $(MOCKGEN) || \
+	( echo "Installing mockgen ..."; \
+	GOBIN=$(LOCALBIN) go install github.com/golang/mock/mockgen@latest )
+
+.PHONY: jq
+jq: localbin ## Download jq locally if necessary.
+	@test -s $(JQ) && $(JQ) --version | grep -q $(JQ_VERSION) || \
+	( echo "Installing jq $(JQ_VERSION) ..."; \
+	JQ=$(JQ) LOCALBIN=$(LOCALBIN) $(REPO_ROOT)/hack/install-jq.sh $(JQ_VERSION) )
+
+.PHONY: registry
+registry: localbin ## Download registry locally if necessary.
+	@test -s $(REGISTRY_BINARY) || \
+	( echo "Installing local registry ..."; \
+	REGISTRY=$(REGISTRY_BINARY) LOCALBIN=$(LOCALBIN) $(REPO_ROOT)/hack/install-registry.sh )

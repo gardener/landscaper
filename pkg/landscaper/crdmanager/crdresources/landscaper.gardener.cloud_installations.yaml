@@ -167,6 +167,10 @@ spec:
                               - version
                               type: object
                             type: array
+                          creationTime:
+                            description: CreationTime defines the datetime the component
+                              was created
+                            type: string
                           labels:
                             description: Labels defines an optional set of additional
                               labels describing the object.

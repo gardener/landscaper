@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -euo pipefail
+
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
+
+source "$PROJECT_ROOT/.ci/ensure-go"
+"$PROJECT_ROOT/.ci/ensure-make"
+
+(
+  cd "$PROJECT_ROOT"
+  make format generate-docs
+
+  if [ -z "$(git status --porcelain=v1)" ]; then
+    echo "nothing to commit"
+    exit 0
+  fi
+
+  git add --all
+  git commit -m "[ci skip] formatting and documentation index"
+)

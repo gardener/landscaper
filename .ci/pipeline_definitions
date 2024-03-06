@@ -44,6 +44,9 @@ landscaper:
           - ocm_build_and_publish
           image: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/integration-test:1.21.5-alpine3.18'
           output_dir: 'integration_test'
+        format:
+          publish_to:
+          - source
     pull-request:
       steps:
         integration_test:
@@ -86,3 +89,6 @@ landscaper:
           - release
           depends:
           - integration_test
+        format:
+          publish_to:
+          - source

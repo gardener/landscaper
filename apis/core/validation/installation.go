@@ -148,9 +148,9 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 			for key, tg := range imp.TargetMap {
 				if !targetMapKeyRegExp.MatchString(key) {
 					allErrs = append(allErrs, field.Invalid(fldPathIdx.Child("targetMap").Key(key), key,
-						"key must contain only lower-case alphanumeric characters, dots, or dashes; " +
-						"it must begin and end with a lower-case alphanumeric character; " +
-						"it must not be empty, and not longer than 63 characters"))
+						"key must contain only lower-case alphanumeric characters, dots, or dashes; "+
+							"it must begin and end with a lower-case alphanumeric character; "+
+							"it must not be empty, and not longer than 63 characters"))
 				}
 				if len(tg) == 0 {
 					allErrs = append(allErrs, field.Required(fldPathIdx.Child("targetMap").Key(key), "target must not be empty"))

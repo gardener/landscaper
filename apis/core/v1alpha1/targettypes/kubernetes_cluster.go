@@ -7,7 +7,7 @@ package targettypes
 import (
 	"encoding/json"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/apis/core"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -70,7 +70,7 @@ func (v *ValueRef) UnmarshalJSON(data []byte) error {
 		v.StrVal = &strVal
 		return nil
 	}
-	v.StrVal = pointer.String(string(data))
+	v.StrVal = ptr.To(string(data))
 	return nil
 }
 

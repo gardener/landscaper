@@ -11,7 +11,6 @@ import (
 	"os"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	depv1alpha1 "github.com/gardener/landscaper/apis/deployer/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/hack/generate-schemes/app"
 	"github.com/gardener/landscaper/apis/openapi"
 	lsschema "github.com/gardener/landscaper/apis/schema"
@@ -27,12 +26,11 @@ var Exports = []string{
 
 var CRDs = []lsschema.CustomResourceDefinitions{
 	lsv1alpha1.ResourceDefinition,
-	depv1alpha1.ResourceDefinition,
 }
 
 var (
 	schemaDir string
-	crdDir string
+	crdDir    string
 )
 
 func init() {
