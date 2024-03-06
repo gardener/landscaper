@@ -13,7 +13,7 @@ set -euo pipefail
 
 PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 FULL_INTEGRATION_TEST_PATH="$(realpath "$INTEGRATION_TEST_PATH")"
-USE_OCM_LIB=${1}
+USE_OCM_LIB=${1:-}
 
 "$PROJECT_ROOT/.ci/int-test" "1" | tee "$FULL_INTEGRATION_TEST_PATH/ttt.log"
 
