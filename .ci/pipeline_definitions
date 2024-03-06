@@ -48,6 +48,9 @@ landscaper:
         format:
           publish_to:
           - source
+          depends:
+          - verify
+          - integration_test
     pull-request:
       steps:
         integration_test:
@@ -93,3 +96,6 @@ landscaper:
         format:
           publish_to:
           - source
+          depends:
+          - verify
+          - integration_test
