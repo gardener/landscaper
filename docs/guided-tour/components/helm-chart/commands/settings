@@ -1,0 +1,11 @@
+# base url of the component repository
+REPO_BASE_URL="eu.gcr.io/gardener-project/landscaper/examples"
+
+# path to the kubeconfig of the target cluster used in the target of the resource cluster
+TARGET_CLUSTER_KUBECONFIG_PATH="/Users/${USER}/tmp/kubes/kubeconfig.yaml"
+
+# namespace and names for resources in the resource cluster
+NAMESPACE="cu-example"
+TARGET_NAME="my-cluster"
+CONTEXT_NAME="landscaper-examples"
+INSTALLATION_NAME="echo-server"
