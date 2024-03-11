@@ -601,6 +601,10 @@
       "default": {},
       "description": "DeployerManagement configures the deployer management of the landscaper."
     },
+    "enforceSignatureVerification": {
+      "description": "EnforceSignatureVerification enforces all installations to have valid signatures to be executed by the landscaper",
+      "type": "boolean"
+    },
     "hpaMain": {
       "$ref": "#/definitions/config-v1alpha1-HPAMainConfiguration",
       "description": "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller)."

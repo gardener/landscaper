@@ -631,7 +631,7 @@ spec:
                 properties:
                   enabled:
                     type: boolean
-                  publicKey:
+                  publicKeySecretReference:
                     description: SecretReference is reference to data in a secret.
                       The secret can also be in a different namespace.
                     properties:
@@ -653,7 +653,7 @@ spec:
                 required:
                 - enabled
                 - signatureName
-                - publicKey
+                - publicKeySecretReference
                 type: object
             required:
             - blueprint
