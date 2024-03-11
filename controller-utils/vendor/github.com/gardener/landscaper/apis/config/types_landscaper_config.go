@@ -47,6 +47,8 @@ type LandscaperConfiguration struct {
 	HPAMainConfiguration *HPAMainConfiguration `json:"hpaMain,omitempty"`
 	// +optional
 	UseOCMLib bool `json:"useOCMLib,omitempty"`
+	// EnforceSignatureVerification enforces all installations to have valid signatures to be executed by the landscaper
+	EnforceSignatureVerification bool `json:"enforceSignatureVerification,omitempty"`
 }
 
 // LsDeployments contains the names of the landscaper deployments.
