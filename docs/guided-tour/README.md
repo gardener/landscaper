@@ -30,9 +30,8 @@ sidebar_position: 1
 ## How to follow the Tour
 
 The Guided Tour consists of several chapters, some of which build on each other. In order to get the most out of it, 
-you should be following the Guided Tour in this sequence. The Guided Tour is not presented very well
-if preprocessed with some documentation tooling. It might be better to read it with your browser in the 
-[original github repository](https://github.com/gardener/landscaper/tree/master/docs/guided-tour).
+you should be following the Guided Tour in this sequence. If you have problems with the presentation of the Guided Tour,
+jump to the [original github repository](https://github.com/gardener/landscaper/tree/master/docs/guided-tour).
 
 ### A Hello World Example
 
