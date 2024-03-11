@@ -5,7 +5,7 @@ sidebar_position: 2
 
 # Helm Chart Resources in the Component Version
 
-Let's look at an example in which a Helm Chart is referenced from a component version.
+Let's look at an example in which a Helm Chart is referenced out of a component version.
 
 For prerequisites see [here](../../README.md).
 
