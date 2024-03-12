@@ -16,9 +16,6 @@ FULL_INTEGRATION_TEST_PATH="$(realpath "$INTEGRATION_TEST_PATH")"
 
 VERSION="$("$PROJECT_ROOT/hack/get-version.sh")"
 PR_ID=1
+GARDENER_KUBECONFIG=$(${PROJECT_ROOT}/.ci/get_gardener_kubeconfig.py)
 
-export VERSION
-export PR_ID
-export PROJECT_ROOT
-
-"$PROJECT_ROOT/hack/integration-test.py" | tee "$FULL_INTEGRATION_TEST_PATH/ttt.log"
+"${PROJECT_ROOT}/hack/integration-test-with-cluster-creation" "$GARDENER_KUBECONFIG" "garden-laas" "$VERSION" "$PR_ID" | tee "$FULL_INTEGRATION_TEST_PATH/ttt.log"
