@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -120,8 +122,7 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 
 // Template loads the specified helm chart
 // and templates it with the given values.
-func (h *Helm) Template(ctx context.Context,
-	shouldUseRealHelmDeployer bool) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
+func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
 
 	currOp := "TemplateChart"
 
@@ -174,21 +175,22 @@ func (h *Helm) Template(ctx context.Context,
 	}
 
 	// the files are only required for the manifest helm deployer
-	var files map[string]string
+	var filesForManifestDeployer map[string]string
+	crdsForManifestDeployer := map[string]string{}
+	shouldUseRealHelmDeployer := ptr.Deref[bool](h.ProviderConfiguration.HelmDeployment, true)
 	if !shouldUseRealHelmDeployer {
-		files, err = engine.RenderWithClient(ch, values, restConfig)
+		filesForManifestDeployer, err = engine.RenderWithClient(ch, values, restConfig)
 		if err != nil {
 			return nil, nil, nil, nil, lserrors.NewWrappedError(
 				err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 		}
+
+		for _, crd := range ch.CRDObjects() {
+			crdsForManifestDeployer[crd.Filename] = string(crd.File.Data[:])
+		}
 	}
 
-	crds := map[string]string{}
-	for _, crd := range ch.CRDObjects() {
-		crds[crd.Filename] = string(crd.File.Data[:])
-	}
-
-	return files, crds, values, ch, nil
+	return filesForManifestDeployer, crdsForManifestDeployer, values, ch, nil
 }
 
 func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {
