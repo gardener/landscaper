@@ -120,7 +120,9 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 
 // Template loads the specified helm chart
 // and templates it with the given values.
-func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
+func (h *Helm) Template(ctx context.Context,
+	shouldUseRealHelmDeployer bool) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
+
 	currOp := "TemplateChart"
 
 	restConfig, _, _, err := h.TargetClient(ctx)
@@ -171,10 +173,14 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 			err, currOp, "PrepareHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
-	files, err := engine.RenderWithClient(ch, values, restConfig)
-	if err != nil {
-		return nil, nil, nil, nil, lserrors.NewWrappedError(
-			err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+	// the files are only required for the manifest helm deployer
+	var files map[string]string
+	if !shouldUseRealHelmDeployer {
+		files, err = engine.RenderWithClient(ch, values, restConfig)
+		if err != nil {
+			return nil, nil, nil, nil, lserrors.NewWrappedError(
+				err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+		}
 	}
 
 	crds := map[string]string{}

@@ -38,7 +38,7 @@ import (
 )
 
 // ApplyFiles applies the helm templated files to the target cluster.
-func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, exports map[string]interface{},
+func (h *Helm) ApplyFiles(ctx context.Context, filesForManifestDeployer, crds map[string]string, exports map[string]interface{},
 	ch *chart.Chart) error {
 
 	currOp := "ApplyFile"
@@ -77,7 +77,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		}
 
 	} else {
-		manifests, err := h.createManifests(ctx, currOp, files, crds)
+		manifests, err := h.createManifests(ctx, currOp, filesForManifestDeployer, crds)
 		if err != nil {
 			return err
 		}

@@ -6,6 +6,7 @@ package helm
 
 import (
 	"context"
+	"k8s.io/utils/ptr"
 	"time"
 
 	"github.com/gardener/landscaper/pkg/components/registries"
@@ -102,7 +103,9 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 
 	di.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 
-	files, crds, values, ch, err := helm.Template(ctx)
+	shouldUseRealHelmDeployer := ptr.Deref[bool](helm.ProviderConfiguration.HelmDeployment, true)
+
+	files, crds, values, ch, err := helm.Template(ctx, shouldUseRealHelmDeployer)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "Template", err.Error())
 		return err
