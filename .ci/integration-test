@@ -19,5 +19,6 @@ PR_ID=1
 
 export VERSION
 export PR_ID
+export PROJECT_ROOT
 
 "$PROJECT_ROOT/hack/integration-test.py" | tee "$FULL_INTEGRATION_TEST_PATH/ttt.log"
