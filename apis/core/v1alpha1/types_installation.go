@@ -11,8 +11,6 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // EncompassedByLabel is the label that contains the name of the parent installation
@@ -122,41 +120,12 @@ type InstallationList struct {
 	Items           []Installation `json:"items"`
 }
 
-// InstallationDefinition defines the Installation resource CRD.
-var InstallationDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "installations",
-		Singular: "installation",
-		ShortNames: []string{
-			"inst",
-		},
-		Kind: "Installation",
-	},
-	Scope:             lsschema.NamespaceScoped,
-	Storage:           true,
-	Served:            true,
-	SubresourceStatus: true,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
-		{
-			Name:     "phase",
-			Type:     "string",
-			JSONPath: ".status.phase",
-		},
-		{
-			Name:     "Execution",
-			Type:     "string",
-			JSONPath: ".status.executionRef.name",
-		},
-		{
-			Name:     "Age",
-			Type:     "date",
-			JSONPath: ".metadata.creationTimestamp",
-		},
-	},
-}
-
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=inst
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Execution",type=string,JSONPath=`.status.executionRef.name`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:subresource:status
 
 // Installation contains the configuration of a component
 type Installation struct {
@@ -192,6 +161,7 @@ type InstallationSpec struct {
 	// It is expected to contain a key for every blueprint-defined data import.
 	// Missing keys will be defaulted to their respective data import.
 	// Example: namespace: (( installation.imports.namespace ))
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	ImportDataMappings map[string]AnyJSON `json:"importDataMappings,omitempty"`
 
@@ -203,6 +173,7 @@ type InstallationSpec struct {
 	// It is expected to contain a key for every blueprint-defined data export.
 	// Missing keys will be defaulted to their respective data export.
 	// Example: namespace: (( blueprint.exports.namespace ))
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 
@@ -238,13 +209,12 @@ type SucceededReconcile struct {
 
 // FailedReconcile allows to configure automatically repeated reconciliations for failed installations
 type FailedReconcile struct {
-	// NumberOfReconciles specifies the maximal number of automatically repeated reconciliations. If not set, no upper
-	// limit exists.
+	// NumberOfReconciles specifies the maximal number of automatically repeated reconciliations. If not set, no upper limit exists.
+	// +kubebuilder:validation:Format=int32
 	// +optional
 	NumberOfReconciles *int `json:"numberOfReconciles,omitempty"`
 
-	// Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default
-	// of 5 minutes is used.
+	// Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 5 minutes is used.
 	// +optional
 	Interval *Duration `json:"interval,omitempty"`
 }
@@ -308,6 +278,7 @@ type AutomaticReconcileStatus struct {
 	// +optional
 	Generation int64 `json:"generation,omitempty"`
 	// NumberOfReconciles is the number of automatic reconciles for the installation with the stored generation.
+	// +kubebuilder:validation:Format=int32
 	// +optional
 	NumberOfReconciles int `json:"numberOfReconciles,omitempty"`
 	// LastReconcileTime is the time of the last automatically triggered reconcile.
@@ -432,6 +403,8 @@ type RemoteBlueprintReference struct {
 // filesystem.
 type InlineBlueprint struct {
 	// Filesystem defines a inline yaml filesystem with a blueprint.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	Filesystem AnyJSON `json:"filesystem"`
 }
 
@@ -451,6 +424,7 @@ type ComponentDescriptorDefinition struct {
 // given an optional context.
 type ComponentDescriptorReference struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// ComponentName defines the unique of the component containing the resource.
@@ -470,6 +444,7 @@ func (r ComponentDescriptorReference) ObjectMeta() cdv2.ObjectMeta {
 // StaticDataSource defines a static data source
 type StaticDataSource struct {
 	// Value defined inline a raw data
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	Value AnyJSON `json:"value,omitempty"`
 

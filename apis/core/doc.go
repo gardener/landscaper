@@ -8,4 +8,5 @@
 // +k8s:defaulter-gen=TypeMeta
 
 // +groupName=landscaper.gardener.cloud
+// +kubebuilder:skip
 package core

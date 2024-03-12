@@ -152,8 +152,11 @@ type RemoteArchiveAccess struct {
 
 // HelmDeploymentConfiguration defines settings for a helm deployment.
 type HelmDeploymentConfiguration struct {
-	Install   map[string]lsv1alpha1.AnyJSON `json:"install,omitempty"`
-	Upgrade   map[string]lsv1alpha1.AnyJSON `json:"upgrade,omitempty"`
+	// +kubebuilder:validation:Schemaless
+	Install map[string]lsv1alpha1.AnyJSON `json:"install,omitempty"`
+	// +kubebuilder:validation:Schemaless
+	Upgrade map[string]lsv1alpha1.AnyJSON `json:"upgrade,omitempty"`
+	// +kubebuilder:validation:Schemaless
 	Uninstall map[string]lsv1alpha1.AnyJSON `json:"uninstall,omitempty"`
 }
 

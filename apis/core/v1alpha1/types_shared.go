@@ -36,10 +36,11 @@ func (s *JSONSchemaDefinition) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (_ JSONSchemaDefinition) OpenAPISchemaType() []string { return []string{"object"} }
-func (_ JSONSchemaDefinition) OpenAPISchemaFormat() string { return "" }
+func (JSONSchemaDefinition) OpenAPISchemaType() []string { return []string{"object"} }
+func (JSONSchemaDefinition) OpenAPISchemaFormat() string { return "" }
 
 // Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.
+// +kubebuilder:validation:Type=string
 type Duration struct {
 	time.Duration `json:",inline"`
 }
@@ -70,14 +71,14 @@ func (d *Duration) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (_ Duration) OpenAPISchemaType() []string { return []string{"string"} }
-func (_ Duration) OpenAPISchemaFormat() string { return "" }
+func (Duration) OpenAPISchemaType() []string { return []string{"string"} }
+func (Duration) OpenAPISchemaFormat() string { return "" }
 
-// AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all
-// it is correctly generated
+// AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated.
 // +k8s:openapi-gen=true
-// +kubebuilder:validation:Type:=string
+// +kubebuilder:pruning:PreserveUnknownFields
 type AnyJSON struct {
+	// +kubebuilder:validation:Schemaless
 	json.RawMessage `json:",inline"`
 }
 
@@ -114,7 +115,7 @@ func (s *AnyJSON) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (_ AnyJSON) OpenAPISchemaType() []string {
+func (AnyJSON) OpenAPISchemaType() []string {
 	return []string{
 		"object",
 		"string",
@@ -123,7 +124,7 @@ func (_ AnyJSON) OpenAPISchemaType() []string {
 		"boolean",
 	}
 }
-func (_ AnyJSON) OpenAPISchemaFormat() string { return "" }
+func (AnyJSON) OpenAPISchemaFormat() string { return "" }
 
 // ConditionStatus is the status of a condition.
 type ConditionStatus string

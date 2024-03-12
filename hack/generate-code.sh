@@ -13,6 +13,9 @@ fi
 if [[ -z ${CODE_GEN_SCRIPT:-} ]]; then
   CODE_GEN_SCRIPT="$LOCALBIN/kube_codegen.sh"
 fi
+if [[ -z ${CONTROLLER_GEN:-} ]]; then
+  CONTROLLER_GEN="$LOCALBIN/controller-gen"
+fi
 if [[ -z ${API_REF_GEN:-} ]]; then
   API_REF_GEN="$LOCALBIN/crd-ref-docs"
 fi
@@ -77,7 +80,7 @@ kube::codegen::gen_openapi \
 
 echo
 echo "> Generating CRDs"
-go run "$PROJECT_ROOT/apis/hack/generate-schemes" --schema-dir "$PROJECT_ROOT/apis/.schemes" --crd-dir "$PROJECT_ROOT/pkg/landscaper/crdmanager/crdresources"
+"$CONTROLLER_GEN" crd paths="$PROJECT_ROOT/apis/..." output:crd:artifacts:config="$PROJECT_ROOT/pkg/landscaper/crdmanager/crdresources"
 
 echo
 echo "> Generating API reference"

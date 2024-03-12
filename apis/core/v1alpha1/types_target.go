@@ -6,8 +6,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // TargetType defines the type of the target.
@@ -22,57 +20,14 @@ type TargetList struct {
 	Items           []Target `json:"items"`
 }
 
-// TargetDefinition defines the Target resource CRD.
-var TargetDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "targets",
-		Singular: "target",
-		ShortNames: []string{
-			"tgt",
-			"tg",
-		},
-		Kind: "Target",
-	},
-	Scope:             lsschema.NamespaceScoped,
-	Storage:           true,
-	Served:            true,
-	SubresourceStatus: false,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
-		{
-			Name:     "Type",
-			Type:     "string",
-			JSONPath: ".spec.type",
-		},
-		{
-			Name:     "Context",
-			Type:     "string",
-			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/context']",
-		},
-		{
-			Name:     "Key",
-			Type:     "string",
-			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/key']",
-		},
-		{
-			Name:     "Idx",
-			Type:     "string",
-			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/index']",
-		},
-		{
-			Name:     "TMKey",
-			Type:     "string",
-			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/targetmapkey']",
-		},
-		{
-			Name:     "Age",
-			Type:     "date",
-			JSONPath: ".metadata.creationTimestamp",
-		},
-	},
-}
-
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=tgt;tg
+// +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`
+// +kubebuilder:printcolumn:name="Context",type=string,JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/context']`
+// +kubebuilder:printcolumn:name="Key",type=string,JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/key']`
+// +kubebuilder:printcolumn:name="Idx",type=string,JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/index']`
+// +kubebuilder:printcolumn:name="TMKey",type=string,JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/targetmapkey']`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Target defines a specific data object that defines target environment.
 // Every deploy item can have a target which is used by the deployer to install the specific application.
@@ -91,6 +46,7 @@ type TargetSpec struct {
 
 	// Configuration contains the target type specific configuration.
 	// Exactly one of the fields Configuration and SecretRef must be set
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	Configuration *AnyJSON `json:"config,omitempty"`
 
