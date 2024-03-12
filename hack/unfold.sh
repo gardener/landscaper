@@ -66,7 +66,7 @@ for f in "$@"; do
       elif $clean; then
         f="$(realpath --relative-base="$PWD" "$f")"
       fi
-      if tmp=$(find "$f" -type d $depth_mod 2>&1); then
+      if tmp=$(find "$f" $depth_mod -type d 2>&1); then
         echo "$tmp"
       else
         echo "error unfolding path '$f': $tmp" >&2
