@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
 
@@ -54,18 +55,18 @@ var _ = Describe("GarbageCollector", func() {
 		logger := logging.Wrap(simplelogger.WithTimestamps(simplelogger.NewIOLogger(GinkgoWriter)))
 		var err error
 		lsMgr, err = manager.New(testenv.Env.Config, manager.Options{
-			Scheme:             api.LandscaperScheme,
-			MetricsBindAddress: "0",
-			Logger:             logger.WithName("lsManager").Logr(),
-			NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
+			Scheme:    api.LandscaperScheme,
+			Metrics:   metricsserver.Options{BindAddress: "0"},
+			Logger:    logger.WithName("lsManager").Logr(),
+			NewClient: lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 		})
 		Expect(err).ToNot(HaveOccurred())
 
 		hostMgr, err = manager.New(hostTestEnv.Env.Config, manager.Options{
-			Scheme:             scheme.Scheme,
-			MetricsBindAddress: "0",
-			Logger:             logger.WithName("hostManager").Logr(),
-			NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
+			Scheme:    scheme.Scheme,
+			Metrics:   metricsserver.Options{BindAddress: "0"},
+			Logger:    logger.WithName("hostManager").Logr(),
+			NewClient: lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 		})
 		Expect(err).ToNot(HaveOccurred())
 

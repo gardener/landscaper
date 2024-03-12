@@ -16,6 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	lsconfig "github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
@@ -55,10 +56,9 @@ func (o *options) run(ctx context.Context) error {
 	o.Log.Info("Starting TargetSync Controller", lc.KeyVersion, version.Get().GitVersion)
 
 	opts := manager.Options{
-		LeaderElection:     false,
-		Port:               9443,
-		MetricsBindAddress: "0",
-		Cache:              cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
+		Cache:          cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
 	}
 
 	data, err := os.ReadFile(o.landscaperKubeconfigPath)

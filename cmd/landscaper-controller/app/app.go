@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/install"
@@ -80,10 +81,9 @@ func (o *Options) run(ctx context.Context) error {
 	burst, qps := lsutils.GetHostClientRequestRestrictions(setupLogger, hostAndResourceClusterDifferent)
 
 	opts := manager.Options{
-		LeaderElection:     false,
-		Port:               9443,
-		MetricsBindAddress: "0",
-		Cache:              cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
+		Cache:          cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
 	}
 
 	//TODO: investigate whether this is used with an uncached client
@@ -92,7 +92,7 @@ func (o *Options) run(ctx context.Context) error {
 	}
 
 	if o.Config.Metrics != nil {
-		opts.MetricsBindAddress = fmt.Sprintf(":%d", o.Config.Metrics.Port)
+		opts.Metrics.BindAddress = fmt.Sprintf(":%d", o.Config.Metrics.Port)
 	}
 
 	hostRestConfig := ctrl.GetConfigOrDie()

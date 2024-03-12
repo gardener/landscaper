@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
 	"k8s.io/utils/ptr"
 
 	"github.com/google/uuid"
@@ -127,9 +129,9 @@ var _ = Describe("Template", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
-				Scheme:             api.LandscaperScheme,
-				MetricsBindAddress: "0",
-				NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
+				Scheme:    api.LandscaperScheme,
+				Metrics:   metricsserver.Options{BindAddress: "0"},
+				NewClient: lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(helm.AddDeployerToManager(mgr.GetClient(), mgr.GetClient(), mgr.GetClient(), mgr.GetClient(),
