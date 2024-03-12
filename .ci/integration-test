@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Script executing the integration tests in the context of a Gardener Concours pipeline job with access to the cc-config.
+# Script executing the integration tests in the context of a Gardener Concourse pipeline job with access to the cc-config.
 # It is called in case of a head-update of the master branch and a new release. The parameter "1", when calling ./.ci/int-test,
 # is integrated in the test cluster name indicating that the tests were triggered by a head update commit or a new release.
 # The cluster name has the format it-pr1-<4-digits>.
@@ -13,7 +13,11 @@ set -euo pipefail
 
 PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 FULL_INTEGRATION_TEST_PATH="$(realpath "$INTEGRATION_TEST_PATH")"
-USE_OCM_LIB=${1:-}
 
-"$PROJECT_ROOT/.ci/int-test" "1" | tee "$FULL_INTEGRATION_TEST_PATH/ttt.log"
+VERSION="$("$PROJECT_ROOT/hack/get-version.sh")"
+PR_ID=1
 
+export VERSION
+export PR_ID
+
+"$PROJECT_ROOT/hack/integration-test.py" | tee "$FULL_INTEGRATION_TEST_PATH/ttt.log"
