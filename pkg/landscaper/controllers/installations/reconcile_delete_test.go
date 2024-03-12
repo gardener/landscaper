@@ -19,6 +19,7 @@ import (
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -132,9 +133,9 @@ var _ = Describe("Delete", func() {
 			ctx, cancel = context.WithCancel(context.Background())
 			var err error
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
-				Scheme:             api.LandscaperScheme,
-				MetricsBindAddress: "0",
-				NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
+				Scheme:    api.LandscaperScheme,
+				Metrics:   metricsserver.Options{BindAddress: "0"},
+				NewClient: lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 			})
 			Expect(err).ToNot(HaveOccurred())
 

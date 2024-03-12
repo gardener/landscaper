@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
@@ -57,8 +58,8 @@ var _ = Describe("Landscaper Controller", func() {
 			)
 			defer ctx.Done()
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
-				MetricsBindAddress: "0",
-				NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
+				Metrics:   metricsserver.Options{BindAddress: "0"},
+				NewClient: lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			lsinstall.Install(mgr.GetScheme())
