@@ -9,7 +9,7 @@ set -euo pipefail
 PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 CHART_ROOT="${PROJECT_ROOT}/charts"
 
-if [[ -n $1 ]]; then
+if [[ -n ${1:-} ]]; then
   EFFECTIVE_VERSION=$1
 elif [[ -z ${EFFECTIVE_VERSION:-} ]]; then
   EFFECTIVE_VERSION=$("$PROJECT_ROOT/hack/get-version.sh")
