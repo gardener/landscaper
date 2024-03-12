@@ -102,7 +102,8 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 
 	di.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 
-	files, crds, values, ch, err := helm.Template(ctx)
+	// filesForManifestDeployer and crdsForManifestDeployer are only required for the helm manifest deployer and otherwise empty
+	filesForManifestDeployer, crdsForManifestDeployer, values, ch, err := helm.Template(ctx)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "Template", err.Error())
 		return err
@@ -118,7 +119,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 		return err
 	}
 
-	return helm.ApplyFiles(ctx, files, crds, exports, ch)
+	return helm.ApplyFiles(ctx, filesForManifestDeployer, crdsForManifestDeployer, exports, ch)
 }
 
 func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
