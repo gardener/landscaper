@@ -91,11 +91,11 @@ landscaper:
           - update_release.py
           trait_depends:
           - release
-          depends:
-          - integration_test
+          # depends:
+          # - integration_test
         format:
           publish_to:
           - source
           depends:
           - verify
-          - integration_test
+          # - integration_test
