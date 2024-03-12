@@ -130,7 +130,7 @@ JQ ?= $(LOCALBIN)/jq
 REGISTRY_BINARY ?= $(LOCALBIN)/registry
 
 ## Tool Versions
-CODE_GEN_VERSION ?= v0.29.1
+CODE_GEN_VERSION ?= $(shell  $(REPO_ROOT)/hack/extract-module-version.sh k8s.io/code-generator)
 FORMATTER_VERSION ?= v0.16.0
 LINTER_VERSION ?= 1.55.2
 OCM_VERSION ?= 0.4.3
@@ -143,9 +143,10 @@ localbin: ## Creates the local bin folder, if it doesn't exist. Not meant to be 
 
 .PHONY: code-gen
 code-gen: localbin ## Download the code-gen script locally.
-	@test -s $(CODE_GEN_SCRIPT) || \
+	@test -s $(CODE_GEN_SCRIPT) && test -s $(LOCALBIN)/kube_codegen_version && cat $(LOCALBIN)/kube_codegen_version | grep -q $(CODE_GEN_VERSION) || \
 	( echo "Downloading code generator script $(CODE_GEN_VERSION) ..."; \
-	curl -sfL "https://raw.githubusercontent.com/kubernetes/code-generator/$(CODE_GEN_VERSION)/kube_codegen.sh" --output "$(CODE_GEN_SCRIPT)" && chmod +x "$(CODE_GEN_SCRIPT)" )
+	curl -sfL "https://raw.githubusercontent.com/kubernetes/code-generator/$(CODE_GEN_VERSION)/kube_codegen.sh" --output "$(CODE_GEN_SCRIPT)" && chmod +x "$(CODE_GEN_SCRIPT)" && \
+	echo $(CODE_GEN_VERSION) > $(LOCALBIN)/kube_codegen_version )
 
 .PHONY: goimports
 goimports: localbin ## Download goimports locally if necessary. If wrong version is installed, it will be overwritten.
