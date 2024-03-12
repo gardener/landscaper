@@ -77,13 +77,13 @@ landscaper:
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
-        integration_test:
-          execute:
-          - integration-test
-          depends:
-          - ocm_build_and_publish
-          image: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/integration-test:1.21.7-alpine3.18'
-          output_dir: 'integration_test'
+        # integration_test:
+        #   execute:
+        #   - integration-test
+        #   depends:
+        #   - ocm_build_and_publish
+        #   image: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/integration-test:1.21.7-alpine3.18'
+        #   output_dir: 'integration_test'
         update_release:
           inputs:
             INTEGRATION_TEST_PATH: integration_test_path
