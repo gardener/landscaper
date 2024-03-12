@@ -22,7 +22,7 @@ fi
 EFFECTIVE_VERSION="$(${PROJECT_ROOT}/hack/get-version.sh)"
 
 echo -n "> Updating helm chart version"
-${PROJECT_ROOT}/hack/update-helm-chart-version.sh ${EFFECTIVE_VERSION}
+${PROJECT_ROOT}/hack/update-helm-chart-version.sh
 
 echo "> Create Component Version ${EFFECTIVE_VERSION}"
 
