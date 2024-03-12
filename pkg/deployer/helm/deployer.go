@@ -6,8 +6,9 @@ package helm
 
 import (
 	"context"
-	"k8s.io/utils/ptr"
 	"time"
+
+	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/pkg/components/registries"
 
@@ -105,6 +106,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 
 	shouldUseRealHelmDeployer := ptr.Deref[bool](helm.ProviderConfiguration.HelmDeployment, true)
 
+	// files are only required for the helm manifest deployer and otherwise empty
 	files, crds, values, ch, err := helm.Template(ctx, shouldUseRealHelmDeployer)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "Template", err.Error())
