@@ -39,6 +39,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	"github.com/gardener/landscaper/pkg/utils/verify"
 )
 
 const (
@@ -369,7 +370,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 
 	//TODO: verify deployment
-	if inst.Spec.Verification != nil && inst.Spec.Verification.Enabled {
+	if verify.IsVerifyEnabled(inst, c.LsConfig) {
 		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentDescriptorRef())
 		if err != nil {
 			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
