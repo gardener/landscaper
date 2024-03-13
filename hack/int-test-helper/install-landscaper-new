@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+TARGET_CLUSTER_KUBECONFIG_PATH=$1
+RESOURCE_CLUSTER_KUBECONFIG_PATH=$2
+LANDSCAPER_VERSION=$3
+
+TMPDIR="$(mktemp -d)"
+
+OCI_REPO="europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper"
+COMPONENT_NAME="github.com/gardener/landscaper"
+
+echo "> Pull landscaper charts"
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-controller-rbac-chart --download-handlers -O "${TMPDIR}/landscaper-controller-rbac-chart.tgz"
+tar xzf "${TMPDIR}/landscaper-controller-rbac-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/landscaper-controller-rbac-chart.tgz"
+
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-controller-deployment-chart --download-handlers -O "${TMPDIR}/landscaper-controller-deployment-chart.tgz"
+tar xzf "${TMPDIR}/landscaper-controller-deployment-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/landscaper-controller-deployment-chart.tgz"
+
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/helm-deployer:${LANDSCAPER_VERSION}" helm-deployer-chart --download-handlers -O "${TMPDIR}/helm-deployer-chart.tgz"
+tar xzf "${TMPDIR}/helm-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/helm-deployer-chart.tgz"
+
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/manifest-deployer:${LANDSCAPER_VERSION}" manifest-deployer-chart --download-handlers -O "${TMPDIR}/manifest-deployer-chart.tgz"
+tar xzf "${TMPDIR}/manifest-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/manifest-deployer-chart.tgz"
+
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-deployer-chart --download-handlers -O "${TMPDIR}/container-deployer-chart.tgz"
+tar xzf "${TMPDIR}/container-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/container-deployer-chart.tgz"
+
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/mock-deployer:${LANDSCAPER_VERSION}" mock-deployer-chart --download-handlers -O "${TMPDIR}/mock-deployer-chart.tgz"
+tar xzf "${TMPDIR}/mock-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/mock-deployer-chart.tgz"
+
+echo "> Deploy RBAC"
+printf "
+global:
+  serviceAccount:
+    controller:
+      create: true
+      annotations: {}
+      name: landscaper-controller
+
+    webhooksServer:
+      create: true
+      annotations: {}
+      name: landscaper-webhooks
+
+    user:
+      create: true
+      annotations: {}
+      name: landscaper-user
+" > "${TMPDIR}/landscaper-rbac-values.yaml"
+
+helm upgrade --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
+  -f "${TMPDIR}/landscaper-rbac-values.yaml" landscaper-rbac "${TMPDIR}/landscaper-rbac"
+
+exit 0
+
+echo "> Deploy Landscaper"
+printf "
+global:
+  serviceAccount:
+    controller:
+      create: true
+      annotations: {}
+      name: landscaper-controller
+
+    webhooksServer:
+      create: true
+      annotations: {}
+      name: landscaper-webhooks
+
+    user:
+      create: true
+      annotations: {}
+      name: landscaper-user
+" > "${TMPDIR}/landscaper-rbac-values.yaml"
+
+helm upgrade --kubeconfig="${TARGET_CLUSTER_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
+  -f "${TMPDIR}/landscaper-rbac-values.yaml" landscaper-rbac "${TMPDIR}/landscaper-rbac"
+
+
+
+
+
