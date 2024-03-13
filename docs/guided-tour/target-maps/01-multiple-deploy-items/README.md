@@ -11,17 +11,17 @@ For prerequisites, see [here](../../README.md#prerequisites-and-basic-definition
 
 ## Description
 
-This example presents a component, which gets as input a map of targets and a data object containing
+This example presents a component version, which gets as input a map of targets and a data object containing
 configuration data for every input target. For every input target a DeployItem is created which deploys
 a config map on the target cluster specified by one of the input targets. The data of the config map contains the
 corresponding data provided as another import.
 
-The example component is stored 
+The example component version is stored 
 [here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-deploy-items). 
-If you want to upload the component to another registry, you can just adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/commands/settings) 
-file and execute the component build and upload script [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/commands/component.sh).
+If you want to upload the component version to another registry, you can just adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/commands/settings) 
+file and execute the component veresion build and upload script [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/commands/component.sh).
 
-The component itself is specified here:
+The component version itself is specified here:
   - [component configuration](component/components.yaml)
   - [blueprints](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/blueprint) 
 

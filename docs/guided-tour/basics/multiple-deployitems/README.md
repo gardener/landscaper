@@ -22,7 +22,7 @@ dependsOn:
    - deploy-item-1
 ```
 
-As a consequence, DeployItem `deploy-item-1` will be processed first, and DeployItem `deploy-item-2` afterwards.
+As a consequence, DeployItem `deploy-item-1` will be processed first, and DeployItem `deploy-item-2` afterward.
 
 Each DeployItem can depend on several other DeployItems. 
 
