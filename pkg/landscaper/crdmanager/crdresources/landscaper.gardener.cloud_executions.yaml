@@ -1,12 +1,15 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: null
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.0
   name: executions.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
   names:
     kind: Execution
+    listKind: ExecutionList
     plural: executions
     shortNames:
     - exec
@@ -29,6 +32,18 @@ spec:
         description: Execution contains the configuration of a execution and deploy
           item
         properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
           spec:
             description: Spec defines a execution and its items
             properties:
@@ -104,9 +119,9 @@ spec:
                         changed.
                       type: boolean
                   required:
+                  - config
                   - name
                   - type
-                  - config
                   type: object
                 type: array
               deployItemsCompressed:
@@ -127,6 +142,7 @@ spec:
                       description: Well-defined error codes in case the condition
                         reports a problem.
                       items:
+                        description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
@@ -152,12 +168,12 @@ spec:
                       description: DataType of the Shoot condition.
                       type: string
                   required:
-                  - type
-                  - status
                   - lastTransitionTime
                   - lastUpdateTime
-                  - reason
                   - message
+                  - reason
+                  - status
+                  - type
                   type: object
                 type: array
               deployItemCache:
@@ -206,6 +222,7 @@ spec:
                     description: Well-defined error codes in case the condition reports
                       a problem.
                     items:
+                      description: ErrorCode is a string alias.
                       type: string
                     type: array
                   lastTransitionTime:
@@ -229,11 +246,11 @@ spec:
                     description: The reason for the condition's last transition.
                     type: string
                 required:
-                - operation
                 - lastTransitionTime
                 - lastUpdateTime
-                - reason
                 - message
+                - operation
+                - reason
                 type: object
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed
@@ -277,9 +294,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
