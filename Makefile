@@ -41,10 +41,8 @@ check: golangci-lint jq goimports ## Runs linter, 'go vet', and checks if the fo
 		JQ=$(JQ) $(REPO_ROOT)/hack/verify-docs-index.sh
 	@LINTER=$(LINTER) FORMATTER=$(FORMATTER) $(REPO_ROOT)/hack/check.sh --golangci-lint-config="$(REPO_ROOT)/.golangci.yaml" $(CODE_DIRS)
 
-## TODO: re-enable
 .PHONY: verify
-verify:
-	@echo "verify disabled"
+verify: check ## Alias for 'make check'.
 
 .PHONY: generate-code
 generate-code: code-gen controller-gen api-ref-gen mockgen ## Runs code generation (deepcopy/conversion/defaulter functions, API reference, openAPI definitions, CRDs, mock clients).
