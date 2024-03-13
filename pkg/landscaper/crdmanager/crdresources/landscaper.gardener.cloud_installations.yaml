@@ -517,6 +517,7 @@ spec:
                   data export. Missing keys will be defaulted to their respective
                   data export. Example: namespace: (( blueprint.exports.namespace
                   ))'
+                type: object
               exports:
                 description: Exports define the exported data objects and targets.
                 properties:
@@ -561,6 +562,7 @@ spec:
                   data import. Missing keys will be defaulted to their respective
                   data import. Example: namespace: (( installation.imports.namespace
                   ))'
+                type: object
               imports:
                 description: Imports define the imported data objects and targets.
                 properties:

@@ -53,6 +53,7 @@ type ContextConfiguration struct {
 	// Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
 	// The key should use a dns-like syntax to express the purpose and avoid conflicts.
 	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
 	// +optional
 	Configurations map[string]AnyJSON `json:"configurations,omitempty"`
 	// ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object

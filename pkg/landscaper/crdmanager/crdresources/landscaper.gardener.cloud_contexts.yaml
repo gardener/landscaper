@@ -42,6 +42,7 @@ spec:
             description: Configurations contains arbitrary configuration information
               for dedicated purposes given by a string key. The key should use a dns-like
               syntax to express the purpose and avoid conflicts.
+            type: object
           kind:
             description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client

@@ -46,6 +46,7 @@ type TargetSpec struct {
 
 	// Configuration contains the target type specific configuration.
 	// Exactly one of the fields Configuration and SecretRef must be set
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Schemaless
 	// +optional
 	Configuration *AnyJSON `json:"config,omitempty"`

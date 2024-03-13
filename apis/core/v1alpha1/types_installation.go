@@ -162,6 +162,7 @@ type InstallationSpec struct {
 	// Missing keys will be defaulted to their respective data import.
 	// Example: namespace: (( installation.imports.namespace ))
 	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
 	// +optional
 	ImportDataMappings map[string]AnyJSON `json:"importDataMappings,omitempty"`
 
@@ -174,6 +175,7 @@ type InstallationSpec struct {
 	// Missing keys will be defaulted to their respective data export.
 	// Example: namespace: (( blueprint.exports.namespace ))
 	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
 	// +optional
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 
