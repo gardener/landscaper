@@ -46,14 +46,9 @@ rules:
     - landscaper.gardener.cloud
   resources:
     - syncobjects
+    - criticalproblems
   verbs:
-    - get
-    - watch
-    - list
-    - create
-    - update
-    - patch
-    - delete
+    - "*"
 
 - apiGroups:
     - ""

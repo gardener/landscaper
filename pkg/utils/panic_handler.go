@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -18,7 +20,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
-func HandlePanics(ctx context.Context, result *reconcile.Result) {
+func HandlePanics(ctx context.Context, result *reconcile.Result, hostUncachedClient client.Client) {
 	logger, _ := logging.FromContextOrNew(ctx, nil)
 
 	if r := recover(); r != nil {
@@ -33,21 +35,33 @@ func HandlePanics(ctx context.Context, result *reconcile.Result) {
 
 			if err.Error() == "runtime error: invalid memory address or nil pointer dereference" {
 				logger.Error(err, "Recovered from a nil pointer dereference or invalid memory address error")
+				if hostUncachedClient != nil {
+					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient)
+				}
 				return
 			}
 
 			if strings.HasPrefix(err.Error(), "runtime error: index out of range") {
 				logger.Error(err, "Recovered from an index out of range error")
+				if hostUncachedClient != nil {
+					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient)
+				}
 				return
 			}
 
 			if strings.HasPrefix(err.Error(), "runtime error: integer divide by zero") {
 				logger.Error(err, "Recovered from a integer divide by zero error")
+				if hostUncachedClient != nil {
+					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient)
+				}
 				return
 			}
 
 			if strings.HasPrefix(err.Error(), "interface conversion:") {
 				logger.Error(err, "Recovered from a type assertion error")
+				if hostUncachedClient != nil {
+					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient)
+				}
 				return
 			}
 

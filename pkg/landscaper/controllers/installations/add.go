@@ -36,6 +36,13 @@ func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient
 		"numberOfWorkerThreads", config.Controllers.Installations.CommonControllerConfig.Workers,
 		"lockingEnabled", lockingEnabled)
 
+	// check if allowed to access
+	problemHandler := utils.GetCriticalProblemsHandler()
+	if err := problemHandler.AccessAllowed(ctx, hostUncachedClient); err != nil {
+		return err
+	}
+	log.Info("access to critical problems allowed")
+
 	a, err := NewController(ctx,
 		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		log,

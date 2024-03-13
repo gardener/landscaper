@@ -238,6 +238,54 @@ _Appears in:_
 
 
 
+#### CriticalProblem
+
+
+
+CriticalProblem contains information about one critical problem.
+
+_Appears in:_
+- [CriticalProblemsSpec](#criticalproblemsspec)
+
+| Field | Description |
+| --- | --- |
+| `podName` _string_ |  |
+| `creationTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#time-v1-meta)_ |  |
+
+
+#### CriticalProblems
+
+
+
+CriticalProblems contains a list of critical landscaper problems.
+
+_Appears in:_
+- [CriticalProblemsList](#criticalproblemslist)
+
+| Field | Description |
+| --- | --- |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |
+| `spec` _[CriticalProblemsSpec](#criticalproblemsspec)_ | Spec contains the specification |
+
+
+
+
+#### CriticalProblemsSpec
+
+
+
+CriticalProblemsSpec contains the specification for a CriticalProblems object.
+
+_Appears in:_
+- [CriticalProblems](#criticalproblems)
+
+| Field | Description |
+| --- | --- |
+| `criticalProblem` _[CriticalProblem](#criticalproblem) array_ |  |
+
+
+
+
 
 
 

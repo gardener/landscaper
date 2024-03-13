@@ -165,7 +165,7 @@ func (o *Options) startMainController(ctx context.Context,
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+	if err := executionactrl.AddControllerToManager(ctx, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		ctrlLogger, lsMgr, hostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}

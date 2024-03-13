@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	NoPodname      = "noPodname"
-	NoPodnamespace = "noPodnamespace"
+	NoPodname      = "nopodname"
+	NoPodnamespace = "nopodnamespace"
 
 	LsHostClientBurstVar     = "LS_HOST_CLIENT_BURST"
 	LsHostClientQpsVar       = "LS_HOST_CLIENT_QPS"

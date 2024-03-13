@@ -59,6 +59,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&SyncObjectList{},
 		&TargetSync{},
 		&TargetSyncList{},
+		&CriticalProblems{},
+		&CriticalProblemsList{},
 	)
 	if err := RegisterConversions(scheme); err != nil {
 		return err

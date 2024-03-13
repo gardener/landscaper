@@ -96,6 +96,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core.Context":                                                     schema_gardener_landscaper_apis_core_Context(ref),
 		"github.com/gardener/landscaper/apis/core.ContextConfiguration":                                        schema_gardener_landscaper_apis_core_ContextConfiguration(ref),
 		"github.com/gardener/landscaper/apis/core.ContextList":                                                 schema_gardener_landscaper_apis_core_ContextList(ref),
+		"github.com/gardener/landscaper/apis/core.CriticalProblem":                                             schema_gardener_landscaper_apis_core_CriticalProblem(ref),
+		"github.com/gardener/landscaper/apis/core.CriticalProblems":                                            schema_gardener_landscaper_apis_core_CriticalProblems(ref),
+		"github.com/gardener/landscaper/apis/core.CriticalProblemsList":                                        schema_gardener_landscaper_apis_core_CriticalProblemsList(ref),
+		"github.com/gardener/landscaper/apis/core.CriticalProblemsSpec":                                        schema_gardener_landscaper_apis_core_CriticalProblemsSpec(ref),
+		"github.com/gardener/landscaper/apis/core.CriticalProblemsStatus":                                      schema_gardener_landscaper_apis_core_CriticalProblemsStatus(ref),
 		"github.com/gardener/landscaper/apis/core.DataExport":                                                  schema_gardener_landscaper_apis_core_DataExport(ref),
 		"github.com/gardener/landscaper/apis/core.DataImport":                                                  schema_gardener_landscaper_apis_core_DataImport(ref),
 		"github.com/gardener/landscaper/apis/core.DataObject":                                                  schema_gardener_landscaper_apis_core_DataObject(ref),
@@ -190,6 +195,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Context":                                            schema_landscaper_apis_core_v1alpha1_Context(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ContextConfiguration":                               schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ContextList":                                        schema_landscaper_apis_core_v1alpha1_ContextList(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblem":                                    schema_landscaper_apis_core_v1alpha1_CriticalProblem(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblems":                                   schema_landscaper_apis_core_v1alpha1_CriticalProblems(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblemsList":                               schema_landscaper_apis_core_v1alpha1_CriticalProblemsList(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblemsSpec":                               schema_landscaper_apis_core_v1alpha1_CriticalProblemsSpec(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblemsStatus":                             schema_landscaper_apis_core_v1alpha1_CriticalProblemsStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataExport":                                         schema_landscaper_apis_core_v1alpha1_DataExport(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataImport":                                         schema_landscaper_apis_core_v1alpha1_DataImport(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataObject":                                         schema_landscaper_apis_core_v1alpha1_DataObject(ref),
@@ -3678,6 +3688,170 @@ func schema_gardener_landscaper_apis_core_ContextList(ref common.ReferenceCallba
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core.Context", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_gardener_landscaper_apis_core_CriticalProblem(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblem contains information about one critical problem.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"podName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"creationTime": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_gardener_landscaper_apis_core_CriticalProblems(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblems contains a list of critical landscaper problems.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec contains the specification",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core.CriticalProblemsSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status contains the status",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core.CriticalProblemsStatus"),
+						},
+					},
+				},
+				Required: []string{"spec"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core.CriticalProblemsSpec", "github.com/gardener/landscaper/apis/core.CriticalProblemsStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_gardener_landscaper_apis_core_CriticalProblemsList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblemsList contains a list of critical landscaper problems objects",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core.CriticalProblems"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core.CriticalProblems", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_gardener_landscaper_apis_core_CriticalProblemsSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblemsSpec contains the specification for a CriticalProblems object.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"criticalProblem": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core.CriticalProblem"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core.CriticalProblem"},
+	}
+}
+
+func schema_gardener_landscaper_apis_core_CriticalProblemsStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblemsStatus contains the status of a CriticalProblems object.",
+				Type:        []string{"object"},
+			},
+		},
 	}
 }
 
@@ -7977,6 +8151,170 @@ func schema_landscaper_apis_core_v1alpha1_ContextList(ref common.ReferenceCallba
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.Context", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_CriticalProblem(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblem contains information about one critical problem.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"podName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"creationTime": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_CriticalProblems(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblems contains a list of critical landscaper problems.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec contains the specification",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblemsSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status contains the status",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblemsStatus"),
+						},
+					},
+				},
+				Required: []string{"spec"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblemsSpec", "github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblemsStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_CriticalProblemsList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblemsList contains a list of critical landscaper problems objects",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblems"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblems", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_CriticalProblemsSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblemsSpec contains the specification for a CriticalProblems object.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"criticalProblem": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblem"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.CriticalProblem"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_CriticalProblemsStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CriticalProblemsStatus contains the status of a CriticalProblems object.",
+				Type:        []string{"object"},
+			},
+		},
 	}
 }
 
