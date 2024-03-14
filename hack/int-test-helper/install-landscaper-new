@@ -4,13 +4,51 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -e
 
-TARGET_CLUSTER_KUBECONFIG_PATH=$1
-RESOURCE_CLUSTER_KUBECONFIG_PATH=$2
-LANDSCAPER_VERSION=$3
+print_help() {
+    echo -e "usage:"
+    echo -e "  $0 -v VERSION -t TARGET_SHOOT_KUBECONFIG -r RESOURCE_SHOOT_KUBECONFIG -i INGRESS_URL"
+    echo -e "\t-v VERSION                   the Landscaper component version"
+    echo -e "\t-t TARGET_SHOOT_KUBECONFIG   the file name of the target shoot cluster kubeconfig"
+    echo -e "\t-r RESOURCE_SHOOT_KUBECONFIG the file name of the target shoot cluster kubeconfig"
+    echo -e "\t-i INGRESS_URL               the target shoot cluster ingress url name"
+}
+
+while getopts v:t:r:i:h flag
+do
+    case "${flag}" in
+        v) LANDSCAPER_VERSION=${OPTARG};;
+        t) TARGET_SHOOT_KUBECONFIG_PATH=${OPTARG};;
+        r) RESOURCE_SHOOT_KUBECONFIG_PATH=${OPTARG};;
+        i) INGRESS_URL=${OPTARG};;
+        h) print_help;exit 0;;
+    esac
+done
+
+if [[ -z $LANDSCAPER_VERSION ]]; then
+    echo "Landscaper component version (-v) is required" >&2
+    print_help
+    exit 1
+fi
+
+if [[ -z $TARGET_SHOOT_KUBECONFIG_PATH ]]; then
+    echo "Target shoot kubeconfig path (-t) is required" >&2
+    print_help
+    exit 1
+fi
+
+if [[ -z RESOURCE_SHOOT_KUBECONFIG_PATH ]]; then
+    echo "Resource shoot kubeconfig path (-r) is required" >&2
+    print_help
+    exit 1
+fi
+
+if [[ -z INGRESS_URL ]]; then
+    echo "Ingress url (-i) is required" >&2
+    print_help
+    exit 1
+fi
 
 TMPDIR="$(mktemp -d)"
 
@@ -36,6 +74,8 @@ tar xzf "${TMPDIR}/container-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/con
 ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/mock-deployer:${LANDSCAPER_VERSION}" mock-deployer-chart --download-handlers -O "${TMPDIR}/mock-deployer-chart.tgz"
 tar xzf "${TMPDIR}/mock-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/mock-deployer-chart.tgz"
 
+tree $TMPDIR
+
 echo "> Deploy RBAC"
 printf "
 global:
@@ -49,17 +89,10 @@ global:
       create: true
       annotations: {}
       name: landscaper-webhooks
-
-    user:
-      create: true
-      annotations: {}
-      name: landscaper-user
 " > "${TMPDIR}/landscaper-rbac-values.yaml"
 
-helm upgrade --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
+helm upgrade --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
   -f "${TMPDIR}/landscaper-rbac-values.yaml" landscaper-rbac "${TMPDIR}/landscaper-rbac"
-
-exit 0
 
 echo "> Deploy Landscaper"
 printf "
@@ -75,14 +108,39 @@ global:
       annotations: {}
       name: landscaper-webhooks
 
-    user:
-      create: true
-      annotations: {}
-      name: landscaper-user
-" > "${TMPDIR}/landscaper-rbac-values.yaml"
+landscaper:
+  verbosity: debug
+  deployItemTimeouts:
+      pickup: 30s
+      abort: 30s
 
-helm upgrade --kubeconfig="${TARGET_CLUSTER_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
-  -f "${TMPDIR}/landscaper-rbac-values.yaml" landscaper-rbac "${TMPDIR}/landscaper-rbac"
+controller:
+  landscaperKubeconfig:
+    kubeconfig: |
+$(cat "$RESOURCE_SHOOT_KUBECONFIG_PATH" | sed "s/^/      /")
+
+webhooksServer:
+  landscaperKubeconfig:
+    kubeconfig: |
+$(cat "$RESOURCE_SHOOT_KUBECONFIG_PATH" | sed "s/^/      /")
+
+  servicePort: 9443
+  disableWebhooks: []
+  certificatesNamespace: ls-system
+
+  ingress:
+    host: ${INGRESS_URL}
+    className: nginx
+    dns:
+      class: garden
+" > "${TMPDIR}/landscaper-controller-values.yaml"
+
+printf "
+
+" > "${TMPDIR}/landscaper-controller-values-resource-shoot.yaml"
+
+helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
+  -f "${TMPDIR}/landscaper-controller-values.yaml" landscaper-controller "${TMPDIR}/landscaper-controller"
 
 
 
