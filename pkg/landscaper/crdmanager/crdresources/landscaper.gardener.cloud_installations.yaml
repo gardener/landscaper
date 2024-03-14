@@ -518,6 +518,7 @@ spec:
                   data export. Example: namespace: (( blueprint.exports.namespace
                   ))'
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               exports:
                 description: Exports define the exported data objects and targets.
                 properties:
@@ -563,6 +564,7 @@ spec:
                   data import. Example: namespace: (( installation.imports.namespace
                   ))'
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               imports:
                 description: Imports define the imported data objects and targets.
                 properties:

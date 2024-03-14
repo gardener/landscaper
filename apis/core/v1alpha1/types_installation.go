@@ -163,6 +163,7 @@ type InstallationSpec struct {
 	// Example: namespace: (( installation.imports.namespace ))
 	// +kubebuilder:validation:Schemaless
 	// +kubebuilder:validation:Type=object
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +optional
 	ImportDataMappings map[string]AnyJSON `json:"importDataMappings,omitempty"`
 
@@ -176,6 +177,7 @@ type InstallationSpec struct {
 	// Example: namespace: (( blueprint.exports.namespace ))
 	// +kubebuilder:validation:Schemaless
 	// +kubebuilder:validation:Type=object
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +optional
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 
