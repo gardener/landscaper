@@ -29,7 +29,7 @@ func IsVerifyEnabled(inst *lsv1alpha1.Installation, config *config.LandscaperCon
 	return false
 }
 
-func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, client client.Client) (string, PublicKeyData, error) {
+func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, installationContext lsv1alpha1.Context, client client.Client) (string, PublicKeyData, error) {
 	if inst.Spec.Verification == nil {
 		return "", nil, errors.New("installation.Spec.Verification cant be nil")
 	}
@@ -40,7 +40,12 @@ func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, clien
 
 	}
 
-	_, publicKeyData, _, err := lutil.ResolveSecretReference(ctx, client, &inst.Spec.Verification.PublicKeySecretReference)
+	publicKeySecretReference, ok := installationContext.VerificationSignatures[signatureName]
+	if !ok {
+		return "", nil, fmt.Errorf("context.VerificationSignatures does not contain a key for signature name '%v'", signatureName)
+	}
+
+	_, publicKeyData, _, err := lutil.ResolveSecretReference(ctx, client, &publicKeySecretReference.PublicKeySecretReference)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed resolving public key from reference: %w", err)
 	}
