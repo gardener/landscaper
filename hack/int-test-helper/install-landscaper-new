@@ -74,8 +74,6 @@ tar xzf "${TMPDIR}/container-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/con
 ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/mock-deployer:${LANDSCAPER_VERSION}" mock-deployer-chart --download-handlers -O "${TMPDIR}/mock-deployer-chart.tgz"
 tar xzf "${TMPDIR}/mock-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/mock-deployer-chart.tgz"
 
-tree $TMPDIR
-
 
 echo "> Deploy RBAC"
 printf "
@@ -94,6 +92,21 @@ global:
 
 helm upgrade --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
   -f "${TMPDIR}/landscaper-rbac-values.yaml" landscaper-rbac "${TMPDIR}/landscaper-rbac"
+
+
+LANDSCAPER_CONTROLLER_KUBECONFIG_PATH="${TMPDIR}/landscaper-controller-kubeconfig.yaml"
+cp "$RESOURCE_SHOOT_KUBECONFIG_PATH" "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH"
+LANDSCAPER_CONTROLLER_TOKEN=$(kubectl --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" -n ls-system create token --duration 24h landscaper-controller)
+LANDSCAPER_CONTROLLER_USER=$(kubectl --kubeconfig "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" config view -o json | jq -r '.["current-context"] as $curctx | .contexts[] | select(.name == $curctx) | .context.user')
+kubectl --kubeconfig "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" config unset users >/dev/null
+kubectl --kubeconfig "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" config set-credentials "$LANDSCAPER_CONTROLLER_USER" --token "$LANDSCAPER_CONTROLLER_TOKEN" >/dev/null
+
+LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH="${TMPDIR}/landscaper-webhooks-kubeconfig.yaml"
+cp "$RESOURCE_SHOOT_KUBECONFIG_PATH" "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH"
+LANDSCAPER_WEBHOOKS_TOKEN=$(kubectl --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" -n ls-system create token --duration 24h landscaper-webhooks)
+LANDSCAPER_WEBHOOKS_USER=$(kubectl --kubeconfig "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH" config view -o json | jq -r '.["current-context"] as $curctx | .contexts[] | select(.name == $curctx) | .context.user')
+kubectl --kubeconfig "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH" config unset users >/dev/null
+kubectl --kubeconfig "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH" config set-credentials "$LANDSCAPER_WEBHOOKS_USER" --token "$LANDSCAPER_WEBHOOKS_TOKEN" >/dev/null
 
 
 echo "> Deploy Landscaper"
@@ -128,7 +141,7 @@ controller:
 
   landscaperKubeconfig:
     kubeconfig: |
-$(cat "$RESOURCE_SHOOT_KUBECONFIG_PATH" | sed "s/^/      /")
+$(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 
 webhooksServer:
   image:
@@ -137,7 +150,7 @@ webhooksServer:
 
   landscaperKubeconfig:
     kubeconfig: |
-$(cat "$RESOURCE_SHOOT_KUBECONFIG_PATH" | sed "s/^/      /")
+$(cat "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH" | sed "s/^/      /")
 
   servicePort: 9443
   disableWebhooks: []
@@ -188,7 +201,7 @@ deployer:
 
   landscaperKubeconfig:
     kubeconfig: |
-$(cat "$RESOURCE_SHOOT_KUBECONFIG_PATH" | sed "s/^/      /")
+$(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 " > "${TMPDIR}/helm-deployer-values.yaml"
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
@@ -209,7 +222,7 @@ deployer:
 
   landscaperKubeconfig:
     kubeconfig: |
-$(cat "$RESOURCE_SHOOT_KUBECONFIG_PATH" | sed "s/^/      /")
+$(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 " > "${TMPDIR}/manifest-deployer-values.yaml"
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
@@ -242,7 +255,7 @@ deployer:
 
   landscaperKubeconfig:
     kubeconfig: |
-$(cat "$RESOURCE_SHOOT_KUBECONFIG_PATH" | sed "s/^/      /")
+$(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 " > "${TMPDIR}/container-deployer-values.yaml"
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
@@ -263,10 +276,8 @@ deployer:
 
   landscaperKubeconfig:
     kubeconfig: |
-$(cat "$RESOURCE_SHOOT_KUBECONFIG_PATH" | sed "s/^/      /")
+$(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 " > "${TMPDIR}/mock-deployer-values.yaml"
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
   -f "${TMPDIR}/mock-deployer-values.yaml" mock-deployer "${TMPDIR}/mock-deployer"
-
-
