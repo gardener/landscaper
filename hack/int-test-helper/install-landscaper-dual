@@ -8,16 +8,18 @@ set -e
 
 print_help() {
     echo -e "usage:"
-    echo -e "  $0 -v VERSION -t TARGET_SHOOT_KUBECONFIG -r RESOURCE_SHOOT_KUBECONFIG -i INGRESS_URL"
+    echo -e "  $0 -w WORKDIR -v VERSION -t TARGET_SHOOT_KUBECONFIG -r RESOURCE_SHOOT_KUBECONFIG -i INGRESS_URL"
+    echo -e "\t-w WORKDIR                   the working directory"
     echo -e "\t-v VERSION                   the Landscaper component version"
     echo -e "\t-t TARGET_SHOOT_KUBECONFIG   the file name of the target shoot cluster kubeconfig"
     echo -e "\t-r RESOURCE_SHOOT_KUBECONFIG the file name of the target shoot cluster kubeconfig"
     echo -e "\t-i INGRESS_URL               the target shoot cluster ingress url name"
 }
 
-while getopts v:t:r:i:h flag
+while getopts w:v:t:r:i:h flag
 do
     case "${flag}" in
+        w) WORKDIR=${OPTARG};;
         v) LANDSCAPER_VERSION=${OPTARG};;
         t) TARGET_SHOOT_KUBECONFIG_PATH=${OPTARG};;
         r) RESOURCE_SHOOT_KUBECONFIG_PATH=${OPTARG};;
@@ -25,6 +27,12 @@ do
         h) print_help;exit 0;;
     esac
 done
+
+if [[ -z $WORKDIR ]]; then
+    echo "Working directory (-w) is required" >&2
+    print_help
+    exit 1
+fi
 
 if [[ -z $LANDSCAPER_VERSION ]]; then
     echo "Landscaper component version (-v) is required" >&2
@@ -50,29 +58,27 @@ if [[ -z INGRESS_URL ]]; then
     exit 1
 fi
 
-TMPDIR="$(mktemp -d)"
-
 OCI_REPO="europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper"
 COMPONENT_NAME="github.com/gardener/landscaper"
 
 echo "> Pull landscaper charts"
-ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-controller-rbac-chart --download-handlers -O "${TMPDIR}/landscaper-controller-rbac-chart.tgz"
-tar xzf "${TMPDIR}/landscaper-controller-rbac-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/landscaper-controller-rbac-chart.tgz"
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-controller-rbac-chart --download-handlers -O "${WORKDIR}/landscaper-controller-rbac-chart.tgz"
+tar xzf "${WORKDIR}/landscaper-controller-rbac-chart.tgz" -C $WORKDIR && rm "${WORKDIR}/landscaper-controller-rbac-chart.tgz"
 
-ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-controller-deployment-chart --download-handlers -O "${TMPDIR}/landscaper-controller-deployment-chart.tgz"
-tar xzf "${TMPDIR}/landscaper-controller-deployment-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/landscaper-controller-deployment-chart.tgz"
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-controller-deployment-chart --download-handlers -O "${WORKDIR}/landscaper-controller-deployment-chart.tgz"
+tar xzf "${WORKDIR}/landscaper-controller-deployment-chart.tgz" -C $WORKDIR && rm "${WORKDIR}/landscaper-controller-deployment-chart.tgz"
 
-ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/helm-deployer:${LANDSCAPER_VERSION}" helm-deployer-chart --download-handlers -O "${TMPDIR}/helm-deployer-chart.tgz"
-tar xzf "${TMPDIR}/helm-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/helm-deployer-chart.tgz"
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/helm-deployer:${LANDSCAPER_VERSION}" helm-deployer-chart --download-handlers -O "${WORKDIR}/helm-deployer-chart.tgz"
+tar xzf "${WORKDIR}/helm-deployer-chart.tgz" -C $WORKDIR && rm "${WORKDIR}/helm-deployer-chart.tgz"
 
-ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/manifest-deployer:${LANDSCAPER_VERSION}" manifest-deployer-chart --download-handlers -O "${TMPDIR}/manifest-deployer-chart.tgz"
-tar xzf "${TMPDIR}/manifest-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/manifest-deployer-chart.tgz"
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/manifest-deployer:${LANDSCAPER_VERSION}" manifest-deployer-chart --download-handlers -O "${WORKDIR}/manifest-deployer-chart.tgz"
+tar xzf "${WORKDIR}/manifest-deployer-chart.tgz" -C $WORKDIR && rm "${WORKDIR}/manifest-deployer-chart.tgz"
 
-ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-deployer-chart --download-handlers -O "${TMPDIR}/container-deployer-chart.tgz"
-tar xzf "${TMPDIR}/container-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/container-deployer-chart.tgz"
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-deployer-chart --download-handlers -O "${WORKDIR}/container-deployer-chart.tgz"
+tar xzf "${WORKDIR}/container-deployer-chart.tgz" -C $WORKDIR && rm "${WORKDIR}/container-deployer-chart.tgz"
 
-ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/mock-deployer:${LANDSCAPER_VERSION}" mock-deployer-chart --download-handlers -O "${TMPDIR}/mock-deployer-chart.tgz"
-tar xzf "${TMPDIR}/mock-deployer-chart.tgz" -C $TMPDIR && rm "${TMPDIR}/mock-deployer-chart.tgz"
+ocm download resources --repo $OCI_REPO "${COMPONENT_NAME}/mock-deployer:${LANDSCAPER_VERSION}" mock-deployer-chart --download-handlers -O "${WORKDIR}/mock-deployer-chart.tgz"
+tar xzf "${WORKDIR}/mock-deployer-chart.tgz" -C $WORKDIR && rm "${WORKDIR}/mock-deployer-chart.tgz"
 
 
 echo "> Deploy RBAC"
@@ -88,20 +94,20 @@ global:
       create: true
       annotations: {}
       name: landscaper-webhooks
-" > "${TMPDIR}/landscaper-rbac-values.yaml"
+" > "${WORKDIR}/landscaper-rbac-values.yaml"
 
 helm upgrade --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
-  -f "${TMPDIR}/landscaper-rbac-values.yaml" landscaper-rbac "${TMPDIR}/landscaper-rbac"
+  -f "${WORKDIR}/landscaper-rbac-values.yaml" landscaper-rbac "${WORKDIR}/landscaper-rbac"
 
 
-LANDSCAPER_CONTROLLER_KUBECONFIG_PATH="${TMPDIR}/landscaper-controller-kubeconfig.yaml"
+LANDSCAPER_CONTROLLER_KUBECONFIG_PATH="${WORKDIR}/landscaper-controller-kubeconfig.yaml"
 cp "$RESOURCE_SHOOT_KUBECONFIG_PATH" "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH"
 LANDSCAPER_CONTROLLER_TOKEN=$(kubectl --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" -n ls-system create token --duration 24h landscaper-controller)
 LANDSCAPER_CONTROLLER_USER=$(kubectl --kubeconfig "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" config view -o json | jq -r '.["current-context"] as $curctx | .contexts[] | select(.name == $curctx) | .context.user')
 kubectl --kubeconfig "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" config unset users >/dev/null
 kubectl --kubeconfig "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" config set-credentials "$LANDSCAPER_CONTROLLER_USER" --token "$LANDSCAPER_CONTROLLER_TOKEN" >/dev/null
 
-LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH="${TMPDIR}/landscaper-webhooks-kubeconfig.yaml"
+LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH="${WORKDIR}/landscaper-webhooks-kubeconfig.yaml"
 cp "$RESOURCE_SHOOT_KUBECONFIG_PATH" "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH"
 LANDSCAPER_WEBHOOKS_TOKEN=$(kubectl --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" -n ls-system create token --duration 24h landscaper-webhooks)
 LANDSCAPER_WEBHOOKS_USER=$(kubectl --kubeconfig "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH" config view -o json | jq -r '.["current-context"] as $curctx | .contexts[] | select(.name == $curctx) | .context.user')
@@ -110,10 +116,10 @@ kubectl --kubeconfig "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH" config set-credentia
 
 
 echo "> Deploy Landscaper"
-ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-controller -o json > "${TMPDIR}/landscaper-controller-resource.json"
-LANDSCAPER_CONTROLLER_IMGTAG="$(cat ${TMPDIR}/landscaper-controller-resource.json | jq -r '.items[0].element.access.imageReference')"
-ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-webhooks-server -o json > "${TMPDIR}/landscaper-webhooks-server-resource.json"
-LANDSCAPER_WEBHOOKS_SERVER_IMGTAG="$(cat ${TMPDIR}/landscaper-webhooks-server-resource.json | jq -r '.items[0].element.access.imageReference')"
+ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-controller -o json > "${WORKDIR}/landscaper-controller-resource.json"
+LANDSCAPER_CONTROLLER_IMGTAG="$(cat ${WORKDIR}/landscaper-controller-resource.json | jq -r '.items[0].element.access.imageReference')"
+ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}:${LANDSCAPER_VERSION}" landscaper-webhooks-server -o json > "${WORKDIR}/landscaper-webhooks-server-resource.json"
+LANDSCAPER_WEBHOOKS_SERVER_IMGTAG="$(cat ${WORKDIR}/landscaper-webhooks-server-resource.json | jq -r '.items[0].element.access.imageReference')"
 
 printf "
 global:
@@ -161,10 +167,28 @@ $(cat "$LANDSCAPER_WEBHOOKS_KUBECONFIG_PATH" | sed "s/^/      /")
     className: nginx
     dns:
       class: garden
-" > "${TMPDIR}/landscaper-controller-values.yaml"
+" > "${WORKDIR}/landscaper-controller-values.yaml"
+
+touch "${WORKDIR}/registry-values.yaml"
+if [[ -f "${WORKDIR}/docker.config" ]]; then
+  printf "
+landscaper:
+  landscaper:
+    truststore:
+      secrets:
+        registryCA: |
+$(cat "${WORKDIR}/cacerts.crt" | sed "s/^/          /")
+    registryConfig:
+      allowPlainHttpRegistries: false
+      insecureSkipVerify: true
+      secrets:
+        default: $(cat "${WORKDIR}/docker.config")
+  " > "${WORKDIR}/registry-values.yaml"
+fi
+
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
-  -f "${TMPDIR}/landscaper-controller-values.yaml" landscaper-controller "${TMPDIR}/landscaper-controller"
+  -f "${WORKDIR}/landscaper-controller-values.yaml" -f "${WORKDIR}/registry-values.yaml" landscaper-controller "${WORKDIR}/landscaper-controller"
 
 
 echo "> Wait for Landscaper being ready"
@@ -188,8 +212,8 @@ done
 
 
 echo "> Deploy Helm Deployer"
-ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/helm-deployer:${LANDSCAPER_VERSION}" helm-deployer-image -o json > "${TMPDIR}/helm-deployer-image-resource.json"
-HELM_DEPLOYER_IMGTAG="$(cat ${TMPDIR}/helm-deployer-image-resource.json | jq -r '.items[0].element.access.imageReference')"
+ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/helm-deployer:${LANDSCAPER_VERSION}" helm-deployer-image -o json > "${WORKDIR}/helm-deployer-image-resource.json"
+HELM_DEPLOYER_IMGTAG="$(cat ${WORKDIR}/helm-deployer-image-resource.json | jq -r '.items[0].element.access.imageReference')"
 
 printf "
 image:
@@ -202,15 +226,15 @@ deployer:
   landscaperKubeconfig:
     kubeconfig: |
 $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
-" > "${TMPDIR}/helm-deployer-values.yaml"
+" > "${WORKDIR}/helm-deployer-values.yaml"
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
-  -f "${TMPDIR}/helm-deployer-values.yaml" helm-deployer "${TMPDIR}/helm-deployer"
+  -f "${WORKDIR}/helm-deployer-values.yaml" helm-deployer "${WORKDIR}/helm-deployer"
 
 
 echo "> Deploy Manifest Deployer"
-ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/manifest-deployer:${LANDSCAPER_VERSION}" manifest-deployer-image -o json > "${TMPDIR}/manifest-deployer-image-resource.json"
-MANIFEST_DEPLOYER_IMGTAG="$(cat ${TMPDIR}/manifest-deployer-image-resource.json | jq -r '.items[0].element.access.imageReference')"
+ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/manifest-deployer:${LANDSCAPER_VERSION}" manifest-deployer-image -o json > "${WORKDIR}/manifest-deployer-image-resource.json"
+MANIFEST_DEPLOYER_IMGTAG="$(cat ${WORKDIR}/manifest-deployer-image-resource.json | jq -r '.items[0].element.access.imageReference')"
 
 printf "
 image:
@@ -223,19 +247,19 @@ deployer:
   landscaperKubeconfig:
     kubeconfig: |
 $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
-" > "${TMPDIR}/manifest-deployer-values.yaml"
+" > "${WORKDIR}/manifest-deployer-values.yaml"
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
-  -f "${TMPDIR}/manifest-deployer-values.yaml" manifest-deployer "${TMPDIR}/manifest-deployer"
+  -f "${WORKDIR}/manifest-deployer-values.yaml" manifest-deployer "${WORKDIR}/manifest-deployer"
 
 
 echo "> Deploy Container Deployer"
-ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-deployer-image -o json > "${TMPDIR}/container-deployer-image-resource.json"
-CONTAINER_DEPLOYER_IMGTAG="$(cat ${TMPDIR}/container-deployer-image-resource.json | jq -r '.items[0].element.access.imageReference')"
-ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-init-image -o json > "${TMPDIR}/container-init-image-resource.json"
-CONTAINER_INIT_IMGTAG="$(cat ${TMPDIR}/container-init-image-resource.json | jq -r '.items[0].element.access.imageReference')"
-ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-wait-image -o json > "${TMPDIR}/container-wait-image-resource.json"
-CONTAINER_WAIT_IMGTAG="$(cat ${TMPDIR}/container-wait-image-resource.json | jq -r '.items[0].element.access.imageReference')"
+ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-deployer-image -o json > "${WORKDIR}/container-deployer-image-resource.json"
+CONTAINER_DEPLOYER_IMGTAG="$(cat ${WORKDIR}/container-deployer-image-resource.json | jq -r '.items[0].element.access.imageReference')"
+ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-init-image -o json > "${WORKDIR}/container-init-image-resource.json"
+CONTAINER_INIT_IMGTAG="$(cat ${WORKDIR}/container-init-image-resource.json | jq -r '.items[0].element.access.imageReference')"
+ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/container-deployer:${LANDSCAPER_VERSION}" container-wait-image -o json > "${WORKDIR}/container-wait-image-resource.json"
+CONTAINER_WAIT_IMGTAG="$(cat ${WORKDIR}/container-wait-image-resource.json | jq -r '.items[0].element.access.imageReference')"
 
 printf "
 image:
@@ -256,15 +280,15 @@ deployer:
   landscaperKubeconfig:
     kubeconfig: |
 $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
-" > "${TMPDIR}/container-deployer-values.yaml"
+" > "${WORKDIR}/container-deployer-values.yaml"
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
-  -f "${TMPDIR}/container-deployer-values.yaml" container-deployer "${TMPDIR}/container-deployer"
+  -f "${WORKDIR}/container-deployer-values.yaml" container-deployer "${WORKDIR}/container-deployer"
 
 
 echo "> Deploy Mock Deployer"
-ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/mock-deployer:${LANDSCAPER_VERSION}" mock-deployer-image -o json > "${TMPDIR}/mock-deployer-image-resource.json"
-MOCK_DEPLOYER_IMGTAG="$(cat ${TMPDIR}/mock-deployer-image-resource.json | jq -r '.items[0].element.access.imageReference')"
+ocm get resources --repo $OCI_REPO "${COMPONENT_NAME}/mock-deployer:${LANDSCAPER_VERSION}" mock-deployer-image -o json > "${WORKDIR}/mock-deployer-image-resource.json"
+MOCK_DEPLOYER_IMGTAG="$(cat ${WORKDIR}/mock-deployer-image-resource.json | jq -r '.items[0].element.access.imageReference')"
 
 printf "
 image:
@@ -277,7 +301,7 @@ deployer:
   landscaperKubeconfig:
     kubeconfig: |
 $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
-" > "${TMPDIR}/mock-deployer-values.yaml"
+" > "${WORKDIR}/mock-deployer-values.yaml"
 
 helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --create-namespace -n ls-system \
-  -f "${TMPDIR}/mock-deployer-values.yaml" mock-deployer "${TMPDIR}/mock-deployer"
+  -f "${WORKDIR}/mock-deployer-values.yaml" mock-deployer "${WORKDIR}/mock-deployer"

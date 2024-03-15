@@ -18,4 +18,4 @@ VERSION="$("$PROJECT_ROOT/hack/get-version.sh")"
 PR_ID=1
 GARDENER_KUBECONFIG=$(${PROJECT_ROOT}/.ci/get_gardener_kubeconfig.py)
 
-"${PROJECT_ROOT}/hack/integration-test-with-cluster-creation" "$GARDENER_KUBECONFIG" "garden-laas" "$VERSION" "$PR_ID" | tee "$FULL_INTEGRATION_TEST_PATH/ttt.log"
+"${PROJECT_ROOT}/.ci/integration-test-runner" "$GARDENER_KUBECONFIG" "garden-laas" "$VERSION" "$PR_ID" | tee "$FULL_INTEGRATION_TEST_PATH/ttt.log"

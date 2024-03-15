@@ -48,7 +48,7 @@ spec:
     kubernetesDashboard:
       enabled: false
     nginxIngress:
-      enabled: false
+      enabled: {{ .nginxIngressEnabled }}
   maintenance:
     timeWindow:
       begin: 010000+0200
