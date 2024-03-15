@@ -16,17 +16,22 @@ type PublicKeyData []byte
 
 // IsVerifyEnabled returns if verification is enabled.
 // The following rules apply:
-// 1. if LandscaperConfiguration.EnforceSignatureVerification is true, always return true
-// 2. else, if Installation.Spec.Verification.Enabled is true, return true.
-// 3. otherwise, verify is not enabled and therefore return false
-func IsVerifyEnabled(inst *lsv1alpha1.Installation, config *config.LandscaperConfiguration) bool {
-	if config.EnforceSignatureVerification {
+// 1. if lsConfig.SignatureVerificationEnforcementPolicy is Enforce, always return true
+// 2. if lsConfig.SignatureVerificationEnforcementPolicy is Disabled, always return false even if installation.Spec.Verification is true.
+// 3. else, if SignatureVerificationEnforcementPolicy is DoNotEnforce return Installation.Spec.Verification.Enabled
+// 3. otherwise should not happen, return true as a safe fallback
+func IsVerifyEnabled(inst *lsv1alpha1.Installation, lsConfig *config.LandscaperConfiguration) bool {
+	switch lsConfig.SignatureVerificationEnforcementPolicy {
+	case config.Enforce:
+		return true
+	case config.Disabled:
+		return false
+	case config.DoNotEnforce:
+		return inst.Spec.Verification != nil && inst.Spec.Verification.Enabled
+	default:
+		//all cases should be handled above, so return true as failsafe
 		return true
 	}
-	if inst.Spec.Verification != nil && inst.Spec.Verification.Enabled {
-		return true
-	}
-	return false
 }
 
 func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, installationContext lsv1alpha1.Context, client client.Client) (string, PublicKeyData, error) {

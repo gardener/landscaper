@@ -601,10 +601,6 @@
       "default": {},
       "description": "DeployerManagement configures the deployer management of the landscaper."
     },
-    "enforceSignatureVerification": {
-      "description": "EnforceSignatureVerification enforces all installations to have valid signatures to be executed by the landscaper",
-      "type": "boolean"
-    },
     "hpaMain": {
       "$ref": "#/definitions/config-v1alpha1-HPAMainConfiguration",
       "description": "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller)."
@@ -629,6 +625,15 @@
     "repositoryContext": {
       "$ref": "#/definitions/apis-v2-UnstructuredTypedObject",
       "description": "RepositoryContext defines the default repository context that should be used to resolve component descriptors. DEPRECATED: use controllers.context.config.default.repositoryContext instead."
+    },
+    "signatureVerificationEnforcementPolicy": {
+      "description": "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"`\n - `\"DoNotEnforce\"`\n - `\"Enforce\"`",
+      "enum": [
+        "Disabled",
+        "DoNotEnforce",
+        "Enforce"
+      ],
+      "type": "string"
     },
     "useOCMLib": {
       "type": "boolean"

@@ -1939,11 +1939,12 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Format: "",
 						},
 					},
-					"enforceSignatureVerification": {
+					"signatureVerificationEnforcementPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "EnforceSignatureVerification enforces all installations to have valid signatures to be executed by the landscaper",
-							Type:        []string{"boolean"},
+							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"`\n - `\"DoNotEnforce\"`\n - `\"Enforce\"`",
+							Type:        []string{"string"},
 							Format:      "",
+							Enum:        []interface{}{"Disabled", "DoNotEnforce", "Enforce"},
 						},
 					},
 				},
@@ -2899,11 +2900,12 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Format: "",
 						},
 					},
-					"enforceSignatureVerification": {
+					"signatureVerificationEnforcementPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "EnforceSignatureVerification enforces all installations to have valid signatures to be executed by the landscaper",
-							Type:        []string{"boolean"},
+							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"`\n - `\"DoNotEnforce\"`\n - `\"Enforce\"`",
+							Type:        []string{"string"},
 							Format:      "",
+							Enum:        []interface{}{"Disabled", "DoNotEnforce", "Enforce"},
 						},
 					},
 				},

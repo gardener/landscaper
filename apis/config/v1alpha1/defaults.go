@@ -78,6 +78,9 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 		defaultCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper", ""))
 		obj.DeployerManagement.DeployerRepositoryContext = &defaultCtx
 	}
+	if obj.SignatureVerificationEnforcementPolicy == "" {
+		obj.SignatureVerificationEnforcementPolicy = DoNotEnforce
+	}
 }
 
 // SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.

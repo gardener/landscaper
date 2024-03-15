@@ -47,8 +47,8 @@ type LandscaperConfiguration struct {
 	HPAMainConfiguration *HPAMainConfiguration `json:"hpaMain,omitempty"`
 	// +optional
 	UseOCMLib bool `json:"useOCMLib,omitempty"`
-	// EnforceSignatureVerification enforces all installations to have valid signatures to be executed by the landscaper
-	EnforceSignatureVerification bool `json:"enforceSignatureVerification,omitempty"`
+	// SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.
+	SignatureVerificationEnforcementPolicy SignatureVerificationEnforcementPolicy `json:"signatureVerificationEnforcementPolicy,omitempty"`
 }
 
 // LsDeployments contains the names of the landscaper deployments.
@@ -304,3 +304,13 @@ type GarbageCollectionConfiguration struct {
 type HPAMainConfiguration struct {
 	MaxReplicas int32 `json:"maxReplicas,omitempty"`
 }
+
+// SignatureVerificationEnforcementPolicy describes the policy for signature verification
+// +enum
+type SignatureVerificationEnforcementPolicy string
+
+const (
+	Enforce      SignatureVerificationEnforcementPolicy = "Enforce"
+	DoNotEnforce SignatureVerificationEnforcementPolicy = "DoNotEnforce"
+	Disabled     SignatureVerificationEnforcementPolicy = "Disabled"
+)
