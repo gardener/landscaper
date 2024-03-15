@@ -39,6 +39,7 @@ type Context struct {
 type ContextConfiguration struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
 	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// UseOCM defines whether OCM is used to process installations that reference this context.

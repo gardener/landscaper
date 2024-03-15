@@ -44,6 +44,7 @@ type ComponentVersionOverwrite struct {
 type ComponentVersionOverwriteReference struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
 	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// ComponentName defines the unique of the component containing the resource.

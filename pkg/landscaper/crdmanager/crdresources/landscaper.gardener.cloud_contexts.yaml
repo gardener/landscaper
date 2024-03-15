@@ -70,13 +70,6 @@ spec:
           repositoryContext:
             description: RepositoryContext defines the context of the component repository
               to resolve blueprints.
-            properties:
-              type:
-                description: Type describes the type of the object.
-                type: string
-            required:
-            - type
-            type: object
             x-kubernetes-preserve-unknown-fields: true
           useOCM:
             description: UseOCM defines whether OCM is used to process installations

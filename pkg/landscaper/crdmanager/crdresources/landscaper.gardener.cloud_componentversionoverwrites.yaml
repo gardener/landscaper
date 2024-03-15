@@ -51,13 +51,6 @@ spec:
                     repositoryContext:
                       description: RepositoryContext defines the context of the component
                         repository to resolve blueprints.
-                      properties:
-                        type:
-                          description: Type describes the type of the object.
-                          type: string
-                      required:
-                      - type
-                      type: object
                       x-kubernetes-preserve-unknown-fields: true
                     version:
                       description: Version defines the version of the component.
@@ -74,13 +67,6 @@ spec:
                     repositoryContext:
                       description: RepositoryContext defines the context of the component
                         repository to resolve blueprints.
-                      properties:
-                        type:
-                          description: Type describes the type of the object.
-                          type: string
-                      required:
-                      - type
-                      type: object
                       x-kubernetes-preserve-unknown-fields: true
                     version:
                       description: Version defines the version of the component.

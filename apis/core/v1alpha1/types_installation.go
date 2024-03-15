@@ -420,6 +420,9 @@ type ComponentDescriptorDefinition struct {
 	Reference *ComponentDescriptorReference `json:"ref,omitempty"`
 
 	// InlineDescriptorReference defines an inline component descriptor
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
 	// +optional
 	Inline *cdv2.ComponentDescriptor `json:"inline,omitempty"`
 }
@@ -429,6 +432,8 @@ type ComponentDescriptorDefinition struct {
 type ComponentDescriptorReference struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
 	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// ComponentName defines the unique of the component containing the resource.
