@@ -80,3 +80,10 @@ then
     echo "Try installing it..."
     go install github.com/onsi/ginkgo/v2/ginkgo@v2.2.0
 fi
+
+if ! command -v ocm &> /dev/null
+then
+    echo "ocm could not be found"
+    echo "Try installing it..."
+    curl -sSfL https://ocm.software/install.sh | OCM_VERSION=v0.8.0 bash)
+fi
