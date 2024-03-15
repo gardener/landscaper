@@ -54,4 +54,10 @@ type ContextConfiguration struct {
 	// If the string is empty, no overwrites will be used.
 	// +optional
 	ComponentVersionOverwritesReference string `json:"componentVersionOverwrites"`
+
+	VerificationSignatures map[string]VerificationSignature `json:"verificationSignatures,omitempty"`
+}
+
+type VerificationSignature struct {
+	PublicKeySecretReference SecretReference `json:"publicKeySecretReference"`
 }

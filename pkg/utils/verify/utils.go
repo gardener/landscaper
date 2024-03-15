@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lutil "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PublicKeyData []byte

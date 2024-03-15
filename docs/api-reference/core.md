@@ -2558,6 +2558,18 @@ The overwrites object has to be in the same namespace as the context.
 If the string is empty, no overwrites will be used.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>verificationSignatures</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.VerificationSignature">
+map[string]..VerificationSignature
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DataExport">DataExport
@@ -5415,7 +5427,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.Verification">Verification</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.VerificationSignature">VerificationSignature</a>)
 </p>
 <p>
 <p>SecretReference is reference to data in a secret.
@@ -6688,6 +6700,24 @@ string
 <td>
 </td>
 </tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.VerificationSignature">VerificationSignature
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ContextConfiguration">ContextConfiguration</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
 <tr>
 <td>
 <code>publicKeySecretReference</code></br>

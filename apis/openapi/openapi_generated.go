@@ -189,6 +189,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes":                                    schema_landscaper_apis_core_v1alpha1_TransitionTimes(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference":                               schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Verification":                                       schema_landscaper_apis_core_v1alpha1_Verification(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature":                              schema_landscaper_apis_core_v1alpha1_VerificationSignature(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":                      schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedObjectReference":                           schema_landscaper_apis_core_v1alpha1_VersionedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":                         schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
@@ -3936,11 +3937,25 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"verificationSignatures": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3999,11 +4014,25 @@ func schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref common.Refere
 							Format:      "",
 						},
 					},
+					"verificationSignatures": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -7941,6 +7970,19 @@ func schema_landscaper_apis_core_v1alpha1_Verification(ref common.ReferenceCallb
 							Format:  "",
 						},
 					},
+				},
+				Required: []string{"enabled", "signatureName"},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_VerificationSignature(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
 					"publicKeySecretReference": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
@@ -7948,7 +7990,7 @@ func schema_landscaper_apis_core_v1alpha1_Verification(ref common.ReferenceCallb
 						},
 					},
 				},
-				Required: []string{"enabled", "signatureName", "publicKeySecretReference"},
+				Required: []string{"publicKeySecretReference"},
 			},
 		},
 		Dependencies: []string{

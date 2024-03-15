@@ -217,9 +217,8 @@ type InstallationSpec struct {
 }
 
 type Verification struct {
-	Enabled                  bool            `json:"enabled"`
-	SignatureName            string          `json:"signatureName"`
-	PublicKeySecretReference SecretReference `json:"publicKeySecretReference"`
+	Enabled       bool   `json:"enabled"`
+	SignatureName string `json:"signatureName"`
 }
 
 // AutomaticReconcile allows to configure automatically repeated reconciliations.
