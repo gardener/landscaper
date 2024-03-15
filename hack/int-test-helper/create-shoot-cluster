@@ -34,5 +34,5 @@ go run ./hack/testcluster shootcluster create \
     --max-num-cluster=$MAX_NUM_CLUSTERS \
     --num-clusters-start-delete-oldest=$NUM_CLUSTERS_START_DELETE_OLDEST \
     --duration-for-cluster-deletion=$DURATION_FOR_CLUSTER_DELETION \
-    --pr-id=$PR_ID
-    --nginx-ingress-enabled=$NGINX_INGRESS_ENABLE
+    --pr-id=$PR_ID \
+    --nginx-ingress-enabled=$NGINX_INGRESS_ENABLED
