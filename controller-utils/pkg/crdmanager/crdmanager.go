@@ -82,7 +82,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				err := crdmgr.client.Create(ctx, &crd)
-				if err != nil {
+				if err != nil && !apierrors.IsAlreadyExists(err) {
 					return err
 				}
 				continue
