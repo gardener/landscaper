@@ -6,8 +6,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -19,35 +17,10 @@ type LsHealthCheckList struct {
 	Items           []LsHealthCheck `json:"items"`
 }
 
-// LsHealthCheckDefinition defines the LsHealthCheck resource CRD.
-var LsHealthCheckDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "lshealthchecks",
-		Singular: "lshealthcheck",
-		ShortNames: []string{
-			"lshc",
-		},
-		Kind: "LsHealthCheck",
-	},
-	Scope:   lsschema.NamespaceScoped,
-	Storage: true,
-	Served:  true,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
-		{
-			Name:     "status",
-			Type:     "string",
-			JSONPath: ".status",
-		},
-		{
-			Name:     "lastUpdateTime",
-			Type:     "date",
-			JSONPath: ".lastUpdateTime",
-		},
-	},
-}
-
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=lshc
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status`
+// +kubebuilder:printcolumn:name="LastUpdateTime",type="date",JSONPath=".lastUpdateTime"
 
 // LsHealthCheck is a resource containing information about problems with the landscaper installation
 type LsHealthCheck struct {

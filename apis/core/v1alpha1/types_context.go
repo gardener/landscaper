@@ -8,8 +8,6 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // DefaultContextName is the name of the default context that is replicated in all namespaces.
@@ -24,30 +22,9 @@ type ContextList struct {
 	Items           []Context `json:"items"`
 }
 
-// ContextDefinition defines the Context resource CRD.
-var ContextDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "contexts",
-		Singular: "context",
-		ShortNames: []string{
-			"ctx",
-		},
-		Kind: "Context",
-	},
-	Scope:   lsschema.NamespaceScoped,
-	Storage: true,
-	Served:  true,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
-		{
-			Name:     "Age",
-			Type:     "date",
-			JSONPath: ".metadata.creationTimestamp",
-		},
-	},
-}
-
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=ctx
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Context is a resource that contains shared information of installations.
 // This includes information about the repository context like the context itself or secrets to access the oci artifacts.
@@ -61,6 +38,8 @@ type Context struct {
 
 type ContextConfiguration struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// UseOCM defines whether OCM is used to process installations that reference this context.
@@ -74,6 +53,8 @@ type ContextConfiguration struct {
 	RegistryPullSecrets []corev1.LocalObjectReference `json:"registryPullSecrets,omitempty"`
 	// Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
 	// The key should use a dns-like syntax to express the purpose and avoid conflicts.
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
 	// +optional
 	Configurations map[string]AnyJSON `json:"configurations,omitempty"`
 	// ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object

@@ -6,8 +6,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // DataObjectSourceType defines the context of a data object.
@@ -56,46 +54,18 @@ type DataObjectList struct {
 	Items           []DataObject `json:"items"`
 }
 
-// DataObjectDefinition defines the DataObject resource CRD.
-var DataObjectDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "dataobjects",
-		Singular: "dataobject",
-		ShortNames: []string{
-			"do",
-			"dobj",
-		},
-		Kind: "DataObject",
-	},
-	Scope:   lsschema.NamespaceScoped,
-	Storage: true,
-	Served:  true,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
-		{
-			Name:     "Context",
-			Type:     "string",
-			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/context']",
-		},
-		{
-			Name:     "Key",
-			Type:     "string",
-			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/key']",
-		},
-		{
-			Name:     "Age",
-			Type:     "date",
-			JSONPath: ".metadata.creationTimestamp",
-		},
-	},
-}
-
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=dobj;do
+// +kubebuilder:printcolumn:name="Context",type=string,JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/context']`
+// +kubebuilder:printcolumn:name="Key",type=string,JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/key']`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // DataObject are resources that can hold any kind json or yaml data.
 type DataObject struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// Data contains the data of the object as string.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	Data AnyJSON `json:"data"`
 }

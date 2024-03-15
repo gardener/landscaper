@@ -7127,7 +7127,7 @@ func schema_landscaper_apis_core_v1alpha1_AnyJSON(ref common.ReferenceCallback) 
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
+				Description: "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated.",
 				Type:        v1alpha1.AnyJSON{}.OpenAPISchemaType(),
 				Format:      v1alpha1.AnyJSON{}.OpenAPISchemaFormat(),
 			},
@@ -8398,7 +8398,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "DeployItemStatus contains the status of a deploy item. todo: add operation",
+				Description: "DeployItemStatus contains the status of a deploy item.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"phase": {

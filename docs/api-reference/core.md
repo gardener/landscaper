@@ -16,7 +16,7 @@ Package v1alpha1 is the v1alpha1 version of the API.
 
 
 
-AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated
+AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated.
 
 _Appears in:_
 - [BlueprintStaticDataSource](#blueprintstaticdatasource)

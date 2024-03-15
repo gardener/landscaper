@@ -6,8 +6,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -19,8 +17,9 @@ type TargetSyncList struct {
 	Items           []TargetSync `json:"items"`
 }
 
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=tgs
+// +kubebuilder:subresource:status
 
 // The TargetSync is created targets from secrets.
 type TargetSync struct {
@@ -94,20 +93,4 @@ type TargetSyncStatus struct {
 	// Last time the token was rotated
 	// +optional
 	LastTokenRotationTime *metav1.Time `json:"lastTokenRotationTime,omitempty"`
-}
-
-var TargetSyncDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "targetsyncs",
-		Singular: "targetsync",
-		ShortNames: []string{
-			"tgs",
-		},
-		Kind: "TargetSync",
-	},
-	Scope:                    lsschema.NamespaceScoped,
-	Storage:                  true,
-	Served:                   true,
-	SubresourceStatus:        true,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{},
 }
