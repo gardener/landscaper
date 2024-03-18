@@ -138,7 +138,7 @@ CODE_GEN_VERSION ?= $(shell  $(REPO_ROOT)/hack/extract-module-version.sh k8s.io/
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
 FORMATTER_VERSION ?= v0.16.0
 LINTER_VERSION ?= 1.55.2
-OCM_VERSION ?= 0.4.3
+OCM_VERSION ?= $(shell  NO_PREFIX=true $(REPO_ROOT)/hack/extract-module-version.sh github.com/open-component-model/ocm)
 API_REF_GEN_VERSION ?= v0.0.10
 JQ_VERSION ?= 1.6
 
