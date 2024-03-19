@@ -57,36 +57,32 @@ You can find a list of error messages and corresponding solutions [here](./error
 
 ### Blueprints and Components
 
-[8. An Installation with an Externally Stored Blueprint](./blueprints/external-blueprint)
-
-[9. Helm Chart Resources in the Component Descriptor](./blueprints/helm-chart-resource)
-
-[10. Echo Server Example](./blueprints/echo-server)
+[8. Blueprint and Helm Chart Resources in a Component Version](./components/helm-chart)
 
 ### Imports and Exports
 
-[11. Import Parameters](./import-export/import-parameters)
+[9. Import Parameters](./import-export/import-parameters)
 
-[12. Import Data Mappings](./import-export/import-data-mappings)
+[10. Import Data Mappings](./import-export/import-data-mappings)
 
-[13. Export Parameters](./import-export/export-parameters)
+[11. Export Parameters](./import-export/export-parameters)
 
 ### Templating
 
-[14. Templating: Accessing Component Descriptors ](./templating/components)
+[12. Templating: Accessing Component Descriptors ](./templating/components)
 
-## Target Maps
+### Target Maps
 
-[15. Target Maps: Multiple Deploy Items](./target-maps/01-multiple-deploy-items)
+[13. Target Maps: Multiple Deploy Items](./target-maps/01-multiple-deploy-items)
 
-[16. Target Maps: Target Map References](./target-maps/02-targetmap-ref)
+[14. Target Maps: Target Map References](./target-maps/02-targetmap-ref)
 
-[17. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
+[15. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
 
-[18. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
+[16. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
 
-[19. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
+[17. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
 
-## Optimization
+### Optimization
 
-[20. Optimization Hints ](../usage/Optimization.md)
+[18. Optimization Hints ](../usage/Optimization.md)
