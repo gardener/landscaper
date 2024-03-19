@@ -56,7 +56,7 @@ func AggregatedBlueprintForNewReconcile(f *framework.Framework) {
 			By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 

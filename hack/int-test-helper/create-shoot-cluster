@@ -16,6 +16,8 @@ NUM_CLUSTERS_START_DELETE_OLDEST=$5
 DURATION_FOR_CLUSTER_DELETION=$6
 PR_ID=$7
 NGINX_INGRESS_ENABLED=$8
+DISABLE_SHOOT_DELETION=$9
+WORKERLESS=${10}
 
 SOURCE_PATH="$(dirname $0)/../.."
 cd "${SOURCE_PATH}"
@@ -23,6 +25,14 @@ SOURCE_PATH="$(pwd)"
 
 if [[ -z $NGINX_INGRESS_ENABLED ]]; then
   NGINX_INGRESS_ENABLED=false
+fi
+
+if [[ -z $DISABLE_SHOOT_DELETION ]]; then
+  DISABLE_SHOOT_DELETION=false
+fi
+
+if [[ -z $WORKERLESS ]]; then
+  WORKERLESS=false
 fi
 
 echo "Run create Gardener shoot cluster in ${SOURCE_PATH}"
@@ -35,4 +45,6 @@ go run ./hack/testcluster shootcluster create \
     --num-clusters-start-delete-oldest=$NUM_CLUSTERS_START_DELETE_OLDEST \
     --duration-for-cluster-deletion=$DURATION_FOR_CLUSTER_DELETION \
     --pr-id=$PR_ID \
-    --nginx-ingress-enabled=$NGINX_INGRESS_ENABLED
+    --nginx-ingress-enabled=$NGINX_INGRESS_ENABLED \
+    --disable-shoot-deletion=$DISABLE_SHOOT_DELETION \
+    --workerless=$WORKERLESS

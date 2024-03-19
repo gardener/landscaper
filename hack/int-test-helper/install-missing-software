@@ -85,5 +85,5 @@ if ! command -v ocm &> /dev/null
 then
     echo "ocm could not be found"
     echo "Try installing it..."
-    curl -sSfL https://ocm.software/install.sh | OCM_VERSION=v0.8.0 bash)
+    curl -sSfL https://ocm.software/install.sh | OCM_VERSION=v0.8.0 bash
 fi

@@ -1,8 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 # SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+set -o nounset
+set -o pipefail
 
 GARDENER_KUBECONFIG_PATH=$1
 NAMESPACE=$2
@@ -24,51 +28,71 @@ echo "Landscaper version: ${VERSION}"
 TMP="${SOURCE_PATH}/tmp-int-test-cluster"
 rm -f -r $TMP
 mkdir -p $TMP
+TARGET_SHOOT_DIR="${TMP}/target-shoot"
+RESOURCE_SHOOT_DIR="${TMP}/resource-shoot"
+mkdir -p $TARGET_SHOOT_DIR
+mkdir -p $RESOURCE_SHOOT_DIR
 echo "Config directory: ${TMP}"
 
 "${SOURCE_PATH}/hack/int-test-helper/install-missing-software"
 
-TARGET_SHOOT_KUBECONFIG_PATH="${TMP}/target-shoot-kubeconfig.yaml"
-RESOURCE_SHOOT_KUBECONFIG_PATH="${TMP}/resource-shoot-kubeconfig.yaml"
-
+echo "Creating Target Shoot Cluster"
 "${SOURCE_PATH}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
-  $TMP \
+  $TARGET_SHOOT_DIR \
   $MAX_NUM_CLUSTERS \
   $NUM_CLUSTERS_START_DELETE_OLDEST \
   $DURATION_FOR_CLUSTER_DELETION \
   $PR_ID \
-  true
+  true \
+  false \
+  false \
+  &>"${TARGET_SHOOT_DIR}/create-shoot-cluster.log" &
 
-cp "${TMP}/kubeconfig.yaml" "$TARGET_SHOOT_KUBECONFIG_PATH"
+TARGET_SHOOT_CREATE_PID=$!
 
+sleep 10
+
+echo "Creating Resource Shoot Cluster"
 "${SOURCE_PATH}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
-  $TMP \
+  $RESOURCE_SHOOT_DIR \
   $MAX_NUM_CLUSTERS \
   $NUM_CLUSTERS_START_DELETE_OLDEST \
   $DURATION_FOR_CLUSTER_DELETION \
   $PR_ID \
-  false
+  false \
+  true \
+  true \
+  &>"${RESOURCE_SHOOT_DIR}/create-shoot-cluster.log" &
 
-cp "${TMP}/kubeconfig.yaml" "$RESOURCE_SHOOT_KUBECONFIG_PATH"
+RESOURCE_SHOOT_CREATE_PID=$!
 
-echo "Target cluster kubeconfig path: ${TARGET_SHOOT_KUBECONFIG_PATH}"
-echo "Resource cluster kubeconfig path: ${RESOURCE_SHOOT_KUBECONFIG_PATH}"
-echo "Ingress domain: $(cat ${TMP}/ingress-domain)"
+if [[ $? != 0 ]]; then
+  echo "Creating the shoot clusters failed"
+  echo "###### TARGET SHOOT LOG ######"
+  cat "${TARGET_SHOOT_DIR}/create-shoot-cluster.log"
+  echo "###### RESOURCE SHOOT LOG ######"
+  cat "${RESOURCE_SHOOT_DIR_SHOOT_DIR}/create-shoot-cluster.log"
+fi
 
-"${SOURCE_PATH}/hack/int-test-helper/create-registry" $TARGET_SHOOT_KUBECONFIG_PATH $TMP
+echo "Waiting until shoot clusters are ready"
+wait $TARGET_SHOOT_CREATE_PID $RESOURCE_SHOOT_CREATE_PID
+
+TARGET_SHOOT_KUBECONFIG_PATH="${TARGET_SHOOT_DIR}/kubeconfig.yaml"
+RESOURCE_SHOOT_KUBECONFIG_PATH="${RESOURCE_SHOOT_DIR}/kubeconfig.yaml"
+
+"${SOURCE_PATH}/hack/int-test-helper/create-registry" $TARGET_SHOOT_KUBECONFIG_PATH $TARGET_SHOOT_DIR
+
+echo "Installing Landscaper"
 "${SOURCE_PATH}/hack/int-test-helper/install-landscaper-dual" \
-  -w $TMP \
+  -w $TARGET_SHOOT_DIR \
   -v $VERSION \
   -t $TARGET_SHOOT_KUBECONFIG_PATH \
   -r $RESOURCE_SHOOT_KUBECONFIG_PATH \
-  -i "$(cat ${TMP}/ingress-domain)"
+  -i "$(cat ${TARGET_SHOOT_DIR}/ingress-domain)"
 
-"${SOURCE_PATH}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH $TMP/docker.config $VERSION
+"${SOURCE_PATH}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH ${TARGET_SHOOT_DIR}/docker.config $VERSION
 
-mv "$TARGET_SHOOT_KUBECONFIG_PATH" "${TMP}/kubeconfig.yaml"
-"${SOURCE_PATH}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
-
-mv "$RESOURCE_SHOOT_KUBECONFIG_PATH" "${TMP}/kubeconfig.yaml"
-"${SOURCE_PATH}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
+"${SOURCE_PATH}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $TARGET_SHOOT_DIR
+"${SOURCE_PATH}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $RESOURCE_SHOOT_DIR

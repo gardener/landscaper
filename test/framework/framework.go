@@ -99,7 +99,8 @@ type Framework struct {
 	// RestConfig is the kubernetes rest config for the test cluster
 	RestConfig *rest.Config
 	// Client is the kubernetes client to interact with the test cluster
-	Client client.Client
+	Client       client.Client
+	TargetClient client.Client
 	// ClientSet is the kubernetes clientset to interact with the test cluster.
 	ClientSet kubernetes.Interface
 	// Cleanups contains all cleanup handles that are executed in the after suite
@@ -230,7 +231,7 @@ func (f *Framework) WaitForSystemComponents(ctx context.Context) error {
 	}
 	f.logger.WithTimestamp().Logfln("Waiting for Landscaper components to be ready in %s", f.LsNamespace)
 	// get all deployments
-	deploymentNames := []string{"landscaper", "landscaper-webhooks", "container-default-container-deployer", "helm-default-helm-deployer", "manifest-default-manifest-deployer", "mock-default-mock-deployer"}
+	deploymentNames := []string{"landscaper", "landscaper-webhooks", "container-deployer", "helm-deployer", "manifest-deployer", "mock-deployer"}
 
 	for _, deploymentName := range deploymentNames {
 		if err := utils.WaitForDeploymentToBeReady(ctx, f.Log(), f.Client, client.ObjectKey{Namespace: f.LsNamespace, Name: deploymentName}, 10*time.Minute); err != nil {

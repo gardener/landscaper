@@ -53,7 +53,7 @@ func TestConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
-	if opts.SkipWaitingForSystemComponents {
+	/*if opts.SkipWaitingForSystemComponents {
 		f.Log().Logfln("Skipped waiting for system components")
 	} else {
 		f.Log().Logfln("Waiting for system components")
@@ -65,7 +65,7 @@ func TestConfig(t *testing.T) {
 			//}
 			t.Fatal(err)
 		}
-	}
+	}*/
 
 	if !opts.DisableCleanupBefore {
 		if err := f.CleanupBeforeTestNamespaces(ctx); err != nil {

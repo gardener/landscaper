@@ -173,17 +173,16 @@ touch "${WORKDIR}/registry-values.yaml"
 if [[ -f "${WORKDIR}/docker.config" ]]; then
   printf "
 landscaper:
-  landscaper:
-    truststore:
-      secrets:
-        registryCA: |
-$(cat "${WORKDIR}/cacerts.crt" | sed "s/^/          /")
-    registryConfig:
-      allowPlainHttpRegistries: false
-      insecureSkipVerify: true
-      secrets:
-        default: $(cat "${WORKDIR}/docker.config")
-  " > "${WORKDIR}/registry-values.yaml"
+  truststore:
+    secrets:
+      registryCA: |
+$(cat "${WORKDIR}/cacerts.crt" | sed "s/^/        /")
+  registryConfig:
+    allowPlainHttpRegistries: false
+    insecureSkipVerify: true
+    secrets:
+      default: $(cat "${WORKDIR}/docker.config")
+" > "${WORKDIR}/registry-values.yaml"
 fi
 
 
@@ -223,7 +222,7 @@ image:
 deployer:
   verbosityLevel: debug
 
-  landscaperKubeconfig:
+  landscaperClusterKubeconfig:
     kubeconfig: |
 $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 " > "${WORKDIR}/helm-deployer-values.yaml"
@@ -244,7 +243,7 @@ image:
 deployer:
   verbosityLevel: debug
 
-  landscaperKubeconfig:
+  landscaperClusterKubeconfig:
     kubeconfig: |
 $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 " > "${WORKDIR}/manifest-deployer-values.yaml"
@@ -277,7 +276,7 @@ deployer:
     repository:  $(echo $CONTAINER_WAIT_IMGTAG | cut -d ":" -f 1)
     tag: $(echo $CONTAINER_WAIT_IMGTAG | cut -d ":" -f 2)
 
-  landscaperKubeconfig:
+  landscaperClusterKubeconfig:
     kubeconfig: |
 $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 " > "${WORKDIR}/container-deployer-values.yaml"
@@ -298,7 +297,7 @@ image:
 deployer:
   verbosityLevel: debug
 
-  landscaperKubeconfig:
+  landscaperClusterKubeconfig:
     kubeconfig: |
 $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 " > "${WORKDIR}/mock-deployer-values.yaml"

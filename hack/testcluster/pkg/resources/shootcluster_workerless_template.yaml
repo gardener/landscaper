@@ -1,0 +1,22 @@
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  namespace: {{ .namespace }}
+  name: {{ .name }}
+  annotations:
+    shoot.gardener.cloud/cleanup-extended-apis-finalize-grace-period-seconds: '180'
+spec:
+  cloudProfileName: gcp
+  region: europe-west1
+  provider:
+    type: gcp
+  kubernetes:
+    kubeAPIServer:
+      runtimeConfig:
+        apps/v1: true
+        batch/v1: true
+    version: "1.26"
+  hibernation:
+    schedules:
+      - start: 00 {{ .hour }} * * 1,2,3,4,5,6,0
+        location: Europe/Berlin

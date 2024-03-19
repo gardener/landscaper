@@ -51,7 +51,7 @@ func TargetMapTests(ctx context.Context, f *framework.Framework) {
 
 		createTargets := func(ctx context.Context, names ...string) error {
 			for _, name := range names {
-				target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, name, f.RestConfig, true)
+				target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, name, f.RestConfig)
 				if err != nil {
 					return err
 				}

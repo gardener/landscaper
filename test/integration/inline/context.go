@@ -65,7 +65,7 @@ func ContextTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateContextFromFile(ctx, state.State, contxt, path.Join(testdataDir, "installation-context", "context.yaml")))
 
 			By("Create Target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
