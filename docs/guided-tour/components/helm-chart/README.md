@@ -53,7 +53,7 @@ To give an example, we build a component version for an echo server. It has the 
 The most convenient way to generate a component version is through a **component constructor** file as described in
 [Getting Started with OCM - All in One](https://ocm.software/docs/guides/getting-started-with-ocm/#all-in-one).
 The component constructor file specifies the component name and version, and the list of resources.
-The component constructor file for this example is [here](./commands/components.yaml):
+The component constructor file for this example is [here](./commands/component-constructor.yaml):
 
 ```yaml
 components:
@@ -207,8 +207,7 @@ corresponding component version).
 > Theoretically, it is possible that the name of a *component reference* or a *resource* is not sufficient to uniquely
 > identify them within a component version. The [ocm specification](https://github.com/open-component-model/ocm-spec/blob/main/doc/01-model/03-elements-sub.md#identifiers)
 > defines that the identity of references as well as resources may optionally also contain a *version* and an
-> *extraId entity* (see following [component configuration file](https://ocm.software/docs/guides/getting-started-with-ocm/#all-in-one)
-> as an [example](./assets/components.yaml)).
+> *extraId entity*.
 >
 > In such cases, the resource cannot be specified with a path expression. Instead, it has to be specified as defined in
 > the [guidelines of the ocm specification](https://github.com/open-component-model/ocm-spec/blob/main/doc/05-guidelines/03-references.md).

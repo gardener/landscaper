@@ -21,7 +21,7 @@ ctf_dir=`mktemp -d`
 # --create specifies that the ctf file/directory should be created if it does not exist yet
 # --file specifies the target ctf file/directory where the components should be added
 echo "add components"
-ocm add components --create --file "$ctf_dir" ${COMPONENT_DIR}/commands/components.yaml
+ocm add components --create --file "$ctf_dir" ${COMPONENT_DIR}/commands/component-constructor.yaml
 
 # This command transfers the components contained in the specified ctf to another component repository
 # (here, an oci registry)
