@@ -2,9 +2,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 
@@ -18,10 +15,9 @@ import (
 const objectName = "critical-problems"
 
 type CriticalProblemsHandler interface {
-	ReportProblem(ctx context.Context, hostUncachedClient client.Client)
+	ReportProblem(ctx context.Context, hostUncachedClient client.Client, description string)
 	GetCriticalProblems(ctx context.Context, hostUncachedClient client.Client) (*v1alpha1.CriticalProblems, error)
 	AccessAllowed(ctx context.Context, hostUncachedClient client.Client) error
-	ProvokePanicIfAnnotated(object *metav1.ObjectMeta)
 }
 
 var cph CriticalProblemsHandler = &criticalProblemsHandler{}
@@ -33,10 +29,10 @@ func GetCriticalProblemsHandler() CriticalProblemsHandler {
 type criticalProblemsHandler struct {
 }
 
-func (r *criticalProblemsHandler) ReportProblem(ctx context.Context, hostUncachedClient client.Client) {
+func (r *criticalProblemsHandler) ReportProblem(ctx context.Context, hostUncachedClient client.Client, description string) {
 	logger, _ := logging.FromContextOrNew(ctx, nil)
 
-	problems := r.getEmptyCriticalProblem()
+	problems := r.getEmptyCriticalProblems()
 
 	if err := hostUncachedClient.Get(ctx, client.ObjectKeyFromObject(problems), problems); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -44,6 +40,7 @@ func (r *criticalProblemsHandler) ReportProblem(ctx context.Context, hostUncache
 				{
 					PodName:      GetCurrentPodNamespace(),
 					CreationTime: metav1.Now(),
+					Description:  description,
 				},
 			}
 
@@ -60,6 +57,7 @@ func (r *criticalProblemsHandler) ReportProblem(ctx context.Context, hostUncache
 	problem := v1alpha1.CriticalProblem{
 		PodName:      GetCurrentPodNamespace(),
 		CreationTime: metav1.Now(),
+		Description:  description,
 	}
 	problems.Spec.CriticalProblems = append(problems.Spec.CriticalProblems, problem)
 
@@ -78,7 +76,7 @@ func (r *criticalProblemsHandler) ReportProblem(ctx context.Context, hostUncache
 func (r *criticalProblemsHandler) GetCriticalProblems(ctx context.Context,
 	hostUncachedClient client.Client) (*v1alpha1.CriticalProblems, error) {
 
-	problems := r.getEmptyCriticalProblem()
+	problems := r.getEmptyCriticalProblems()
 	err := hostUncachedClient.Get(ctx, client.ObjectKeyFromObject(problems), problems)
 	return problems, err
 }
@@ -92,17 +90,7 @@ func (r *criticalProblemsHandler) AccessAllowed(ctx context.Context,
 	return nil
 }
 
-func (r *criticalProblemsHandler) ProvokePanicIfAnnotated(object *metav1.ObjectMeta) {
-	if kubernetes.HasAnnotationWithValue(object, v1alpha1.LandscaperDomain+"/throwpanic", "active") {
-		a := 1
-		b := 2
-		b = a + b
-		c := a / (4 - b - a)
-		fmt.Println("C:", c)
-	}
-}
-
-func (r *criticalProblemsHandler) getEmptyCriticalProblem() *v1alpha1.CriticalProblems {
+func (r *criticalProblemsHandler) getEmptyCriticalProblems() *v1alpha1.CriticalProblems {
 	problems := &v1alpha1.CriticalProblems{}
 	problems.SetName(objectName)
 	problems.SetNamespace(GetCurrentPodNamespace())

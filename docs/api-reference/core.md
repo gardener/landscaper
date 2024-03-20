@@ -249,8 +249,9 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
-| `podName` _string_ |  |
-| `creationTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#time-v1-meta)_ |  |
+| `podName` _string_ | PodName contains the name of the pod where the problem occurred |
+| `creationTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#time-v1-meta)_ | CreationTime contains the timestamp when the problem occured |
+| `description` _string_ | Description contains an error description |
 
 
 #### CriticalProblems

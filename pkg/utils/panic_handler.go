@@ -36,7 +36,7 @@ func HandlePanics(ctx context.Context, result *reconcile.Result, hostUncachedCli
 			if err.Error() == "runtime error: invalid memory address or nil pointer dereference" {
 				logger.Error(err, "Recovered from a nil pointer dereference or invalid memory address error")
 				if hostUncachedClient != nil {
-					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient)
+					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient, err.Error())
 				}
 				return
 			}
@@ -44,7 +44,7 @@ func HandlePanics(ctx context.Context, result *reconcile.Result, hostUncachedCli
 			if strings.HasPrefix(err.Error(), "runtime error: index out of range") {
 				logger.Error(err, "Recovered from an index out of range error")
 				if hostUncachedClient != nil {
-					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient)
+					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient, err.Error())
 				}
 				return
 			}
@@ -52,7 +52,7 @@ func HandlePanics(ctx context.Context, result *reconcile.Result, hostUncachedCli
 			if strings.HasPrefix(err.Error(), "runtime error: integer divide by zero") {
 				logger.Error(err, "Recovered from a integer divide by zero error")
 				if hostUncachedClient != nil {
-					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient)
+					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient, err.Error())
 				}
 				return
 			}
@@ -60,7 +60,7 @@ func HandlePanics(ctx context.Context, result *reconcile.Result, hostUncachedCli
 			if strings.HasPrefix(err.Error(), "interface conversion:") {
 				logger.Error(err, "Recovered from a type assertion error")
 				if hostUncachedClient != nil {
-					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient)
+					GetCriticalProblemsHandler().ReportProblem(ctx, hostUncachedClient, err.Error())
 				}
 				return
 			}

@@ -3700,13 +3700,22 @@ func schema_gardener_landscaper_apis_core_CriticalProblem(ref common.ReferenceCa
 				Properties: map[string]spec.Schema{
 					"podName": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "PodName contains the name of the pod where the problem occurred",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"creationTime": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							Description: "CreationTime contains the timestamp when the problem occured",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description contains an error description",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -8163,13 +8172,22 @@ func schema_landscaper_apis_core_v1alpha1_CriticalProblem(ref common.ReferenceCa
 				Properties: map[string]spec.Schema{
 					"podName": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "PodName contains the name of the pod where the problem occurred",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"creationTime": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							Description: "CreationTime contains the timestamp when the problem occured",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description contains an error description",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},

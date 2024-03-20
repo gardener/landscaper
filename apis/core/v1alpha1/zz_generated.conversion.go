@@ -1488,6 +1488,7 @@ func Convert_core_ContextList_To_v1alpha1_ContextList(in *core.ContextList, out 
 func autoConvert_v1alpha1_CriticalProblem_To_core_CriticalProblem(in *CriticalProblem, out *core.CriticalProblem, s conversion.Scope) error {
 	out.PodName = in.PodName
 	out.CreationTime = in.CreationTime
+	out.Description = in.Description
 	return nil
 }
 
@@ -1499,6 +1500,7 @@ func Convert_v1alpha1_CriticalProblem_To_core_CriticalProblem(in *CriticalProble
 func autoConvert_core_CriticalProblem_To_v1alpha1_CriticalProblem(in *core.CriticalProblem, out *CriticalProblem, s conversion.Scope) error {
 	out.PodName = in.PodName
 	out.CreationTime = in.CreationTime
+	out.Description = in.Description
 	return nil
 }
 

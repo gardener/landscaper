@@ -42,9 +42,16 @@ spec:
                     problem.
                   properties:
                     creationTime:
+                      description: CreationTime contains the timestamp when the problem
+                        occured
                       format: date-time
                       type: string
+                    description:
+                      description: Description contains an error description
+                      type: string
                     podName:
+                      description: PodName contains the name of the pod where the
+                        problem occurred
                       type: string
                   type: object
                 type: array
