@@ -16,15 +16,15 @@ MAX_NUM_CLUSTERS=20
 NUM_CLUSTERS_START_DELETE_OLDEST=15
 DURATION_FOR_CLUSTER_DELETION=48h
 
-SOURCE_PATH="$(realpath $(dirname $0)/..)"
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 
 echo "Run integration tests with cluster and registry creation"
-echo "Source path: ${SOURCE_PATH}"
+echo "Source path: ${PROJECT_ROOT}"
 echo "Gardener kubeconfig path: ${GARDENER_KUBECONFIG_PATH}"
 echo "Shoot cluster namespace: ${NAMESPACE}"
 echo "Landscaper version: ${VERSION}"
 
-TMP="${SOURCE_PATH}/tmp-int-test-cluster"
+TMP="${PROJECT_ROOT}/tmp-int-test-cluster"
 rm -f -r $TMP
 mkdir -p $TMP
 TARGET_SHOOT_DIR="${TMP}/target-shoot"
@@ -40,14 +40,14 @@ exit_on_error() {
   fi
 }
 
-"${SOURCE_PATH}/hack/int-test-helper/install-missing-software"
+"${PROJECT_ROOT}/hack/int-test-helper/install-missing-software"
 exit_on_error $? "install software failed"
 
 echo "Creating Target Shoot Cluster"
 NGINX_INGRESS_ENABLED=true
 DISABLE_SHOOT_DELETION=false
 WORKERLESS=false
-"${SOURCE_PATH}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
+"${PROJECT_ROOT}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
   $TARGET_SHOOT_DIR \
   $MAX_NUM_CLUSTERS \
@@ -71,7 +71,7 @@ echo "Creating Resource Shoot Cluster"
 NGINX_INGRESS_ENABLED=false
 DISABLE_SHOOT_DELETION=true
 WORKERLESS=false
-"${SOURCE_PATH}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
+"${PROJECT_ROOT}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
   $RESOURCE_SHOOT_DIR \
   $MAX_NUM_CLUSTERS \
@@ -103,11 +103,11 @@ RESOURCE_SHOOT_KUBECONFIG_PATH="${RESOURCE_SHOOT_DIR}/kubeconfig.yaml"
 echo "Target Shoot Cluster Name: $(cat ${TARGET_SHOOT_DIR}/clustername)"
 echo "Resource Shoot Cluster Name: $(cat ${RESOURCE_SHOOT_DIR}/clustername)"
 
-"${SOURCE_PATH}/hack/int-test-helper/create-registry" $TARGET_SHOOT_KUBECONFIG_PATH $TARGET_SHOOT_DIR
+"${PROJECT_ROOT}/hack/int-test-helper/create-registry" $TARGET_SHOOT_KUBECONFIG_PATH $TARGET_SHOOT_DIR
 exit_on_error $? "create-registry failed"
 
 echo "Installing Landscaper"
-"${SOURCE_PATH}/hack/int-test-helper/install-landscaper-dual" \
+"${PROJECT_ROOT}/hack/int-test-helper/install-landscaper-dual" \
   -w $TARGET_SHOOT_DIR \
   -v $VERSION \
   -t $TARGET_SHOOT_KUBECONFIG_PATH \
@@ -116,8 +116,8 @@ echo "Installing Landscaper"
 
 exit_on_error $? "installing landscaper failed"
 
-"${SOURCE_PATH}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH ${TARGET_SHOOT_DIR}/docker.config $VERSION true
+"${PROJECT_ROOT}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH ${TARGET_SHOOT_DIR}/docker.config $VERSION true
 exit_on_error $? "run-tests failed"
 
-"${SOURCE_PATH}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $TARGET_SHOOT_DIR
-"${SOURCE_PATH}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $RESOURCE_SHOOT_DIR
+"${PROJECT_ROOT}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $TARGET_SHOOT_DIR
+"${PROJECT_ROOT}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $RESOURCE_SHOOT_DIR
