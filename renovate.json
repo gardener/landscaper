@@ -1,3 +1,14 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "description": "Combine k8s updates in a single PR",
+      "matchManagers": ["gomod"],
+      "matchPackagePatterns": ["^(?:[a-zA-Z]*\\.)?k8s\\.io/"],
+      "groupName": "k8s monorepo",
+      "major": {
+        "enabled": false
+      }
+    }
+  ]
 }
