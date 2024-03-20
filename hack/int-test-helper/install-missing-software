@@ -8,7 +8,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-PROJECT_ROOT="$(realpath $(dirname $0)/..)"
+PROJECT_ROOT="$(realpath $(dirname $0)/../..)"
 
 echo "Run install missing software"
 
