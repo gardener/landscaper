@@ -9,8 +9,9 @@ set -o nounset
 set -o pipefail
 
 KUBECONFIG_PATH=$1
-REGISTRY_CONFIG=$2 # if empty, registry tests and the checks whether the landscaper and the deployers are running will be skipped
+REGISTRY_CONFIG=$2
 VERSION=$3
+SKIP_WAITING_FOR_SYSTEM_COMPONENTS=$4
 
 # to disable set on 1
 DISABLE_CLEANUP=0
@@ -24,7 +25,8 @@ echo "Run integration tests in source path ${SOURCE_PATH}"
 echo "Run integration tests in source path ${SOURCE_PATH}"
 ginkgo -timeout=60m -v -progress -no-color -seed=17 -fail-fast ./test/integration  -- \
   --kubeconfig $KUBECONFIG_PATH  \
-  ${REGISTRY_CONFIG:+"--registry-config="}${REGISTRY_CONFIG:-"--skip-waiting-for-system-components"} \
+  ${REGISTRY_CONFIG:+"--registry-config=${REGISTRY_CONFIG}"} \
+  ${SKIP_WAITING_FOR_SYSTEM_COMPONENTS:+"--skip-waiting-for-system-components=${SKIP_WAITING_FOR_SYSTEM_COMPONENTS}"} \
   --ls-namespace=ls-system  \
   --ls-version=$VERSION  \
   --ls-run-on-shoot  \

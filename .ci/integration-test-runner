@@ -4,7 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -o errexit
 set -o nounset
 set -o pipefail
 
@@ -34,9 +33,20 @@ mkdir -p $TARGET_SHOOT_DIR
 mkdir -p $RESOURCE_SHOOT_DIR
 echo "Config directory: ${TMP}"
 
+exit_on_error() {
+  if [ "$1" -ne 0 ]; then
+    echo -e "Error: $2"
+    exit 1
+  fi
+}
+
 "${SOURCE_PATH}/hack/int-test-helper/install-missing-software"
+exit_on_error $? "install software failed"
 
 echo "Creating Target Shoot Cluster"
+NGINX_INGRESS_ENABLED=true
+DISABLE_SHOOT_DELETION=false
+WORKERLESS=false
 "${SOURCE_PATH}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
   $TARGET_SHOOT_DIR \
@@ -44,16 +54,23 @@ echo "Creating Target Shoot Cluster"
   $NUM_CLUSTERS_START_DELETE_OLDEST \
   $DURATION_FOR_CLUSTER_DELETION \
   $PR_ID \
-  true \
-  false \
-  false \
+  $NGINX_INGRESS_ENABLED \
+  $DISABLE_SHOOT_DELETION \
+  $WORKERLESS \
   &>"${TARGET_SHOOT_DIR}/create-shoot-cluster.log" &
 
 TARGET_SHOOT_CREATE_PID=$!
 
+# When both create-shoot-cluster calls are started at the same time,
+# the resource shoot may be cleaned-up by the target shoot create call.
+# To prevent this, the target shoot create gets a head start before the
+# resource shoot is being created.
 sleep 10
 
 echo "Creating Resource Shoot Cluster"
+NGINX_INGRESS_ENABLED=false
+DISABLE_SHOOT_DELETION=true
+WORKERLESS=false
 "${SOURCE_PATH}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
   $RESOURCE_SHOOT_DIR \
@@ -61,12 +78,15 @@ echo "Creating Resource Shoot Cluster"
   $NUM_CLUSTERS_START_DELETE_OLDEST \
   $DURATION_FOR_CLUSTER_DELETION \
   $PR_ID \
-  false \
-  true \
-  true \
+  $NGINX_INGRESS_ENABLED \
+  $DISABLE_SHOOT_DELETION \
+  $WORKERLESS \
   &>"${RESOURCE_SHOOT_DIR}/create-shoot-cluster.log" &
 
 RESOURCE_SHOOT_CREATE_PID=$!
+
+echo "Waiting until shoot clusters are ready"
+wait $TARGET_SHOOT_CREATE_PID $RESOURCE_SHOOT_CREATE_PID
 
 if [[ $? != 0 ]]; then
   echo "Creating the shoot clusters failed"
@@ -74,15 +94,17 @@ if [[ $? != 0 ]]; then
   cat "${TARGET_SHOOT_DIR}/create-shoot-cluster.log"
   echo "###### RESOURCE SHOOT LOG ######"
   cat "${RESOURCE_SHOOT_DIR_SHOOT_DIR}/create-shoot-cluster.log"
+  exit 1
 fi
-
-echo "Waiting until shoot clusters are ready"
-wait $TARGET_SHOOT_CREATE_PID $RESOURCE_SHOOT_CREATE_PID
 
 TARGET_SHOOT_KUBECONFIG_PATH="${TARGET_SHOOT_DIR}/kubeconfig.yaml"
 RESOURCE_SHOOT_KUBECONFIG_PATH="${RESOURCE_SHOOT_DIR}/kubeconfig.yaml"
 
+echo "Target Shoot Cluster Name: $(cat ${TARGET_SHOOT_DIR}/clustername)"
+echo "Resource Shoot Cluster Name: $(cat ${RESOURCE_SHOOT_DIR}/clustername)"
+
 "${SOURCE_PATH}/hack/int-test-helper/create-registry" $TARGET_SHOOT_KUBECONFIG_PATH $TARGET_SHOOT_DIR
+exit_on_error $? "create-registry failed"
 
 echo "Installing Landscaper"
 "${SOURCE_PATH}/hack/int-test-helper/install-landscaper-dual" \
@@ -92,7 +114,10 @@ echo "Installing Landscaper"
   -r $RESOURCE_SHOOT_KUBECONFIG_PATH \
   -i "$(cat ${TARGET_SHOOT_DIR}/ingress-domain)"
 
-"${SOURCE_PATH}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH ${TARGET_SHOOT_DIR}/docker.config $VERSION
+exit_on_error $? "installing landscaper failed"
+
+"${SOURCE_PATH}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH ${TARGET_SHOOT_DIR}/docker.config $VERSION true
+exit_on_error $? "run-tests failed"
 
 "${SOURCE_PATH}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $TARGET_SHOOT_DIR
 "${SOURCE_PATH}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $RESOURCE_SHOOT_DIR
