@@ -1,27 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    "group:kubernetes"
+  ],
   "packageRules": [
     {
-      "description": "Combine k8s updates in a single PR",
+      "description": "Combine landscaper updates in a single PR",
       "matchManagers": [
         "gomod"
       ],
-      "matchPackagePatterns": [
-        "^(?:[a-zA-Z]*\\.)?k8s\\.io/"
-      ],
-      "groupName": "k8s monorepo",
-      "major": {
-        "enabled": false
-      }
-    },
-    {
-      "description": "Combine landscaper updates in a single PR",
-      "matchManagers": ["gomod"],
-      "matchPackagePatterns": ["^(?:[a-zA-Z]*\\.)?github\\.com/gardener/landscaper/"],
-      "groupName": "landscaper monorepo",
-      "major": {
-        "enabled": false
-      }
+      "matchSourceUrls": [
+        "https://github.com/gardener/landscaper"
+      ]
     }
   ]
 }
