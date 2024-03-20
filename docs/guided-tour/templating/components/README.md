@@ -15,22 +15,24 @@ For prerequisites, see [here](../../README.md).
 
 Component descriptors can reference other component descriptors. In this example we consider three component descriptors, 
 which we name as follows:
-- the [root component descriptor](./component-root/v2-external/component-descriptor.yaml),
-- the [core component descriptor](./component-core/v2/component-descriptor.yaml),
-- the [extension component descriptor](./component-extension/v2/component-descriptor.yaml).  
+- the [root component descriptor](./components/component-descriptor-root.yaml),
+- the [core component descriptor](./components/component-descriptor-core.yaml),
+- the [extension component descriptor](./components/component-descriptor-ext.yaml).  
 
 The root component descriptor references the other two in its section `component.componentReferences`:
 
 ```yaml
 component:
-  ...
+  name: github.com/gardener/landscaper-examples/guided-tour/templating-components-root
+  version: 2.2.0
   componentReferences:
     - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-core
       name: core
-      version: 1.0.0
+      version: 2.2.0
     - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-extension
       name: extension
-      version: 1.0.0
+      version: 2.2.0
+  ...
 ```
 
 We have uploaded these three component descriptors into an OCI registry, so that the Landscaper can read them from there
@@ -114,7 +116,7 @@ The resources that we have collected from the component descriptors look for exa
   version: 1.0.0
 ```
 
-This is not yet the desired result format. Therefore, we use a template `formateResource` to transform the resources. 
+This is not yet the desired result format. Therefore, we use a template `formatResource` to transform the resources. 
 The template extracts the field `.access.imageReference` from a resource, splits the string value in 
 three parts, and produces the following result: 
 
@@ -124,7 +126,7 @@ repository: gardener-project/landscaper/examples/images/image-a
 tag: 1.0.0
 ```
 
-We can pass only one argument to a template. However, our template `formateResource` needs two inputs, a `resource` and
+We can pass only one argument to a template. However, our template `formatResource` needs two inputs, a `resource` and
 an `indent`. To solve this, we put both values in a dictionary `$args` and pass this dictionary to template:
 
 ```yaml
@@ -139,27 +141,29 @@ For more details, see [Templating][1].
 
 ## Procedure
 
-The procedure to deploy the helm chart with the Landscaper is:
+1. On the target cluster, create a namespace `example`. It is the namespace of the resulting ConfigMap.
 
-1. Insert the kubeconfig of your target cluster into file [target.yaml](installation/target.yaml).
+2. On the Landscaper resource cluster, create a namespace `cu-example`.
 
-2. On the Landscaper resource cluster, create namespace `example` and apply the [context.yaml](./installation/context.yaml), 
-   the [target.yaml](installation/target.yaml), and the [installation.yaml](installation/installation.yaml):
+3. On the Landscaper resource cluster, in namespace `cu-example`, create a Target, a Context, and an Installation.
+   There are templates for these resources in the directory
+   [installation](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/installation).
+   To apply them:
+    - adapt the [settings](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/commands/settings) file
+      such that the entry `TARGET_CLUSTER_KUBECONFIG_PATH` points to the kubeconfig of the target cluster,
+    - run the [deploy-k8s-resources script](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/commands/deploy-k8s-resources.sh),
+      which will template and apply the Target, Context, and Installation.
 
-   ```shell
-   kubectl create ns example
-   kubectl apply -f <path to context.yaml>
-   kubectl apply -f <path to target.yaml>
-   kubectl apply -f <path to installation.yaml>
-   ```
+4. When the Installation has succeeded, there is a ConfigMap `templating-components` in namespace `example`, 
+   which contains the result of the templating that we have discussed.
+
 
 ## Cleanup
 
-To clean up, delete the Installation from the Landscaper resource cluster:
-
-```shell
-kubectl delete inst -n example templating-components
-```
+You can remove the Installation with the
+[delete-installation script](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/commands/delete-installation.sh).
+When the Installation is gone, you can delete the Context and Target with the
+[delete-other-k8s-resources script](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/commands/delete-other-k8s-resources.sh).
 
 
 ## References 

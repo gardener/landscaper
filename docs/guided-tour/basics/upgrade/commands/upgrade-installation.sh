@@ -4,10 +4,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+set -o errexit
+
 COMPONENT_DIR="$(dirname $0)/.."
+cd "${COMPONENT_DIR}"
+COMPONENT_DIR="$(pwd)"
+echo "COMPONENT_DIR: ${COMPONENT_DIR}"
 
-source ${COMPONENT_DIR}/commands/settings
+source "${COMPONENT_DIR}/commands/settings"
 
+TMP_DIR=`mktemp -d`
+echo "TMP_DIR: ${TMP_DIR}"
 
-# upgrade installation
-kubectl apply -f "${COMPONENT_DIR}/installation/installation-1.0.1.yaml" --kubeconfig="${LS_DATA_KUBECONFIG}"
+echo "creating installation"
+outputFile="${TMP_DIR}/installation-upg.yaml"
+mako-render "${COMPONENT_DIR}/installation/installation-upg.yaml.tpl" \
+  --var namespace="${NAMESPACE}" \
+  --output-file=${outputFile}
+kubectl apply -f ${outputFile} --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"

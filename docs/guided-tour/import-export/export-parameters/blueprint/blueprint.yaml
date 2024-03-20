@@ -16,49 +16,9 @@ exports:
 deployExecutions:
   - name: default
     type: GoTemplate
-    template: |
-      deployItems:
-        - name: default-deploy-item
-          type: landscaper.gardener.cloud/kubernetes-manifest
-      
-          target:
-            import: cluster   # import parameter name
-      
-          config:
-            apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
-            kind: ProviderConfiguration
-            updateStrategy: update
-            manifests:
-              - policy: manage
-                manifest:
-                  apiVersion: v1
-                  kind: ServiceAccount
-                  metadata:
-                    name: test-service-account
-                    namespace: example
-              - policy: manage
-                manifest:
-                  apiVersion: v1
-                  kind: Secret
-                  metadata:
-                    name: test-secret
-                    namespace: example
-                    annotations:
-                      kubernetes.io/service-account.name: test-service-account
-                  type: kubernetes.io/service-account-token
-            exports:
-              exports:
-                - key: test-token
-                  fromResource:
-                    apiVersion: v1
-                    kind: Secret
-                    name: test-secret
-                    namespace: example
-                  jsonPath: .data.token
+    file: /deploy-execution.yaml
 
 exportExecutions:
   - name: default-export-execution
     type: GoTemplate
-    template: |
-      exports:
-        token: {{ index .deployitems "default-deploy-item" "test-token" | b64dec }}
+    file: /export-execution.yaml
