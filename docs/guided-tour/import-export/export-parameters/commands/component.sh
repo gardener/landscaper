@@ -21,7 +21,7 @@ ctf_dir=$(mktemp -d)
 # --create specifies that the ctf file/directory should be created if it does not exist yet
 # --file specifies the target ctf file/directory where the components should be added
 echo "add components"
-ocm add components --create --file "${ctf_dir}" ${component_dir}/commands/component-constructor.yaml
+ocm add components --create --file "${ctf_dir}" "${component_dir}/commands/component-constructor.yaml"
 
 # This command transfers the components contained in the specified ctf to another component repository
 # (here, an oci registry)
@@ -31,4 +31,4 @@ ocm transfer ctf --overwrite "${ctf_dir}" "${REPO_BASE_URL}"
 
 
 ## Download
-# ocm download component eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0 -O ./archive-helm-chart
+# ocm download component eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/export-token:1.1.0 -O ./archive-export-token
