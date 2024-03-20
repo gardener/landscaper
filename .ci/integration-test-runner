@@ -67,11 +67,7 @@ CREATE_SHOOT_PIDS+=($!)
 # the resource shoot may be cleaned-up by the target shoot create call.
 # To prevent this, the target shoot create gets a head start before the
 # resource shoot is being created.
-sleep 1
-
-until [ -f "${TARGET_SHOOT_DIR}/clustername" ]; do
-  sleep 1
-done
+sleep 15
 
 echo "Creating Resource Shoot Cluster"
 NGINX_INGRESS_ENABLED=false
@@ -99,7 +95,7 @@ if [[ $? != 0 ]]; then
   echo "###### TARGET SHOOT LOG ######"
   cat "${TARGET_SHOOT_DIR}/create-shoot-cluster.log"
   echo "###### RESOURCE SHOOT LOG ######"
-  cat "${RESOURCE_SHOOT_DIR_SHOOT_DIR}/create-shoot-cluster.log"
+  cat "${RESOURCE_SHOOT_DIR}/create-shoot-cluster.log"
   exit 1
 fi
 
