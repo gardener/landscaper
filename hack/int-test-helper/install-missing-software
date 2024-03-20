@@ -87,6 +87,6 @@ if ! command -v ocm &> /dev/null
 then
     echo "ocm could not be found"
     echo "Try installing it..."
-    OCM_VERSION=$(NO_PREFIX=true $(REPO_ROOT)/hack/extract-module-version.sh github.com/open-component-model/ocm)
+    OCM_VERSION=$(NO_PREFIX=true ${PROJECT_ROOT}/hack/extract-module-version.sh github.com/open-component-model/ocm)
     curl -sSfL https://ocm.software/install.sh | OCM_VERSION=${OCM_VERSION} bash
 fi
