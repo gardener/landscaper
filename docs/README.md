@@ -58,6 +58,7 @@
 - [Component Overwrites](usage/ComponentOverwrites.md)
 - [Conditional Imports](usage/ConditionalImports.md)
 - [Context](usage/Context.md)
+- [Critical Problems](usage/CriticalProblems.md)
 - [DeployItem Timeouts](usage/DeployItemTimeouts.md)
 - [Installations](usage/Installations.md)
 - [JSONSchema](usage/JSONSchema.md)
