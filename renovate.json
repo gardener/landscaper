@@ -3,9 +3,22 @@
   "packageRules": [
     {
       "description": "Combine k8s updates in a single PR",
-      "matchManagers": ["gomod"],
-      "matchPackagePatterns": ["^(?:[a-zA-Z]*\\.)?k8s\\.io/"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackagePatterns": [
+        "^(?:[a-zA-Z]*\\.)?k8s\\.io/"
+      ],
       "groupName": "k8s monorepo",
+      "major": {
+        "enabled": false
+      }
+    },
+    {
+      "description": "Combine landscaper updates in a single PR",
+      "matchManagers": ["gomod"],
+      "matchPackagePatterns": ["^(?:[a-zA-Z]*\\.)?github\\.com/gardener/landscaper/"],
+      "groupName": "landscaper monorepo",
       "major": {
         "enabled": false
       }
