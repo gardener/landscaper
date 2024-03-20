@@ -43,11 +43,13 @@ exit_on_error() {
 "${PROJECT_ROOT}/hack/int-test-helper/install-missing-software"
 exit_on_error $? "install software failed"
 
+CREATE_SHOOT_PIDS=()
+
 echo "Creating Target Shoot Cluster"
 NGINX_INGRESS_ENABLED=true
 DISABLE_SHOOT_DELETION=false
 WORKERLESS=false
-"${PROJECT_ROOT}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
+timeout -k 30m 30m "${PROJECT_ROOT}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
   $TARGET_SHOOT_DIR \
   $MAX_NUM_CLUSTERS \
@@ -59,19 +61,23 @@ WORKERLESS=false
   $WORKERLESS \
   &>"${TARGET_SHOOT_DIR}/create-shoot-cluster.log" &
 
-TARGET_SHOOT_CREATE_PID=$!
+CREATE_SHOOT_PIDS+=($!)
 
 # When both create-shoot-cluster calls are started at the same time,
 # the resource shoot may be cleaned-up by the target shoot create call.
 # To prevent this, the target shoot create gets a head start before the
 # resource shoot is being created.
-sleep 10
+sleep 1
+
+until [ -f "${TARGET_SHOOT_DIR}/clustername" ]; do
+  sleep 1
+done
 
 echo "Creating Resource Shoot Cluster"
 NGINX_INGRESS_ENABLED=false
 DISABLE_SHOOT_DELETION=true
 WORKERLESS=false
-"${PROJECT_ROOT}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
+timeout -k 30m 30m "${PROJECT_ROOT}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
   $NAMESPACE \
   $RESOURCE_SHOOT_DIR \
   $MAX_NUM_CLUSTERS \
@@ -83,10 +89,10 @@ WORKERLESS=false
   $WORKERLESS \
   &>"${RESOURCE_SHOOT_DIR}/create-shoot-cluster.log" &
 
-RESOURCE_SHOOT_CREATE_PID=$!
+CREATE_SHOOT_PIDS+=($!)
 
 echo "Waiting until shoot clusters are ready"
-wait $TARGET_SHOOT_CREATE_PID $RESOURCE_SHOOT_CREATE_PID
+wait "${CREATE_SHOOT_PIDS[@]}"
 
 if [[ $? != 0 ]]; then
   echo "Creating the shoot clusters failed"
