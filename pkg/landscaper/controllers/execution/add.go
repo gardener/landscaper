@@ -5,6 +5,7 @@
 package execution
 
 import (
+	"context"
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +23,8 @@ import (
 )
 
 // AddControllerToManager adds the execution controller to the controller manager
-func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+func AddControllerToManager(ctx context.Context, lsUncachedClient, lsCachedClient,
+	hostUncachedClient, hostCachedClient client.Client,
 	logger logging.Logger, lsMgr, hostMgr manager.Manager, config *config.LandscaperConfiguration) error {
 	log := logger.Reconciles("execution", "Execution")
 
@@ -31,6 +33,13 @@ func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
 		"numberOfWorkerThreads", config.Controllers.Executions.CommonControllerConfig.Workers,
 		"lockingEnabled", lockingEnabled)
+
+	// check if allowed to access
+	problemHandler := utils.GetCriticalProblemsHandler()
+	if err := problemHandler.AccessAllowed(ctx, hostUncachedClient); err != nil {
+		return err
+	}
+	log.Info("access to critical problems allowed")
 
 	a, err := NewController(
 		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,

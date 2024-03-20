@@ -173,7 +173,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (resu
 	_, ctx = c.log.StartReconcileAndAddToContext(ctx, req)
 
 	result = reconcile.Result{}
-	defer utils.HandlePanics(ctx, &result)
+	defer utils.HandlePanics(ctx, &result, c.hostUncachedClient)
 
 	result, err = c.reconcile(ctx, req)
 

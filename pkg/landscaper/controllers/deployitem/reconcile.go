@@ -27,7 +27,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	ctx = logging.NewContext(ctx, logger)
 
 	result = reconcile.Result{}
-	defer lsutil.HandlePanics(ctx, &result)
+	defer lsutil.HandlePanics(ctx, &result, nil)
 
 	result, err = con.reconcile(ctx, req)
 

@@ -83,7 +83,7 @@ func (c *TargetSyncController) Reconcile(ctx context.Context, req reconcile.Requ
 	_, ctx = c.log.StartReconcileAndAddToContext(ctx, req)
 
 	result = reconcile.Result{}
-	defer utils.HandlePanics(ctx, &result)
+	defer utils.HandlePanics(ctx, &result, nil)
 
 	result, err = c.reconcile(ctx, req)
 

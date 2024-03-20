@@ -180,7 +180,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (resu
 	_, ctx = logging.MustStartReconcileFromContext(ctx, req, nil)
 
 	result = reconcile.Result{}
-	defer lsutil.HandlePanics(ctx, &result)
+	defer lsutil.HandlePanics(ctx, &result, c.hostUncachedClient)
 
 	result, err = c.innerReconcile(ctx, req)
 
