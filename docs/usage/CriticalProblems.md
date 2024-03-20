@@ -38,13 +38,17 @@ spec:
   criticalProblem:
   - creationTime: "2024-03-19T13:57:44Z"
     podName: test0001-2f9e5e91
+    description: ...
   - creationTime: "2024-03-19T14:02:44Z"
     podName: test0001-2f9e5e91
+    description: ...
   - creationTime: "2024-03-19T14:07:44Z"
     podName: test0001-2f9e5e91
+    description: ...
 ```
 
-Every problem entry possesses a creation timestamp and the pod name, on which the corresponding problem happened.
+Every problem entry possesses a creation timestamp, the pod name, on which the corresponding problem happened and an
+problem description.
 
 The `criticalproblems` custom resource could be used to regularly check if something critical happened with respect
 to the processing of Installations, Executions and DeployItems. If this is the case, you should check the logs to further
