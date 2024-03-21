@@ -67,6 +67,7 @@ CREATE_SHOOT_PIDS+=($!)
 # the resource shoot may be cleaned-up by the target shoot create call.
 # To prevent this, the target shoot create gets a head start before the
 # resource shoot is being created.
+# The sleep also improves the entropy when generating a Shoot name.
 sleep 15
 
 echo "Creating Resource Shoot Cluster"
