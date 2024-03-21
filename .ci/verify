@@ -4,9 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-echo "TODO: disabled for now"
-exit 0
-
 PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 
 (
