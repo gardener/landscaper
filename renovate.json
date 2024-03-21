@@ -14,7 +14,8 @@
       ],
       "matchSourceUrls": [
         "https://github.com/gardener/landscaper"
-      ]
+      ],
+      "commitMessageSuffix": " (run-int-tests)"
     },
     {
       "description": "Fixed version for component-cli v0.44.0",
