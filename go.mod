@@ -49,7 +49,7 @@ require (
 replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
-	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.0
 	github.com/imdario/mergo => dario.cat/mergo v0.3.16
 )
 
