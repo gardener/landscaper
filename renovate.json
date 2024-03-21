@@ -15,6 +15,19 @@
       "matchSourceUrls": [
         "https://github.com/gardener/landscaper"
       ]
+    },
+    {
+      "description": "Fixed version for component-cli v0.44.0",
+      "matchPackagePatterns": ["github.com/gardener/component-cli"],
+      "matchManagers": ["gomod"],
+      "enabled": false
+    },
+    {
+      "description": "Ignore version for landscpaer/apis and controller-utils as used locally",
+      "matchPackagePatterns": ["github.com/gardener/landscaper/.*"],
+      "matchManagers": ["gomod"],
+      "enabled": false
     }
+ 
   ]
 }
