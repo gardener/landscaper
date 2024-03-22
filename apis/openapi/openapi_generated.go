@@ -1941,7 +1941,7 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 					},
 					"signatureVerificationEnforcementPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"`\n - `\"DoNotEnforce\"`\n - `\"Enforce\"`",
+							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"` explcitly disables signature verification. Enabling the verification on installation level will not have an effect and the verification will still be disabled.\n - `\"DoNotEnforce\"` does not enforce a global policy. Signature verification can be enabled in the installation if desired. [DEFAULT]\n - `\"Enforce\"` will enforce all instalations to have valid signatures before being worked on. Disabling the verification on installation level has no impact.",
 							Type:        []string{"string"},
 							Format:      "",
 							Enum:        []interface{}{"Disabled", "DoNotEnforce", "Enforce"},
@@ -2902,7 +2902,7 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 					},
 					"signatureVerificationEnforcementPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"`\n - `\"DoNotEnforce\"`\n - `\"Enforce\"`",
+							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"` explcitly disables signature verification. Enabling the verification on installation level will not have an effect and the verification will still be disabled.\n - `\"DoNotEnforce\"` does not enforce a global policy. Signature verification can be enabled in the installation if desired. [DEFAULT]\n - `\"Enforce\"` will enforce all instalations to have valid signatures before being worked on. Disabling the verification on installation level has no impact.",
 							Type:        []string{"string"},
 							Format:      "",
 							Enum:        []interface{}{"Disabled", "DoNotEnforce", "Enforce"},
@@ -7991,8 +7991,14 @@ func schema_landscaper_apis_core_v1alpha1_VerificationSignature(ref common.Refer
 							Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
+					"caCertificateSecretReference": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+						},
+					},
 				},
-				Required: []string{"publicKeySecretReference"},
+				Required: []string{"publicKeySecretReference", "caCertificateSecretReference"},
 			},
 		},
 		Dependencies: []string{

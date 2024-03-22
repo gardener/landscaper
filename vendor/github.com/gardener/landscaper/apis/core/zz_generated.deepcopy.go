@@ -2886,6 +2886,7 @@ func (in *Verification) DeepCopy() *Verification {
 func (in *VerificationSignature) DeepCopyInto(out *VerificationSignature) {
 	*out = *in
 	out.PublicKeySecretReference = in.PublicKeySecretReference
+	out.CaCertificateSecretReference = in.CaCertificateSecretReference
 	return
 }
 

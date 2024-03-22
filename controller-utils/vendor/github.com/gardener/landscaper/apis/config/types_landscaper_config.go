@@ -310,7 +310,10 @@ type HPAMainConfiguration struct {
 type SignatureVerificationEnforcementPolicy string
 
 const (
-	Enforce      SignatureVerificationEnforcementPolicy = "Enforce"
+	// Enforce will enforce all instalations to have valid signatures before being worked on. Disabling the verification on installation level has no impact.
+	Enforce SignatureVerificationEnforcementPolicy = "Enforce"
+	// DoNotEnforce does not enforce a global policy. Signature verification can be enabled in the installation if desired. [DEFAULT]
 	DoNotEnforce SignatureVerificationEnforcementPolicy = "DoNotEnforce"
-	Disabled     SignatureVerificationEnforcementPolicy = "Disabled"
+	// Disabled explcitly disables signature verification. Enabling the verification on installation level will not have an effect and the verification will still be disabled.
+	Disabled SignatureVerificationEnforcementPolicy = "Disabled"
 )

@@ -6730,6 +6730,18 @@ SecretReference
 <td>
 </td>
 </tr>
+<tr>
+<td>
+<code>caCertificateSecretReference</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
+SecretReference
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.VersionedNamedObjectReference">VersionedNamedObjectReference
