@@ -10,7 +10,6 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/json"
 	"os"
 	"path"
 	"sort"
@@ -18,6 +17,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
