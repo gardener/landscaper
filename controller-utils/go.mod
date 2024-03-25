@@ -3,7 +3,7 @@ module github.com/gardener/landscaper/controller-utils
 go 1.21
 
 require (
-	github.com/gardener/landscaper/apis v0.101.0
+	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang/mock v1.6.0
