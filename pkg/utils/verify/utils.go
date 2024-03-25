@@ -28,7 +28,7 @@ func IsVerifyEnabled(inst *lsv1alpha1.Installation, lsConfig *config.LandscaperC
 	case config.Disabled:
 		return false
 	case config.DoNotEnforce:
-		return inst.Spec.Verification != nil && inst.Spec.Verification.Enabled
+		return inst.Spec.Verification != nil
 	default:
 		//all cases should be handled above, so return true as failsafe
 		return true

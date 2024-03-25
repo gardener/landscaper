@@ -7958,13 +7958,6 @@ func schema_landscaper_apis_core_v1alpha1_Verification(ref common.ReferenceCallb
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"enabled": {
-						SchemaProps: spec.SchemaProps{
-							Default: false,
-							Type:    []string{"boolean"},
-							Format:  "",
-						},
-					},
 					"signatureName": {
 						SchemaProps: spec.SchemaProps{
 							Default: "",
@@ -7973,7 +7966,7 @@ func schema_landscaper_apis_core_v1alpha1_Verification(ref common.ReferenceCallb
 						},
 					},
 				},
-				Required: []string{"enabled", "signatureName"},
+				Required: []string{"signatureName"},
 			},
 		},
 	}

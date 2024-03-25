@@ -3832,7 +3832,6 @@ func Convert_core_TypedObjectReference_To_v1alpha1_TypedObjectReference(in *core
 }
 
 func autoConvert_v1alpha1_Verification_To_core_Verification(in *Verification, out *core.Verification, s conversion.Scope) error {
-	out.Enabled = in.Enabled
 	out.SignatureName = in.SignatureName
 	return nil
 }
@@ -3843,7 +3842,6 @@ func Convert_v1alpha1_Verification_To_core_Verification(in *Verification, out *c
 }
 
 func autoConvert_core_Verification_To_v1alpha1_Verification(in *core.Verification, out *Verification, s conversion.Scope) error {
-	out.Enabled = in.Enabled
 	out.SignatureName = in.SignatureName
 	return nil
 }

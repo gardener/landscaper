@@ -629,12 +629,9 @@ spec:
                 type: object
               verification:
                 properties:
-                  enabled:
-                    type: boolean
                   signatureName:
                     type: string
                 required:
-                - enabled
                 - signatureName
                 type: object
             required:

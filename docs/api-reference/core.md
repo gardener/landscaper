@@ -6682,16 +6682,6 @@ ObjectReference
 <tbody>
 <tr>
 <td>
-<code>enabled</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
 <code>signatureName</code></br>
 <em>
 string
