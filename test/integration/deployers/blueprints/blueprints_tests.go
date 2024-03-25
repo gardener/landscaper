@@ -161,7 +161,7 @@ func executeTest(ctx context.Context, f *framework.Framework, state *framework.S
 	By("Create Target for the installation")
 	// This target has no "landscaper.gardener.cloud/environment" annotation, so that a default deployer is responsible.
 	targetName := "my-cluster-target"
-	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, targetName, f.RestConfig, true)
+	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, targetName, f.RestConfig)
 	utils.ExpectNoError(err)
 	utils.ExpectNoError(state.Create(ctx, target))
 
@@ -241,7 +241,7 @@ func executeTest(ctx context.Context, f *framework.Framework, state *framework.S
 	By("Testing the deployer with a simple deployitem")
 	// This target has a "landscaper.gardener.cloud/environment" annotation, so that the deployer is responsible which we have just installed.
 	targetName2 := "my-cluster-target-2"
-	target2, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, targetName2, f.RestConfig, true)
+	target2, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, targetName2, f.RestConfig)
 	utils.ExpectNoError(err)
 	annotations := target2.GetAnnotations()
 	if annotations == nil {

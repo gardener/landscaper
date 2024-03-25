@@ -64,7 +64,7 @@ func ImportExportTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateDataObjectFromFile(ctx, state.State, do3, path.Join(testdataDir, "installation-1", "import-do-data.yaml")))
 
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
@@ -167,7 +167,7 @@ func ImportExportTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateDataObjectFromFile(ctx, state.State, do3, path.Join(testdataDir, "installation-1", "import-do-data.yaml")))
 
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 

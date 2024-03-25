@@ -65,7 +65,7 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
@@ -131,7 +131,7 @@ func ManifestDeployerTestsForNewReconcile(f *framework.Framework) {
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
