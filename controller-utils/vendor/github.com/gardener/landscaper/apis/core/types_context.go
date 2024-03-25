@@ -59,6 +59,6 @@ type ContextConfiguration struct {
 }
 
 type VerificationSignature struct {
-	PublicKeySecretReference     SecretReference `json:"publicKeySecretReference"`
-	CaCertificateSecretReference SecretReference `json:"caCertificateSecretReference"`
+	PublicKeySecretReference     *SecretReference `json:"publicKeySecretReference,omitempty"`
+	CaCertificateSecretReference *SecretReference `json:"caCertificateSecretReference,omitempty"`
 }

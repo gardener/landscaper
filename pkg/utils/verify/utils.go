@@ -13,6 +13,7 @@ import (
 )
 
 type PublicKeyData []byte
+type CaCertData []byte
 
 // IsVerifyEnabled returns if verification is enabled.
 // The following rules apply:
@@ -34,29 +35,44 @@ func IsVerifyEnabled(inst *lsv1alpha1.Installation, lsConfig *config.LandscaperC
 	}
 }
 
-func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, installationContext lsv1alpha1.Context, client client.Client) (string, PublicKeyData, error) {
+func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, installationContext lsv1alpha1.Context, client client.Client) (string, PublicKeyData, CaCertData, error) {
 	if inst.Spec.Verification == nil {
-		return "", nil, errors.New("installation.Spec.Verification cant be nil")
+		return "", nil, nil, errors.New("installation.Spec.Verification cant be nil")
 	}
 
 	signatureName := inst.Spec.Verification.SignatureName
 	if signatureName == "" {
-		return "", nil, errors.New("installation.Spec.Verification.SignatureName must be set")
+		return "", nil, nil, errors.New("installation.Spec.Verification.SignatureName must be set")
 
 	}
 
-	publicKeySecretReference, ok := installationContext.VerificationSignatures[signatureName]
+	verificationSignatures, ok := installationContext.VerificationSignatures[signatureName]
 	if !ok {
-		return "", nil, fmt.Errorf("context.VerificationSignatures does not contain a key for signature name '%v'", signatureName)
+		return "", nil, nil, fmt.Errorf("context.VerificationSignatures does not contain a key for signature name '%v'", signatureName)
 	}
 
-	_, publicKeyData, _, err := lutil.ResolveSecretReference(ctx, client, &publicKeySecretReference.PublicKeySecretReference)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed resolving public key from reference: %w", err)
-	}
-	if len(publicKeyData) == 0 {
-		return "", nil, errors.New("installation.Spec.Verification.publicKeySecretReference referenced public key is empty")
+	// Extract Public Key Data
+	var publicKeyData PublicKeyData
+	var err error
+
+	if verificationSignatures.PublicKeySecretReference != nil {
+		_, publicKeyData, _, err = lutil.ResolveSecretReference(ctx, client, verificationSignatures.PublicKeySecretReference)
+		if err != nil {
+			return "", nil, nil, fmt.Errorf("failed resolving public key from reference: %w", err)
+		}
 	}
 
-	return signatureName, publicKeyData, nil
+	//Extract CaCertData
+	var caCertData CaCertData
+	if verificationSignatures.CaCertificateSecretReference != nil {
+		_, caCertData, _, err = lutil.ResolveSecretReference(ctx, client, verificationSignatures.CaCertificateSecretReference)
+		if err != nil {
+			return "", nil, nil, fmt.Errorf("failed resolving public key from reference: %w", err)
+		}
+		// if len(caCertData) == 0 {
+		// 	return "", nil, nil, errors.New("installation.Spec.Verification.publicKeySecretReference referenced public key is empty")
+		// }
+	}
+
+	return signatureName, publicKeyData, caCertData, nil
 }

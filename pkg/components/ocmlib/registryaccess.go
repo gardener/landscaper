@@ -14,6 +14,7 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/signing"
 	"github.com/open-component-model/ocm/pkg/signing/handlers/rsa"
+	"github.com/open-component-model/ocm/pkg/signing/signutils"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 
@@ -68,18 +69,36 @@ func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) (mod
 	}, nil
 }
 
-func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion, name string, pkeyData []byte) error {
-	pubkey, err := rsa.ParsePublicKey(pkeyData)
-	if err != nil {
-		return fmt.Errorf("failed parsing public key data: %w", err)
+func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion, name string, pkeyData []byte, caCertData []byte) error {
+	verificationOptions := []signing.Option{
+		signing.Recursive(true),
+	}
+
+	if pkeyData != nil {
+		pubkey, err := rsa.ParsePublicKey(pkeyData)
+		if err != nil {
+			return fmt.Errorf("failed parsing public key data: %w", err)
+		}
+		verificationOptions = append(verificationOptions, signing.PublicKey(name, pubkey))
+	}
+
+	if caCertData != nil {
+		cert, err := signutils.ParseCertificate(caCertData)
+		if err != nil {
+			return fmt.Errorf("failed parsing ca cert data: %w", err)
+		}
+		_, certPool, err := signutils.GetCertificate(cert, false)
+		if err != nil {
+			return fmt.Errorf("failed generating ca cert pool: %w", err)
+		}
+		verificationOptions = append(verificationOptions, signing.RootCertificates(certPool))
 	}
 
 	castedComponentVersion, ok := componentVersion.(*ComponentVersion)
 	if !ok {
 		return errors.New("failed casting componentVersion interface to ocm.ComponentVersion")
 	}
-
-	_, err = signing.VerifyComponentVersion(castedComponentVersion.GetOCMObject(), name, signing.PublicKey(name, pubkey), signing.Recursive(true))
+	_, err := signing.VerifyComponentVersion(castedComponentVersion.GetOCMObject(), name, verificationOptions...)
 	if err != nil {
 		return fmt.Errorf("failed verifying signature: %w", err)
 	}

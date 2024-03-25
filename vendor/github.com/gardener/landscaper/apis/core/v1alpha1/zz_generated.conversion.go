@@ -3854,12 +3854,8 @@ func Convert_core_Verification_To_v1alpha1_Verification(in *core.Verification, o
 }
 
 func autoConvert_v1alpha1_VerificationSignature_To_core_VerificationSignature(in *VerificationSignature, out *core.VerificationSignature, s conversion.Scope) error {
-	if err := Convert_v1alpha1_SecretReference_To_core_SecretReference(&in.PublicKeySecretReference, &out.PublicKeySecretReference, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_SecretReference_To_core_SecretReference(&in.CaCertificateSecretReference, &out.CaCertificateSecretReference, s); err != nil {
-		return err
-	}
+	out.PublicKeySecretReference = (*core.SecretReference)(unsafe.Pointer(in.PublicKeySecretReference))
+	out.CaCertificateSecretReference = (*core.SecretReference)(unsafe.Pointer(in.CaCertificateSecretReference))
 	return nil
 }
 
@@ -3869,12 +3865,8 @@ func Convert_v1alpha1_VerificationSignature_To_core_VerificationSignature(in *Ve
 }
 
 func autoConvert_core_VerificationSignature_To_v1alpha1_VerificationSignature(in *core.VerificationSignature, out *VerificationSignature, s conversion.Scope) error {
-	if err := Convert_core_SecretReference_To_v1alpha1_SecretReference(&in.PublicKeySecretReference, &out.PublicKeySecretReference, s); err != nil {
-		return err
-	}
-	if err := Convert_core_SecretReference_To_v1alpha1_SecretReference(&in.CaCertificateSecretReference, &out.CaCertificateSecretReference, s); err != nil {
-		return err
-	}
+	out.PublicKeySecretReference = (*SecretReference)(unsafe.Pointer(in.PublicKeySecretReference))
+	out.CaCertificateSecretReference = (*SecretReference)(unsafe.Pointer(in.CaCertificateSecretReference))
 	return nil
 }
 

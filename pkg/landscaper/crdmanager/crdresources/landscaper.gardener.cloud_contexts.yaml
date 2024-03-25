@@ -100,9 +100,6 @@ spec:
                   required:
                   - name
                   type: object
-              required:
-              - publicKeySecretReference
-              - caCertificateSecretReference
               type: object
             type: object
         type: object

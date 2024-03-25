@@ -7987,18 +7987,15 @@ func schema_landscaper_apis_core_v1alpha1_VerificationSignature(ref common.Refer
 				Properties: map[string]spec.Schema{
 					"publicKeySecretReference": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 					"caCertificateSecretReference": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 				},
-				Required: []string{"publicKeySecretReference", "caCertificateSecretReference"},
 			},
 		},
 		Dependencies: []string{

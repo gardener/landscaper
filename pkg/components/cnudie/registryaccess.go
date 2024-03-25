@@ -24,7 +24,7 @@ var _ model.RegistryAccess = &RegistryAccess{}
 
 // VerifySignature is NOT supported in cnudie, only in OCM. Will always return error.
 // Check if ocm is used before calling this function.
-func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion, name string, pkeyData []byte) error {
+func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion, name string, pkeyData []byte, caCertData []byte) error {
 	return errors.New("VerifySignature is not supported in CNUDIE sbom")
 }
 
