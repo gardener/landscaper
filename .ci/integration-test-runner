@@ -18,6 +18,8 @@ DURATION_FOR_CLUSTER_DELETION=48h
 
 PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 
+make -C $PROJECT_ROOT revendor
+
 echo "Run integration tests with cluster and registry creation"
 echo "Source path: ${PROJECT_ROOT}"
 echo "Gardener kubeconfig path: ${GARDENER_KUBECONFIG_PATH}"
