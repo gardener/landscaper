@@ -60,7 +60,8 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	}
 
 	registryAccess := &RegistryAccess{}
-	registryAccess.octx = ocm.New(datacontext.MODE_EXTENDED)
+	registryAccess.octx = ocm.FromContext(ctx)
+	registryAccess.octx.Finalizer().Close(registryAccess)
 	registryAccess.session = ocm.NewSession(datacontext.NewSession())
 
 	var localfs vfs.FileSystem
