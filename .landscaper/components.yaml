@@ -21,7 +21,7 @@ components:
           compress: true
           mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
       - name: helm-deployer-chart
-        type: helm.io/chart
+        type: helmChart
         input:
           type: helm
           path: ${HELM_DEPLOYER_CHART_PATH}
@@ -57,7 +57,7 @@ components:
           compress: true
           mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
       - name: manifest-deployer-chart
-        type: helm.io/chart
+        type: helmChart
         input:
           type: helm
           path: ${MANIFEST_DEPLOYER_CHART_PATH}
@@ -93,7 +93,7 @@ components:
           compress: true
           mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
       - name: container-deployer-chart
-        type: helm.io/chart
+        type: helmChart
         input:
           type: helm
           path: ${CONTAINER_DEPLOYER_CHART_PATH}
@@ -145,7 +145,7 @@ components:
           compress: true
           mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
       - name: mock-deployer-chart
-        type: helm.io/chart
+        type: helmChart
         input:
           type: helm
           path: ${MOCK_DEPLOYER_CHART_PATH}
@@ -186,19 +186,19 @@ components:
         version: ${VERSION}
     resources:
       - name: landscaper-chart
-        type: helm.io/chart
+        type: helmChart
         input:
           type: helm
           path: ${LANDSCAPER_CHART_PATH}
           repository: charts/landscaper
       - name: landscaper-controller-rbac-chart
-        type: helm.io/chart
+        type: helmChart
         input:
           type: helm
           path: ${LANDSCAPER_CONTROLLER_RBAC_CHART_PATH}
           repository: charts/landscaper-controller-rbac
       - name: landscaper-controller-deployment-chart
-        type: helm.io/chart
+        type: helmChart
         input:
           type: helm
           path: ${LANDSCAPER_CONTROLLER_DEPLOYMENT_CHART_PATH}

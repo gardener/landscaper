@@ -49,7 +49,7 @@ func DependencyTests(f *framework.Framework) {
 
 		It("should process subinstallations in the correct order", func() {
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
@@ -77,7 +77,7 @@ func DependencyTests(f *framework.Framework) {
 
 		It("should detect a dependency cycle", func() {
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
@@ -91,7 +91,7 @@ func DependencyTests(f *framework.Framework) {
 
 		It("should detect an export conflict", func() {
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 

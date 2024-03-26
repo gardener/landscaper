@@ -18,6 +18,8 @@ import (
 	"text/template"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/json"
+
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -31,8 +33,12 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-//go:embed resources/shootcluster_template.yaml
-var shootClusterTemplate string
+var (
+	//go:embed resources/shootcluster_template.yaml
+	shootClusterTemplate string
+	//go:embed resources/shootcluster_workerless_template.yaml
+	shootClusterWorkerlessTemplate string
+)
 
 const (
 	// namePrefix is the name prefix of shoot clusters used for integration tests
@@ -52,6 +58,9 @@ const (
 
 	// name of the file that will be created in the auth directory, containing the kubeconfig of the shoot cluster
 	filenameForKubeconfig = "kubeconfig.yaml"
+
+	// name of the file that will be created in the auth directory, containing the ingress domain when ingress is enabled
+	filenameForIngressDomain = "ingress-domain"
 )
 
 var (
@@ -77,10 +86,14 @@ type ShootClusterManager struct {
 	numClustersStartDeleteOldest int
 	durationForClusterDeletion   time.Duration
 	prID                         string
+	nginxIngressEnabled          bool
+	disableShootDeletion         bool
+	workerless                   bool
 }
 
 func NewShootClusterManager(log utils.Logger, gardenClusterKubeconfigPath, namespace,
-	authDirectoryPath string, maxNumOfClusters, numClustersStartDeleteOldest int, durationForClusterDeletion, prID string) (*ShootClusterManager, error) {
+	authDirectoryPath string, maxNumOfClusters, numClustersStartDeleteOldest int, durationForClusterDeletion,
+	prID string, nginxIngressEnabled, disableShootDeletion, workerless bool) (*ShootClusterManager, error) {
 
 	log.Logfln("Create cluster manager with:")
 	log.Logfln("  GardenClusterKubeconfigPath: " + gardenClusterKubeconfigPath)
@@ -90,6 +103,9 @@ func NewShootClusterManager(log utils.Logger, gardenClusterKubeconfigPath, names
 	log.Logfln("  NumClustersStartDeleteOldest: " + strconv.Itoa(numClustersStartDeleteOldest))
 	log.Logfln("  DurationForClusterDeletion: " + durationForClusterDeletion)
 	log.Logfln("  PrID: " + prID)
+	log.Logfln("  NginxEnabled: " + strconv.FormatBool(nginxIngressEnabled))
+	log.Logfln("  DisableShootDeletion: " + strconv.FormatBool(disableShootDeletion))
+	log.Logfln("  Workerless: " + strconv.FormatBool(workerless))
 
 	duration, err := time.ParseDuration(durationForClusterDeletion)
 	if err != nil {
@@ -105,6 +121,9 @@ func NewShootClusterManager(log utils.Logger, gardenClusterKubeconfigPath, names
 		numClustersStartDeleteOldest: numClustersStartDeleteOldest,
 		durationForClusterDeletion:   duration,
 		prID:                         prID,
+		nginxIngressEnabled:          nginxIngressEnabled,
+		disableShootDeletion:         disableShootDeletion,
+		workerless:                   workerless,
 	}, nil
 }
 
@@ -120,8 +139,10 @@ func (o *ShootClusterManager) CreateShootCluster(ctx context.Context) error {
 	o.log.Logfln("generate shoot name")
 	clusterName := o.generateShootName()
 
-	if err := o.checkAndDeleteExistingTestShoots(ctx, gardenClientForShoots, gardenClientForSecrets, clusterName); err != nil {
-		return err
+	if !o.disableShootDeletion {
+		if err := o.checkAndDeleteExistingTestShoots(ctx, gardenClientForShoots, gardenClientForSecrets, clusterName); err != nil {
+			return err
+		}
 	}
 
 	o.log.Logfln("generate auth directory")
@@ -161,6 +182,13 @@ func (o *ShootClusterManager) CreateShootCluster(ctx context.Context) error {
 	filePath := path.Join(o.authDirectoryPath, filenameForKubeconfig)
 	if err := o.writeKubeconfig(ctx, shootKubeconfigBase64, filePath); err != nil {
 		return err
+	}
+
+	if o.nginxIngressEnabled {
+		o.log.Logfln("write ingress domain for test cluster")
+		if err := o.writeIngressDomain(ctx, gardenClientForShoots, clusterName); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -324,7 +352,11 @@ func (o *ShootClusterManager) getCreationTimestampOfUnstructuredResource(shoot u
 }
 
 func (o *ShootClusterManager) createShootManifest(name string) (*unstructured.Unstructured, error) {
-	tmpl, err := template.New("shootcluster").Parse(shootClusterTemplate)
+	templateFile := shootClusterTemplate
+	if o.workerless {
+		templateFile = shootClusterWorkerlessTemplate
+	}
+	tmpl, err := template.New("shootcluster").Parse(templateFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manifest of shoot cluster: template parsing failed: %w", err)
 	}
@@ -334,9 +366,10 @@ func (o *ShootClusterManager) createShootManifest(name string) (*unstructured.Un
 
 	var manifestBuffer bytes.Buffer
 	if err := tmpl.Execute(&manifestBuffer, map[string]interface{}{
-		"namespace": o.namespace,
-		"name":      name,
-		"hour":      hour,
+		"namespace":           o.namespace,
+		"name":                name,
+		"hour":                hour,
+		"nginxIngressEnabled": o.nginxIngressEnabled,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create manifest of shoot cluster: templating failed: %w", err)
 	}
@@ -387,8 +420,11 @@ func (o *ShootClusterManager) waitUntilShootClusterIsReady(ctx context.Context, 
 		checkList := map[string]bool{
 			"APIServerAvailable":      false,
 			"ControlPlaneHealthy":     false,
-			"EveryNodeReady":          false,
 			"SystemComponentsHealthy": false,
+		}
+
+		if !o.workerless {
+			checkList["EveryNodeReady"] = false
 		}
 
 		for _, condition := range conditions {
@@ -612,4 +648,47 @@ func (o *ShootClusterManager) deleteOldestShootCluster(ctx context.Context, gard
 			}
 		}
 	}
+}
+
+type shootType struct {
+	Spec shootSpec `json:"spec"`
+}
+
+type shootSpec struct {
+	DNS shootDNS `json:"dns"`
+}
+
+type shootDNS struct {
+	Domain string `json:"domain"`
+}
+
+func (o *ShootClusterManager) writeIngressDomain(ctx context.Context, gardenClient dynamic.ResourceInterface, clusterName string) error {
+
+	shoot, err := gardenClient.Get(ctx, clusterName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	shootRaw, err := shoot.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	var shootDns shootType
+	if err := json.Unmarshal(shootRaw, &shootDns); err != nil {
+		return err
+	}
+
+	if len(shootDns.Spec.DNS.Domain) == 0 {
+		return fmt.Errorf("dns domaint not available")
+	}
+
+	ingressDomain := "ingress." + shootDns.Spec.DNS.Domain
+
+	filePath := path.Join(o.authDirectoryPath, filenameForIngressDomain)
+	if err := os.WriteFile(filePath, []byte(ingressDomain), os.ModePerm); err != nil {
+		return fmt.Errorf("failed to write ingress domain to file %s: %w", filePath, err)
+	}
+
+	return nil
 }

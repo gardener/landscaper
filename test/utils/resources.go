@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -188,10 +189,27 @@ func CreateKubernetesTargetFromSecret(namespace, name string, secret *corev1.Sec
 }
 
 // BuildInternalKubernetesTarget creates a new target of type kubernetes
-// whereas the hostname of the cluster will be set to the cluster internal host.
-// It is expected that the controller runs inside the same cluster where it also deploys to.
-func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client, namespace, name string, restConfig *rest.Config, internal bool) (*lsv1alpha1.Target, error) {
-	if internal {
+// whereas a local hostname of the cluster will be set to the cluster internal host.
+func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client, namespace, name string, restConfig *rest.Config) (*lsv1alpha1.Target, error) {
+	apiUrl, err := url.Parse(restConfig.Host)
+	if err != nil {
+		return nil, err
+	}
+
+	apiHost := apiUrl.Host
+
+	if len(apiUrl.Port()) > 0 {
+		apiHost, _, err = net.SplitHostPort(apiUrl.Host)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if apiHost == "localhost" ||
+		apiHost == "127.0.0.1" ||
+		apiHost == "::1" ||
+		apiHost == "0:0:0:0:0:0:0:1" {
+
 		oldHost := restConfig.Host
 		defer func() {
 			restConfig.Host = oldHost
@@ -217,6 +235,7 @@ func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client
 		u.Host = fmt.Sprintf("%s.%s:%d", kubernetesSvcName, kubernetesSvcNamespace, svc.Spec.Ports[0].Port)
 		restConfig.Host = u.String()
 	}
+
 	return lsutils.CreateKubernetesTarget(namespace, name, restConfig)
 }
 

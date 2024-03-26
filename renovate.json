@@ -1,0 +1,34 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    "group:kubernetes",
+    "security:openssf-scorecard",
+    ":dependencyDashboard"
+  ],
+  "packageRules": [
+    {
+      "description": "Combine landscaper updates in a single PR",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchSourceUrls": [
+        "https://github.com/gardener/landscaper"
+      ],
+      "commitMessageSuffix": " (run-int-tests)"
+    },
+    {
+      "description": "Fixed version for component-cli v0.44.0",
+      "matchPackagePatterns": ["github.com/gardener/component-cli"],
+      "matchManagers": ["gomod"],
+      "enabled": false
+    },
+    {
+      "description": "Ignore version for landscpaer/apis and controller-utils as used locally",
+      "matchPackagePatterns": ["github.com/gardener/landscaper/.*"],
+      "matchManagers": ["gomod"],
+      "enabled": false
+    }
+ 
+  ]
+}

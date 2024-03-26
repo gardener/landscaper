@@ -14,12 +14,12 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/imdario/mergo v0.3.16
+	github.com/imdario/mergo v1.0.0
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
 	github.com/mandelsoft/spiff v1.7.0-beta-5
 	github.com/mandelsoft/vfs v0.4.3
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/ginkgo/v2 v2.17.0
+	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
 	github.com/open-component-model/ocm v0.8.0
 	github.com/opencontainers/go-digest v1.0.0
@@ -49,7 +49,7 @@ require (
 replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
-	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.0
 	github.com/imdario/mergo => dario.cat/mergo v0.3.16
 )
 

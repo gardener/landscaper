@@ -141,6 +141,7 @@ LINTER_VERSION ?= 1.55.2
 OCM_VERSION ?= $(shell  NO_PREFIX=true $(REPO_ROOT)/hack/extract-module-version.sh github.com/open-component-model/ocm)
 API_REF_GEN_VERSION ?= v0.0.10
 JQ_VERSION ?= 1.6
+SETUP_ENVTEST_VERSION ?= release-0.16
 
 .PHONY: localbin
 localbin: ## Creates the local bin folder, if it doesn't exist. Not meant to be called manually, used as requirement for the other tool commands.
@@ -176,7 +177,7 @@ golangci-lint: localbin ## Download golangci-lint locally if necessary. If wrong
 envtest: localbin ## Download envtest-setup locally if necessary.
 	@test -s $(LOCALBIN)/setup-envtest || \
 	( echo "Installing setup-envtest ..."; \
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest )
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(SETUP_ENVTEST_VERSION) )
 
 .PHONY: ocm
 ocm: localbin ## Install OCM CLI if necessary.

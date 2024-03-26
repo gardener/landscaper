@@ -60,7 +60,7 @@ func RootInstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateNamespaceDataObjectFromFile(ctx, state.State, do, path.Join(testdataDir, "installation-root-trigger", "import-do-namespace.yaml")))
 
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
