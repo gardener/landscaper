@@ -50,7 +50,7 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.0
-	github.com/imdario/mergo => dario.cat/mergo v0.3.16
+	github.com/imdario/mergo => dario.cat/mergo v1.0.0
 )
 
 require (

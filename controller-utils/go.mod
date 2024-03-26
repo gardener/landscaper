@@ -24,7 +24,7 @@ require (
 
 replace (
 	github.com/gardener/landscaper/apis => ../apis
-	github.com/imdario/mergo => dario.cat/mergo v0.3.16
+	github.com/imdario/mergo => dario.cat/mergo v1.0.0
 )
 
 require (
