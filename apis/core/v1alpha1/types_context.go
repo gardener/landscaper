@@ -53,6 +53,7 @@ type ContextConfiguration struct {
 	RegistryPullSecrets []corev1.LocalObjectReference `json:"registryPullSecrets,omitempty"`
 	// Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
 	// The key should use a dns-like syntax to express the purpose and avoid conflicts.
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Schemaless
 	// +kubebuilder:validation:Type=object
 	// +optional
