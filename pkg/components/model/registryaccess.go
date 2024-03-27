@@ -14,7 +14,7 @@ import (
 type RegistryAccess interface {
 	GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
 
-	//TODO doc
+	//VerifySignature calls the ocm lib to verify the named signature in the component version with the public key or ca cert data.
 	VerifySignature(componentVersion ComponentVersion, name string, pkeyData []byte, caCertData []byte) error
 }
 
