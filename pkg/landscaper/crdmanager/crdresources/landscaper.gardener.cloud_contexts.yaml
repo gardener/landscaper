@@ -43,6 +43,7 @@ spec:
               for dedicated purposes given by a string key. The key should use a dns-like
               syntax to express the purpose and avoid conflicts.
             type: object
+            x-kubernetes-preserve-unknown-fields: true
           kind:
             description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client

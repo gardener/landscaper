@@ -50,33 +50,33 @@ kube::codegen::gen_helpers \
   --output-base "$src_path" \
   --boilerplate "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
-echo
-echo "> Generating openapi definitions"
-kube::codegen::gen_openapi \
-  --input-pkg-root "$API_MODULE_PATH" \
-  --output-pkg-root "$API_MODULE_PATH" \
-  --output-base "$src_path" \
-  --extra-pkgs "$API_MODULE_PATH/core/v1alpha1" \
-  --extra-pkgs "$API_MODULE_PATH/config/v1alpha1" \
-  --extra-pkgs "$API_MODULE_PATH/config" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/core/v1alpha1" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/utils/readinesschecks" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/utils/managedresource" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/utils/continuousreconcile" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/helm/v1alpha1" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/manifest/v1alpha1" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/manifest/v1alpha2" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/container/v1alpha1" \
-  --extra-pkgs "$API_MODULE_PATH/deployer/mock/v1alpha1" \
-  --extra-pkgs "github.com/gardener/component-spec/bindings-go/apis/v2" \
-  --extra-pkgs "k8s.io/api/core/v1" \
-  --extra-pkgs "k8s.io/apimachinery/pkg/apis/meta/v1" \
-  --extra-pkgs "k8s.io/apimachinery/pkg/api/resource" \
-  --extra-pkgs "k8s.io/apimachinery/pkg/types" \
-  --extra-pkgs "k8s.io/apimachinery/pkg/runtime" \
-  --report-filename "$src_path/$API_MODULE_PATH/openapi/api_violations.report" \
-  --update-report \
-  --boilerplate "${PROJECT_ROOT}/hack/boilerplate.go.txt"
+# echo
+# echo "> Generating openapi definitions"
+# kube::codegen::gen_openapi \
+#   --input-pkg-root "$API_MODULE_PATH" \
+#   --output-pkg-root "$API_MODULE_PATH" \
+#   --output-base "$src_path" \
+#   --extra-pkgs "$API_MODULE_PATH/core/v1alpha1" \
+#   --extra-pkgs "$API_MODULE_PATH/config/v1alpha1" \
+#   --extra-pkgs "$API_MODULE_PATH/config" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/core/v1alpha1" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/utils/readinesschecks" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/utils/managedresource" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/utils/continuousreconcile" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/helm/v1alpha1" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/manifest/v1alpha1" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/manifest/v1alpha2" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/container/v1alpha1" \
+#   --extra-pkgs "$API_MODULE_PATH/deployer/mock/v1alpha1" \
+#   --extra-pkgs "github.com/gardener/component-spec/bindings-go/apis/v2" \
+#   --extra-pkgs "k8s.io/api/core/v1" \
+#   --extra-pkgs "k8s.io/apimachinery/pkg/apis/meta/v1" \
+#   --extra-pkgs "k8s.io/apimachinery/pkg/api/resource" \
+#   --extra-pkgs "k8s.io/apimachinery/pkg/types" \
+#   --extra-pkgs "k8s.io/apimachinery/pkg/runtime" \
+#   --report-filename "$src_path/$API_MODULE_PATH/openapi/api_violations.report" \
+#   --update-report \
+#   --boilerplate "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
 echo
 echo "> Generating CRDs"
