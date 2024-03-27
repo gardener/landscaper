@@ -3,6 +3,7 @@ module github.com/gardener/landscaper
 go 1.21
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/containerd/containerd v1.7.14
 	github.com/docker/cli v24.0.9+incompatible
@@ -14,11 +15,10 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/imdario/mergo v1.0.0
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
 	github.com/mandelsoft/spiff v1.7.0-beta-5
 	github.com/mandelsoft/vfs v0.4.3
-	github.com/onsi/ginkgo/v2 v2.17.1
+	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
 	github.com/open-component-model/ocm v0.8.0
@@ -50,7 +50,6 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.0
-	github.com/imdario/mergo => dario.cat/mergo v1.0.0
 )
 
 require (
@@ -204,6 +203,7 @@ require (
 	github.com/hashicorp/hcl v1.0.1-vault-5 // indirect
 	github.com/hashicorp/vault-client-go v0.4.3 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
+	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20230811132847-661be99b8267 // indirect
