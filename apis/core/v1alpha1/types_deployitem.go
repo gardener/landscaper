@@ -8,8 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // DeployItemValidationCondition is the Conditions type to indicate the deploy items configuration validation status.
@@ -83,46 +81,13 @@ type DeployItemList struct {
 	Items           []DeployItem `json:"items"`
 }
 
-// DeployItemDefinition defines the DeployItem resource CRD.
-var DeployItemDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "deployitems",
-		Singular: "deployitem",
-		ShortNames: []string{
-			"di",
-		},
-		Kind: "DeployItem",
-	},
-	Scope:             lsschema.NamespaceScoped,
-	Storage:           true,
-	Served:            true,
-	SubresourceStatus: true,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
-		{
-			Name:     "Type",
-			Type:     "string",
-			JSONPath: ".spec.type",
-		},
-		{
-			Name:     "Phase",
-			Type:     "string",
-			JSONPath: ".status.phase",
-		},
-		{
-			Name:     "ExportRef",
-			Type:     "string",
-			JSONPath: ".status.exportRef.name",
-		},
-		{
-			Name:     "Age",
-			Type:     "date",
-			JSONPath: ".metadata.creationTimestamp",
-		},
-	},
-}
-
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=di
+// +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="ExportRef",type=string,JSONPath=`.status.exportRef.name`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:subresource:status
 
 // DeployItem defines a resource that should be processed by a external deployer
 type DeployItem struct {
@@ -148,6 +113,7 @@ type DeployItemSpec struct {
 	// +optional
 	Context string `json:"context,omitempty"`
 	// Configuration contains the deployer type specific configuration.
+	// +kubebuilder:validation:EmbeddedResource
 	Configuration *runtime.RawExtension `json:"config,omitempty"`
 	// Timeout specifies how long the deployer may take to apply the deploy item.
 	// When the time is exceeded, the deploy item fails.
@@ -164,7 +130,6 @@ type DeployItemSpec struct {
 }
 
 // DeployItemStatus contains the status of a deploy item.
-// todo: add operation
 type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
 	Phase DeployItemPhase `json:"phase,omitempty"`
@@ -195,6 +160,7 @@ type DeployItemStatus struct {
 	Deployer DeployerInformation `json:"deployer,omitempty"`
 
 	// ProviderStatus contains the provider specific status
+	// +kubebuilder:validation:EmbeddedResource
 	// +optional
 	ProviderStatus *runtime.RawExtension `json:"providerStatus,omitempty"`
 

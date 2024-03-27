@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "core-v1-ContainerState": {
+      "description": "ContainerState holds a possible state of container. Only one of its members may be specified. If none of them is specified, the default one is ContainerStateWaiting.",
+      "type": "object",
+      "properties": {
+        "running": {
+          "description": "Details about a running container",
+          "$ref": "#/definitions/core-v1-ContainerStateRunning"
+        },
+        "terminated": {
+          "description": "Details about a terminated container",
+          "$ref": "#/definitions/core-v1-ContainerStateTerminated"
+        },
+        "waiting": {
+          "description": "Details about a waiting container",
+          "$ref": "#/definitions/core-v1-ContainerStateWaiting"
+        }
+      }
+    },
+    "core-v1-ContainerStateRunning": {
+      "description": "ContainerStateRunning is a running state of a container.",
+      "type": "object",
+      "properties": {
+        "startedAt": {
+          "description": "Time at which the container was last (re-)started",
+          "$ref": "#/definitions/meta-v1-Time"
+        }
+      }
+    },
+    "core-v1-ContainerStateTerminated": {
+      "description": "ContainerStateTerminated is a terminated state of a container.",
+      "type": "object",
+      "required": [
+        "exitCode"
+      ],
+      "properties": {
+        "containerID": {
+          "description": "Container's ID in the format '\u003ctype\u003e://\u003ccontainer_id\u003e'",
+          "type": "string"
+        },
+        "exitCode": {
+          "description": "Exit status from the last termination of the container",
+          "type": "integer",
+          "format": "int32",
+          "default": 0
+        },
+        "finishedAt": {
+          "description": "Time at which the container last terminated",
+          "$ref": "#/definitions/meta-v1-Time"
+        },
+        "message": {
+          "description": "Message regarding the last termination of the container",
+          "type": "string"
+        },
+        "reason": {
+          "description": "(brief) reason from the last termination of the container",
+          "type": "string"
+        },
+        "signal": {
+          "description": "Signal from the last termination of the container",
+          "type": "integer",
+          "format": "int32"
+        },
+        "startedAt": {
+          "description": "Time at which previous execution of the container started",
+          "$ref": "#/definitions/meta-v1-Time"
+        }
+      }
+    },
+    "core-v1-ContainerStateWaiting": {
+      "description": "ContainerStateWaiting is a waiting state of a container.",
+      "type": "object",
+      "properties": {
+        "message": {
+          "description": "Message regarding why the container is not yet running.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "(brief) reason the container is not yet running.",
+          "type": "string"
+        }
+      }
+    },
+    "deployer-container-ContainerStatus": {
+      "description": "ContainerStatus describes the status of a pod with its init, wait and main container.",
+      "type": "object",
+      "required": [
+        "image",
+        "imageID"
+      ],
+      "properties": {
+        "exitCode": {
+          "description": "ExitCode of the main container.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "image": {
+          "description": "The image the container is running. More info: https://kubernetes.io/docs/concepts/containers/images",
+          "type": "string",
+          "default": ""
+        },
+        "imageID": {
+          "description": "ImageID of the container's image.",
+          "type": "string",
+          "default": ""
+        },
+        "message": {
+          "description": "A human readable message indicating details about why the pod is in this condition.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "A brief CamelCase message indicating details about why the pod is in this state. e.g. 'Evicted'",
+          "type": "string"
+        },
+        "state": {
+          "description": "Details about the container's current condition.",
+          "default": {},
+          "$ref": "#/definitions/core-v1-ContainerState"
+        }
+      }
+    },
+    "deployer-container-PodStatus": {
+      "description": "PodStatus describes the status of a pod with its init, wait and main container",
+      "type": "object",
+      "required": [
+        "podName",
+        "containerStatus",
+        "initContainerStatus",
+        "waitContainerStatus"
+      ],
+      "properties": {
+        "containerStatus": {
+          "description": "ContainerStatus contains the status of the pod that executes the configured container.",
+          "default": {},
+          "$ref": "#/definitions/deployer-container-ContainerStatus"
+        },
+        "initContainerStatus": {
+          "description": "InitContainerStatus contains the status of the init container.",
+          "default": {},
+          "$ref": "#/definitions/deployer-container-ContainerStatus"
+        },
+        "lastRun": {
+          "description": "LastRun is the time when the pod was executed the last time.",
+          "$ref": "#/definitions/meta-v1-Time"
+        },
+        "lastSuccessfulJobID": {
+          "description": "LastSuccessfulJobID is set to the current JobID when the pod successfully finished. If the pod has not yet finished, this field will be nil.",
+          "type": "string"
+        },
+        "podName": {
+          "description": "PodName is the name of the created pod.",
+          "type": "string",
+          "default": ""
+        },
+        "waitContainerStatus": {
+          "description": "WaitContainerStatus contains the status of the wait container.",
+          "default": {},
+          "$ref": "#/definitions/deployer-container-ContainerStatus"
+        }
+      }
+    },
+    "meta-v1-Time": {
+      "description": "Time is a wrapper around time.Time which supports correct marshaling to YAML and JSON.  Wrappers are provided for many of the factory methods that the time package offers.",
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "description": "ProviderStatus is the container provider specific status",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "lastOperation": {
+      "default": "",
+      "description": "LastOperation defines the last run operation of the pod. The operation can be either reconcile or deletion.",
+      "type": "string"
+    },
+    "podStatus": {
+      "$ref": "#/definitions/deployer-container-PodStatus",
+      "description": "PodStatus indicated the status of the executed pod."
+    }
+  },
+  "required": [
+    "lastOperation"
+  ],
+  "title": "deployer-container-ProviderStatus",
+  "type": "object"
+}

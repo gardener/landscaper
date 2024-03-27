@@ -1,6 +1,13 @@
+---
+title: The Manifest Deployer
+sidebar_position: 2
+---
+
 # Manifest Deployer Example
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
+Let's have a closer look at the Manifest Deployer.
+
+For prerequisites, see [here](../../README.md).
 
 The Landscaper offers different deployers per default: 
 
@@ -8,7 +15,8 @@ The Landscaper offers different deployers per default:
 - the [Kubernetes Manifest Deployer](../../../deployer/manifest.md), 
 - and the [Container Deployer](../../../deployer/container.md).
 
-We have already used the Helm deployer in the first Hello World Example to create a ConfigMap on the target cluster.
+We have already used the Helm deployer in the first Hello World Example to deploy a 
+Helm Chart to create a ConfigMap on the target cluster.
 
 In the current example, we will show how the same task can be achieved with the Kubernetes manifest deployer.
 This deployer is great if you want to deploy some Kubernetes manifests without going the extra mile of building a Helm chart for these manifests. The Kubernetes manifests are directly included in the blueprint of the Installation.

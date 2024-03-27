@@ -225,8 +225,7 @@ func GetTargetListImportBySelector(
 	contextName string,
 	inst *lsv1alpha1.Installation,
 	selector map[string]string,
-	targetImport lsv1alpha1.TargetImport,
-	restrictToImport bool) (*dataobjects.TargetExtensionList, error) {
+	targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetExtensionList, error) {
 	targets := &lsv1alpha1.TargetList{}
 	// construct label selector
 	contextSelector := labels.NewSelector()
@@ -237,6 +236,13 @@ func GetTargetListImportBySelector(
 			return nil, fmt.Errorf("unable to construct label selector: %w", err)
 		}
 		contextSelector = contextSelector.Add(*r)
+
+		r, err = labels.NewRequirement(lsv1alpha1.DataObjectJobIDLabel, selection.Equals, []string{inst.Status.JobID})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+
 	} else {
 		// top-level targets probably don't have an empty context set, so check for non-existence of the label
 		r, err := labels.NewRequirement(lsv1alpha1.DataObjectContextLabel, selection.DoesNotExist, nil)
@@ -253,14 +259,13 @@ func GetTargetListImportBySelector(
 		}
 		contextSelector = contextSelector.Add(*r)
 	}
-	if restrictToImport {
-		// add further labels to ensure that only targets imported by that installation are selected
-		r, err := labels.NewRequirement(lsv1alpha1.DataObjectSourceTypeLabel, selection.Equals, []string{string(lsv1alpha1.ImportDataObjectSourceType)})
-		if err != nil {
-			return nil, fmt.Errorf("unable to construct label selector: %w", err)
-		}
-		contextSelector = contextSelector.Add(*r)
+
+	// add further labels to ensure that only targets imported by that installation are selected
+	r, err := labels.NewRequirement(lsv1alpha1.DataObjectSourceTypeLabel, selection.Equals, []string{string(lsv1alpha1.ImportDataObjectSourceType)})
+	if err != nil {
+		return nil, fmt.Errorf("unable to construct label selector: %w", err)
 	}
+	contextSelector = contextSelector.Add(*r)
 
 	if err := read_write_layer.ListTargets(ctx, kubeClient, targets, read_write_layer.R000072,
 		client.InNamespace(inst.Namespace), &client.ListOptions{LabelSelector: contextSelector}); err != nil {
@@ -268,6 +273,86 @@ func GetTargetListImportBySelector(
 	}
 	targetExtensionList := dataobjects.NewTargetExtensionList(targets.Items, &targetImport)
 	return targetExtensionList, nil
+}
+
+// GetTargetMapImportByNames fetches the target imports from the cluster, based on a map of target names.
+func GetTargetMapImportByNames(
+	ctx context.Context,
+	kubeClient client.Client,
+	contextName string,
+	inst *lsv1alpha1.Installation,
+	targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetMapExtension, error) {
+
+	targetMap := make(map[string]lsv1alpha1.Target)
+	for id, targetName := range targetImport.TargetMap {
+		// get target from context above the installation
+		raw := &lsv1alpha1.Target{}
+		targetName = lsv1alpha1helper.GenerateDataObjectName(contextName, targetName)
+		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Namespace), raw); err != nil {
+			return nil, err
+		}
+		targetMap[id] = *raw
+	}
+
+	targetMapExtension := dataobjects.NewTargetMapExtension(targetMap, &targetImport)
+	return targetMapExtension, nil
+}
+
+// GetTargetMapImportBySelector fetches the targets which are specified by a target map reference.
+func GetTargetMapImportBySelector(
+	ctx context.Context,
+	kubeClient client.Client,
+	contextName string,
+	inst *lsv1alpha1.Installation,
+	targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetMapExtension, error) {
+
+	// construct label selector
+	contextSelector := labels.NewSelector()
+	if len(contextName) != 0 {
+		// top-level targets probably don't have an empty context set, so only add the selector if there actually is a context
+		r, err := labels.NewRequirement(lsv1alpha1.DataObjectContextLabel, selection.Equals, []string{contextName})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+
+		r, err = labels.NewRequirement(lsv1alpha1.DataObjectJobIDLabel, selection.Equals, []string{inst.Status.JobID})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+
+	} else {
+		// top-level targets probably don't have an empty context set, so check for non-existence of the label
+		r, err := labels.NewRequirement(lsv1alpha1.DataObjectContextLabel, selection.DoesNotExist, nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+	}
+
+	// add given labels to selector
+	r, err := labels.NewRequirement(lsv1alpha1.DataObjectKeyLabel, selection.Equals, []string{targetImport.TargetMapReference})
+	if err != nil {
+		return nil, fmt.Errorf("unable to construct label selector: %w", err)
+	}
+	contextSelector = contextSelector.Add(*r)
+
+	// add further labels to ensure that only targets imported by that installation are selected
+	r, err = labels.NewRequirement(lsv1alpha1.DataObjectSourceTypeLabel, selection.Equals, []string{string(lsv1alpha1.ImportDataObjectSourceType)})
+	if err != nil {
+		return nil, fmt.Errorf("unable to construct label selector: %w", err)
+	}
+	contextSelector = contextSelector.Add(*r)
+
+	targets := &lsv1alpha1.TargetList{}
+	if err := read_write_layer.ListTargets(ctx, kubeClient, targets, read_write_layer.R000102,
+		client.InNamespace(inst.Namespace), &client.ListOptions{LabelSelector: contextSelector}); err != nil {
+		return nil, err
+	}
+
+	targetMapExtension, err := dataobjects.NewTargetMapExtensionFromList(targets, &targetImport)
+	return targetMapExtension, err
 }
 
 // GetReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition

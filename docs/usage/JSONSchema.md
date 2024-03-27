@@ -1,3 +1,8 @@
+---
+title: JSON Schema
+sidebar_position: 15
+---
+
 # JSONSchema
 
 Data imports and exports of Blueprints are defined using JSONSchema.

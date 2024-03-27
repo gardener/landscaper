@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/yaml"
 
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
@@ -83,9 +84,9 @@ func (o *DefaultOptions) Complete() error {
 	burst, qps := lsutils.GetHostClientRequestRestrictions(log, hostAndResourceClusterDifferent)
 
 	opts := manager.Options{
-		LeaderElection:     false,
-		MetricsBindAddress: "0", // disable the metrics serving by default
-		Cache:              cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"}, // disable the metrics serving by default
+		Cache:          cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
 	}
 
 	hostRestConfig, err := ctrl.GetConfig()

@@ -1,0 +1,19 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+
+name: composition
+
+blueprint:
+  ref: cd://resources/blueprint-composition
+
+imports:
+  data:
+    - name: namespace
+      dataRef: namespace
+    - name: configs
+      dataRef: configs1
+  targets:
+    - name: redCluster
+      target: redCluster1
+    - name: blueCluster
+      target: blueCluster1

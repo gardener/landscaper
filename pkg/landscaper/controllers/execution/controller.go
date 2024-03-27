@@ -118,7 +118,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (resu
 	ctx = logging.NewContext(ctx, logger)
 
 	result = reconcile.Result{}
-	defer lsutil.HandlePanics(ctx, &result)
+	defer lsutil.HandlePanics(ctx, &result, c.hostUncachedClient)
 
 	result, err = c.reconcile(ctx, req)
 

@@ -7,11 +7,9 @@ package v1alpha1
 import (
 	"time"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
@@ -36,9 +34,6 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	SetDefaults_CommonControllerConfig(&obj.Controllers.DeployItems.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&obj.Controllers.Contexts.CommonControllerConfig)
 
-	if len(obj.DeployerManagement.Namespace) == 0 {
-		obj.DeployerManagement.Namespace = "ls-system"
-	}
 	if obj.DeployItemTimeouts == nil {
 		obj.DeployItemTimeouts = &DeployItemTimeouts{}
 	}
@@ -58,26 +53,6 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 		obj.Controllers.Contexts.Config.Default.RepositoryContext = obj.RepositoryContext
 	}
 
-	if obj.DeployerManagement.Disable {
-		obj.DeployerManagement.Agent.Disable = true
-	}
-	if len(obj.DeployerManagement.Agent.Name) == 0 {
-		obj.DeployerManagement.Agent.Name = "default"
-	}
-	if len(obj.DeployerManagement.Agent.Namespace) == 0 {
-		obj.DeployerManagement.Agent.Namespace = obj.DeployerManagement.Namespace
-	}
-	if len(obj.DeployerManagement.Agent.LandscaperNamespace) == 0 {
-		obj.DeployerManagement.Agent.LandscaperNamespace = obj.DeployerManagement.Namespace
-	}
-	if obj.DeployerManagement.Agent.OCI == nil {
-		obj.DeployerManagement.Agent.OCI = obj.Registry.OCI
-	}
-
-	if obj.DeployerManagement.DeployerRepositoryContext == nil {
-		defaultCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper", ""))
-		obj.DeployerManagement.DeployerRepositoryContext = &defaultCtx
-	}
 	if obj.SignatureVerificationEnforcementPolicy == "" {
 		obj.SignatureVerificationEnforcementPolicy = DoNotEnforce
 	}
@@ -86,10 +61,10 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 // SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.
 func SetDefaults_CrdManagementConfiguration(obj *CrdManagementConfiguration) {
 	if obj.DeployCustomResourceDefinitions == nil {
-		obj.DeployCustomResourceDefinitions = pointer.Bool(true)
+		obj.DeployCustomResourceDefinitions = ptr.To(true)
 	}
 	if obj.ForceUpdate == nil {
-		obj.ForceUpdate = pointer.Bool(true)
+		obj.ForceUpdate = ptr.To(true)
 	}
 }
 
@@ -102,16 +77,6 @@ func SetDefaults_CommonControllerConfig(obj *CommonControllerConfig) {
 		obj.CacheSyncTimeout = &metav1.Duration{
 			Duration: 2 * time.Minute,
 		}
-	}
-}
-
-// SetDefaults_AgentConfiguration sets the defaults for the landscaper configuration.
-func SetDefaults_AgentConfiguration(obj *AgentConfiguration) {
-	if len(obj.Namespace) == 0 {
-		obj.Namespace = "ls-system"
-	}
-	if len(obj.LandscaperNamespace) == 0 {
-		obj.LandscaperNamespace = "ls-system"
 	}
 }
 

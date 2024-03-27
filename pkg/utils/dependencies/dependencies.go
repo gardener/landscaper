@@ -144,6 +144,10 @@ func (r *installationNode) fetchPredecessors(otherNodes []*installationNode) (se
 			targets = append(targets, imp.Target)
 		} else if len(imp.Targets) != 0 {
 			targets = imp.Targets
+		} else if imp.TargetMap != nil {
+			for _, t := range imp.TargetMap {
+				targets = append(targets, t)
+			}
 		} else {
 			// targetListReferences can only refer to parent imports, not to sibling exports
 			continue

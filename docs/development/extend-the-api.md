@@ -16,8 +16,7 @@ If fields shall be removed permanently from the API then a proper deprecation pe
 All Landscaper and Deployer API definitions are provided as separate go submodule (see the apis [go.mod file](../../apis/go.mod) and an example of a multi module repo [here](https://github.com/go-modules-by-example/index/blob/master/009_submodules/README.md))
 The separate repo was introduced so that external projects only use the apis module and do not have to care about the big dependency tree of the landscaper itself.
 
-Using a submodule for the api means that the api module is a dependency of the main landscaper project. 
-As a dependency, the module is vendored in `vendor/github.com/gardener/landscaper/apis` so after a module change you have to run `make revendor` in order to get the changes applied in the landscaper main project. (If you use `make generate` the revendoring is automatically done)
+Using a submodule for the api means that the api module is a dependency of the main landscaper project.
 
 
 **Checklist** when changing the API:
@@ -61,7 +60,7 @@ As a dependency, the module is vendored in `vendor/github.com/gardener/landscape
    ```
 1. If necessary then implement/adapt the conversion logic defined in the versioned APIs (e.g., `apis/core/v1alpha1/conversions.go`).
 1. If necessary then implement/adapt defaulting logic defined in the versioned APIs (e.g., `apis/core/v1alpha1/defaults.go`).
-1. Run the code generation: `make install-requirements generate`
+1. Run the code generation: `make generate`
 1. If necessary then implement/adapt validation logic defined in the internal API (e.g., `apis/core/validation/validation.go`).
 1. If necessary then adapt the exemplary YAML manifests of the resources defined in `example/*.yaml`.
 1. In most cases it makes sense to add/adapt the documentation for administrators/operators and/or end-users in the `docs` folder to provide information on purpose and usage of the added/changed fields.

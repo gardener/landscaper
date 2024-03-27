@@ -164,12 +164,20 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 
 		message := fmt.Sprintf("unable to install helm chart release: %s", err.Error())
 		logger.Info(message)
+
+		if c.isHelmInstallMessage(message) {
+			return nil, lserror.NewWrappedError(err, currOp, "Install", message, lsv1alpha1.ErrorForInfoOnly)
+		}
 		return nil, lserror.NewWrappedError(err, currOp, "Install", message)
 	}
 
 	logger.Info(fmt.Sprintf("%s successfully installed in %s", c.releaseName, c.defaultNamespace))
 
 	return rel, nil
+}
+
+func (c *RealHelmDeployer) isHelmInstallMessage(message string) bool {
+	return strings.Contains(message, "rendered manifests contain a resource that already exists. Unable to continue with install")
 }
 
 // upgradeRelease upgrades a helm release
@@ -208,12 +216,23 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 
 		message := fmt.Sprintf("unable to upgrade helm chart release: %s", err.Error())
 		logger.Info(message)
-		return nil, lserror.NewWrappedError(err, currOp, "Install", message)
+
+		if c.isHelmUpgradeMessage(message) {
+			return nil, lserror.NewWrappedError(err, currOp, "Update", message, lsv1alpha1.ErrorForInfoOnly)
+		}
+		return nil, lserror.NewWrappedError(err, currOp, "Update", message)
 	}
 
 	logger.Info(fmt.Sprintf("%s successfully upgraded in %s", c.releaseName, c.defaultNamespace))
 
 	return rel, nil
+}
+
+func (c *RealHelmDeployer) isHelmUpgradeMessage(message string) bool {
+	return strings.Contains(message, "rendered manifests contain a resource that already exists. Unable to continue with update") ||
+		strings.Contains(message, "pre-upgrade hooks failed") ||
+		strings.Contains(message, "The order in patch list") ||
+		strings.Contains(message, "YAML parse error on")
 }
 
 func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {

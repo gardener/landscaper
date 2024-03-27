@@ -403,6 +403,94 @@ var _ = Describe("Blueprint", func() {
 				Expect(allErrs).To(HaveLen(0))
 			})
 
+			It("should pass if a targetmap import of a subinstallation refers to a targetmap imported by its parent", func() {
+				imports := []core.ImportDefinition{
+					{
+						FieldValueDefinition: core.FieldValueDefinition{
+							Name:       "myimportref",
+							TargetType: "mytype",
+						},
+						Type: core.ImportTypeTargetMap,
+					},
+				}
+
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Name = "my-inst"
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImport{
+					{
+						Name:               "myimport",
+						TargetMapReference: "myimportref",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
+				Expect(allErrs).To(HaveLen(0))
+			})
+
+			It("should pass if a targetmap import of a subinstallation refers to targets imported by its parent", func() {
+				imports := []core.ImportDefinition{
+					{
+						FieldValueDefinition: core.FieldValueDefinition{
+							Name:       "myimportref",
+							TargetType: "mytype",
+						},
+						Type: core.ImportTypeTarget,
+					},
+				}
+
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Name = "my-inst"
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImport{
+					{
+						Name: "myimport",
+						TargetMap: map[string]string{
+							"mykey1": "myimportref",
+						},
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
+				Expect(allErrs).To(HaveLen(0))
+			})
+
+			It("should pass if a targetmap import of a subinstallation refers to targets exported by a sibling", func() {
+				imports := []core.ImportDefinition{
+					{
+						FieldValueDefinition: core.FieldValueDefinition{
+							Name:   "myimportref",
+							Schema: &core.JSONSchemaDefinition{RawMessage: []byte("type: string")},
+						},
+					},
+				}
+				// subinstallation template exporting a target
+				tmpl1 := &core.InstallationTemplate{}
+				tmpl1.Name = "my-inst1"
+				tmpl1.Blueprint.Ref = "myref1"
+				tmpl1.Exports.Targets = []core.TargetExport{
+					{
+						Name:   "myexport",
+						Target: "myexportref",
+					},
+				}
+				// subinstallation template importing a targetmap
+				tmpl2 := &core.InstallationTemplate{}
+				tmpl2.Name = "my-inst2"
+				tmpl2.Blueprint.Ref = "myref2"
+				tmpl2.Imports.Targets = []core.TargetImport{
+					{
+						Name: "myimport",
+						TargetMap: map[string]string{
+							"mykey": "myexportref",
+						},
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl1, tmpl2})
+				Expect(allErrs).To(HaveLen(0))
+			})
+
 			It("should pass if a target import of a subinstallation is imported as part of a targetlist by its parent", func() {
 				imports := []core.ImportDefinition{
 					{
@@ -421,6 +509,31 @@ var _ = Describe("Blueprint", func() {
 					{
 						Name:   "myimport",
 						Target: "myimportref[1]",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
+				Expect(allErrs).To(HaveLen(0))
+			})
+
+			It("should pass if a target import of a subinstallation is imported as part of a targetmap by its parent", func() {
+				imports := []core.ImportDefinition{
+					{
+						FieldValueDefinition: core.FieldValueDefinition{
+							Name:       "myimportref",
+							TargetType: "mytype",
+						},
+						Type: core.ImportTypeTargetMap,
+					},
+				}
+
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Name = "my-inst"
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImport{
+					{
+						Name:   "myimport",
+						Target: "myimportref[mykey]",
 					},
 				}
 
@@ -470,6 +583,33 @@ var _ = Describe("Blueprint", func() {
 							TargetType: "mytype",
 						},
 						Type: core.ImportTypeTargetList,
+					},
+				}
+
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImport{
+					{
+						Name:   "myimport",
+						Target: "myimportref",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
+				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":  Equal(field.ErrorTypeNotFound),
+					"Field": Equal("b[0].imports.targets[0][myimport]"),
+				}))))
+			})
+
+			It("should fail if a target import of a subinstallation refers to a complete targetmap from its parent", func() {
+				imports := []core.ImportDefinition{
+					{
+						FieldValueDefinition: core.FieldValueDefinition{
+							Name:       "myimportref",
+							TargetType: "mytype",
+						},
+						Type: core.ImportTypeTargetMap,
 					},
 				}
 

@@ -1,0 +1,128 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o nounset
+set -o pipefail
+
+GARDENER_KUBECONFIG_PATH=$1
+NAMESPACE=$2
+VERSION=$3
+PR_ID=$4
+
+MAX_NUM_CLUSTERS=20
+NUM_CLUSTERS_START_DELETE_OLDEST=15
+DURATION_FOR_CLUSTER_DELETION=48h
+
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
+
+make -C $PROJECT_ROOT revendor
+
+echo "Run integration tests with cluster and registry creation"
+echo "Source path: ${PROJECT_ROOT}"
+echo "Gardener kubeconfig path: ${GARDENER_KUBECONFIG_PATH}"
+echo "Shoot cluster namespace: ${NAMESPACE}"
+echo "Landscaper version: ${VERSION}"
+
+TMP="${PROJECT_ROOT}/tmp-int-test-cluster"
+rm -f -r $TMP
+mkdir -p $TMP
+TARGET_SHOOT_DIR="${TMP}/target-shoot"
+RESOURCE_SHOOT_DIR="${TMP}/resource-shoot"
+mkdir -p $TARGET_SHOOT_DIR
+mkdir -p $RESOURCE_SHOOT_DIR
+echo "Config directory: ${TMP}"
+
+exit_on_error() {
+  if [ "$1" -ne 0 ]; then
+    echo -e "Error: $2"
+    exit 1
+  fi
+}
+
+"${PROJECT_ROOT}/hack/int-test-helper/install-missing-software"
+exit_on_error $? "install software failed"
+
+CREATE_SHOOT_PIDS=()
+
+echo "Creating Target Shoot Cluster"
+NGINX_INGRESS_ENABLED=true
+DISABLE_SHOOT_DELETION=false
+WORKERLESS=false
+timeout -k 30m 30m "${PROJECT_ROOT}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
+  $NAMESPACE \
+  $TARGET_SHOOT_DIR \
+  $MAX_NUM_CLUSTERS \
+  $NUM_CLUSTERS_START_DELETE_OLDEST \
+  $DURATION_FOR_CLUSTER_DELETION \
+  $PR_ID \
+  $NGINX_INGRESS_ENABLED \
+  $DISABLE_SHOOT_DELETION \
+  $WORKERLESS \
+  &>"${TARGET_SHOOT_DIR}/create-shoot-cluster.log" &
+
+CREATE_SHOOT_PIDS+=($!)
+
+# When both create-shoot-cluster calls are started at the same time,
+# the resource shoot may be cleaned-up by the target shoot create call.
+# To prevent this, the target shoot create gets a head start before the
+# resource shoot is being created.
+# The sleep also improves the entropy when generating a Shoot name.
+sleep 15
+
+echo "Creating Resource Shoot Cluster"
+NGINX_INGRESS_ENABLED=false
+DISABLE_SHOOT_DELETION=true
+WORKERLESS=false
+timeout -k 30m 30m "${PROJECT_ROOT}/hack/int-test-helper/create-shoot-cluster" $GARDENER_KUBECONFIG_PATH \
+  $NAMESPACE \
+  $RESOURCE_SHOOT_DIR \
+  $MAX_NUM_CLUSTERS \
+  $NUM_CLUSTERS_START_DELETE_OLDEST \
+  $DURATION_FOR_CLUSTER_DELETION \
+  $PR_ID \
+  $NGINX_INGRESS_ENABLED \
+  $DISABLE_SHOOT_DELETION \
+  $WORKERLESS \
+  &>"${RESOURCE_SHOOT_DIR}/create-shoot-cluster.log" &
+
+CREATE_SHOOT_PIDS+=($!)
+
+echo "Waiting until shoot clusters are ready"
+wait "${CREATE_SHOOT_PIDS[@]}"
+
+if [[ $? != 0 ]]; then
+  echo "Creating the shoot clusters failed"
+  echo "###### TARGET SHOOT LOG ######"
+  cat "${TARGET_SHOOT_DIR}/create-shoot-cluster.log"
+  echo "###### RESOURCE SHOOT LOG ######"
+  cat "${RESOURCE_SHOOT_DIR}/create-shoot-cluster.log"
+  exit 1
+fi
+
+TARGET_SHOOT_KUBECONFIG_PATH="${TARGET_SHOOT_DIR}/kubeconfig.yaml"
+RESOURCE_SHOOT_KUBECONFIG_PATH="${RESOURCE_SHOOT_DIR}/kubeconfig.yaml"
+
+echo "Target Shoot Cluster Name: $(cat ${TARGET_SHOOT_DIR}/clustername)"
+echo "Resource Shoot Cluster Name: $(cat ${RESOURCE_SHOOT_DIR}/clustername)"
+
+"${PROJECT_ROOT}/hack/int-test-helper/create-registry" $TARGET_SHOOT_KUBECONFIG_PATH $TARGET_SHOOT_DIR
+exit_on_error $? "create-registry failed"
+
+echo "Installing Landscaper"
+"${PROJECT_ROOT}/hack/int-test-helper/install-landscaper-dual" \
+  -w $TARGET_SHOOT_DIR \
+  -v $VERSION \
+  -t $TARGET_SHOOT_KUBECONFIG_PATH \
+  -r $RESOURCE_SHOOT_KUBECONFIG_PATH \
+  -i "$(cat ${TARGET_SHOOT_DIR}/ingress-domain)"
+
+exit_on_error $? "installing landscaper failed"
+
+"${PROJECT_ROOT}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH ${TARGET_SHOOT_DIR}/docker.config $VERSION true
+exit_on_error $? "run-tests failed"
+
+"${PROJECT_ROOT}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $TARGET_SHOOT_DIR
+"${PROJECT_ROOT}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $RESOURCE_SHOOT_DIR

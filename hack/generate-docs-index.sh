@@ -1,17 +1,21 @@
 #!/bin/bash
 #
-# Copyright (c) 2022 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
 
-CURRENT_DIR=$(dirname $0)
-PROJECT_ROOT="${CURRENT_DIR}"/..
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 DOCS_FOLDER="${PROJECT_ROOT}/docs"
 METAFILE_NAME=".docnames"
+
+if [[ -z ${LOCALBIN:-} ]]; then
+  LOCALBIN="$PROJECT_ROOT/bin"
+fi
+if [[ -z ${JQ:-} ]]; then
+  JQ="$LOCALBIN/jq"
+fi
 
 doc_index_file=${1:-"$DOCS_FOLDER/README.md"}
 
@@ -25,7 +29,7 @@ function println() {
 function getDocFolderName() {
   local metafile="$1/$METAFILE_NAME"
   if [[ -f "$metafile" ]]; then
-    cat "$metafile" | jq -r '.header'
+    cat "$metafile" | $JQ -r '.header'
   fi
 }
 
@@ -38,15 +42,15 @@ function getDocName() {
   local metafile="$1/$METAFILE_NAME"
   local filename="$2"
   if [[ -f "$metafile" ]]; then
-    local overwrite="$(cat "$metafile" | jq -r '.overwrites[$name]' --arg name "$2")"
+    local overwrite="$(cat "$metafile" | $JQ -r '.overwrites[$name]' --arg name "$2")"
     if [[ "$overwrite" != "null" ]]; then
       echo "$overwrite"
       return
     fi
   fi
   if [[ -f "$filename" ]]; then
-    local firstline=$(cat "$filename" | head -n 1)
-    echo "${firstline#'# '}"
+    local firstheader=$(grep -m1 "#" "$filename")
+    echo "${firstheader#'# '}"
   fi
 }
 

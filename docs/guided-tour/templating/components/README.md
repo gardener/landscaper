@@ -1,9 +1,14 @@
-# Templating: Accessing Component Descriptors 
+---
+title: Accessing Component Descriptors 
+sidebar_position: 1
+---
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
+# Accessing Component Descriptors in Templates
 
 This example demonstrates the templating of DeployItems. In particular, we show how you can access component descriptors
 during the templating.
+
+For prerequisites, see [here](../../README.md).
 
 
 ## References Between Component Descriptors

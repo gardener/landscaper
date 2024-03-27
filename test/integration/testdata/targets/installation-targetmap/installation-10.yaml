@@ -1,0 +1,30 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: targetmaps-10-root
+  namespace: cu-example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+
+spec:
+  blueprint:
+    ref:
+      resourceName: blueprint-export-composition-ref
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper/integration-tests/targetmap
+      repositoryContext:
+        baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+        type: ociRegistry
+      version: "1.0.0"
+
+  imports:
+    targets:
+      - name: clusterECR
+        target: white-cluster
+    data:
+      - name: namespace
+        dataRef: do-namespace
+      - name: configsECR
+        dataRef: do-configs

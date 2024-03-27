@@ -10,8 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	lsschema "github.com/gardener/landscaper/apis/schema"
-
 	"github.com/gardener/landscaper/apis/core"
 )
 
@@ -57,14 +55,12 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&LsHealthCheckList{},
 		&ComponentVersionOverwrites{},
 		&ComponentVersionOverwritesList{},
-		&Environment{},
-		&EnvironmentList{},
-		&DeployerRegistration{},
-		&DeployerRegistrationList{},
 		&SyncObject{},
 		&SyncObjectList{},
 		&TargetSync{},
 		&TargetSyncList{},
+		&CriticalProblems{},
+		&CriticalProblemsList{},
 	)
 	if err := RegisterConversions(scheme); err != nil {
 		return err
@@ -72,27 +68,3 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
-
-// ResourceDefinition defines the custom resources of this version.
-var ResourceDefinition = func() lsschema.CustomResourceDefinitions {
-	return lsschema.CustomResourceDefinitions{
-		Group:     SchemeGroupVersion.Group,
-		Version:   SchemeGroupVersion.Version,
-		OutputDir: "../pkg/landscaper/crdmanager/crdresources",
-
-		Definitions: []lsschema.CustomResourceDefinition{
-			InstallationDefinition,
-			ExecutionDefinition,
-			DeployItemDefinition,
-			DataObjectDefinition,
-			TargetDefinition,
-			ContextDefinition,
-			LsHealthCheckDefinition,
-			DeployerRegistrationDefinition,
-			EnvironmentDefinition,
-			ComponentVersionOverwritesDefinition,
-			SyncObjectDefinition,
-			TargetSyncDefinition,
-		},
-	}
-}()

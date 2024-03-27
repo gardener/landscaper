@@ -7,8 +7,6 @@ package v1alpha1
 import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -20,25 +18,8 @@ type ComponentVersionOverwritesList struct {
 	Items           []ComponentVersionOverwrites `json:"items"`
 }
 
-// ComponentVersionOverwritesDefinition defines the ComponentVersionOverwrites resource CRD.
-var ComponentVersionOverwritesDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "componentversionoverwrites",
-		Singular: "componentversionoverwrite",
-		ShortNames: []string{
-			"compveroverwrite",
-			"cvo",
-		},
-		Kind: "ComponentVersionOverwrites",
-	},
-	Scope:   lsschema.NamespaceScoped,
-	Storage: true,
-	Served:  true,
-}
-
-// +genclient
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=compveroverwrite;cvo,singular=componentversionoverwrite
 
 // ComponentVersionOverwrites contain overwrites for specific (versions of) components.
 type ComponentVersionOverwrites struct {
@@ -62,6 +43,8 @@ type ComponentVersionOverwrite struct {
 // ComponentVersionOverwriteReference defines a component reference by
 type ComponentVersionOverwriteReference struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// ComponentName defines the unique of the component containing the resource.

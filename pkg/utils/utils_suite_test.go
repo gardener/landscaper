@@ -7,13 +7,20 @@ package utils_test
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
 	"testing"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	utils2 "github.com/gardener/landscaper/pkg/utils"
 
 	corev1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/yaml"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lscutils "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
@@ -107,4 +114,30 @@ ref:
 
 	})
 
+})
+
+var (
+	testenv     *envtest.Environment
+	projectRoot = filepath.Join("../../")
+)
+
+var _ = BeforeSuite(func() {
+	var err error
+	testenv, err = envtest.New(projectRoot)
+	Expect(err).ToNot(HaveOccurred())
+
+	_, err = testenv.Start()
+	Expect(err).ToNot(HaveOccurred())
+
+	ns := &corev1.Namespace{}
+	ns.Name = utils2.GetCurrentPodNamespace()
+	err = testenv.Client.Get(context.Background(), client.ObjectKeyFromObject(ns), ns)
+	Expect(err == nil || apierrors.IsNotFound(err)).To(BeTrue())
+	if err != nil && apierrors.IsNotFound(err) {
+		Expect(testenv.Client.Create(context.Background(), ns)).ToNot(HaveOccurred())
+	}
+})
+
+var _ = AfterSuite(func() {
+	Expect(testenv.Stop()).ToNot(HaveOccurred())
 })

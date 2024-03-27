@@ -232,9 +232,6 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 
 	// cleanup
 	newCleaner := NewDataObjectAndTargetCleaner(inst, c.LsUncachedClient())
-	if err := newCleaner.CleanupContext(ctx); err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error()), nil
-	}
 	if err := newCleaner.CleanupExports(ctx); err != nil {
 		return lserrors.NewWrappedError(err, currentOperation, "CleanupExports", err.Error()), nil
 	}
@@ -364,6 +361,7 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 	}
 
 	if len(subInstsToDelete) == 0 {
+		// all orphaned removed
 		return nil, nil
 	}
 
@@ -472,10 +470,13 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 }
 
 func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
-
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
-
 	currentOperation := "handlePhaseCompleting"
+
+	newCleaner := NewDataObjectAndTargetCleaner(inst, c.LsUncachedClient())
+	if err := newCleaner.CleanupContext(ctx); err != nil {
+		return nil, lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error())
+	}
 
 	instOp, imps, importsHash, _, fatalError, fatalError2 := c.init(ctx, inst)
 
@@ -547,7 +548,6 @@ func (c *Controller) CreateImportsAndSubobjects(ctx context.Context, op *install
 		return lserrors.NewWrappedError(err, currOp, "ReconcileExecution", err.Error())
 	}
 
-	inst.GetInstallation().Status.Imports = inst.ImportStatus().GetStatus()
 	return nil
 }
 

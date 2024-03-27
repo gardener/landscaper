@@ -9,6 +9,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
+
+	"k8s.io/utils/ptr"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
@@ -120,6 +123,7 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 // Template loads the specified helm chart
 // and templates it with the given values.
 func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
+
 	currOp := "TemplateChart"
 
 	restConfig, _, _, err := h.TargetClient(ctx)
@@ -145,6 +149,9 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		h.Configuration.OCI,
 		h.SharedCache)
 	if err != nil {
+		if h.isDownloadInfoError(err) {
+			return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error(), lsv1alpha1.ErrorForInfoOnly)
+		}
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error())
 	}
 
@@ -164,21 +171,26 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 	values, err = chartutil.ToRenderValues(ch, values, options, nil)
 	if err != nil {
 		return nil, nil, nil, nil, lserrors.NewWrappedError(
-			err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+			err, currOp, "PrepareHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
-	files, err := engine.RenderWithClient(ch, values, restConfig)
-	if err != nil {
-		return nil, nil, nil, nil, lserrors.NewWrappedError(
-			err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+	// the files are only required for the manifest helm deployer
+	var filesForManifestDeployer map[string]string
+	crdsForManifestDeployer := map[string]string{}
+	shouldUseRealHelmDeployer := ptr.Deref[bool](h.ProviderConfiguration.HelmDeployment, true)
+	if !shouldUseRealHelmDeployer {
+		filesForManifestDeployer, err = engine.RenderWithClient(ch, values, restConfig)
+		if err != nil {
+			return nil, nil, nil, nil, lserrors.NewWrappedError(
+				err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+		}
+
+		for _, crd := range ch.CRDObjects() {
+			crdsForManifestDeployer[crd.Filename] = string(crd.File.Data[:])
+		}
 	}
 
-	crds := map[string]string{}
-	for _, crd := range ch.CRDObjects() {
-		crds[crd.Filename] = string(crd.File.Data[:])
-	}
-
-	return files, crds, values, ch, nil
+	return filesForManifestDeployer, crdsForManifestDeployer, values, ch, nil
 }
 
 func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {
@@ -249,4 +261,11 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 		return restConfig, kubeClient, clientset, nil
 	}
 	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
+}
+
+func (h *Helm) isDownloadInfoError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "no chart name found") ||
+		(strings.Contains(msg, "cannot get chart repository") && strings.Contains(msg, "could not find protocol handler for")) ||
+		(strings.Contains(msg, "cannot download repository index for") && strings.Contains(msg, "404 Not Found"))
 }

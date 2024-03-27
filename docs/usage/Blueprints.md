@@ -1,4 +1,11 @@
+---
+title: Blueprints
+sidebar_position: 1
+---
+
 # Blueprints
+
+## Definition
 
 A Blueprint is a parameterized description of how to deploy a specific component.
 
@@ -33,24 +40,6 @@ The blueprint definition (blueprint.yaml) describes
 - generation rules for export values
 - generation of nested installations
 
-
-**Index**:
-- [Blueprints](#blueprints)
-  - [Example](#example)
-  - [Import Definitions](#import-definitions)
-  - [Export Definitions](#export-definitions)
-  - [JSONSchema](#jsonschema)
-  - [Rendering](#rendering)
-    - [Import Values](#import-values)
-    - [DeployItems](#deployitems)
-    - [Export Values](#export-values)
-      - [Data Exports](#data-exports)
-      - [Target Exports](#target-exports)
-    - [Templated Installations](#templated-installations)
-  - [Nested Installations](#nested-installations)
-    - [Static Installations](#static-installations)
-    - [Templated Installations](#templated-installations)
-
 ## Example
 
 The following snippet shows the structure of a `blueprint.yaml` file. It is expected as top-level file in the blueprint filesystem structure. Refer to [apis/.schemes/core-v1alpha1-Blueprint.json](../../apis/.schemes/core-v1alpha1-Blueprint.json) for the automatically generated jsonschema definition.
@@ -84,10 +73,10 @@ imports:
   required: true # required, defaults to true
   type: target # this is a target import
   targetType: landscaper.gardener.cloud/kubernetes-cluster
-# Import a targetlist
-- name: my-targetlist-import-key
+# Import a targetmap
+- name: my-targetmap-import-key
   # required: true # defaults to true
-  type: targetList # this is a targetlist import
+  type: targetMap # this is a targetmap import
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 # exports defines all values that are produced by the blueprint
@@ -168,9 +157,11 @@ Blueprints describe formal imports. A formal import parameter has a name and a *
   This type declares an import of a [deployment target object](./Targets.md). It is used in the rendered deployitems to specify the target environment for the deployment of the deployitem.
 
 
-- **`targetList`**
+- **`targetMap`**
 
-  This type can be used if, instead of a single target object, an arbitrary number of targets should be imported. All targets imported as part of a targetlist import must have the same `targetType`. For more information on how to work with TargetList imports, see the documentation [here](./TargetLists.md).
+  This type can be used if, instead of a single target object, an arbitrary number of targets should be imported. All 
+  targets imported as part of a targetmap import must have the same `targetType`. For more information on how to 
+  work with TargetMap imports, see the [guided tour](../guided-tour/README.md#target-maps). 
 
 
 The imports are described as a list of import declarations in the blueprint top-level field `imports`. An import declaration has the following fields:
@@ -208,7 +199,7 @@ The imports are described as a list of import declarations in the blueprint top-
 
 - **`targetType`** *string*
 
-  Must be set for imports of type `target` and `targetList` (only). It declares
+  Must be set for imports of type `target` and `targetMap` (only). It declares
   the type of the expected [*Target*](./Targets.md) object. If the `targetType` 
   does not contain a `/`, it will be prefixed with `landscaper.gardener.cloud/`.
 
@@ -507,9 +498,9 @@ A deployitem specification has the following fields:
 - **`target`** *target import reference*
 
   This reference denotes the target object
-  describing the target environment the depoyitem should be deployed to,
+  describing the target environment the deployitem should be deployed to,
   e.g. a dedicated kubernetes cluster.
-  It refers to a target import or targetlist import and has the following fields:
+  It refers to a target import or targetMap import and has the following fields:
 
 
   - **`import`** *string*
@@ -517,9 +508,9 @@ A deployitem specification has the following fields:
   Name of the import importing the referenced target.
 
 
-  - **`index`** *int (optional)*
+  - **`key`** *string (optional)*
 
-  If the import refers to a targetlist import, `index` specifies the list index of the referenced target.
+  If the import refers to a targetmap import, `key` specifies the keys of the referenced targets.
 
   - **`updateOnChangeOnly`** *bool*
 
@@ -853,7 +844,7 @@ before putting it as regular installations into the landscaper data plane:
     - name: "" # target import name
       target: "" # target name
     - name: ""
-      targetListRef: "" # references a targetlist import of the parent
+      targetMapRef: "" # references a targetmap import of the parent
   #importMappings: {}
 
   exports:
@@ -882,7 +873,7 @@ subinstallations:
   imports:
     targets:
     - name: "also-my-foo-targets"
-      targetListRef: "my-foo-targets"
+      targetMapRef: "my-foo-targets"
 ```
 
 Static installations are not templated and cannot refer to import values.

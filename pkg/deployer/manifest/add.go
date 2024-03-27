@@ -5,6 +5,7 @@
 package manifest
 
 import (
+	"context"
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +32,12 @@ func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, 
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
 		"numberOfWorkerThreads", config.Controller.Workers,
 		"lockingEnabled", lockingEnabled)
+
+	problemHandler := utils.GetCriticalProblemsHandler()
+	if err := problemHandler.AccessAllowed(context.Background(), hostUncachedClient); err != nil {
+		return err
+	}
+	log.Info("access to critical problems allowed")
 
 	d, err := NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		log,

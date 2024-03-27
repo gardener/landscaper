@@ -1,0 +1,20 @@
+deployItems:
+  - name: default-deploy-item
+    type: landscaper.gardener.cloud/helm
+
+    target:
+      import: cluster   # "cluster" is the name of an import parameter
+
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      name: echo-server
+      namespace: example
+      createNamespace: true
+
+      chart:
+        resourceRef: {{ getResourceKey `cd://resources/echo-server-chart` }}
+
+      values:
+        {{ $imageResource := getResource .cd "name" "echo-server-image" }}
+        image: {{ $imageResource.access.imageReference }}

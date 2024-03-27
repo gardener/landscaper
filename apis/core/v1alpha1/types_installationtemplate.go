@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // InstallationTemplate defines a subinstallation in a blueprint.
@@ -31,6 +30,9 @@ type InstallationTemplate struct {
 	// It is expected to contain a key for every blueprint-defined data import.
 	// Missing keys will be defaulted to their respective data import.
 	// Example: namespace: (( installation.imports.namespace ))
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +optional
 	ImportDataMappings map[string]AnyJSON `json:"importDataMappings,omitempty"`
 
@@ -42,6 +44,9 @@ type InstallationTemplate struct {
 	// It is expected to contain a key for every blueprint-defined data export.
 	// Missing keys will be defaulted to their respective data export.
 	// Example: namespace: (( blueprint.exports.namespace ))
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +optional
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 
@@ -63,6 +68,7 @@ type InstallationTemplateBlueprintDefinition struct {
 
 	// Filesystem defines a virtual filesystem with all files needed for a blueprint.
 	// The filesystem must be a YAML filesystem.
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	Filesystem AnyJSON `json:"filesystem,omitempty"`
 }

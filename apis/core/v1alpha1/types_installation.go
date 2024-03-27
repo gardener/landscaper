@@ -6,12 +6,11 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	"slices"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // EncompassedByLabel is the label that contains the name of the parent installation
@@ -121,41 +120,12 @@ type InstallationList struct {
 	Items           []Installation `json:"items"`
 }
 
-// InstallationDefinition defines the Installation resource CRD.
-var InstallationDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "installations",
-		Singular: "installation",
-		ShortNames: []string{
-			"inst",
-		},
-		Kind: "Installation",
-	},
-	Scope:             lsschema.NamespaceScoped,
-	Storage:           true,
-	Served:            true,
-	SubresourceStatus: true,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
-		{
-			Name:     "phase",
-			Type:     "string",
-			JSONPath: ".status.phase",
-		},
-		{
-			Name:     "Execution",
-			Type:     "string",
-			JSONPath: ".status.executionRef.name",
-		},
-		{
-			Name:     "Age",
-			Type:     "date",
-			JSONPath: ".metadata.creationTimestamp",
-		},
-	},
-}
-
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=inst
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Execution",type=string,JSONPath=`.status.executionRef.name`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:subresource:status
 
 // Installation contains the configuration of a component
 type Installation struct {
@@ -195,6 +165,9 @@ type InstallationSpec struct {
 	// It is expected to contain a key for every blueprint-defined data import.
 	// Missing keys will be defaulted to their respective data import.
 	// Example: namespace: (( installation.imports.namespace ))
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +optional
 	ImportDataMappings map[string]AnyJSON `json:"importDataMappings,omitempty"`
 
@@ -206,6 +179,9 @@ type InstallationSpec struct {
 	// It is expected to contain a key for every blueprint-defined data export.
 	// Missing keys will be defaulted to their respective data export.
 	// Example: namespace: (( blueprint.exports.namespace ))
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +optional
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 
@@ -247,13 +223,12 @@ type SucceededReconcile struct {
 
 // FailedReconcile allows to configure automatically repeated reconciliations for failed installations
 type FailedReconcile struct {
-	// NumberOfReconciles specifies the maximal number of automatically repeated reconciliations. If not set, no upper
-	// limit exists.
+	// NumberOfReconciles specifies the maximal number of automatically repeated reconciliations. If not set, no upper limit exists.
+	// +kubebuilder:validation:Format=int32
 	// +optional
 	NumberOfReconciles *int `json:"numberOfReconciles,omitempty"`
 
-	// Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default
-	// of 5 minutes is used.
+	// Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 5 minutes is used.
 	// +optional
 	Interval *Duration `json:"interval,omitempty"`
 }
@@ -269,12 +244,6 @@ type InstallationStatus struct {
 
 	// LastError describes the last error that occurred.
 	LastError *Error `json:"lastError,omitempty"`
-
-	// ConfigGeneration is the generation of the exported values.
-	ConfigGeneration string `json:"configGeneration"`
-
-	// Imports contain the state of the imported values.
-	Imports []ImportStatus `json:"imports,omitempty"`
 
 	// SubInstCache contains the currently existing sub installations belonging to the execution. If nil undefined.
 	// +optional
@@ -323,6 +292,7 @@ type AutomaticReconcileStatus struct {
 	// +optional
 	Generation int64 `json:"generation,omitempty"`
 	// NumberOfReconciles is the number of automatic reconciles for the installation with the stored generation.
+	// +kubebuilder:validation:Format=int32
 	// +optional
 	NumberOfReconciles int `json:"numberOfReconciles,omitempty"`
 	// LastReconcileTime is the time of the last automatically triggered reconcile.
@@ -409,6 +379,12 @@ type TargetImport struct {
 	// Exactly one of Target, Targets, and TargetListReference has to be specified.
 	// +optional
 	TargetListReference string `json:"targetListRef,omitempty"`
+
+	// +optional
+	TargetMap map[string]string `json:"targetMap,omitempty"`
+
+	// +optional
+	TargetMapReference string `json:"targetMapRef,omitempty"`
 }
 
 // TargetExport is a single target export.
@@ -441,6 +417,8 @@ type RemoteBlueprintReference struct {
 // filesystem.
 type InlineBlueprint struct {
 	// Filesystem defines a inline yaml filesystem with a blueprint.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	Filesystem AnyJSON `json:"filesystem"`
 }
 
@@ -452,6 +430,9 @@ type ComponentDescriptorDefinition struct {
 	Reference *ComponentDescriptorReference `json:"ref,omitempty"`
 
 	// InlineDescriptorReference defines an inline component descriptor
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
 	// +optional
 	Inline *cdv2.ComponentDescriptor `json:"inline,omitempty"`
 }
@@ -460,6 +441,9 @@ type ComponentDescriptorDefinition struct {
 // given an optional context.
 type ComponentDescriptorReference struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// ComponentName defines the unique of the component containing the resource.
@@ -479,6 +463,7 @@ func (r ComponentDescriptorReference) ObjectMeta() cdv2.ObjectMeta {
 // StaticDataSource defines a static data source
 type StaticDataSource struct {
 	// Value defined inline a raw data
+	// +kubebuilder:validation:Schemaless
 	// +optional
 	Value AnyJSON `json:"value,omitempty"`
 
@@ -507,59 +492,6 @@ type SecretLabelSelectorRef struct {
 	Key string `json:"key"`
 }
 
-// ImportStatusType defines the type of a import status.
-type ImportStatusType string
-
-const (
-	// DataImportStatusType is an ImportStatusType for data objects
-	DataImportStatusType ImportStatusType = "dataobject"
-	// TargetImportStatusType is an ImportStatusType for targets
-	TargetImportStatusType ImportStatusType = "target"
-	// TargetListImportStatusType is an ImportStatusType for target lists
-	TargetListImportStatusType ImportStatusType = "targetList"
-)
-
-// TargetImportStatus
-type TargetImportStatus struct {
-	// Target is the name of the in-cluster target object.
-	Target string `json:"target,omitempty"`
-	// SourceRef is the reference to the installation from where the value is imported
-	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
-	// ConfigGeneration is the generation of the imported value.
-	ConfigGeneration string `json:"configGeneration,omitempty"`
-}
-
-// ImportStatus hold the state of a import.
-type ImportStatus struct {
-	// Name is the distinct identifier of the import.
-	// Can be either from data or target imports
-	Name string `json:"name"`
-	// Type defines the kind of import.
-	// Can be either DataObject, Target, or TargetList
-	Type ImportStatusType `json:"type"`
-	// Target is the name of the in-cluster target object.
-	// +optional
-	Target string `json:"target,omitempty"`
-	// TargetList is a list of import statuses for in-cluster target objects.
-	// +optional
-	Targets []TargetImportStatus `json:"targetList,omitempty"`
-	// DataRef is the name of the in-cluster data object.
-	// +optional
-	DataRef string `json:"dataRef,omitempty"`
-	// SecretRef is the name of the secret.
-	// +optional
-	SecretRef string `json:"secretRef,omitempty"`
-	// ConfigMapRef is the name of the imported configmap.
-	// +optional
-	ConfigMapRef string `json:"configMapRef,omitempty"`
-	// SourceRef is the reference to the installation from where the value is imported
-	// +optional
-	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
-	// ConfigGeneration is the generation of the imported value.
-	// +optional
-	ConfigGeneration string `json:"configGeneration,omitempty"`
-}
-
 // MarshalJSON implements the json marshaling for a TargetImport
 // Why this is needed:
 //
@@ -570,16 +502,20 @@ type ImportStatus struct {
 func (ti TargetImport) MarshalJSON() ([]byte, error) {
 
 	type TargetImportWithTargets struct {
-		Name                string   `json:"name"`
-		Target              string   `json:"target,omitempty"`
-		Targets             []string `json:"targets"`
-		TargetListReference string   `json:"targetListRef,omitempty"`
+		Name                string            `json:"name"`
+		Target              string            `json:"target,omitempty"`
+		Targets             []string          `json:"targets"`
+		TargetListReference string            `json:"targetListRef,omitempty"`
+		TargetMap           map[string]string `json:"targetMap,omitempty"`
+		TargetMapReference  string            `json:"targetMapRef,omitempty"`
 	}
 	type TargetImportWithoutTargets struct {
-		Name                string   `json:"name"`
-		Target              string   `json:"target,omitempty"`
-		Targets             []string `json:"targets,omitempty"`
-		TargetListReference string   `json:"targetListRef,omitempty"`
+		Name                string            `json:"name"`
+		Target              string            `json:"target,omitempty"`
+		Targets             []string          `json:"targets,omitempty"`
+		TargetListReference string            `json:"targetListRef,omitempty"`
+		TargetMap           map[string]string `json:"targetMap,omitempty"`
+		TargetMapReference  string            `json:"targetMapRef,omitempty"`
 	}
 
 	if ti.Targets == nil {
@@ -618,7 +554,7 @@ func (inst *Installation) IsImportingData(name string) bool {
 // IsImportingTarget checks if the current component imports a target with the given name.
 func (inst *Installation) IsImportingTarget(name string) bool {
 	for _, def := range inst.Spec.Imports.Targets {
-		if def.Target == name {
+		if def.Target == name || slices.Contains(def.Targets, name) {
 			return true
 		}
 	}

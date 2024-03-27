@@ -452,6 +452,9 @@ func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports
 		case lsv1alpha1.ImportTypeTargetList:
 			allErr = append(allErr, validateTargetListImport(value, importDef.TargetType, fldPath)...)
 
+		case lsv1alpha1.ImportTypeTargetMap:
+			allErr = append(allErr, validateTargetMapImport(value, importDef.TargetType, fldPath)...)
+
 		default:
 			allErr = append(allErr, field.Invalid(fldPath, string(importDef.Type), "unknown import type"))
 		}
@@ -533,6 +536,21 @@ func validateTargetListImport(value interface{}, expectedTargetType string, fldP
 
 	for i, targetObj := range targetList {
 		allErr = append(allErr, validateTargetImport(targetObj, expectedTargetType, fldPath.Index(i))...)
+	}
+
+	return allErr
+}
+
+func validateTargetMapImport(value interface{}, expectedTargetType string, fldPath *field.Path) field.ErrorList {
+	allErr := field.ErrorList{}
+
+	targetMap, ok := value.(map[string]interface{})
+	if !ok {
+		allErr = append(allErr, field.Invalid(fldPath, value, "a target map is expected to be a map"))
+	}
+
+	for targetMapKey, targetObj := range targetMap {
+		allErr = append(allErr, validateTargetImport(targetObj, expectedTargetType, fldPath.Key(targetMapKey))...)
 	}
 
 	return allErr

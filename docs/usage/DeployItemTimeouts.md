@@ -1,3 +1,8 @@
+---
+title: DeployItem Timeouts
+sidebar_position: 11
+---
+
 # DeployItem Timeouts
 
 If not deactivated in the configuration, the landscaper checks for two different timeouts on deploy items: pickup and

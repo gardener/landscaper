@@ -61,7 +61,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		}
 	}
 
-	kubeclient := fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithStatusSubresource(&lsv1alpha1.Installation{}, &lsv1alpha1.Execution{}, &lsv1alpha1.DeployItem{}, &lsv1alpha1.TargetSync{}, &lsv1alpha1.DeployerRegistration{}).WithObjects(objects...).Build()
+	kubeclient := fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithStatusSubresource(&lsv1alpha1.Installation{}, &lsv1alpha1.Execution{}, &lsv1alpha1.DeployItem{}, &lsv1alpha1.TargetSync{}).WithObjects(objects...).Build()
 	state.Client = kubeclient
 	return kubeclient, state, nil
 }

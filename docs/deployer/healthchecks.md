@@ -1,3 +1,8 @@
+---
+title: Deployer Resource Health-/Readiness Checks
+sidebar_position: 7
+---
+
 # Deployer Resource Health-/Readiness Checks
 
 The Helm and Manifest deployers can check the health of the resources they just deployed. This document describes how the health checks work and how they can be configured.

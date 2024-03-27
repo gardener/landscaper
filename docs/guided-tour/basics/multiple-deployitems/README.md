@@ -1,10 +1,15 @@
-# Deploying Multiple Helm Charts with One Installation
+---
+title: Multi-Chart Installations
+sidebar_position: 3
+---
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
+# Deploying Multiple Helm Charts with One Installation
 
 It is possible to combine multiple deployments in one Installation. We will demonstrate this with the blueprint in [this Installation](./installation/installation.yaml). It contains two DeployItems. Each of them deploys the hello-world Helm chart, but to two different clusters. Therefore, the Installation 
 imports two Target objects: [target-1.yaml](./installation/target-1.yaml) and 
 [target-2.yaml](./installation/target-2.yaml).
+
+For prerequisites, see [here](../../README.md).
 
 
 ## Dependencies Between DeployItems
@@ -17,7 +22,7 @@ dependsOn:
    - deploy-item-1
 ```
 
-As a consequence, DeployItem `deploy-item-1` will be processed first, and DeployItem `deploy-item-2` afterwards.
+As a consequence, DeployItem `deploy-item-1` will be processed first, and DeployItem `deploy-item-2` afterward.
 
 Each DeployItem can depend on several other DeployItems. 
 

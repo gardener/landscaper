@@ -1,19 +1,16 @@
 #!/bin/bash
 #
-# Copyright (c) 2021 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -e
+set -euo pipefail
 
-CURRENT_DIR=$(dirname $0)
-PROJECT_ROOT="${CURRENT_DIR}"/..
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 CHART_ROOT="${PROJECT_ROOT}/charts"
 
-if [[ -n $1 ]]; then
-  EFFECTIVE_VERSION=$1
-elif [[ $EFFECTIVE_VERSION == "" ]]; then
-  EFFECTIVE_VERSION=$(cat $PROJECT_ROOT/VERSION)
+if [[ -z ${EFFECTIVE_VERSION:-} ]]; then
+  EFFECTIVE_VERSION=$("$PROJECT_ROOT/hack/get-version.sh")
 fi
 
 CHARTLIST=$(find $CHART_ROOT -maxdepth 10 -type f -name "Chart.yaml")

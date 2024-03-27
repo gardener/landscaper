@@ -11,7 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	lsschema "github.com/gardener/landscaper/apis/schema"
 	"github.com/gardener/landscaper/apis/utils"
 )
 
@@ -101,48 +100,14 @@ type ExecutionList struct {
 	Items           []Execution `json:"items"`
 }
 
-// ExecutionDefinition defines the Execution resource CRD.
-var ExecutionDefinition = lsschema.CustomResourceDefinition{
-	Names: lsschema.CustomResourceDefinitionNames{
-		Plural:   "executions",
-		Singular: "execution",
-		ShortNames: []string{
-			"exec",
-		},
-		Kind: "Execution",
-	},
-	Scope:             lsschema.NamespaceScoped,
-	Storage:           true,
-	Served:            true,
-	SubresourceStatus: true,
-	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
-		{
-			Name:     "Phase",
-			Type:     "string",
-			JSONPath: ".status.phase",
-		},
-		{
-			Name:     "ExportRef",
-			Type:     "string",
-			JSONPath: ".status.exportRef.name",
-		},
-		{
-			Name:     "Age",
-			Type:     "date",
-			JSONPath: ".metadata.creationTimestamp",
-		},
-	},
-}
-
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:shortName=exec
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="ExportRef",type=string,JSONPath=`.status.exportRef.name`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:subresource:status
 
 // Execution contains the configuration of a execution and deploy item
-// +kubebuilder:resource:path="executions",scope="Namespaced",shortName="exec",singular="execution"
-// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
-// +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
-// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
-// +kubebuilder:subresource:status
 type Execution struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -229,6 +194,7 @@ type DeployItemTemplate struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// ProviderConfiguration contains the type specific configuration for the execution.
+	// +kubebuilder:validation:EmbeddedResource
 	Configuration *runtime.RawExtension `json:"config"`
 
 	// DependsOn lists deploy items that need to be executed before this one

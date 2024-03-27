@@ -1,0 +1,19 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+
+name: multiple-subinst
+
+blueprint:
+  ref: cd://resources/blueprint-multiple-subinst
+
+imports:
+  data:
+    - name: namespace
+      dataRef: namespace
+    - name: configs
+      dataRef: configs
+  targets:
+    - name: clusters
+      targetMap:
+        red: redCluster
+        blue: blueCluster

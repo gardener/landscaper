@@ -1,0 +1,90 @@
+components:
+  - name: github.com/gardener/landscaper/integration-tests/targetmap
+    version: 1.0.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint-composition
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/composition
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-composition-ref
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/composition-ref
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-composition-ref-upd
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/composition-ref-upd
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-composition-upd
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/composition-upd
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-multiple-items
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/multiple-items
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-export-composition
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/export-composition
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-export-composition-ref
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/export-composition-ref
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-exporter
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/exporter
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-multiple-subinst
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/multiple-subinst
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-single-item
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/single-item
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-targetmap-ref
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/targetmap-ref
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-targetmap-ref-ref
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ./blueprint/targetmap-ref-ref
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip

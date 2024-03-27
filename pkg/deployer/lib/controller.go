@@ -180,7 +180,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (resu
 	_, ctx = logging.MustStartReconcileFromContext(ctx, req, nil)
 
 	result = reconcile.Result{}
-	defer lsutil.HandlePanics(ctx, &result)
+	defer lsutil.HandlePanics(ctx, &result, c.hostUncachedClient)
 
 	result, err = c.innerReconcile(ctx, req)
 
@@ -352,7 +352,12 @@ func (c *controller) buildResult(ctx context.Context, phase lsv1alpha1.DeployIte
 
 	if lsError != nil {
 		logger, _ := logging.FromContextOrNew(ctx, nil)
-		logger.Error(lsError, "reconcile deploy item")
+
+		if lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorForInfoOnly) {
+			logger.Info(lsError.Error())
+		} else {
+			logger.Error(lsError, "reconcile deploy item")
+		}
 	}
 
 	if phase.IsFinal() {

@@ -15,6 +15,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -72,9 +73,9 @@ var _ = Describe("Template", func() {
 		ctx, cancel = context.WithCancel(context.Background())
 		var err error
 		mgr, err = manager.New(testenv.Env.Config, manager.Options{
-			Scheme:             api.LandscaperScheme,
-			MetricsBindAddress: "0",
-			NewClient:          lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
+			Scheme:    api.LandscaperScheme,
+			Metrics:   metricsserver.Options{BindAddress: "0"},
+			NewClient: lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 		})
 		Expect(err).ToNot(HaveOccurred())
 

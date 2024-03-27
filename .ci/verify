@@ -4,17 +4,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -o errexit
-set -o nounset
-set -o pipefail
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
 
-cd "$(dirname $0)/.."
+(
+  cd "${PROJECT_ROOT}"
 
-make install-requirements
-
-#mkdir -p /go/src/github.com/gardener/landscaper
-#cp -a . /go/src/github.com/gardener/landscaper
-#cd /go/src/github.com/gardener/landscaper
-
-make verify
-make test
+  make revendor
+  SKIP_FORMATTING_CHECK=true SKIP_DOCS_INDEX_CHECK=true make verify # code formatting and docs index generation happens during head-update pipeline step, no need to verify it here
+  make test
+)

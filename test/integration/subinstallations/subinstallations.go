@@ -64,7 +64,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateDataObjectFromFile(ctx, state.State, do3, path.Join(testdataDir, "installation-1", "import-do-data.yaml")))
 
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
@@ -135,7 +135,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateNamespaceDataObjectFromFile(ctx, state.State, do, path.Join(testdataDir, "installation-2", "import-do-namespace.yaml")))
 
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 
@@ -188,7 +188,7 @@ func SubinstallationTests(f *framework.Framework) {
 			utils.ExpectNoError(utils.CreateDataObjectFromFile(ctx, state.State, do3, path.Join(testdataDir, "installation-3", "import-do-data-1.yaml")))
 
 			By("Create target")
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, target))
 

@@ -52,14 +52,12 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&LsHealthCheckList{},
 		&ComponentVersionOverwrites{},
 		&ComponentVersionOverwritesList{},
-		&Environment{},
-		&EnvironmentList{},
-		&DeployerRegistration{},
-		&DeployerRegistrationList{},
 		&SyncObject{},
 		&SyncObjectList{},
 		&TargetSync{},
 		&TargetSyncList{},
+		&CriticalProblems{},
+		&CriticalProblemsList{},
 	)
 	return nil
 }

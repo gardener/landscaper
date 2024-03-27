@@ -1,0 +1,24 @@
+components:
+  - name: github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-subinst
+    version: 1.0.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint-root
+        type: landscaper.gardener.cloud/blueprint
+        # the available input types can be found in the help of the command line tool through
+        # ocm add resources --help
+        input:
+          type: dir
+          path: ./blueprint/root
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-sub
+        type: landscaper.gardener.cloud/blueprint
+        # the available input types can be found in the help of the command line tool through
+        # ocm add resources --help
+        input:
+          type: dir
+          path: ./blueprint/sub
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip

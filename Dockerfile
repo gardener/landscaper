@@ -2,16 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-#### BUILDER ####
-FROM golang:1.21.5 AS builder
-
-WORKDIR /go/src/github.com/gardener/landscaper
-COPY . .
-
-ARG EFFECTIVE_VERSION
-
-RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
-
 #### BASE ####
 FROM gcr.io/distroless/static-debian11:nonroot AS base
 
@@ -20,80 +10,87 @@ FROM gcr.io/distroless/static-debian11:nonroot AS base
 #### Landscaper Controller ####
 FROM base as landscaper-controller
 
-COPY --from=builder /go/bin/landscaper-controller /landscaper-controller
-
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /
+COPY bin/landscaper-controller-$TARGETOS.$TARGETARCH /landscaper-controller
+USER 65532:65532
 
 ENTRYPOINT ["/landscaper-controller"]
 
 #### Landsacper webhooks server ####
 FROM base as landscaper-webhooks-server
 
-COPY --from=builder /go/bin/landscaper-webhooks-server /landscaper-webhooks-server
-
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /
+COPY bin/landscaper-webhooks-server-$TARGETOS.$TARGETARCH /landscaper-webhooks-server
+USER 65532:65532
 
 ENTRYPOINT ["/landscaper-webhooks-server"]
-
-#### Landscaper Agent ####
-FROM base as landscaper-agent
-
-COPY --from=builder /go/bin/landscaper-agent /landscaper-agent
-
-WORKDIR /
-
-ENTRYPOINT ["/landscaper-agent"]
 
 #### Container Deployer Controller ####
 FROM base as container-deployer-controller
 
-COPY --from=builder /go/bin/container-deployer-controller /container-deployer-controller
-
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /
+COPY bin/container-deployer-controller-$TARGETOS.$TARGETARCH /container-deployer-controller
+USER 65532:65532
 
 ENTRYPOINT ["/container-deployer-controller"]
 
 #### Container Deployer Init ####
 FROM base as container-deployer-init
 
-COPY --from=builder /go/bin/container-deployer-init /container-deployer-init
-
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /
+COPY bin/container-deployer-init-$TARGETOS.$TARGETARCH /container-deployer-init
+USER 65532:65532
 
 ENTRYPOINT ["/container-deployer-init"]
 
 #### Container Deployer wait ####
 FROM base as container-deployer-wait
 
-COPY --from=builder /go/bin/container-deployer-wait /container-deployer-wait
-
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /
+COPY bin/container-deployer-wait-$TARGETOS.$TARGETARCH /container-deployer-wait
+USER 65532:65532
 
 ENTRYPOINT ["/container-deployer-wait"]
 
 #### Helm Deployer Controller ####
 FROM base as helm-deployer-controller
 
-COPY --from=builder /go/bin/helm-deployer-controller /helm-deployer-controller
-
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /
+COPY bin/helm-deployer-controller-$TARGETOS.$TARGETARCH /helm-deployer-controller
+USER 65532:65532
 
 ENTRYPOINT ["/helm-deployer-controller"]
 
 #### Manifest Deployer Controller ####
 FROM base as manifest-deployer-controller
 
-COPY --from=builder /go/bin/manifest-deployer-controller /manifest-deployer-controller
-
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /
+COPY bin/manifest-deployer-controller-$TARGETOS.$TARGETARCH /manifest-deployer-controller
+USER 65532:65532
 
 ENTRYPOINT ["/manifest-deployer-controller"]
 
 #### Mock Deployer Controller ####
 FROM base as mock-deployer-controller
 
-COPY --from=builder /go/bin/mock-deployer-controller /mock-deployer-controller
-
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /
+COPY bin/mock-deployer-controller-$TARGETOS.$TARGETARCH /mock-deployer-controller
+USER 65532:65532
 
 ENTRYPOINT ["/mock-deployer-controller"]

@@ -1,3 +1,8 @@
+---
+title: Landscaper Optimization
+sidebar_position: 18
+---
+
 # Optimization
 
 This chapter contains some hints to improve the performance of Landscaper instances.

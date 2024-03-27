@@ -1,10 +1,15 @@
-# Handling an Immediate Error
+---
+title: Immediate Errors
+sidebar_position: 1
+---
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
+# Handling an Immediate Error
 
 In this example, we deploy again the Helm chart of the hello-world example.
 To illustrate the error handling, we have introduced an error: a `:` is missing in the imports section
 of the blueprint in the [Installation](./installation/installation.yaml).
+
+For prerequisites, see [here](../../README.md).
 
 ## Procedure
 

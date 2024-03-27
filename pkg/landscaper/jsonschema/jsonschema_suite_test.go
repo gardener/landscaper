@@ -502,7 +502,7 @@ var _ = Describe("jsonschema", func() {
 
 			// create test registry
 			testenv = testreg.New(testreg.Options{
-				RegistryBinaryPath: filepath.Join("../../../", "tmp", "test", "registry", "registry"),
+				RegistryBinaryPath: filepath.Join("../../../", "bin", "registry"),
 				Stdout:             GinkgoWriter,
 				Stderr:             GinkgoWriter,
 			})

@@ -1,3 +1,8 @@
+---
+title: Helm Deployer
+sidebar_position: 1
+---
+
 # Helm Deployer
 
 The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. There are two
@@ -295,7 +300,7 @@ component:
   version: 'v0.1.0'
   ...
   resources:
-    - type: helm.io/chart
+    - type: helmChart
       name: nginx-chart
       version: 9.7.0
       relation: external

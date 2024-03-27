@@ -1,8 +1,13 @@
+---
+title: Handling Deletion Errors
+sidebar_position: 3
+---
+
 # Handling a Delete Error
 
-For prerequisites, see [here](../../README.md#prerequisites-and-basic-definitions).
-
 In this example, we will again deploy the Helm chart of the hello-world example and then delete it. During the deletion, an error will be provoked by removing the target before the deletion happened.
+
+For prerequisites, see [here](../../README.md).
 
 ## Procedure
 

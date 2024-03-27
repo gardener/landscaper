@@ -1,6 +1,9 @@
-# Guided Tour
+---
+title: Prerequisites
+sidebar_position: 1
+---
 
-In this tour, you will learn about the different Landscaper features by simple examples. 
+# Guided Tour
 
 ## Prerequisites and Basic Definitions
 
@@ -9,9 +12,10 @@ In this tour, you will learn about the different Landscaper features by simple e
 - A convenient tool we will often use in the following examples is the [Landscaper
   CLI](https://github.com/gardener/landscapercli). 
 
+- For building reusable components you require the [OCM CLI](https://ocm.software/docs/guides/getting-started-with-ocm/#prerequisites).
+
 - During the following exercises, you might need to change files, provided with the examples. For this, you should
-  simply clone this repository and do the required changes on your local files. You could also fork the repo and work on
-  your fork.
+  simply clone [this repository](https://github.com/gardener/landscaper) and do the required changes on your local files. You could also fork the repo and work on your fork.
 
 - In all examples, 3 Kubernetes clusters are involved:
 
@@ -23,19 +27,17 @@ In this tour, you will learn about the different Landscaper features by simple e
   It is possible that some or all of these clusters coincide, e.g. in the most simplistic approach, you have only one
   cluster. Such a "one-cluster-setup" is the easiest way to start working with the Landscaper.
 
-> **_NOTE:_** **The Landscaper now also supports [OCM (Open Component Model)](https://ocm.software/) Component
-> Descriptors [Version 3](https://ocm.software/docs/component-descriptors/version-3/), additionally to [Version
-> 2](https://ocm.software/docs/component-descriptors/version-2/).  
-> Since we try our best to avoid disruptions, this functionality is currently behind a feature switch. For detailed 
-> information on how to enable this for your own landscaper instance, set the corresponding flag in the configuration to
-> `true`, as shown [here](https://github.com/gardener/landscaper/blob/master/docs/installation/install-landscaper-controller.md#configuration-through-valuesyaml).
-> If you just want to follow along the tour, you should have the switch enabled!**
+## How to follow the Tour
 
-## A Hello World Example
+The Guided Tour consists of several chapters, some of which build on each other. In order to get the most out of it, 
+you should be following the Guided Tour in this sequence. If you have problems with the presentation of the Guided Tour,
+jump to the [original github repository](https://github.com/gardener/landscaper/tree/master/docs/guided-tour).
+
+### A Hello World Example
 
 [1. Hello World Example](./hello-world)
 
-## Basics
+### Basics
 
 [2. Upgrading the Hello World Example](./basics/upgrade)
 
@@ -43,7 +45,7 @@ In this tour, you will learn about the different Landscaper features by simple e
 
 [4. Multiple Deployments in One Installation](./basics/multiple-deployitems)
 
-## Recovering from Errors
+### Recovering from Errors
 
 [5. Handling an Immediate Error](./error-handling/immediate-error)
 
@@ -53,26 +55,34 @@ In this tour, you will learn about the different Landscaper features by simple e
 
 You can find a list of error messages and corresponding solutions [here](./error-handling/problem_analysis.md).
 
-## Blueprints and Components
+### Blueprints and Components
 
-[8. An Installation with an Externally Stored Blueprint](./blueprints/external-blueprint)
+[8. Blueprint and Helm Chart Resources in a Component Version](./components/helm-chart)
 
-[9. Helm Chart Resources in the Component Descriptor](./blueprints/helm-chart-resource)
+### Imports and Exports
 
-[10. Echo Server Example](./blueprints/echo-server)
+[9. Import Parameters](./import-export/import-parameters)
 
-## Imports and Exports
+[10. Import Data Mappings](./import-export/import-data-mappings)
 
-[11. Import Parameters](./import-export/import-parameters)
+[11. Export Parameters](./import-export/export-parameters)
 
-[12. Import Data Mappings](./import-export/import-data-mappings)
+### Templating
 
-[13. Export Parameters](./import-export/export-parameters)
+[12. Templating: Accessing Component Descriptors ](./templating/components)
 
-## Templating
+### Target Maps
 
-[14. Templating: Accessing Component Descriptors ](./templating/components)
+[13. Target Maps: Multiple Deploy Items](./target-maps/01-multiple-deploy-items)
 
-## Optimization
+[14. Target Maps: Target Map References](./target-maps/02-targetmap-ref)
 
-[15. Optimization Hints ](../usage/Optimization.md)
+[15. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
+
+[16. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
+
+[17. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
+
+### Optimization
+
+[18. Optimization Hints ](../usage/Optimization.md)

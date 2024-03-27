@@ -1,3 +1,8 @@
+---
+title: Common Issues
+sidebar_position: 4
+---
+
 ## Common Issues
 
 This document lists issues and how to fix them.

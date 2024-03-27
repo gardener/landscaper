@@ -14,7 +14,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	deployerconfig "github.com/gardener/landscaper/pkg/deployermanagement/config"
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
@@ -27,8 +26,7 @@ type Options struct {
 	ConfigPath               string
 	landscaperKubeconfigPath string
 
-	Config   *config.LandscaperConfiguration
-	Deployer deployerconfig.Options
+	Config *config.LandscaperConfiguration
 }
 
 func NewOptions() *Options {
@@ -38,7 +36,6 @@ func NewOptions() *Options {
 func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.ConfigPath, "config", "", "Specify the path to the configuration file")
 	fs.StringVar(&o.landscaperKubeconfigPath, "landscaper-kubeconfig", "", "Specify the path to the landscaper kubeconfig cluster")
-	o.Deployer.AddFlags(fs)
 	logging.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
@@ -55,9 +52,6 @@ func (o *Options) Complete(ctx context.Context) error {
 
 	o.Config, err = o.parseConfigurationFile(ctx)
 	if err != nil {
-		return err
-	}
-	if err := o.Deployer.Complete(); err != nil {
 		return err
 	}
 

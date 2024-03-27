@@ -1,3 +1,8 @@
+---
+title: Conditional Imports
+sidebar_position: 10
+---
+
 # Conditional Imports
 
 The basics of import definitions in blueprints are explained [here](./Blueprints.md). This document focuses on an advanced feature for import definitions: conditional imports.

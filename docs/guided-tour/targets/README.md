@@ -1,3 +1,8 @@
+---
+title: Constructing a Target Resource
+sidebar_position: 50
+---
+
 # Constructing a Target Resource
 
 Suppose you want to use the Landscaper to deploy an application on some kubernetes cluster, the so-called *target cluster*.

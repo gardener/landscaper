@@ -9,9 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/utils/ptr"
@@ -22,7 +22,6 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	lscutils "github.com/gardener/landscaper/controller-utils/pkg/landscaper"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
@@ -45,6 +44,7 @@ type Operation struct {
 	context                         Scope
 
 	targetLists map[string]*dataobjects.TargetExtensionList
+	targetMaps  map[string]*dataobjects.TargetMapExtension
 	targets     map[string]*dataobjects.TargetExtension
 
 	// CurrentOperation is the name of the current operation that is used for the error reporting
@@ -65,11 +65,17 @@ func (o *Operation) GetTargetImport(name string) *dataobjects.TargetExtension {
 func (o *Operation) GetTargetListImport(name string) *dataobjects.TargetExtensionList {
 	return o.targetLists[name]
 }
+func (o *Operation) GetTargetMapImport(name string) *dataobjects.TargetMapExtension {
+	return o.targetMaps[name]
+}
 func (o *Operation) SetTargetImports(data map[string]*dataobjects.TargetExtension) {
 	o.targets = data
 }
 func (o *Operation) SetTargetListImports(data map[string]*dataobjects.TargetExtensionList) {
 	o.targetLists = data
+}
+func (o *Operation) SetTargetMapImports(data map[string]*dataobjects.TargetMapExtension) {
+	o.targetMaps = data
 }
 
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
@@ -231,7 +237,6 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
 		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
@@ -244,27 +249,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
-			configGen = inst.Status.ConfigGeneration
 		}
-
-		importStatus := lsv1alpha1.ImportStatus{
-			Name:             def.Name,
-			Type:             lsv1alpha1.DataImportStatusType,
-			DataRef:          def.DataRef,
-			SourceRef:        sourceRef,
-			ConfigGeneration: configGen,
-		}
-		if len(def.DataRef) != 0 {
-			importStatus.DataRef = def.DataRef
-		} else if def.SecretRef != nil {
-			secretRef := lscutils.SecretRefFromLocalRef(def.SecretRef, o.Inst.GetInstallation().Namespace)
-			importStatus.SecretRef = fmt.Sprintf("%s#%s", secretRef.NamespacedName().String(), secretRef.Key)
-		} else if def.ConfigMapRef != nil {
-			configMapRef := lscutils.ConfigMapRefFromLocalRef(def.ConfigMapRef, o.Inst.GetInstallation().Namespace)
-			importStatus.ConfigMapRef = fmt.Sprintf("%s#%s", configMapRef.NamespacedName().String(), configMapRef.Key)
-		}
-
-		o.Inst.ImportStatus().Update(importStatus)
 	}
 
 	return dataObjects, nil
@@ -286,7 +271,6 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.GetTarget().ObjectMeta)
 		)
 		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
@@ -300,15 +284,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
-			configGen = inst.Status.ConfigGeneration
 		}
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:             def.Name,
-			Type:             lsv1alpha1.TargetImportStatusType,
-			Target:           def.Target,
-			SourceRef:        sourceRef,
-			ConfigGeneration: configGen,
-		})
 	}
 
 	return targets, nil
@@ -318,8 +294,8 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dataobjects.TargetExtensionList, error) {
 	targets := map[string]*dataobjects.TargetExtensionList{}
 	for _, def := range o.Inst.GetInstallation().Spec.Imports.Targets {
-		if len(def.Target) != 0 {
-			// It's a single target, skip it
+		if len(def.Target) != 0 || def.TargetMap != nil || len(def.TargetMapReference) > 0 {
+			// It's a single target or a target map, skip it
 			continue
 		}
 		var (
@@ -331,7 +307,7 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 			tl, err = GetTargetListImportByNames(ctx, o.LsUncachedClient(), o.Context().Name, o.Inst.GetInstallation(), def)
 		} else if len(def.TargetListReference) != 0 {
 			// TargetListReference is converted to a label selector internally
-			tl, err = GetTargetListImportBySelector(ctx, o.LsUncachedClient(), o.Context().Name, o.Inst.GetInstallation(), map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def, true)
+			tl, err = GetTargetListImportBySelector(ctx, o.LsUncachedClient(), o.Context().Name, o.Inst.GetInstallation(), map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def)
 		} else {
 			// Invalid target
 			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
@@ -341,40 +317,38 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		}
 
 		targets[def.Name] = tl
-
-		tis := make([]lsv1alpha1.TargetImportStatus, len(tl.GetTargetExtensions()))
-		for i, t := range tl.GetTargetExtensions() {
-			var (
-				sourceRef *lsv1alpha1.ObjectReference
-				configGen = dataobjects.ImportedBase(t).ComputeConfigGeneration()
-				owner     = kutil.GetOwner(t.GetTarget().ObjectMeta)
-			)
-			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.GetInstallation()) {
-				sourceRef = &lsv1alpha1.ObjectReference{
-					Name:      owner.Name,
-					Namespace: o.Inst.GetInstallation().Namespace,
-				}
-				inst := &lsv1alpha1.Installation{}
-				if err := read_write_layer.GetInstallation(ctx, o.LsUncachedClient(), sourceRef.NamespacedName(), inst, read_write_layer.R000011); err != nil {
-					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
-						sourceRef.NamespacedName().String(), def.Name, err)
-				}
-				configGen = inst.Status.ConfigGeneration
-			}
-			tis[i] = lsv1alpha1.TargetImportStatus{
-				Target:           t.GetTarget().Name,
-				SourceRef:        sourceRef,
-				ConfigGeneration: configGen,
-			}
-		}
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
-			Name:    def.Name,
-			Type:    lsv1alpha1.TargetListImportStatusType,
-			Targets: tis,
-		})
 	}
 
 	return targets, nil
+}
+
+// GetImportedTargetMaps returns all imported target maps of the installation.
+func (o *Operation) GetImportedTargetMaps(ctx context.Context) (map[string]*dataobjects.TargetMapExtension, error) {
+	targetMaps := map[string]*dataobjects.TargetMapExtension{}
+
+	for _, def := range o.Inst.GetInstallation().Spec.Imports.Targets {
+		if len(def.Target) != 0 || def.Targets != nil || len(def.TargetListReference) != 0 {
+			// It's a target or target list, skip it
+			continue
+		}
+
+		var tm *dataobjects.TargetMapExtension
+		var err error
+		if def.TargetMap != nil {
+			tm, err = GetTargetMapImportByNames(ctx, o.LsUncachedClient(), o.Context().Name, o.Inst.GetInstallation(), def)
+		} else if len(def.TargetMapReference) != 0 {
+			tm, err = GetTargetMapImportBySelector(ctx, o.LsUncachedClient(), o.Context().Name, o.Inst.GetInstallation(), def)
+		} else {
+			err = fmt.Errorf("invalid target definition %s", def.Name)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		targetMaps[def.Name] = tm
+	}
+
+	return targetMaps, nil
 }
 
 // NewError creates a new error with the current operation
@@ -413,31 +387,17 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	return installations, nil
 }
 
-// SetExportConfigGeneration returns the new export generation of the installation
-// based on its own generation and its context
-func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
-	// we have to set our config generation to the desired state
-
-	o.Inst.GetInstallation().Status.ConfigGeneration = ""
-	return o.WriterToLsUncachedClient().UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Inst.GetInstallation())
-}
-
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
 func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*dataobjects.DataObject, targetExports []*dataobjects.TargetExtension) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.CreateExportsCondition)
 
-	configGen, err := CreateGenerationHash(o.Inst.GetInstallation())
-	if err != nil {
-		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
-			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-				"CreateConfigHash",
-				fmt.Sprintf("unable to create config hash: %s", err.Error())))
-		return err
-	}
-
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.GetInstallation())
 	for _, do := range dataExports {
-		do = do.SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		do = do.
+			SetNamespace(o.Inst.GetInstallation().Namespace).
+			SetSource(src).
+			SetContext(o.InstallationContextName()).
+			SetJobID(o.Inst.GetInstallation().Status.JobID)
 		raw, err := do.Build()
 		if err != nil {
 			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
@@ -464,7 +424,11 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 	}
 
 	for _, target := range targetExports {
-		target = target.SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		target = target.
+			SetNamespace(o.Inst.GetInstallation().Namespace).
+			SetSource(src).
+			SetContext(o.InstallationContextName()).
+			SetJobID(o.Inst.GetInstallation().Status.JobID)
 
 		targetForUpdate := &lsv1alpha1.Target{}
 		target.ApplyNameAndNamespace(targetForUpdate)
@@ -486,7 +450,6 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 	}
 
-	o.Inst.GetInstallation().Status.ConfigGeneration = configGen
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue, "DataObjectsCreated", "DataObjects successfully created")
 	return o.UpdateInstallationStatus(ctx, o.Inst.GetInstallation(), read_write_layer.W000057, cond)
 }
@@ -532,6 +495,14 @@ func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1al
 			if err := o.createOrUpdateTargetListImport(ctx, src, importDef, importDataList); err != nil {
 				return fmt.Errorf("unable to create or update targetlist import '%s': %w", importDef.Name, err)
 			}
+		case lsv1alpha1.ImportTypeTargetMap:
+			importTargetMap, ok := importData.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("targetmap import '%s' is not a map", importDef.Name)
+			}
+			if err := o.createOrUpdateTargetMapImport(ctx, src, importDef, importTargetMap); err != nil {
+				return fmt.Errorf("unable to create or update targetmap import '%s': %w", importDef.Name, err)
+			}
 		default:
 			return fmt.Errorf("unknown import type '%s' for import '%s'", string(importDef.Type), importDef.Name)
 		}
@@ -546,7 +517,8 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 		SetNamespace(o.Inst.GetInstallation().Namespace).SetSource(src).
 		SetContext(src).
 		SetKey(importDef.Name).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
-		SetData(importData)
+		SetData(importData).
+		SetJobID(o.Inst.GetInstallation().Status.JobID)
 	raw, err := do.Build()
 	if err != nil {
 		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
@@ -588,7 +560,9 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 		SetContext(src).
 		SetKey(importDef.Name).
 		SetIndex(nil).
-		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
+		SetTargetMapKey(nil).
+		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
+		SetJobID(o.Inst.GetInstallation().Status.JobID)
 
 	targetForUpdate := &lsv1alpha1.Target{}
 	targetExtension.ApplyNameAndNamespace(targetForUpdate)
@@ -631,7 +605,9 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 			SetContext(src).
 			SetKey(importDef.Name).
 			SetIndex(ptr.To[int](i)).
-			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
+			SetTargetMapKey(nil).
+			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
+			SetJobID(o.Inst.GetInstallation().Status.JobID)
 	}
 
 	targets, err := targetExtensionList.Build(importDef.Name)
@@ -645,17 +621,73 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	for i, target := range targets {
-		if _, err := o.WriterToLsUncachedClient().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000072, target, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), target, api.LandscaperScheme); err != nil {
+		tmpTarget := &lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: target.Namespace, Name: target.Name}}
+		if _, err := o.WriterToLsUncachedClient().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000072, tmpTarget, func() error {
+			if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), tmpTarget, api.LandscaperScheme); err != nil {
 				return err
 			}
-			return targetExtensionList.Apply(target, i)
+			return targetExtensionList.Apply(tmpTarget, i)
 		}); err != nil {
 			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"CreateTargets",
 					fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
 			return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", target.Name, importDef.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (o *Operation) createOrUpdateTargetMapImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, values map[string]interface{}) error {
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInstallation().Status.Conditions, lsv1alpha1.CreateImportsCondition)
+
+	tars := make(map[string]lsv1alpha1.Target)
+	for key := range values {
+		tar := &lsv1alpha1.Target{}
+		data, err := json.Marshal(values[key])
+		if err != nil {
+			return err
+		}
+		if _, _, err := api.Decoder.Decode(data, nil, tar); err != nil {
+			return err
+		}
+		tars[key] = *tar
+	}
+
+	targetMapExtension := dataobjects.NewTargetMapExtension(tars, nil)
+	for key := range targetMapExtension.GetTargetExtensions() {
+		tar := targetMapExtension.GetTargetExtensions()[key]
+		tar.SetNamespace(o.Inst.GetInstallation().Namespace).
+			SetContext(src).
+			SetKey(importDef.Name).
+			SetIndex(nil).
+			SetTargetMapKey(ptr.To(key)).
+			SetSource(src).
+			SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
+			SetJobID(o.Inst.GetInstallation().Status.JobID)
+	}
+
+	targets, err := targetMapExtension.Build(importDef.Name)
+	if err != nil {
+		o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
+			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateTargets",
+				fmt.Sprintf("unable to create targets for import '%s'", importDef.Name)))
+		return fmt.Errorf("unable to build targets for import '%s': %w", importDef.Name, err)
+	}
+
+	for targetMapKey, target := range targets {
+		tmpTarget := &lsv1alpha1.Target{ObjectMeta: metav1.ObjectMeta{Namespace: target.Namespace, Name: target.Name}}
+		if _, err := o.WriterToLsUncachedClient().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000089, tmpTarget, func() error {
+			if err := controllerutil.SetOwnerReference(o.Inst.GetInstallation(), tmpTarget, api.LandscaperScheme); err != nil {
+				return err
+			}
+			return targetMapExtension.Apply(tmpTarget, targetMapKey)
+		}); err != nil {
+			o.Inst.GetInstallation().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInstallation().Status.Conditions,
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateTargets",
+					fmt.Sprintf("unable to create target for targetmap import '%s'", importDef.Name)))
+			return fmt.Errorf("unable to create or update target '%s' for targetmap import '%s': %w", target.Name, importDef.Name, err)
 		}
 	}
 

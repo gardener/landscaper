@@ -1,12 +1,15 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: null
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.0
   name: installations.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
   names:
     kind: Installation
+    listKind: InstallationList
     plural: installations
     shortNames:
     - inst
@@ -15,7 +18,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.phase
-      name: phase
+      name: Phase
       type: string
     - jsonPath: .status.executionRef.name
       name: Execution
@@ -28,6 +31,18 @@ spec:
       openAPIV3Schema:
         description: Installation contains the configuration of a component
         properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
           spec:
             description: Spec contains the specification for a installation.
             properties:
@@ -95,356 +110,8 @@ spec:
                   inline:
                     description: InlineDescriptorReference defines an inline component
                       descriptor
-                    properties:
-                      component:
-                        description: Spec contains the specification of the component.
-                        properties:
-                          componentReferences:
-                            description: ComponentReferences references component
-                              dependencies that can be resolved in the current context.
-                            items:
-                              description: ComponentReference describes the reference
-                                to another component in the registry.
-                              properties:
-                                componentName:
-                                  description: ComponentName describes the remote
-                                    name of the referenced object
-                                  type: string
-                                digest:
-                                  description: Digest is the optional digest of the
-                                    referenced component.
-                                  properties:
-                                    hashAlgorithm:
-                                      type: string
-                                    normalisationAlgorithm:
-                                      type: string
-                                    value:
-                                      type: string
-                                  required:
-                                  - hashAlgorithm
-                                  - normalisationAlgorithm
-                                  - value
-                                  type: object
-                                extraIdentity:
-                                  additionalProperties:
-                                    type: string
-                                  description: ExtraIdentity is the identity of an
-                                    object. An additional label with key "name" ist
-                                    not allowed
-                                  type: object
-                                labels:
-                                  description: Labels defines an optional set of additional
-                                    labels describing the object.
-                                  items:
-                                    description: Label is a label that can be set
-                                      on objects.
-                                    properties:
-                                      name:
-                                        description: Name is the unique name of the
-                                          label.
-                                        type: string
-                                      value:
-                                        description: Value is the json/yaml data of
-                                          the label
-                                        format: byte
-                                        type: string
-                                    required:
-                                    - name
-                                    - value
-                                    type: object
-                                  type: array
-                                name:
-                                  description: Name is the context unique name of
-                                    the object.
-                                  type: string
-                                version:
-                                  description: Version is the semver version of the
-                                    object.
-                                  type: string
-                              required:
-                              - name
-                              - componentName
-                              - version
-                              type: object
-                            type: array
-                          labels:
-                            description: Labels defines an optional set of additional
-                              labels describing the object.
-                            items:
-                              description: Label is a label that can be set on objects.
-                              properties:
-                                name:
-                                  description: Name is the unique name of the label.
-                                  type: string
-                                value:
-                                  description: Value is the json/yaml data of the
-                                    label
-                                  format: byte
-                                  type: string
-                              required:
-                              - name
-                              - value
-                              type: object
-                            type: array
-                          name:
-                            description: Name is the context unique name of the object.
-                            type: string
-                          provider:
-                            description: Provider defines the provider type of a component.
-                              It can be external or internal.
-                            type: string
-                          repositoryContexts:
-                            description: RepositoryContexts defines the previous repositories
-                              of the component
-                            items:
-                              description: UnstructuredTypedObject describes a generic
-                                typed object.
-                              type: object
-                              x-kubernetes-preserve-unknown-fields: true
-                            type: array
-                          resources:
-                            description: Resources defines all resources that are
-                              created by the component and by a third party.
-                            items:
-                              description: Resource describes a resource dependency
-                                of a component.
-                              properties:
-                                access:
-                                  description: Access describes the type specific
-                                    method to access the defined resource.
-                                  type: object
-                                  x-kubernetes-preserve-unknown-fields: true
-                                digest:
-                                  description: Digest is the optional digest of the
-                                    referenced resource.
-                                  properties:
-                                    hashAlgorithm:
-                                      type: string
-                                    normalisationAlgorithm:
-                                      type: string
-                                    value:
-                                      type: string
-                                  required:
-                                  - hashAlgorithm
-                                  - normalisationAlgorithm
-                                  - value
-                                  type: object
-                                extraIdentity:
-                                  additionalProperties:
-                                    type: string
-                                  description: ExtraIdentity is the identity of an
-                                    object. An additional label with key "name" ist
-                                    not allowed
-                                  type: object
-                                labels:
-                                  description: Labels defines an optional set of additional
-                                    labels describing the object.
-                                  items:
-                                    description: Label is a label that can be set
-                                      on objects.
-                                    properties:
-                                      name:
-                                        description: Name is the unique name of the
-                                          label.
-                                        type: string
-                                      value:
-                                        description: Value is the json/yaml data of
-                                          the label
-                                        format: byte
-                                        type: string
-                                    required:
-                                    - name
-                                    - value
-                                    type: object
-                                  type: array
-                                name:
-                                  description: Name is the context unique name of
-                                    the object.
-                                  type: string
-                                relation:
-                                  description: Relation describes the relation of
-                                    the resource to the component. Can be a local
-                                    or external resource
-                                  type: string
-                                srcRef:
-                                  description: SourceRef defines a list of source
-                                    names. These names reference the sources defines
-                                    in `component.sources`.
-                                  items:
-                                    description: SourceRef defines a reference to
-                                      a source
-                                    properties:
-                                      identitySelector:
-                                        additionalProperties:
-                                          type: string
-                                        description: IdentitySelector defines the
-                                          identity that is used to match a source.
-                                        type: object
-                                      labels:
-                                        description: Labels defines an optional set
-                                          of additional labels describing the object.
-                                        items:
-                                          description: Label is a label that can be
-                                            set on objects.
-                                          properties:
-                                            name:
-                                              description: Name is the unique name
-                                                of the label.
-                                              type: string
-                                            value:
-                                              description: Value is the json/yaml
-                                                data of the label
-                                              format: byte
-                                              type: string
-                                          required:
-                                          - name
-                                          - value
-                                          type: object
-                                        type: array
-                                    type: object
-                                  type: array
-                                type:
-                                  description: Type describes the type of the object.
-                                  type: string
-                                version:
-                                  description: Version is the semver version of the
-                                    object.
-                                  type: string
-                              required:
-                              - name
-                              - version
-                              - type
-                              - access
-                              type: object
-                            type: array
-                          sources:
-                            description: Sources defines sources that produced the
-                              component
-                            items:
-                              description: Source is the definition of a component's
-                                source.
-                              properties:
-                                access:
-                                  description: UnstructuredTypedObject describes a
-                                    generic typed object.
-                                  type: object
-                                  x-kubernetes-preserve-unknown-fields: true
-                                extraIdentity:
-                                  additionalProperties:
-                                    type: string
-                                  description: ExtraIdentity is the identity of an
-                                    object. An additional label with key "name" ist
-                                    not allowed
-                                  type: object
-                                labels:
-                                  description: Labels defines an optional set of additional
-                                    labels describing the object.
-                                  items:
-                                    description: Label is a label that can be set
-                                      on objects.
-                                    properties:
-                                      name:
-                                        description: Name is the unique name of the
-                                          label.
-                                        type: string
-                                      value:
-                                        description: Value is the json/yaml data of
-                                          the label
-                                        format: byte
-                                        type: string
-                                    required:
-                                    - name
-                                    - value
-                                    type: object
-                                  type: array
-                                name:
-                                  description: Name is the context unique name of
-                                    the object.
-                                  type: string
-                                type:
-                                  description: Type describes the type of the object.
-                                  type: string
-                                version:
-                                  description: Version is the semver version of the
-                                    object.
-                                  type: string
-                              required:
-                              - name
-                              - version
-                              - type
-                              - access
-                              type: object
-                            type: array
-                          version:
-                            description: Version is the semver version of the object.
-                            type: string
-                        required:
-                        - name
-                        - version
-                        - repositoryContexts
-                        - provider
-                        - sources
-                        - componentReferences
-                        - resources
-                        type: object
-                      meta:
-                        description: Metadata specifies the schema version of the
-                          component.
-                        properties:
-                          schemaVersion:
-                            description: Version is the schema version of the component
-                              descriptor.
-                            type: string
-                        required:
-                        - schemaVersion
-                        type: object
-                      signatures:
-                        description: Signatures contains a list of signatures for
-                          the ComponentDescriptor
-                        items:
-                          description: Signature defines a digest and corresponding
-                            signature, identifyable by name.
-                          properties:
-                            digest:
-                              description: DigestSpec defines a digest.
-                              properties:
-                                hashAlgorithm:
-                                  type: string
-                                normalisationAlgorithm:
-                                  type: string
-                                value:
-                                  type: string
-                              required:
-                              - hashAlgorithm
-                              - normalisationAlgorithm
-                              - value
-                              type: object
-                            name:
-                              type: string
-                            signature:
-                              description: SignatureSpec defines a signature.
-                              properties:
-                                algorithm:
-                                  type: string
-                                mediaType:
-                                  type: string
-                                value:
-                                  type: string
-                              required:
-                              - algorithm
-                              - value
-                              - mediaType
-                              type: object
-                          required:
-                          - name
-                          - digest
-                          - signature
-                          type: object
-                        type: array
-                    required:
-                    - meta
-                    - component
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   ref:
                     description: ComponentDescriptorReference is the reference to
                       a component descriptor
@@ -470,16 +137,13 @@ spec:
                 description: Context defines the current context of the installation.
                 type: string
               exportDataMappings:
-                additionalProperties:
-                  description: AnyJSON enhances the json.RawMessages with a dedicated
-                    openapi definition so that all it is correctly generated
-                  x-kubernetes-preserve-unknown-fields: true
                 description: 'ExportDataMappings contains a template for restructuring
                   exports. It is expected to contain a key for every blueprint-defined
                   data export. Missing keys will be defaulted to their respective
                   data export. Example: namespace: (( blueprint.exports.namespace
                   ))'
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               exports:
                 description: Exports define the exported data objects and targets.
                 properties:
@@ -497,8 +161,8 @@ spec:
                             data.
                           type: string
                       required:
-                      - name
                       - dataRef
+                      - name
                       type: object
                     type: array
                   targets:
@@ -519,16 +183,13 @@ spec:
                     type: array
                 type: object
               importDataMappings:
-                additionalProperties:
-                  description: AnyJSON enhances the json.RawMessages with a dedicated
-                    openapi definition so that all it is correctly generated
-                  x-kubernetes-preserve-unknown-fields: true
                 description: 'ImportDataMappings contains a template for restructuring
                   imports. It is expected to contain a key for every blueprint-defined
                   data import. Missing keys will be defaulted to their respective
                   data import. Example: namespace: (( installation.imports.namespace
                   ))'
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               imports:
                 description: Imports define the imported data objects and targets.
                 properties:
@@ -603,6 +264,12 @@ spec:
                             Exactly one of Target, Targets, and TargetListReference
                             has to be specified.
                           type: string
+                        targetMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        targetMapRef:
+                          type: string
                         targets:
                           description: Targets is a list of in-cluster target objects.
                             Exactly one of Target, Targets, and TargetListReference
@@ -674,6 +341,7 @@ spec:
                       description: Well-defined error codes in case the condition
                         reports a problem.
                       items:
+                        description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
@@ -699,17 +367,14 @@ spec:
                       description: DataType of the Shoot condition.
                       type: string
                   required:
-                  - type
-                  - status
                   - lastTransitionTime
                   - lastUpdateTime
-                  - reason
                   - message
+                  - reason
+                  - status
+                  - type
                   type: object
                 type: array
-              configGeneration:
-                description: ConfigGeneration is the generation of the exported values.
-                type: string
               dependentsToTrigger:
                 description: DependentsToTrigger lists dependent installations to
                   be triggered
@@ -733,83 +398,6 @@ spec:
                 required:
                 - name
                 type: object
-              imports:
-                description: Imports contain the state of the imported values.
-                items:
-                  description: ImportStatus hold the state of a import.
-                  properties:
-                    configGeneration:
-                      description: ConfigGeneration is the generation of the imported
-                        value.
-                      type: string
-                    configMapRef:
-                      description: ConfigMapRef is the name of the imported configmap.
-                      type: string
-                    dataRef:
-                      description: DataRef is the name of the in-cluster data object.
-                      type: string
-                    name:
-                      description: Name is the distinct identifier of the import.
-                        Can be either from data or target imports
-                      type: string
-                    secretRef:
-                      description: SecretRef is the name of the secret.
-                      type: string
-                    sourceRef:
-                      description: SourceRef is the reference to the installation
-                        from where the value is imported
-                      properties:
-                        name:
-                          description: Name is the name of the kubernetes object.
-                          type: string
-                        namespace:
-                          description: Namespace is the namespace of kubernetes object.
-                          type: string
-                      required:
-                      - name
-                      type: object
-                    target:
-                      description: Target is the name of the in-cluster target object.
-                      type: string
-                    targetList:
-                      description: TargetList is a list of import statuses for in-cluster
-                        target objects.
-                      items:
-                        description: TargetImportStatus
-                        properties:
-                          configGeneration:
-                            description: ConfigGeneration is the generation of the
-                              imported value.
-                            type: string
-                          sourceRef:
-                            description: SourceRef is the reference to the installation
-                              from where the value is imported
-                            properties:
-                              name:
-                                description: Name is the name of the kubernetes object.
-                                type: string
-                              namespace:
-                                description: Namespace is the namespace of kubernetes
-                                  object.
-                                type: string
-                            required:
-                            - name
-                            type: object
-                          target:
-                            description: Target is the name of the in-cluster target
-                              object.
-                            type: string
-                        type: object
-                      type: array
-                    type:
-                      description: Type defines the kind of import. Can be either
-                        DataObject, Target, or TargetList
-                      type: string
-                  required:
-                  - name
-                  - type
-                  type: object
-                type: array
               importsHash:
                 description: ImportsHash is the hash of the import data.
                 type: string
@@ -826,6 +414,7 @@ spec:
                     description: Well-defined error codes in case the condition reports
                       a problem.
                     items:
+                      description: ErrorCode is a string alias.
                       type: string
                     type: array
                   lastTransitionTime:
@@ -849,11 +438,11 @@ spec:
                     description: The reason for the condition's last transition.
                     type: string
                 required:
-                - operation
                 - lastTransitionTime
                 - lastUpdateTime
-                - reason
                 - message
+                - operation
+                - reason
                 type: object
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed
@@ -911,7 +500,6 @@ spec:
                 type: object
             required:
             - observedGeneration
-            - configGeneration
             type: object
         required:
         - spec
@@ -920,9 +508,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

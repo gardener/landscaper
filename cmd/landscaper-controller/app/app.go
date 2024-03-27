@@ -13,7 +13,6 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,16 +20,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/install"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/agent"
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
-	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	deployitemctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	executionactrl "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
@@ -85,10 +81,9 @@ func (o *Options) run(ctx context.Context) error {
 	burst, qps := lsutils.GetHostClientRequestRestrictions(setupLogger, hostAndResourceClusterDifferent)
 
 	opts := manager.Options{
-		LeaderElection:     false,
-		Port:               9443,
-		MetricsBindAddress: "0",
-		Cache:              cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
+		Cache:          cache.Options{SyncPeriod: ptr.To[time.Duration](time.Hour * 24 * 1000)},
 	}
 
 	//TODO: investigate whether this is used with an uncached client
@@ -97,7 +92,7 @@ func (o *Options) run(ctx context.Context) error {
 	}
 
 	if o.Config.Metrics != nil {
-		opts.MetricsBindAddress = fmt.Sprintf(":%d", o.Config.Metrics.Port)
+		opts.Metrics.BindAddress = fmt.Sprintf(":%d", o.Config.Metrics.Port)
 	}
 
 	hostRestConfig := ctrl.GetConfigOrDie()
@@ -170,7 +165,7 @@ func (o *Options) startMainController(ctx context.Context,
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+	if err := executionactrl.AddControllerToManager(ctx, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		ctrlLogger, lsMgr, hostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
@@ -206,43 +201,6 @@ func (o *Options) startCentralLandscaper(ctx context.Context,
 
 	if err := contextctrl.AddControllerToManager(lsUncachedClient, lsCachedClient, ctrlLogger, lsMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup context controller: %w", err)
-	}
-
-	if !o.Config.DeployerManagement.Disable {
-		if err := deployers.AddControllersToManager(lsUncachedClient, lsCachedClient, ctrlLogger, lsMgr, o.Config); err != nil {
-			return fmt.Errorf("unable to setup deployer controllers: %w", err)
-		}
-		if !o.Config.DeployerManagement.Agent.Disable {
-			agentConfig := o.Config.DeployerManagement.Agent.AgentConfiguration
-			// add default selector and in addition reconcile all target that do not have a a environment definition
-			agentConfig.TargetSelectors = append(agent.DefaultTargetSelector(agentConfig.Name),
-				lsv1alpha1.TargetSelector{
-					Annotations: []lsv1alpha1.Requirement{
-						{
-							Key:      lsv1alpha1.DeployerEnvironmentTargetAnnotationName,
-							Operator: selection.DoesNotExist,
-						},
-					},
-				},
-			)
-			if err := agent.AddToManager(ctx, lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
-				o.Log, lsMgr, hostMgr, agentConfig, "landscaper-helm"); err != nil {
-				return fmt.Errorf("unable to setup default agent: %w", err)
-			}
-		}
-		if err := o.DeployInternalDeployers(ctx, lsUncachedClient); err != nil {
-			return err
-		}
-
-		if o.Config.LsDeployments.AdditionalDeployments == nil {
-			o.Config.LsDeployments.AdditionalDeployments = &config.AdditionalDeployments{
-				Deployments: []string{},
-			}
-		}
-		for _, deployer := range o.Deployer.EnabledDeployers {
-			deploymentName := deployer + "-" + o.Config.DeployerManagement.Agent.Name + "-" + deployer + "-deployer"
-			o.Config.LsDeployments.AdditionalDeployments.Deployments = append(o.Config.LsDeployments.AdditionalDeployments.Deployments, deploymentName)
-		}
 	}
 
 	if err := deployitemctrl.AddControllerToManager(lsUncachedClient, lsCachedClient,
@@ -300,12 +258,6 @@ func (o *Options) startCentralLandscaper(ctx context.Context,
 		return nil
 	})
 	return eg.Wait()
-}
-
-// DeployInternalDeployers automatically deploys configured deployers using the new Deployer registrations.
-func (o *Options) DeployInternalDeployers(ctx context.Context, lsUncachedClient client.Client) error {
-	ctx = logging.NewContext(ctx, logging.Wrap(ctrl.Log.WithName("deployerManagement")))
-	return o.Deployer.DeployInternalDeployers(ctx, lsUncachedClient, o.Config)
 }
 
 func (o *Options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {

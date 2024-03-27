@@ -1,3 +1,8 @@
+---
+title: Accessing Blueprints
+sidebar_position: 9
+---
+
 # Accessing Blueprints
 
 Blueprints are referenced in installations or installation templates via the component descriptors access.

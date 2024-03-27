@@ -1,0 +1,17 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+
+name: export-composition
+
+blueprint:
+  ref: cd://resources/blueprint-export-composition
+
+imports:
+  targets:
+    - name: clusterEC
+      target: clusterECR
+  data:
+    - name: namespace
+      dataRef: namespace
+    - name: configsEC
+      dataRef: configsECR

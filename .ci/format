@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -euo pipefail
+
+PROJECT_ROOT="$(realpath $(dirname $0)/..)"
+
+source "$PROJECT_ROOT/.ci/ensure-go"
+"$PROJECT_ROOT/.ci/ensure-make"
+
+(
+  cd "$PROJECT_ROOT"
+  make format generate-docs
+
+  git add "*.go" docs/README.md
+  if git status --porcelain=v1 | grep -e '^M\s\s' 1>/dev/null; then
+    git commit -m "[ci skip] formatting and documentation index"
+  else
+    echo "Nothing to commit."
+  fi
+
+  echo "Stashing remaining changes to avoid problems during pull/push."
+  git stash
+)

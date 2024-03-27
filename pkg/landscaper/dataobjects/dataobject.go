@@ -36,13 +36,15 @@ type DataObject struct {
 // Metadata describes the metadata of a data object.
 // This metadata is also represented as annotations/labels at the object.
 type Metadata struct {
-	Namespace  string
-	Context    string
-	SourceType lsv1alpha1.DataObjectSourceType
-	Source     string
-	Key        string
-	Hash       string
-	Index      *int
+	Namespace    string
+	Context      string
+	SourceType   lsv1alpha1.DataObjectSourceType
+	Source       string
+	Key          string
+	Hash         string
+	Index        *int
+	TargetMapKey *string
+	JobID        string
 }
 
 // generateHash returns the internal data generation function for dataobjects or targets.
@@ -93,6 +95,12 @@ func GetMetadataFromObject(objAcc metav1.Object, data []byte) Metadata {
 				meta.Index = ptr.To[int](index)
 			}
 		}
+		if targetMapKey, ok := labels[lsv1alpha1.DataObjectTargetMapKeyLabel]; ok {
+			meta.TargetMapKey = &targetMapKey
+		}
+		if jobID, ok := labels[lsv1alpha1.DataObjectJobIDLabel]; ok {
+			meta.JobID = jobID
+		}
 	}
 	if hash, ok := objAcc.GetAnnotations()[lsv1alpha1.DataObjectHashAnnotation]; ok {
 		meta.Hash = hash
@@ -134,6 +142,16 @@ func SetMetadataFromObject(objAcc metav1.Object, meta Metadata) {
 	} else {
 		delete(labels, lsv1alpha1.DataObjectIndexLabel)
 	}
+	if meta.TargetMapKey != nil {
+		labels[lsv1alpha1.DataObjectTargetMapKeyLabel] = fmt.Sprint(*meta.TargetMapKey)
+	} else {
+		delete(labels, lsv1alpha1.DataObjectTargetMapKeyLabel)
+	}
+	if len(meta.JobID) != 0 {
+		labels[lsv1alpha1.DataObjectJobIDLabel] = meta.JobID
+	} else {
+		delete(labels, lsv1alpha1.DataObjectJobIDLabel)
+	}
 
 	objAcc.SetLabels(labels)
 
@@ -167,6 +185,11 @@ func (do *DataObject) SetContext(ctx string) *DataObject {
 // SetNamespace sets the namespace for the given data object.
 func (do *DataObject) SetNamespace(ns string) *DataObject {
 	do.Metadata.Namespace = ns
+	return do
+}
+
+func (do *DataObject) SetJobID(jobID string) *DataObject {
+	do.Metadata.JobID = jobID
 	return do
 }
 

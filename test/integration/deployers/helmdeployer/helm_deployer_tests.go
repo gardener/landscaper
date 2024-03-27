@@ -338,7 +338,7 @@ func HelmDeployerTests(f *framework.Framework) {
 					Status: corev1.NamespaceStatus{},
 				}
 
-				target, err = utils.BuildInternalKubernetesTarget(ctx, f.Client, "private-registry", "target", f.RestConfig, true)
+				target, err = utils.BuildInternalKubernetesTarget(ctx, f.Client, "private-registry", "target", f.RestConfig)
 				Expect(err).To(BeNil())
 				Expect(target).ToNot(BeNil())
 
@@ -477,7 +477,7 @@ func deployDeployItemAndWaitForSuccess(
 	chartDir string,
 	valuesFile string, exports *managedresource.Exports, readinesCheck *readinesschecks.ReadinessCheckConfiguration, useHelmDeployment bool) (*lsv1alpha1.DeployItem, error) {
 
-	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, chartName, f.RestConfig, true)
+	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, chartName, f.RestConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -513,7 +513,7 @@ func updateDeployItemAndWaitForSuccess(
 	chartDir string,
 	valuesFile string, useHelmDeployment bool) *lsv1alpha1.DeployItem {
 
-	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, chartName, f.RestConfig, true)
+	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, chartName, f.RestConfig)
 	utils.ExpectNoError(err)
 
 	By("Creating the updated DeployItem")
