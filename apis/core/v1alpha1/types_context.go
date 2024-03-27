@@ -82,10 +82,15 @@ type ContextConfiguration struct {
 	// +optional
 	ComponentVersionOverwritesReference string `json:"componentVersionOverwrites"`
 
+	// VerificationSignatures maps a signature name to the trusted verification information
+	// +optional
 	VerificationSignatures map[string]VerificationSignature `json:"verificationSignatures,omitempty"`
 }
 
+// VerificationSignatures contains the trusted verification information
 type VerificationSignature struct {
-	PublicKeySecretReference     *SecretReference `json:"publicKeySecretReference,omitempty"`
+	// PublicKeySecretReference contains a secret reference to a public key in PEM format that is used to verify the component signature
+	PublicKeySecretReference *SecretReference `json:"publicKeySecretReference,omitempty"`
+	// CaCertificateSecretReference contains a secret reference to one or more certificates in PEM format that are used to verify the compnent signature
 	CaCertificateSecretReference *SecretReference `json:"caCertificateSecretReference,omitempty"`
 }

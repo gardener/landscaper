@@ -18,8 +18,8 @@ type CaCertData []byte
 // IsVerifyEnabled returns if verification is enabled.
 // The following rules apply:
 // 1. if lsConfig.SignatureVerificationEnforcementPolicy is Enforce, always return true
-// 2. if lsConfig.SignatureVerificationEnforcementPolicy is Disabled, always return false even if installation.Spec.Verification is true.
-// 3. else, if SignatureVerificationEnforcementPolicy is DoNotEnforce return Installation.Spec.Verification.Enabled
+// 2. if lsConfig.SignatureVerificationEnforcementPolicy is Disabled, always return false even if installation.Spec.Verification is set.
+// 3. else, if SignatureVerificationEnforcementPolicy is DoNotEnforce return Installation.Spec.Verification != nil
 // 3. otherwise should not happen, return true as a safe fallback
 func IsVerifyEnabled(inst *lsv1alpha1.Installation, lsConfig *config.LandscaperConfiguration) bool {
 	switch lsConfig.SignatureVerificationEnforcementPolicy {
@@ -35,6 +35,7 @@ func IsVerifyEnabled(inst *lsv1alpha1.Installation, lsConfig *config.LandscaperC
 	}
 }
 
+// ExtractVerifyInfo extracts signautre name, publickey data and caCert data from the secrets referenced in the context
 func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, installationContext lsv1alpha1.Context, client client.Client) (string, PublicKeyData, CaCertData, error) {
 	if inst.Spec.Verification == nil {
 		return "", nil, nil, errors.New("installation.Spec.Verification cant be nil")
@@ -62,16 +63,13 @@ func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, insta
 		}
 	}
 
-	//Extract CaCertData
+	// Extract CaCertData
 	var caCertData CaCertData
 	if verificationSignatures.CaCertificateSecretReference != nil {
 		_, caCertData, _, err = lutil.ResolveSecretReference(ctx, client, verificationSignatures.CaCertificateSecretReference)
 		if err != nil {
 			return "", nil, nil, fmt.Errorf("failed resolving public key from reference: %w", err)
 		}
-		// if len(caCertData) == 0 {
-		// 	return "", nil, nil, errors.New("installation.Spec.Verification.publicKeySecretReference referenced public key is empty")
-		// }
 	}
 
 	return signatureName, publicKeyData, caCertData, nil

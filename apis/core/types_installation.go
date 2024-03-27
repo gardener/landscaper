@@ -47,6 +47,8 @@ type InstallationSpec struct {
 	// +optional
 	Context string `json:"context,omitempty"`
 
+	// Verification defines the necessary data to verify the signature of the refered component
+	// +optional
 	Verification *Verification `json:"verification,omitempty"`
 
 	//ComponentDescriptor is a reference to the installation's component descriptor
@@ -87,7 +89,9 @@ type InstallationSpec struct {
 	Optimization *Optimization `json:"optimization,omitempty"`
 }
 
+// Verification defines the necessary data to verify the signature of the refered component
 type Verification struct {
+	// SignatureName defines the name of the signature that is verified
 	SignatureName string `json:"signatureName"`
 }
 
