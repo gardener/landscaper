@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package verify
 
 import (
@@ -36,7 +40,7 @@ func IsVerifyEnabled(inst *lsv1alpha1.Installation, lsConfig *config.LandscaperC
 }
 
 // ExtractVerifyInfo extracts signautre name, publickey data and caCert data from the secrets referenced in the context
-func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, installationContext lsv1alpha1.Context, client client.Client) (string, PublicKeyData, CaCertData, error) {
+func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, installationContext *lsv1alpha1.Context, client client.Client) (string, PublicKeyData, CaCertData, error) {
 	if inst.Spec.Verification == nil {
 		return "", nil, nil, errors.New("installation.Spec.Verification cant be nil")
 	}

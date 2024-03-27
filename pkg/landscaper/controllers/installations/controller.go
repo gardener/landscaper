@@ -375,7 +375,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
 		}
 
-		signatureName, publicKeyData, caCertData, err := verify.ExtractVerifyInfo(ctx, inst, lsCtx.External.Context, c.hostUncachedClient)
+		signatureName, publicKeyData, caCertData, err := verify.ExtractVerifyInfo(ctx, inst, &lsCtx.External.Context, c.hostUncachedClient)
 		if err != nil {
 			return nil, lserrors.NewWrappedError(err, currOp, "ExtractVerifyInfo", err.Error())
 		}
