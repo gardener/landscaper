@@ -45,7 +45,7 @@ check: golangci-lint jq goimports ## Runs linter, 'go vet', and checks if the fo
 verify: check ## Alias for 'make check'.
 
 .PHONY: generate-code
-generate-code: code-gen controller-gen api-ref-gen mockgen ## Runs code generation (deepcopy/conversion/defaulter functions, API reference, openAPI definitions, CRDs, mock clients).
+generate-code: revendor code-gen controller-gen api-ref-gen mockgen ## Runs code generation (deepcopy/conversion/defaulter functions, API reference, openAPI definitions, CRDs, mock clients).
 	@CODE_GEN_SCRIPT=$(CODE_GEN_SCRIPT) CONTROLLER_GEN=$(CONTROLLER_GEN) API_REF_GEN=$(API_REF_GEN) MOCKGEN=$(MOCKGEN) $(REPO_ROOT)/hack/generate-code.sh
 
 .PHONY: generate-docs
