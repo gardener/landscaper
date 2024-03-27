@@ -12,4 +12,7 @@ PROJECT_ROOT="$(realpath $(dirname $0)/..)"
   make revendor
   SKIP_FORMATTING_CHECK=true SKIP_DOCS_INDEX_CHECK=true make verify # code formatting and docs index generation happens during head-update pipeline step, no need to verify it here
   make test
+
+  echo "> Test make generate"
+  make generate
 )
