@@ -17,5 +17,5 @@ PROJECT_ROOT="$(realpath $(dirname $0)/..)"
   code_generate_root="${PROJECT_ROOT}/../code_generate/github.com/gardener"
   mkdir -p "$code_generate_root"
   cp -r "$PROJECT_ROOT" "${code_generate_root}/landscaper"
-  make generate
+  make -C "${code_generate_root}/landscaper" generate
 )
