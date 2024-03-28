@@ -8,6 +8,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -35,6 +40,9 @@ import (
 var _ = Describe("SubInstallation", func() {
 
 	var (
+		ctx  context.Context
+		octx ocm.Context
+
 		op                *lsoperation.Operation
 		state             *envtest.State
 		fakeClient        client.Client
@@ -114,9 +122,11 @@ var _ = Describe("SubInstallation", func() {
 	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		var err error
-		ctx := context.Background()
-		defer ctx.Done()
 
 		state, err = testenv.InitResources(ctx, "./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
@@ -126,34 +136,29 @@ var _ = Describe("SubInstallation", func() {
 		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12")).To(Succeed())
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		op, err = lsoperation.NewBuilder().
 			WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).
 			WithEventRecorder(record.NewFakeRecorder(1024)).
 			ComponentRegistry(registryAccess).
-			Build(context.Background())
+			Build(ctx)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		Expect(testenv.CleanupState(context.Background(), state)).To(Succeed())
+		Expect(testenv.CleanupState(ctx, state)).To(Succeed())
+		Expect(octx.Finalize()).To(Succeed())
 	})
 
 	Context("Create subinstallations", func() {
 
 		It("should not create any installations if no subinstallation definitions are defined", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, _ = expectSubInstallationsSucceed(ctx, "test1", "root")
 		})
 
 		It("should create one installation if a subinstallation is defined", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, subinsts := expectSubInstallationsSucceed(ctx, "test2", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-1",
 				Reference: lsv1alpha1.ObjectReference{
@@ -181,9 +186,6 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		It("should create one installation if a subinstallationExecution is defined", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, _ = expectSubInstallationsSucceed(ctx, "test3", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-1",
 				Reference: lsv1alpha1.ObjectReference{
@@ -193,9 +195,6 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		It("should create multiple installations for all definition references", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, _ = expectSubInstallationsSucceed(ctx, "test4", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-1",
 				Reference: lsv1alpha1.ObjectReference{
@@ -210,9 +209,6 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		It("should create multiple installations for all templates defined by default subinstallations and executions", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, _ = expectSubInstallationsSucceed(ctx, "test5", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-2",
 				Reference: lsv1alpha1.ObjectReference{
@@ -230,9 +226,6 @@ var _ = Describe("SubInstallation", func() {
 	Context("Update", func() {
 
 		It("should set a installation reference even if nothing has changed to trigger a reconcile", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, _ = expectSubInstallationsSucceed(ctx, "test6", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-1",
 				Reference: lsv1alpha1.ObjectReference{
@@ -242,9 +235,6 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		It("should update a reference even if nothing has changed to trigger a reconcile", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, _ = expectSubInstallationsSucceed(ctx, "test7", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-1",
 				Reference: lsv1alpha1.ObjectReference{
@@ -254,9 +244,6 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		It("should reinstall a subinstallation that does not exist anymore", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, _ = expectSubInstallationsSucceed(ctx, "test8", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-1",
 				Reference: lsv1alpha1.ObjectReference{
@@ -266,9 +253,6 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		It("should install subinstallation that references blueprint in a component reference", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, _ = expectSubInstallationsSucceed(ctx, "test11", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-1",
 				Reference: lsv1alpha1.ObjectReference{
@@ -278,16 +262,10 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		XIt("should not update until all subinstallations are not in progressing state", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_ = expectSubInstallationsFail(ctx, "test9", "root")
 		})
 
 		It("should inherit context definition", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
 			_, subinsts := expectSubInstallationsSucceed(ctx, "test12", "root", lsv1alpha1.NamedObjectReference{
 				Name: "def-1",
 				Reference: lsv1alpha1.ObjectReference{
@@ -301,9 +279,6 @@ var _ = Describe("SubInstallation", func() {
 		Context("Cleanup", func() {
 
 			It("should remove a subinstallation that is not referenced anymore", func() {
-				ctx := context.Background()
-				defer ctx.Done()
-
 				inst := fakeInstallations["test10/root"]
 				Expect(inst).ToNot(BeNil())
 				si := createSubInstallationsOperation(ctx, inst)

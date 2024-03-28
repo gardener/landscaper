@@ -8,7 +8,10 @@ import (
 	"context"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/components/model"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -41,7 +44,12 @@ var (
 )
 
 var _ = Describe("facade implementation compatibility tests", func() {
-	ctx := context.Background()
+	var (
+		octx ocm.Context
+		ctx  context.Context
+	)
+	// ocmlog.Context().AddRule(logging.NewConditionRule(logging.TraceLevel))
+
 	ocmfactory := &ocmlib.Factory{}
 	cnudiefactory := &cnudie.Factory{}
 	blueprintData := struct {
@@ -51,6 +59,15 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		blueprintYaml: Must(vfs.ReadFile(osfs.New(), "testdata/localcnudierepos/components-with-blueprints/blobs/blueprint-dir/blueprint.yaml")),
 		test:          Must(vfs.ReadFile(osfs.New(), "testdata/localcnudierepos/components-with-blueprints/blobs/blueprint-dir/data/test")),
 	}
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 	// Blueprint Handler
 	// The ocmlib backed implementation can automatically convert a directory to a tar, this functionality is tested
 	DescribeTable("resolve blueprint dir", func(factory model.Factory, registryRootPath string) {

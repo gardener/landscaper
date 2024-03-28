@@ -13,6 +13,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/runtime"
 
@@ -51,12 +54,22 @@ func TestConfig(t *testing.T) {
 }
 
 var _ = Describe("GetChart", func() {
+	var (
+		octx ocm.Context
+		ctx  context.Context
+	)
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
 	Context("FromOCIRegistry", func() {
 		It("should resolve a chart from public readable helm ociClient artifact", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
-
 			chartAccess := &helmv1alpha1.Chart{
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0",
 			}
@@ -67,9 +80,6 @@ var _ = Describe("GetChart", func() {
 		})
 
 		It("should resolve a legacy chart from public readable helm ociClient artifact", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
-
 			chartAccess := &helmv1alpha1.Chart{
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
 			}
@@ -81,8 +91,6 @@ var _ = Describe("GetChart", func() {
 	})
 
 	It("should resolve a chart as base64 encoded file", func() {
-		ctx := logging.NewContext(context.Background(), logging.Discard())
-
 		chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
 		defer closer()
 
@@ -111,9 +119,6 @@ var _ = Describe("GetChart", func() {
 		})
 
 		It("should resolve a chart from a webserver", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
-
 			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
 			defer closer()
 
@@ -136,9 +141,6 @@ var _ = Describe("GetChart", func() {
 		})
 
 		It("should not try to load a chart for non-success http status codes", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
-
 			srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(401)
 				body := []byte(http.StatusText(401))
@@ -164,9 +166,6 @@ var _ = Describe("GetChart", func() {
 
 	Context("From OCM Resource Ref", func() {
 		It("should resolve a chart from a local ocm resource", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
-
 			// Setup Test
 			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"}, nil, nil)

@@ -7,6 +7,11 @@ package reconcilehelper_test
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/apis/config"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -27,6 +32,9 @@ import (
 var _ = Describe("Validation", func() {
 
 	var (
+		ctx  context.Context
+		octx ocm.Context
+
 		op *installations.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
@@ -34,6 +42,10 @@ var _ = Describe("Validation", func() {
 	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		var (
 			err   error
 			state *envtest.State
@@ -45,14 +57,18 @@ var _ = Describe("Validation", func() {
 		fakeInstallations = state.Installations
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "../testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
-		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(context.Background())
+		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		op = &installations.Operation{
 			Operation: operation,
 		}
+	})
+
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
 	})
 
 	Context("ImportsSatisfied", func() {
@@ -60,8 +76,6 @@ var _ = Describe("Validation", func() {
 		Context("Data Import", func() {
 
 			It("should succeed if the import comes from the parent", func() {
-				ctx := context.Background()
-
 				inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 				Expect(err).ToNot(HaveOccurred())
 				op.Inst = inInstA
@@ -76,7 +90,6 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should succeed if the import comes from a sibling", func() {
-				ctx := context.Background()
 				inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
@@ -103,8 +116,6 @@ var _ = Describe("Validation", func() {
 		Context("Target Import", func() {
 
 			It("should succeed if the import comes from a sibling", func() {
-				ctx := context.Background()
-
 				_, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
 				Expect(err).ToNot(HaveOccurred())
 
@@ -122,7 +133,6 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should fail if a target import from a manually added target is not present", func() {
-				ctx := context.Background()
 				inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
 				Expect(err).ToNot(HaveOccurred())
 				op.Inst = inInstRoot
@@ -141,7 +151,6 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should fail if a import from a parent import is not present", func() {
-				ctx := context.Background()
 				inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/f"])
 				Expect(err).ToNot(HaveOccurred())
 				op.Inst = inInstF
@@ -162,8 +171,6 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if neither the parent nor a sibling provide the import", func() {
-			ctx := context.Background()
-
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test11/a"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstA
@@ -181,8 +188,6 @@ var _ = Describe("Validation", func() {
 	Context("InstallationsDependingOnReady", func() {
 
 		It("should succeed if all installations which is depended on are ready", func() {
-			ctx := context.Background()
-
 			inInstE, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
 			Expect(err).ToNot(HaveOccurred())
 			inInstE.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
@@ -211,7 +216,6 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if a preceding installation is 'Failed'", func() {
-			ctx := context.Background()
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
 			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Failed
@@ -251,7 +255,6 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if a preceding installation is 'Progressing'", func() {
-			ctx := context.Background()
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
 			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Progressing
@@ -298,7 +301,6 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if a preceding installation is outdated", func() {
-			ctx := context.Background()
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
 			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded

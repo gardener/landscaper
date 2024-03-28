@@ -7,6 +7,11 @@ package components_test
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
@@ -39,10 +44,19 @@ var (
 )
 
 var _ = Describe("facade implementation compatibility tests", func() {
-	ctx := context.Background()
+	var (
+		ctx  context.Context
+		octx ocm.Context
+	)
 	ocmfactory := &ocmlib.Factory{}
 	cnudiefactory := &cnudie.Factory{}
 	jsonschemaData := Must(vfs.ReadFile(osfs.New(), "testdata/localcnudierepos/components-with-jsonschemas/blobs/jsonschema.json"))
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
 
 	// JsonSchema Handler
 	DescribeTable("resolve jsonschema", func(factory model.Factory, registryRootPath string) {

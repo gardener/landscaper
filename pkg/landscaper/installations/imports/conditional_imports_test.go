@@ -7,6 +7,11 @@ package imports_test
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -34,6 +39,9 @@ import (
 var _ = Describe("ConditionalImports", func() {
 
 	var (
+		ctx  context.Context
+		octx ocm.Context
+
 		op *installations.Operation
 
 		instRef types.NamespacedName
@@ -43,6 +51,10 @@ var _ = Describe("ConditionalImports", func() {
 	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		var err error
 
 		instRef = kutil.ObjectKey("conditional-import-inst", "test8")
@@ -57,18 +69,21 @@ var _ = Describe("ConditionalImports", func() {
 		createDefaultContextsForNamespace(fakeClient)
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "../testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
-		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(context.Background())
+		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		op = &installations.Operation{
 			Operation: operation,
 		}
 	})
 
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
+
 	It("should remove imports based on optional/conditional parent imports from subinstallation", func() {
-		ctx := context.Background()
 		inst := &lsv1alpha1.Installation{}
 		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
 		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
@@ -108,7 +123,6 @@ var _ = Describe("ConditionalImports", func() {
 	})
 
 	It("should not remove imports based on optional/conditional parent imports which are satisfied from subinstallation", func() {
-		ctx := context.Background()
 		inst := &lsv1alpha1.Installation{}
 		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
 		// add imports to installation
@@ -171,7 +185,6 @@ var _ = Describe("ConditionalImports", func() {
 	})
 
 	It("should not succeed if a conditional import is not fulfilled while it's condition is fulfilled", func() {
-		ctx := context.Background()
 		inst := &lsv1alpha1.Installation{}
 		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
 		// add imports to installation

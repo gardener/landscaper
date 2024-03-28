@@ -7,6 +7,11 @@ package executions_test
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/apis/config"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -27,6 +32,9 @@ import (
 
 var _ = Describe("Execution Operation", func() {
 	var (
+		ctx  context.Context
+		octx ocm.Context
+
 		registryAccess    model.RegistryAccess
 		repositoryContext types.UnstructuredTypedObject
 		componentVersion  model.ComponentVersion
@@ -36,9 +44,11 @@ var _ = Describe("Execution Operation", func() {
 	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		var err error
-		ctx := context.Background()
-		defer ctx.Done()
 
 		state, err = testenv.InitResources(ctx, "./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
@@ -47,7 +57,7 @@ var _ = Describe("Execution Operation", func() {
 		testInstallations = state.Installations
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry/root"}
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
@@ -61,10 +71,11 @@ var _ = Describe("Execution Operation", func() {
 		Expect(componentVersion).ToNot(BeNil())
 	})
 
-	It("to create an execution with the correct configuration", func() {
-		ctx := context.Background()
-		defer ctx.Done()
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
+	It("to create an execution with the correct configuration", func() {
 		var err error
 
 		lsCtx := &installations.Scope{

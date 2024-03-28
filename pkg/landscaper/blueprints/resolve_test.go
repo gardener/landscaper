@@ -7,6 +7,9 @@ package blueprints_test
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
 	"github.com/gardener/landscaper/pkg/components/registries"
 
 	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
@@ -30,19 +33,28 @@ import (
 
 var _ = Describe("Resolve", func() {
 
-	var defaultStoreConfig config.BlueprintStore
+	var (
+		ctx                context.Context
+		octx               ocm.Context
+		defaultStoreConfig config.BlueprintStore
+	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		cs := v1alpha1.BlueprintStore{}
 		v1alpha1.SetDefaults_BlueprintStore(&cs)
 		Expect(v1alpha1.Convert_v1alpha1_BlueprintStore_To_config_BlueprintStore(&cs, &defaultStoreConfig, nil)).To(Succeed())
+	})
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
 	})
 
 	// TODO: remove with component-cli
 	Context("ResolveBlueprintFromBlobResolver", func() {
 		It("should resolve a blueprint from a blobresolver", func() {
-			ctx := context.Background()
-
 			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprint.SetStore(store)
@@ -104,8 +116,6 @@ var _ = Describe("Resolve", func() {
 
 		// TODO: remove with component-cli
 		It("should resolve a blueprint from a blobresolver with a gzipped blueprint", func() {
-			ctx := context.Background()
-
 			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprint.SetStore(store)
@@ -167,8 +177,6 @@ var _ = Describe("Resolve", func() {
 
 		// TODO: remove with component-cli
 		It("should throw an error if a blueprint is received corrupted", func() {
-			ctx := context.Background()
-
 			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprint.SetStore(store)
@@ -228,8 +236,6 @@ var _ = Describe("Resolve", func() {
 
 		// TODO: remove with component-cli
 		It("should throw an error if a blueprint is received corrupted with gzipped media type", func() {
-			ctx := context.Background()
-
 			store, err := blueprint.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprint.SetStore(store)

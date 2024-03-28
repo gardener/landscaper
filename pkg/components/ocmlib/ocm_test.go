@@ -11,6 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -92,8 +95,22 @@ var (
 )
 
 var _ = Describe("ocm-lib facade implementation", func() {
-	ctx := context.Background()
+	var (
+		ctx  context.Context
+		octx ocm.Context
+	)
+
 	factory := &Factory{}
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
 	It("get component version from component descriptor reference (from local repository)", func() {
 		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion

@@ -9,6 +9,11 @@ import (
 	"path/filepath"
 	"reflect"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/pkg/components/model/types"
 
 	"github.com/gardener/landscaper/pkg/components/model"
@@ -138,9 +143,21 @@ var (
 // If this can be guaranteed, the rest of the landscaper as well as the other tests should not have to care about the
 // actual facade implementation.
 var _ = Describe("facade implementation compatibility tests", func() {
-	ctx := context.Background()
+	var (
+		ctx  context.Context
+		octx ocm.Context
+	)
 	ocmfactory := &ocmlib.Factory{}
 	cnudiefactory := &cnudie.Factory{}
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
 	// Test for the expected "straight forward" cases
 	It("compatibility of facade implementations and component descriptor versions", func() {
@@ -373,8 +390,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	// Check nil argument handling of facade methods
 	DescribeTable("prevent null pointer exceptions", func(factory model.Factory, registryRootPath string) {
-		// The linter does not allow to pass a nil context
-		ctx := context.TODO()
 		// Test registry access
 		registryAccess, err := factory.NewRegistryAccess(ctx, nil, nil, nil, nil, nil, nil, nil)
 		Expect(registryAccess).ToNot(BeNil())
