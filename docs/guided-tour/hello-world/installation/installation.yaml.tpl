@@ -2,7 +2,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: hello-world
-  namespace: example
+  namespace: ${namespace}
   annotations:
     landscaper.gardener.cloud/operation: reconcile
 
