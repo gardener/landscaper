@@ -15,9 +15,6 @@ combination with the container deployer provides these input data during runtime
 your program must be stored in a predefined file and are collected by Landscaper/container deployer once your 
 program and thus the container terminates.
 
-More details and examples about how to create a component with a blueprint containing a DeployItem for the container 
-deployer could be found [here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md). 
-
 **Index**:
 - [Provider Configuration](#provider-configuration)
 - [Provider Status](#status)
@@ -163,9 +160,6 @@ When the image with your program is executed, it gets access to particular infor
   - **User**: 1000
   - **Group**: 3000
   - **FSGroup**: 2000
-  
-Again you will find a more detailed explanation of these env variables
-[here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md).
 
 
 ### Status
