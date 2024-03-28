@@ -273,6 +273,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TokenRotation":                                      schema_landscaper_apis_core_v1alpha1_TokenRotation(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TransitionTimes":                                    schema_landscaper_apis_core_v1alpha1_TransitionTimes(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference":                               schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.Verification":                                       schema_landscaper_apis_core_v1alpha1_Verification(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature":                              schema_landscaper_apis_core_v1alpha1_VerificationSignature(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":                      schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedObjectReference":                           schema_landscaper_apis_core_v1alpha1_VersionedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":                         schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
@@ -1861,6 +1863,14 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Format: "",
 						},
 					},
+					"signatureVerificationEnforcementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"` explcitly disables signature verification. Enabling the verification on installation level will not have an effect and the verification will still be disabled.\n - `\"DoNotEnforce\"` does not enforce a global policy. Signature verification can be enabled in the installation if desired. [DEFAULT]\n - `\"Enforce\"` will enforce all instalations to have valid signatures before being worked on. Disabling the verification on installation level has no impact.",
+							Type:        []string{"string"},
+							Format:      "",
+							Enum:        []interface{}{"Disabled", "DoNotEnforce", "Enforce"},
+						},
+					},
 				},
 				Required: []string{"TypeMeta", "Controllers", "Registry", "BlueprintStore"},
 			},
@@ -2608,6 +2618,14 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"boolean"},
 							Format: "",
+						},
+					},
+					"signatureVerificationEnforcementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"` explcitly disables signature verification. Enabling the verification on installation level will not have an effect and the verification will still be disabled.\n - `\"DoNotEnforce\"` does not enforce a global policy. Signature verification can be enabled in the installation if desired. [DEFAULT]\n - `\"Enforce\"` will enforce all instalations to have valid signatures before being worked on. Disabling the verification on installation level has no impact.",
+							Type:        []string{"string"},
+							Format:      "",
+							Enum:        []interface{}{"Disabled", "DoNotEnforce", "Enforce"},
 						},
 					},
 				},
@@ -8043,11 +8061,25 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"verificationSignatures": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -8106,11 +8138,25 @@ func schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref common.Refere
 							Format:      "",
 						},
 					},
+					"verificationSignatures": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -9743,6 +9789,11 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 							Format:      "",
 						},
 					},
+					"verification": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Verification"),
+						},
+					},
 					"componentDescriptor": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ComponentDescriptor is a reference to the installation's component descriptor",
@@ -9815,7 +9866,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.AutomaticReconcile", "github.com/gardener/landscaper/apis/core/v1alpha1.BlueprintDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationExports", "github.com/gardener/landscaper/apis/core/v1alpha1.InstallationImports", "github.com/gardener/landscaper/apis/core/v1alpha1.Optimization", "github.com/gardener/landscaper/apis/core/v1alpha1.Verification"},
 	}
 }
 
@@ -11664,6 +11715,50 @@ func schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref common.Refere
 				Required: []string{"apiVersion", "kind", "name"},
 			},
 		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_Verification(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"signatureName": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"signatureName"},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_VerificationSignature(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"publicKeySecretReference": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+						},
+					},
+					"caCertificateSecretReference": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
 	}
 }
 

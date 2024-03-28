@@ -52,6 +52,10 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 		// The old location is ignored if a repository context is defined in the new location.
 		obj.Controllers.Contexts.Config.Default.RepositoryContext = obj.RepositoryContext
 	}
+
+	if obj.SignatureVerificationEnforcementPolicy == "" {
+		obj.SignatureVerificationEnforcementPolicy = DoNotEnforce
+	}
 }
 
 // SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.

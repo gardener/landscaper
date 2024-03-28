@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
+	v1alpha1config "github.com/gardener/landscaper/apis/config/v1alpha1"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -46,13 +47,16 @@ var _ = Describe("Inline Component Descriptor", func() {
 		var err error
 
 		op := operation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024), testenv.Client)
-
+		lsConfig := &v1alpha1config.LandscaperConfiguration{
+			Registry: v1alpha1config.RegistryConfiguration{
+				Local: &v1alpha1config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
+			},
+		}
+		v1alpha1config.SetDefaults_LandscaperConfiguration(lsConfig)
+		lsConfigCore := &config.LandscaperConfiguration{}
+		Expect(v1alpha1config.Convert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(lsConfig, lsConfigCore, nil)).ToNot(HaveOccurred())
 		instActuator = instctlr.NewTestActuator(testenv.Client, testenv.Client, testenv.Client, *op, logging.Discard(), clock.RealClock{},
-			&config.LandscaperConfiguration{
-				Registry: config.RegistryConfiguration{
-					Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
-				},
-			}, "test-inst3-"+testutils.GetNextCounter())
+			lsConfigCore, "test-inst3-"+testutils.GetNextCounter())
 
 		execActuator, err = execctlr.NewController(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			logging.Discard(), api.LandscaperScheme,
