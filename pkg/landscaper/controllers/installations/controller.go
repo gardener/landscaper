@@ -368,7 +368,6 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
-	//TODO: verify deployment
 	if verify.IsVerifyEnabled(inst, c.LsConfig) {
 		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentDescriptorRef())
 		if err != nil {
