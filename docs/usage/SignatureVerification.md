@@ -23,7 +23,7 @@ signatureVerificationEnforcementPolicy: DoNotEnforce # DoNotEnforce(DEFAULT)|Enf
 The following values are possible:
 - **DoNotEnforce** (DEFAULT): does not enforce a landscaper-wide policy. Each installation can specify a `spec.verification` key to enable the verification for it.
 - **Enforce**: enforces all installations to be verified and therefore all installation need the `spec.verification` key with provided verification options.
-- **Disabled**: explicitly disable all verifications for all installations even if a installations provides verification information with `spec.verification` key. **It is advised to use this option for debugging only.**
+- **Disabled**: explicitly disables all verifications for all installations even if an installation provides verification information with `spec.verification` key. **It is advised to use this option for debugging only.**
 
 ## Configure Verification
 
