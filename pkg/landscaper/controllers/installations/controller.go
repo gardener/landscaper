@@ -355,7 +355,7 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 
 // initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
 // It does not modify the installation resource in the cluster in any way.
-func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, lserrors.LsError) {
+func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation, runVerify bool) (*installations.Operation, lserrors.LsError) {
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
@@ -368,7 +368,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
-	if verify.IsVerifyEnabled(inst, c.LsConfig) {
+	if runVerify && verify.IsVerifyEnabled(inst, c.LsConfig) {
 		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentDescriptorRef())
 		if err != nil {
 			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
