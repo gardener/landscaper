@@ -2,7 +2,7 @@
 
 Landscaper can verify the signature of a component version and only continue with the installation if the signature is valid and matches the content.
 
-> **IMPORTANT**: In the current state, the landscaper can only verify the signature and content when the installation is created/modified. Later controllers such as deployer will access the resources WITHOUT further verification. This implies that a potential malicious manipulation between creating the installation (and verifying the signature) and subsequent resource access can NOT be detected/prevented. Therefor, it is advisable to use this feature with a trusted repository only.
+> **IMPORTANT**: In the current state, the landscaper can only verify the signature and content when the installation is created/modified. Later controllers such as deployer will access the resources WITHOUT further verification. This implies that a potential malicious manipulation between creating the installation (and verifying the signature) and subsequent resource access can NOT be detected/prevented. Therefore, it is advisable to use this feature with a trusted repository only.
 
 ## Requirement
 
