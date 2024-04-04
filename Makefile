@@ -138,7 +138,7 @@ CODE_GEN_VERSION ?= $(shell  $(REPO_ROOT)/hack/extract-module-version.sh k8s.io/
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
 # renovate: datasource=go depName=golang.org/x/tools/cmd/goimports
-FORMATTER_VERSION ?= v0.19.0
+FORMATTER_VERSION ?=0.20.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
 LINTER_VERSION ?= v1.57.2
 # renovate: datasource=go depName=github.com/elastic/crd-ref-docs
