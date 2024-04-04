@@ -17,7 +17,7 @@ DOCKER_BUILDER_NAME := "ls-multiarch"
 DISABLE_CLEANUP := false
 ENVTEST_K8S_VERSION = 1.27
 
-CODE_DIRS := $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/... $(REPO_ROOT)/hack/testcluster/... $(REPO_ROOT)/apis/... $(REPO_ROOT)/controller-utils/pkg/...
+CODE_DIRS := $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/... $(REPO_ROOT)/hack/testcluster/... $(REPO_ROOT)/apis/... $(REPO_ROOT)/controller-utils/...
 
 ##@ General
 
@@ -36,7 +36,7 @@ format: goimports ## Runs the formatter.
 	@@FORMATTER=$(FORMATTER) $(REPO_ROOT)/hack/format.sh $(CODE_DIRS)
 
 .PHONY: check
-check: golangci-lint jq goimports ## Runs linter, 'go vet', and checks if the formatter has been run.
+check: revendor golangci-lint jq goimports ## Runs linter, 'go vet', and checks if the formatter has been run.
 	@test "$(SKIP_DOCS_INDEX_CHECK)" = "true" || \
 		JQ=$(JQ) $(REPO_ROOT)/hack/verify-docs-index.sh
 	@LINTER=$(LINTER) FORMATTER=$(FORMATTER) $(REPO_ROOT)/hack/check.sh --golangci-lint-config="$(REPO_ROOT)/.golangci.yaml" $(CODE_DIRS)
@@ -135,13 +135,25 @@ REGISTRY_BINARY ?= $(LOCALBIN)/registry
 
 ## Tool Versions
 CODE_GEN_VERSION ?= $(shell  $(REPO_ROOT)/hack/extract-module-version.sh k8s.io/code-generator)
+# renovate: datasource=go depName=sigs.k8s.io/controller-tools
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
-FORMATTER_VERSION ?= v0.16.0
-LINTER_VERSION ?= 1.55.2
-OCM_VERSION ?= $(shell  NO_PREFIX=true $(REPO_ROOT)/hack/extract-module-version.sh github.com/open-component-model/ocm)
-API_REF_GEN_VERSION ?= v0.0.10
-JQ_VERSION ?= 1.6
-SETUP_ENVTEST_VERSION ?= release-0.16
+# renovate: datasource=go depName=golang.org/x/tools/cmd/goimports
+FORMATTER_VERSION ?= v0.19.0
+# renovate: datasource=github-releases depName=golangci/golangci-lint
+LINTER_VERSION ?= v1.57.2
+# renovate: datasource=go depName=github.com/elastic/crd-ref-docs
+API_REF_GEN_VERSION ?= v0.0.12
+# renovate: datasource=github-releases depName=jqlang/jq
+JQ_VERSION ?= v1.7.1
+# renovate: datasource=go depName=github.com/open-component-model/ocm
+OCM_VERSION ?= v0.8.0
+# renovate: datasource=go depName=github.com/golang/mock
+MOCKGEN_VERSION ?= v1.6.0
+# renovate: datasource=github-releases depName=distribution/distribution
+REGISTRY_VERSION ?= v3.0.0-alpha.1
+# This cannot be handled properly e.g. with renovate, because the controller-runtime maintainers refuse to tag the
+# setup-envtest module (https://github.com/kubernetes-sigs/controller-runtime/issues/2720)
+SETUP_ENVTEST_VERSION ?= release-0.17
 
 .PHONY: localbin
 localbin: ## Creates the local bin folder, if it doesn't exist. Not meant to be called manually, used as requirement for the other tool commands.
@@ -169,43 +181,42 @@ goimports: localbin ## Download goimports locally if necessary. If wrong version
 
 .PHONY: golangci-lint
 golangci-lint: localbin ## Download golangci-lint locally if necessary. If wrong version is installed, it will be overwritten.
-	@test -s $(LINTER) && $(LINTER) --version | grep -q $(LINTER_VERSION) || \
+	@test -s $(LINTER) && $(LINTER) --version | grep -q $(subst v,,$(LINTER_VERSION)) || \
 	( echo "Installing golangci-lint $(LINTER_VERSION) ..."; \
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) v$(LINTER_VERSION) )
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) $(LINTER_VERSION) )
 
 .PHONY: envtest
-envtest: localbin ## Download envtest-setup locally if necessary.
-	@test -s $(LOCALBIN)/setup-envtest || \
-	( echo "Installing setup-envtest ..."; \
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(SETUP_ENVTEST_VERSION) )
+envtest: localbin ## Download envtest-setup locally.
+	@echo "Installing setup-envtest ..."; \
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(SETUP_ENVTEST_VERSION)
 
 .PHONY: ocm
-ocm: localbin ## Install OCM CLI if necessary.
-	@test -s $(OCM) && $(OCM) --version | grep -q $(OCM_VERSION) || \
+ocm: localbin ## Install OCM CLI if necessary. If wrong version is installed, it will be overwritten.
+	@test -s $(OCM) && $(OCM) --version | grep -q $(subst v,,$(OCM_VERSION)) || \
 	( echo "Installing OCM tooling $(OCM_VERSION) ..."; \
-	curl -sSfL https://ocm.software/install.sh | OCM_VERSION=$(OCM_VERSION) bash -s $(LOCALBIN) )
+	curl -sSfL https://ocm.software/install.sh | OCM_VERSION=$(subst v,,$(OCM_VERSION)) bash -s $(LOCALBIN) )
 
 .PHONY: api-ref-gen
-api-ref-gen: localbin ## Download API reference generator locally if necessary.
+api-ref-gen: localbin ## Download API reference generator locally if necessary. If wrong version is installed, it will be overwritten.
 	@test -s $(API_REF_GEN) && test -s $(LOCALBIN)/crd-ref-docs_version && cat $(LOCALBIN)/crd-ref-docs_version | grep -q $(API_REF_GEN_VERSION) || \
 	( echo "Installing API reference generator $(API_REF_GEN_VERSION) ..."; \
 	GOBIN=$(LOCALBIN) go install github.com/elastic/crd-ref-docs@$(API_REF_GEN_VERSION) && \
 	echo $(API_REF_GEN_VERSION) > $(LOCALBIN)/crd-ref-docs_version )
 
 .PHONY: mockgen
-mockgen: localbin ## Download mockgen locally if necessary.
-	@test -s $(MOCKGEN) || \
+mockgen: localbin ## Download mockgen locally if necessary. If wrong version is installed, it will be overwritten.
+	@test -s $(MOCKGEN) && $(MOCKGEN) --version | grep -q $(MOCKGEN_VERSION) || \
 	( echo "Installing mockgen ..."; \
-	GOBIN=$(LOCALBIN) go install github.com/golang/mock/mockgen@latest )
+	GOBIN=$(LOCALBIN) go install github.com/golang/mock/mockgen@$(MOCKGEN_VERSION) )
 
 .PHONY: jq
-jq: localbin ## Download jq locally if necessary.
-	@test -s $(JQ) && $(JQ) --version | grep -q $(JQ_VERSION) || \
+jq: localbin ## Download jq locally if necessary. If wrong version is installed, it will be overwritten.
+	@test -s $(JQ) && $(JQ) --version | grep -q $(subst v,,$(JQ_VERSION)) || \
 	( echo "Installing jq $(JQ_VERSION) ..."; \
-	JQ=$(JQ) LOCALBIN=$(LOCALBIN) $(REPO_ROOT)/hack/install-jq.sh $(JQ_VERSION) )
+	JQ=$(JQ) LOCALBIN=$(LOCALBIN) $(REPO_ROOT)/hack/install-jq.sh $(subst v,,$(JQ_VERSION)) )
 
 .PHONY: registry
-registry: localbin ## Download registry locally if necessary.
-	@test -s $(REGISTRY_BINARY) || \
+registry: localbin ## Download registry locally if necessary. If wrong version is installed, it will be overwritten.
+	@test -s $(REGISTRY_BINARY) && $(REGISTRY_BINARY) --version | grep -q $(REGISTRY_VERSION) || \
 	( echo "Installing local registry ..."; \
-	REGISTRY=$(REGISTRY_BINARY) LOCALBIN=$(LOCALBIN) $(REPO_ROOT)/hack/install-registry.sh )
+	REGISTRY=$(REGISTRY_BINARY) LOCALBIN=$(LOCALBIN) $(REPO_ROOT)/hack/install-registry.sh $(REGISTRY_VERSION) )
