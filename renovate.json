@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "configMigration": true,
   "extends": [
-    "config:base",
+    "config:recommended",
     "group:kubernetes",
     "security:openssf-scorecard",
     ":dependencyDashboard"
@@ -9,12 +10,8 @@
   "packageRules": [
     {
       "description": "Combine landscaper updates in a single PR",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchSourceUrls": [
-        "https://github.com/gardener/landscaper"
-      ],
+      "matchManagers": ["gomod"],
+      "matchSourceUrls": ["https://github.com/gardener/landscaper"],
       "commitMessageSuffix": " (run-int-tests)"
     },
     {
@@ -29,6 +26,19 @@
       "matchManagers": ["gomod"],
       "enabled": false
     }
- 
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "(^|/|\\.)([Dd]ocker|[Cc]ontainer)file$",
+        "(^|/)([Dd]ocker|[Cc]ontainer)file[^/]*$",
+        "(^|/)Makefile$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s(?:ENV |ARG )?.+?_VERSION ?(?:\\?=|=)\"?(?<currentValue>.+?)\"?\\s"
+      ],
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
   ]
 }
