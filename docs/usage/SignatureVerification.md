@@ -28,7 +28,7 @@ The following values are possible:
 ## Configure Verification
 
 Necessary verification information is provided in the installation and the context.
-In the installation, `spec.verification.signatureName` needs to be set to the name of the signature in the component version:
+In the installation, `spec.verification.signatureName` needs to be set to the name of the signature in the context that is also the sginature name in the component version:
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
