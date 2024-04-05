@@ -29,6 +29,7 @@
   ],
   "customManagers": [
     {
+      "description": "Match in Makefile",
       "customType": "regex",
       "fileMatch": [
         "(^|/|\\.)([Dd]ocker|[Cc]ontainer)file$",
@@ -36,9 +37,8 @@
         "(^|/)Makefile$"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s(?:ENV |ARG )?.+?_VERSION ?(?:\\?=|=)\"?(?<currentValue>.+?)\"?\\s"
-      ],
-      "extractVersionTemplate": "^v(?<version>.*)$"
+        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s(?:ENV |ARG )?.+?_VERSION ?(?:\\?=|=)\"? ?(?<currentValue>.+?)\"?\\s"
+      ]
     }
   ]
 }
