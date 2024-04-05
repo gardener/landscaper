@@ -11,8 +11,7 @@
     {
       "description": "Combine landscaper updates in a single PR",
       "matchManagers": ["gomod"],
-      "matchSourceUrls": ["https://github.com/gardener/landscaper"],
-      "commitMessageSuffix": " (run-int-tests)"
+      "matchSourceUrls": ["https://github.com/gardener/landscaper"]
     },
     {
       "description": "Fixed version for component-cli v0.44.0",
