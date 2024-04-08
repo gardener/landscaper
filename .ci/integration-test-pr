@@ -15,7 +15,7 @@ VERSION="$("$PROJECT_ROOT/hack/get-version.sh")"
 
 echo "check if integration tests should be started"
 (
-  cd "$PROJECT_ROOT"
+  cd "${PROJECT_ROOT}"
   PR_ID=$(git config -f "$PROJECT_ROOT/.git/config" pullrequest.id)
   echo "PR_ID: " $PR_ID
 
