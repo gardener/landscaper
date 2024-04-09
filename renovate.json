@@ -1,17 +1,24 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "configMigration": true,
+  "schedule": "after 05:30am and before 06:00pm every weekday",
   "extends": [
     "config:recommended",
     "group:kubernetes",
+    "group:goOpenapi",
     "security:openssf-scorecard",
-    ":dependencyDashboard"
+    ":dependencyDashboard",
+    ":rebaseStalePrs"
   ],
   "packageRules": [
     {
       "description": "Combine landscaper updates in a single PR",
       "matchManagers": ["gomod"],
       "matchSourceUrls": ["https://github.com/gardener/landscaper"]
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
     },
     {
       "description": "Fixed version for component-cli v0.44.0",
