@@ -2,13 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "configMigration": true,
   "schedule": "after 05:30am and before 06:00pm every weekday",
+  "timezone": "Europe/Berlin",
   "extends": [
     "config:recommended",
     "group:kubernetes",
     "group:goOpenapi",
     "security:openssf-scorecard",
-    ":dependencyDashboard",
-    ":rebaseStalePrs"
+    ":dependencyDashboard"
   ],
   "packageRules": [
     {
@@ -18,7 +18,8 @@
     },
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true
+      "automerge": true,
+      "rebaseWhen": "auto"
     },
     {
       "description": "Fixed version for component-cli v0.44.0",
