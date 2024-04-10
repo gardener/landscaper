@@ -3535,6 +3535,12 @@ func schema_gardener_landscaper_apis_core_Context(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"ocmConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an ocm configfile. For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 					"registryPullSecrets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.",
@@ -3596,6 +3602,12 @@ func schema_gardener_landscaper_apis_core_ContextConfiguration(ref common.Refere
 							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
 							Type:        []string{"boolean"},
 							Format:      "",
+						},
+					},
+					"ocmConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an ocm configfile. For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
 					"registryPullSecrets": {
@@ -8007,6 +8019,12 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"ocmConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an ocm configfile. For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 					"registryPullSecrets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.",
@@ -8068,6 +8086,12 @@ func schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref common.Refere
 							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
 							Type:        []string{"boolean"},
 							Format:      "",
+						},
+					},
+					"ocmConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an ocm configfile. For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
 					"registryPullSecrets": {
@@ -12240,7 +12264,7 @@ func schema_landscaper_apis_deployer_container_ProviderConfiguration(ref common.
 					},
 					"componentDescriptor": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ComponentDescriptor is the resolved reference to the ComponentDescriptor defnition",
+							Description: "ComponentDescriptor is the resolved reference to the ComponentDescriptor definition",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorDefinition"),
 						},
 					},
