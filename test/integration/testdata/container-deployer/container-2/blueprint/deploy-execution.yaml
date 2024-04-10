@@ -1,0 +1,17 @@
+deployItems:
+- name: container-deployer
+  type: landscaper.gardener.cloud/container
+  target:
+    name: {{ index .imports "targetCluster" "metadata" "name" }}
+    namespace: {{ index .imports "targetCluster" "metadata" "namespace" }}
+  config:
+    apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+    {{- $image := getResource .cd "name" "container-deployer-base" }}
+    image: {{ $image.access.imageReference }}
+    command: ["sh"]
+    args: ["-c", "python ${CONTENT_PATH}/script.py"]
+    componentDescriptor:
+      {{ toJson .componentDescriptorDef | indent 6 }}
+    blueprint:
+      {{ toJson .blueprint | indent 6 }}

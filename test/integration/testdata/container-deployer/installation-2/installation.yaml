@@ -1,0 +1,28 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: container-2
+  namespace: example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+spec:
+  context: ocm-config-context
+
+  blueprint:
+    ref:
+      resourceName: blueprint
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/acme.org/component
+      version: 1.0.0
+
+  imports:
+    targets:
+      - name: targetCluster
+        target: my-cluster
+
+  exports:
+    data:
+      - name: components
+        dataRef: components
