@@ -39,8 +39,8 @@ var _ = Describe("check correct factory instantiation all condition variants", f
 	})
 
 	// Default Case
-	It("useOCMLib: default (false) / useOCM: default (false)", func() {
-		_, ok := GetFactory().(*cnudie.Factory)
+	It("useOCMLib: default (true) / useOCM: default (true)", func() {
+		_, ok := GetFactory().(*ocmlib.Factory)
 		Expect(ok).To(BeTrue())
 	})
 })
