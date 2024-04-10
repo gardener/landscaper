@@ -419,7 +419,7 @@ var _ = Describe("jsonschema", func() {
 			}
 
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(blobFs)
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, blobFs, nil, nil,
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, blobFs, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, cd, blobResolver)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -574,7 +574,7 @@ var _ = Describe("jsonschema", func() {
 `, strings.Split(testenv.Addr, ":")[0], strings.Split(testenv.Addr, ":")[1], testenv.BasicAuth.Username, testenv.BasicAuth.Password, testenv.Certificate.CA))
 			secrets := []corev1.Secret{{
 				Data: map[string][]byte{`.ocmcredentialconfig`: config}}}
-			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, secrets, nil, nil, ociconfig, nil)
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, nil, secrets, nil, nil, ociconfig, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -879,7 +879,7 @@ var _ = Describe("jsonschema", func() {
 			var err error
 
 			localregistryconfig := &apiconfig.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, localregistryconfig, nil, nil)
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())

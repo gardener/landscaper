@@ -55,8 +55,10 @@ type Factory interface {
 	//
 	// [component-cli]: https://github.com/gardener/component-cli
 	// [ocmlib]: https://github.com/open-component-model/ocm
+	// TODO: rework this constructor method and replace essentially all parameters with an Option, so that this can easily be extended in the future
 	NewRegistryAccess(ctx context.Context,
 		fs vfs.FileSystem,
+		ocmconfig *corev1.ConfigMap,
 		secrets []corev1.Secret,
 		sharedCache cache.Cache,
 		localRegistryConfig *config.LocalRegistryConfiguration,

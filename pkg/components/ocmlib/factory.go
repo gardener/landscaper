@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+
 	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -48,6 +50,7 @@ var _ model.Factory = &Factory{}
 
 func (*Factory) NewRegistryAccess(ctx context.Context,
 	fs vfs.FileSystem,
+	ocmconfig *corev1.ConfigMap,
 	secrets []corev1.Secret,
 	sharedCache cache.Cache,
 	localRegistryConfig *config.LocalRegistryConfiguration,
@@ -64,6 +67,27 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	registryAccess.octx.Finalizer().Close(registryAccess)
 	registryAccess.session = ocm.NewSession(datacontext.NewSession())
 
+	// If a config map containing the data of an ocm config file is provided, apply its configuration.
+	if ocmconfig != nil {
+		ocmconfigdata, ok := ocmconfig.Data[utils.DEFAULT_OCM_CONFIG]
+		if !ok {
+			return nil, fmt.Errorf("ocm configuration config map does not contain key \"%s\"", utils.DEFAULT_OCM_CONFIG)
+		}
+		cfg, err := registryAccess.octx.ConfigContext().GetConfigForData([]byte(ocmconfigdata), nil)
+		if err != nil {
+			return nil, fmt.Errorf("invalid ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
+		}
+		err = registryAccess.octx.ConfigContext().ApplyConfig(cfg, fmt.Sprintf("%s/%s", ocmconfig.Namespace, ocmconfig.Name))
+		if err != nil {
+			return nil, fmt.Errorf("cannot apply ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
+		}
+	}
+
+	// If a local registry configuration is provided, the vfsattr (= virtual file system attribute) in the ocm context's
+	// data context is set to projection of the hosts file system which has the specified path as its root.
+	// This attribute is used when creating a type "local" ocm repository (a special repository implementation used by the
+	// landscaper) from spec.
+	// For more details, check pkg/components/ocmlib/repository and pkg/components/ocmlib/repository/local.
 	var localfs vfs.FileSystem
 	if localRegistryConfig != nil {
 		var err error
@@ -77,6 +101,17 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		vfsattr.Set(registryAccess.octx, readonlyfs.New(memoryfs.New()))
 	}
 
+	// If an inline component descriptor is provided in the installation, the inline component descriptor is resolved
+	// to a flat list of component descriptors (see pkg/components/ocmlib/inlinecompdesc/util.go expand documentation
+	// for why this is necessary). This list is then used to create a type "inline" ocm repository (a special repository
+	// implementation used by the landscaper).
+	// For more details, check pkg/components/ocmlib/repository and pkg/components/ocmlib/repository/inline.
+	// The references of inline component descriptors can reference either
+	// 1) another component descriptor nested in the inline component descriptor or
+	// 2) a component descriptor in the repository context of the top level inline component descriptor itself
+	// Thus, a compound resolver consisting of the inline repository and the repository specified by the repository
+	// context is added to the registry access. This resolver is used if the repository context in the
+	// component descriptor reference is equal to the repository context of the inline component descriptor.
 	if inlineCd != nil {
 		cd, err := runtime.DefaultYAMLEncoding.Marshal(inlineCd)
 		if err != nil {
@@ -97,9 +132,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 			return nil, err
 		}
 		_ = registryAccess.session.AddCloser(registryAccess.inlineRepository)
-		if err != nil {
-			return nil, err
-		}
+
 		registryAccess.resolver = registryAccess.inlineRepository
 		if len(inlineCd.RepositoryContexts) > 0 {
 			repoCtx := inlineCd.GetEffectiveRepositoryContext()

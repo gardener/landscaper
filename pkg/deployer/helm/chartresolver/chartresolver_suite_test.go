@@ -167,7 +167,7 @@ var _ = Describe("GetChart", func() {
 	Context("From OCM Resource Ref", func() {
 		It("should resolve a chart from a local ocm resource", func() {
 			// Setup Test
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"}, nil, nil)
 			Expect(err).To(BeNil())
 

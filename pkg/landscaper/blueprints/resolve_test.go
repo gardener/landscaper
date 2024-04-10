@@ -94,7 +94,7 @@ var _ = Describe("Resolve", func() {
 			})
 			cd.ComponentReferences = []cdv2.ComponentReference{}
 
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil,
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, &cd, blobResolver)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -155,7 +155,7 @@ var _ = Describe("Resolve", func() {
 			})
 			cd.ComponentReferences = []types.ComponentReference{}
 
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil,
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, &cd, blobResolver)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -216,7 +216,7 @@ var _ = Describe("Resolve", func() {
 			})
 			cd.ComponentReferences = []types.ComponentReference{}
 
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil,
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, &cd, blobResolver)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -275,7 +275,7 @@ var _ = Describe("Resolve", func() {
 			})
 			cd.ComponentReferences = []types.ComponentReference{}
 
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil,
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, &cd, blobResolver)
 			Expect(err).ToNot(HaveOccurred())
 

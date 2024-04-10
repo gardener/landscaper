@@ -35,6 +35,7 @@ var _ model.Factory = &Factory{}
 
 func (*Factory) NewRegistryAccess(ctx context.Context,
 	fs vfs.FileSystem,
+	ocmconfig *corev1.ConfigMap,
 	secrets []corev1.Secret,
 	sharedCache cache.Cache,
 	localRegistryConfig *config.LocalRegistryConfiguration,

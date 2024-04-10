@@ -60,7 +60,7 @@ var _ = Describe("Context", func() {
 		fakeClient = testenv.Client
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 		op = lsoperation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024), fakeClient).SetComponentsRegistry(registryAccess)
 	})

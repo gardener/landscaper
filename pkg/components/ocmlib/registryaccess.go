@@ -70,14 +70,14 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	if cdRef == nil {
 		return nil, errors.New("component descriptor reference cannot be nil")
 	}
-	if cdRef.RepositoryContext == nil {
-		return nil, errors.New("repository context cannot be nil")
-	}
 
-	spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
-	if err != nil {
-		return nil, err
-	}
+	var resolver ocm.ComponentVersionResolver
+
+	if cdRef.RepositoryContext != nil {
+		spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
+		if err != nil {
+			return nil, err
+		}
 
 	var cv ocm.ComponentVersionAccess
 	// check if repository context from inline component descriptor should be used
@@ -93,12 +93,34 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 		if err != nil {
 			return nil, err
 		}
+		// check if repository context from inline component descriptor should be used
+		if r.inlineRepository != nil && reflect.DeepEqual(spec, r.inlineSpec) {
+			// in this case, resolver knows an inline repository as well as the repository specified by the repository
+			// context of the inline component descriptor
+			resolver = r.resolver
+		} else {
+			// if there is no inline repository or the repository context is different from the one specified in the inline
+			// component descriptor, we need to look up the repository specified by the component descriptor reference
 
-		cv, err = r.session.LookupComponentVersion(repo, cdRef.ComponentName, cdRef.Version)
+			// if rule-a.prio > rule-b.prio, then rule-a is preferred
+			// ensure, that this has the highest prio (int(^uint(0)>>1) == MaxInt), since the component version
+			// overwrite depends on that
+			r.octx.AddResolverRule("", spec, int(^uint(0)>>1))
+			resolver = r.octx.GetResolver()
+		}
+	} else {
+		resolver = r.octx.GetResolver()
 	}
+
+	if resolver == nil {
+		return nil, errors.New("no repository or ocm resolvers found")
+	}
+
+	cv, err := r.session.LookupComponentVersion(resolver, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
 		return nil, err
 	}
+
 	return r.NewComponentVersion(cv)
 }
 

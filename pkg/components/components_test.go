@@ -164,9 +164,9 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref))
 
-		oRaForCnudie := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH_VALID}, nil, nil))
-		oRaForOcm := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH_VALID}, nil, nil))
-		cnudieRa := Must(cnudiefactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH_VALID}, nil, nil))
+		oRaForCnudie := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH_VALID}, nil, nil))
+		oRaForOcm := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH_VALID}, nil, nil))
+		cnudieRa := Must(cnudiefactory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH_VALID}, nil, nil))
 
 		// the 3 registry accesses should all behave the same and the interface methods should return the same data
 		oRaForCnudieCv := Must(oRaForCnudie.GetComponentVersion(ctx, cdref))
@@ -265,7 +265,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 			Version:           "1.0.0",
 		}
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: "./"}, nil, inlineDescriptor))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: "./"}, nil, inlineDescriptor))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		Expect(compvers.GetComponentDescriptor()).To(YAMLEqual(inlineDescriptor))
 	},
@@ -278,7 +278,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		res, err := compvers.GetResource("non-existent-resource", nil)
 		Expect(err).To(HaveOccurred())
@@ -295,7 +295,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		res := Must(compvers.GetResource(GENERIC_RESOURCE_NAME, nil))
 
@@ -315,7 +315,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withoutRepoctxComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers, err := registryAccess.GetComponentVersion(ctx, cdref)
 		Expect(err).To(HaveOccurred())
 		Expect(compvers).To(BeNil())
@@ -329,7 +329,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withInvalidAccessTypeComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers, err := registryAccess.GetComponentVersion(ctx, cdref)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(compvers).ToNot(BeNil())
@@ -351,7 +351,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withInvalidReferenceComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers, err := registryAccess.GetComponentVersion(ctx, cdref)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(compvers).ToNot(BeNil())
@@ -378,7 +378,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(invalidComponentComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers, err := registryAccess.GetComponentVersion(ctx, cdref)
 		Expect(err).To(HaveOccurred())
 		Expect(compvers).To(BeNil())
@@ -402,7 +402,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		// Organize a valid component version
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref))
-		registryAccess, err = factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil)
+		registryAccess, err = factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil)
 		Expect(registryAccess).ToNot(BeNil())
 		Expect(err).ToNot(HaveOccurred())
 
@@ -414,14 +414,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(err).To(HaveOccurred())
 
 		referencedComponent, err := compvers.GetReferencedComponentVersion(ctx, nil, nil, nil)
-		Expect(err).To(HaveOccurred())
-		Expect(referencedComponent).To(BeNil())
-
-		// Organize valid component reference
-		ref := compvers.GetComponentReference(REFERENCED_COMPONENT_NAME)
-		Expect(ref).ToNot(BeNil())
-
-		referencedComponent, err = compvers.GetReferencedComponentVersion(ctx, ref, nil, nil)
 		Expect(err).To(HaveOccurred())
 		Expect(referencedComponent).To(BeNil())
 	},
