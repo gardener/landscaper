@@ -7,12 +7,16 @@ package ocmlib
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
+
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	ocmerrors "github.com/open-component-model/ocm/pkg/errors"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -50,6 +54,22 @@ const (
 // Prepare Test Data
 var (
 	componentReference = `
+{
+  "repositoryContext": {
+    "type": "local",
+    "filePath": "./"
+  },
+  "componentName": "example.com/landscaper-component",
+  "version": "1.0.0"
+}
+`
+	componentReferenceWithoutContext = `
+{
+  "componentName": "example.com/landscaper-component",
+  "version": "1.0.0"
+}
+`
+	componentReferenceWithWrongContext = `
 {
   "repositoryContext": {
     "type": "local",
@@ -429,4 +449,104 @@ version: 1.0.0
 		Expect(ok).To(BeTrue())
 		Expect(bp.Info.Annotations, map[string]interface{}{"local/name": "root-a", "local/version": "1.0.0"})
 	})
+
+	It("ocm config is nil", func() {
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+	It("repository context is prioritized when ocm config sets resolvers", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./norealpath
+        priority: 10
+`},
+		}
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+	It("repository context is not set and ocm config sets resolvers", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./
+        priority: 10
+`},
+		}
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+	It("repository context is set but component cannot be found there and ocm config sets resolvers", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./
+        priority: 10
+`},
+		}
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+	It("repository context is set and ocm config sets resolvers but component cannot be found in either", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./
+        priority: 10
+`},
+		}
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, &config.LocalRegistryConfiguration{RootPath: "./testdata/localcnudierepos/other"}, nil, nil, nil))
+
+		cv, err := r.GetComponentVersion(ctx, cdref)
+		Expect(cv).To(BeNil())
+		var notfounderr *ocmerrors.NotFoundError
+		Expect(errors.As(err, &notfounderr)).To(BeTrue())
+	})
+	It("repository context is not set and ocm config does not set resolvers", func() {
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		cv, err := r.GetComponentVersion(ctx, cdref)
+		Expect(cv).To(BeNil())
+		Expect(err).ToNot(BeNil())
+	})
+
 })
