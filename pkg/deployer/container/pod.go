@@ -66,6 +66,12 @@ func TargetSecretName(deployItemNamespace, deployItemName string) string {
 	return fmt.Sprintf("%s-%s-target", deployItemNamespace, deployItemName)
 }
 
+// OCMConfigConfigMapName generates the secret name for the imported secret.
+// todo: use container identity
+func OCMConfigConfigMapName(deployItemNamespace, deployItemName string) string {
+	return fmt.Sprintf("%s-%s-ocmconfig", deployItemNamespace, deployItemName)
+}
+
 // ImagePullSecretName generates the secret name for the image pull secret.
 // todo: use container identity
 func ImagePullSecretName(deployItemNamespace, deployItemName string) string {
@@ -121,7 +127,8 @@ type PodOptions struct {
 	BluePrintPullSecret               string
 	ComponentDescriptorPullSecret     string
 
-	UseOCM bool
+	OCMConfigConfigMapName string
+	UseOCM                 bool
 
 	Name                 string
 	Namespace            string
@@ -205,6 +212,22 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		MountPath: filepath.Dir(container.ConfigurationPath),
 	}
 
+	ocmConfigVolume := corev1.Volume{
+		Name: "ocm-configuration",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: opts.OCMConfigConfigMapName,
+				},
+			},
+		},
+	}
+	ocmConfigVolumeMount := corev1.VolumeMount{
+		Name:      ocmConfigVolume.Name,
+		ReadOnly:  true,
+		MountPath: filepath.Dir(container.OCMConfigPath),
+	}
+
 	targetVolume := corev1.Volume{
 		Name: "target",
 		VolumeSource: corev1.VolumeSource{
@@ -240,6 +263,10 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 			Name:  container.UseOCMName,
 			Value: fmt.Sprint(opts.UseOCM),
 		},
+		{
+			Name:  container.OCMConfigPathName,
+			Value: container.OCMConfigPath,
+		},
 	}
 	additionalSidecarEnvVars := []corev1.EnvVar{
 		{
@@ -263,10 +290,11 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		waitServiceAccountVolume,
 		sharedVolume,
 		configurationVolume,
+		ocmConfigVolume,
 		targetVolume,
 	}
 
-	initMounts := []corev1.VolumeMount{configurationVolumeMount, targetInitVolumeMount, initServiceAccountMount, sharedVolumeMount}
+	initMounts := []corev1.VolumeMount{configurationVolumeMount, ocmConfigVolumeMount, targetInitVolumeMount, initServiceAccountMount, sharedVolumeMount}
 
 	for name, v := range map[string]string{
 		"blueprint-pull-secret": opts.BluePrintPullSecret,
