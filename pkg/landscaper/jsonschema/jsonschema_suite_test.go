@@ -870,9 +870,10 @@ var _ = Describe("jsonschema", func() {
 	Context("WithLocalRegistry", func() {
 
 		var (
-			registryAccess    model.RegistryAccess
-			componentVersion  model.ComponentVersion
-			repositoryContext types.UnstructuredTypedObject
+			registryAccess      model.RegistryAccess
+			componentVersion    model.ComponentVersion
+			repositoryContext   types.UnstructuredTypedObject
+			localregistryconfig *apiconfig.LocalRegistryConfiguration
 		)
 
 		BeforeEach(func() {
@@ -894,6 +895,9 @@ var _ = Describe("jsonschema", func() {
 		})
 
 		It("should resolve with explicit repository context", func() {
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
 			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
 				ComponentVersion:  componentVersion,
 				RegistryAccess:    registryAccess,
@@ -909,6 +913,9 @@ var _ = Describe("jsonschema", func() {
 		})
 
 		It("should not resolve without explicit repository context", func() {
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
 			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
 				ComponentVersion: componentVersion,
 				RegistryAccess:   registryAccess,
