@@ -73,13 +73,15 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		if !ok {
 			return nil, fmt.Errorf("ocm configuration config map does not contain key \"%s\"", utils.DEFAULT_OCM_CONFIG)
 		}
-		cfg, err := registryAccess.octx.ConfigContext().GetConfigForData([]byte(ocmconfigdata), nil)
-		if err != nil {
-			return nil, fmt.Errorf("invalid ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
-		}
-		err = registryAccess.octx.ConfigContext().ApplyConfig(cfg, fmt.Sprintf("%s/%s", ocmconfig.Namespace, ocmconfig.Name))
-		if err != nil {
-			return nil, fmt.Errorf("cannot apply ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
+		if len(ocmconfigdata) > 0 {
+			cfg, err := registryAccess.octx.ConfigContext().GetConfigForData([]byte(ocmconfigdata), nil)
+			if err != nil {
+				return nil, fmt.Errorf("invalid ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
+			}
+			err = registryAccess.octx.ConfigContext().ApplyConfig(cfg, fmt.Sprintf("%s/%s", ocmconfig.Namespace, ocmconfig.Name))
+			if err != nil {
+				return nil, fmt.Errorf("cannot apply ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
+			}
 		}
 	}
 

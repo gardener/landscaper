@@ -150,10 +150,15 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 		if err != nil {
 			return err
 		}
-		ocmconfig := corev1.ConfigMap{
-			Data: map[string]string{ocmutils.DEFAULT_OCM_CONFIG: string(ocmConfigData)},
+
+		var ocmConfig *corev1.ConfigMap
+		if len(ocmConfigData) > 0 {
+			ocmConfig = &corev1.ConfigMap{
+				Data: map[string]string{ocmutils.DEFAULT_OCM_CONFIG: string(ocmConfigData)},
+			}
 		}
-		registryAccess, err = registries.GetFactory(opts.UseOCM).NewRegistryAccess(ctx, fs, &ocmconfig, nil, nil, nil, ociconfig, providerConfig.ComponentDescriptor.Inline)
+
+		registryAccess, err = registries.GetFactory(opts.UseOCM).NewRegistryAccess(ctx, fs, ocmConfig, nil, nil, nil, ociconfig, providerConfig.ComponentDescriptor.Inline)
 		if err != nil {
 			return err
 		}
