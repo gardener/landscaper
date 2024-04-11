@@ -9,6 +9,7 @@ set -o nounset
 set -o pipefail
 
 PROJECT_ROOT="$(realpath $(dirname $0)/../..)"
+LOCALBIN="/usr/local/bin"
 
 echo "Run install missing software"
 
@@ -53,8 +54,7 @@ if ! command -v jq &> /dev/null
 then
     echo "jq could not be found"
     echo "Try installing it..."
-    curl -sSLO https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
-    install -o root -g root -m 0755 jq-linux64 /usr/local/bin/jq
+    LOCALBIN=${LOCALBIN} make -C ${PROJECT_ROOT} jq
 fi
 
 if ! command -v landscaper-cli &> /dev/null
@@ -87,6 +87,5 @@ if ! command -v ocm &> /dev/null
 then
     echo "ocm could not be found"
     echo "Try installing it..."
-    OCM_VERSION=$(NO_PREFIX=true ${PROJECT_ROOT}/hack/extract-module-version.sh github.com/open-component-model/ocm)
-    curl -sSfL https://ocm.software/install.sh | OCM_VERSION=${OCM_VERSION} bash
+    LOCALBIN=${LOCALBIN} make -C ${PROJECT_ROOT} ocm
 fi
