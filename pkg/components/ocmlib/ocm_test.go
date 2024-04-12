@@ -9,6 +9,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -90,13 +92,36 @@ var (
 }
 `, HOSTNAME1, auth, HOSTNAME2, auth))
 
-	ocmconfigdata = []byte(fmt.Sprintf(`
+	ociocmconfigdata = []byte(fmt.Sprintf(`
 {
   "type": "credentials.config.ocm.software",
   "consumers": [
     {
       "identity": {
         "type": "OCIRegistry",
+        "hostname": "%s"
+      },
+      "credentials": [
+        {
+          "type": "Credentials",
+          "properties": {
+            "username": "%s",
+            "password": "%s"
+          }
+        }
+      ]
+    }
+  ]
+}
+`, HOSTNAME1, USERNAME, PASSWORD))
+
+	helmocmconfigdata = []byte(fmt.Sprintf(`
+{
+  "type": "credentials.config.ocm.software",
+  "consumers": [
+    {
+      "identity": {
+        "type": "HelmChartRepository",
         "hostname": "%s"
       },
       "credentials": [
@@ -209,9 +234,20 @@ var _ = Describe("ocm-lib facade implementation", func() {
 	It("ocm credentials from secrets", func() {
 		// Prepare secret with ocmconfig credentials
 		secrets := []corev1.Secret{{
-			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
+			Data: map[string][]byte{".ocmcredentialconfig": ociocmconfigdata},
 		}}
 		r := Must(factory.NewRegistryAccess(ctx, nil, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
+		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("ocm credentials from config", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: string(ociocmconfigdata)},
+		}
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, nil, nil, nil)).(*RegistryAccess)
 		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
@@ -230,7 +266,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		}
 		// Create a Helm OCI Resource and check whether credentials are properly set and can be found
 		// Type Assertion to *HelmChartProvider to be able to access the ocictx containing the credentials
-		r := Must(factory.NewHelmOCIResource(ctx, fs, "ghcr.io/test/repo/testimage:1.0.0", nil, &config.OCIConfiguration{
+		r := Must(factory.NewHelmOCIResource(ctx, fs, nil, "ghcr.io/test/repo/testimage:1.0.0", nil, &config.OCIConfiguration{
 			ConfigFiles: []string{"testdata/dockerconfig.json"},
 		}, nil))
 		creds := Must(ociid.GetCredentials(r.(*HelmChartProvider).ocictx, HOSTNAME1, "/test/repo"))
@@ -248,7 +284,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 
 		// Create a Helm OCI Resource and check whether credentials are properly set and can be found
 		// Type Assertion to *HelmChartProvider to be able to access the ocictx containing the credentials
-		r := Must(factory.NewHelmOCIResource(ctx, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
+		r := Must(factory.NewHelmOCIResource(ctx, nil, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
 		creds := Must(ociid.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
@@ -258,11 +294,36 @@ var _ = Describe("ocm-lib facade implementation", func() {
 	It("oci helm resource - ocm credentials from secrets", func() {
 		// Prepare secret with ocmconfig credentials
 		secrets := []corev1.Secret{{
-			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
+			Data: map[string][]byte{".ocmcredentialconfig": ociocmconfigdata},
 		}}
-		r := Must(factory.NewHelmOCIResource(ctx, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
+		r := Must(factory.NewHelmOCIResource(ctx, nil, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
 		creds := Must(ociid.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("oci helm resource - ocm credentials from config", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: string(ociocmconfigdata)},
+		}
+		r := Must(factory.NewHelmOCIResource(ctx, nil, ocmconfig, "ghcr.io/test/repo/testimage:1.0.0", nil, nil, nil)).(*HelmChartProvider)
+		creds := Must(ociid.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("helm repo helm resource - ocm credentials from config", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: string(helmocmconfigdata)},
+		}
+		r := Must(factory.NewHelmRepoResource(ctx, ocmconfig, &helmv1alpha1.HelmChartRepo{
+			HelmChartRepoUrl: HOSTNAME1,
+			HelmChartName:    "test/repo",
+			HelmChartVersion: "1.0.0",
+		}, nil, nil)).(*HelmChartProvider)
+		props := helmid.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo")
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
 	})

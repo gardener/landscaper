@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package chartresolver_test
+package chartresolver
 
 import (
 	"bytes"
 	"context"
 	"encoding/base64"
 	"io"
+	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,7 +32,6 @@ import (
 
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	utils "github.com/gardener/landscaper/test/utils"
 )
 
@@ -70,21 +70,17 @@ var _ = Describe("GetChart", func() {
 
 	Context("FromOCIRegistry", func() {
 		It("should resolve a chart from public readable helm ociClient artifact", func() {
-			chartAccess := &helmv1alpha1.Chart{
-				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0",
-			}
+			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0"
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, nil, nil, nil)
+			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
 
 		It("should resolve a legacy chart from public readable helm ociClient artifact", func() {
-			chartAccess := &helmv1alpha1.Chart{
-				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
-			}
+			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, nil, nil, nil)
+			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -94,13 +90,11 @@ var _ = Describe("GetChart", func() {
 		chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
 		defer closer()
 
-		chartAccess := &helmv1alpha1.Chart{
-			Archive: &helmv1alpha1.ArchiveAccess{
-				Raw: base64.StdEncoding.EncodeToString(chartBytes),
-			},
+		Archive := &helmv1alpha1.ArchiveAccess{
+			Raw: base64.StdEncoding.EncodeToString(chartBytes),
 		}
 
-		chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
+		chart, err := getChartFromArchive(Archive)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("testchart"))
 	})
@@ -127,15 +121,13 @@ var _ = Describe("GetChart", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}))
 
-			chartAccess := &helmv1alpha1.Chart{
-				Archive: &helmv1alpha1.ArchiveAccess{
-					Remote: &helmv1alpha1.RemoteArchiveAccess{
-						URL: srv.URL,
-					},
+			Archive := &helmv1alpha1.ArchiveAccess{
+				Remote: &helmv1alpha1.RemoteArchiveAccess{
+					URL: srv.URL,
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
+			chart, err := getChartFromArchive(Archive)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("testchart"))
 		})
@@ -148,15 +140,13 @@ var _ = Describe("GetChart", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}))
 
-			chartAccess := &helmv1alpha1.Chart{
-				Archive: &helmv1alpha1.ArchiveAccess{
-					Remote: &helmv1alpha1.RemoteArchiveAccess{
-						URL: srv.URL,
-					},
+			Archive := &helmv1alpha1.ArchiveAccess{
+				Remote: &helmv1alpha1.RemoteArchiveAccess{
+					URL: srv.URL,
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil)
+			chart, err := getChartFromArchive(Archive)
 			Expect(chart).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(http.StatusText(401)))
@@ -165,15 +155,26 @@ var _ = Describe("GetChart", func() {
 	})
 
 	Context("From OCM Resource Ref", func() {
-		It("should resolve a chart from a local ocm resource", func() {
+		var (
+			resourceRef string
+			repoCtx     *cdv2.UnstructuredTypedObject
+		)
+
+		BeforeEach(func() {
+			// Establish an extra context and ocm context for the setup since the ocm context used here will cache the
+			// repository context and component version which would partially defeat the purpose of these tests.
+			localCtx := logging.NewContext(context.Background(), logging.Discard())
+			localOctx := ocm.New(datacontext.MODE_EXTENDED)
+			localCtx = localOctx.BindTo(ctx)
+
 			// Setup Test
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil,
+			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, nil, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"}, nil, nil)
 			Expect(err).To(BeNil())
 
 			cdref := &lsv1alpha1.ComponentDescriptorReference{}
 			Expect(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref)).To(BeNil())
-			cv, err := registry.GetComponentVersion(ctx, cdref)
+			cv, err := registry.GetComponentVersion(localCtx, cdref)
 			Expect(err).To(BeNil())
 			Expect(cv).ToNot(BeNil())
 
@@ -181,21 +182,35 @@ var _ = Describe("GetChart", func() {
 			Expect(err).To(BeNil())
 
 			getResourceKey := templateFuncs["getResourceKey"].(func(args ...interface{}) (string, error))
-			resourceRef, err := getResourceKey(`cd://componentReferences/referenced-landscaper-component/resources/chart`)
+			resourceRef, err = getResourceKey(`cd://componentReferences/referenced-landscaper-component/resources/chart`)
 			Expect(err).To(BeNil())
-			chartAccess := &helmv1alpha1.Chart{
-				ResourceRef: resourceRef,
-			}
-			un := &cdv2.UnstructuredTypedObject{}
-			Expect(un.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./testdata/ocmrepo"}`))).To(BeNil())
+			repoCtx = &cdv2.UnstructuredTypedObject{}
+			Expect(repoCtx.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./testdata/ocmrepo"}`))).To(BeNil())
+		})
 
-			// Test
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{
-				ContextConfiguration: lsv1alpha1.ContextConfiguration{RepositoryContext: un},
-			}, nil, nil, nil)
+		It("should resolve a chart from a local ocm resource", func() {
+			chart, err := getChartFromResourceRef(ctx, nil, resourceRef, &lsv1alpha1.Context{
+				ContextConfiguration: lsv1alpha1.ContextConfiguration{RepositoryContext: repoCtx},
+			}, nil)
+			Expect(err).To(BeNil())
+			Expect(chart).ToNot(BeNil())
+		})
+		It("resolve from ocm resource ref with ocm config resolver", func() {
+			ocmConfig := &corev1.ConfigMap{
+				Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./testdata/ocmrepo
+        priority: 10
+`},
+			}
+			chart, err := getChartFromResourceRef(ctx, ocmConfig, resourceRef, &lsv1alpha1.Context{}, nil)
 			Expect(err).To(BeNil())
 			Expect(chart).ToNot(BeNil())
 		})
 	})
-
 })
