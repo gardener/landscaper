@@ -27,8 +27,8 @@ GARDENER_KUBECONFIG=$(${PROJECT_ROOT}/.ci/get_gardener_kubeconfig.py)
   if git show -s --format=%s | grep run-int-tests; then
     echo "'run-int-tests' in commit message, integration tests should be started"
     "${PROJECT_ROOT}/.ci/integration-test-runner" "$GARDENER_KUBECONFIG" "garden-laas" "$VERSION" "$PR_ID"
-  elif git branch --show-current | grep "renovate/"; then
-    echo "Dependency update from renovate, integration tests should be started"
+  elif git branch --show-current | grep -E "renovate/|dependabot/"; then
+    echo "Dependency update from renovate or dependabot, integration tests should be started"
     "${PROJECT_ROOT}/.ci/integration-test-runner" "$GARDENER_KUBECONFIG" "garden-laas" "$VERSION" "$PR_ID"
    else
       echo "integration tests are skipped"
