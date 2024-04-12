@@ -682,7 +682,7 @@ func (c *Container) SyncOCMConfiguration(ctx context.Context, defaultLabels map[
 		kutil.SetMetaDataLabel(&configmap.ObjectMeta, container.ContainerDeployerTypeLabel, "configuration")
 		return nil
 	}); err != nil {
-		return fmt.Errorf("unable to sync provider configuration to host cluster: %w", err)
+		return fmt.Errorf("unable to sync ocm configuration to host cluster: %w", err)
 	}
 	return nil
 }
