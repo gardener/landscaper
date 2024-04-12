@@ -75,3 +75,7 @@ afterwards a deletion of the installation has the following effect:
   deploy items such that they could be deleted.
 
 Note that you have to add the annotation **before** you delete the installation.
+
+## Reconcile-If-Changed Annotation
+
+See [here](https://github.com/gardener/landscaper/blob/master/docs/usage/Installations.md#automatic-reconciliationprocessing-of-installations-if-spec-was-changed).
