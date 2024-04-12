@@ -42,7 +42,7 @@ spec:
   region: europe-west1
   secretBindingName: laas-canary
   kubernetes:
-    version: "1.26"
+    version: "1.27"
   purpose: evaluation
   addons:
     kubernetesDashboard:
