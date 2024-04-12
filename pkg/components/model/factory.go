@@ -68,6 +68,7 @@ type Factory interface {
 
 	// NewHelmRepoResource returns a helm chart resource that is stored in a helm chart repository.
 	NewHelmRepoResource(ctx context.Context,
+		ocmconfig *corev1.ConfigMap,
 		helmChartRepo *helmv1alpha1.HelmChartRepo,
 		lsClient client.Client,
 		contextObj *lsv1alpha1.Context) (TypedResourceProvider, error)
@@ -75,6 +76,7 @@ type Factory interface {
 	// NewHelmOCIResource returns a helm chart resource that is stored in an OCI registry.
 	NewHelmOCIResource(ctx context.Context,
 		fs vfs.FileSystem,
+		ocmconfig *corev1.ConfigMap,
 		ociImageRef string,
 		registryPullSecrets []corev1.Secret,
 		ociConfig *config.OCIConfiguration,

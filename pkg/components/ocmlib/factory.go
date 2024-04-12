@@ -68,21 +68,8 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	registryAccess.session = ocm.NewSession(datacontext.NewSession())
 
 	// If a config map containing the data of an ocm config file is provided, apply its configuration.
-	if ocmconfig != nil {
-		ocmconfigdata, ok := ocmconfig.Data[utils.DEFAULT_OCM_CONFIG]
-		if !ok {
-			return nil, fmt.Errorf("ocm configuration config map does not contain key \"%s\"", utils.DEFAULT_OCM_CONFIG)
-		}
-		if len(ocmconfigdata) > 0 {
-			cfg, err := registryAccess.octx.ConfigContext().GetConfigForData([]byte(ocmconfigdata), nil)
-			if err != nil {
-				return nil, fmt.Errorf("invalid ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
-			}
-			err = registryAccess.octx.ConfigContext().ApplyConfig(cfg, fmt.Sprintf("%s/%s", ocmconfig.Namespace, ocmconfig.Name))
-			if err != nil {
-				return nil, fmt.Errorf("cannot apply ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
-			}
-		}
+	if err := ApplyOCMConfigMapToOCMContext(registryAccess.octx, ocmconfig); err != nil {
+		return nil, err
 	}
 
 	// If a local registry configuration is provided, the vfsattr (= virtual file system attribute) in the ocm context's
@@ -166,9 +153,14 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	return registryAccess, nil
 }
 
-func (f *Factory) NewHelmRepoResource(ctx context.Context, helmChartRepo *helmv1alpha1.HelmChartRepo, lsClient client.Client, contextObj *lsv1alpha1.Context) (model.TypedResourceProvider, error) {
+func (f *Factory) NewHelmRepoResource(ctx context.Context, ocmconfig *corev1.ConfigMap, helmChartRepo *helmv1alpha1.HelmChartRepo, lsClient client.Client, contextObj *lsv1alpha1.Context) (model.TypedResourceProvider, error) {
+	octx := ocm.FromContext(ctx)
+	if err := ApplyOCMConfigMapToOCMContext(octx, ocmconfig); err != nil {
+		return nil, err
+	}
+
 	provider := &HelmChartProvider{
-		ocictx:  oci.New(datacontext.MODE_EXTENDED),
+		ocictx:  octx.OCIContext(),
 		ref:     helmChartRepo.HelmChartName,
 		version: helmChartRepo.HelmChartVersion,
 		repourl: common.NormalizeUrl(helmChartRepo.HelmChartRepoUrl),
@@ -230,10 +222,17 @@ func (c *CredentialSource) Credentials(ctx credentials.Context, _ ...credentials
 }
 
 func (f *Factory) NewHelmOCIResource(ctx context.Context,
-	fs vfs.FileSystem, ociImageRef string,
+	fs vfs.FileSystem,
+	ocmconfig *corev1.ConfigMap,
+	ociImageRef string,
 	registryPullSecrets []corev1.Secret,
 	ociConfig *config.OCIConfiguration,
 	sharedCache cache.Cache) (model.TypedResourceProvider, error) {
+
+	octx := ocm.FromContext(ctx)
+	if err := ApplyOCMConfigMapToOCMContext(octx, ocmconfig); err != nil {
+		return nil, err
+	}
 
 	if fs == nil {
 		fs = osfs.New()
@@ -245,7 +244,7 @@ func (f *Factory) NewHelmOCIResource(ctx context.Context,
 	}
 
 	provider := &HelmChartProvider{
-		ocictx:  oci.New(datacontext.MODE_EXTENDED),
+		ocictx:  octx.OCIContext(),
 		ref:     refspec.Repository,
 		version: refspec.Version(),
 		repourl: fmt.Sprintf("oci://%s", refspec.Host),
@@ -308,6 +307,26 @@ func AddSecretCredsToCredContext(secrets []corev1.Secret, provider credentials.C
 				if err != nil {
 					return err
 				}
+			}
+		}
+	}
+	return nil
+}
+
+func ApplyOCMConfigMapToOCMContext(octx ocm.Context, ocmconfig *corev1.ConfigMap) error {
+	if ocmconfig != nil {
+		ocmconfigdata, ok := ocmconfig.Data[utils.DEFAULT_OCM_CONFIG]
+		if !ok {
+			return fmt.Errorf("ocm configuration config map does not contain key \"%s\"", utils.DEFAULT_OCM_CONFIG)
+		}
+		if len(ocmconfigdata) > 0 {
+			cfg, err := octx.ConfigContext().GetConfigForData([]byte(ocmconfigdata), nil)
+			if err != nil {
+				return fmt.Errorf("invalid ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
+			}
+			err = octx.ConfigContext().ApplyConfig(cfg, fmt.Sprintf("%s/%s", ocmconfig.Namespace, ocmconfig.Name))
+			if err != nil {
+				return fmt.Errorf("cannot apply ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
 			}
 		}
 	}
