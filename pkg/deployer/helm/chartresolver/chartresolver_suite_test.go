@@ -9,10 +9,11 @@ import (
 	"context"
 	"encoding/base64"
 	"io"
-	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
