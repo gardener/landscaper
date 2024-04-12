@@ -146,7 +146,13 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			InsecureSkipVerify: false,
 		}
 
-		ocmConfigData, err := vfs.ReadFile(fs, opts.OCMConfigFilePath)
+		var ocmConfigData []byte
+		if ok, err := vfs.FileExists(fs, opts.OCMConfigFilePath); err == nil && ok {
+			ocmConfigData, err = vfs.ReadFile(fs, opts.OCMConfigFilePath)
+			if err != nil {
+				return err
+			}
+		}
 		if err != nil {
 			return err
 		}
