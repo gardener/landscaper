@@ -147,14 +147,15 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 		}
 
 		var ocmConfigData []byte
-		if ok, err := vfs.FileExists(fs, opts.OCMConfigFilePath); err == nil && ok {
+		ok, err := vfs.FileExists(fs, opts.OCMConfigFilePath)
+		if err != nil {
+			return err
+		}
+		if ok {
 			ocmConfigData, err = vfs.ReadFile(fs, opts.OCMConfigFilePath)
 			if err != nil {
 				return err
 			}
-		}
-		if err != nil {
-			return err
 		}
 
 		var ocmConfig *corev1.ConfigMap
