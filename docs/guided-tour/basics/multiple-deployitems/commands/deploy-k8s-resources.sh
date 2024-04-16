@@ -19,26 +19,26 @@ echo "TMP_DIR: ${TMP_DIR}"
 echo "creating target 1"
 echo "target cluster kubeconfig: ${TARGET_CLUSTER_KUBECONFIG_PATH_1}"
 outputFile="${TMP_DIR}/target-1.yaml"
-mako-render "${COMPONENT_DIR}/installation/target.yaml.tpl" \
-  --var name="my-cluster-1" \
-  --var namespace="${NAMESPACE}" \
-  --var kubeconfig_path="${TARGET_CLUSTER_KUBECONFIG_PATH_1}" \
-  --output-file="${outputFile}"
+export name="my-cluster-1"
+export namespace="${NAMESPACE}"
+export kubeconfig_path="${TARGET_CLUSTER_KUBECONFIG_PATH_1}"
+inputFile="${COMPONENT_DIR}/installation/target.yaml.tpl"
+envsubst < ${inputFile} > ${outputFile}
 kubectl apply -f "${outputFile}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
 
 echo "creating target 2"
 echo "target cluster kubeconfig: ${TARGET_CLUSTER_KUBECONFIG_PATH_2}"
 outputFile="${TMP_DIR}/target-2.yaml"
-mako-render "${COMPONENT_DIR}/installation/target.yaml.tpl" \
-  --var name="my-cluster-2" \
-  --var namespace="${NAMESPACE}" \
-  --var kubeconfig_path="${TARGET_CLUSTER_KUBECONFIG_PATH_2}" \
-  --output-file="${outputFile}"
+export name="my-cluster-2"
+export namespace="${NAMESPACE}"
+export kubeconfig_path="${TARGET_CLUSTER_KUBECONFIG_PATH_2}"
+inputFile="${COMPONENT_DIR}/installation/target.yaml.tpl"
+envsubst < ${inputFile} > ${outputFile}
 kubectl apply -f "${outputFile}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
 
 echo "creating installation"
 outputFile="${TMP_DIR}/installation.yaml.tpl"
-mako-render "${COMPONENT_DIR}/installation/installation.yaml.tpl" \
-  --var namespace="${NAMESPACE}" \
-  --output-file=${outputFile}
+export namespace="${NAMESPACE}"
+inputFile=""${COMPONENT_DIR}/installation/installation.yaml.tpl"
+envsubst < ${inputFile} > ${outputFile}
 kubectl apply -f ${outputFile} --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"

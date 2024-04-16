@@ -18,7 +18,7 @@ echo "TMP_DIR: ${TMP_DIR}"
 
 echo "creating installation"
 outputFile="${TMP_DIR}/installation-fixed.yaml"
-mako-render "${COMPONENT_DIR}/installation/installation-fixed.yaml.tpl" \
-  --var namespace="${NAMESPACE}" \
-  --output-file=${outputFile}
+export namespace="${NAMESPACE}"
+inputFile="${COMPONENT_DIR}/installation/installation-fixed.yaml.tpl"
+envsubst < ${inputFile} > ${outputFile}
 kubectl apply -f ${outputFile} --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
