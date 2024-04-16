@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+
+COMPONENT_DIR="$(dirname $0)/.."
+cd "${COMPONENT_DIR}"
+COMPONENT_DIR="$(pwd)"
+echo "COMPONENT_DIR: ${COMPONENT_DIR}"
+
+source "${COMPONENT_DIR}/commands/settings"
+
+echo "deleting target 1"
+kubectl delete target "my-cluster-1" -n "${NAMESPACE}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
+
+echo "deleting target 2"
+kubectl delete target "my-cluster-2" -n "${NAMESPACE}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"

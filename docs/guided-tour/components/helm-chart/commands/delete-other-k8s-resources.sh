@@ -14,7 +14,7 @@ echo "COMPONENT_DIR: ${COMPONENT_DIR}"
 source "${COMPONENT_DIR}/commands/settings"
 
 echo "deleting context"
-kubectl delete context "${CONTEXT_NAME}" -n "${NAMESPACE}"
+kubectl delete context landscaper-examples -n "${NAMESPACE}"
 
 echo "deleting target"
-kubectl delete target "${TARGET_NAME}" -n "${NAMESPACE}"
+kubectl delete target my-cluster -n "${NAMESPACE}"

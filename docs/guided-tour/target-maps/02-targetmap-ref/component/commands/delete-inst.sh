@@ -17,10 +17,10 @@ TMP_DIR=`mktemp -d`
 echo tempdir ${TMP_DIR}
 
 outputFile="${TMP_DIR}/installation.yaml"
-mako-render "${COMPONENT_DIR}/installation/installation.yaml.tpl" \
-  --var namespace="${NAMESPACE}" \
-  --var targetNamespace="${TARGET_NAMESPACE}" \
-  --output-file=${outputFile}
+export namespace="${NAMESPACE}"
+export targetNamespace="${TARGET_NAMESPACE}"
+inputFile="${COMPONENT_DIR}/installation/installation.yaml.tpl"
+envsubst < ${inputFile} > ${outputFile}
 kubectl delete -f ${outputFile}
 
 

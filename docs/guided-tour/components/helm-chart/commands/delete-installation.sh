@@ -14,4 +14,4 @@ echo "COMPONENT_DIR: ${COMPONENT_DIR}"
 source "${COMPONENT_DIR}/commands/settings"
 
 echo "deleting installation"
-kubectl delete installation "${INSTALLATION_NAME}" -n "${NAMESPACE}"
+kubectl delete installation echo-server -n "${NAMESPACE}"

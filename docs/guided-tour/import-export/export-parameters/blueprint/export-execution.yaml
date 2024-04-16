@@ -1,0 +1,2 @@
+exports:
+  token: {{ index .deployitems "default-deploy-item" "test-token" | b64dec }}

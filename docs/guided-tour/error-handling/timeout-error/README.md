@@ -13,16 +13,14 @@ For prerequisites, see [here](../../README.md).
 
 ## Procedure
 
-1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml).
-   
-2. On the Landscaper resource cluster, create namespace `example` and apply the [target.yaml](installation/target.yaml) 
-   and the [installation.yaml](installation/installation.yaml):
-   
-   ```shell
-   kubectl create ns example
-   kubectl apply -f <path to target.yaml>
-   kubectl apply -f <path to installation.yaml>
-   ```
+1. In the [settings](commands/settings) file, adjust the variables `RESOURCE_CLUSTER_KUBECONFIG_PATH`
+   and `TARGET_CLUSTER_KUBECONFIG_PATH`.
+
+2. On the Landscaper resource cluster, create a namespace `cu-example`.
+
+3. Run script [commands/deploy-k8s-resources.sh](commands/deploy-k8s-resources.sh).
+   It creates a Target and an Installation on the resource cluster.
+
 
 ## Inspect the Result
 
@@ -114,13 +112,13 @@ To interrupt an ongoing deployment, add the annotation `landscaper.gardener.clou
 Installation:
 
 ```shell
-kubectl annotate inst -n example hello-world landscaper.gardener.cloud/operation=interrupt
+kubectl annotate inst -n cu-example hello-world landscaper.gardener.cloud/operation=interrupt
 ```
 
 Alternatively, you can use the following command of the Landscaper CLI to add this annotation:
 
 ```shell
-landscaper-cli inst interrupt -n example hello-world
+landscaper-cli inst interrupt -n cu-example hello-world
 ```
 
 > **Warning:** Be aware that the interruption just _forces_ the Installation and its DeployItems into a final phase 
@@ -130,12 +128,10 @@ landscaper-cli inst interrupt -n example hello-world
 
 ## Deploy the fixed Installation
 
-Once the Installation reaches phase `Failed`, apply the corrected one (
-[installation/installation-fixed.yaml](./installation/installation-fixed.yaml)) with the fixed Helm chart version:
-
-```shell
-kubectl apply -f <path to installation-fixed.yaml>
-```
+Once the Installation reaches phase `Failed`, run script 
+[commands/deploy-fixed-installation.sh](commands/deploy-fixed-installation.sh)
+to apply the corrected one ([installation/installation-fixed.yaml](./installation/installation-fixed.yaml)) 
+with the fixed Helm chart version.
 
 > Note that this fixed version already contains the annotation `landscaper.gardener.cloud/operation: reconcile`, 
 > so that Landscaper will start processing it.
@@ -146,15 +142,15 @@ exist on the target cluster.
 
 ## Cleanup
 
-To clean up, delete the Installation from the Landscaper resource cluster:
-
-```shell
-kubectl delete inst -n example hello-world
-```
+You can remove the Installation with the
+[delete-installation script](commands/delete-installation.sh).
 
 Note: if the Installation is not yet in a final phase, the deletion process will not start directly. 
 Rather it will wait until the current deployment process has finished. However, if you do not want
 to wait for this, you can **interrupt** the ongoing deployment as described [above](#interrupting-a-deployment).
+
+When the Installation is gone, you can delete the Target with the
+[delete-other-k8s-resources script](commands/delete-other-k8s-resources.sh).
 
 
 ## Configuring a Timeout for a DeployItem
