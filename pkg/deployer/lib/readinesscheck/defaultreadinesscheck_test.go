@@ -85,7 +85,7 @@ var _ = Describe("Default readiness checks", func() {
 			Entry("empty status", &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Generation: 10},
 				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
-				Status: appsv1.DeploymentStatus{},
+				Status:     appsv1.DeploymentStatus{},
 			}, HaveOccurred()),
 			Entry("not enough updated replicas", &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Generation: 10},
