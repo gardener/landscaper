@@ -67,7 +67,24 @@ verificationSignatures:
       namespace: default
       key: key
 ```
-The referenced secret contains the PEM encoded public key or ca certificate.
+The referenced secret contains the PEM encoded public key or ca certificate. Those can be generated using openssl.
 
 Which option to use depends on how the component version was signed. The `publicKeySecretReference` maps to the `--public-key` of the ocm cli command `ocm verify` and the `caCertificateSecretReference` maps to the `ca-cert` option.
 If the signature field of the component version also contains a certificate of the signer, the `caCertificateSecretReference` with the issuer certificate of the signer. 
+
+Example secret containing a public key:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-publickey
+  namespace: default
+type: Opaque
+stringData:
+  key: |
+    -----BEGIN RSA PUBLIC KEY-----
+    ...
+    -----END RSA PUBLIC KEY-----
+
+```
