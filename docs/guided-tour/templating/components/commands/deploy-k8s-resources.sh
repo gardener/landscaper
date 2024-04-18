@@ -28,7 +28,7 @@ echo "creating target"
 echo "target cluster kubeconfig: $TARGET_CLUSTER_KUBECONFIG_PATH"
 outputFile="${TMP_DIR}/target.yaml"
 export namespace="${NAMESPACE}"
-export kubeconfig_path="${TARGET_CLUSTER_KUBECONFIG_PATH}"
+export kubeconfig=`sed 's/^/      /' $TARGET_CLUSTER_KUBECONFIG_PATH`
 inputFile="${COMPONENT_DIR}/installation/target.yaml.tpl"
 envsubst < ${inputFile} > ${outputFile}
 kubectl apply -f ${outputFile}
