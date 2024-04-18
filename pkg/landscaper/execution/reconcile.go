@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,6 +59,12 @@ func (o *Operation) updateDeployItem(ctx context.Context, item executionItem) (*
 		if len(clusterName) > 0 {
 			metav1.SetMetaDataAnnotation(&item.DeployItem.ObjectMeta, clusterNameAnnotation, clusterName)
 		}
+
+		lsv1alpha1helper.DeleteCacheHelmChartsAnnotation(&item.DeployItem.ObjectMeta)
+		if lsv1alpha1helper.HasCacheHelmChartsAnnotation(&o.exec.ObjectMeta) {
+			metav1.SetMetaDataAnnotation(&item.DeployItem.ObjectMeta, lsv1alpha1.CacheHelmChartsAnnotation, "true")
+		}
+
 		o.Scheme().Default(item.DeployItem)
 		return controllerutil.SetControllerReference(o.exec, item.DeployItem, o.Scheme())
 	}); err != nil {
