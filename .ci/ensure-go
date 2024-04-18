@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-go_version="1.21.9"
+go_version="1.22.2"
 
 if ! which go 1>/dev/null; then
   echo "> Installing go ..."
