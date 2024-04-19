@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: executions.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
@@ -33,14 +33,19 @@ spec:
           item
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -83,11 +88,10 @@ spec:
                         a deploy item
                       properties:
                         skipUninstallIfClusterRemoved:
-                          description: SkipUninstallIfClusterRemoved specifies that
-                            uninstall is skipped if the target cluster is already
-                            deleted. Works only in the context of an existing target
-                            sync object which is used to check the Garden project
-                            with the shoot cluster resources
+                          description: |-
+                            SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted.
+                            Works only in the context of an existing target sync object which is used to check the Garden project with
+                            the shoot cluster resources
                           type: boolean
                       type: object
                     target:
@@ -104,11 +108,11 @@ spec:
                       - name
                       type: object
                     timeout:
-                      description: Timeout specifies how long the deployer may take
-                        to apply the deploy item. When the time is exceeded, the deploy
-                        item fails. Value has to be parsable by time.ParseDuration
-                        (or 'none' to deactivate the timeout). Defaults to ten minutes
-                        if not specified.
+                      description: |-
+                        Timeout specifies how long the deployer may take to apply the deploy item.
+                        When the time is exceeded, the deploy item fails.
+                        Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
+                        Defaults to ten minutes if not specified.
                       type: string
                     type:
                       description: DataType is the DeployItem type of the execution.
@@ -197,8 +201,9 @@ spec:
                     type: array
                 type: object
               exportRef:
-                description: ExportReference references the object that contains the
-                  exported values. only used for operation purpose.
+                description: |-
+                  ExportReference references the object that contains the exported values.
+                  only used for operation purpose.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.
@@ -253,9 +258,9 @@ spec:
                 - reason
                 type: object
               observedGeneration:
-                description: ObservedGeneration is the most recent generation observed
-                  for this Execution. It corresponds to the Execution generation,
-                  which is updated on mutation by the landscaper.
+                description: |-
+                  ObservedGeneration is the most recent generation observed for this Execution.
+                  It corresponds to the Execution generation, which is updated on mutation by the landscaper.
                 format: int64
                 type: integer
               phase:
