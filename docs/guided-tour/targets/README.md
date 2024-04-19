@@ -41,11 +41,11 @@ Create a ClusterRoleBinding which binds the ServiceAccount to the ClusterRole `c
 You can choose another ClusterRole. However, it must grant enough permissions to deploy applications to your target cluster:
 
 ```shell
-mako-render "./resources/clusterrolebinding.yaml.tpl" \
-  --var "clusterrolebinding_name=${clusterrolebinding_name}" \
-  --var "serviceaccount_name=${serviceaccount_name}" \
-  --var "serviceaccount_namespace=${serviceaccount_namespace}" \
-  | kubectl apply -f -
+export "clusterrolebinding_name=${clusterrolebinding_name}"
+export "serviceaccount_name=${serviceaccount_name}"
+export "serviceaccount_namespace=${serviceaccount_namespace}"
+inputFile="${COMPONENT_DIR}/installation/installation-upg.yaml.tpl"
+envsubst < ${inputFile} | kubectl apply -f -
 ```
 
 Alternatively, you can manually apply the [ClusterRoleBinding manifest](./resources/clusterrolebinding.yaml.tpl) 

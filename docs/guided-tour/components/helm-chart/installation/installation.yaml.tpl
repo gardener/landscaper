@@ -1,13 +1,13 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
-  name: ${installationName}
+  name: echo-server
   namespace: ${namespace}
   annotations:
     landscaper.gardener.cloud/operation: reconcile
 
 spec:
-  context: ${contextName}
+  context: landscaper-examples
 
   componentDescriptor:
     ref:
@@ -22,4 +22,4 @@ spec:
   imports:
     targets:
       - name: cluster           # name of an import parameter of the blueprint
-        target: ${targetName}   # name of the Target custom resource containing the kubeconfig of the target cluster
+        target: my-cluster      # name of the Target custom resource containing the kubeconfig of the target cluster

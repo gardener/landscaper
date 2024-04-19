@@ -206,20 +206,18 @@ func CheckPod(pod *corev1.Pod) error {
 }
 
 // CheckDeployment checks whether the given Deployment is ready.
-// A Deployment is considered ready if the controller observed its current revision and
-// if the number of updated replicas is equal to the number of replicas.
 func CheckDeployment(dp *appsv1.Deployment) error {
 	if dp.Status.ObservedGeneration < dp.Generation {
 		return outdatedGeneration(dp.Status.ObservedGeneration, dp.Generation)
 	}
 
-	replicas := int32(1)
+	specReplicas := int32(0)
 	if dp.Spec.Replicas != nil {
-		replicas = *dp.Spec.Replicas
+		specReplicas = *dp.Spec.Replicas
 	}
 
-	if dp.Status.UpdatedReplicas < replicas || dp.Status.AvailableReplicas < replicas {
-		return notEnoughReadyReplicas(dp.Status.AvailableReplicas, replicas)
+	if specReplicas != dp.Status.Replicas || specReplicas != dp.Status.UpdatedReplicas || specReplicas != dp.Status.AvailableReplicas {
+		return notEnoughReadyReplicas(dp.Status.AvailableReplicas, specReplicas)
 	}
 
 	return nil

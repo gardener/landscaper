@@ -30,14 +30,20 @@ Each DeployItem can depend on several other DeployItems.
 
 ## Procedure
 
-1. Insert the kubeconfigs of your target clusters into [target-1.yaml](./installation/target-1.yaml) and [target-2.yaml](./installation/target-2.yaml).
+1. In the [settings](commands/settings) file, adjust the variables `RESOURCE_CLUSTER_KUBECONFIG_PATH`,
+   `TARGET_CLUSTER_KUBECONFIG_PATH_1`, and `TARGET_CLUSTER_KUBECONFIG_PATH_2`.
 
-1. On the Landscaper resource cluster, create namespace `example` and apply the two targets and the Installation [installation.yaml](./installation/installation.yaml):
-   
-   ```shell
-   kubectl create ns example
-   kubectl apply -f <path to target-1.yaml>
-   kubectl apply -f <path to target-2.yaml>
-   kubectl apply -f <path to installation.yaml>
-   ```
-2. Check if both target clusters contain the hello-world Helm chart deployment. If you are fast enough, you should be able to observe that this always happens first in the cluster specified in [target-1.yaml](./installation/target-1.yaml), and only after this installation has succeeded, deployment is started in the cluster specified in [target-2.yaml](./installation/target-2.yaml).
+2. On the Landscaper resource cluster, create a namespace `cu-example`.
+
+3. Run script [commands/deploy-k8s-resources.sh](commands/deploy-k8s-resources.sh).
+   It creates two targets based on the template [target.yaml.tpl](installation/target.yaml.tpl) and the [installation.yaml.tpl](installation/installation.yaml.tpl).
+
+4. Wait until the Installation is in phase `Succeeded`. Check if both target clusters contain the hello-world Helm chart deployment. 
+   If you are fast enough, you should be able to observe that this happens one after the other in the two target clusters.
+
+## Cleanup
+
+You can remove the Installation with the
+[delete-installation script](commands/delete-installation.sh).
+When the Installation is gone, you can delete the Targets with the
+[delete-other-k8s-resources script](commands/delete-other-k8s-resources.sh).

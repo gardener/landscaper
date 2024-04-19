@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: installations.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
@@ -32,14 +32,19 @@ spec:
         description: Installation contains the configuration of a component
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -51,9 +56,9 @@ spec:
                   repeated reconciliations.
                 properties:
                   failedReconcile:
-                    description: FailedReconcile allows to configure automatically
-                      repeated reconciliations for failed installations. If not set,
-                      no such automatically repeated reconciliations are triggered.
+                    description: |-
+                      FailedReconcile allows to configure automatically repeated reconciliations for failed installations.
+                      If not set, no such automatically repeated reconciliations are triggered.
                     properties:
                       interval:
                         description: Interval specifies the interval between two subsequent
@@ -68,14 +73,14 @@ spec:
                         type: integer
                     type: object
                   succeededReconcile:
-                    description: SucceededReconcile allows to configure automatically
-                      repeated reconciliations for succeeded installations. If not
-                      set, no such automatically repeated reconciliations are triggered.
+                    description: |-
+                      SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations.
+                      If not set, no such automatically repeated reconciliations are triggered.
                     properties:
                       interval:
-                        description: Interval specifies the interval between two subsequent
-                          repeated reconciliations. If not set, a default of 24 hours
-                          is used.
+                        description: |-
+                          Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of
+                          24 hours is used.
                         type: string
                     type: object
                 type: object
@@ -137,11 +142,11 @@ spec:
                 description: Context defines the current context of the installation.
                 type: string
               exportDataMappings:
-                description: 'ExportDataMappings contains a template for restructuring
-                  exports. It is expected to contain a key for every blueprint-defined
-                  data export. Missing keys will be defaulted to their respective
-                  data export. Example: namespace: (( blueprint.exports.namespace
-                  ))'
+                description: |-
+                  ExportDataMappings contains a template for restructuring exports.
+                  It is expected to contain a key for every blueprint-defined data export.
+                  Missing keys will be defaulted to their respective data export.
+                  Example: namespace: (( blueprint.exports.namespace ))
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               exports:
@@ -183,11 +188,11 @@ spec:
                     type: array
                 type: object
               importDataMappings:
-                description: 'ImportDataMappings contains a template for restructuring
-                  imports. It is expected to contain a key for every blueprint-defined
-                  data import. Missing keys will be defaulted to their respective
-                  data import. Example: namespace: (( installation.imports.namespace
-                  ))'
+                description: |-
+                  ImportDataMappings contains a template for restructuring imports.
+                  It is expected to contain a key for every blueprint-defined data import.
+                  Missing keys will be defaulted to their respective data import.
+                  Example: namespace: (( installation.imports.namespace ))
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               imports:
@@ -199,9 +204,9 @@ spec:
                       description: DataImport is a data object import.
                       properties:
                         configMapRef:
-                          description: ConfigMapRef defines a data reference from
-                            a configmap. This method is not allowed in installation
-                            templates.
+                          description: |-
+                            ConfigMapRef defines a data reference from a configmap.
+                            This method is not allowed in installation templates.
                           properties:
                             key:
                               description: Key is the name of the key in the configmap
@@ -214,16 +219,17 @@ spec:
                           - name
                           type: object
                         dataRef:
-                          description: DataRef is the name of the in-cluster data
-                            object. The reference can also be a namespaces name. E.g.
-                            "default/mydataref"
+                          description: |-
+                            DataRef is the name of the in-cluster data object.
+                            The reference can also be a namespaces name. E.g. "default/mydataref"
                           type: string
                         name:
                           description: Name the internal name of the imported/exported
                             data.
                           type: string
                         secretRef:
-                          description: SecretRef defines a data reference from a secret.
+                          description: |-
+                            SecretRef defines a data reference from a secret.
                             This method is not allowed in installation templates.
                           properties:
                             key:
@@ -237,7 +243,8 @@ spec:
                           - name
                           type: object
                         version:
-                          description: Version specifies the imported data version.
+                          description: |-
+                            Version specifies the imported data version.
                             defaults to "v1"
                           type: string
                       required:
@@ -254,15 +261,14 @@ spec:
                           description: Name the internal name of the imported target.
                           type: string
                         target:
-                          description: Target is the name of the in-cluster target
-                            object. Exactly one of Target, Targets, and TargetListReference
-                            has to be specified.
+                          description: |-
+                            Target is the name of the in-cluster target object.
+                            Exactly one of Target, Targets, and TargetListReference has to be specified.
                           type: string
                         targetListRef:
-                          description: TargetListReference can (only) be used to import
-                            a targetlist that has been imported by the parent installation.
-                            Exactly one of Target, Targets, and TargetListReference
-                            has to be specified.
+                          description: |-
+                            TargetListReference can (only) be used to import a targetlist that has been imported by the parent installation.
+                            Exactly one of Target, Targets, and TargetListReference has to be specified.
                           type: string
                         targetMap:
                           additionalProperties:
@@ -271,9 +277,9 @@ spec:
                         targetMapRef:
                           type: string
                         targets:
-                          description: Targets is a list of in-cluster target objects.
-                            Exactly one of Target, Targets, and TargetListReference
-                            has to be specified.
+                          description: |-
+                            Targets is a list of in-cluster target objects.
+                            Exactly one of Target, Targets, and TargetListReference has to be specified.
                           items:
                             type: string
                           type: array
@@ -445,9 +451,9 @@ spec:
                 - reason
                 type: object
               observedGeneration:
-                description: ObservedGeneration is the most recent generation observed
-                  for this ControllerInstallations. It corresponds to the ControllerInstallations
-                  generation, which is updated on mutation by the landscaper.
+                description: |-
+                  ObservedGeneration is the most recent generation observed for this ControllerInstallations.
+                  It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
                 format: int64
                 type: integer
               phase:

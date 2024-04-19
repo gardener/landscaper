@@ -18,10 +18,10 @@ REGISTRY_DIR="$(dirname ${REGISTRY})"
 REGISTRY_ARCHIVE="${REGISTRY_DIR}/registry.tar.gz"
 REGISTRY_REPO_DIR="$(mktemp -d)"
 
-git clone --quiet  https://github.com/distribution/distribution.git "${REGISTRY_REPO_DIR}"
+git clone --quiet  --depth=1 --branch="$1" https://github.com/distribution/distribution.git "${REGISTRY_REPO_DIR}" 2>/dev/null
 (
   cd "${REGISTRY_REPO_DIR}"
-  make bin/registry
+  make bin/registry 2>/dev/null
 )
 cp "${REGISTRY_REPO_DIR}/bin/registry" "${REGISTRY}"
 rm -rf "${REGISTRY_REPO_DIR}"

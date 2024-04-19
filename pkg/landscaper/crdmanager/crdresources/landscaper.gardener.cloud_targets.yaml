@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: targets.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
@@ -39,19 +39,24 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Target defines a specific data object that defines target environment.
-          Every deploy item can have a target which is used by the deployer to install
-          the specific application.
+        description: |-
+          Target defines a specific data object that defines target environment.
+          Every deploy item can have a target which is used by the deployer to install the specific application.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -59,13 +64,14 @@ spec:
             description: TargetSpec contains the definition of a target.
             properties:
               config:
-                description: Configuration contains the target type specific configuration.
+                description: |-
+                  Configuration contains the target type specific configuration.
                   Exactly one of the fields Configuration and SecretRef must be set
                 x-kubernetes-preserve-unknown-fields: true
               secretRef:
-                description: Reference to a secret containing the target type specific
-                  configuration. Exactly one of the fields Configuration and SecretRef
-                  must be set
+                description: |-
+                  Reference to a secret containing the target type specific configuration.
+                  Exactly one of the fields Configuration and SecretRef must be set
                 properties:
                   key:
                     description: Key is the name of the key in the secret that holds
@@ -78,9 +84,9 @@ spec:
                 - name
                 type: object
               type:
-                description: Type is the type of the target that defines its data
-                  structure. The actual schema may be defined by a target type crd
-                  in the future.
+                description: |-
+                  Type is the type of the target that defines its data structure.
+                  The actual schema may be defined by a target type crd in the future.
                 type: string
             required:
             - type

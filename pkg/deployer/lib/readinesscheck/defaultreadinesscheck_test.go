@@ -70,16 +70,9 @@ var _ = Describe("Default readiness checks", func() {
 				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
 				Status: appsv1.DeploymentStatus{
 					ObservedGeneration: 10,
+					Replicas:           3,
 					UpdatedReplicas:    3,
 					AvailableReplicas:  3},
-			}, BeNil()),
-			Entry("ready with number of replicas unspecified", &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{Generation: 10},
-				Spec:       appsv1.DeploymentSpec{},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 10,
-					UpdatedReplicas:    1,
-					AvailableReplicas:  1},
 			}, BeNil()),
 			Entry("not observed at latest version", &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Generation: 10},
@@ -90,13 +83,16 @@ var _ = Describe("Default readiness checks", func() {
 					AvailableReplicas:  3},
 			}, HaveOccurred()),
 			Entry("empty status", &appsv1.Deployment{
-				Status: appsv1.DeploymentStatus{},
+				ObjectMeta: metav1.ObjectMeta{Generation: 10},
+				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
+				Status:     appsv1.DeploymentStatus{},
 			}, HaveOccurred()),
 			Entry("not enough updated replicas", &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Generation: 10},
 				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
 				Status: appsv1.DeploymentStatus{
 					ObservedGeneration: 10,
+					Replicas:           3,
 					UpdatedReplicas:    2,
 					AvailableReplicas:  3},
 			}, HaveOccurred()),
@@ -105,6 +101,7 @@ var _ = Describe("Default readiness checks", func() {
 				Spec:       appsv1.DeploymentSpec{Replicas: replicas(3)},
 				Status: appsv1.DeploymentStatus{
 					ObservedGeneration: 10,
+					Replicas:           3,
 					UpdatedReplicas:    3,
 					AvailableReplicas:  2},
 			}, HaveOccurred()),
