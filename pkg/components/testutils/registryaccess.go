@@ -43,3 +43,7 @@ func (t *TestRegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv
 
 	return nil, fmt.Errorf("component not found: %v", cdRef)
 }
+
+func (r *TestRegistryAccess) VerifySignature(componentVersion model.ComponentVersion, name string, pkeyData []byte, caCertData []byte) error {
+	return nil
+}
