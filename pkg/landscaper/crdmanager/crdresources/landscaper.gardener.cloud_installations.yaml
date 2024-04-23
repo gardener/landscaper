@@ -300,6 +300,13 @@ spec:
                       data from its siblings or has no siblings at all
                     type: boolean
                 type: object
+              verification:
+                properties:
+                  signatureName:
+                    type: string
+                required:
+                - signatureName
+                type: object
             required:
             - blueprint
             type: object

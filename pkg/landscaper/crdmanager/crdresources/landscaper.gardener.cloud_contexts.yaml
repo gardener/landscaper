@@ -85,6 +85,45 @@ spec:
             description: UseOCM defines whether OCM is used to process installations
               that reference this context.
             type: boolean
+          verificationSignatures:
+            additionalProperties:
+              properties:
+                caCertificateSecretReference:
+                  description: SecretReference is reference to data in a secret. The
+                    secret can also be in a different namespace.
+                  properties:
+                    key:
+                      description: Key is the name of the key in the secret that holds
+                        the data.
+                      type: string
+                    name:
+                      description: Name is the name of the kubernetes object.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of kubernetes object.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                publicKeySecretReference:
+                  description: SecretReference is reference to data in a secret. The
+                    secret can also be in a different namespace.
+                  properties:
+                    key:
+                      description: Key is the name of the key in the secret that holds
+                        the data.
+                      type: string
+                    name:
+                      description: Name is the name of the kubernetes object.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of kubernetes object.
+                      type: string
+                  required:
+                  - name
+                  type: object
+              type: object
+            type: object
         type: object
     served: true
     storage: true
