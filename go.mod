@@ -2,8 +2,6 @@ module github.com/gardener/landscaper
 
 go 1.22
 
-toolchain go1.22.2
-
 require (
 	dario.cat/mergo v1.0.0
 	github.com/Masterminds/sprig/v3 v3.2.3
