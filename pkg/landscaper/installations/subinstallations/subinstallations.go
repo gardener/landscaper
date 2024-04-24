@@ -291,6 +291,12 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		subInst.Annotations = map[string]string{
 			lsv1alpha1.SubinstallationNameAnnotation: subInstTmpl.Name,
 		}
+
+		lsv1alpha1helper.DeleteCacheHelmChartsAnnotation(&subInst.ObjectMeta)
+		if lsv1alpha1helper.HasCacheHelmChartsAnnotation(&inst.ObjectMeta) {
+			metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.CacheHelmChartsAnnotation, "true")
+		}
+
 		if err := controllerutil.SetControllerReference(inst, subInst, o.Scheme()); err != nil {
 			return errors.Wrapf(err, "unable to set owner reference")
 		}

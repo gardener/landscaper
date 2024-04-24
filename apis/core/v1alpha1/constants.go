@@ -31,6 +31,9 @@ const (
 	// uninstalling the deployed artifacts
 	DeleteWithoutUninstallAnnotation = LandscaperDomain + "/delete-without-uninstall"
 
+	// CacheHelmChartsAnnotation specifies if helm charts of an installation should be cached
+	CacheHelmChartsAnnotation = LandscaperDomain + "/cache-helm-charts"
+
 	// DeleteIgnoreSuccessors is the annotation that specifies that an installation is deleted even if there
 	// are dependent installations.
 	DeleteIgnoreSuccessors = LandscaperDomain + "/delete-ignore-successors"

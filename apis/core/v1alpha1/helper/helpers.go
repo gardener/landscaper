@@ -242,6 +242,19 @@ func HasDeleteWithoutUninstallAnnotation(obj metav1.ObjectMeta) bool {
 	return ok && v == "true"
 }
 
+func HasCacheHelmChartsAnnotation(obj *metav1.ObjectMeta) bool {
+	v, ok := obj.GetAnnotations()[v1alpha1.CacheHelmChartsAnnotation]
+	return ok && v == "true"
+}
+
+func SetCacheHelmChartsAnnotation(obj *metav1.ObjectMeta) {
+	metav1.SetMetaDataAnnotation(obj, v1alpha1.CacheHelmChartsAnnotation, "true")
+}
+
+func DeleteCacheHelmChartsAnnotation(obj *metav1.ObjectMeta) {
+	delete(obj.GetAnnotations(), v1alpha1.CacheHelmChartsAnnotation)
+}
+
 // SetDeployItemToFailed sets status.phase of the DeployItem to a failure phase
 // If the DeployItem has a DeletionTimestamp, 'DeleteFailed' is used, otherwise it will be set to 'Failed'.
 // Afterwards, the set phase is returned.

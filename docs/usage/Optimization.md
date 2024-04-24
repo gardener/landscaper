@@ -11,6 +11,9 @@ This chapter contains some hints to improve the performance of Landscaper instan
   Landscaper instance. A reasonable upper bound is about 200 objects for every object type. If you have more
   objects, spread them over more than one namespace.
 
+- It is possible to cache helm chart with the annotation `landscaper.gardener.cloud/cache-helm-charts: "true"`
+  ([see](./Annotations.md#cache-helm-charts-annotation))
+
 - If you know that an installation does not import/exports data from/to sibling installations or has no 
   siblings at all, you could specify this in the `spec` of an installation as follows. If nothing set, the default
   value `false` is assumed. This hint prevents the need for complex dependency computation and speeds up processing. 

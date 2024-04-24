@@ -52,28 +52,50 @@ func GetChart(ctx context.Context,
 	contextObj *lsv1alpha1.Context,
 	registryPullSecrets []corev1.Secret,
 	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache) (*chart.Chart, error) {
+	sharedCache cache.Cache,
+	useChartCache bool) (*chart.Chart, error) {
 
 	if chartConfig.Archive != nil {
 		return getChartFromArchive(chartConfig.Archive)
 	}
 
-	if len(chartConfig.Ref) != 0 {
-		return getChartFromOCIRef(ctx, contextObj, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
+	var chart *chart.Chart
+	var err error
+
+	if useChartCache {
+		chart, err = GetHelmChartCache(MaxSizeInByteDefault, RemoveOutdatedDurationDefault).getChart(chartConfig.Ref,
+			chartConfig.HelmChartRepo, chartConfig.ResourceRef)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if chartConfig.HelmChartRepo != nil {
-		return getChartFromHelmChartRepo(ctx, lsClient, contextObj, chartConfig.HelmChartRepo)
+	if chart == nil {
+		if len(chartConfig.Ref) != 0 {
+			chart, err = getChartFromOCIRef(ctx, contextObj, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
+		} else if chartConfig.HelmChartRepo != nil {
+			chart, err = getChartFromHelmChartRepo(ctx, lsClient, contextObj, chartConfig.HelmChartRepo)
+		} else if chartConfig.FromResource != nil {
+			chart, err = nil, errors.New("chart.fromResource is no longer supported")
+		} else if chartConfig.ResourceRef != "" {
+			chart, err = getChartFromResourceRef(ctx, chartConfig.ResourceRef, contextObj, lsClient)
+		} else {
+			chart, err = nil, NoChartDefinedError
+		}
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if chartConfig.FromResource != nil {
-		return nil, errors.New("chart.fromResource is no longer supported")
+	if useChartCache {
+		if err = GetHelmChartCache(MaxSizeInByteDefault, RemoveOutdatedDurationDefault).addOrUpdateChart(ctx,
+			chartConfig.Ref, chartConfig.HelmChartRepo, chartConfig.ResourceRef, chart); err != nil {
+			return nil, err
+		}
 	}
 
-	if chartConfig.ResourceRef != "" {
-		return getChartFromResourceRef(ctx, chartConfig.ResourceRef, contextObj, lsClient)
-	}
-	return nil, NoChartDefinedError
+	return chart, nil
 }
 
 func getChartFromResourceRef(ctx context.Context, resourceRef string, lsCtx *lsv1alpha1.Context,
