@@ -60,6 +60,11 @@ spec:
                       FailedReconcile allows to configure automatically repeated reconciliations for failed installations.
                       If not set, no such automatically repeated reconciliations are triggered.
                     properties:
+                      cronSpec:
+                        description: |-
+                          CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".
+                          If not empty, this specification is used instead of Interval.
+                        type: string
                       interval:
                         description: Interval specifies the interval between two subsequent
                           repeated reconciliations. If not set, a default of 5 minutes
@@ -77,6 +82,11 @@ spec:
                       SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations.
                       If not set, no such automatically repeated reconciliations are triggered.
                     properties:
+                      cronSpec:
+                        description: |-
+                          CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".
+                          If not empty, this specification is used instead of Interval.
+                        type: string
                       interval:
                         description: |-
                           Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of
