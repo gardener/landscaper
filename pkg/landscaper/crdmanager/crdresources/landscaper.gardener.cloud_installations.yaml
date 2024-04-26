@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: installations.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
@@ -301,8 +301,12 @@ spec:
                     type: boolean
                 type: object
               verification:
+                description: Verification defines the necessary data to verify the
+                  signature of the refered component
                 properties:
                   signatureName:
+                    description: SignatureName defines the name of the signature that
+                      is verified
                     type: string
                 required:
                 - signatureName

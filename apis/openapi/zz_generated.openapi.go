@@ -174,6 +174,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core.TokenRotation":                                               schema_gardener_landscaper_apis_core_TokenRotation(ref),
 		"github.com/gardener/landscaper/apis/core.TransitionTimes":                                             schema_gardener_landscaper_apis_core_TransitionTimes(ref),
 		"github.com/gardener/landscaper/apis/core.TypedObjectReference":                                        schema_gardener_landscaper_apis_core_TypedObjectReference(ref),
+		"github.com/gardener/landscaper/apis/core.Verification":                                                schema_gardener_landscaper_apis_core_Verification(ref),
+		"github.com/gardener/landscaper/apis/core.VerificationSignature":                                       schema_gardener_landscaper_apis_core_VerificationSignature(ref),
 		"github.com/gardener/landscaper/apis/core.VersionedNamedObjectReference":                               schema_gardener_landscaper_apis_core_VersionedNamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core.VersionedObjectReference":                                    schema_gardener_landscaper_apis_core_VersionedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core.VersionedResourceReference":                                  schema_gardener_landscaper_apis_core_VersionedResourceReference(ref),
@@ -3589,11 +3591,26 @@ func schema_gardener_landscaper_apis_core_Context(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"verificationSignatures": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VerificationSignatures maps a signature name to the trusted verification information",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core.VerificationSignature"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core.AnyJSON", "github.com/gardener/landscaper/apis/core.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3652,11 +3669,26 @@ func schema_gardener_landscaper_apis_core_ContextConfiguration(ref common.Refere
 							Format:      "",
 						},
 					},
+					"verificationSignatures": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VerificationSignatures maps a signature name to the trusted verification information",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core.VerificationSignature"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core.AnyJSON", "github.com/gardener/landscaper/apis/core.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -5291,6 +5323,12 @@ func schema_gardener_landscaper_apis_core_InstallationSpec(ref common.ReferenceC
 							Format:      "",
 						},
 					},
+					"verification": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Verification defines the necessary data to verify the signature of the refered component",
+							Ref:         ref("github.com/gardener/landscaper/apis/core.Verification"),
+						},
+					},
 					"componentDescriptor": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ComponentDescriptor is a reference to the installation's component descriptor",
@@ -5363,7 +5401,7 @@ func schema_gardener_landscaper_apis_core_InstallationSpec(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core.AnyJSON", "github.com/gardener/landscaper/apis/core.AutomaticReconcile", "github.com/gardener/landscaper/apis/core.BlueprintDefinition", "github.com/gardener/landscaper/apis/core.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core.InstallationExports", "github.com/gardener/landscaper/apis/core.InstallationImports", "github.com/gardener/landscaper/apis/core.Optimization"},
+			"github.com/gardener/landscaper/apis/core.AnyJSON", "github.com/gardener/landscaper/apis/core.AutomaticReconcile", "github.com/gardener/landscaper/apis/core.BlueprintDefinition", "github.com/gardener/landscaper/apis/core.ComponentDescriptorDefinition", "github.com/gardener/landscaper/apis/core.InstallationExports", "github.com/gardener/landscaper/apis/core.InstallationImports", "github.com/gardener/landscaper/apis/core.Optimization", "github.com/gardener/landscaper/apis/core.Verification"},
 	}
 }
 
@@ -7215,6 +7253,55 @@ func schema_gardener_landscaper_apis_core_TypedObjectReference(ref common.Refere
 	}
 }
 
+func schema_gardener_landscaper_apis_core_Verification(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Verification defines the necessary data to verify the signature of the refered component",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"signatureName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SignatureName defines the name of the signature that is verified",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"signatureName"},
+			},
+		},
+	}
+}
+
+func schema_gardener_landscaper_apis_core_VerificationSignature(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VerificationSignatures contains the trusted verification information",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"publicKeySecretReference": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PublicKeySecretReference contains a secret reference to a public key in PEM format that is used to verify the component signature",
+							Ref:         ref("github.com/gardener/landscaper/apis/core.SecretReference"),
+						},
+					},
+					"caCertificateSecretReference": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CaCertificateSecretReference contains a secret reference to one or more certificates in PEM format that are used to verify the compnent signature",
+							Ref:         ref("github.com/gardener/landscaper/apis/core.SecretReference"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core.SecretReference"},
+	}
+}
+
 func schema_gardener_landscaper_apis_core_VersionedNamedObjectReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -8063,7 +8150,8 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 					},
 					"verificationSignatures": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
+							Description: "VerificationSignatures maps a signature name to the trusted verification information",
+							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
 								Schema: &spec.Schema{
@@ -8140,7 +8228,8 @@ func schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref common.Refere
 					},
 					"verificationSignatures": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
+							Description: "VerificationSignatures maps a signature name to the trusted verification information",
+							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
 								Schema: &spec.Schema{
@@ -9791,7 +9880,8 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 					},
 					"verification": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.Verification"),
+							Description: "Verification defines the necessary data to verify the signature of the refered component",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Verification"),
 						},
 					},
 					"componentDescriptor": {
@@ -11722,13 +11812,15 @@ func schema_landscaper_apis_core_v1alpha1_Verification(ref common.ReferenceCallb
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Verification defines the necessary data to verify the signature of the refered component",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"signatureName": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Description: "SignatureName defines the name of the signature that is verified",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -11742,16 +11834,19 @@ func schema_landscaper_apis_core_v1alpha1_VerificationSignature(ref common.Refer
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "VerificationSignatures contains the trusted verification information",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"publicKeySecretReference": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+							Description: "PublicKeySecretReference contains a secret reference to a public key in PEM format that is used to verify the component signature",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 					"caCertificateSecretReference": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+							Description: "CaCertificateSecretReference contains a secret reference to one or more certificates in PEM format that are used to verify the compnent signature",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 				},

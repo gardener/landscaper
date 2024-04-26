@@ -267,6 +267,7 @@ _Appears in:_
 | `registryPullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core) array_ | RegistryPullSecrets defines a list of registry credentials that are used to<br />pull blueprints, component descriptors and jsonschemas from the respective registry.<br />For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/<br />Note that the type information is used to determine the secret key and the type of the secret. |  |  |
 | `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key.<br />The key should use a dns-like syntax to express the purpose and avoid conflicts. |  | Schemaless: {} <br />Type: object <br /> |
 | `componentVersionOverwrites` _string_ | ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object<br />The overwrites object has to be in the same namespace as the context.<br />If the string is empty, no overwrites will be used. |  |  |
+| `verificationSignatures` _object (keys:string, values:[VerificationSignature](#verificationsignature))_ | VerificationSignatures maps a signature name to the trusted verification information |  |  |
 
 
 #### ContextConfiguration
@@ -287,6 +288,7 @@ _Appears in:_
 | `registryPullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core) array_ | RegistryPullSecrets defines a list of registry credentials that are used to<br />pull blueprints, component descriptors and jsonschemas from the respective registry.<br />For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/<br />Note that the type information is used to determine the secret key and the type of the secret. |  |  |
 | `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key.<br />The key should use a dns-like syntax to express the purpose and avoid conflicts. |  | Schemaless: {} <br />Type: object <br /> |
 | `componentVersionOverwrites` _string_ | ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object<br />The overwrites object has to be in the same namespace as the context.<br />If the string is empty, no overwrites will be used. |  |  |
+| `verificationSignatures` _object (keys:string, values:[VerificationSignature](#verificationsignature))_ | VerificationSignatures maps a signature name to the trusted verification information |  |  |
 
 
 
@@ -958,6 +960,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `context` _string_ | Context defines the current context of the installation. |  |  |
+| `verification` _[Verification](#verification)_ | Verification defines the necessary data to verify the signature of the refered component |  |  |
 | `componentDescriptor` _[ComponentDescriptorDefinition](#componentdescriptordefinition)_ | ComponentDescriptor is a reference to the installation's component descriptor |  |  |
 | `blueprint` _[BlueprintDefinition](#blueprintdefinition)_ | Blueprint is the resolved reference to the definition. |  |  |
 | `imports` _[InstallationImports](#installationimports)_ | Imports define the imported data objects and targets. |  |  |
@@ -1218,6 +1221,23 @@ _Appears in:_
 | `key` _string_ | The key of the secret to select from.  Must be a valid secret key. |  |  |
 
 
+#### SecretReference
+
+
+
+SecretReference is reference to data in a secret.
+The secret can also be in a different namespace.
+
+
+
+_Appears in:_
+- [VerificationSignature](#verificationsignature)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `name` _string_ | Name is the name of the kubernetes object. |  |  |
+| `namespace` _string_ | Namespace is the namespace of kubernetes object. |  |  |
+| `key` _string_ | Key is the name of the key in the secret that holds the data. |  |  |
 
 
 
@@ -1571,6 +1591,40 @@ _Appears in:_
 | `finishedTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#time-v1-meta)_ | FinishedTime is the time when the finished phase is set. |  |  |
 
 
+
+
+#### Verification
+
+
+
+Verification defines the necessary data to verify the signature of the refered component
+
+
+
+_Appears in:_
+- [InstallationSpec](#installationspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `signatureName` _string_ | SignatureName defines the name of the signature that is verified |  |  |
+
+
+#### VerificationSignature
+
+
+
+VerificationSignatures contains the trusted verification information
+
+
+
+_Appears in:_
+- [Context](#context)
+- [ContextConfiguration](#contextconfiguration)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `publicKeySecretReference` _[SecretReference](#secretreference)_ | PublicKeySecretReference contains a secret reference to a public key in PEM format that is used to verify the component signature |  |  |
+| `caCertificateSecretReference` _[SecretReference](#secretreference)_ | CaCertificateSecretReference contains a secret reference to one or more certificates in PEM format that are used to verify the compnent signature |  |  |
 
 
 
