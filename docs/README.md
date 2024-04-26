@@ -66,6 +66,7 @@
 - [Configuring the Landscaper Logs](usage/Logging.md)
 - [Optimization](usage/Optimization.md)
 - [Repository Context](usage/RepositoryContext.md)
+- [Signature Verification](usage/SignatureVerification.md)
 - [Skipping the Uninstallation of an Application](usage/SkipUninstall.md)
 - [TargetSyncs](usage/TargetSyncs.md)
 - [Targets](usage/Targets.md)

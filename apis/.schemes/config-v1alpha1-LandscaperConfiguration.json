@@ -468,6 +468,15 @@
       "$ref": "#/definitions/apis-v2-UnstructuredTypedObject",
       "description": "RepositoryContext defines the default repository context that should be used to resolve component descriptors. DEPRECATED: use controllers.context.config.default.repositoryContext instead."
     },
+    "signatureVerificationEnforcementPolicy": {
+      "description": "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"` explcitly disables signature verification. Enabling the verification on installation level will not have an effect and the verification will still be disabled.\n - `\"DoNotEnforce\"` does not enforce a global policy. Signature verification can be enabled in the installation if desired. [DEFAULT]\n - `\"Enforce\"` will enforce all instalations to have valid signatures before being worked on. Disabling the verification on installation level has no impact.",
+      "enum": [
+        "Disabled",
+        "DoNotEnforce",
+        "Enforce"
+      ],
+      "type": "string"
+    },
     "useOCMLib": {
       "type": "boolean"
     }

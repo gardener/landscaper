@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: targetsyncs.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
@@ -22,14 +22,19 @@ spec:
         description: The TargetSync is created targets from secrets.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -41,10 +46,11 @@ spec:
                   a target is created, which references the secret in SecretRef
                 type: boolean
               secretNameExpression:
-                description: SecretNameExpression defines the names of the secrets
-                  which should be synced via a regular expression according to https://github.com/google/re2/wiki/Syntax
-                  with the extension that * is also a valid expression and matches
-                  all names. if not set no secrets are synced
+                description: |-
+                  SecretNameExpression defines the names of the secrets which should be synced via a regular expression according
+                  to https://github.com/google/re2/wiki/Syntax with the extension that * is also a valid expression and matches
+                  all names.
+                  if not set no secrets are synced
                 type: string
               secretRef:
                 description: SecretRef references the secret that contains the kubeconfig
@@ -61,26 +67,25 @@ spec:
                 - name
                 type: object
               shootNameExpression:
-                description: ShootNameExpression defines the names of shoot clusters
-                  for which targets with short living access data to the shoots are
-                  created via a regular expression according to https://github.com/google/re2/wiki/Syntax
-                  with the extension that * is also a valid expression and matches
-                  all names. if not set no targets for the shoots are created
+                description: |-
+                  ShootNameExpression defines the names of shoot clusters for which targets with short living access data
+                  to the shoots are created via a regular expression according to https://github.com/google/re2/wiki/Syntax with
+                  the extension that * is also a valid expression and matches all names.
+                  if not set no targets for the shoots are created
                 type: string
               sourceNamespace:
                 description: SourceNamespace describes the namespace from where the
                   secrets should be synced
                 type: string
               targetToSourceName:
-                description: TargetToSourceName is the name of the target referencing
-                  the secret defined in SecretRef if CreateTargetToSource is set on
-                  true. If TargetToSourceName is empty SourceNamespace is used instead.
+                description: |-
+                  TargetToSourceName is the name of the target referencing the secret defined in SecretRef if CreateTargetToSource
+                  is set on true. If TargetToSourceName is empty SourceNamespace is used instead.
                 type: string
               tokenRotation:
-                description: TokenRotation defines the data to perform an automatic
-                  rotation of the token to access the source cluster with the secrets
-                  to sync. The token expires after 90 days and will be rotated every
-                  60 days.
+                description: |-
+                  TokenRotation defines the data to perform an automatic rotation of the token to access the source cluster with the
+                  secrets to sync. The token expires after 90 days and will be rotated every 60 days.
                 properties:
                   enabled:
                     description: Enabled defines if automatic token is executed

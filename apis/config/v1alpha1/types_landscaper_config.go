@@ -44,6 +44,8 @@ type LandscaperConfiguration struct {
 	HPAMainConfiguration *HPAMainConfiguration `json:"hpaMain,omitempty"`
 	// +optional
 	UseOCMLib bool `json:"useOCMLib,omitempty"`
+	// SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.
+	SignatureVerificationEnforcementPolicy SignatureVerificationEnforcementPolicy `json:"signatureVerificationEnforcementPolicy,omitempty"`
 }
 
 // LsDeployments contains the names of the landscaper deployments.
@@ -277,3 +279,16 @@ type GarbageCollectionConfiguration struct {
 type HPAMainConfiguration struct {
 	MaxReplicas int32 `json:"maxReplicas,omitempty"`
 }
+
+// SignatureVerificationEnforcementPolicy describes the policy for signature verification
+// +enum
+type SignatureVerificationEnforcementPolicy string
+
+const (
+	// Enforce will enforce all instalations to have valid signatures before being worked on. Disabling the verification on installation level has no impact.
+	Enforce SignatureVerificationEnforcementPolicy = "Enforce"
+	// DoNotEnforce does not enforce a global policy. Signature verification can be enabled in the installation if desired. [DEFAULT]
+	DoNotEnforce SignatureVerificationEnforcementPolicy = "DoNotEnforce"
+	// Disabled explcitly disables signature verification. Enabling the verification on installation level will not have an effect and the verification will still be disabled.
+	Disabled SignatureVerificationEnforcementPolicy = "Disabled"
+)

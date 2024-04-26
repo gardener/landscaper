@@ -1,0 +1,20 @@
+components:
+  - name: github.com/gardener/landscaper-examples/guided-tour/templating-components-root
+    version: 2.2.0
+    provider:
+      name: internal
+    componentReferences:
+      - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-core
+        name: core
+        version: 2.2.0
+      - componentName: github.com/gardener/landscaper-examples/guided-tour/templating-components-extension
+        name: extension
+        version: 2.2.0
+    resources:
+      - name: blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip

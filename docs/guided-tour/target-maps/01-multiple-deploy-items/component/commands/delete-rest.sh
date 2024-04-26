@@ -17,16 +17,16 @@ TMP_DIR=`mktemp -d`
 echo tempdir ${TMP_DIR}
 
 outputFile="${TMP_DIR}/context.yaml"
-mako-render "${COMPONENT_DIR}/installation/context.yaml.tpl" \
-  --var namespace="${NAMESPACE}" \
-  --var repoBaseUrl="${REPO_BASE_URL}" \
-  --output-file=${outputFile}
+export namespace="${NAMESPACE}"
+export repoBaseUrl="${REPO_BASE_URL}"
+inputFile="${COMPONENT_DIR}/installation/context.yaml.tpl"
+envsubst < ${inputFile} > ${outputFile}
 kubectl delete -f ${outputFile}
 
 outputFile="${TMP_DIR}/dataobject.yaml"
-mako-render "${COMPONENT_DIR}/installation/dataobject.yaml.tpl" \
-  --var namespace="${NAMESPACE}" \
-  --output-file=${outputFile}
+export namespace="${NAMESPACE}"
+inputFile="${COMPONENT_DIR}/installation/dataobject.yaml.tpl"
+envsubst < ${inputFile} > ${outputFile}
 kubectl delete -f ${outputFile}
 
 
@@ -37,11 +37,11 @@ array=("blue" "green" "yellow" "orange" "red")
 for color in "${array[@]}"
 do
    outputFile="${TMP_DIR}/target-${color}.yaml"
-   mako-render "${COMPONENT_DIR}/installation/target.yaml.tpl" \
-     --var namespace="${NAMESPACE}" \
-     --var color="${color}" \
-     --var kubeconfig_path="${TARGET_CLUSTER_KUBECONFIG_PATH}" \
-     --output-file=${outputFile}
+   export namespace="${NAMESPACE}"
+   export color="${color}"
+   export kubeconfig=`sed 's/^/      /' $TARGET_CLUSTER_KUBECONFIG_PATH`
+   inputFile="${COMPONENT_DIR}/installation/target.yaml.tpl"
+   envsubst < ${inputFile} > ${outputFile}
    kubectl delete -f ${outputFile}
 done
 

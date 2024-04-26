@@ -38,6 +38,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	"github.com/gardener/landscaper/pkg/utils/verify"
 )
 
 const (
@@ -354,7 +355,7 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 
 // initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
 // It does not modify the installation resource in the cluster in any way.
-func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, lserrors.LsError) {
+func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation, runVerify bool) (*installations.Operation, lserrors.LsError) {
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
@@ -365,6 +366,23 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 
 	if err := c.SetupRegistries(ctx, op, lsCtx.External.Context, lsCtx.External.RegistryPullSecrets(), inst); err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
+	}
+
+	if runVerify && verify.IsVerifyEnabled(inst, c.LsConfig) {
+		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentDescriptorRef())
+		if err != nil {
+			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
+		}
+
+		signatureName, publicKeyData, caCertData, err := verify.ExtractVerifyInfo(ctx, inst, &lsCtx.External.Context, c.hostUncachedClient)
+		if err != nil {
+			return nil, lserrors.NewWrappedError(err, currOp, "ExtractVerifyInfo", err.Error())
+		}
+
+		if err := op.ComponentsRegistry().VerifySignature(componentVersion, signatureName, publicKeyData, caCertData); err != nil {
+			return nil, lserrors.NewWrappedError(err, currOp, "VerifySignature", err.Error())
+		}
+
 	}
 
 	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)

@@ -19,28 +19,33 @@ a Secret. The new chart version can be found in our
 
 First, we deploy the original hello-world helm chart:
 
-1. Add the kubeconfig of your target cluster to your [target.yaml](installation/target.yaml) at the specified location.
+1. In the [settings](commands/settings) file, adjust the variables `RESOURCE_CLUSTER_KUBECONFIG_PATH` 
+   and `TARGET_CLUSTER_KUBECONFIG_PATH`.
 
-2. On the Landscaper resource cluster, create a namespace `example` and apply your [target.yaml](installation/target.yaml) and [installation.yaml](installation/installation.yaml):
-   
-   ```shell
-   kubectl create ns example
-   kubectl apply -f <path to target.yaml>
-   kubectl apply -f <path to installation-1.0.0.yaml>
-   ```
+2. On the Landscaper resource cluster, create a namespace `cu-example`.
 
-3. Wait until the Installation reaches phase `Succeeded` and check that the ConfigMap of the Helm chart is available in the target cluster.
+3. Run script [commands/deploy-k8s-resources.sh](commands/deploy-k8s-resources.sh).
+   It templates a [target.yaml.tpl](installation/target.yaml.tpl) and an [installation.yaml.tpl](installation/installation.yaml.tpl)
+   and applies both on the resource cluster.
 
-4. Upgrade the Installation by applying [installation-1.0.1.yaml](installation/installation-1.0.1.yaml). This Installation references the newer version `1.0.1` of the hello-world Helm chart, which simply deploys a Secret instead of a ConfigMap.
+4. Wait until the Installation reaches phase `Succeeded` and check that the ConfigMap of the Helm chart is available in the target cluster.
 
-   ```shell
-   kubectl apply -f <path to installation-1.0.1.yaml>
-   ```
+5. Run script [commands/upgrade-installation.sh](commands/upgrade-installation.sh).
+   It applies [installation-upg.yaml.tpl](installation/installation-upg.yaml.tpl). This upgraded Installation 
+   references the newer version `1.0.1` of the hello-world Helm chart, which simply deploys a Secret instead of a ConfigMap.
 
-Note that the upgraded Installation has the annotation `landscaper.gardener.cloud/operation: reconcile`. Without this annotation, Landscaper will not start processing the Installation.
+Note that the upgraded Installation has the annotation `landscaper.gardener.cloud/operation: reconcile`. 
+Without this annotation, Landscaper will not start processing the Installation.
 
-5. Wait until the Installation is again in phase `Succeeded`. The ConfigMap that was deployed by the old chart version should no longer exist. Instead, there should be a Secret deployed by the new chart version:
+6. Wait until the Installation is again in phase `Succeeded`. The ConfigMap that was deployed by the old chart version should no longer exist. Instead, there should be a Secret deployed by the new chart version:
 
    ```shell
    kubectl get secret -n example hello-world
    ```
+
+## Cleanup
+
+You can remove the Installation with the
+[delete-installation script](commands/delete-installation.sh).
+When the Installation is gone, you can delete the Target with the
+[delete-other-k8s-resources script](commands/delete-other-k8s-resources.sh).
