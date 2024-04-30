@@ -43,7 +43,7 @@ var _ = Describe("ImportExecutions", func() {
 
 		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 		Expect(err).ToNot(HaveOccurred())
-		imps, err := rh.ImportsSatisfied()
+		imps, err := rh.ImportsSatisfied(ctx)
 		Expect(err).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, imps)).To(Succeed())

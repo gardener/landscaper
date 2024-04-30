@@ -8,6 +8,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -102,6 +105,10 @@ func (b *OperationBuilder) validate() error {
 
 // Build creates an installation operation.
 func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "BuildInstallation")
+	defer pm.StopDebug()
+
 	if err := b.validate(); err != nil {
 		return nil, err
 	}
