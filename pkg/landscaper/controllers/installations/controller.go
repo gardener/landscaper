@@ -357,6 +357,11 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 // It does not modify the installation resource in the cluster in any way.
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation, runVerify bool) (*installations.Operation, lserrors.LsError) {
 	currOp := "InitPrerequisites"
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "initPrerequisites")
+	defer pm.StopDebug()
+
 	op := c.Operation.Copy()
 
 	lsCtx, err := installations.GetInstallationContext(ctx, c.LsUncachedClient(), inst)
@@ -379,10 +384,12 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 			return nil, lserrors.NewWrappedError(err, currOp, "ExtractVerifyInfo", err.Error())
 		}
 
+		pmVerify := utils.StartPerformanceMeasurement(&logger, "VerifySignature")
 		if err := op.ComponentsRegistry().VerifySignature(componentVersion, signatureName, publicKeyData, caCertData); err != nil {
+			pmVerify.StopDebug()
 			return nil, lserrors.NewWrappedError(err, currOp, "VerifySignature", err.Error())
 		}
-
+		pmVerify.StopDebug()
 	}
 
 	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)

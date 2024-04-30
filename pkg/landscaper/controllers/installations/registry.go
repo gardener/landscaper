@@ -7,6 +7,9 @@ package installations
 import (
 	"context"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/landscaper/pkg/components/registries"
 
 	corev1 "k8s.io/api/core/v1"
@@ -19,6 +22,10 @@ import (
 // SetupRegistries sets up components and blueprints registries for the current reconcile
 func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, contextObj lsv1alpha1.Context, pullSecrets []lsv1alpha1.ObjectReference,
 	installation *lsv1alpha1.Installation) error {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "SetupRegistries")
+	defer pm.StopDebug()
 
 	// resolve all pull secrets
 	secrets, err := c.resolveSecrets(ctx, pullSecrets)

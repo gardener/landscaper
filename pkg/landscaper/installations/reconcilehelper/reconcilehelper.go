@@ -8,6 +8,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	lserror "github.com/gardener/landscaper/apis/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -30,6 +33,10 @@ type ReconcileHelper struct {
 }
 
 func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*ReconcileHelper, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "NewReconcileHelper")
+	defer pm.StopDebug()
+
 	rh := &ReconcileHelper{
 		ctx:       ctx,
 		Operation: op,

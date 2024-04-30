@@ -8,6 +8,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -54,6 +57,10 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	ociRegistryConfig *config.OCIConfiguration,
 	inlineCd *types.ComponentDescriptor,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "NewRegistryAccess")
+	defer pm.StopDebug()
 
 	if fs == nil {
 		fs = osfs.New()

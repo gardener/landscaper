@@ -280,6 +280,9 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation, ru
 
 	currentOperation := "init"
 
+	pm := lsutil.StartPerformanceMeasurement(&logger, "init")
+	defer pm.StopDebug()
+
 	instOp, fatalError := c.initPrerequisites(ctx, inst, runVerify)
 	if fatalError != nil {
 		return nil, nil, "", nil, fatalError, nil

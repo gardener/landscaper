@@ -10,6 +10,9 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/signing"
@@ -106,6 +109,10 @@ func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion
 }
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion")
+	defer pm.StopDebug()
+
 	if cdRef == nil {
 		return nil, errors.New("component descriptor reference cannot be nil")
 	}
