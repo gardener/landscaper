@@ -56,7 +56,11 @@ func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*Reco
 ///// VALIDATION METHODS /////
 
 //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
-func (rh *ReconcileHelper) GetPredecessors(predecessorNames sets.String) (map[string]*installations.InstallationAndImports, error) {
+func (rh *ReconcileHelper) GetPredecessors(ctx context.Context, predecessorNames sets.String) (map[string]*installations.InstallationAndImports, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "GetPredecessors")
+	defer pm.StopDebug()
+
 	predecessorMap := map[string]*installations.InstallationAndImports{}
 
 	siblings, err := rh.getSiblings()
@@ -76,8 +80,13 @@ func (rh *ReconcileHelper) GetPredecessors(predecessorNames sets.String) (map[st
 	return predecessorMap, nil
 }
 
-func (rh *ReconcileHelper) AllPredecessorsFinished(installation *lsv1alpha1.Installation,
+func (rh *ReconcileHelper) AllPredecessorsFinished(ctx context.Context, installation *lsv1alpha1.Installation,
 	predecessorMap map[string]*installations.InstallationAndImports) lserror.LsError {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "AllPredecessorsFinished")
+	defer pm.StopDebug()
+
 	// iterate over siblings which is depended on (either directly or transitively) and check if they are 'ready'
 	for name := range predecessorMap {
 		predecessor := predecessorMap[name]
@@ -107,7 +116,11 @@ func (rh *ReconcileHelper) AllPredecessorsFinished(installation *lsv1alpha1.Inst
 	return nil
 }
 
-func (rh *ReconcileHelper) AllPredecessorsSucceeded(installation *lsv1alpha1.Installation, predecessorMap map[string]*installations.InstallationAndImports) error {
+func (rh *ReconcileHelper) AllPredecessorsSucceeded(ctx context.Context, installation *lsv1alpha1.Installation, predecessorMap map[string]*installations.InstallationAndImports) error {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "AllPredecessorsSucceeded")
+	defer pm.StopDebug()
+
 	for name := range predecessorMap {
 		predecessor := predecessorMap[name]
 
@@ -182,7 +195,11 @@ func (rh *ReconcileHelper) fetchImports() error {
 }
 
 //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
-func (rh *ReconcileHelper) FetchPredecessors() (sets.String, error) {
+func (rh *ReconcileHelper) FetchPredecessors(ctx context.Context) (sets.String, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "FetchPredecessors")
+	defer pm.StopDebug()
+
 	inst := rh.Inst.GetInstallation()
 	siblingInsts := []*lsv1alpha1.Installation{}
 
