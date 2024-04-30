@@ -7,42 +7,51 @@ sidebar_position: 1
 
 ## Definition
 
-A Blueprint is a parameterized description of how to deploy a specific component.
+A Blueprint is a filesystem structure that contains a Blueprint definition at `/blueprint.yaml`. Any other additional 
+file can be contained in a Blueprint and referred to in the blueprint.yaml for example JSON schema definitions or
+configuration data.
 
-The description follows the kubernetes controller approach:
+A Blueprint definition is a parameterized description of how to deploy a specific component consisting of many different
+artifacts. It can be compared with a function with some input and output parameters. 
 
-The task of a Blueprint is to provide deployitem descriptions based on its input and outputs based on the input and the state of the deployment.
+Blueprints are used in Installations, which are particular Landscaper custom resources. Installations "call" 
+Blueprint definitions with particular input data. Depending on these input data, the task of a Blueprint is to define 
+a set of deployitems. Particular controllers of the Landscaper use the Blueprint definition to create these deployitems 
+as kubernetes custom resources. 
 
-The rendered deployitems are then handled by independent kubernetes controllers, which perform the real deployment tasks. 
-This way, the Blueprint does not execute deployment actions, but provides the target state of formally described 
-deployitems. The actions described by the Blueprint itself are therefore restricted to YAML-based manifest rendering. 
-These actions are described by [template executions](./Templating.md).
+The deployitems are handled by independent Landscaper kubernetes controllers (so-called deployers), which perform the 
+real deployment tasks. This way, the Blueprint does not execute deployment actions, but defines the deployitems. 
+The actions described by the Blueprint itself are therefore restricted to YAML-based manifest rendering.
 
-A Blueprint is a filesystem structure that contains the blueprint definition at `/blueprint.yaml`. Any other additional file can be referred to in the blueprint.yaml for JSON schema definitions and templates.
+Every Blueprint must have a corresponding component descriptor that has two purposes:
+- The component descriptor references the blueprint location.
+- The Blueprint can reference sources, resources etc. of the component descriptor in the Blueprint definition and
+  use these data to render the deployitems.
 
-Every Blueprint must have a corresponding component descriptor that is used to reference the Blueprint and define its dependencies.
+The typical structure of a Blueprint looks as follows:
 
 ```
 my-blueprint
 ├── data
-│   ├── gotemplate.tmpl
 │   └── <myadditional files>
 ├── installations
 │   └── installation.yaml
 └── blueprint.yaml
 ```
 
-The blueprint definition (blueprint.yaml) describes
+In summary, a Blueprint definition (blueprint.yaml) describes
 - declaration of import parameters
 - declaration of export parameters
 - JSONSchema definitions
 - generation rules for deployitems
 - generation rules for export values
-- generation of nested installations
+- generation of nested installations (again calling some Blueprint with particular input parameters)
 
 ## Example
 
-The following snippet shows the structure of a `blueprint.yaml` file. It is expected as top-level file in the blueprint filesystem structure. Refer to [apis/.schemes/core-v1alpha1-Blueprint.json](../../apis/.schemes/core-v1alpha1-Blueprint.json) for the automatically generated jsonschema definition.
+The following snippet shows the structure of a `blueprint.yaml` file. It is expected as top-level file in the Blueprint 
+filesystem structure. Refer to [apis/.schemes/core-v1alpha1-Blueprint.json](../../apis/.schemes/core-v1alpha1-Blueprint.json) for the automatically generated 
+jsonschema definition.
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -59,7 +68,7 @@ localTypes:
     type: object
 
 # imports defines all imported values that are expected.
-# Data can be either imported as data object or target.
+# Data can be either imported as data objects, targets or target maps.
 imports:
 # Import a data object by specifying the expected structure of data
 # as jsonschema.
@@ -146,15 +155,18 @@ subinstallations:
 
 ## Import Definitions
 
-Blueprints describe formal imports. A formal import parameter has a name and a *value type*. It may describe a single simple value or a complex data structure. There are several *types* of imports, indicating different use cases:
+Blueprints describe formal imports. A formal import parameter has a name and a *value type*. It may describe a single 
+simple value or a complex data structure. There are several *types* of imports, indicating different use cases:
 - **`data`**
 
-  This type of import is used to import arbitrary data according to its value type. The value type is described by a [JSONSchema](#jsonschema).
+  This type of import is used to import arbitrary data according to its value type. The value type is described by 
+  a [JSONSchema](#jsonschema).
 
 
 - **`target`**
 
-  This type declares an import of a [deployment target object](./Targets.md). It is used in the rendered deployitems to specify the target environment for the deployment of the deployitem.
+  This type declares an import of a [deployment target object](./Targets.md). It is used in the rendered deployitems to specify
+  the target environment for the deployment of the deployitem.
 
 
 - **`targetMap`**
