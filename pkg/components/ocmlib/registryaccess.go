@@ -138,12 +138,16 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 		// if there is no inline repository or the repository context is different from the one specified in the inline
 		// component descriptor, we need to look up the repository specified by the component descriptor reference
 		var repo ocm.Repository
+		pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
 		repo, err = r.session.LookupRepository(r.octx, spec)
+		pm1.StopDebug()
 		if err != nil {
 			return nil, err
 		}
 
+		pm2 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupComponentVersion")
 		cv, err = r.session.LookupComponentVersion(repo, cdRef.ComponentName, cdRef.Version)
+		pm2.StopDebug()
 	}
 	if err != nil {
 		return nil, err
