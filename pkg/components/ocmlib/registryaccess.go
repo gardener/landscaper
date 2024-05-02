@@ -110,6 +110,9 @@ func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion
 
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
 	logger, _ := logging.FromContextOrNew(ctx, nil)
+	if cdRef != nil {
+		logger = logger.WithValues("componentRefName", cdRef.ComponentName, "componentRefVersion", cdRef.Version)
+	}
 	pm := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion")
 	defer pm.StopDebug()
 
