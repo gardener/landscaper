@@ -57,7 +57,7 @@ func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*Reco
 
 //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 func (rh *ReconcileHelper) GetPredecessors(ctx context.Context, predecessorNames sets.String) (map[string]*installations.InstallationAndImports, error) {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "GetPredecessors")
 	defer pm.StopDebug()
 
@@ -83,7 +83,7 @@ func (rh *ReconcileHelper) GetPredecessors(ctx context.Context, predecessorNames
 func (rh *ReconcileHelper) AllPredecessorsFinished(ctx context.Context, installation *lsv1alpha1.Installation,
 	predecessorMap map[string]*installations.InstallationAndImports) lserror.LsError {
 
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "AllPredecessorsFinished")
 	defer pm.StopDebug()
 
@@ -117,7 +117,7 @@ func (rh *ReconcileHelper) AllPredecessorsFinished(ctx context.Context, installa
 }
 
 func (rh *ReconcileHelper) AllPredecessorsSucceeded(ctx context.Context, installation *lsv1alpha1.Installation, predecessorMap map[string]*installations.InstallationAndImports) error {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "AllPredecessorsSucceeded")
 	defer pm.StopDebug()
 
@@ -196,7 +196,7 @@ func (rh *ReconcileHelper) fetchImports() error {
 
 //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
 func (rh *ReconcileHelper) FetchPredecessors(ctx context.Context) (sets.String, error) {
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "FetchPredecessors")
 	defer pm.StopDebug()
 

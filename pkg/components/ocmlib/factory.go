@@ -58,7 +58,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	inlineCd *types.ComponentDescriptor,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 
-	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger, _ := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "NewRegistryAccess")
 	defer pm.StopDebug()
 
