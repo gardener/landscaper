@@ -20,11 +20,10 @@ import (
 type OperationBuilder struct {
 	lsoperation.Builder
 
-	inst                            *InstallationImportsAndBlueprint
-	componentVersion                model.ComponentVersion
-	op                              *lsoperation.Operation
-	resolvedComponentDescriptorList *model.ComponentVersionList
-	context                         *Scope
+	inst             *InstallationImportsAndBlueprint
+	componentVersion model.ComponentVersion
+	op               *lsoperation.Operation
+	context          *Scope
 }
 
 // NewOperationBuilder creates a new operation builder.
@@ -44,13 +43,6 @@ func (b *OperationBuilder) Installation(inst *InstallationImportsAndBlueprint) *
 // Will be calculated if not set.
 func (b *OperationBuilder) ComponentVersion(componentVersion model.ComponentVersion) *OperationBuilder {
 	b.componentVersion = componentVersion
-	return b
-}
-
-// WithComponentDescriptorList sets the list of transitive component descriptors.
-// Will be calculated if not set.
-func (b *OperationBuilder) WithComponentDescriptorList(list *model.ComponentVersionList) *OperationBuilder {
-	b.resolvedComponentDescriptorList = list
 	return b
 }
 
@@ -115,10 +107,9 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 
 	instOp := &Operation{
-		Operation:                       b.op,
-		Inst:                            b.inst,
-		ComponentVersion:                b.componentVersion,
-		ResolvedComponentDescriptorList: b.resolvedComponentDescriptorList,
+		Operation:        b.op,
+		Inst:             b.inst,
+		ComponentVersion: b.componentVersion,
 	}
 
 	if b.context == nil {
@@ -145,17 +136,15 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 		instOp.ComponentVersion = componentVersion
 	}
 
-	if instOp.ResolvedComponentDescriptorList == nil {
-		componentVersions, err := model.GetTransitiveComponentReferences(ctx,
-			instOp.ComponentVersion,
-			instOp.Context().External.RepositoryContext,
-			instOp.Context().External.Overwriter)
-		if err != nil {
-			return nil, err
-		}
-
-		instOp.ResolvedComponentDescriptorList = componentVersions
+	componentVersions, err := model.GetTransitiveComponentReferences(ctx,
+		instOp.ComponentVersion,
+		instOp.Context().External.RepositoryContext,
+		instOp.Context().External.Overwriter)
+	if err != nil {
+		return nil, err
 	}
+
+	instOp.ResolvedComponentDescriptorList = componentVersions
 
 	return instOp, nil
 }
