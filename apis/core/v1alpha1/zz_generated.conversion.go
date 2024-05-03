@@ -2212,6 +2212,7 @@ func Convert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in *core.ExportD
 func autoConvert_v1alpha1_FailedReconcile_To_core_FailedReconcile(in *FailedReconcile, out *core.FailedReconcile, s conversion.Scope) error {
 	out.NumberOfReconciles = (*int)(unsafe.Pointer(in.NumberOfReconciles))
 	out.Interval = (*core.Duration)(unsafe.Pointer(in.Interval))
+	out.CronSpec = in.CronSpec
 	return nil
 }
 
@@ -2223,6 +2224,7 @@ func Convert_v1alpha1_FailedReconcile_To_core_FailedReconcile(in *FailedReconcil
 func autoConvert_core_FailedReconcile_To_v1alpha1_FailedReconcile(in *core.FailedReconcile, out *FailedReconcile, s conversion.Scope) error {
 	out.NumberOfReconciles = (*int)(unsafe.Pointer(in.NumberOfReconciles))
 	out.Interval = (*Duration)(unsafe.Pointer(in.Interval))
+	out.CronSpec = in.CronSpec
 	return nil
 }
 
@@ -3031,6 +3033,7 @@ func Convert_core_SubinstallationTemplate_To_v1alpha1_SubinstallationTemplate(in
 
 func autoConvert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile(in *SucceededReconcile, out *core.SucceededReconcile, s conversion.Scope) error {
 	out.Interval = (*core.Duration)(unsafe.Pointer(in.Interval))
+	out.CronSpec = in.CronSpec
 	return nil
 }
 
@@ -3041,6 +3044,7 @@ func Convert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile(in *Succeede
 
 func autoConvert_core_SucceededReconcile_To_v1alpha1_SucceededReconcile(in *core.SucceededReconcile, out *SucceededReconcile, s conversion.Scope) error {
 	out.Interval = (*Duration)(unsafe.Pointer(in.Interval))
+	out.CronSpec = in.CronSpec
 	return nil
 }
 

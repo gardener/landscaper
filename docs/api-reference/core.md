@@ -781,6 +781,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `numberOfReconciles` _integer_ | NumberOfReconciles specifies the maximal number of automatically repeated reconciliations. If not set, no upper limit exists. |  | Format: int32 <br /> |
 | `interval` _[Duration](#duration)_ | Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 5 minutes is used. |  | Type: string <br /> |
+| `cronSpec` _string_ | CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".<br />If not empty, this specification is used instead of Interval. |  |  |
 
 
 #### FieldValueDefinition
@@ -1340,6 +1341,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `interval` _[Duration](#duration)_ | Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of<br />24 hours is used. |  | Type: string <br /> |
+| `cronSpec` _string_ | CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".<br />If not empty, this specification is used instead of Interval. |  |  |
 
 
 #### SyncObject

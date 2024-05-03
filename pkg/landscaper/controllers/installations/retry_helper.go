@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/robfig/cron/v3"
+
 	"k8s.io/utils/clock"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,7 +128,7 @@ func (r *retryHelper) recomputeRetryForFailed(ctx context.Context, inst *lsv1alp
 		return oldResult, oldError
 	}
 
-	if r.isNextRetryDueForFailed(inst) {
+	if r.isNextRetryDueForFailed(ctx, inst) {
 		if err := r.addReconcileAnnotation(ctx, inst); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -142,7 +144,7 @@ func (r *retryHelper) recomputeRetryForFailed(ctx context.Context, inst *lsv1alp
 	// too early
 	return reconcile.Result{
 		Requeue:      true,
-		RequeueAfter: r.getDurationUntilNextRetryForFailed(inst),
+		RequeueAfter: r.getDurationUntilNextRetryForFailed(ctx, inst),
 	}, nil
 }
 
@@ -198,7 +200,7 @@ func (r *retryHelper) recomputeRetryForNewAndSucceeded(ctx context.Context, inst
 		return reconcile.Result{}, nil
 	}
 
-	if r.isNextRetryDueForNewAndSucceeded(inst) {
+	if r.isNextRetryDueForNewAndSucceeded(ctx, inst) {
 		if err := r.addReconcileAnnotation(ctx, inst); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -214,7 +216,7 @@ func (r *retryHelper) recomputeRetryForNewAndSucceeded(ctx context.Context, inst
 	// too early
 	return reconcile.Result{
 		Requeue:      true,
-		RequeueAfter: r.getDurationUntilNextRetryForSucceeded(inst),
+		RequeueAfter: r.getDurationUntilNextRetryForSucceeded(ctx, inst),
 	}, nil
 }
 
@@ -241,29 +243,59 @@ func (r *retryHelper) maxNumberOfRetriesDoneForFailed(inst *lsv1alpha1.Installat
 		*inst.Spec.AutomaticReconcile.FailedReconcile.NumberOfReconciles <= alreadyExecutedRetries
 }
 
-func (r *retryHelper) isNextRetryDueForFailed(inst *lsv1alpha1.Installation) bool {
-	return r.now().After(r.getNextRetryTimeForFailed(inst))
+func (r *retryHelper) isNextRetryDueForFailed(ctx context.Context, inst *lsv1alpha1.Installation) bool {
+	return r.now().After(r.getNextRetryTimeForFailed(ctx, inst))
 }
 
-func (r *retryHelper) isNextRetryDueForNewAndSucceeded(inst *lsv1alpha1.Installation) bool {
-	return r.now().After(r.getNextRetryTimeForSucceeded(inst))
+func (r *retryHelper) isNextRetryDueForNewAndSucceeded(ctx context.Context, inst *lsv1alpha1.Installation) bool {
+	return r.now().After(r.getNextRetryTimeForSucceeded(ctx, inst))
 }
 
-func (r *retryHelper) getDurationUntilNextRetryForFailed(inst *lsv1alpha1.Installation) time.Duration {
-	return r.getNextRetryTimeForFailed(inst).Sub(r.now())
+func (r *retryHelper) getDurationUntilNextRetryForFailed(ctx context.Context, inst *lsv1alpha1.Installation) time.Duration {
+	return r.getNextRetryTimeForFailed(ctx, inst).Sub(r.now())
 }
 
-func (r *retryHelper) getDurationUntilNextRetryForSucceeded(inst *lsv1alpha1.Installation) time.Duration {
-	return r.getNextRetryTimeForSucceeded(inst).Sub(r.now())
+func (r *retryHelper) getDurationUntilNextRetryForSucceeded(ctx context.Context, inst *lsv1alpha1.Installation) time.Duration {
+	return r.getNextRetryTimeForSucceeded(ctx, inst).Sub(r.now())
 }
 
-func (r *retryHelper) getNextRetryTimeForFailed(inst *lsv1alpha1.Installation) time.Time {
-	lastRetryTime := inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time // TODO
+func (r *retryHelper) getNextRetryTimeForFailed(ctx context.Context, inst *lsv1alpha1.Installation) time.Time {
+	log, _ := logging.FromContextOrNew(ctx, nil)
+
+	lastRetryTime := inst.Status.AutomaticReconcileStatus.LastReconcileTime
+
+	cronSpec := inst.Spec.AutomaticReconcile.FailedReconcile.CronSpec
+	if cronSpec != "" {
+		specSchedule, err := cron.ParseStandard(cronSpec)
+		if err == nil {
+			nextTimeToReconcile := specSchedule.Next(time.UnixMilli(lastRetryTime.UnixMilli()))
+			return nextTimeToReconcile
+		}
+
+		// err != nil should not happen because prevented by webhook checks
+		log.Error(err, "failed to parse cron spec for failed retry time", "cronSpec", cronSpec)
+	}
+
 	return lastRetryTime.Add(r.getRetryIntervalForFailed(inst))
 }
 
-func (r *retryHelper) getNextRetryTimeForSucceeded(inst *lsv1alpha1.Installation) time.Time {
-	lastRetryTime := inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time // TODO
+func (r *retryHelper) getNextRetryTimeForSucceeded(ctx context.Context, inst *lsv1alpha1.Installation) time.Time {
+	log, _ := logging.FromContextOrNew(ctx, nil)
+
+	lastRetryTime := inst.Status.AutomaticReconcileStatus.LastReconcileTime.Time
+
+	cronSpec := inst.Spec.AutomaticReconcile.SucceededReconcile.CronSpec
+	if cronSpec != "" {
+		specSchedule, err := cron.ParseStandard(cronSpec)
+		if err == nil {
+			nextTimeToReconcile := specSchedule.Next(time.UnixMilli(lastRetryTime.UnixMilli()))
+			return nextTimeToReconcile
+		}
+
+		// err != nil should not happen because prevented by webhook checks
+		log.Error(err, "failed to parse cron spec for succeeded retry time", "cronSpec", cronSpec)
+	}
+
 	return lastRetryTime.Add(r.getRetryIntervalForSucceeded(inst))
 }
 
