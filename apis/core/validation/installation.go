@@ -7,6 +7,7 @@ package validation
 import (
 	"regexp"
 
+	"github.com/robfig/cron/v3"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -58,6 +59,8 @@ func ValidateInstallationSpec(spec *core.InstallationSpec, fldPath *field.Path) 
 	allErrs = append(allErrs, ValidateInstallationBlueprint(spec.Blueprint, fldPath.Child("blueprint"))...)
 	allErrs = append(allErrs, ValidateInstallationComponentDescriptor(spec.ComponentDescriptor, fldPath.Child("componentDescriptor"))...)
 
+	allErrs = append(allErrs, ValidateInstallationAutomaticReconcile(spec.AutomaticReconcile, fldPath.Child("automaticReconcile"))...)
+
 	return allErrs
 }
 
@@ -78,6 +81,49 @@ func ValidateInstallationComponentDescriptor(cd *core.ComponentDescriptorDefinit
 	// check that a ComponentDescriptor - if given - is either inline or ref but not both
 	if cd != nil {
 		allErrs = append(allErrs, ValidateExactlyOneOf(fldPath.Child("definition"), *cd, "Inline", "Reference")...)
+	}
+
+	return allErrs
+}
+
+func ValidateInstallationAutomaticReconcile(automaticReconcile *core.AutomaticReconcile, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if automaticReconcile != nil {
+		allErrs = append(allErrs, ValidateInstallationSucceededReconcile(automaticReconcile.SucceededReconcile, fldPath.Child("succeededReconcile"))...)
+		allErrs = append(allErrs, ValidateInstallationFailedReconcile(automaticReconcile.FailedReconcile, fldPath.Child("failedReconcile"))...)
+	}
+
+	return allErrs
+}
+
+func ValidateInstallationFailedReconcile(failedReconcile *core.FailedReconcile, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if failedReconcile != nil {
+		if failedReconcile.CronSpec != "" {
+			_, err := cron.ParseStandard(failedReconcile.CronSpec)
+			if err != nil {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("cronSpec"), failedReconcile.CronSpec,
+					"field must be a valid cron spec"))
+			}
+		}
+	}
+
+	return allErrs
+}
+
+func ValidateInstallationSucceededReconcile(succeededReconcile *core.SucceededReconcile, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if succeededReconcile != nil {
+		if succeededReconcile.CronSpec != "" {
+			_, err := cron.ParseStandard(succeededReconcile.CronSpec)
+			if err != nil {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("cronSpec"), succeededReconcile.CronSpec,
+					"field must be a valid cron spec"))
+			}
+		}
 	}
 
 	return allErrs

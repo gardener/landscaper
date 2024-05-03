@@ -4985,6 +4985,13 @@ func schema_gardener_landscaper_apis_core_FailedReconcile(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
 						},
 					},
+					"cronSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CronSpec describes the reconcile intervals according to the cron syntax \"https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format\". If not empty, this specification is used instead of Interval.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -6362,6 +6369,13 @@ func schema_gardener_landscaper_apis_core_SucceededReconcile(ref common.Referenc
 						SchemaProps: spec.SchemaProps{
 							Description: "Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 24 hours is used.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
+						},
+					},
+					"cronSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CronSpec describes the reconcile intervals according to the cron syntax \"https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format\". If not empty, this specification is used instead of Interval.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -9540,6 +9554,13 @@ func schema_landscaper_apis_core_v1alpha1_FailedReconcile(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
+					"cronSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CronSpec describes the reconcile intervals according to the cron syntax \"https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format\". If not empty, this specification is used instead of Interval.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -10917,6 +10938,13 @@ func schema_landscaper_apis_core_v1alpha1_SucceededReconcile(ref common.Referenc
 						SchemaProps: spec.SchemaProps{
 							Description: "Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 24 hours is used.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
+					"cronSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CronSpec describes the reconcile intervals according to the cron syntax \"https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format\". If not empty, this specification is used instead of Interval.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
