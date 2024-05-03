@@ -8,6 +8,7 @@ require (
 	github.com/onsi/gomega v1.33.1
 	github.com/robfig/cron/v3 v3.0.1
 	k8s.io/api v0.29.4
+	k8s.io/apiextensions-apiserver v0.29.4
 	k8s.io/apimachinery v0.29.4
 	k8s.io/client-go v0.29.4
 	k8s.io/kube-openapi v0.0.0-20240430033511-f0e62f92d13f

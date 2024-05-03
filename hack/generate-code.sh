@@ -80,7 +80,7 @@ kube::codegen::gen_helpers \
 
 echo
 echo "> Generating CRDs"
-"$CONTROLLER_GEN" crd paths="$PROJECT_ROOT/apis/..." output:crd:artifacts:config="$PROJECT_ROOT/pkg/landscaper/crdmanager/crdresources"
+"$CONTROLLER_GEN" crd paths="$PROJECT_ROOT/apis/..." output:crd:artifacts:config="$PROJECT_ROOT/apis/crds/manifests"
 
 echo
 echo "> Generating API reference"
