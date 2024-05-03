@@ -1,10 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "configMigration": true,
-  "schedule": "after 06:30am and before 04:30pm every weekday",
+  "schedule": "after 02:30pm and before 04:30pm every weekday",
   "timezone": "Europe/Berlin",
   "extends": [
-    "config:recommended",
+    "config:best-practices",
     "group:kubernetes",
     "group:goOpenapi",
     "security:openssf-scorecard",

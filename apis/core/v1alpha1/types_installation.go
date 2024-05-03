@@ -219,6 +219,10 @@ type SucceededReconcile struct {
 	// 24 hours is used.
 	// +optional
 	Interval *Duration `json:"interval,omitempty"`
+
+	// CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".
+	// If not empty, this specification is used instead of Interval.
+	CronSpec string `json:"cronSpec,omitempty"`
 }
 
 // FailedReconcile allows to configure automatically repeated reconciliations for failed installations
@@ -231,6 +235,10 @@ type FailedReconcile struct {
 	// Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 5 minutes is used.
 	// +optional
 	Interval *Duration `json:"interval,omitempty"`
+
+	// CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".
+	// If not empty, this specification is used instead of Interval.
+	CronSpec string `json:"cronSpec,omitempty"`
 }
 
 // InstallationStatus contains the current status of a Installation.

@@ -872,15 +872,15 @@ kind: Installation
 metadata:
   name: my-installation
 spec:
-  automaticReconcile: {
+  automaticReconcile: 
     succeededReconcile:
       interval: <some-duration, e.g. 5s>
+      cronSpec: <cron expression,. e.g. "0 * * * *" for every hour>
 
     failedReconcile:
       interval: <some-duration, e.g. 5s>
       numberOfReconciles: <some-number, e.g. 10>
-  }
-
+      cronSpec: <cron expression,. e.g. "0 * * * *" for every hour>
 ```
 
 The additional fields have the following meanings:
@@ -888,16 +888,24 @@ The additional fields have the following meanings:
 - **succeededReconcile.interval**: This field allows to specify a different interval between two subsequent automatic reconciles
   of succeeded installations.
 
+- **succeededReconcile.cronSpec**: This field allows to specify different points in time for automatic reconciles
+  of succeeded installations according to the [cron expression format](https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format).
+  If this field is set, it overwrites *succeededReconcile.interval*. 
+
 - **failedReconcile.interval**: This field allows to specify a different interval between two subsequent automatic reconciles 
   of failed installations.
 
-- **failedReconcile.numberOfReconciles**: With this field, you can restrict the maximal number of automatic reconciles of failed 
-  installations. The counter for the already executed automatic reconciles is automatically reset to 0 if
+- **failedReconcile.cronSpec**: This field allows to specify different points in time for automatic reconciles
+  of failed installations according to the [cron expression format](https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format).
+  If this field is set, it overwrites *failedReconcile.interval*.
+
+- **failedReconcile.numberOfReconciles**: With this field, you can restrict the maximal number of automatic reconciles 
+  of failed installations. If not set, there is no upper bound. The counter for the already executed automatic 
+  reconciles is automatically reset to 0 if
   - the specification of an installation is changed, resulting in a change of the generation number or
   - the installation went into a successful final state or
   - the reconciliation is triggered by setting the `landscaper.gardener.cloud/operation: reconcile` from outside. This
     includes the case that a predecessor root installations triggers the installation when it finished its work.
-
 
 Be aware that the automatic reconcile mechanism does not start the processing of a new installation. This must still be 
 triggered by setting the annotation `landscaper.gardener.cloud/operation: reconcile`. This is also true if you change

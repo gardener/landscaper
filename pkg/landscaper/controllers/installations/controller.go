@@ -518,7 +518,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		// reduceLogLevelForConflicts is set on true, if conflicts might occur, e.g.
 		// - when deleting an item a touch operation might be triggered for all siblings to speed up the operation
 		if reduceLogLevelForConflicts && apierrors.IsConflict(err) {
-			logger.Info("unable to update installation status", err, err.Error())
+			logger.Info("unable to update installation status", lc.KeyError, err.Error())
 		} else {
 			logger.Error(err, "unable to update installation status")
 		}
