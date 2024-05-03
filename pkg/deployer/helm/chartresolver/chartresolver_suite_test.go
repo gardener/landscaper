@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/resource_cache"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/runtime"
 
@@ -90,8 +92,8 @@ var _ = Describe("GetChart", func() {
 			ctx := logging.NewContext(context.Background(), logging.Discard())
 			defer ctx.Done()
 
-			helmChartCache := chartresolver.GetHelmChartCache(chartresolver.MaxSizeInByteDefault,
-				chartresolver.RemoveOutdatedDurationDefault)
+			helmChartCache := chartresolver.GetHelmChartCache(resource_cache.MaxSizeInByteDefault,
+				resource_cache.RemoveOutdatedDurationDefault)
 
 			helmChartCache.Clear()
 			cacheEntries, size, _ := helmChartCache.GetEntries()
@@ -213,7 +215,7 @@ var _ = Describe("GetChart", func() {
 			// 6 remove outdated
 			time.Sleep(time.Duration(1) * time.Second)
 			timeBefore = time.Now()
-			helmChartCache.SetMaxSizeInByte(chartresolver.MaxSizeInByteDefault)
+			helmChartCache.SetMaxSizeInByte(resource_cache.MaxSizeInByteDefault)
 
 			_, _ = chartresolver.GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
@@ -351,8 +353,8 @@ var _ = Describe("GetChart", func() {
 			un := &cdv2.UnstructuredTypedObject{}
 			Expect(un.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./testdata/ocmrepo"}`))).To(BeNil())
 
-			helmChartCache := chartresolver.GetHelmChartCache(chartresolver.MaxSizeInByteDefault,
-				chartresolver.RemoveOutdatedDurationDefault)
+			helmChartCache := chartresolver.GetHelmChartCache(resource_cache.MaxSizeInByteDefault,
+				resource_cache.RemoveOutdatedDurationDefault)
 
 			helmChartCache.Clear()
 

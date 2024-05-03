@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gardener/landscaper/pkg/utils/resource_cache"
+
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
@@ -63,7 +65,7 @@ func GetChart(ctx context.Context,
 	var err error
 
 	if useChartCache {
-		chart, err = GetHelmChartCache(MaxSizeInByteDefault, RemoveOutdatedDurationDefault).getChart(chartConfig.Ref,
+		chart, err = GetHelmChartCache(resource_cache.MaxSizeInByteDefault, resource_cache.RemoveOutdatedDurationDefault).getChart(chartConfig.Ref,
 			chartConfig.HelmChartRepo, chartConfig.ResourceRef)
 		if err != nil {
 			return nil, err
@@ -89,7 +91,7 @@ func GetChart(ctx context.Context,
 	}
 
 	if useChartCache {
-		if err = GetHelmChartCache(MaxSizeInByteDefault, RemoveOutdatedDurationDefault).addOrUpdateChart(ctx,
+		if err = GetHelmChartCache(resource_cache.MaxSizeInByteDefault, resource_cache.RemoveOutdatedDurationDefault).addOrUpdateChart(ctx,
 			chartConfig.Ref, chartConfig.HelmChartRepo, chartConfig.ResourceRef, chart); err != nil {
 			return nil, err
 		}

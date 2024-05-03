@@ -22,7 +22,7 @@ const (
 )
 
 type ResourceCache struct {
-	resourceCache     map[string]*cacheEntry
+	resourceCache     map[string]*CacheEntry
 	rwLock            sync.RWMutex
 	currentSizeInByte int64
 	lastCleanup       time.Time
@@ -31,12 +31,12 @@ type ResourceCache struct {
 	removeOutdatedDuration time.Duration
 }
 
-type cacheEntry struct {
+type CacheEntry struct {
 	resourceBytesCompressed []byte
 	timestamp               time.Time
 }
 
-func (c *cacheEntry) GetEntries() ([]byte, time.Time) {
+func (c *CacheEntry) GetEntries() ([]byte, time.Time) {
 	return c.resourceBytesCompressed, c.timestamp
 }
 
@@ -65,7 +65,7 @@ func createResourceCacheSync(initMaxSizeInByte int64, initRemoveOutdatedDuration
 
 	if resourceCache == nil {
 		resourceCache = &ResourceCache{
-			resourceCache:          make(map[string]*cacheEntry),
+			resourceCache:          make(map[string]*CacheEntry),
 			currentSizeInByte:      0,
 			lastCleanup:            time.Now(),
 			maxSizeInByte:          initMaxSizeInByte,
@@ -156,12 +156,12 @@ func (c *ResourceCache) Clear() {
 	c.rwLock.Lock()
 	defer c.rwLock.Unlock()
 
-	c.resourceCache = make(map[string]*cacheEntry)
+	c.resourceCache = make(map[string]*CacheEntry)
 	c.currentSizeInByte = 0
 	c.lastCleanup = time.Now()
 }
 
-func (c *ResourceCache) GetEntries() (map[string]*cacheEntry, int64, time.Time) {
+func (c *ResourceCache) GetEntries() (map[string]*CacheEntry, int64, time.Time) {
 	c.rwLock.RLock()
 	defer c.rwLock.RUnlock()
 
@@ -189,7 +189,7 @@ func (c *ResourceCache) SetLastCleanup(lastCleanup time.Time) {
 	c.lastCleanup = lastCleanup
 }
 
-func (c *ResourceCache) createEntry(obj any) (*cacheEntry, error) {
+func (c *ResourceCache) createEntry(obj any) (*CacheEntry, error) {
 	var resourceMarshaled []byte
 	resourceMarshaled, err := json.Marshal(obj)
 	if err != nil {
@@ -201,14 +201,14 @@ func (c *ResourceCache) createEntry(obj any) (*cacheEntry, error) {
 		return nil, err
 	}
 
-	return &cacheEntry{
+	return &CacheEntry{
 		resourceBytesCompressed: resourceCompressed,
 		timestamp:               time.Now(),
 	}, nil
 }
 
 func (c *ResourceCache) removeOldest() {
-	var oldestEntry *cacheEntry
+	var oldestEntry *CacheEntry
 	oldestHash := ""
 	for hash, entry := range c.resourceCache {
 		if oldestEntry == nil || entry.timestamp.Before(oldestEntry.timestamp) {
