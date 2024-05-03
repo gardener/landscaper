@@ -9,6 +9,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -41,6 +44,10 @@ func IsVerifyEnabled(inst *lsv1alpha1.Installation, lsConfig *config.LandscaperC
 
 // ExtractVerifyInfo extracts signautre name, publickey data and caCert data from the secrets referenced in the context
 func ExtractVerifyInfo(ctx context.Context, inst *lsv1alpha1.Installation, installationContext *lsv1alpha1.Context, client client.Client) (string, PublicKeyData, CaCertData, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "ExtractVerifyInfo")
+	defer pm.StopDebug()
+
 	if inst.Spec.Verification == nil {
 		return "", nil, nil, errors.New("installation.Spec.Verification cant be nil")
 	}

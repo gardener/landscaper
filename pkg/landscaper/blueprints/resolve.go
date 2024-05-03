@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -93,6 +95,10 @@ func ResolveBlueprint(ctx context.Context,
 // Resolve returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
 func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *lsv1alpha1.ComponentDescriptorReference, bpDef lsv1alpha1.BlueprintDefinition) (*Blueprint, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "ResolveBlueprint")
+	defer pm.StopDebug()
+
 	if bpDef.Reference == nil && bpDef.Inline == nil {
 		return nil, errors.New("no remote reference nor a inline blueprint is defined")
 	}
@@ -137,11 +143,17 @@ func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *ls
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
+
+	pm1 := utils.StartPerformanceMeasurement(&logger, "ResolveBlueprint-GetResource")
 	resource, err := componentVersion.GetResource(bpDef.Reference.ResourceName, nil)
+	pm1.StopDebug()
 	if err != nil {
 		return nil, err
 	}
+
+	pm2 := utils.StartPerformanceMeasurement(&logger, "ResolveBlueprint-GetTypedContent")
 	content, err := resource.GetTypedContent(ctx)
+	pm2.StopDebug()
 	if err != nil {
 		return nil, err
 	}
