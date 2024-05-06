@@ -20,7 +20,7 @@ First of all, we need to create two custom resources:
 - a `Target` custom resource, containing the access information for the target cluster
 - and an `Installation` custom resource containing the instructions for deploying the Helm chart.
 
-1. In the [settings](commands/settings) file, adjust these variables:
+1. In the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/hello-world/commands/settings) file, adjust these variables:
     - variable `RESOURCE_CLUSTER_KUBECONFIG_PATH` so that it contains the path to the kubeconfig of your resource cluster,
       i.e. the cluster where the Landscaper resources like Installations, Targets etc. are created,
     - variable `TARGET_CLUSTER_KUBECONFIG_PATH` so that it contains the path to the kubeconfig of your target cluster,
