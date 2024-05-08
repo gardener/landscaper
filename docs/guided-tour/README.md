@@ -67,22 +67,26 @@ You can find a list of error messages and corresponding solutions [here](./error
 
 [11. Export Parameters](./import-export/export-parameters)
 
+### Subinstallations
+
+[12. Data flow between Subinstallations](./subinstallations/export-import)
+
 ### Templating
 
-[12. Templating: Accessing Component Descriptors ](./templating/components)
+[13. Templating: Accessing Component Descriptors ](./templating/components)
 
 ### Target Maps
 
-[13. Target Maps: Multiple Deploy Items](./target-maps/01-multiple-deploy-items)
+[14. Target Maps: Multiple Deploy Items](./target-maps/01-multiple-deploy-items)
 
-[14. Target Maps: Target Map References](./target-maps/02-targetmap-ref)
+[15. Target Maps: Target Map References](./target-maps/02-targetmap-ref)
 
-[15. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
+[16. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
 
-[16. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
+[17. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
 
-[17. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
+[18. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
 
 ### Optimization
 
-[18. Optimization Hints ](../usage/Optimization.md)
+[19. Optimization Hints ](../usage/Optimization.md)
