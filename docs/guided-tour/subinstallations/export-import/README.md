@@ -1,4 +1,4 @@
-# Export-Import
+# Data flow between Subinstallations
 
 The blueprint in this example has three subinstallations.
 All three subinstallations use the same blueprint, which creates a configmap.
@@ -11,7 +11,7 @@ The root installation exports the list of all configmap names.
 
 The following diagram shows the data flow. (The parameter for the target is omitted.)
 
-![export-import-3](./images/export-import.png)
+![export-import](./images/export-import.png)
 
 
 ## Procedure
