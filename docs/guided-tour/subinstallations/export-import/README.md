@@ -1,17 +1,73 @@
-# Data flow between Subinstallations
+---
+title: Data Flow Between Subinstallations
+sidebar_position: 1
+---
 
-The blueprint in this example has three subinstallations.
-All three subinstallations use the same blueprint, which creates a configmap.
+# Data Flow Between Subinstallations
 
-Each subinstallation imports the name of the configmap that it creates (import parameter `configmap-name-in`)
-and exports a slightly modified name (export parameter `configmap-name-out`) which serves as import for the next
-subinstallation.
+In the previous examples, blueprints defined deploy items. In complex scenarios however, a blueprint can also consist of 
+subinstallations. Each subinstallation has itself a blueprint, which can again consist of subinstallations or define deploy items.
 
-The root installation exports the list of all configmap names.
+The blueprint in this example has three subinstallations. All three subinstallations use the same blueprint, which 
+creates a ConfigMap. Therefore, the scenario comprises the following resources:
+- the [installation](./installation/installation.yaml.tpl) &mdash; to distinguish it from the subinstallations, we call it the "root" installation.
+- the [blueprint of the root installation](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/subinstallations/export-import/blueprints/root) &mdash; 
+  it defines its subinstallations:
+  - [subinstallation-1](./blueprints/root/subinstallation-1.yaml),
+  - [subinstallation-2](./blueprints/root/subinstallation-2.yaml),
+  - [subinstallation-3](./blueprints/root/subinstallation-3.yaml).  
+  
+  At runtime, the Landscaper will create actual Installation resources for them.
+- the common [blueprint of the subinstallations](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/subinstallations/export-import/blueprints/sub).
 
-The following diagram shows the data flow. (The parameter for the target is omitted.)
+
+### The Data Flow 
+
+The blueprint of the subinstallations imports the name of the Configmap that it creates (import parameter `configmap-name-in`)
+and exports a slightly modified name (export parameter `configmap-name-out`) which serves as import for the next subinstallation.
+The blueprint of the root installation imports the name of the first ConfigMap (import parameter `configmap-name-base`), 
+and exports the list of all configmap names (export parameter `configmapNames`).
+
+The following diagram shows the data flow. Installations are displayed in yellow, blueprint in blue, 
+and DataObjects which contain the export and import values in grey (The parameter for the Target is omitted.) 
 
 ![export-import](./images/export-import.png)
+
+The order in which subinstallations are processed is implicitely derived from the exports and imports. 
+In our case the subinstallations are processed in a chain, because the second imports an export of the first, and
+the third imports an export of the second.
+
+
+### Analogy with Functions and Function Calls
+
+There is an analogy in which blueprints correspond to functions, and Installations to function calls. In this analogy,
+our example would correspond to the following code, in which a function `rootBlueprint` calls three times a 
+function `subBlueprint`:
+
+```go
+// root installation = call of function "rootBlueprint"
+rootBlueprint(cluster, "example-configmap")
+
+// root blueprint
+func rootBlueprint(cluster Target, configmapNameBase string) (configmapNames []string) {
+
+    // 1st subinstallation = 1st call of function "subBlueprint"
+    configmapName2 := subBlueprint(cluster, configmapNameBase)
+
+    // 2nd subinstallation = 2nd call of function "subBlueprint"
+    configmapName3 := subBlueprint(cluster, configmapName2)
+
+    // 3rd subinstallation = 3rd call of function "subBlueprint"
+    _ = subBlueprint(cluster, configmapName3)
+	
+	return []string {configmapNameBase, configmapName2, configmapName3}
+} 
+
+// sub blueprint
+func subBlueprint(cluster Target, configmapNameIn string) (configmapNameOut string) {
+	...
+}
+```
 
 
 ## Procedure
