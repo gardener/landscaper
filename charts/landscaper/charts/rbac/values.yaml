@@ -26,3 +26,23 @@ global:
       # The name of the service account to use.
       # If not set and create is true, the default will be "landscaper-user"
       name: ""
+
+aggregation:
+  admin:
+    # Specifies whether the admin aggregation cluster role shall be created
+    create: true
+    # Annotations to add to the admin aggregation cluster role
+    annotations: {}
+    # The name of the admin aggregation cluster role.
+    # If not set and create is true, the default will be "landscaper:aggregate-to-admin"
+    name: ""
+
+  view:
+    # Specifies whether the view aggregation cluster role shall be created
+    create: true
+    # Annotations to add to the view aggregation cluster role
+    annotations: {}
+    # The name of the view aggregation cluster role.
+    # If not set and create is true, the default will be "landscaper:view"
+    name: ""
+
