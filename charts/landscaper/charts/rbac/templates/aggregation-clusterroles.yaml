@@ -1,0 +1,46 @@
+{{- if .Values.aggregation.admin.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "landscaper.aggregation.admin.clusterRoleName" . }}
+  labels:
+    rbac.landscaper.gardener.cloud/aggregate-to-admin: "true"
+    {{- include "landscaper.labels" . | nindent 4 }}
+  {{- with .Values.aggregation.admin.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+rules:
+  - apiGroups:
+    - landscaper.gardener.cloud
+    resources:
+      - "*"
+    verbs:
+      - create
+      - update
+      - patch
+      - delete
+{{- end }}
+---
+{{- if .Values.aggregation.view.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "landscaper.aggregation.view.clusterRoleName" . }}
+  labels:
+    rbac.landscaper.gardener.cloud/aggregate-to-view: "true"
+    {{- include "landscaper.labels" . | nindent 4 }}
+  {{- with .Values.aggregation.admin.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+rules:
+  - apiGroups:
+    - landscaper.gardener.cloud
+    resources:
+    - "*"
+    verbs:
+    - get
+    - list
+    - watch
+{{- end }}

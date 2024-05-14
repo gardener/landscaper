@@ -36,3 +36,12 @@ func (p *PerformanceMeasurement) Stop() {
 		keyDuration, duration.String(),
 		keyDurationMillis, durationMillis)
 }
+
+func (p *PerformanceMeasurement) StopDebug() {
+	duration := time.Since(p.startTime)
+	durationMillis := strconv.FormatInt(duration.Milliseconds(), 10)
+	p.log.Debug("stop performance measurement",
+		keyDescription, p.description,
+		keyDuration, duration.String(),
+		keyDurationMillis, durationMillis)
+}
