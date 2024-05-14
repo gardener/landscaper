@@ -10,18 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gardener/landscaper/apis/utils"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"helm.sh/helm/v3/pkg/chart"
 
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/apis/utils"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
-
-// TODO
-// unit tests
-// make stuff configurable
 
 const (
 	MaxSizeInByteDefault          = 100 * 1000 * 1000
@@ -95,13 +89,13 @@ func (c *HelmChartCache) getChart(ociRef string, helmRepo *helmv1alpha1.HelmChar
 		return nil, nil
 	}
 
-	chartUncompressed, err := utils.Gunzip(chartBytesCompressed)
+	chartBytesUncompressed, err := utils.Gunzip(chartBytesCompressed)
 	if err != nil {
 		return nil, err
 	}
 
-	helmChart := &chart.Chart{}
-	if err := json.Unmarshal(chartUncompressed, helmChart); err != nil {
+	helmChart, err := UnmarshalChart(chartBytesUncompressed)
+	if err != nil {
 		return nil, err
 	}
 
@@ -216,9 +210,9 @@ func (c *HelmChartCache) SetLastCleanup(lastCleanup time.Time) {
 	c.lastCleanup = lastCleanup
 }
 
-func (c *HelmChartCache) createEntry(chart *chart.Chart) (*cacheEntry, error) {
+func (c *HelmChartCache) createEntry(ch *chart.Chart) (*cacheEntry, error) {
 	var chartMarshaled []byte
-	chartMarshaled, err := json.Marshal(chart)
+	chartMarshaled, err := MarshalChart(ch)
 	if err != nil {
 		return nil, err
 	}

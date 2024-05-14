@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test2-cm
+  namespace: test-namespace
+data:
+  foo: bar
