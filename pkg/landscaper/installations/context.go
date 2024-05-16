@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -93,6 +95,10 @@ func (o *Operation) SetInstallationContext(ctx context.Context) error {
 func GetInstallationContext(ctx context.Context,
 	kubeClient client.Client,
 	inst *lsv1alpha1.Installation) (*Scope, error) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "GetInstallationContext")
+	defer pm.StopDebug()
 
 	parentInst, err := GetParent(ctx, kubeClient, inst)
 	if err != nil {

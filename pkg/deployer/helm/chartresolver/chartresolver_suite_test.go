@@ -11,7 +11,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -51,7 +53,7 @@ var (
 
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Chartresolver Test Suite")
+	RunSpecs(t, "Chart resolver Test Suite")
 }
 
 var _ = Describe("GetChart", func() {
@@ -84,6 +86,161 @@ var _ = Describe("GetChart", func() {
 			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
+		})
+
+		It("should test chart cache 1", func() {
+
+			ctx := logging.NewContext(context.Background(), logging.Discard())
+			defer ctx.Done()
+
+			helmChartCache := GetHelmChartCache(MaxSizeInByteDefault,
+				RemoveOutdatedDurationDefault)
+
+			helmChartCache.Clear()
+			cacheEntries, size, _ := helmChartCache.GetEntries()
+			Expect(len(cacheEntries)).To(Equal(0))
+			Expect(size).To(Equal(int64(0)))
+
+			timeBefore := time.Now()
+
+			// fetch a 1. time
+			chartAccess1 := &helmv1alpha1.Chart{
+				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
+			}
+
+			chart1, err := GetChart(ctx, chartAccess1, nil,
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				nil, nil, nil, true)
+			Expect(err).ToNot(HaveOccurred())
+
+			cacheEntries1, size1, _ := helmChartCache.GetEntries()
+			Expect(len(cacheEntries1)).To(Equal(1))
+			Expect(size1 > 1000).To(BeTrue())
+			for _, entry := range cacheEntries1 {
+				_, timeTmp := entry.GetEntries()
+				Expect(timeBefore.After(timeTmp)).To(BeFalse())
+			}
+
+			// fetch a 2. time
+			timeBefore = time.Now()
+			time.Sleep(time.Duration(10) * time.Millisecond)
+
+			chart2, err := GetChart(ctx, chartAccess1, nil,
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				nil, nil, nil, true)
+			Expect(err).ToNot(HaveOccurred())
+
+			chart1.Raw = nil
+			Expect(reflect.DeepEqual(chart1, chart2)).To(BeTrue())
+
+			cacheEntries2, size2, _ := helmChartCache.GetEntries()
+			Expect(len(cacheEntries2)).To(Equal(1))
+			Expect(size2 > 1000).To(BeTrue())
+
+			for _, entry := range cacheEntries1 {
+				_, timeTmp := entry.GetEntries()
+				Expect(timeBefore.Before(timeTmp)).To(BeTrue())
+			}
+
+			contained, err := helmChartCache.HasKey(chartAccess1.Ref, chartAccess1.HelmChartRepo, chartAccess1.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeTrue())
+
+			// fetch a 3. time
+			time.Sleep(time.Duration(10) * time.Millisecond)
+
+			chart3, err := GetChart(ctx, chartAccess1, nil,
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				nil, nil, nil, true)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(reflect.DeepEqual(chart2, chart3)).To(BeTrue())
+			cacheEntries3, size3, _ := helmChartCache.GetEntries()
+			Expect(len(cacheEntries3)).To(Equal(1))
+			Expect(size2 == size3).To(BeTrue())
+
+			// 4. fetch a new one
+			time.Sleep(time.Duration(10) * time.Millisecond)
+
+			chartAccess4 := &helmv1alpha1.Chart{
+				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17",
+			}
+
+			chart4, err := GetChart(ctx, chartAccess4, nil,
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				nil, nil, nil, true)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(chart4).ToNot(BeNil())
+
+			cacheEntries4, size4, _ := helmChartCache.GetEntries()
+			Expect(len(cacheEntries4)).To(Equal(2))
+			Expect(size4 > size3).To(BeTrue())
+
+			contained, err = helmChartCache.HasKey(chartAccess1.Ref, chartAccess1.HelmChartRepo, chartAccess1.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeTrue())
+
+			contained, err = helmChartCache.HasKey(chartAccess4.Ref, chartAccess4.HelmChartRepo, chartAccess4.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeTrue())
+
+			// 5. fetch another one removing the first
+			time.Sleep(time.Duration(10) * time.Millisecond)
+
+			newMaxSize := int64(100000)
+			helmChartCache.SetMaxSizeInByte(newMaxSize)
+			chartAccess5 := &helmv1alpha1.Chart{
+				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.18",
+			}
+
+			_, err = GetChart(ctx, chartAccess5, nil,
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				nil, nil, nil, true)
+			Expect(err).ToNot(HaveOccurred())
+			cacheEntries5, size5, _ := helmChartCache.GetEntries()
+			Expect(len(cacheEntries5)).To(Equal(2))
+			Expect(size5 <= newMaxSize).To(BeTrue())
+
+			contained, err = helmChartCache.HasKey(chartAccess1.Ref, chartAccess1.HelmChartRepo, chartAccess1.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeFalse())
+
+			contained, err = helmChartCache.HasKey(chartAccess4.Ref, chartAccess4.HelmChartRepo, chartAccess4.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeTrue())
+
+			contained, err = helmChartCache.HasKey(chartAccess5.Ref, chartAccess5.HelmChartRepo, chartAccess5.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeTrue())
+
+			// 6 remove outdated
+			time.Sleep(time.Duration(1) * time.Second)
+			timeBefore = time.Now()
+			helmChartCache.SetMaxSizeInByte(MaxSizeInByteDefault)
+
+			_, _ = GetChart(ctx, chartAccess1, nil,
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				nil, nil, nil, true)
+
+			outdatedDuration := time.Since(timeBefore) + time.Duration(500)*time.Millisecond
+			helmChartCache.SetOutdatedDuration(outdatedDuration)
+			helmChartCache.SetLastCleanup(time.Now().Add(-(time.Duration(61) * time.Minute)))
+
+			_, _ = GetChart(ctx, chartAccess1, nil,
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				nil, nil, nil, true)
+
+			contained, err = helmChartCache.HasKey(chartAccess1.Ref, chartAccess1.HelmChartRepo, chartAccess1.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeTrue())
+
+			contained, err = helmChartCache.HasKey(chartAccess4.Ref, chartAccess4.HelmChartRepo, chartAccess4.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeFalse())
+
+			contained, err = helmChartCache.HasKey(chartAccess5.Ref, chartAccess5.HelmChartRepo, chartAccess5.ResourceRef)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contained).To(BeFalse())
 		})
 	})
 
@@ -157,8 +314,9 @@ var _ = Describe("GetChart", func() {
 
 	Context("From OCM Resource Ref", func() {
 		var (
-			resourceRef string
-			repoCtx     *cdv2.UnstructuredTypedObject
+			resourceRef    string
+			repoCtx        *cdv2.UnstructuredTypedObject
+			helmChartCache *HelmChartCache
 		)
 
 		BeforeEach(func() {
@@ -187,6 +345,12 @@ var _ = Describe("GetChart", func() {
 			Expect(err).To(BeNil())
 			repoCtx = &cdv2.UnstructuredTypedObject{}
 			Expect(repoCtx.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./testdata/ocmrepo"}`))).To(BeNil())
+
+			helmChartCache = GetHelmChartCache(MaxSizeInByteDefault,
+				RemoveOutdatedDurationDefault)
+
+			helmChartCache.Clear()
+
 		})
 
 		It("should resolve a chart from a local ocm resource", func() {
@@ -195,6 +359,10 @@ var _ = Describe("GetChart", func() {
 			}, nil)
 			Expect(err).To(BeNil())
 			Expect(chart).ToNot(BeNil())
+
+			contained, err := helmChartCache.HasKey("", nil, resourceRef)
+			Expect(err).To(BeNil())
+			Expect(contained).To(BeTrue())
 		})
 		It("resolve from ocm resource ref with ocm config resolver", func() {
 			ocmConfig := &corev1.ConfigMap{

@@ -1,9 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "configMigration": true,
+  "schedule": "after 02:30pm and before 04:30pm every weekday",
+  "prHourlyLimit": 1,
+  "timezone": "Europe/Berlin",
   "extends": [
-    "config:recommended",
+    "config:best-practices",
     "group:kubernetes",
+    "group:goOpenapi",
     "security:openssf-scorecard",
     ":dependencyDashboard"
   ],
@@ -11,8 +15,11 @@
     {
       "description": "Combine landscaper updates in a single PR",
       "matchManagers": ["gomod"],
-      "matchSourceUrls": ["https://github.com/gardener/landscaper"],
-      "commitMessageSuffix": " (run-int-tests)"
+      "matchSourceUrls": ["https://github.com/gardener/landscaper"]
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "rebaseWhen": "auto"
     },
     {
       "description": "Fixed version for component-cli v0.44.0",
@@ -29,6 +36,7 @@
   ],
   "customManagers": [
     {
+      "description": "Match in Makefile",
       "customType": "regex",
       "fileMatch": [
         "(^|/|\\.)([Dd]ocker|[Cc]ontainer)file$",
@@ -36,9 +44,8 @@
         "(^|/)Makefile$"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s(?:ENV |ARG )?.+?_VERSION ?(?:\\?=|=)\"?(?<currentValue>.+?)\"?\\s"
-      ],
-      "extractVersionTemplate": "^v(?<version>.*)$"
+        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s(?:ENV |ARG )?.+?_VERSION ?(?:\\?=|=)\"? ?(?<currentValue>.+?)\"?\\s"
+      ]
     }
   ]
 }

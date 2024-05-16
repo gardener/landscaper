@@ -146,6 +146,10 @@ type InstallationSpec struct {
 	// +optional
 	Context string `json:"context,omitempty"`
 
+	// Verification defines the necessary data to verify the signature of the refered component
+	// +optional
+	Verification *Verification `json:"verification,omitempty"`
+
 	//ComponentDescriptor is a reference to the installation's component descriptor
 	// +optional
 	ComponentDescriptor *ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`
@@ -190,6 +194,12 @@ type InstallationSpec struct {
 	Optimization *Optimization `json:"optimization,omitempty"`
 }
 
+// Verification defines the necessary data to verify the signature of the refered component
+type Verification struct {
+	// SignatureName defines the name of the signature that is verified
+	SignatureName string `json:"signatureName"`
+}
+
 // AutomaticReconcile allows to configure automatically repeated reconciliations.
 type AutomaticReconcile struct {
 	// SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations.
@@ -209,6 +219,10 @@ type SucceededReconcile struct {
 	// 24 hours is used.
 	// +optional
 	Interval *Duration `json:"interval,omitempty"`
+
+	// CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".
+	// If not empty, this specification is used instead of Interval.
+	CronSpec string `json:"cronSpec,omitempty"`
 }
 
 // FailedReconcile allows to configure automatically repeated reconciliations for failed installations
@@ -221,6 +235,10 @@ type FailedReconcile struct {
 	// Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of 5 minutes is used.
 	// +optional
 	Interval *Duration `json:"interval,omitempty"`
+
+	// CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".
+	// If not empty, this specification is used instead of Interval.
+	CronSpec string `json:"cronSpec,omitempty"`
 }
 
 // InstallationStatus contains the current status of a Installation.

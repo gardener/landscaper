@@ -41,11 +41,11 @@ Create a ClusterRoleBinding which binds the ServiceAccount to the ClusterRole `c
 You can choose another ClusterRole. However, it must grant enough permissions to deploy applications to your target cluster:
 
 ```shell
-mako-render "./resources/clusterrolebinding.yaml.tpl" \
-  --var "clusterrolebinding_name=${clusterrolebinding_name}" \
-  --var "serviceaccount_name=${serviceaccount_name}" \
-  --var "serviceaccount_namespace=${serviceaccount_namespace}" \
-  | kubectl apply -f -
+# Set path to clusterrolebinding template. Adjust the path if necessary.
+inputFile="./resources/clusterrolebinding.yaml.tpl"
+
+# Apply template. (The template uses the variables exported above.)
+envsubst < ${inputFile} | kubectl apply -f -
 ```
 
 Alternatively, you can manually apply the [ClusterRoleBinding manifest](./resources/clusterrolebinding.yaml.tpl) 
@@ -82,8 +82,6 @@ Check whether you can access your target cluster with this kubeconfig.
 
 ### Create Target
 
-We can now create a Target custom resource using the kubeconfig t
-
 On the **resource cluster**, you can now create a `Target` custom resource containing the above kubeconfig:
 
 ```yaml
@@ -91,7 +89,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Target
 metadata:
   name: my-cluster
-  namespace: example
+  namespace: cu-example
 spec:
   type: landscaper.gardener.cloud/kubernetes-cluster
   config:

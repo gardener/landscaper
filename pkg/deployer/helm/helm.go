@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
 	"k8s.io/utils/ptr"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -141,13 +143,10 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "ResolveSecrets", err.Error())
 	}
 
-	ch, err := chartresolver.GetChart(ctx,
-		&h.ProviderConfiguration.Chart,
-		h.lsUncachedClient,
-		h.Context,
-		registryPullSecrets,
-		h.Configuration.OCI,
-		h.SharedCache)
+	useChartCache := helper.HasCacheHelmChartsAnnotation(&h.DeployItem.ObjectMeta)
+
+	ch, err := chartresolver.GetChart(ctx, &h.ProviderConfiguration.Chart, h.lsUncachedClient, h.Context,
+		registryPullSecrets, h.Configuration.OCI, h.SharedCache, useChartCache)
 	if err != nil {
 		if h.isDownloadInfoError(err) {
 			return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error(), lsv1alpha1.ErrorForInfoOnly)

@@ -7,23 +7,22 @@ sidebar_position: 1
 
 In this example, we deploy again the Helm chart of the hello-world example.
 To illustrate the error handling, we have introduced an error: a `:` is missing in the imports section
-of the blueprint in the [Installation](./installation/installation.yaml).
+of the blueprint in the [Installation](installation/installation.yaml.tpl).
 
 For prerequisites, see [here](../../README.md).
 
 ## Procedure
 
-We will again create a Target custom resource, containing the access information for the target cluster, and an Installation custom resource, containing the instructions to deploy our example Helm chart. 
+We will again create a Target custom resource, containing the access information for the target cluster, 
+and an Installation custom resource, containing the instructions to deploy our example Helm chart. 
 
-1. Insert the kubeconfig of your target cluster into your [target.yaml](installation/target.yaml). 
+1. In the [settings](commands/settings) file, adjust the variables `RESOURCE_CLUSTER_KUBECONFIG_PATH`
+   and `TARGET_CLUSTER_KUBECONFIG_PATH`.
 
-2. On the Landscaper resource cluster, create namespace `example` and apply the [target.yaml](installation/target.yaml) and the [installation.yaml](installation/installation.yaml):
-   
-   ```shell
-   kubectl create ns example
-   kubectl apply -f <path to target.yaml>
-   kubectl apply -f <path to installation.yaml>
-   ```
+2. On the Landscaper resource cluster, create a namespace `cu-example`.
+
+3. Run script [commands/deploy-k8s-resources.sh](commands/deploy-k8s-resources.sh).
+   It creates a Target and an Installation on the resource cluster.
 
 ## Inspect the Result
 
@@ -39,15 +38,17 @@ status:
 
 ## Deploy the fixed Installation
 
-Here you can find a fixed version of the Installation: 
-[installation/installation-fixed.yaml](./installation/installation-fixed.yaml).
+Here you can find a fixed version of the Installation: [installation/installation-fixed.yaml](installation/installation-fixed.yaml).
 
-Deploy this version:
-
-```shell
-kubectl apply -f <path to installation-fixed.yaml>
-```
+Deploy it with the script [commands/deploy-fixed-installation.sh](commands/deploy-fixed-installation.sh).
 
 > Note that this fixed version already contains the annotation `landscaper.gardener.cloud/operation: reconcile`, so that Landscaper will start processing it. This is considered a good practice, as it eliminates the additional step of adding the reconcile annotation afterwards.
 
 After some time, the phase of the Installation should change to `Succeeded`, and the ConfigMap deployed by the Helm chart should exist on the target cluster.
+
+## Cleanup
+
+You can remove the Installation with the
+[delete-installation script](commands/delete-installation.sh).
+When the Installation is gone, you can delete the Target with the
+[delete-other-k8s-resources script](commands/delete-other-k8s-resources.sh).

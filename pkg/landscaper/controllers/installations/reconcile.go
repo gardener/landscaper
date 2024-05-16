@@ -236,7 +236,7 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 		return lserrors.NewWrappedError(err, currentOperation, "CleanupExports", err.Error()), nil
 	}
 
-	instOp, imps, importsHash, predecessorMap, fatalError, normalError := c.init(ctx, inst)
+	instOp, imps, importsHash, predecessorMap, fatalError, normalError := c.init(ctx, inst, true)
 
 	if fatalError != nil {
 		return fatalError, nil
@@ -252,7 +252,7 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 	// the import data might not be consistent. Then we should not go to the next phase and start the current sub objects
 	// fatal errors are not so important here as there will be a retry and if these still exists, they will result in a failure
 	// in the next reconcile loop
-	_, _, importsHashNew, predecessorMapNew, fatalError, normalError := c.init(ctx, inst)
+	_, _, importsHashNew, predecessorMapNew, fatalError, normalError := c.init(ctx, inst, false)
 	if fatalError != nil {
 		return nil, fatalError
 	} else if normalError != nil {
@@ -273,14 +273,17 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 	return nil, nil
 }
 
-func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation,
+func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation, runVerify bool) (*installations.Operation,
 	*imports.Imports, string, map[string]*installations.InstallationAndImports, lserrors.LsError, lserrors.LsError) {
 
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
 	currentOperation := "init"
 
-	instOp, fatalError := c.initPrerequisites(ctx, inst)
+	pm := lsutil.StartPerformanceMeasurement(&logger, "init")
+	defer pm.StopDebug()
+
+	instOp, fatalError := c.initPrerequisites(ctx, inst, runVerify)
 	if fatalError != nil {
 		return nil, nil, "", nil, fatalError, nil
 	}
@@ -296,30 +299,30 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*
 	predecessorMap := map[string]*installations.InstallationAndImports{}
 
 	if inst.Spec.Optimization == nil || !inst.Spec.Optimization.HasNoSiblingImports {
-		predecessors, err := rh.FetchPredecessors()
+		predecessors, err := rh.FetchPredecessors(ctx)
 		if err != nil {
 			fatalError = lserrors.NewWrappedError(err, currentOperation, "FetchPredecessors", err.Error())
 			return nil, nil, "", nil, fatalError, nil
 		}
 
-		predecessorMap, err = rh.GetPredecessors(predecessors)
+		predecessorMap, err = rh.GetPredecessors(ctx, predecessors)
 		if err != nil {
 			normalError := lserrors.NewWrappedError(err, currentOperation, "GetPredecessors", err.Error())
 			return nil, nil, "", nil, nil, normalError
 		}
 
-		if err = rh.AllPredecessorsFinished(inst, predecessorMap); err != nil {
+		if err = rh.AllPredecessorsFinished(ctx, inst, predecessorMap); err != nil {
 			normalError := lserrors.NewWrappedError(err, currentOperation, "AllPredecessorsFinished", err.Error())
 			return nil, nil, "", nil, nil, normalError
 		}
 
-		if err = rh.AllPredecessorsSucceeded(inst, predecessorMap); err != nil {
+		if err = rh.AllPredecessorsSucceeded(ctx, inst, predecessorMap); err != nil {
 			fatalError = lserrors.NewWrappedError(err, currentOperation, "AllPredecessorsSucceeded", err.Error())
 			return nil, nil, "", nil, fatalError, nil
 		}
 	}
 
-	imps, err := rh.ImportsSatisfied()
+	imps, err := rh.ImportsSatisfied(ctx)
 	if err != nil {
 		fatalError = lserrors.NewWrappedError(err, currentOperation, "ImportsSatisfied", err.Error())
 		return nil, nil, "", nil, fatalError, nil
@@ -478,7 +481,7 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 		return nil, lserrors.NewWrappedError(err, currentOperation, "CleanupContext", err.Error())
 	}
 
-	instOp, imps, importsHash, _, fatalError, fatalError2 := c.init(ctx, inst)
+	instOp, imps, importsHash, _, fatalError, fatalError2 := c.init(ctx, inst, false)
 
 	if fatalError != nil {
 		return fatalError, nil

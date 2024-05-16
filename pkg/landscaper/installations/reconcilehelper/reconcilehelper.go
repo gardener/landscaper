@@ -8,6 +8,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	lserror "github.com/gardener/landscaper/apis/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -30,6 +33,10 @@ type ReconcileHelper struct {
 }
 
 func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*ReconcileHelper, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "NewReconcileHelper")
+	defer pm.StopDebug()
+
 	rh := &ReconcileHelper{
 		ctx:       ctx,
 		Operation: op,
@@ -49,7 +56,11 @@ func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*Reco
 ///// VALIDATION METHODS /////
 
 //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
-func (rh *ReconcileHelper) GetPredecessors(predecessorNames sets.String) (map[string]*installations.InstallationAndImports, error) {
+func (rh *ReconcileHelper) GetPredecessors(ctx context.Context, predecessorNames sets.String) (map[string]*installations.InstallationAndImports, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "GetPredecessors")
+	defer pm.StopDebug()
+
 	predecessorMap := map[string]*installations.InstallationAndImports{}
 
 	siblings, err := rh.getSiblings()
@@ -69,8 +80,13 @@ func (rh *ReconcileHelper) GetPredecessors(predecessorNames sets.String) (map[st
 	return predecessorMap, nil
 }
 
-func (rh *ReconcileHelper) AllPredecessorsFinished(installation *lsv1alpha1.Installation,
+func (rh *ReconcileHelper) AllPredecessorsFinished(ctx context.Context, installation *lsv1alpha1.Installation,
 	predecessorMap map[string]*installations.InstallationAndImports) lserror.LsError {
+
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "AllPredecessorsFinished")
+	defer pm.StopDebug()
+
 	// iterate over siblings which is depended on (either directly or transitively) and check if they are 'ready'
 	for name := range predecessorMap {
 		predecessor := predecessorMap[name]
@@ -100,7 +116,11 @@ func (rh *ReconcileHelper) AllPredecessorsFinished(installation *lsv1alpha1.Inst
 	return nil
 }
 
-func (rh *ReconcileHelper) AllPredecessorsSucceeded(installation *lsv1alpha1.Installation, predecessorMap map[string]*installations.InstallationAndImports) error {
+func (rh *ReconcileHelper) AllPredecessorsSucceeded(ctx context.Context, installation *lsv1alpha1.Installation, predecessorMap map[string]*installations.InstallationAndImports) error {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "AllPredecessorsSucceeded")
+	defer pm.StopDebug()
+
 	for name := range predecessorMap {
 		predecessor := predecessorMap[name]
 
@@ -116,7 +136,11 @@ func (rh *ReconcileHelper) AllPredecessorsSucceeded(installation *lsv1alpha1.Ins
 }
 
 // ImportsSatisfied returns an error if an import of the installation is not satisfied.
-func (rh *ReconcileHelper) ImportsSatisfied() (*imports.Imports, error) {
+func (rh *ReconcileHelper) ImportsSatisfied(ctx context.Context) (*imports.Imports, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "ImportsSatisfied")
+	defer pm.StopDebug()
+
 	if rh.imports == nil {
 		if err := rh.fetchImports(); err != nil {
 			return nil, err
@@ -175,7 +199,11 @@ func (rh *ReconcileHelper) fetchImports() error {
 }
 
 //nolint:staticcheck // Ignore SA1019 // TODO: change to generic set
-func (rh *ReconcileHelper) FetchPredecessors() (sets.String, error) {
+func (rh *ReconcileHelper) FetchPredecessors(ctx context.Context) (sets.String, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "FetchPredecessors")
+	defer pm.StopDebug()
+
 	inst := rh.Inst.GetInstallation()
 	siblingInsts := []*lsv1alpha1.Installation{}
 

@@ -195,6 +195,11 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 		}
 
+		lsv1alpha1helper.DeleteCacheHelmChartsAnnotation(&exec.ObjectMeta)
+		if lsv1alpha1helper.HasCacheHelmChartsAnnotation(&inst.GetInstallation().ObjectMeta) {
+			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.CacheHelmChartsAnnotation, "true")
+		}
+
 		if exec.CreationTimestamp.IsZero() && exec.DeletionTimestamp.IsZero() {
 			controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
 		}

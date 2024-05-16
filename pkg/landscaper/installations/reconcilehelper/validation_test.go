@@ -85,7 +85,7 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				_, err = rh.ImportsSatisfied()
+				_, err = rh.ImportsSatisfied(ctx)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -107,7 +107,7 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				_, err = rh.ImportsSatisfied()
+				_, err = rh.ImportsSatisfied(ctx)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -128,7 +128,7 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				_, err = rh.ImportsSatisfied()
+				_, err = rh.ImportsSatisfied(ctx)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -146,7 +146,7 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				_, err = rh.ImportsSatisfied()
+				_, err = rh.ImportsSatisfied(ctx)
 				Expect(err).To(HaveOccurred())
 			})
 
@@ -164,7 +164,7 @@ var _ = Describe("Validation", func() {
 
 				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 				Expect(err).ToNot(HaveOccurred())
-				_, err = rh.ImportsSatisfied()
+				_, err = rh.ImportsSatisfied(ctx)
 				Expect(err).To(HaveOccurred())
 			})
 
@@ -180,7 +180,7 @@ var _ = Describe("Validation", func() {
 
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
-			_, err = rh.ImportsSatisfied()
+			_, err = rh.ImportsSatisfied(ctx)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -202,16 +202,16 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessors, err := rh.FetchPredecessors()
+			predecessors, err := rh.FetchPredecessors(ctx)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(predecessors)
+			predecessorMap, err := rh.GetPredecessors(ctx, predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsFinished(inInstE.GetInstallation(), predecessorMap)
+			err = rh.AllPredecessorsFinished(ctx, inInstE.GetInstallation(), predecessorMap)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsSucceeded(inInstE.GetInstallation(), predecessorMap)
+			err = rh.AllPredecessorsSucceeded(ctx, inInstE.GetInstallation(), predecessorMap)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -240,16 +240,16 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessors, err := rh.FetchPredecessors()
+			predecessors, err := rh.FetchPredecessors(ctx)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(predecessors)
+			predecessorMap, err := rh.GetPredecessors(ctx, predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
+			err = rh.AllPredecessorsFinished(ctx, inInstD.GetInstallation(), predecessorMap)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsSucceeded(inInstD.GetInstallation(), predecessorMap)
+			err = rh.AllPredecessorsSucceeded(ctx, inInstD.GetInstallation(), predecessorMap)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 		})
@@ -289,13 +289,13 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessors, err := rh.FetchPredecessors()
+			predecessors, err := rh.FetchPredecessors(ctx)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(predecessors)
+			predecessorMap, err := rh.GetPredecessors(ctx, predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
+			err = rh.AllPredecessorsFinished(ctx, inInstD.GetInstallation(), predecessorMap)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 		})
@@ -335,13 +335,13 @@ var _ = Describe("Validation", func() {
 			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessors, err := rh.FetchPredecessors()
+			predecessors, err := rh.FetchPredecessors(ctx)
 			Expect(err).ToNot(HaveOccurred())
 
-			predecessorMap, err := rh.GetPredecessors(predecessors)
+			predecessorMap, err := rh.GetPredecessors(ctx, predecessors)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = rh.AllPredecessorsFinished(inInstD.GetInstallation(), predecessorMap)
+			err = rh.AllPredecessorsFinished(ctx, inInstD.GetInstallation(), predecessorMap)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 		})

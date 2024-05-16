@@ -1,0 +1,136 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: contexts.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: Context
+    listKind: ContextList
+    plural: contexts
+    shortNames:
+    - ctx
+    singular: context
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Context is a resource that contains shared information of installations.
+          This includes information about the repository context like the context itself or secrets to access the oci artifacts.
+          But it can also contain deployer specific config.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          componentVersionOverwrites:
+            description: |-
+              ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object
+              The overwrites object has to be in the same namespace as the context.
+              If the string is empty, no overwrites will be used.
+            type: string
+          configurations:
+            description: |-
+              Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
+              The key should use a dns-like syntax to express the purpose and avoid conflicts.
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          registryPullSecrets:
+            description: |-
+              RegistryPullSecrets defines a list of registry credentials that are used to
+              pull blueprints, component descriptors and jsonschemas from the respective registry.
+              For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+              Note that the type information is used to determine the secret key and the type of the secret.
+            items:
+              description: |-
+                LocalObjectReference contains enough information to let you locate the
+                referenced object inside the same namespace.
+              properties:
+                name:
+                  description: |-
+                    Name of the referent.
+                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?
+                  type: string
+              type: object
+              x-kubernetes-map-type: atomic
+            type: array
+          repositoryContext:
+            description: RepositoryContext defines the context of the component repository
+              to resolve blueprints.
+            x-kubernetes-preserve-unknown-fields: true
+          useOCM:
+            description: UseOCM defines whether OCM is used to process installations
+              that reference this context.
+            type: boolean
+          verificationSignatures:
+            additionalProperties:
+              description: VerificationSignatures contains the trusted verification
+                information
+              properties:
+                caCertificateSecretReference:
+                  description: CaCertificateSecretReference contains a secret reference
+                    to one or more certificates in PEM format that are used to verify
+                    the compnent signature
+                  properties:
+                    key:
+                      description: Key is the name of the key in the secret that holds
+                        the data.
+                      type: string
+                    name:
+                      description: Name is the name of the kubernetes object.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of kubernetes object.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                publicKeySecretReference:
+                  description: PublicKeySecretReference contains a secret reference
+                    to a public key in PEM format that is used to verify the component
+                    signature
+                  properties:
+                    key:
+                      description: Key is the name of the key in the secret that holds
+                        the data.
+                      type: string
+                    name:
+                      description: Name is the name of the kubernetes object.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of kubernetes object.
+                      type: string
+                  required:
+                  - name
+                  type: object
+              type: object
+            description: VerificationSignatures maps a signature name to the trusted
+              verification information
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources: {}

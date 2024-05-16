@@ -980,6 +980,26 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*Verification)(nil), (*core.Verification)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Verification_To_core_Verification(a.(*Verification), b.(*core.Verification), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.Verification)(nil), (*Verification)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_Verification_To_v1alpha1_Verification(a.(*core.Verification), b.(*Verification), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*VerificationSignature)(nil), (*core.VerificationSignature)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_VerificationSignature_To_core_VerificationSignature(a.(*VerificationSignature), b.(*core.VerificationSignature), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.VerificationSignature)(nil), (*VerificationSignature)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_VerificationSignature_To_v1alpha1_VerificationSignature(a.(*core.VerificationSignature), b.(*VerificationSignature), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*VersionedNamedObjectReference)(nil), (*core.VersionedNamedObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_VersionedNamedObjectReference_To_core_VersionedNamedObjectReference(a.(*VersionedNamedObjectReference), b.(*core.VersionedNamedObjectReference), scope)
 	}); err != nil {
@@ -1442,6 +1462,7 @@ func autoConvert_v1alpha1_ContextConfiguration_To_core_ContextConfiguration(in *
 	out.RegistryPullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Configurations = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.Configurations))
 	out.ComponentVersionOverwritesReference = in.ComponentVersionOverwritesReference
+	out.VerificationSignatures = *(*map[string]core.VerificationSignature)(unsafe.Pointer(&in.VerificationSignatures))
 	return nil
 }
 
@@ -1457,6 +1478,7 @@ func autoConvert_core_ContextConfiguration_To_v1alpha1_ContextConfiguration(in *
 	out.RegistryPullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Configurations = *(*map[string]AnyJSON)(unsafe.Pointer(&in.Configurations))
 	out.ComponentVersionOverwritesReference = in.ComponentVersionOverwritesReference
+	out.VerificationSignatures = *(*map[string]VerificationSignature)(unsafe.Pointer(&in.VerificationSignatures))
 	return nil
 }
 
@@ -2192,6 +2214,7 @@ func Convert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in *core.ExportD
 func autoConvert_v1alpha1_FailedReconcile_To_core_FailedReconcile(in *FailedReconcile, out *core.FailedReconcile, s conversion.Scope) error {
 	out.NumberOfReconciles = (*int)(unsafe.Pointer(in.NumberOfReconciles))
 	out.Interval = (*core.Duration)(unsafe.Pointer(in.Interval))
+	out.CronSpec = in.CronSpec
 	return nil
 }
 
@@ -2203,6 +2226,7 @@ func Convert_v1alpha1_FailedReconcile_To_core_FailedReconcile(in *FailedReconcil
 func autoConvert_core_FailedReconcile_To_v1alpha1_FailedReconcile(in *core.FailedReconcile, out *FailedReconcile, s conversion.Scope) error {
 	out.NumberOfReconciles = (*int)(unsafe.Pointer(in.NumberOfReconciles))
 	out.Interval = (*Duration)(unsafe.Pointer(in.Interval))
+	out.CronSpec = in.CronSpec
 	return nil
 }
 
@@ -2395,6 +2419,7 @@ func Convert_core_InstallationList_To_v1alpha1_InstallationList(in *core.Install
 
 func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *InstallationSpec, out *core.InstallationSpec, s conversion.Scope) error {
 	out.Context = in.Context
+	out.Verification = (*core.Verification)(unsafe.Pointer(in.Verification))
 	out.ComponentDescriptor = (*core.ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
 	if err := Convert_v1alpha1_BlueprintDefinition_To_core_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
@@ -2419,6 +2444,7 @@ func Convert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installation
 
 func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.InstallationSpec, out *InstallationSpec, s conversion.Scope) error {
 	out.Context = in.Context
+	out.Verification = (*Verification)(unsafe.Pointer(in.Verification))
 	out.ComponentDescriptor = (*ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
 	if err := Convert_core_BlueprintDefinition_To_v1alpha1_BlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
@@ -3009,6 +3035,7 @@ func Convert_core_SubinstallationTemplate_To_v1alpha1_SubinstallationTemplate(in
 
 func autoConvert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile(in *SucceededReconcile, out *core.SucceededReconcile, s conversion.Scope) error {
 	out.Interval = (*core.Duration)(unsafe.Pointer(in.Interval))
+	out.CronSpec = in.CronSpec
 	return nil
 }
 
@@ -3019,6 +3046,7 @@ func Convert_v1alpha1_SucceededReconcile_To_core_SucceededReconcile(in *Succeede
 
 func autoConvert_core_SucceededReconcile_To_v1alpha1_SucceededReconcile(in *core.SucceededReconcile, out *SucceededReconcile, s conversion.Scope) error {
 	out.Interval = (*Duration)(unsafe.Pointer(in.Interval))
+	out.CronSpec = in.CronSpec
 	return nil
 }
 
@@ -3521,6 +3549,48 @@ func autoConvert_core_TypedObjectReference_To_v1alpha1_TypedObjectReference(in *
 // Convert_core_TypedObjectReference_To_v1alpha1_TypedObjectReference is an autogenerated conversion function.
 func Convert_core_TypedObjectReference_To_v1alpha1_TypedObjectReference(in *core.TypedObjectReference, out *TypedObjectReference, s conversion.Scope) error {
 	return autoConvert_core_TypedObjectReference_To_v1alpha1_TypedObjectReference(in, out, s)
+}
+
+func autoConvert_v1alpha1_Verification_To_core_Verification(in *Verification, out *core.Verification, s conversion.Scope) error {
+	out.SignatureName = in.SignatureName
+	return nil
+}
+
+// Convert_v1alpha1_Verification_To_core_Verification is an autogenerated conversion function.
+func Convert_v1alpha1_Verification_To_core_Verification(in *Verification, out *core.Verification, s conversion.Scope) error {
+	return autoConvert_v1alpha1_Verification_To_core_Verification(in, out, s)
+}
+
+func autoConvert_core_Verification_To_v1alpha1_Verification(in *core.Verification, out *Verification, s conversion.Scope) error {
+	out.SignatureName = in.SignatureName
+	return nil
+}
+
+// Convert_core_Verification_To_v1alpha1_Verification is an autogenerated conversion function.
+func Convert_core_Verification_To_v1alpha1_Verification(in *core.Verification, out *Verification, s conversion.Scope) error {
+	return autoConvert_core_Verification_To_v1alpha1_Verification(in, out, s)
+}
+
+func autoConvert_v1alpha1_VerificationSignature_To_core_VerificationSignature(in *VerificationSignature, out *core.VerificationSignature, s conversion.Scope) error {
+	out.PublicKeySecretReference = (*core.SecretReference)(unsafe.Pointer(in.PublicKeySecretReference))
+	out.CaCertificateSecretReference = (*core.SecretReference)(unsafe.Pointer(in.CaCertificateSecretReference))
+	return nil
+}
+
+// Convert_v1alpha1_VerificationSignature_To_core_VerificationSignature is an autogenerated conversion function.
+func Convert_v1alpha1_VerificationSignature_To_core_VerificationSignature(in *VerificationSignature, out *core.VerificationSignature, s conversion.Scope) error {
+	return autoConvert_v1alpha1_VerificationSignature_To_core_VerificationSignature(in, out, s)
+}
+
+func autoConvert_core_VerificationSignature_To_v1alpha1_VerificationSignature(in *core.VerificationSignature, out *VerificationSignature, s conversion.Scope) error {
+	out.PublicKeySecretReference = (*SecretReference)(unsafe.Pointer(in.PublicKeySecretReference))
+	out.CaCertificateSecretReference = (*SecretReference)(unsafe.Pointer(in.CaCertificateSecretReference))
+	return nil
+}
+
+// Convert_core_VerificationSignature_To_v1alpha1_VerificationSignature is an autogenerated conversion function.
+func Convert_core_VerificationSignature_To_v1alpha1_VerificationSignature(in *core.VerificationSignature, out *VerificationSignature, s conversion.Scope) error {
+	return autoConvert_core_VerificationSignature_To_v1alpha1_VerificationSignature(in, out, s)
 }
 
 func autoConvert_v1alpha1_VersionedNamedObjectReference_To_core_VersionedNamedObjectReference(in *VersionedNamedObjectReference, out *core.VersionedNamedObjectReference, s conversion.Scope) error {

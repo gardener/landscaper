@@ -1,0 +1,530 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: installations.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: Installation
+    listKind: InstallationList
+    plural: installations
+    shortNames:
+    - inst
+    singular: installation
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.executionRef.name
+      name: Execution
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Installation contains the configuration of a component
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec contains the specification for a installation.
+            properties:
+              automaticReconcile:
+                description: AutomaticReconcile allows to configure automatically
+                  repeated reconciliations.
+                properties:
+                  failedReconcile:
+                    description: |-
+                      FailedReconcile allows to configure automatically repeated reconciliations for failed installations.
+                      If not set, no such automatically repeated reconciliations are triggered.
+                    properties:
+                      cronSpec:
+                        description: |-
+                          CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".
+                          If not empty, this specification is used instead of Interval.
+                        type: string
+                      interval:
+                        description: Interval specifies the interval between two subsequent
+                          repeated reconciliations. If not set, a default of 5 minutes
+                          is used.
+                        type: string
+                      numberOfReconciles:
+                        description: NumberOfReconciles specifies the maximal number
+                          of automatically repeated reconciliations. If not set, no
+                          upper limit exists.
+                        format: int32
+                        type: integer
+                    type: object
+                  succeededReconcile:
+                    description: |-
+                      SucceededReconcile allows to configure automatically repeated reconciliations for succeeded installations.
+                      If not set, no such automatically repeated reconciliations are triggered.
+                    properties:
+                      cronSpec:
+                        description: |-
+                          CronSpec describes the reconcile intervals according to the cron syntax "https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format".
+                          If not empty, this specification is used instead of Interval.
+                        type: string
+                      interval:
+                        description: |-
+                          Interval specifies the interval between two subsequent repeated reconciliations. If not set, a default of
+                          24 hours is used.
+                        type: string
+                    type: object
+                type: object
+              blueprint:
+                description: Blueprint is the resolved reference to the definition.
+                properties:
+                  inline:
+                    description: Inline defines a inline yaml filesystem with a blueprint.
+                    properties:
+                      filesystem:
+                        description: Filesystem defines a inline yaml filesystem with
+                          a blueprint.
+                        x-kubernetes-preserve-unknown-fields: true
+                    required:
+                    - filesystem
+                    type: object
+                  ref:
+                    description: Reference defines a remote reference to a blueprint
+                    properties:
+                      resourceName:
+                        description: ResourceName is the name of the blueprint as
+                          defined by a component descriptor.
+                        type: string
+                    required:
+                    - resourceName
+                    type: object
+                type: object
+              componentDescriptor:
+                description: ComponentDescriptor is a reference to the installation's
+                  component descriptor
+                properties:
+                  inline:
+                    description: InlineDescriptorReference defines an inline component
+                      descriptor
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  ref:
+                    description: ComponentDescriptorReference is the reference to
+                      a component descriptor
+                    properties:
+                      componentName:
+                        description: ComponentName defines the unique of the component
+                          containing the resource.
+                        type: string
+                      repositoryContext:
+                        description: RepositoryContext defines the context of the
+                          component repository to resolve blueprints.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      version:
+                        description: Version defines the version of the component.
+                        type: string
+                    required:
+                    - componentName
+                    - version
+                    type: object
+                type: object
+              context:
+                description: Context defines the current context of the installation.
+                type: string
+              exportDataMappings:
+                description: |-
+                  ExportDataMappings contains a template for restructuring exports.
+                  It is expected to contain a key for every blueprint-defined data export.
+                  Missing keys will be defaulted to their respective data export.
+                  Example: namespace: (( blueprint.exports.namespace ))
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              exports:
+                description: Exports define the exported data objects and targets.
+                properties:
+                  data:
+                    description: Data defines all data object exports.
+                    items:
+                      description: DataExport is a data object export.
+                      properties:
+                        dataRef:
+                          description: DataRef is the name of the in-cluster data
+                            object.
+                          type: string
+                        name:
+                          description: Name the internal name of the imported/exported
+                            data.
+                          type: string
+                      required:
+                      - dataRef
+                      - name
+                      type: object
+                    type: array
+                  targets:
+                    description: Targets defines all target exports.
+                    items:
+                      description: TargetExport is a single target export.
+                      properties:
+                        name:
+                          description: Name the internal name of the exported target.
+                          type: string
+                        target:
+                          description: Target is the name of the in-cluster target
+                            object.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                type: object
+              importDataMappings:
+                description: |-
+                  ImportDataMappings contains a template for restructuring imports.
+                  It is expected to contain a key for every blueprint-defined data import.
+                  Missing keys will be defaulted to their respective data import.
+                  Example: namespace: (( installation.imports.namespace ))
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              imports:
+                description: Imports define the imported data objects and targets.
+                properties:
+                  data:
+                    description: Data defines all data object imports.
+                    items:
+                      description: DataImport is a data object import.
+                      properties:
+                        configMapRef:
+                          description: |-
+                            ConfigMapRef defines a data reference from a configmap.
+                            This method is not allowed in installation templates.
+                          properties:
+                            key:
+                              description: Key is the name of the key in the configmap
+                                that holds the data.
+                              type: string
+                            name:
+                              description: Name is the name of the configmap
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        dataRef:
+                          description: |-
+                            DataRef is the name of the in-cluster data object.
+                            The reference can also be a namespaces name. E.g. "default/mydataref"
+                          type: string
+                        name:
+                          description: Name the internal name of the imported/exported
+                            data.
+                          type: string
+                        secretRef:
+                          description: |-
+                            SecretRef defines a data reference from a secret.
+                            This method is not allowed in installation templates.
+                          properties:
+                            key:
+                              description: Key is the name of the key in the secret
+                                that holds the data.
+                              type: string
+                            name:
+                              description: Name is the name of the secret
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        version:
+                          description: |-
+                            Version specifies the imported data version.
+                            defaults to "v1"
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  targets:
+                    description: Targets defines all target imports.
+                    items:
+                      description: TargetImport is either a single target or a target
+                        list import.
+                      properties:
+                        name:
+                          description: Name the internal name of the imported target.
+                          type: string
+                        target:
+                          description: |-
+                            Target is the name of the in-cluster target object.
+                            Exactly one of Target, Targets, and TargetListReference has to be specified.
+                          type: string
+                        targetListRef:
+                          description: |-
+                            TargetListReference can (only) be used to import a targetlist that has been imported by the parent installation.
+                            Exactly one of Target, Targets, and TargetListReference has to be specified.
+                          type: string
+                        targetMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        targetMapRef:
+                          type: string
+                        targets:
+                          description: |-
+                            Targets is a list of in-cluster target objects.
+                            Exactly one of Target, Targets, and TargetListReference has to be specified.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - name
+                      type: object
+                    type: array
+                type: object
+              optimization:
+                description: Optimization contains settings to improve execution performance.
+                properties:
+                  hasNoSiblingExports:
+                    description: set this on true if the installation does not export
+                      data to its siblings or has no siblings at all
+                    type: boolean
+                  hasNoSiblingImports:
+                    description: set this on true if the installation does not import
+                      data from its siblings or has no siblings at all
+                    type: boolean
+                type: object
+              verification:
+                description: Verification defines the necessary data to verify the
+                  signature of the refered component
+                properties:
+                  signatureName:
+                    description: SignatureName defines the name of the signature that
+                      is verified
+                    type: string
+                required:
+                - signatureName
+                type: object
+            required:
+            - blueprint
+            type: object
+          status:
+            description: Status contains the status of the installation.
+            properties:
+              automaticReconcileStatus:
+                description: AutomaticReconcileStatus describes the status of automatically
+                  triggered reconciles.
+                properties:
+                  generation:
+                    description: Generation describes the generation of the installation
+                      for which the status holds.
+                    format: int64
+                    type: integer
+                  lastReconcileTime:
+                    description: LastReconcileTime is the time of the last automatically
+                      triggered reconcile.
+                    format: date-time
+                    type: string
+                  numberOfReconciles:
+                    description: NumberOfReconciles is the number of automatic reconciles
+                      for the installation with the stored generation.
+                    format: int32
+                    type: integer
+                  onFailed:
+                    description: OnFailed is true if the last automatically triggered
+                      reconcile was done for a failed installation.
+                    type: boolean
+                type: object
+              conditions:
+                description: Conditions contains the actual condition of a installation
+                items:
+                  description: Condition holds the information about the state of
+                    a resource.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: DataType of the Shoot condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              dependentsToTrigger:
+                description: DependentsToTrigger lists dependent installations to
+                  be triggered
+                items:
+                  properties:
+                    name:
+                      description: Name is the name of the dependent installation
+                      type: string
+                  type: object
+                type: array
+              executionRef:
+                description: ExecutionReference is the reference to the execution
+                  that schedules the templated execution items.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                type: object
+              importsHash:
+                description: ImportsHash is the hash of the import data.
+                type: string
+              jobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              jobIDFinished:
+                description: JobIDFinished is the ID of the finished working request.
+                type: string
+              lastError:
+                description: LastError describes the last error that occurred.
+                properties:
+                  codes:
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
+                    items:
+                      description: ErrorCode is a string alias.
+                      type: string
+                    type: array
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: Last time the condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  operation:
+                    description: Operation describes the operator where the error
+                      occurred.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                required:
+                - lastTransitionTime
+                - lastUpdateTime
+                - message
+                - operation
+                - reason
+                type: object
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the most recent generation observed for this ControllerInstallations.
+                  It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
+                format: int64
+                type: integer
+              phase:
+                description: InstallationPhase is the current phase of the installation.
+                type: string
+              phaseTransitionTime:
+                description: PhaseTransitionTime is the time when the phase last changed.
+                format: date-time
+                type: string
+              subInstCache:
+                description: SubInstCache contains the currently existing sub installations
+                  belonging to the execution. If nil undefined.
+                properties:
+                  activeSubs:
+                    items:
+                      description: DiNamePair contains the spec name and the real
+                        name of a deploy item
+                      properties:
+                        objectName:
+                          type: string
+                        specName:
+                          type: string
+                      type: object
+                    type: array
+                  orphanedSubs:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              transitionTimes:
+                description: TransitionTimes contains timestamps of status transitions
+                properties:
+                  finishedTime:
+                    description: FinishedTime is the time when the finished phase
+                      is set.
+                    format: date-time
+                    type: string
+                  initTime:
+                    description: InitTime is the time when the Init phase starts.
+                    format: date-time
+                    type: string
+                  triggerTime:
+                    description: TriggerTime is the time when the jobID is set.
+                    format: date-time
+                    type: string
+                  waitTime:
+                    description: WaitTime is the time when the work is done.
+                    format: date-time
+                    type: string
+                type: object
+            required:
+            - observedGeneration
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

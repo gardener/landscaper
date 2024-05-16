@@ -1,0 +1,368 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: deployitems.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: DeployItem
+    listKind: DeployItemList
+    plural: deployitems
+    shortNames:
+    - di
+    singular: deployitem
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.type
+      name: Type
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.exportRef.name
+      name: ExportRef
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DeployItem defines a resource that should be processed by a external
+          deployer
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DeployItemSpec contains the definition of a deploy item.
+            properties:
+              config:
+                description: Configuration contains the deployer type specific configuration.
+                type: object
+                x-kubernetes-embedded-resource: true
+                x-kubernetes-preserve-unknown-fields: true
+              context:
+                description: Context defines the current context of the deployitem.
+                type: string
+              onDelete:
+                description: OnDelete specifies particular setting when deleting a
+                  deploy item
+                properties:
+                  skipUninstallIfClusterRemoved:
+                    description: |-
+                      SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted.
+                      Works only in the context of an existing target sync object which is used to check the Garden project with
+                      the shoot cluster resources
+                    type: boolean
+                type: object
+              target:
+                description: |-
+                  Target specifies an optional target of the deploy item.
+                  In most cases it contains the secrets to access a evironment.
+                  It is also used by the deployers to determine the ownernship.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                type: object
+              timeout:
+                description: |-
+                  Timeout specifies how long the deployer may take to apply the deploy item.
+                  When the time is exceeded, the deploy item fails.
+                  Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
+                  Defaults to ten minutes if not specified.
+                type: string
+              type:
+                description: Type is the type of the deployer that should handle the
+                  item.
+                type: string
+              updateOnChangeOnly:
+                description: UpdateOnChangeOnly specifies if redeployment is executed
+                  only if the specification of the deploy item has changed.
+                type: boolean
+            required:
+            - type
+            type: object
+          status:
+            description: DeployItemStatus contains the status of a deploy item.
+            properties:
+              conditions:
+                description: Conditions contains the actual condition of a deploy
+                  item
+                items:
+                  description: Condition holds the information about the state of
+                    a resource.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: DataType of the Shoot condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              deployItemPhase:
+                description: DeployerPhase is DEPRECATED and will soon be removed.
+                type: string
+              deployer:
+                description: Deployer describes the deployer that has reconciled the
+                  deploy item.
+                properties:
+                  identity:
+                    description: Identity describes the unique identity of the deployer.
+                    type: string
+                  name:
+                    description: Name is the name of the deployer.
+                    type: string
+                  version:
+                    description: Version is the version of the deployer.
+                    type: string
+                required:
+                - identity
+                - name
+                - version
+                type: object
+              exportRef:
+                description: ExportReference is the reference to the object that contains
+                  the exported values.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                type: object
+              firstError:
+                description: FirstError describes the first error that occurred since
+                  JobID was changed the last time.
+                properties:
+                  codes:
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
+                    items:
+                      description: ErrorCode is a string alias.
+                      type: string
+                    type: array
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: Last time the condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  operation:
+                    description: Operation describes the operator where the error
+                      occurred.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                required:
+                - lastTransitionTime
+                - lastUpdateTime
+                - message
+                - operation
+                - reason
+                type: object
+              jobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              jobIDFinished:
+                description: JobIDFinished is the ID of the finished working request.
+                type: string
+              jobIDGenerationTime:
+                description: JobIDGenerationTime is the timestamp when the JobID was
+                  set.
+                format: date-time
+                type: string
+              lastError:
+                description: LastError describes the last error that occurred.
+                properties:
+                  codes:
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
+                    items:
+                      description: ErrorCode is a string alias.
+                      type: string
+                    type: array
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: Last time the condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  operation:
+                    description: Operation describes the operator where the error
+                      occurred.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                required:
+                - lastTransitionTime
+                - lastUpdateTime
+                - message
+                - operation
+                - reason
+                type: object
+              lastErrors:
+                description: ErrorHistory describes the last n errors that occurred
+                  since JobID was changed the last time.
+                items:
+                  description: Error holds information about an error that occurred.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    operation:
+                      description: Operation describes the operator where the error
+                        occurred.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - operation
+                  - reason
+                  type: object
+                type: array
+              lastReconcileTime:
+                description: LastReconcileTime indicates when the reconciliation of
+                  the last change to the deploy item has started
+                format: date-time
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the most recent generation observed for this DeployItem.
+                  It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
+                format: int64
+                type: integer
+              phase:
+                description: Phase is the current phase of the DeployItem
+                type: string
+              providerStatus:
+                description: ProviderStatus contains the provider specific status
+                type: object
+                x-kubernetes-embedded-resource: true
+                x-kubernetes-preserve-unknown-fields: true
+              transitionTimes:
+                description: TransitionTimes contains timestamps of status transitions
+                properties:
+                  finishedTime:
+                    description: FinishedTime is the time when the finished phase
+                      is set.
+                    format: date-time
+                    type: string
+                  initTime:
+                    description: InitTime is the time when the Init phase starts.
+                    format: date-time
+                    type: string
+                  triggerTime:
+                    description: TriggerTime is the time when the jobID is set.
+                    format: date-time
+                    type: string
+                  waitTime:
+                    description: WaitTime is the time when the work is done.
+                    format: date-time
+                    type: string
+                type: object
+            required:
+            - observedGeneration
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -35,3 +35,15 @@ Create the name of the service account to use
 {{- define "landscaper.user.serviceAccountName" -}}
 {{- default "landscaper-user" .Values.global.serviceAccount.user.name }}
 {{- end }}
+
+{{/*
+Create the name of the of the aggregation cluster roles
+*/}}
+{{- define "landscaper.aggregation.admin.clusterRoleName" -}}
+{{- default "landscaper:aggregate-to-admin" .Values.aggregation.admin.name }}
+{{- end }}
+
+{{- define "landscaper.aggregation.view.clusterRoleName" -}}
+{{- default "landscaper:aggregate-to-view" .Values.aggregation.view.name}}
+{{- end }}
+

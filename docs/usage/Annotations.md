@@ -75,3 +75,15 @@ afterwards a deletion of the installation has the following effect:
   deploy items such that they could be deleted.
 
 Note that you have to add the annotation **before** you delete the installation.
+
+## Reconcile-If-Changed Annotation
+
+See [here](https://github.com/gardener/landscaper/blob/master/docs/usage/Installations.md#automatic-reconciliationprocessing-of-installations-if-spec-was-changed).
+
+## Cache-Helm-Charts Annotation
+
+If the annotation `landscaper.gardener.cloud/cache-helm-charts: "true"` has been added to a root Installation,
+all HelmCharts of deploy items of this Installation are fetched only once and cached locally. The default maximal 
+size of the cache is 100 MB in the main memory. If more memory is required for new helm charts, the oldest entries are 
+removed. Furthermore, by default all entries not used for more than one day, are also deleted.
+

@@ -9,6 +9,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
@@ -19,6 +22,10 @@ func GetTransitiveComponentReferences(ctx context.Context,
 	componentVersion ComponentVersion,
 	repositoryContext *types.UnstructuredTypedObject,
 	overwriter componentoverwrites.Overwriter) (*ComponentVersionList, error) {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "GetTransitiveComponentReferences")
+	defer pm.StopDebug()
 
 	cds := map[componentIdentifier]ComponentVersion{}
 	if err := getTransitiveComponentReferencesRecursively(ctx, componentVersion, repositoryContext, overwriter, cds); err != nil {
@@ -53,6 +60,10 @@ func getTransitiveComponentReferencesRecursively(ctx context.Context,
 	repositoryContext *types.UnstructuredTypedObject,
 	overwriter componentoverwrites.Overwriter,
 	cds map[componentIdentifier]ComponentVersion) error {
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	pm := utils.StartPerformanceMeasurement(&logger, "getTransitiveComponentReferencesRecursively")
+	defer pm.StopDebug()
 
 	cid := componentIdentifier{
 		Name:    cd.GetName(),

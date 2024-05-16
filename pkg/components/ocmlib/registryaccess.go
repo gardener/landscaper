@@ -10,8 +10,14 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/signing"
+	"github.com/open-component-model/ocm/pkg/signing/handlers/rsa"
+	"github.com/open-component-model/ocm/pkg/signing/signutils"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 
@@ -66,7 +72,50 @@ func (r *RegistryAccess) NewComponentVersion(cv ocm.ComponentVersionAccess) (mod
 	}, nil
 }
 
+func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion, name string, pkeyData []byte, caCertData []byte) error {
+	verificationOptions := []signing.Option{
+		signing.Recursive(true),
+	}
+
+	if pkeyData != nil {
+		pubkey, err := rsa.ParsePublicKey(pkeyData)
+		if err != nil {
+			return fmt.Errorf("failed parsing public key data: %w", err)
+		}
+		verificationOptions = append(verificationOptions, signing.PublicKey(name, pubkey))
+	}
+
+	if caCertData != nil {
+		cert, err := signutils.ParseCertificate(caCertData)
+		if err != nil {
+			return fmt.Errorf("failed parsing ca cert data: %w", err)
+		}
+		_, certPool, err := signutils.GetCertificate(cert, false)
+		if err != nil {
+			return fmt.Errorf("failed generating ca cert pool: %w", err)
+		}
+		verificationOptions = append(verificationOptions, signing.RootCertificates(certPool))
+	}
+
+	castedComponentVersion, ok := componentVersion.(*ComponentVersion)
+	if !ok {
+		return errors.New("failed casting componentVersion interface to ocm.ComponentVersion")
+	}
+	_, err := signing.VerifyComponentVersion(castedComponentVersion.GetOCMObject(), name, verificationOptions...)
+	if err != nil {
+		return fmt.Errorf("failed verifying signature: %w", err)
+	}
+	return nil
+}
+
 func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	if cdRef != nil {
+		logger = logger.WithValues("componentRefName", cdRef.ComponentName, "componentRefVersion", cdRef.Version)
+	}
+	pm := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion")
+	defer pm.StopDebug()
+
 	if cdRef == nil {
 		return nil, errors.New("component descriptor reference cannot be nil")
 	}
@@ -85,6 +134,7 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 			// context of the inline component descriptor
 			resolver = r.resolver
 		} else {
+			pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
 			// if there is no inline repository or the repository context is different from the one specified in the inline
 			// component descriptor, we need to look up the repository specified by the component descriptor reference
 
@@ -93,16 +143,21 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 			// overwrite depends on that
 			r.octx.AddResolverRule("", spec, int(^uint(0)>>1))
 			resolver = r.octx.GetResolver()
+			pm1.StopDebug()
 		}
 	} else {
+		pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
 		resolver = r.octx.GetResolver()
+		pm1.StopDebug()
 	}
 
 	if resolver == nil {
 		return nil, errors.New("no repository or ocm resolvers found")
 	}
 
+	pm2 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupComponentVersion")
 	cv, err := r.session.LookupComponentVersion(resolver, cdRef.ComponentName, cdRef.Version)
+	pm2.StopDebug()
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,301 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: executions.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: Execution
+    listKind: ExecutionList
+    plural: executions
+    shortNames:
+    - exec
+    singular: execution
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.exportRef.name
+      name: ExportRef
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Execution contains the configuration of a execution and deploy
+          item
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines a execution and its items
+            properties:
+              context:
+                description: Context defines the current context of the execution.
+                type: string
+              deployItems:
+                description: DeployItems defines all execution items that need to
+                  be scheduled.
+                items:
+                  description: DeployItemTemplate defines a execution element that
+                    is translated into a deploy item.
+                  properties:
+                    config:
+                      description: ProviderConfiguration contains the type specific
+                        configuration for the execution.
+                      type: object
+                      x-kubernetes-embedded-resource: true
+                      x-kubernetes-preserve-unknown-fields: true
+                    dependsOn:
+                      description: DependsOn lists deploy items that need to be executed
+                        before this one
+                      items:
+                        type: string
+                      type: array
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: Labels is the map of labels to be added to the
+                        deploy item.
+                      type: object
+                    name:
+                      description: Name is the unique name of the execution.
+                      type: string
+                    onDelete:
+                      description: OnDelete specifies particular setting when deleting
+                        a deploy item
+                      properties:
+                        skipUninstallIfClusterRemoved:
+                          description: |-
+                            SkipUninstallIfClusterRemoved specifies that uninstall is skipped if the target cluster is already deleted.
+                            Works only in the context of an existing target sync object which is used to check the Garden project with
+                            the shoot cluster resources
+                          type: boolean
+                      type: object
+                    target:
+                      description: Target is the object reference to the target that
+                        the deploy item should deploy to.
+                      properties:
+                        name:
+                          description: Name is the name of the kubernetes object.
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of kubernetes object.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    timeout:
+                      description: |-
+                        Timeout specifies how long the deployer may take to apply the deploy item.
+                        When the time is exceeded, the deploy item fails.
+                        Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
+                        Defaults to ten minutes if not specified.
+                      type: string
+                    type:
+                      description: DataType is the DeployItem type of the execution.
+                      type: string
+                    updateOnChangeOnly:
+                      description: UpdateOnChangeOnly specifies if redeployment is
+                        executed only if the specification of the deploy item has
+                        changed.
+                      type: boolean
+                  required:
+                  - config
+                  - name
+                  - type
+                  type: object
+                type: array
+              deployItemsCompressed:
+                description: DeployItemsCompressed as zipped byte array
+                format: byte
+                type: string
+            type: object
+          status:
+            description: Status contains the current status of the execution.
+            properties:
+              conditions:
+                description: Conditions contains the actual condition of a execution
+                items:
+                  description: Condition holds the information about the state of
+                    a resource.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: DataType of the Shoot condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              deployItemCache:
+                description: DeployItemCache contains the currently existing deploy
+                  item belonging to the execution. If nil undefined.
+                properties:
+                  activeDIs:
+                    items:
+                      description: DiNamePair contains the spec name and the real
+                        name of a deploy item
+                      properties:
+                        objectName:
+                          type: string
+                        specName:
+                          type: string
+                      type: object
+                    type: array
+                  orphanedDIs:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              exportRef:
+                description: |-
+                  ExportReference references the object that contains the exported values.
+                  only used for operation purpose.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                type: object
+              jobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              jobIDFinished:
+                description: JobIDFinished is the ID of the finished working request.
+                type: string
+              lastError:
+                description: LastError describes the last error that occurred.
+                properties:
+                  codes:
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
+                    items:
+                      description: ErrorCode is a string alias.
+                      type: string
+                    type: array
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: Last time the condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  operation:
+                    description: Operation describes the operator where the error
+                      occurred.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                required:
+                - lastTransitionTime
+                - lastUpdateTime
+                - message
+                - operation
+                - reason
+                type: object
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the most recent generation observed for this Execution.
+                  It corresponds to the Execution generation, which is updated on mutation by the landscaper.
+                format: int64
+                type: integer
+              phase:
+                description: ExecutionPhase is the current phase of the execution.
+                type: string
+              phaseTransitionTime:
+                description: PhaseTransitionTime is the time when the phase last changed.
+                format: date-time
+                type: string
+              transitionTimes:
+                description: TransitionTimes contains timestamps of status transitions
+                properties:
+                  finishedTime:
+                    description: FinishedTime is the time when the finished phase
+                      is set.
+                    format: date-time
+                    type: string
+                  initTime:
+                    description: InitTime is the time when the Init phase starts.
+                    format: date-time
+                    type: string
+                  triggerTime:
+                    description: TriggerTime is the time when the jobID is set.
+                    format: date-time
+                    type: string
+                  waitTime:
+                    description: WaitTime is the time when the work is done.
+                    format: date-time
+                    type: string
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
