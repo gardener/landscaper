@@ -48,7 +48,7 @@ configurations:
 
 >**DEPRECATED:**  
 > The `repositoryContext` has been deprecated and is superseded by the specification of resolvers in the `ocmConfig` as
-> shown and explained [here]().
+> shown and explained below.
 
 The repository context is usually the location where the component descriptors are stored in an OCI registry. For the 
 example above it is expected that the component descriptors are stored under `example.com/component-descriptors/`.
