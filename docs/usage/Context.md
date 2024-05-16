@@ -13,12 +13,8 @@ access data like credentials for the component descriptors and other (OCI) artif
 
 As you already know, an installation references a blueprint and a component descriptor. The component descriptor itself 
 might reference further artifacts like OCI images, other component descriptors etc. With the information in the context,
-the Landscapes knows the location of the components descriptors and possesses the required credentials to all OCI 
+the Landscaper knows the location of the components descriptors and possesses the required credentials to all OCI 
 artefacts (including the component descriptors).
-
-Remark: Be aware that all components descriptors must be located in the same repository context, e.g. if they are stored
-in an OCI registry in a repository context `example.com/somePath`, it is assumed that all component descriptors are located
-under `example.com/somePath/component-descriptors/`
 
 A context can only be referenced by installations in the same namespace.
 
@@ -34,20 +30,71 @@ kind: Context
 metadata:
   name: example-context
   namespace: example-namespace
+  
+ocmConfig:
+  name: example-ocm-config
 
+# DEPRECATED
 repositoryContext:
   type: ociRegistry
   baseUrl: "example.com"
 
 registryPullSecrets: # additional pull secrets to access component descriptors and blueprints
 - name: my-pullsecret
-
+    
 configurations:
   config.mydeployer.mydomain.org: ... # custom configuration, not evaluated by landscaper
 ```
 
+>**DEPRECATED:**  
+> The `repositoryContext` has been deprecated and is superseded by the specification of resolvers in the `ocmConfig` as
+> shown and explained [here]().
+
 The repository context is usually the location where the component descriptors are stored in an OCI registry. For the 
 example above it is expected that the component descriptors are stored under `example.com/component-descriptors/`.
+
+The `ocmConfig` is a reference to a config map in the same namespace containing a key `.ocmconfig` with the 
+corresponding value being ocm configuration data.
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ocm-config
+  namespace: example
+data:
+  .ocmconfig: |
+      type: generic.config.ocm.software/v1
+      configurations:
+        - type: ocm.config.ocm.software
+          resolvers:
+          - repository:
+              type: OCIRegistry
+              baseUrl: ghcr.io
+              subPath: ocm-example-repo-1
+            prefix: github.com/acme.org/component
+            priority: 10
+          - repository:
+              type: OCIRegistry
+              baseUrl: docker.io
+              subPath: ocm-example-repo-2
+            prefix: github.com/acme.org/referenced-component
+            priority: 10
+```
+
+So this config map is a representation of the [ocm configfile](https://ocm.software/docs/cli-reference/help/configfile/) 
+concept as a kubernetes API object. Consequently, you can test certain ocm configurations locally, using your ocm 
+configfile (located at $HOME/.ocmconfig per default) and the ocm-cli and then copy the files contents into the config 
+map under the key `.ocmconfig`.
+The `resolvers` can be used to replace the `repositoryContext` specification in the Context object. This also allows to
+specify multiple repositories. So, the component specified in the installation can reference a component located in
+another repository. In the example above, a component called `github.com/acme.org/component` stored in 
+`ghcr.io/ocm-example-repo-1` can have a reference to a component called `github.com/acme.org/referenced-component` 
+stored in `docker.io/ocm-example-repo-2`. For further details, check the 
+[ocm configfile documentation](https://ocm.software/docs/cli-reference/help/configfile/).
+
+> **NOTE:**  
+> The ocm configfile allows to influence almost all parts of the ocm tooling's behavior. While several of these features 
+> work technically already, only the configuration of resolvers is officially supported for now. 
 
 These registry pull secrets are references to secrets in the same namespace as the context. It is expected that the 
 secrets contain oci registry access credentials. These credentials are used by the Landscaper to access component 
@@ -57,7 +104,7 @@ How to create registry pull secrets is described
 [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/). They typically look as
 follows:
 
-```
+```yaml
 apiVersion: v1
 kind: Secret
 metadata:
