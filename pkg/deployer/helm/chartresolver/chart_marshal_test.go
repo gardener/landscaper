@@ -1,11 +1,12 @@
 package chartresolver_test
 
 import (
-	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
+
+	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 )
 
 var _ = Describe("Chart tree", func() {
