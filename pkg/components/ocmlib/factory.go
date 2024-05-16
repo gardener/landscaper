@@ -7,6 +7,9 @@ package ocmlib
 import (
 	"context"
 	"fmt"
+	"github.com/open-component-model/ocm/pkg/common/accessio"
+	"github.com/open-component-model/ocm/pkg/contexts/oci/attrs/cacheattr"
+	"time"
 
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 
@@ -66,7 +69,21 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	registryAccess.octx = ocm.FromContext(ctx)
 	registryAccess.octx.Finalizer().Close(registryAccess)
 	registryAccess.session = ocm.NewSession(datacontext.NewSession())
-
+	ocmcache, err := accessio.NewStaticBlobCache("/app/ls/oci-cache/ocm")
+	if err != nil {
+		return nil, err
+	}
+	err = cacheattr.Set(registryAccess.octx, ocmcache)
+	if err != nil {
+		return nil, err
+	}
+	if c, ok := ocmcache.(accessio.CleanupCache); ok {
+		before := time.Now().Add(time.Hour * 48)
+		_, _, _, _, _, _, err = c.Cleanup(nil, &before, false)
+		if err != nil {
+			return nil, err
+		}
+	}
 	// If a config map containing the data of an ocm config file is provided, apply its configuration.
 	if err := ApplyOCMConfigMapToOCMContext(registryAccess.octx, ocmconfig); err != nil {
 		return nil, err
