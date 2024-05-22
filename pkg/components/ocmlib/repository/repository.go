@@ -111,6 +111,8 @@ func (a *ComponentAccess) IsReadOnly() bool {
 	return true
 }
 
+func (a *ComponentAccess) SetReadOnly() {}
+
 func (a *ComponentAccess) Close() error {
 	return nil
 }
@@ -176,6 +178,8 @@ func (v *ComponentVersionAccess) Close() error {
 func (v *ComponentVersionAccess) IsReadOnly() bool {
 	return true
 }
+
+func (a *ComponentVersionAccess) SetReadOnly() {}
 
 func (v *ComponentVersionAccess) GetInexpensiveContentVersionIdentity(a cpi.AccessSpec) string {
 	switch a.GetKind() { //nolint:gocritic // to be extended

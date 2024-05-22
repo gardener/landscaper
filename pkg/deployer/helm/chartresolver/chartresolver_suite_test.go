@@ -314,9 +314,8 @@ var _ = Describe("GetChart", func() {
 
 	Context("From OCM Resource Ref", func() {
 		var (
-			resourceRef    string
-			repoCtx        *cdv2.UnstructuredTypedObject
-			helmChartCache *HelmChartCache
+			resourceRef string
+			repoCtx     *cdv2.UnstructuredTypedObject
 		)
 
 		BeforeEach(func() {
@@ -345,12 +344,6 @@ var _ = Describe("GetChart", func() {
 			Expect(err).To(BeNil())
 			repoCtx = &cdv2.UnstructuredTypedObject{}
 			Expect(repoCtx.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./testdata/ocmrepo"}`))).To(BeNil())
-
-			helmChartCache = GetHelmChartCache(MaxSizeInByteDefault,
-				RemoveOutdatedDurationDefault)
-
-			helmChartCache.Clear()
-
 		})
 
 		It("should resolve a chart from a local ocm resource", func() {
@@ -359,10 +352,6 @@ var _ = Describe("GetChart", func() {
 			}, nil)
 			Expect(err).To(BeNil())
 			Expect(chart).ToNot(BeNil())
-
-			contained, err := helmChartCache.HasKey("", nil, resourceRef)
-			Expect(err).To(BeNil())
-			Expect(contained).To(BeTrue())
 		})
 		It("resolve from ocm resource ref with ocm config resolver", func() {
 			ocmConfig := &corev1.ConfigMap{

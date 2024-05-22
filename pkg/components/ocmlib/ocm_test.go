@@ -7,8 +7,8 @@ package ocmlib
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
+	"github.com/mandelsoft/goutils/errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -17,11 +17,9 @@ import (
 
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	ocmerrors "github.com/open-component-model/ocm/pkg/errors"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -600,7 +598,8 @@ configurations:
 
 		cv, err := r.GetComponentVersion(ctx, cdref)
 		Expect(cv).To(BeNil())
-		var notfounderr *ocmerrors.NotFoundError
+
+		var notfounderr *errors.NotFoundError
 		Expect(errors.As(err, &notfounderr)).To(BeTrue())
 	})
 	It("repository context is not set and ocm config does not set resolvers", func() {

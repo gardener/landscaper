@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	ocmutils "github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -322,9 +322,9 @@ func AddSecretCredsToCredContext(secrets []corev1.Secret, provider credentials.C
 
 func ApplyOCMConfigMapToOCMContext(octx ocm.Context, ocmconfig *corev1.ConfigMap) error {
 	if ocmconfig != nil {
-		ocmconfigdata, ok := ocmconfig.Data[utils.DEFAULT_OCM_CONFIG]
+		ocmconfigdata, ok := ocmconfig.Data[ocmutils.DEFAULT_OCM_CONFIG]
 		if !ok {
-			return fmt.Errorf("ocm configuration config map does not contain key \"%s\"", utils.DEFAULT_OCM_CONFIG)
+			return fmt.Errorf("ocm configuration config map does not contain key \"%s\"", ocmutils.DEFAULT_OCM_CONFIG)
 		}
 		if len(ocmconfigdata) > 0 {
 			cfg, err := octx.ConfigContext().GetConfigForData([]byte(ocmconfigdata), nil)
