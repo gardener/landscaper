@@ -17,9 +17,9 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
 	"github.com/open-component-model/ocm/pkg/helm/loader"
 
+	"github.com/mandelsoft/goutils/finalizer"
 	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/finalizer"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"sigs.k8s.io/yaml"
 

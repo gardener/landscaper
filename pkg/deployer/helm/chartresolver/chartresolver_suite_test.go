@@ -323,7 +323,7 @@ var _ = Describe("GetChart", func() {
 			// repository context and component version which would partially defeat the purpose of these tests.
 			localCtx := logging.NewContext(context.Background(), logging.Discard())
 			localOctx := ocm.New(datacontext.MODE_EXTENDED)
-			localCtx = localOctx.BindTo(ctx)
+			localCtx = localOctx.BindTo(localCtx)
 
 			// Setup Test
 			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, nil, nil, nil, nil,

@@ -16,6 +16,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
+	github.com/mandelsoft/goutils v0.0.0-20240510154642-0f1a031c54cb
 	github.com/mandelsoft/spiff v1.7.0-beta-5
 	github.com/mandelsoft/vfs v0.4.3
 	github.com/onsi/ginkgo v1.16.5
@@ -228,7 +229,6 @@ require (
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mandelsoft/goutils v0.0.0-20240510154642-0f1a031c54cb // indirect
 	github.com/mandelsoft/logging v0.0.0-20240201091719-67180059d6bf // indirect
 	github.com/marstr/guid v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

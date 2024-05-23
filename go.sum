@@ -747,8 +747,6 @@ github.com/onsi/gomega v1.17.0/go.mod h1:HnhC7FXeEQY45zxNK3PPoIUhzk/80Xly9PcubAl
 github.com/onsi/gomega v1.19.0/go.mod h1:LY+I3pBVzYsTBU1AnDwOSxaYi9WoWiqgwooUqq9yPro=
 github.com/onsi/gomega v1.33.1 h1:dsYjIxxSR755MDmKVsaFQTE22ChNBcuuTWgkUDSubOk=
 github.com/onsi/gomega v1.33.1/go.mod h1:U4R44UsT+9eLIaYRB2a5qajjtQYn0hauxvRm16AVYg0=
-github.com/open-component-model/ocm v0.9.0 h1:fFTpGjDgenb2M0EC/3O3ELw27RsPummw+Fnz+QxJATg=
-github.com/open-component-model/ocm v0.9.0/go.mod h1:luDM9z2qeiruMm0BOic6wIiK2hrKvFyIxEW8TpvfT14=
 github.com/open-component-model/ocm v0.10.0 h1:KVblCNJkIwOYUOhDDsBxNeIsFYE9If+VkqFy3zV2xfM=
 github.com/open-component-model/ocm v0.10.0/go.mod h1:0DihXekRb3tyqAGYbEzEWSOflwPaOpH6TeSwwkwvK0c=
 github.com/open-policy-agent/opa v0.63.0 h1:ztNNste1v8kH0/vJMJNquE45lRvqwrM5mY9Ctr9xIXw=
