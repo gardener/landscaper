@@ -45,21 +45,19 @@ rm -f ${GOPATH}/bin/openapi-gen
 source "$CODE_GEN_SCRIPT"
 
 echo "> Generating deepcopy/conversion/defaulter functions"
-kube::codegen::gen_helpers \
-  --input-pkg-root "$LANDSCAPER_MODULE_PATH" \
-  --output-base "$src_path" \
+kube::codegen::gen_helpers "$PROJECT_ROOT" \
   --boilerplate "${PROJECT_ROOT}/hack/boilerplate.go.txt"
+
 
  echo
  echo "> Generating openapi definitions"
- kube::codegen::gen_openapi \
-   --input-pkg-root "$API_MODULE_PATH" \
-   --output-pkg-root "$API_MODULE_PATH" \
-   --output-base "$src_path" \
+
+ kube::codegen::gen_openapi "$PROJECT_ROOT/apis" \
+   --output-pkg "$API_MODULE_PATH" \
+   --output-dir "$PROJECT_ROOT/apis/openapi" \
    --extra-pkgs "$API_MODULE_PATH/core/v1alpha1" \
    --extra-pkgs "$API_MODULE_PATH/config/v1alpha1" \
    --extra-pkgs "$API_MODULE_PATH/config" \
-   --extra-pkgs "$API_MODULE_PATH/deployer/core/v1alpha1" \
    --extra-pkgs "$API_MODULE_PATH/deployer/utils/readinesschecks" \
    --extra-pkgs "$API_MODULE_PATH/deployer/utils/managedresource" \
    --extra-pkgs "$API_MODULE_PATH/deployer/utils/continuousreconcile" \
