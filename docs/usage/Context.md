@@ -23,7 +23,6 @@ A context can only be referenced by installations in the same namespace.
 A context object has the following structure.  It contains the repository context, registry pull secrets for accessing
 resources stored in OCI registries, and additional information in the configurations section.
 
-
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Context
