@@ -7,6 +7,11 @@ package executions_test
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/apis/config"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -29,13 +34,15 @@ import (
 var _ = Describe("DeployItemExecutions", func() {
 
 	var (
+		ctx  context.Context
+		octx ocm.Context
+
 		op                *installations.Operation
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
 	)
 
 	Load := func(inst string) (context.Context, *installations.InstallationImportsAndBlueprint) {
-		ctx := context.Background()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations[inst])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
@@ -51,6 +58,10 @@ var _ = Describe("DeployItemExecutions", func() {
 	}
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		var (
 			err   error
 			state *envtest.State
@@ -62,14 +73,18 @@ var _ = Describe("DeployItemExecutions", func() {
 		fakeInstallations = state.Installations
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry/root"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
-		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(context.Background())
+		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		op = &installations.Operation{
 			Operation: operation,
 		}
+	})
+
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
 	})
 
 	It("should correctly reference targets in deployitem specifications", func() {

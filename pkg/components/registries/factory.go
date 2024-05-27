@@ -48,10 +48,10 @@ func GetFactory(useOCM ...bool) model.Factory {
 	if ocmLibraryMode != nil {
 		ocmLibraryModeBool = *ocmLibraryMode
 	} else {
-		ocmLibraryModeBool = false
+		ocmLibraryModeBool = true
 		log.Info("useOCMLib flag not set and therefore defaulted!", "ocmLibraryMode", ocmLibraryModeBool)
 	}
-	useOCMBool := utils.OptionalDefaultedBool(false, useOCM...)
+	useOCMBool := utils.OptionalDefaultedBool(true, useOCM...)
 
 	if useOCMBool || ocmLibraryModeBool {
 		log.Info("using ocm")

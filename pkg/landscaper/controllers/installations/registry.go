@@ -7,6 +7,8 @@ package installations
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -33,12 +35,23 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		return err
 	}
 
+	var ocmConfig *corev1.ConfigMap
+	if contextObj.OCMConfig != nil {
+		ocmConfig = &corev1.ConfigMap{}
+		if err := c.LsUncachedClient().Get(ctx, client.ObjectKey{
+			Namespace: contextObj.Namespace,
+			Name:      contextObj.OCMConfig.Name,
+		}, ocmConfig); err != nil {
+			return err
+		}
+	}
+
 	var inlineCd *types.ComponentDescriptor = nil
 	if installation.Spec.ComponentDescriptor != nil {
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}
 
-	registry, err := registries.GetFactory(contextObj.UseOCM).NewRegistryAccess(ctx, nil, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
+	registry, err := registries.GetFactory(contextObj.UseOCM).NewRegistryAccess(ctx, nil, ocmConfig, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
 	if err != nil {
 		return err
 	}

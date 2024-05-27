@@ -17,6 +17,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
 	"github.com/gardener/landscaper/pkg/components/cnudie"
 
 	corev1 "k8s.io/api/core/v1"
@@ -56,6 +59,19 @@ func TestConfig(t *testing.T) {
 }
 
 var _ = Describe("jsonschema", func() {
+	var (
+		ctx  context.Context
+		octx ocm.Context
+	)
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
 	Context("schema validation", func() {
 		It("should pass a correct schema", func() {
@@ -329,7 +345,6 @@ var _ = Describe("jsonschema", func() {
 		)
 
 		BeforeEach(func() {
-			ctx := context.Background()
 			version := "v0.0.0"
 			schemaBytes := []byte(`{ "type": "string"}`)
 
@@ -404,7 +419,7 @@ var _ = Describe("jsonschema", func() {
 			}
 
 			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(blobFs)
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, blobFs, nil, nil,
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, blobFs, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, cd, blobResolver)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -490,7 +505,6 @@ var _ = Describe("jsonschema", func() {
 	Context("WithRealRegistry", func() {
 		// tests which require a real (local) registry
 		var (
-			ctx            context.Context
 			testenv        *testreg.Environment
 			ociCache       cache.Cache
 			ociClient      ociclient.Client
@@ -498,15 +512,13 @@ var _ = Describe("jsonschema", func() {
 		)
 
 		BeforeEach(func() {
-			ctx = context.Background()
-
 			// create test registry
 			testenv = testreg.New(testreg.Options{
 				RegistryBinaryPath: filepath.Join("../../../", "bin", "registry"),
 				Stdout:             GinkgoWriter,
 				Stderr:             GinkgoWriter,
 			})
-			testutils.ExpectNoError(testenv.Start(context.Background()))
+			testutils.ExpectNoError(testenv.Start(ctx))
 			testutils.ExpectNoError(testenv.WaitForRegistryToBeHealthy())
 
 			keyring := testcred.New()
@@ -562,7 +574,7 @@ var _ = Describe("jsonschema", func() {
 `, strings.Split(testenv.Addr, ":")[0], strings.Split(testenv.Addr, ":")[1], testenv.BasicAuth.Username, testenv.BasicAuth.Password, testenv.Certificate.CA))
 			secrets := []corev1.Secret{{
 				Data: map[string][]byte{`.ocmcredentialconfig`: config}}}
-			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, secrets, nil, nil, ociconfig, nil)
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, nil, secrets, nil, nil, ociconfig, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -858,17 +870,17 @@ var _ = Describe("jsonschema", func() {
 	Context("WithLocalRegistry", func() {
 
 		var (
-			registryAccess    model.RegistryAccess
-			componentVersion  model.ComponentVersion
-			repositoryContext types.UnstructuredTypedObject
+			registryAccess      model.RegistryAccess
+			componentVersion    model.ComponentVersion
+			repositoryContext   types.UnstructuredTypedObject
+			localregistryconfig *apiconfig.LocalRegistryConfiguration
 		)
 
 		BeforeEach(func() {
 			var err error
-			ctx := context.Background()
 
 			localregistryconfig := &apiconfig.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-			registryAccess, err = registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
@@ -883,6 +895,9 @@ var _ = Describe("jsonschema", func() {
 		})
 
 		It("should resolve with explicit repository context", func() {
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
 			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
 				ComponentVersion:  componentVersion,
 				RegistryAccess:    registryAccess,
@@ -898,6 +913,9 @@ var _ = Describe("jsonschema", func() {
 		})
 
 		It("should not resolve without explicit repository context", func() {
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
 			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
 				ComponentVersion: componentVersion,
 				RegistryAccess:   registryAccess,

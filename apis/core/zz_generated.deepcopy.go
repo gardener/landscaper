@@ -478,6 +478,11 @@ func (in *ContextConfiguration) DeepCopyInto(out *ContextConfiguration) {
 		in, out := &in.RepositoryContext, &out.RepositoryContext
 		*out = (*in).DeepCopy()
 	}
+	if in.OCMConfig != nil {
+		in, out := &in.OCMConfig, &out.OCMConfig
+		*out = new(v1.LocalObjectReference)
+		**out = **in
+	}
 	if in.RegistryPullSecrets != nil {
 		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
 		*out = make([]v1.LocalObjectReference, len(*in))

@@ -11,6 +11,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/open-component-model/ocm/pkg/runtime"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -42,6 +47,18 @@ func TestConfig(t *testing.T) {
 }
 
 var _ = Describe("TemplateDeployExecutions", func() {
+	var (
+		ctx  context.Context
+		octx ocm.Context
+	)
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
 	sharedTestdataDir := filepath.Join("./testdata", "shared_data")
 
@@ -68,10 +85,22 @@ var _ = Describe("TemplateDeployExecutions", func() {
 })
 
 func runTestSuite(testdataDir, sharedTestdataDir string) {
-	var stateHandler template.GenericStateHandler
+	var (
+		stateHandler template.GenericStateHandler
+		ctx          context.Context
+		octx         ocm.Context
+	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		stateHandler = template.NewMemoryStateHandler()
+	})
+
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
 	})
 
 	Context("TemplateSubinstallationExecutions", func() {
@@ -337,10 +366,9 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		DescribeTable("templating against specific component descriptor schema versions", func(useOCM bool, schemaVersion string, templateFileName string, schemaVersionSuffix string) {
 			// Preparation to conveniently be able to access the respective component versions
-			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix, Version: "1.0.0"})
@@ -400,10 +428,9 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		It("templating against v2 with mixed component descriptor schema versions", func() {
 			// Preparation to conveniently be able to access the respective component versions
-			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-mixed", Version: "1.0.0"})
@@ -456,10 +483,9 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		It("templating against v3alpha1 with mixed component descriptor schema versions", func() {
 			// Preparation to conveniently be able to access the respective component versions
-			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-mixed", Version: "1.0.0"})
@@ -512,10 +538,9 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		It("should get resource key for given relative resource reference", func() {
 			// Preparation to conveniently be able to access the respective component versions
-			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
@@ -548,10 +573,9 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		It("should get resource key for given relative resource path", func() {
 			// Preparation to conveniently be able to access the respective component versions
-			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
@@ -584,10 +608,9 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		It("should get resource content for given relative resource reference", func() {
 			// Preparation to conveniently be able to access the respective component versions
-			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
@@ -623,10 +646,9 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		It("should get resource content for given relative resource path", func() {
 			// Preparation to conveniently be able to access the respective component versions
-			ctx := context.Background()
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
@@ -696,7 +718,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			}
 			stateBytes, err := json.Marshal(state)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stateHandler.Store(context.TODO(), "deploy"+exec[0].Name, stateBytes)).To(Succeed())
+			Expect(stateHandler.Store(ctx, "deploy"+exec[0].Name, stateBytes)).To(Succeed())
 			_, err = op.TemplateDeployExecutions(template.NewDeployExecutionOptions(
 				template.NewBlueprintExecutionOptions(nil, &blueprints.Blueprint{Info: blue, Fs: nil}, nil, nil,
 					map[string]interface{}{"version": "0.0.2"})))

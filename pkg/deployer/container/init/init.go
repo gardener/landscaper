@@ -12,6 +12,8 @@ import (
 	"path"
 	"path/filepath"
 
+	ocmutils "github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -143,7 +145,27 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			AllowPlainHttp:     false,
 			InsecureSkipVerify: false,
 		}
-		registryAccess, err = registries.GetFactory(opts.UseOCM).NewRegistryAccess(ctx, fs, nil, nil, nil, ociconfig, providerConfig.ComponentDescriptor.Inline)
+
+		var ocmConfigData []byte
+		ok, err := vfs.FileExists(fs, opts.OCMConfigFilePath)
+		if err != nil {
+			return err
+		}
+		if ok {
+			ocmConfigData, err = vfs.ReadFile(fs, opts.OCMConfigFilePath)
+			if err != nil {
+				return err
+			}
+		}
+
+		var ocmConfig *corev1.ConfigMap
+		if len(ocmConfigData) > 0 {
+			ocmConfig = &corev1.ConfigMap{
+				Data: map[string]string{ocmutils.DEFAULT_OCM_CONFIG: string(ocmConfigData)},
+			}
+		}
+
+		registryAccess, err = registries.GetFactory(opts.UseOCM).NewRegistryAccess(ctx, fs, ocmConfig, nil, nil, nil, ociconfig, providerConfig.ComponentDescriptor.Inline)
 		if err != nil {
 			return err
 		}

@@ -35,6 +35,7 @@ var _ model.Factory = &Factory{}
 
 func (*Factory) NewRegistryAccess(ctx context.Context,
 	fs vfs.FileSystem,
+	ocmconfig *corev1.ConfigMap,
 	secrets []corev1.Secret,
 	sharedCache cache.Cache,
 	localRegistryConfig *config.LocalRegistryConfiguration,
@@ -106,6 +107,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 
 // NewHelmRepoResource returns a helm chart resource that is stored in a helm chart repository.
 func (*Factory) NewHelmRepoResource(ctx context.Context,
+	ocmconfig *corev1.ConfigMap,
 	helmChartRepo *helmv1alpha1.HelmChartRepo,
 	lsClient client.Client,
 	contextObj *lsv1alpha1.Context) (model.TypedResourceProvider, error) {
@@ -126,6 +128,7 @@ func (*Factory) NewHelmRepoResource(ctx context.Context,
 // NewHelmOCIResource returns a helm chart resource that is stored in an OCI registry.
 func (*Factory) NewHelmOCIResource(ctx context.Context,
 	fs vfs.FileSystem,
+	ocmconfig *corev1.ConfigMap,
 	ociImageRef string,
 	registryPullSecrets []corev1.Secret,
 	ociConfig *config.OCIConfiguration,

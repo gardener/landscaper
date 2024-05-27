@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ocm-config
+  namespace: example
+data:
+  .ocmconfig: |
+      type: generic.config.ocm.software/v1
+      configurations:
+        - type: ocm.config.ocm.software
+          resolvers:
+          - repository:
+              type: OCIRegistry
+              baseUrl: eu.gcr.io
+              subPath: gardener-project/landscaper/integration-tests/ocm-repo-1
+            priority: 10
+          - repository:
+              type: OCIRegistry
+              baseUrl: eu.gcr.io
+              subPath: gardener-project/landscaper/integration-tests/ocm-repo-2
+            priority: 10
+
+

@@ -1,0 +1,10 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Context
+metadata:
+  name: ocm-config-context
+  namespace: example
+repositoryContext:
+  baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+  type: ociRegistry
+ocmConfig:
+  name: ocm-config

@@ -36,7 +36,7 @@ import (
 	"github.com/gardener/landscaper/test/framework"
 )
 
-// ContainerTests implemets tests for the Landscaper container deployer.
+// ContainerTests implements tests for the Landscaper container deployer.
 func ContainerTests(f *framework.Framework) {
 	var (
 		state       = f.Register()
@@ -415,5 +415,50 @@ func ContainerTests(f *framework.Framework) {
 			Expect(actualTargetContentAsObject).To(Equal(expectedTargetContentAsObject))
 		})
 
+	})
+
+	// This test checks whether the container
+	Context("OCM Config", func() {
+		BeforeEach(func() {
+			ctx = context.Background()
+			ctx = logging.NewContext(ctx, log)
+		})
+
+		It("use ocm config to read components from multiple ocm repositories", func() {
+			By("create target")
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, "my-cluster", f.RestConfig)
+			utils.ExpectNoError(err)
+			utils.ExpectNoError(state.Create(ctx, target))
+
+			By("create ocm config map")
+			cfgmap := &v1.ConfigMap{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(cfgmap, path.Join(testdataDir, "installation-2", "ocm-config-configmap.yaml")))
+			cfgmap.SetNamespace(state.Namespace)
+			utils.ExpectNoError(state.Create(ctx, cfgmap))
+
+			By("create context")
+			lsctx := &lsv1alpha1.Context{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(lsctx, path.Join(testdataDir, "installation-2", "context.yaml")))
+			lsctx.SetNamespace(state.Namespace)
+			utils.ExpectNoError(state.Create(ctx, lsctx))
+
+			By("create installation")
+			inst := &lsv1alpha1.Installation{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-2", "installation.yaml")))
+			inst.SetNamespace(state.Namespace)
+			utils.ExpectNoError(state.Create(ctx, inst))
+
+			By("wait for installation to finish")
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhases.Succeeded, 5*time.Minute))
+
+			// Since it is not really possible to look inside the container, the test exports a data object containing
+			// a list of the components that were available in the container.
+			By("check for components")
+			var components []interface{}
+			componentsExport := &lsv1alpha1.DataObject{}
+			utils.ExpectNoError(state.Client.Get(ctx, types.NamespacedName{Name: "components", Namespace: state.Namespace}, componentsExport))
+			utils.ExpectNoError(json.Unmarshal(componentsExport.Data.RawMessage, &components))
+			Expect(components).To(HaveLen(2))
+		})
 	})
 }

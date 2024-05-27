@@ -1,0 +1,24 @@
+components:
+  - name: github.com/acme.org/component
+    version: "1.0.0"
+    provider:
+      name: acme.org
+    resources:
+      - name: blueprint
+        type: blueprint
+        input:
+          type: dir
+          path: ./blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: container-deployer-base
+        type: ociImage
+        version: v0.1.0
+        relation: external
+        access:
+          type: ociRegistry
+          imageReference: eu.gcr.io/gardener-project/landscaper/integration-tests/images/container-deployer:v0.1.0
+    componentReferences:
+      - name: reference
+        version: 1.0.0
+        componentName: github.com/acme.org/referenced-component

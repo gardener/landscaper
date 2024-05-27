@@ -131,12 +131,11 @@ func BuildLsErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.
 	if err == nil {
 		return nil
 	}
-	switch e := err.(type) {
-	case LsError:
-		return e
-	default:
-		return NewErrorOrNil(err, operation, reason, codes...)
+	var lserr LsError
+	if errors.As(err, &lserr) {
+		return lserr
 	}
+	return NewErrorOrNil(err, operation, reason, codes...)
 }
 
 // IsError returns the landscaper error if the given error is one.

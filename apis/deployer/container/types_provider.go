@@ -51,7 +51,7 @@ type ProviderConfiguration struct {
 	// Blueprint is the resolved reference to the Blueprint definition
 	// +optional
 	Blueprint *lsv1alpha1.BlueprintDefinition `json:"blueprint,omitempty"`
-	// ComponentDescriptor is the resolved reference to the ComponentDescriptor defnition
+	// ComponentDescriptor is the resolved reference to the ComponentDescriptor definition
 	// +optional
 	ComponentDescriptor *lsv1alpha1.ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`
 	// RegistryPullSecrets defines a list of registry credentials that are used to

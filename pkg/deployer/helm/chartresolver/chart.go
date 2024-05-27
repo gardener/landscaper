@@ -17,10 +17,9 @@ import (
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
 	"github.com/open-component-model/ocm/pkg/helm/loader"
 
+	"github.com/mandelsoft/goutils/finalizer"
 	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/finalizer"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	"sigs.k8s.io/yaml"
 
@@ -55,6 +54,17 @@ func GetChart(ctx context.Context,
 	sharedCache cache.Cache,
 	useChartCache bool) (*chart.Chart, error) {
 
+	var ocmConfig *corev1.ConfigMap
+	if contextObj.OCMConfig != nil {
+		ocmConfig = &corev1.ConfigMap{}
+		if err := lsClient.Get(ctx, client.ObjectKey{
+			Namespace: contextObj.Namespace,
+			Name:      contextObj.OCMConfig.Name,
+		}, ocmConfig); err != nil {
+			return nil, err
+		}
+	}
+
 	if chartConfig.Archive != nil {
 		return getChartFromArchive(chartConfig.Archive)
 	}
@@ -72,13 +82,13 @@ func GetChart(ctx context.Context,
 
 	if chart == nil {
 		if len(chartConfig.Ref) != 0 {
-			chart, err = getChartFromOCIRef(ctx, contextObj, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
+			chart, err = getChartFromOCIRef(ctx, ocmConfig, contextObj, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
 		} else if chartConfig.HelmChartRepo != nil {
-			chart, err = getChartFromHelmChartRepo(ctx, lsClient, contextObj, chartConfig.HelmChartRepo)
+			chart, err = getChartFromHelmChartRepo(ctx, ocmConfig, lsClient, contextObj, chartConfig.HelmChartRepo)
 		} else if chartConfig.FromResource != nil {
 			chart, err = nil, errors.New("chart.fromResource is no longer supported")
 		} else if chartConfig.ResourceRef != "" {
-			chart, err = getChartFromResourceRef(ctx, chartConfig.ResourceRef, contextObj, lsClient)
+			chart, err = getChartFromResourceRef(ctx, ocmConfig, chartConfig.ResourceRef, contextObj, lsClient)
 		} else {
 			chart, err = nil, NoChartDefinedError
 		}
@@ -98,22 +108,19 @@ func GetChart(ctx context.Context,
 	return chart, nil
 }
 
-func getChartFromResourceRef(ctx context.Context, resourceRef string, lsCtx *lsv1alpha1.Context,
+func getChartFromResourceRef(ctx context.Context, ocmConfig *corev1.ConfigMap, resourceRef string, lsCtx *lsv1alpha1.Context,
 	lsClient client.Client) (_ *chart.Chart, err error) {
 
 	op := "getChartFromResourceRef"
 
-	octx := ocm.New(datacontext.MODE_EXTENDED)
+	octx := ocm.FromContext(ctx)
+	if err := ocmlib.ApplyOCMConfigMapToOCMContext(octx, ocmConfig); err != nil {
+		return nil, err
+	}
 
 	if lsCtx == nil {
 		return nil, lserrors.NewError(op, "NoContext", "landscaper context cannot be nil", lsv1alpha1.ErrorForInfoOnly,
 			lsv1alpha1.ErrorConfigurationProblem)
-	}
-
-	if lsCtx == nil || lsCtx.RepositoryContext == nil || lsCtx.RepositoryContext.Raw == nil {
-		msg := fmt.Sprintf("landscaper context %s/%s does not specify a repository context but has"+
-			" to specify a repository context to resolve resource from an ocm reference", lsCtx.Namespace, lsCtx.Name)
-		return nil, lserrors.NewError(op, "NoContext", msg, lsv1alpha1.ErrorForInfoOnly, lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	// Credential Handling
@@ -158,21 +165,23 @@ func getChartFromResourceRef(ctx context.Context, resourceRef string, lsCtx *lsv
 		return nil, err
 	}
 
-	spec, err := octx.RepositorySpecForConfig(lsCtx.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
-	if err != nil {
-		return nil, err
+	if lsCtx != nil && lsCtx.RepositoryContext != nil && lsCtx.RepositoryContext.Raw != nil {
+		spec, err := octx.RepositorySpecForConfig(lsCtx.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
+		if err != nil {
+			return nil, err
+		}
+		octx.AddResolverRule("", spec, int(^uint(0)>>1))
 	}
 
 	var finalize finalizer.Finalizer
 	defer finalize.FinalizeWithErrorPropagation(&err)
 
-	repo, err := spec.Repository(octx, nil)
-	if err != nil {
-		return nil, err
+	resolver := octx.GetResolver()
+	if resolver == nil {
+		return nil, errors.New("no repository or ocm resolvers found")
 	}
-	finalize.Close(repo)
 
-	compvers, err := repo.LookupComponentVersion(globalId.ComponentIdentity.Name, globalId.ComponentIdentity.Version)
+	compvers, err := resolver.LookupComponentVersion(globalId.ComponentIdentity.Name, globalId.ComponentIdentity.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -228,13 +237,14 @@ func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Char
 }
 
 func getChartFromOCIRef(ctx context.Context,
+	ocmConfig *corev1.ConfigMap,
 	contextObj *lsv1alpha1.Context,
 	ociImageRef string,
 	registryPullSecrets []corev1.Secret,
 	ociConfig *config.OCIConfiguration,
 	sharedCache cache.Cache) (*chart.Chart, error) {
 
-	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmOCIResource(ctx, nil, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
+	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmOCIResource(ctx, nil, ocmConfig, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
 	if err != nil {
 		return nil, err
 	}
@@ -251,11 +261,12 @@ func getChartFromOCIRef(ctx context.Context,
 }
 
 func getChartFromHelmChartRepo(ctx context.Context,
+	ocmConfig *corev1.ConfigMap,
 	lsClient client.Client,
 	contextObj *lsv1alpha1.Context,
 	repo *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
 
-	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmRepoResource(ctx, repo, lsClient, contextObj)
+	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmRepoResource(ctx, ocmConfig, repo, lsClient, contextObj)
 	if err != nil {
 		return nil, fmt.Errorf("unable to construct resource for chart %q with version %q from helm chart repo %q: %w",
 			repo.HelmChartName, repo.HelmChartVersion, repo.HelmChartRepoUrl, err)
