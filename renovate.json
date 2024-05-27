@@ -3,6 +3,7 @@
   "configMigration": true,
   "schedule": "after 02:30pm and before 04:30pm every weekday",
   "prHourlyLimit": 1,
+  "prConcurrentLimit": 2,
   "timezone": "Europe/Berlin",
   "extends": [
     "config:best-practices",
