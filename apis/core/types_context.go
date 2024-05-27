@@ -39,6 +39,11 @@ type ContextConfiguration struct {
 	// UseOCM defines whether OCM is used to process installations that reference this context.
 	// +optional
 	UseOCM bool `json:"useOCM,omitempty"`
+	// OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an
+	// ocm configfile.
+	// For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md
+	// +optional
+	OCMConfig *corev1.LocalObjectReference `json:"ocmConfig"`
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints, component descriptors and jsonschemas from the respective registry.
 	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/

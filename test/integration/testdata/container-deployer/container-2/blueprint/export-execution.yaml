@@ -1,0 +1,3 @@
+exports:
+  components:
+    {{- index .values "deployitems" "container-deployer" "components" | toYaml | nindent 4 }}

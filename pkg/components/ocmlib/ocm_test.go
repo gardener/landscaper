@@ -12,6 +12,17 @@ import (
 	"path/filepath"
 	"reflect"
 
+	"github.com/mandelsoft/goutils/errors"
+
+	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
+
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -56,6 +67,22 @@ var (
   "version": "1.0.0"
 }
 `
+	componentReferenceWithoutContext = `
+{
+  "componentName": "example.com/landscaper-component",
+  "version": "1.0.0"
+}
+`
+	componentReferenceWithWrongContext = `
+{
+  "repositoryContext": {
+    "type": "local",
+    "filePath": "./"
+  },
+  "componentName": "example.com/landscaper-component",
+  "version": "1.0.0"
+}
+`
 
 	auth             = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", USERNAME, PASSWORD)))
 	dockerconfigdata = []byte(fmt.Sprintf(`
@@ -67,7 +94,7 @@ var (
 }
 `, HOSTNAME1, auth, HOSTNAME2, auth))
 
-	ocmconfigdata = []byte(fmt.Sprintf(`
+	ociocmconfigdata = []byte(fmt.Sprintf(`
 {
   "type": "credentials.config.ocm.software",
   "consumers": [
@@ -89,18 +116,55 @@ var (
   ]
 }
 `, HOSTNAME1, USERNAME, PASSWORD))
+
+	helmocmconfigdata = []byte(fmt.Sprintf(`
+{
+  "type": "credentials.config.ocm.software",
+  "consumers": [
+    {
+      "identity": {
+        "type": "HelmChartRepository",
+        "hostname": "%s"
+      },
+      "credentials": [
+        {
+          "type": "Credentials",
+          "properties": {
+            "username": "%s",
+            "password": "%s"
+          }
+        }
+      ]
+    }
+  ]
+}
+`, HOSTNAME1, USERNAME, PASSWORD))
 )
 
 var _ = Describe("ocm-lib facade implementation", func() {
-	ctx := context.Background()
+	var (
+		ctx  context.Context
+		octx ocm.Context
+	)
+
 	factory := &Factory{}
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
 	It("get component version from component descriptor reference (from local repository)", func() {
 		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion
 		// method can deal with the legacy ComponentDescriptorReference type rather than testing ocmlib functionality
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
 
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 		Expect(cv).NotTo(BeNil())
@@ -114,7 +178,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 
 		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
@@ -130,7 +194,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 
 		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
@@ -147,7 +211,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 			Expect(f.Close()).To(Succeed())
 		}
 		// Create a Registry Access and check whether credentials are properly set and can be found
-		r := Must(factory.NewRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
+		r := Must(factory.NewRegistryAccess(ctx, fs, nil, nil, nil, nil, &config.OCIConfiguration{
 			ConfigFiles: []string{"testdata/dockerconfig.json"},
 		}, nil)).(*RegistryAccess)
 		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
@@ -162,7 +226,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 			Data: map[string][]byte{corev1.DockerConfigJsonKey: dockerconfigdata},
 		}}
 		// Create a Registry Access and check whether credentials are properly set and can be found
-		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
 		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
@@ -172,9 +236,20 @@ var _ = Describe("ocm-lib facade implementation", func() {
 	It("ocm credentials from secrets", func() {
 		// Prepare secret with ocmconfig credentials
 		secrets := []corev1.Secret{{
-			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
+			Data: map[string][]byte{".ocmcredentialconfig": ociocmconfigdata},
 		}}
-		r := Must(factory.NewRegistryAccess(ctx, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
+		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("ocm credentials from config", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: string(ociocmconfigdata)},
+		}
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, nil, nil, nil)).(*RegistryAccess)
 		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
@@ -193,7 +268,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		}
 		// Create a Helm OCI Resource and check whether credentials are properly set and can be found
 		// Type Assertion to *HelmChartProvider to be able to access the ocictx containing the credentials
-		r := Must(factory.NewHelmOCIResource(ctx, fs, "ghcr.io/test/repo/testimage:1.0.0", nil, &config.OCIConfiguration{
+		r := Must(factory.NewHelmOCIResource(ctx, fs, nil, "ghcr.io/test/repo/testimage:1.0.0", nil, &config.OCIConfiguration{
 			ConfigFiles: []string{"testdata/dockerconfig.json"},
 		}, nil))
 		creds := Must(ociid.GetCredentials(r.(*HelmChartProvider).ocictx, HOSTNAME1, "/test/repo"))
@@ -211,7 +286,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 
 		// Create a Helm OCI Resource and check whether credentials are properly set and can be found
 		// Type Assertion to *HelmChartProvider to be able to access the ocictx containing the credentials
-		r := Must(factory.NewHelmOCIResource(ctx, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
+		r := Must(factory.NewHelmOCIResource(ctx, nil, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
 		creds := Must(ociid.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
@@ -221,11 +296,36 @@ var _ = Describe("ocm-lib facade implementation", func() {
 	It("oci helm resource - ocm credentials from secrets", func() {
 		// Prepare secret with ocmconfig credentials
 		secrets := []corev1.Secret{{
-			Data: map[string][]byte{".ocmcredentialconfig": ocmconfigdata},
+			Data: map[string][]byte{".ocmcredentialconfig": ociocmconfigdata},
 		}}
-		r := Must(factory.NewHelmOCIResource(ctx, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
+		r := Must(factory.NewHelmOCIResource(ctx, nil, nil, "ghcr.io/test/repo/testimage:1.0.0", secrets, nil, nil)).(*HelmChartProvider)
 		creds := Must(ociid.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("oci helm resource - ocm credentials from config", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: string(ociocmconfigdata)},
+		}
+		r := Must(factory.NewHelmOCIResource(ctx, nil, ocmconfig, "ghcr.io/test/repo/testimage:1.0.0", nil, nil, nil)).(*HelmChartProvider)
+		creds := Must(ociid.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo"))
+		props := creds.Properties()
+		Expect(props["username"]).To(Equal(USERNAME))
+		Expect(props["password"]).To(Equal(PASSWORD))
+	})
+
+	It("helm repo helm resource - ocm credentials from config", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: string(helmocmconfigdata)},
+		}
+		r := Must(factory.NewHelmRepoResource(ctx, ocmconfig, &helmv1alpha1.HelmChartRepo{
+			HelmChartRepoUrl: HOSTNAME1,
+			HelmChartName:    "test/repo",
+			HelmChartVersion: "1.0.0",
+		}, nil, nil)).(*HelmChartProvider)
+		props := helmid.GetCredentials(r.ocictx, HOSTNAME1, "/test/repo")
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
 	})
@@ -412,4 +512,105 @@ version: 1.0.0
 		Expect(ok).To(BeTrue())
 		Expect(bp.Info.Annotations, map[string]interface{}{"local/name": "root-a", "local/version": "1.0.0"})
 	})
+
+	It("ocm config is nil", func() {
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+	It("repository context is prioritized when ocm config sets resolvers", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./norealpath
+        priority: 10
+`},
+		}
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+	It("repository context is not set and ocm config sets resolvers", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./
+        priority: 10
+`},
+		}
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+	It("repository context is set but component cannot be found there and ocm config sets resolvers", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./
+        priority: 10
+`},
+		}
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+
+		cv := Must(r.GetComponentVersion(ctx, cdref))
+		Expect(cv).NotTo(BeNil())
+	})
+	It("repository context is set and ocm config sets resolvers but component cannot be found in either", func() {
+		ocmconfig := &corev1.ConfigMap{
+			Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./
+        priority: 10
+`},
+		}
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, ocmconfig, nil, nil, &config.LocalRegistryConfiguration{RootPath: "./testdata/localcnudierepos/other"}, nil, nil, nil))
+
+		cv, err := r.GetComponentVersion(ctx, cdref)
+		Expect(cv).To(BeNil())
+
+		var notfounderr *errors.NotFoundError
+		Expect(errors.As(err, &notfounderr)).To(BeTrue())
+	})
+	It("repository context is not set and ocm config does not set resolvers", func() {
+		cdref := &v1alpha1.ComponentDescriptorReference{}
+		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
+		r := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		cv, err := r.GetComponentVersion(ctx, cdref)
+		Expect(cv).To(BeNil())
+		Expect(err).ToNot(BeNil())
+	})
+
 })

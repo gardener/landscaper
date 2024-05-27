@@ -57,6 +57,20 @@ spec:
             type: string
           metadata:
             type: object
+          ocmConfig:
+            description: |-
+              OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an
+              ocm configfile.
+              For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md
+            properties:
+              name:
+                description: |-
+                  Name of the referent.
+                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                  TODO: Add other useful fields. apiVersion, kind, uid?
+                type: string
+            type: object
+            x-kubernetes-map-type: atomic
           registryPullSecrets:
             description: |-
               RegistryPullSecrets defines a list of registry credentials that are used to

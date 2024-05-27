@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package chartresolver_test
+package chartresolver
 
 import (
 	"bytes"
@@ -14,6 +14,11 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/runtime"
@@ -30,7 +35,6 @@ import (
 
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	utils "github.com/gardener/landscaper/test/utils"
 )
 
@@ -53,34 +57,33 @@ func TestConfig(t *testing.T) {
 }
 
 var _ = Describe("GetChart", func() {
+	var (
+		octx ocm.Context
+		ctx  context.Context
+	)
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
 	Context("FromOCIRegistry", func() {
 		It("should resolve a chart from public readable helm ociClient artifact", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
+			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0"
 
-			chartAccess := &helmv1alpha1.Chart{
-				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0",
-			}
-
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}},
-				nil, nil, nil, false)
+			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
 
 		It("should resolve a legacy chart from public readable helm ociClient artifact", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
+			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 
-			chartAccess := &helmv1alpha1.Chart{
-				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
-			}
-
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}},
-				nil, nil, nil, false)
+			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -90,8 +93,8 @@ var _ = Describe("GetChart", func() {
 			ctx := logging.NewContext(context.Background(), logging.Discard())
 			defer ctx.Done()
 
-			helmChartCache := chartresolver.GetHelmChartCache(chartresolver.MaxSizeInByteDefault,
-				chartresolver.RemoveOutdatedDurationDefault)
+			helmChartCache := GetHelmChartCache(MaxSizeInByteDefault,
+				RemoveOutdatedDurationDefault)
 
 			helmChartCache.Clear()
 			cacheEntries, size, _ := helmChartCache.GetEntries()
@@ -105,7 +108,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
 			}
 
-			chart1, err := chartresolver.GetChart(ctx, chartAccess1, nil,
+			chart1, err := GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
 				nil, nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
@@ -122,7 +125,7 @@ var _ = Describe("GetChart", func() {
 			timeBefore = time.Now()
 			time.Sleep(time.Duration(10) * time.Millisecond)
 
-			chart2, err := chartresolver.GetChart(ctx, chartAccess1, nil,
+			chart2, err := GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
 				nil, nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
@@ -146,7 +149,7 @@ var _ = Describe("GetChart", func() {
 			// fetch a 3. time
 			time.Sleep(time.Duration(10) * time.Millisecond)
 
-			chart3, err := chartresolver.GetChart(ctx, chartAccess1, nil,
+			chart3, err := GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
 				nil, nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
@@ -163,7 +166,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17",
 			}
 
-			chart4, err := chartresolver.GetChart(ctx, chartAccess4, nil,
+			chart4, err := GetChart(ctx, chartAccess4, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
 				nil, nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
@@ -190,7 +193,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.18",
 			}
 
-			_, err = chartresolver.GetChart(ctx, chartAccess5, nil,
+			_, err = GetChart(ctx, chartAccess5, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
 				nil, nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
@@ -213,9 +216,9 @@ var _ = Describe("GetChart", func() {
 			// 6 remove outdated
 			time.Sleep(time.Duration(1) * time.Second)
 			timeBefore = time.Now()
-			helmChartCache.SetMaxSizeInByte(chartresolver.MaxSizeInByteDefault)
+			helmChartCache.SetMaxSizeInByte(MaxSizeInByteDefault)
 
-			_, _ = chartresolver.GetChart(ctx, chartAccess1, nil,
+			_, _ = GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
 				nil, nil, nil, true)
 
@@ -223,7 +226,7 @@ var _ = Describe("GetChart", func() {
 			helmChartCache.SetOutdatedDuration(outdatedDuration)
 			helmChartCache.SetLastCleanup(time.Now().Add(-(time.Duration(61) * time.Minute)))
 
-			_, _ = chartresolver.GetChart(ctx, chartAccess1, nil,
+			_, _ = GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
 				nil, nil, nil, true)
 
@@ -242,18 +245,14 @@ var _ = Describe("GetChart", func() {
 	})
 
 	It("should resolve a chart as base64 encoded file", func() {
-		ctx := logging.NewContext(context.Background(), logging.Discard())
-
 		chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
 		defer closer()
 
-		chartAccess := &helmv1alpha1.Chart{
-			Archive: &helmv1alpha1.ArchiveAccess{
-				Raw: base64.StdEncoding.EncodeToString(chartBytes),
-			},
+		Archive := &helmv1alpha1.ArchiveAccess{
+			Raw: base64.StdEncoding.EncodeToString(chartBytes),
 		}
 
-		chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil, false)
+		chart, err := getChartFromArchive(Archive)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("testchart"))
 	})
@@ -272,9 +271,6 @@ var _ = Describe("GetChart", func() {
 		})
 
 		It("should resolve a chart from a webserver", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
-
 			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
 			defer closer()
 
@@ -283,23 +279,18 @@ var _ = Describe("GetChart", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}))
 
-			chartAccess := &helmv1alpha1.Chart{
-				Archive: &helmv1alpha1.ArchiveAccess{
-					Remote: &helmv1alpha1.RemoteArchiveAccess{
-						URL: srv.URL,
-					},
+			Archive := &helmv1alpha1.ArchiveAccess{
+				Remote: &helmv1alpha1.RemoteArchiveAccess{
+					URL: srv.URL,
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil, false)
+			chart, err := getChartFromArchive(Archive)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("testchart"))
 		})
 
 		It("should not try to load a chart for non-success http status codes", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
-
 			srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(401)
 				body := []byte(http.StatusText(401))
@@ -307,15 +298,13 @@ var _ = Describe("GetChart", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}))
 
-			chartAccess := &helmv1alpha1.Chart{
-				Archive: &helmv1alpha1.ArchiveAccess{
-					Remote: &helmv1alpha1.RemoteArchiveAccess{
-						URL: srv.URL,
-					},
+			Archive := &helmv1alpha1.ArchiveAccess{
+				Remote: &helmv1alpha1.RemoteArchiveAccess{
+					URL: srv.URL,
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, nil, nil, nil, nil, false)
+			chart, err := getChartFromArchive(Archive)
 			Expect(chart).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(http.StatusText(401)))
@@ -324,18 +313,26 @@ var _ = Describe("GetChart", func() {
 	})
 
 	Context("From OCM Resource Ref", func() {
-		It("should resolve a chart from a local ocm resource", func() {
-			ctx := logging.NewContext(context.Background(), logging.Discard())
-			defer ctx.Done()
+		var (
+			resourceRef string
+			repoCtx     *cdv2.UnstructuredTypedObject
+		)
+
+		BeforeEach(func() {
+			// Establish an extra context and ocm context for the setup since the ocm context used here will cache the
+			// repository context and component version which would partially defeat the purpose of these tests.
+			localCtx := logging.NewContext(context.Background(), logging.Discard())
+			localOctx := ocm.New(datacontext.MODE_EXTENDED)
+			localCtx = localOctx.BindTo(localCtx)
 
 			// Setup Test
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, nil, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"}, nil, nil)
 			Expect(err).To(BeNil())
 
 			cdref := &lsv1alpha1.ComponentDescriptorReference{}
 			Expect(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref)).To(BeNil())
-			cv, err := registry.GetComponentVersion(ctx, cdref)
+			cv, err := registry.GetComponentVersion(localCtx, cdref)
 			Expect(err).To(BeNil())
 			Expect(cv).ToNot(BeNil())
 
@@ -343,30 +340,35 @@ var _ = Describe("GetChart", func() {
 			Expect(err).To(BeNil())
 
 			getResourceKey := templateFuncs["getResourceKey"].(func(args ...interface{}) (string, error))
-			resourceRef, err := getResourceKey(`cd://componentReferences/referenced-landscaper-component/resources/chart`)
+			resourceRef, err = getResourceKey(`cd://componentReferences/referenced-landscaper-component/resources/chart`)
 			Expect(err).To(BeNil())
-			chartAccess := &helmv1alpha1.Chart{
-				ResourceRef: resourceRef,
-			}
-			un := &cdv2.UnstructuredTypedObject{}
-			Expect(un.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./testdata/ocmrepo"}`))).To(BeNil())
+			repoCtx = &cdv2.UnstructuredTypedObject{}
+			Expect(repoCtx.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./testdata/ocmrepo"}`))).To(BeNil())
+		})
 
-			helmChartCache := chartresolver.GetHelmChartCache(chartresolver.MaxSizeInByteDefault,
-				chartresolver.RemoveOutdatedDurationDefault)
-
-			helmChartCache.Clear()
-
-			// Test
-			chart, err := chartresolver.GetChart(ctx, chartAccess, nil, &lsv1alpha1.Context{
-				ContextConfiguration: lsv1alpha1.ContextConfiguration{RepositoryContext: un},
-			}, nil, nil, nil, true)
+		It("should resolve a chart from a local ocm resource", func() {
+			chart, err := getChartFromResourceRef(ctx, nil, resourceRef, &lsv1alpha1.Context{
+				ContextConfiguration: lsv1alpha1.ContextConfiguration{RepositoryContext: repoCtx},
+			}, nil)
 			Expect(err).To(BeNil())
 			Expect(chart).ToNot(BeNil())
-
-			contained, err := helmChartCache.HasKey(chartAccess.Ref, chartAccess.HelmChartRepo, chartAccess.ResourceRef)
+		})
+		It("resolve from ocm resource ref with ocm config resolver", func() {
+			ocmConfig := &corev1.ConfigMap{
+				Data: map[string]string{`.ocmconfig`: `
+type: generic.config.ocm.software/v1
+configurations:
+  - type: ocm.config.ocm.software
+    resolvers:
+      - repository:
+          type: local
+          filePath: ./testdata/ocmrepo
+        priority: 10
+`},
+			}
+			chart, err := getChartFromResourceRef(ctx, ocmConfig, resourceRef, &lsv1alpha1.Context{}, nil)
 			Expect(err).To(BeNil())
-			Expect(contained).To(BeTrue())
+			Expect(chart).ToNot(BeNil())
 		})
 	})
-
 })

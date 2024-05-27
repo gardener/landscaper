@@ -10,6 +10,11 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/apis/config"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -64,6 +69,9 @@ func (c *TestSimulatorCallbacks) OnExports(path string, exports map[string]inter
 
 var _ = Describe("Installation Simulator", func() {
 	var (
+		ctx  context.Context
+		octx ocm.Context
+
 		testDataDir          = "./testdata/01-subinstallations"
 		registryAccess       model.RegistryAccess
 		rootComponentVersion model.ComponentVersion
@@ -82,12 +90,14 @@ var _ = Describe("Installation Simulator", func() {
 	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		var err error
-		ctx := context.Background()
-		defer ctx.Done()
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: testDataDir}
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
@@ -176,6 +186,10 @@ targetExports: []
 `,
 			},
 		}
+	})
+
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
 	})
 
 	It("should simulate an installation with subinstallations", func() {

@@ -119,39 +119,49 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 	if cdRef == nil {
 		return nil, errors.New("component descriptor reference cannot be nil")
 	}
-	if cdRef.RepositoryContext == nil {
-		return nil, errors.New("repository context cannot be nil")
-	}
 
-	spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
-	if err != nil {
-		return nil, err
-	}
+	var resolver ocm.ComponentVersionResolver
 
-	var cv ocm.ComponentVersionAccess
-	// check if repository context from inline component descriptor should be used
-	if r.inlineRepository != nil && reflect.DeepEqual(spec, r.inlineSpec) {
-		// in this case, resolver knows an inline repository as well as the repository specified by the repository
-		// context of the inline component descriptor
-		cv, err = r.session.LookupComponentVersion(r.resolver, cdRef.ComponentName, cdRef.Version)
-	} else {
-		// if there is no inline repository or the repository context is different from the one specified in the inline
-		// component descriptor, we need to look up the repository specified by the component descriptor reference
-		var repo ocm.Repository
-		pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
-		repo, err = r.session.LookupRepository(r.octx, spec)
-		pm1.StopDebug()
+	if cdRef.RepositoryContext != nil {
+		spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
 		if err != nil {
 			return nil, err
 		}
 
-		pm2 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupComponentVersion")
-		cv, err = r.session.LookupComponentVersion(repo, cdRef.ComponentName, cdRef.Version)
-		pm2.StopDebug()
+		// check if repository context from inline component descriptor should be used
+		if r.inlineRepository != nil && reflect.DeepEqual(spec, r.inlineSpec) {
+			// in this case, resolver knows an inline repository as well as the repository specified by the repository
+			// context of the inline component descriptor
+			resolver = r.resolver
+		} else {
+			pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
+			// if there is no inline repository or the repository context is different from the one specified in the inline
+			// component descriptor, we need to look up the repository specified by the component descriptor reference
+
+			// if rule-a.prio > rule-b.prio, then rule-a is preferred
+			// ensure, that this has the highest prio (int(^uint(0)>>1) == MaxInt), since the component version
+			// overwrite depends on that
+			r.octx.AddResolverRule("", spec, int(^uint(0)>>1))
+			resolver = r.octx.GetResolver()
+			pm1.StopDebug()
+		}
+	} else {
+		pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
+		resolver = r.octx.GetResolver()
+		pm1.StopDebug()
 	}
+
+	if resolver == nil {
+		return nil, errors.New("no repository or ocm resolvers found")
+	}
+
+	pm2 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupComponentVersion")
+	cv, err := r.session.LookupComponentVersion(resolver, cdRef.ComponentName, cdRef.Version)
+	pm2.StopDebug()
 	if err != nil {
 		return nil, err
 	}
+
 	return r.NewComponentVersion(cv)
 }
 

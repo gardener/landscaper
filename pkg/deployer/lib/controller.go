@@ -6,8 +6,12 @@ package lib
 
 import (
 	"context"
+	goerrors "errors"
 	"fmt"
 	"time"
+
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
@@ -178,6 +182,12 @@ func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCac
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
 	_, ctx = logging.MustStartReconcileFromContext(ctx, req, nil)
+
+	octx := ocm.New(datacontext.MODE_EXTENDED)
+	defer func() {
+		err = goerrors.Join(err, octx.Finalize())
+	}()
+	ctx = octx.BindTo(ctx)
 
 	result = reconcile.Result{}
 	defer lsutil.HandlePanics(ctx, &result, c.hostUncachedClient)
@@ -406,7 +416,6 @@ func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		return lserrors.NewError(operation, "ProviderConfigurationMissing", "provider configuration missing",
 			lsv1alpha1.ErrorConfigurationProblem)
 	}
-
 	err := c.deployer.Reconcile(ctx, lsCtx, deployItem, rt)
 	return lserrors.BuildLsErrorOrNil(err, operation, "Reconcile")
 }

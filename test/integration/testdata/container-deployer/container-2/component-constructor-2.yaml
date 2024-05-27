@@ -1,0 +1,5 @@
+components:
+  - name: github.com/acme.org/referenced-component
+    version: "1.0.0"
+    provider:
+      name: acme.org

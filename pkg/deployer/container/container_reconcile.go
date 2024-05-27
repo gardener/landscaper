@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	dockerreference "github.com/containerd/containerd/reference/docker"
 	dockerconfig "github.com/docker/cli/cli/config"
 	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
@@ -106,6 +108,11 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				operationName, "SyncTarget", err.Error())
 		}
 
+		if err := c.SyncOCMConfiguration(ctx, defaultLabels); err != nil {
+			return lserrors.NewWrappedError(err,
+				operationName, "SyncOCMConfiguration", err.Error())
+		}
+
 		imagePullSecret, blueprintSecret, componentDescriptorSecret, err := c.parseAndSyncSecrets(ctx, defaultLabels)
 		if err != nil {
 			return lserrors.NewWrappedError(err,
@@ -135,7 +142,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			BluePrintPullSecret:           blueprintSecret,
 			ComponentDescriptorPullSecret: componentDescriptorSecret,
 
-			UseOCM: c.Context.UseOCM,
+			OCMConfigConfigMapName: OCMConfigConfigMapName(c.DeployItem.Namespace, c.DeployItem.Name),
+			UseOCM:                 c.Context.UseOCM,
 
 			Name:                 c.DeployItem.Name,
 			Namespace:            c.Configuration.Namespace,
@@ -568,9 +576,22 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 		}
 	}
 
-	// sync pull secrets for BluePrint
+	// sync pull secrets for BluePrint and ocm config
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		registryAccess, err := registries.GetFactory(c.Context.UseOCM).NewRegistryAccess(ctx, fs, nil, c.sharedCache, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		var ocmConfig *corev1.ConfigMap
+		if c.Context.OCMConfig != nil {
+			ocmConfig = &corev1.ConfigMap{}
+			if err := c.lsUncachedClient.Get(ctx, client.ObjectKey{
+				Namespace: c.Context.Namespace,
+				Name:      c.Context.OCMConfig.Name,
+			}, ocmConfig); err != nil {
+				log.Debug("unable to get ocm config from config map", lc.KeyResource, fmt.Sprintf("%s/%s", ocmConfig.GetNamespace(), ocmConfig.GetName()), lc.KeyError, err.Error())
+				erro = fmt.Errorf("unable to get ocm config from config map: %w", err)
+				return
+			}
+		}
+
+		registryAccess, err := registries.GetFactory(c.Context.UseOCM).NewRegistryAccess(ctx, fs, ocmConfig, nil, c.sharedCache, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
@@ -635,6 +656,33 @@ func (c *Container) SyncConfiguration(ctx context.Context, defaultLabels map[str
 		return nil
 	}); err != nil {
 		return fmt.Errorf("unable to sync provider configuration to host cluster: %w", err)
+	}
+	return nil
+}
+
+func (c *Container) SyncOCMConfiguration(ctx context.Context, defaultLabels map[string]string) error {
+	configmap := &corev1.ConfigMap{}
+	configmap.Data = map[string]string{}
+	configmap.Name = OCMConfigConfigMapName(c.DeployItem.Namespace, c.DeployItem.Name)
+	configmap.Namespace = c.Configuration.Namespace
+
+	if c.Context.OCMConfig != nil {
+		ocmConfig := corev1.ConfigMap{}
+		if err := c.lsUncachedClient.Get(ctx, client.ObjectKey{
+			Namespace: c.Context.Namespace,
+			Name:      c.Context.OCMConfig.Name,
+		}, &ocmConfig); err != nil {
+			return err
+		}
+		configmap.Data = ocmConfig.Data
+	}
+
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostUncachedClient, configmap, func() error {
+		InjectDefaultLabels(configmap, defaultLabels)
+		kutil.SetMetaDataLabel(&configmap.ObjectMeta, container.ContainerDeployerTypeLabel, "configuration")
+		return nil
+	}); err != nil {
+		return fmt.Errorf("unable to sync ocm configuration to host cluster: %w", err)
 	}
 	return nil
 }
