@@ -30,6 +30,7 @@ type options struct {
 	ContentDirPath              string
 	StateDirPath                string
 	RegistrySecretBasePath      string
+	OCMConfigFilePath           string
 
 	UseOCM bool
 
@@ -51,6 +52,7 @@ func (o *options) Complete() {
 	o.ContentDirPath = os.Getenv(container.ContentPathName)
 	o.StateDirPath = os.Getenv(container.StatePathName)
 	o.RegistrySecretBasePath = os.Getenv(container.RegistrySecretBasePathName)
+	o.OCMConfigFilePath = os.Getenv(container.OCMConfigPathName)
 
 	o.UseOCM = os.Getenv(container.UseOCMName) == "true"
 

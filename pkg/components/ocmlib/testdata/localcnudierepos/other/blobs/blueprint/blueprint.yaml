@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+annotations:
+  local/name: root-a
+  local/version: 1.0.0
+
+imports:
+- name: imp-a
+  type: data
+  schema:
+    type: string
+
+exports:
+- name: exp-a
+  type: data
+  schema:
+    type: string
+
+deployExecutions:
+- type: GoTemplate
+  template: |
+    deployItems:
+    - name: main
+      type: landscaper.gardener.cloud/mock
+      config:
+        apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+        providerStatus:
+          apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+          kind: ProviderStatus
+          imp: {{ index .imports "imp-a" }}
+        export:
+          exp-a: exp-mock
+
+exportExecutions:
+- type: GoTemplate
+  template: |
+    exports:
+      exp-a: {{ index .values.deployitems.main "exp-a" }}

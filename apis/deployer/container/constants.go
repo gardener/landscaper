@@ -116,6 +116,15 @@ var ConfigurationPath = filepath.Join(BasePath, "internal", ConfigurationFilenam
 // RegistrySecretBasePath is the path to all OCI pull secrets
 var RegistrySecretBasePath = filepath.Join(BasePath, "registry_secrets")
 
+// OCMConfigPathName is the name of the env var that points to the ocm config file.
+const OCMConfigPathName = "OCM_CONFIGURATION_PATH"
+
+// OCMConfigPath is the path to the ocm config file
+var OCMConfigPath = filepath.Join(BasePath, "ocm", OCMConfigFileName)
+
+// OCMConfigFileName is the name of the file that contains the ocm config.
+const OCMConfigFileName = ".ocmconfig"
+
 var UseOCMName = "USE_OCM"
 
 // RegistrySecretBasePathName is the environment variable pointing to the file system location of all OCI pull secrets

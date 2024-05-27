@@ -7,6 +7,11 @@ package cdutils_test
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo/v2"
@@ -25,6 +30,9 @@ import (
 
 var _ = Describe("URI", func() {
 	var (
+		ctx  context.Context
+		octx ocm.Context
+
 		registryAccess     model.RegistryAccess
 		componentVersion   model.ComponentVersion
 		repositorySpec     *types.UnstructuredTypedObject
@@ -37,6 +45,10 @@ var _ = Describe("URI", func() {
 	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		access := &cdv2.UnstructuredTypedObject{}
 		err := access.UnmarshalJSON([]byte(`{"type":"localFilesystemBlob","fileName":"r1","mediaType":"example"}`))
 		Expect(err).ToNot(HaveOccurred())
@@ -101,8 +113,6 @@ var _ = Describe("URI", func() {
 			},
 		}
 
-		ctx := context.Background()
-
 		// Prepare in memory test repository
 		memFs := memoryfs.New()
 
@@ -121,7 +131,7 @@ var _ = Describe("URI", func() {
 		_, err = file.Write(cd2data)
 		Expect(err).ToNot(HaveOccurred())
 
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil,
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil, nil,
 			&config.LocalRegistryConfiguration{RootPath: "./"}, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -135,6 +145,10 @@ var _ = Describe("URI", func() {
 			Version:           cd.GetVersion(),
 		})
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
 	})
 
 	It("should resolve a direct local resource", func() {

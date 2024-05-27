@@ -6,8 +6,12 @@ package installations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"
@@ -172,6 +176,12 @@ type Controller struct {
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
 	_, ctx = c.log.StartReconcileAndAddToContext(ctx, req)
+
+	octx := ocm.New(datacontext.MODE_EXTENDED)
+	defer func() {
+		err = errors.Join(err, octx.Finalize())
+	}()
+	ctx = octx.BindTo(ctx)
 
 	result = reconcile.Result{}
 	defer utils.HandlePanics(ctx, &result, c.hostUncachedClient)

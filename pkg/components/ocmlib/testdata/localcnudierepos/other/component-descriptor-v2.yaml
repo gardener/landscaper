@@ -1,0 +1,29 @@
+meta:
+  schemaVersion: v2
+
+component:
+  name: example.com/not-landscaper-component
+  version: 1.0.0
+
+  provider: internal
+
+  repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "/"
+
+  sources: []
+
+  resources:
+  - name: blueprint
+    type: blueprint
+    version: 1.0.0
+    relation: local
+    access:
+      type: localFilesystemBlob
+      filename: blueprint
+      mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+
+  componentReferences:
+    - name: referenced-landscaper-component
+      version: 1.0.0
+      componentName: example.com/referenced-landscaper-component

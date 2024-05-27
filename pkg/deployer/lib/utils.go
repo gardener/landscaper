@@ -131,6 +131,9 @@ func CreateOrUpdateExport(ctx context.Context, kubeWriter *read_write_layer.Writ
 // GetRegistryPullSecretsFromContext returns the object references to
 // registry pull secrets defined by the landscaper context.
 func GetRegistryPullSecretsFromContext(lsCtx *lsv1alpha1.Context) []lsv1alpha1.ObjectReference {
+	if lsCtx == nil || lsCtx.RegistryPullSecrets == nil {
+		return nil
+	}
 	refs := make([]lsv1alpha1.ObjectReference, len(lsCtx.RegistryPullSecrets))
 	for i, r := range lsCtx.RegistryPullSecrets {
 		refs[i] = lsv1alpha1.ObjectReference{

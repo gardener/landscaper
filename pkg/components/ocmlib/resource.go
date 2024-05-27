@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	"github.com/open-component-model/ocm/pkg/common"
@@ -95,6 +97,8 @@ func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceCon
 }
 
 func (r *Resource) GetCachingIdentity(ctx context.Context) string {
+	log, _ := logging.FromContextOrNew(ctx, nil)
+
 	spec, err := r.resourceAccess.Access()
 	if err != nil {
 		return ""
@@ -103,6 +107,12 @@ func (r *Resource) GetCachingIdentity(ctx context.Context) string {
 	if err != nil {
 		return ""
 	}
+	defer func() {
+		err = cv.Close()
+		if err != nil {
+			log.Log(logging.DEBUG, "unable to close reference to component version")
+		}
+	}()
 	return spec.GetInexpensiveContentVersionIdentity(cv)
 }
 

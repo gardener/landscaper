@@ -187,8 +187,9 @@ golangci-lint: localbin ## Download golangci-lint locally if necessary. If wrong
 
 .PHONY: envtest
 envtest: localbin ## Download envtest-setup locally.
-	@echo "Installing setup-envtest ..."; \
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(SETUP_ENVTEST_VERSION)
+	@test -s $(LOCALBIN)/setup-envtest && echo "setup-envtest already installed, skipping installation (version might be outdated)" || \
+	( echo "Installing setup-envtest ..."; \
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(SETUP_ENVTEST_VERSION) )
 
 .PHONY: ocm
 ocm: localbin ## Install OCM CLI if necessary. If wrong version is installed, it will be overwritten.

@@ -7,6 +7,11 @@ package installations_test
 import (
 	"context"
 
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/gardener/landscaper/apis/config"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -31,6 +36,9 @@ import (
 var _ = Describe("Context", func() {
 
 	var (
+		ctx  context.Context
+		octx ocm.Context
+
 		op *lsoperation.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
@@ -39,27 +47,30 @@ var _ = Describe("Context", func() {
 	)
 
 	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+
 		var err error
-		state, err = testenv.InitResources(context.TODO(), "./testdata/state")
+		state, err = testenv.InitResources(ctx, "./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 		fakeInstallations = state.Installations
-		Expect(testutils.CreateExampleDefaultContext(context.TODO(), testenv.Client, "test1", "test2", "test3", "test4")).To(Succeed())
+		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4")).To(Succeed())
 
 		fakeClient = testenv.Client
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(context.Background(), nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 		op = lsoperation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024), fakeClient).SetComponentsRegistry(registryAccess)
 	})
 
 	AfterEach(func() {
-		Expect(testenv.CleanupState(context.TODO(), state)).To(Succeed())
+		Expect(testenv.CleanupState(ctx, state)).To(Succeed())
+		Expect(octx.Finalize()).To(Succeed())
 	})
 
 	It("should show no parent nor siblings for the test1 root", func() {
-		ctx := context.Background()
-
 		instRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
@@ -72,8 +83,6 @@ var _ = Describe("Context", func() {
 	})
 
 	It("should show no parent and one sibling for the test2/a installation", func() {
-		ctx := context.Background()
-
 		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
@@ -86,8 +95,6 @@ var _ = Describe("Context", func() {
 	})
 
 	It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
-		ctx := context.Background()
-
 		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 
@@ -102,8 +109,6 @@ var _ = Describe("Context", func() {
 	})
 
 	It("initialize root installations with default context", func() {
-		ctx := context.Background()
-
 		defaultRepoContext, err := componentresolvers.NewLocalRepositoryContext("../testdata/registry")
 
 		Expect(err).ToNot(HaveOccurred())
@@ -122,7 +127,6 @@ var _ = Describe("Context", func() {
 	Context("GetExternalContext", func() {
 
 		It("should get the reference from the context", func() {
-			ctx := context.Background()
 			state, err := testenv.InitState(ctx)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -143,7 +147,6 @@ var _ = Describe("Context", func() {
 		})
 
 		It("should get the reference from the installation", func() {
-			ctx := context.Background()
 			state, err := testenv.InitState(ctx)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -171,7 +174,6 @@ var _ = Describe("Context", func() {
 		})
 
 		It("should throw an error if a component name and version is defined but no repository context", func() {
-			ctx := context.Background()
 			state, err := testenv.InitState(ctx)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -196,7 +198,6 @@ var _ = Describe("Context", func() {
 		Context("ComponentVersionOverwrite", func() {
 
 			It("should overwrite a repository context", func() {
-				ctx := context.Background()
 				state, err := testenv.InitState(ctx)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -242,7 +243,6 @@ var _ = Describe("Context", func() {
 			})
 
 			It("should overwrite a repository context defined by the external context", func() {
-				ctx := context.Background()
 				state, err := testenv.InitState(ctx)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -293,6 +293,19 @@ var _ = Describe("Context", func() {
 })
 
 var _ = Describe("Context", func() {
+	var (
+		ctx  context.Context
+		octx ocm.Context
+	)
+
+	BeforeEach(func() {
+		ctx = logging.NewContext(context.Background(), logging.Discard())
+		octx = ocm.New(datacontext.MODE_EXTENDED)
+		ctx = octx.BindTo(ctx)
+	})
+	AfterEach(func() {
+		Expect(octx.Finalize()).To(Succeed())
+	})
 
 	Context("InjectComponentDescriptorRef", func() {
 		It("should inject the component ref", func() {
@@ -349,7 +362,7 @@ var _ = Describe("Context", func() {
 			ref := &lsv1alpha1.ComponentDescriptorReference{}
 			lsCtx := &lsv1alpha1.Context{}
 			lsCtx.RepositoryContext = testutils.ExampleRepositoryContext()
-			_, err := installations.ApplyComponentOverwrite(context.Background(), nil, nil, lsCtx, ref)
+			_, err := installations.ApplyComponentOverwrite(ctx, nil, nil, lsCtx, ref)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))
 		})
@@ -374,7 +387,7 @@ var _ = Describe("Context", func() {
 				},
 			})
 
-			_, err := installations.ApplyComponentOverwrite(context.Background(), nil, ow, lsCtx, ref)
+			_, err := installations.ApplyComponentOverwrite(ctx, nil, ow, lsCtx, ref)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref.RepositoryContext).To(Equal(repoCtx))
 			Expect(lsCtx.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))
