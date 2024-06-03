@@ -233,3 +233,10 @@ The controllers handle the delete-without-uninstall annotation in the following 
 - **Deployer:** Deployers should follow the rules defined in the [deployer contract](./deployer_contract.md). 
   The Landscaper deployers (container, helm, and manifest deployer) skip the normal deletion procedure that would 
   uninstall artifacts from the target cluster, and directly remove the finalizer of the deploy item.
+
+## Misc
+
+### Optimized usage of OCM lib
+
+To prevent fetching Component Descriptors (CDs) several times, an [OCM context cache](../../pkg/utils/cache/ocm_context_cache.go)
+was introduced which caches an OCM context and registry access for the duration of a particular jobID of an Installation.
