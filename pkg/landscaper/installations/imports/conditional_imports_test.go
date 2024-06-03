@@ -86,7 +86,8 @@ var _ = Describe("ConditionalImports", func() {
 	It("should remove imports based on optional/conditional parent imports from subinstallation", func() {
 		inst := &lsv1alpha1.Installation{}
 		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
+		conInst, err := installations.CreateInternalInstallationWithContext(ctx, inst,
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -140,7 +141,8 @@ var _ = Describe("ConditionalImports", func() {
 			},
 		})
 		utils.ExpectNoError(fakeClient.Update(ctx, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
+		conInst, err := installations.CreateInternalInstallationWithContext(ctx, inst,
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -196,7 +198,8 @@ var _ = Describe("ConditionalImports", func() {
 			},
 		})
 		utils.ExpectNoError(fakeClient.Update(ctx, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
+		conInst, err := installations.CreateInternalInstallationWithContext(ctx, inst,
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())

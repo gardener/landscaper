@@ -76,7 +76,8 @@ var _ = Describe("Validation", func() {
 		Context("Data Import", func() {
 
 			It("should succeed if the import comes from the parent", func() {
-				inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
+				inInstA, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/a"],
+					op.LsUncachedClient(), op.ComponentsRegistry())
 				Expect(err).ToNot(HaveOccurred())
 				op.Inst = inInstA
 				Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -90,15 +91,18 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should succeed if the import comes from a sibling", func() {
-				inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+				inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/root"],
+					op.LsUncachedClient(), op.ComponentsRegistry())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInstallation())).To(Succeed())
 
-				inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
+				inInstA, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/a"],
+					op.LsUncachedClient(), op.ComponentsRegistry())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
-				inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
+				inInstB, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/b"],
+					op.LsUncachedClient(), op.ComponentsRegistry())
 				Expect(err).ToNot(HaveOccurred())
 				op.Inst = inInstB
 				Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -116,10 +120,12 @@ var _ = Describe("Validation", func() {
 		Context("Target Import", func() {
 
 			It("should succeed if the import comes from a sibling", func() {
-				_, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
+				_, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/e"],
+					op.LsUncachedClient(), op.ComponentsRegistry())
 				Expect(err).ToNot(HaveOccurred())
 
-				inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/f"])
+				inInstF, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/f"],
+					op.LsUncachedClient(), op.ComponentsRegistry())
 				Expect(err).ToNot(HaveOccurred())
 				op.Inst = inInstF
 				Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -133,7 +139,8 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should fail if a target import from a manually added target is not present", func() {
-				inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
+				inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test4/root"],
+					op.LsUncachedClient(), op.ComponentsRegistry())
 				Expect(err).ToNot(HaveOccurred())
 				op.Inst = inInstRoot
 				Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -151,7 +158,8 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should fail if a import from a parent import is not present", func() {
-				inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/f"])
+				inInstF, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test4/f"],
+					op.LsUncachedClient(), op.ComponentsRegistry())
 				Expect(err).ToNot(HaveOccurred())
 				op.Inst = inInstF
 				Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -171,7 +179,8 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if neither the parent nor a sibling provide the import", func() {
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test11/a"])
+			inInstA, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test11/a"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstA
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -188,11 +197,13 @@ var _ = Describe("Validation", func() {
 	Context("InstallationsDependingOnReady", func() {
 
 		It("should succeed if all installations which is depended on are ready", func() {
-			inInstE, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
+			inInstE, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/e"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstE.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
 
-			inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/f"])
+			inInstF, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/f"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstF
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -216,22 +227,26 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if a preceding installation is 'Failed'", func() {
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
+			inInstA, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/a"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Failed
 			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
-			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
+			inInstB, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/b"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstB.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Failed
 			Expect(fakeClient.Status().Update(ctx, inInstB.GetInstallation())).To(Succeed())
 
-			inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/c"])
+			inInstC, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/c"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstC.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
 			Expect(fakeClient.Status().Update(ctx, inInstC.GetInstallation())).To(Succeed())
 
-			inInstD, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/d"])
+			inInstD, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/d"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstD
 
@@ -255,28 +270,32 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if a preceding installation is 'Progressing'", func() {
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
+			inInstA, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/a"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Progressing
 			inInstA.GetInstallation().Status.JobID = "2"
 			inInstA.GetInstallation().Status.JobIDFinished = "1"
 			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
-			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
+			inInstB, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/b"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstB.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Progressing
 			inInstB.GetInstallation().Status.JobID = "2"
 			inInstB.GetInstallation().Status.JobIDFinished = "1"
 			Expect(fakeClient.Status().Update(ctx, inInstB.GetInstallation())).To(Succeed())
 
-			inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/c"])
+			inInstC, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/c"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstC.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
 			inInstC.GetInstallation().Status.JobID = "2"
 			inInstC.GetInstallation().Status.JobIDFinished = "2"
 			Expect(fakeClient.Status().Update(ctx, inInstC.GetInstallation())).To(Succeed())
 
-			inInstD, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/d"])
+			inInstD, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/d"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstD.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Init
 			inInstD.GetInstallation().Status.JobID = "2"
@@ -301,28 +320,32 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if a preceding installation is outdated", func() {
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
+			inInstA, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/a"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstA.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
 			inInstA.GetInstallation().Status.JobID = "1"
 			inInstA.GetInstallation().Status.JobIDFinished = "1"
 			Expect(fakeClient.Status().Update(ctx, inInstA.GetInstallation())).To(Succeed())
 
-			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
+			inInstB, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/b"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstB.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
 			inInstB.GetInstallation().Status.JobID = "1"
 			inInstB.GetInstallation().Status.JobIDFinished = "1"
 			Expect(fakeClient.Status().Update(ctx, inInstB.GetInstallation())).To(Succeed())
 
-			inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/c"])
+			inInstC, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/c"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstC.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Succeeded
 			inInstC.GetInstallation().Status.JobID = "2"
 			inInstC.GetInstallation().Status.JobIDFinished = "2"
 			Expect(fakeClient.Status().Update(ctx, inInstC.GetInstallation())).To(Succeed())
 
-			inInstD, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/d"])
+			inInstD, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/d"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			inInstD.GetInstallation().Status.InstallationPhase = lsv1alpha1.InstallationPhases.Init
 			inInstD.GetInstallation().Status.JobID = "2"
