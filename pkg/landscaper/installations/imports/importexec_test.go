@@ -43,7 +43,8 @@ var _ = Describe("ImportExecutions", func() {
 	)
 
 	Load := func(ctx context.Context, inst string) *imports.Constructor {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations[inst])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations[inst],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())

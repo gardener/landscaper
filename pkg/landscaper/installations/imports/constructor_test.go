@@ -75,7 +75,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should construct the imported config from a sibling", func() {
-		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/b"])
+		inInstB, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test2/b"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -92,7 +93,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should construct the imported config from a sibling and the indirect parent import", func() {
-		inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/c"])
+		inInstC, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test2/c"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstC
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -111,7 +113,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should construct the imported config from a manual created data object", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test5/root"])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test5/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -129,7 +132,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should construct the imported config from a secret", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test6/root"])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test6/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -146,7 +150,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should construct the imported config from a configmap", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test7/root"])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test7/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -163,7 +168,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should use defaults defined in blueprint for missing optional imports", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test13/root"])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test13/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -183,10 +189,12 @@ var _ = Describe("Constructor", func() {
 
 	Context("schema validation", func() {
 		It("should forbid when the import of a component does not satisfy the schema", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+			inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/root"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
+			inInstA, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/a"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstA
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -206,7 +214,8 @@ var _ = Describe("Constructor", func() {
 		})
 
 		It("should handle missing schema definition in import gracefully", func() {
-			inInstJ, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test12/j"])
+			inInstJ, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test12/j"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstJ
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -219,7 +228,8 @@ var _ = Describe("Constructor", func() {
 
 	Context("Targets", func() {
 		It("should construct import from a manually added target", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
+			inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test4/root"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -238,7 +248,8 @@ var _ = Describe("Constructor", func() {
 		})
 
 		It("should construct import from a parent import", func() {
-			inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/f"])
+			inInstF, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test4/f"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstF
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -259,7 +270,8 @@ var _ = Describe("Constructor", func() {
 
 	Context("TargetLists", func() {
 		It("should construct a targetlist import from target names", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test9/root"])
+			inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test9/root"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			utils.ExpectNoError(op.ResolveComponentDescriptors(ctx))
