@@ -7,6 +7,9 @@ package installations
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/utils/cache"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -51,10 +54,22 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}
 
-	registry, err := registries.GetFactory(contextObj.UseOCM).NewRegistryAccess(ctx, nil, ocmConfig, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
-	if err != nil {
-		return err
+	var registry model.RegistryAccess
+	if inlineCd == nil {
+		registry = cache.GetOCMContextCache().GetRegistryAccess(ctx, installation.Status.JobID)
 	}
+
+	if registry == nil {
+		registry, err = registries.GetFactory(contextObj.UseOCM).NewRegistryAccess(ctx, nil, ocmConfig, secrets, c.SharedCache, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
+		if err != nil {
+			return err
+		}
+
+		if inlineCd == nil {
+			cache.GetOCMContextCache().AddRegistryAccess(ctx, installation.Status.JobID, registry)
+		}
+	}
+
 	op.SetComponentsRegistry(registry)
 	return nil
 }
