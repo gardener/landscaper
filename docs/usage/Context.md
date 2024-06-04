@@ -45,9 +45,9 @@ configurations:
   config.mydeployer.mydomain.org: ... # custom configuration, not evaluated by landscaper
 ```
 
->**DEPRECATED:**  
-> The `repositoryContext` has been deprecated and is superseded by the specification of resolvers in the `ocmConfig` as
-> shown and explained below.
+>**NOTE:**  
+> Due to some implementation details, the `repositoryContext` is still required, even if resolvers are specified in the 
+> `ocmConfig` as shown and explained below.
 
 The repository context is usually the location where the component descriptors are stored in an OCI registry. For the 
 example above it is expected that the component descriptors are stored under `example.com/component-descriptors/`.
@@ -84,7 +84,8 @@ So this config map is a representation of the [ocm configfile](https://ocm.softw
 concept as a kubernetes API object. Consequently, you can test certain ocm configurations locally, using your ocm 
 configfile (located at $HOME/.ocmconfig per default) and the ocm-cli and then copy the files contents into the config 
 map under the key `.ocmconfig`.
-The `resolvers` can be used to replace the `repositoryContext` specification in the Context object. This also allows to
+While the `repositoryContext` is currently still required, in the future, `resolvers` will likely replace the 
+`repositoryContext` specification in the Context object entirely. The `resolvers` also allows to
 specify multiple repositories. So, the component specified in the installation can reference a component located in
 another repository. In the example above, a component called `github.com/acme.org/component` stored in 
 `ghcr.io/ocm-example-repo-1` can have a reference to a component called `github.com/acme.org/referenced-component` 
