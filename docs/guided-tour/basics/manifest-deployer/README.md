@@ -22,7 +22,7 @@ In the current example, we will show how the same task can be achieved with the 
 This deployer is great if you want to deploy some Kubernetes manifests without going the extra mile of building a 
 Helm chart for these manifests. The Kubernetes manifests are directly included in the blueprint of the Installation.
 
-Let's look at the blueprint of the [Installation](installation/installation.yaml). It contains one DeployItem:
+Let's look at the blueprint of the [Installation](installation/installation.yaml.tpl). It contains one DeployItem:
 
 ```yaml
 deployItems:
