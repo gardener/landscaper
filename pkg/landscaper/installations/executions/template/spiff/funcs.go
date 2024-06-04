@@ -163,7 +163,7 @@ func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}
 		// which the deployer would forward to the webserver and the webserver determines the root component to resolve
 		// this reference by watching the installation (this way, we would ensure that the deployer can only get
 		// resources from its legitimate component)
-		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, nil)
+		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return info.Error("unable to resolve relative resource reference: %w", err)
 		}
@@ -221,7 +221,7 @@ func spiffGetResourceContent(cv model.ComponentVersion) func(arguments []interfa
 			return info.Error(err)
 		}
 
-		resource, _, err := utils.ResolveResourceReference(compvers, *resourceRef, nil)
+		resource, _, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return info.Error("unable to resolve relative resource reference: %w", err)
 		}
