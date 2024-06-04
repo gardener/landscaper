@@ -141,9 +141,13 @@ type FilterInstallationFunc func(inst *lsv1alpha1.Installation) bool
 func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation,
 	subInstCache *lsv1alpha1.SubInstCache, readID read_write_layer.ReadID, filter ...FilterInstallationFunc) ([]*lsv1alpha1.Installation, error) {
 
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	tmpInstallations := []*lsv1alpha1.Installation{}
 
 	if subInstCache != nil {
+		pm := lsutil.StartPerformanceMeasurement(&logger, "ListSubinstallations-WithCache")
+		defer pm.StopDebug()
+
 		for i := range subInstCache.OrphanedSubs {
 			nextInst := &lsv1alpha1.Installation{}
 			key := client.ObjectKey{Namespace: inst.Namespace, Name: subInstCache.OrphanedSubs[i]}
@@ -168,6 +172,9 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 			tmpInstallations = append(tmpInstallations, nextInst)
 		}
 	} else {
+		pm := lsutil.StartPerformanceMeasurement(&logger, "ListSubinstallations-WithoutCache")
+		defer pm.StopDebug()
+
 		installationList := &lsv1alpha1.InstallationList{}
 
 		err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, readID,

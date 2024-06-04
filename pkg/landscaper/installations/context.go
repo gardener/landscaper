@@ -193,7 +193,11 @@ func GetParentAndSiblings(ctx context.Context, kubeClient client.Client, inst *l
 }
 
 func GetSiblings(ctx context.Context, kubeClient client.Client, inst, parent *lsv1alpha1.Installation) (siblings []*lsv1alpha1.Installation, err error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
 	if IsRootInstallation(inst) {
+		pm := utils.StartPerformanceMeasurement(&logger, "GetSiblings-IsRoot")
+		defer pm.StopDebug()
 		// get all root object as siblings
 		filter := func(a lsv1alpha1.Installation) bool {
 			return a.Name == inst.Name
@@ -206,6 +210,8 @@ func GetSiblings(ctx context.Context, kubeClient client.Client, inst, parent *ls
 	}
 
 	// siblings are all encompassed installation of the parent installation
+	pm := utils.StartPerformanceMeasurement(&logger, "GetSiblings-NoRoot")
+	defer pm.StopDebug()
 	siblings, err = ListSubinstallations(ctx, kubeClient, parent, parent.Status.SubInstCache, read_write_layer.R000006, func(found *lsv1alpha1.Installation) bool {
 		return inst.Name == found.Name
 	})
