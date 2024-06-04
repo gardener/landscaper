@@ -58,7 +58,6 @@ rules:
   - "pods/status"
   - "secrets"
   - "serviceaccounts"
-  - "configmaps"
   verbs:
   - "*"
 
@@ -66,6 +65,7 @@ rules:
   - ""
   resources:
   - namespaces
+  - configmaps
   verbs:
   - get
   - list
