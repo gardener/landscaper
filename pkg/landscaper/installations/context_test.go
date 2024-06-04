@@ -71,7 +71,8 @@ var _ = Describe("Context", func() {
 	})
 
 	It("should show no parent nor siblings for the test1 root", func() {
-		instRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		instRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, instRoot, nil)
@@ -83,7 +84,8 @@ var _ = Describe("Context", func() {
 	})
 
 	It("should show no parent and one sibling for the test2/a installation", func() {
-		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/a"])
+		inst, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test2/a"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
@@ -95,7 +97,8 @@ var _ = Describe("Context", func() {
 	})
 
 	It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
-		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
+		inst, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/b"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
@@ -113,7 +116,8 @@ var _ = Describe("Context", func() {
 
 		Expect(err).ToNot(HaveOccurred())
 
-		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root-test40"])
+		inst, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test4/root-test40"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, &defaultRepoContext)

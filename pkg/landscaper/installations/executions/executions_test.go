@@ -43,7 +43,8 @@ var _ = Describe("DeployItemExecutions", func() {
 	)
 
 	Load := func(inst string) (context.Context, *installations.InstallationImportsAndBlueprint) {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations[inst])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations[inst],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())

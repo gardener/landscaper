@@ -91,20 +91,6 @@ func ResolveComponentDescriptor(ctx context.Context, registryAccess model.Regist
 	}, overwriter)
 }
 
-// CreateInternalInstallation creates an internal installation for an Installation
-// DEPRECATED: use CreateInternalInstallationWithContext instead
-func CreateInternalInstallation(ctx context.Context, registry model.RegistryAccess, inst *lsv1alpha1.Installation) (*InstallationImportsAndBlueprint, error) {
-	if inst == nil {
-		return nil, nil
-	}
-	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	blue, err := blueprints.Resolve(ctx, registry, cdRef, inst.Spec.Blueprint)
-	if err != nil {
-		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
-	}
-	return NewInstallationImportsAndBlueprint(inst, blue), nil
-}
-
 // CreateInternalInstallationWithContext creates an internal installation for an Installation
 func CreateInternalInstallationWithContext(ctx context.Context,
 	inst *lsv1alpha1.Installation,

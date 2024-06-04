@@ -6,12 +6,8 @@ package installations
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
-
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"
@@ -40,6 +36,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils"
+	utilscache "github.com/gardener/landscaper/pkg/utils/cache"
 	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"github.com/gardener/landscaper/pkg/utils/verify"
@@ -176,12 +173,6 @@ type Controller struct {
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
 	_, ctx = c.log.StartReconcileAndAddToContext(ctx, req)
-
-	octx := ocm.New(datacontext.MODE_EXTENDED)
-	defer func() {
-		err = errors.Join(err, octx.Finalize())
-	}()
-	ctx = octx.BindTo(ctx)
 
 	result = reconcile.Result{}
 	defer utils.HandlePanics(ctx, &result, c.hostUncachedClient)
@@ -355,6 +346,9 @@ func (c *Controller) reconcileInstallation(ctx context.Context, inst *lsv1alpha1
 
 	// handle reconcile
 	if isDifferentJobIDs(inst) {
+		octx := utilscache.GetOCMContextCache().GetOrCreateOCMContext(ctx, inst.Status.JobID)
+		ctx = octx.BindTo(ctx)
+
 		err := c.handleReconcilePhase(ctx, inst)
 		return utils.LogHelper{}.LogErrorAndGetReconcileResult(ctx, err)
 	} else {
@@ -501,6 +495,13 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	inst.Status.InstallationPhase = phase
 
 	if phase.IsFinal() {
+		if installations.IsRootInstallation(inst) {
+			err := utilscache.GetOCMContextCache().RemoveOCMContext(ctx, inst.Status.JobID)
+			if err != nil {
+				logger.Error(err, "Failed to remove OCM context cache")
+			}
+		}
+
 		inst.Status.JobIDFinished = inst.Status.JobID
 		inst.Status.TransitionTimes = utils.SetFinishedTransitionTime(inst.Status.TransitionTimes)
 	}

@@ -77,7 +77,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should construct the exported config from its execution", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/root"])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test2/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 
@@ -107,7 +108,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should construct the exported config from a child", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -148,7 +150,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should forbid the export from a child when the schema is not satisfied", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test1/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -166,7 +169,8 @@ var _ = Describe("Constructor", func() {
 	})
 
 	It("should construct the exported config from a siblings and the execution config", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root"])
+		inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test3/root"],
+			op.LsUncachedClient(), op.ComponentsRegistry())
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -209,7 +213,8 @@ var _ = Describe("Constructor", func() {
 
 	Context("Target Export", func() {
 		It("should export a target from a template and a subinstallation", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
+			inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test4/root"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -235,7 +240,8 @@ var _ = Describe("Constructor", func() {
 		})
 
 		It("should forbid export of a wrong target type", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
+			inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test4/root"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -255,7 +261,8 @@ var _ = Describe("Constructor", func() {
 
 	Context("ExportDataMappings", func() {
 		It("should correctly export hard-coded values", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test5/root"])
+			inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test5/root"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 
@@ -279,7 +286,8 @@ var _ = Describe("Constructor", func() {
 		})
 
 		It("should correctly render templates with the child's exports", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test6/root"])
+			inInstRoot, err := installations.CreateInternalInstallationWithContext(ctx, fakeInstallations["test6/root"],
+				op.LsUncachedClient(), op.ComponentsRegistry())
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
