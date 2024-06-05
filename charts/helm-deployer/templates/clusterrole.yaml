@@ -36,9 +36,7 @@ rules:
   - pods
   - configmaps
   verbs:
-  - get
-  - watch
-  - list
+  - "*"
 
 - apiGroups:
   - landscaper.gardener.cloud
