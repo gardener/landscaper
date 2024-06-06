@@ -53,6 +53,7 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 				importResource                     = filepath.Join(nginxTutorialResourcesRootDir, "configmap.yaml")
 				nginxInstResource                  = filepath.Join(nginxTutorialResourcesRootDir, "installation.yaml")
 				echoServerInstResource             = filepath.Join(echoServerTutorialResourcesRootDir, "installation.yaml")
+				echoServerInstResourceWrong        = filepath.Join(echoServerTutorialResourcesRootDir, "installation-wrong.yaml")
 			)
 
 			defer ctx.Done()
@@ -117,6 +118,20 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 			}
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, echoServerDeployment, 2*time.Minute))
 
+			By("Create invalid echo server Installation")
+			wrongEchoInst := &lsv1alpha1.Installation{}
+			Expect(utils.ReadResourceFromFile(wrongEchoInst, echoServerInstResourceWrong)).To(Succeed())
+			wrongEchoInst.SetNamespace(state.Namespace)
+			lsv1alpha1helper.SetOperation(&wrongEchoInst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+			utils.ExpectNoError(state.Create(ctx, wrongEchoInst))
+
+			// wait for installation to finish
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, wrongEchoInst, lsv1alpha1.InstallationPhases.Failed, 2*time.Minute))
+
+			By("Delete invalid echo server installation")
+			utils.ExpectNoError(f.Client.Delete(ctx, wrongEchoInst))
+			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, wrongEchoInst, 2*time.Minute))
+
 			By("Delete nginx installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, nginxInst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, nginxInst, 2*time.Minute))
@@ -131,5 +146,4 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, nginxDeployment, 2*time.Minute))
 		})
 	})
-
 }
