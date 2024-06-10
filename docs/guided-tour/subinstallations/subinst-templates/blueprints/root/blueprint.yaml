@@ -20,8 +20,6 @@ exports:
 
 subinstallations:
   - file: /subinstallation-1.yaml
-  - file: /subinstallation-2.yaml
-  - file: /subinstallation-3.yaml
 
 exportExecutions:
   - name: default-export-execution

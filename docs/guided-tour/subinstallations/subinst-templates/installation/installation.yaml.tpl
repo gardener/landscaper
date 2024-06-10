@@ -27,6 +27,9 @@ spec:
       - name: configmap-name-base
         dataRef: do-configmap-name-base
 
+  importDataMappings:
+    numOfSubInsts: 3
+
   exports:
     data:
       - name: configmap-names

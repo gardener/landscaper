@@ -16,4 +16,4 @@ imports:
 exports:
   data:
     - name: configmap-name-out
-      dataRef: configmap-name-2
+      dataRef: configmap-name-1

@@ -1,5 +1,3 @@
 exports:
   configmap-names:
-    - {{ index .dataobjects "configmap-name-base" }}
-    - {{ index .dataobjects "configmap-name-2" }}
-    - {{ index .dataobjects "configmap-name-3" }}
+    - {{ index .dataobjects "configmap-name-1" }}
