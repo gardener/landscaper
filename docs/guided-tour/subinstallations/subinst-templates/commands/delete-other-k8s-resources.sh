@@ -16,8 +16,5 @@ source "${COMPONENT_DIR}/commands/settings"
 echo "deleting context"
 kubectl delete context landscaper-examples -n "${NAMESPACE}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
 
-echo "deleting dataobject"
-kubectl delete dataobject do-configmap-name-base -n "${NAMESPACE}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
-
 echo "deleting target"
 kubectl delete target my-cluster -n "${NAMESPACE}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"

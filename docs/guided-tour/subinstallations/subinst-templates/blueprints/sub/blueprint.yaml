@@ -13,18 +13,8 @@ imports:
       description: name of the configmap which the blueprint creates.
       type: string
 
-exports:
-  - name: configmap-name-out
-    type: data
-    schema:
-      type: string
-
 deployExecutions:
   - name: default-deploy-execution
     file: /deploy-execution.yaml
     type: GoTemplate
 
-exportExecutions:
-  - name: default-export-execution
-    file: /export-execution.yaml
-    type: GoTemplate

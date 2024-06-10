@@ -23,14 +23,6 @@ spec:
       - name: cluster
         target: my-cluster
 
-    data:
-      - name: configmap-name-base
-        dataRef: do-configmap-name-base
-
   importDataMappings:
-    numOfSubInsts: 3
+    numofsubinsts: 3
 
-  exports:
-    data:
-      - name: configmap-names
-        dataRef: do-configmap-names

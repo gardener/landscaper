@@ -1,3 +1,0 @@
-exports:
-  configmap-names:
-    - {{ index .dataobjects "configmap-name-1" }}

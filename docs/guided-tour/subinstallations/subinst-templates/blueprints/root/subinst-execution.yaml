@@ -1,0 +1,16 @@
+subinstallations:
+{{- range $index := .imports.numofsubinsts | int | until }}
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+    name: subinst-{{ $index }}
+    blueprint:
+      ref: cd://componentReferences/sub/resources/blueprint-sub
+
+    imports:
+      targets:
+        - name: cluster
+          target: cluster
+
+    importDataMappings:
+      configmap-name-in: cm-{{ $index }}
+{{ end }}

@@ -24,13 +24,6 @@ inputFile="${COMPONENT_DIR}/installation/context.yaml.tpl"
 envsubst < ${inputFile} > ${outputFile}
 kubectl apply -f ${outputFile} --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
 
-echo "creating dataobject"
-outputFile="${TMP_DIR}/dataobject.yaml"
-export namespace="${NAMESPACE}"
-inputFile="${COMPONENT_DIR}/installation/dataobject.yaml.tpl"
-envsubst < ${inputFile} > ${outputFile}
-kubectl apply -f ${outputFile} --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
-
 echo "creating target"
 echo "target cluster kubeconfig: $TARGET_CLUSTER_KUBECONFIG_PATH"
 outputFile="${TMP_DIR}/target.yaml"

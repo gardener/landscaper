@@ -6,22 +6,14 @@ imports:
   - name: cluster
     targetType: landscaper.gardener.cloud/kubernetes-cluster
 
-  - name: configmap-name-base
+  - name: numofsubinsts
     required: true
     type: data
     schema:
-      type: string
+      type: integer
 
-exports:
-  - name: configmap-names
-    type: data
-    schema:
-      type: array
-
-subinstallations:
-  - file: /subinstallation-1.yaml
-
-exportExecutions:
-  - name: default-export-execution
-    file: /export-execution.yaml
+subinstallationExecutions:
+  - name: subinst-executions
     type: GoTemplate
+    file: /subinst-execution.yaml
+
