@@ -1,15 +1,14 @@
 ---
-title: Component References
+title: Subinstallation Templates
 sidebar_position: 2
 ---
 
 # Component References
 
-In this example we describe how components could be reused in other components. 
-
-This example is almost a copy of the [export-import example](../export-import). 
-In that example we considered one component version with two resources, namely the blueprints of a root installation 
-and its sub installations. In the present example, we consider two component versions, each with one blueprint resource.
+In this example we describe how sub installations could be created in a more flexible way using templating. Therefore,
+we present a root installation with an import data mapping `numofsubinsts` containing an integer value, which creates 
+as many sub installations as defined by the current value of `numofsubinsts`. Every sub installation creates 
+one deploy item which deploys one config map.
 
 The list of components in the [component-constructor.yaml](commands/component-constructor.yaml) has now two items:
 
@@ -40,17 +39,82 @@ spec:
       resourceName: blueprint-root
 ```
 
-The three [sub installations](blueprints/root/subinstallation-1.yaml) specify their blueprint as follows:
+The root installation defines the number of sub installations which should be created in its import data mappings:
 
 ```yaml
-blueprint:
-  ref: cd://componentReferences/sub/resources/blueprint-sub
+  importDataMappings:
+    numofsubinsts: 3
 ```
 
-The value of the field `blueprint.ref` has this structure:
-- it starts with `cd://`, 
-- followed by any number &ge; 0 of `/componentReferences/<name of component reference>`,
-- and it ends with `/resources/<name of blueprint resource>`.
+The [blueprint of the root installation](blueprints/root/blueprint.yaml) has `numofsubinsts` as input parameter
+and a special section which creates the sub installations via templating:
 
-In our case we start in the root component, follow the component reference with name `sub`, 
-and in the referenced component we select the resource with name `blueprint-sub`.
+```yaml
+subinstallationExecutions:
+  - name: subinst-executions
+    type: GoTemplate
+    file: /subinst-execution.yaml
+```
+
+The specific template specifications for the sub installations is stored in a [file](blueprints/root/subinst-execution.yaml)
+which looks as follows and creates `numofsubinsts` times a sub installation with name `subinst-<loop-number>`. 
+
+```yaml
+subinstallations:
+{{- range $index := .imports.numofsubinsts | int | until }}
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+    name: subinst-{{ $index }}
+    blueprint:
+      ref: cd://componentReferences/sub/resources/blueprint-sub
+
+    imports:
+      targets:
+        - name: cluster
+          target: cluster
+
+    importDataMappings:
+      configmap-name-in: cm-{{ $index }}
+{{ end }}
+```
+
+Every sub installation gets its own import value in the `importDataMappings` section which is used as the config map name
+by the corresponding deploy items.
+
+The blueprint for the sub installations could be found  [here](blueprints/sub/blueprint.yaml).
+
+## Procedure
+
+1. On the target cluster, create a namespace `example`. It is the namespace into which we will deploy the ConfigMaps.
+
+2. On the Landscaper resource cluster, create a namespace `cu-example`.
+
+3. On the Landscaper resource cluster, in namespace `cu-example`, create a Target `my-cluster` containing a
+   kubeconfig for the target cluster, a Context `landscaper-examples`, 
+   and an Installation `subinst-templates`. There are templates for these resources in the directory
+   [installation](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/subinstallations/subinst-templates/installation).
+   To apply them:
+  - adapt the [settings](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/subinstallations/subinst-templates/commands/settings) file
+    such that the entry `RESOURCE_CLUSTER_KUBECONFIG_PATH` points to the kubeconfig of the resource cluster,
+    and the entry `TARGET_CLUSTER_KUBECONFIG_PATH` points to the kubeconfig of the target cluster,
+  - run the [deploy-k8s-resources script](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/subinstallations/subinst-templates/commands/deploy-k8s-resources.sh),
+    which will template and apply the Target, Context, and Installation.
+
+As a result, the three sub installations have deployed three ConfigMaps on the target cluster in namespace `example`:
+
+```shell
+$ kubectl get configmaps -n example
+
+NAME                    DATA   AGE
+cm-0               1      53s
+cm-1               1      53s
+cm-2               1      53s
+```
+
+## Cleanup
+
+You can remove the Installation with the
+[delete-installation script](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/subinstallations/subinst-templates/commands/delete-installation.sh).
+When the Installation is gone, you can delete the Context and Target with the
+[delete-other-k8s-resources script](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/subinstallations/subinst-templates/commands/delete-other-k8s-resources.sh).
+
