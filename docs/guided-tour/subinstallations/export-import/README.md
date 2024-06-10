@@ -1,6 +1,6 @@
 ---
 title: Data Flow Between Subinstallations
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # Data Flow Between Subinstallations

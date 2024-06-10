@@ -1,9 +1,9 @@
 ---
 title: Subinstallation Templates
-sidebar_position: 2
+sidebar_position: 4
 ---
 
-# Component References
+# Subinstallation Templates
 
 In this example we describe how sub installations could be created in a more dynamic way using templating, e.g.
 depending on some input values. Therefore, we present a root installation with an import data mapping `numofsubinsts` 

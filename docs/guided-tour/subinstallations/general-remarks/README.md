@@ -1,6 +1,6 @@
 ---
-title: Component References
-sidebar_position: 2
+title: General Remarks about Sub Installations
+sidebar_position: 1
 ---
 
 # General Remarks about Sub Installations
