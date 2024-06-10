@@ -73,22 +73,24 @@ You can find a list of error messages and corresponding solutions [here](./error
 
 [13. Reuse of Components](./subinstallations/component-references)
 
+[14. Subinstallation Templates](./subinstallations/subinst-templates)
+
 ### Templating
 
-[14. Templating: Accessing Component Descriptors ](./templating/components)
+[15. Templating: Accessing Component Descriptors ](./templating/components)
 
 ### Target Maps
 
-[15. Target Maps: Multiple Deploy Items](./target-maps/01-multiple-deploy-items)
+[16. Target Maps: Multiple Deploy Items](./target-maps/01-multiple-deploy-items)
 
-[16. Target Maps: Target Map References](./target-maps/02-targetmap-ref)
+[17. Target Maps: Target Map References](./target-maps/02-targetmap-ref)
 
-[17. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
+[18. Target Maps: Multiple Subinstallations](./target-maps/03-multiple-subinst)
 
-[18. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
+[19. Target Maps: Target Map on Subinstallation Level](./target-maps/04-forward-map)
 
-[19. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
+[20. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
 
 ### Optimization
 
-[20. Optimization Hints ](../usage/Optimization.md)
+[21. Optimization Hints ](../usage/Optimization.md)

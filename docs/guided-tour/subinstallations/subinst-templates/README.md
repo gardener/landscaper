@@ -5,19 +5,19 @@ sidebar_position: 2
 
 # Component References
 
-In this example we describe how sub installations could be created in a more flexible way using templating. Therefore,
-we present a root installation with an import data mapping `numofsubinsts` containing an integer value, which creates 
-as many sub installations as defined by the current value of `numofsubinsts`. Every sub installation creates 
-one deploy item which deploys one config map.
+In this example we describe how sub installations could be created in a more dynamic way using templating, e.g.
+depending on some input values. Therefore, we present a root installation with an import data mapping `numofsubinsts` 
+containing an integer value, which creates as many sub installations as defined by the value of `numofsubinsts`. 
+Every sub installation is quite simple and creates one deploy item which deploys one config map.
 
-The list of components in the [component-constructor.yaml](commands/component-constructor.yaml) has now two items:
+The list of components in the [component-constructor.yaml](commands/component-constructor.yaml) has two items:
 
 - component `github.com/gardener/landscaper-examples/guided-tour/subinst-templates/root`, version `1.0.0`,
   with the blueprint of the root installation as resource.
 - component `github.com/gardener/landscaper-examples/guided-tour/subinst-templates/sub`, version `1.0.0`,
   with the blueprint of the sub installation as resource.
 
-Moreover, the first component version has a component reference to the second:
+The first component version has a component reference to the second:
 
 ```yaml
 componentReferences:
