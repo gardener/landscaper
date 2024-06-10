@@ -1,0 +1,29 @@
+components:
+  - name: github.com/gardener/landscaper-examples/guided-tour/subinst-templates/root
+    version: 1.0.0
+    provider:
+      name: internal
+    componentReferences:
+      - name: sub
+        componentName: github.com/gardener/landscaper-examples/guided-tour/subinst-templates/sub
+        version: 1.0.0
+    resources:
+      - name: blueprint-root
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprints/root
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+  - name: github.com/gardener/landscaper-examples/guided-tour/subinst-templates/sub
+    version: 1.0.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint-sub
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprints/sub
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
