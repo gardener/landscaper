@@ -831,13 +831,16 @@ spec:
 
 An operator can set annotations manually to enforce a specific behavior ([see](./Annotations.md)).
 
-## Automatic Reconciliation/Processing of Installations
+## Reconciliation/Processing of Installations
 
 By default, the Landscaper only processes an installation if the annotation `landscaper.gardener.cloud/operation: reconcile` is set.
 Then it removes that annotation and starts processing the installation. If this succeeds the field `status.phase` of the
 installation is set to `Succeeded`, if not it is set to `Failed` or `DeleteFailed`. To restart the processing, it is
 required to set the annotation `landscaper.gardener.cloud/operation: reconcile` again. More details about this could be
 found [here](../technical/installation_controller.md).
+
+
+## Automatic Reconciliation/Processing of Installations
 
 You could also configure an automatic repeated processing for an installation. Therefore, you must add the following 
 to the `spec`:
