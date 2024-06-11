@@ -16,30 +16,24 @@ import (
 	gotmpl "text/template"
 	"time"
 
-	"github.com/open-component-model/ocm/pkg/mime"
-
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
-	"github.com/open-component-model/ocm/pkg/runtime"
-
-	"github.com/gardener/landscaper/pkg/components/ocmlib"
-
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
-
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
-	"github.com/gardener/landscaper/pkg/components/cnudie"
-
 	"github.com/Masterminds/sprig/v3"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	"github.com/open-component-model/ocm/pkg/mime"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
+	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/ocmlib"
 	lstmpl "github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 	"github.com/gardener/landscaper/pkg/utils/clusters"
 )
 

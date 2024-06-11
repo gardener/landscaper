@@ -9,8 +9,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -21,10 +19,13 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
+	"github.com/gardener/landscaper/pkg/utils/cache"
 )
 
 // TODO: investigate if this coding can be removed entirely after component-cli is removed
@@ -34,7 +35,7 @@ import (
 func ResolveBlueprint(ctx context.Context,
 	registry model.RegistryAccess,
 	cdRef *lsv1alpha1.ComponentDescriptorReference,
-	bpDef lsv1alpha1.BlueprintDefinition) (*Blueprint, error) {
+	bpDef lsv1alpha1.BlueprintDefinition) (*blueprints.Blueprint, error) {
 
 	if bpDef.Reference == nil && bpDef.Inline == nil {
 		return nil, errors.New("no remote reference nor a inline blueprint is defined")
@@ -60,7 +61,7 @@ func ResolveBlueprint(ctx context.Context,
 		if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, blue); err != nil {
 			return nil, fmt.Errorf("unable to decode blueprint definition from inline defined blueprint. %w", err)
 		}
-		return New(blue, readonlyfs.New(fs)), nil
+		return blueprints.New(blue, readonlyfs.New(fs)), nil
 	}
 
 	if cdRef == nil {
@@ -85,7 +86,7 @@ func ResolveBlueprint(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	blueprint, ok := content.Resource.(*Blueprint)
+	blueprint, ok := content.Resource.(*blueprints.Blueprint)
 	if !ok {
 		return nil, fmt.Errorf("received resource of type %T but expected type *Blueprint", blueprint)
 	}
@@ -94,7 +95,14 @@ func ResolveBlueprint(ctx context.Context,
 
 // Resolve returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
-func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *lsv1alpha1.ComponentDescriptorReference, bpDef lsv1alpha1.BlueprintDefinition) (*Blueprint, error) {
+func Resolve(
+	ctx context.Context,
+	registryAccess model.RegistryAccess,
+	cdRef *lsv1alpha1.ComponentDescriptorReference,
+	bpDef lsv1alpha1.BlueprintDefinition,
+	bpCacheID *cache.BlueprintCacheID,
+) (*blueprints.Blueprint, error) {
+
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "ResolveBlueprint")
 	defer pm.StopDebug()
@@ -123,7 +131,11 @@ func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *ls
 		if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, blue); err != nil {
 			return nil, fmt.Errorf("unable to decode blueprint definition from inline defined blueprint. %w", err)
 		}
-		return New(blue, readonlyfs.New(fs)), nil
+		return blueprints.New(blue, readonlyfs.New(fs)), nil
+	}
+
+	if cachedBlueprint := cache.GetOCMContextCache().GetBlueprint(ctx, bpCacheID); cachedBlueprint != nil {
+		return cachedBlueprint, nil
 	}
 
 	if cdRef == nil {
@@ -157,10 +169,13 @@ func Resolve(ctx context.Context, registryAccess model.RegistryAccess, cdRef *ls
 	if err != nil {
 		return nil, err
 	}
-	blueprint, ok := content.Resource.(*Blueprint)
+	blueprint, ok := content.Resource.(*blueprints.Blueprint)
 	if !ok {
 		return nil, fmt.Errorf("received resource of type %T but expected type *Blueprint", blueprint)
 	}
+
+	cache.GetOCMContextCache().AddBlueprint(ctx, blueprint, bpCacheID)
+
 	return blueprint, nil
 }
 

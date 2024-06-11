@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 )
 
 // Installation is the internal representation of a installation

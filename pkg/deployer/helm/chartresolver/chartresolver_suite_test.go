@@ -15,26 +15,21 @@ import (
 	"testing"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/open-component-model/ocm/pkg/runtime"
-
-	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/pkg/components/registries"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"github.com/open-component-model/ocm/pkg/runtime"
+	corev1 "k8s.io/api/core/v1"
 
+	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/registries"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 	utils "github.com/gardener/landscaper/test/utils"
 )
 

@@ -10,20 +10,18 @@ import (
 
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	ocmruntime "github.com/open-component-model/ocm/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
-
 	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
 	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
+	ocmruntime "github.com/open-component-model/ocm/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 )
 
 // Templater implements all available template executors.

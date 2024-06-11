@@ -13,34 +13,25 @@ import (
 	"reflect"
 
 	"github.com/mandelsoft/goutils/errors"
-
-	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
-
-	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
-
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	corev1 "k8s.io/api/core/v1"
-
-	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
 	ociid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/oci/identity"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/runtime"
+	. "github.com/open-component-model/ocm/pkg/testutils"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/landscaper/apis/config"
-
-	. "github.com/open-component-model/ocm/pkg/testutils"
-
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 )
 
 const (

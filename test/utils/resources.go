@@ -13,35 +13,30 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
-
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/gardener/landscaper/test/utils/envtest"
-
-	"github.com/gardener/landscaper/pkg/api"
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	k8smock "github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/container"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 // TestInstallationConfig defines a installation configuration which can be used to create
