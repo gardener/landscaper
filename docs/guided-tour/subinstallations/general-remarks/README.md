@@ -17,3 +17,12 @@ for the shoot cluster to the second sub installation. The second sub installatio
 application to the shoot cluster. 
 
 Remark: DeployItems could not exchange data directly with other DeployItems. 
+
+An installation with sub installations is processed as follows. When the processing of the root installation is 
+triggered, the root installations creates the sub installations and provides them their import data. A sub installation
+starts working if all its import data, including those from its sibling sub installations, is available. When all
+sub installations have finished their work (including the executions of their sub installations), the root installation
+fetches the export data of the sub installations and finishes its work.
+
+Deleting a root installation triggers the deletion of all sub installation in the following order. A sub installation 
+Sub-A is removed when all sub installations, which requires import data from Sub-A, were removed. 
