@@ -29,6 +29,7 @@ metadata:
   name: {{ include "landscaper.aggregation.view.clusterRoleName" . }}
   labels:
     rbac.landscaper.gardener.cloud/aggregate-to-view: "true"
+    rbac.landscaper.gardener.cloud/aggregate-to-admin: "true"
     {{- include "landscaper.labels" . | nindent 4 }}
   {{- with .Values.aggregation.admin.annotations }}
   annotations:
