@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+meta:
+  schemaVersion: v2
+
+component:
+  name: example.com/g
+  version: v1.0.0
+
+  provider: internal
+
+  repositoryContexts:
+  - type: ociRegistry
+    baseUrl: "../../../testdata/registry"
+
+  sources: []
+  resources: []
+  componentReferences: []
