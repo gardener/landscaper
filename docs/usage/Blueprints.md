@@ -5,53 +5,62 @@ sidebar_position: 1
 
 # Blueprints
 
-## Definition
+A blueprint is a deployment instruction. It defines how to deploy a set of artifacts, for example helm charts. 
 
-A Blueprint is a filesystem structure that contains a Blueprint definition at `/blueprint.yaml`. Any other additional 
-file can be contained in a Blueprint and referred to in the blueprint.yaml for example JSON schema definitions or
-configuration data.
+A blueprint is parameterized, i.e. it has import and export parameters to allow a dataflow.
+Thus, a blueprint can be compared with a function that has import and export parameters and performs a deployment.
+Blueprints are used in [Installations](Installations.md), which are particular Landscaper custom resources. 
+To stay with the analogy between blueprints and functions, an Installation corresponds to a function call.
+Creating an Installation custom resource ([with a certain annotation](Installations.md#reconciliationprocessing-of-installations)) 
+starts the deployment process defined by its blueprint. The Installation provides the values for the import parameters 
+of the blueprint that it "calls".
 
-A Blueprint definition is a parameterized description of how to deploy a specific component consisting of many different
-artifacts. It can be compared with a function with some input and output parameters. 
+During the processing of an Installation and its blueprint, DeployItem custom resources are created. They describe the 
+elementary deployment units of a blueprint, for example the deployment of a single helm chart. 
+The DeployItems are created based on templates (GoTemplate or Spiff) defined in the blueprint. These templates can be
+filled with values of the import parameters.
+The DeployItems are handled by independent Landscaper kubernetes controllers (so-called deployers), which perform the
+real deployment tasks.
 
-Blueprints are used in Installations, which are particular Landscaper custom resources. Installations "call" 
-Blueprint definitions with particular input data. Depending on these input data, the task of a Blueprint is to define 
-a set of deployitems. Particular controllers of the Landscaper use the Blueprint definition to create these deployitems 
-as kubernetes custom resources. 
+For complex deployment processes, it is possible to bundle several installations and their blueprints into 
+a parent blueprint. Put the other way round, a (parent) blueprint can define subinstallations, each with a blueprint that describes
+a part of the whole deployment process. Blueprints of subinstallations can again have subinstallations, and so on.
+Imports can be passed from a parent to its subinstallations, and exports from subinstallations to the parent. 
+Moreover, subinstallations of the same parent can exchange data, i.e. a subinstallation can import the exports of its siblings.
+The export-import graph determines the order, in which installations are processed. This graph must not have cycles.
 
-The deployitems are handled by independent Landscaper kubernetes controllers (so-called deployers), which perform the 
-real deployment tasks. This way, the Blueprint does not execute deployment actions, but defines the deployitems. 
-The actions described by the Blueprint itself are therefore restricted to YAML-based manifest rendering.
 
-Every Blueprint must have a corresponding component descriptor that has two purposes:
-- The component descriptor references the blueprint location.
-- The Blueprint can reference sources, resources etc. of the component descriptor in the Blueprint definition and
-  use these data to render the deployitems.
+## The Structure of a Blueprint
 
-The typical structure of a Blueprint looks as follows:
+A blueprint is a filesystem structure. It consists of a directory that must contain a yaml file with name `blueprint.yaml`. 
+It can contain further files and subdirectories. 
+
+For example, the blueprint of the guided tour example 
+[import-export/export-parameters](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/import-export/export-parameters/blueprint)
+contains besides the `blueprint.yaml` also a file `deploy-execution.yaml` with a template to generate DeployItems, and a
+file `export-execution.yaml` with a template to generate export values:
 
 ```
-my-blueprint
-├── data
-│   └── <myadditional files>
-├── installations
-│   └── installation.yaml
-└── blueprint.yaml
+├── blueprint.yaml
+├── deploy-execution.yaml
+└── export-execution.yaml
 ```
 
-In summary, a Blueprint definition (blueprint.yaml) describes
+Other possible files in the blueprint directory are for example subinstallations as in the guided tour example 
+[subinstallations/export-import](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/subinstallations/export-import/blueprints/root).
+
+
+The `blueprint.yaml` file describes:
 - declaration of import parameters
 - declaration of export parameters
 - JSONSchema definitions
-- generation rules for deployitems
+- generation rules for DeployItems
 - generation rules for export values
-- generation of nested installations (again calling some Blueprint with particular input parameters)
+- generation of subinstallations (again calling some Blueprint with particular input parameters)
 
-## Example
-
-The following snippet shows the structure of a `blueprint.yaml` file. It is expected as top-level file in the Blueprint 
-filesystem structure. Refer to [apis/.schemes/core-v1alpha1-Blueprint.json](../../apis/.schemes/core-v1alpha1-Blueprint.json) for the automatically generated 
-jsonschema definition.
+The following snippet shows the structure of a `blueprint.yaml` file. 
+Refer to [apis/.schemes/core-v1alpha1-Blueprint.json](../../apis/.schemes/core-v1alpha1-Blueprint.json) 
+for the automatically generated jsonschema definition.
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -150,8 +159,26 @@ subinstallations:
     - name: "" # target export name
       target: "" # target name
   #exportDataMappings: {}
-
 ```
+
+The declaration of import and export parameters in explained in the sections [Import Definitions](#import-definitions) 
+and [Export Definitions](#export-definitions) below.
+
+The templating of DeployItems, export values, and subinstallations is explained in the [Templating](Templating.md) chapter.
+
+
+## Storing a Blueprint
+
+Blueprints are intended to be reusable. Therefore, they must be stored in a central place, from where they can be
+accessed by several installations. The Landscaper makes use of the [Open Component Model (OCM)](https://ocm.software/). 
+A blueprint (except inline blueprints) must belong to an OCM component version: it must be a local resource of
+this component version, and be store together with it in an OCM repository.
+The guided tour explains in example [components/helm-chart](../guided-tour/components/helm-chart/README.md) how to
+achieve this.
+
+All resources which the blueprint uses (e.g. helm charts, json schemata, or blueprints of subinstallations)
+must also be resources of this component version, or of component versions which are referenced by it (transitively).
+
 
 ## Import Definitions
 
@@ -796,29 +823,29 @@ In this case the name in this scope is provided by the export definition of
 the installation.
 
 
-## Nested Installations
+## Subinstallations
 
 Blueprints may contain installation specifications which will result in installations when the blueprint is instantiated through an installation.
 They have a naming scope that is finally defined by the installation the blueprint is instantiated for.
-Naming scope means that nested installations can only import data that is also imported
-by the parent or exported by other nested installations with the same parent.
+Naming scope means that subinstallations can only import data that is also imported
+by the parent or exported by other subinstallations with the same parent.
 
-Nested installation specifications offer the same configuration as real installations
+Subinstallation specifications offer the same configuration as real installations
 except that the used blueprints have to be defined in the component descriptor
 of the blueprint (either as resource or by a component reference).
 Inline blueprints are also possible, although not recommended for productive purposes.
 
-Nested installations can be defined in two flavors;
+Subinstallations can be defined in two flavors;
 
 - [Static Installations](#static-installations)
 - [Templated Installations](#templated-installations)
 
 In any case the result is a list of installation specifications.
-Every specification is mapped to a dedicated nested installation object
+Every specification is mapped to a dedicated subinstallation object
 in the context of the actual installation the blueprint is instantiated for.
 
-All possible options to define a nested installation can be used in parallel and are summed up.
-The name of all described nested installations must be unique in the context of
+All possible options to define a subinstallation can be used in parallel and are summed up.
+The name of all described subinstallations must be unique in the context of
 the blueprint. But they don't need to be unique in the landscaper namespace,
 because the live only in the context of installation the blueprint is
 instantiated for. If the blueprint is used for multiple installations (flat or
@@ -892,8 +919,8 @@ Static installations are not templated and cannot refer to import values.
 
 ### Templated Installations
 
-Similar to how deployitems can be defined, it is also possible to create nested
-installations based on the imports by using template [executions](./Templating.md).
+Similar to how deployitems can be defined, it is also possible to create
+subinstallations based on the imports by using template [executions](./Templating.md).
 Templated installations are configured as a list under the top-level field
 `subinstallationExecutions` in the blueprint manifest.
 
