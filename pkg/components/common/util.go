@@ -8,14 +8,21 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/readonlyfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 )
 
 var scheme = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9]*://.*$")
@@ -102,4 +109,21 @@ func lower(b byte) byte {
 		return b + ('a' - 'A')
 	}
 	return b
+}
+
+// BuildBlueprintFromPath creates a read-only blueprint from an extracted blueprint.
+func BuildBlueprintFromPath(fs vfs.FileSystem, bpPath string) (*blueprints.Blueprint, error) {
+	blueprintBytes, err := vfs.ReadFile(fs, filepath.Join(bpPath, lsv1alpha1.BlueprintFileName))
+	if err != nil {
+		return nil, fmt.Errorf("unable to read blueprint definition: %w", err)
+	}
+	blueprint := &lsv1alpha1.Blueprint{}
+	if _, _, err := api.Decoder.Decode(blueprintBytes, nil, blueprint); err != nil {
+		return nil, fmt.Errorf("unable to decode blueprint definition: %w", err)
+	}
+	bpFs, err := projectionfs.New(readonlyfs.New(fs), bpPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create blueprint filesystem: %w", err)
+	}
+	return blueprints.New(blueprint, readonlyfs.New(bpFs)), nil
 }

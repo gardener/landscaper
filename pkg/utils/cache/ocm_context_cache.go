@@ -4,12 +4,14 @@ import (
 	"context"
 	"sync"
 
-	"github.com/gardener/landscaper/pkg/components/model"
-
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 )
 
 const cacheKey = "cacheKey"
@@ -26,8 +28,25 @@ type OCMContextCache struct {
 }
 
 type OCMContextCacheEntry struct {
-	octx     ocm.Context
-	registry model.RegistryAccess
+	octx       ocm.Context
+	registry   model.RegistryAccess
+	blueprints map[client.ObjectKey]*blueprints.Blueprint
+}
+
+type BlueprintCacheID struct {
+	jobID           string
+	installationKey client.ObjectKey
+}
+
+func NewBlueprintCacheID(inst *v1alpha1.Installation) *BlueprintCacheID {
+	return &BlueprintCacheID{
+		jobID:           inst.Status.JobID,
+		installationKey: client.ObjectKeyFromObject(inst),
+	}
+}
+
+func (b *BlueprintCacheID) String() string {
+	return "blueprintCacheID:" + b.jobID + "/" + b.installationKey.Namespace + "/" + b.installationKey.Name
 }
 
 var ocmContextCacheInstance *OCMContextCache
@@ -49,7 +68,8 @@ func (o *OCMContextCache) GetOrCreateOCMContext(ctx context.Context, jobID strin
 		log, _ := logging.FromContextOrNew(ctx, nil)
 		log.Debug("creating new ocm context", cacheKey, jobID)
 		o.ocmEntries[jobID] = &OCMContextCacheEntry{
-			octx: ocm.New(datacontext.MODE_EXTENDED),
+			octx:       ocm.New(datacontext.MODE_EXTENDED),
+			blueprints: make(map[client.ObjectKey]*blueprints.Blueprint),
 		}
 	}
 
@@ -105,5 +125,46 @@ func (o *OCMContextCache) AddRegistryAccess(ctx context.Context, jobID string, r
 		log.Debug("adding registry to ocm context cache", cacheKey, jobID)
 
 		entry.registry = registry
+	}
+}
+
+func (o *OCMContextCache) GetBlueprint(ctx context.Context, id *BlueprintCacheID) *blueprints.Blueprint {
+	if id == nil {
+		return nil
+	}
+
+	o.rwLock.RLock()
+	defer o.rwLock.RUnlock()
+
+	entry := o.ocmEntries[id.jobID]
+	if entry != nil {
+		bp := entry.blueprints[id.installationKey]
+		if bp != nil {
+			log, _ := logging.FromContextOrNew(ctx, nil)
+			log.Debug("get blueprint from ocm context cache", cacheKey, id.String())
+
+			return bp
+		}
+	}
+
+	return nil
+}
+
+func (o *OCMContextCache) AddBlueprint(ctx context.Context, blueprint *blueprints.Blueprint, id *BlueprintCacheID) {
+	if id == nil {
+		return
+	}
+
+	o.rwLock.Lock()
+	defer o.rwLock.Unlock()
+
+	entry := o.ocmEntries[id.jobID]
+	if entry != nil {
+		if entry.blueprints[id.installationKey] == nil {
+			log, _ := logging.FromContextOrNew(ctx, nil)
+			log.Debug("adding blueprint to ocm context cache", cacheKey, id.String())
+
+			entry.blueprints[id.installationKey] = blueprint
+		}
 	}
 }

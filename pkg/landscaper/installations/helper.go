@@ -17,8 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -29,6 +27,8 @@ import (
 	lstypes "github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
+	utilscache "github.com/gardener/landscaper/pkg/utils/cache"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 var componentInstallationGVK schema.GroupVersionKind
@@ -103,7 +103,8 @@ func CreateInternalInstallationWithContext(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	blue, err := blueprints.Resolve(ctx, registry, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
+	blueprintCacheID := utilscache.NewBlueprintCacheID(inst)
+	blue, err := blueprints.Resolve(ctx, registry, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint, blueprintCacheID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

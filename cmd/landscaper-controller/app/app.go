@@ -10,7 +10,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/tools/clientcmd"
@@ -26,7 +25,6 @@ import (
 	"github.com/gardener/landscaper/apis/core/install"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/components/cache/blueprint"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	deployitemctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	executionactrl "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
@@ -153,12 +151,6 @@ func (o *Options) run(ctx context.Context) error {
 func (o *Options) startMainController(ctx context.Context,
 	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	lsMgr, hostMgr manager.Manager, ctrlLogger, setupLogger logging.Logger) error {
-
-	store, err := blueprint.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
-	if err != nil {
-		return fmt.Errorf("unable to setup blueprint store: %w", err)
-	}
-	blueprint.SetStore(store)
 
 	if err := installationsctrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		ctrlLogger, lsMgr, o.Config, "installations"); err != nil {

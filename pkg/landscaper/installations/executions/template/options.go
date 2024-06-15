@@ -7,12 +7,11 @@ package template
 import (
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 )
 
 // BlueprintExecutionOptions describes the base options for templating of all blueprint executions.

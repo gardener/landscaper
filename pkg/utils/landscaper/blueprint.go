@@ -18,13 +18,14 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	lsblueprints "github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
+	"github.com/gardener/landscaper/pkg/utils/blueprints"
 	"github.com/gardener/landscaper/pkg/utils/dependencies"
 )
 
@@ -378,7 +379,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 		}
 
 		subCd.Reference.RepositoryContext = subInstRepositoryContext
-		subBlueprint, err := blueprints.Resolve(ctx, r.registryAccess, subCd.Reference, *subBlueprintDef)
+		subBlueprint, err := lsblueprints.Resolve(ctx, r.registryAccess, subCd.Reference, *subBlueprintDef, nil)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to resolve blueprint for subinstallation %q: %w", subInstTmpl.Name, err)
 		}
