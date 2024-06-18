@@ -9,7 +9,6 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,9 +30,6 @@ type Factory interface {
 	// secrets allows to pass in credentials of specific types (such as dockerconfigjson or
 	// credentials.config.ocm.software although the latter only works with the ocmlib backed implementation and are
 	// ignored otherwise) that will be considered when accessing registries.
-	//
-	// sharedCache is an oci cache. It is only used by the component-cli backed implementation and is ignored otherwise,
-	// as the ocmlib backed implementations uses an ocmlib internal cache for oci artifacts.
 	//
 	// localRegistryConfig allows to pass in a root path. This root path may already point to a local ocm repository (in
 	// which case it is sufficient to specify that the repository context is of type "local" in the component reference
@@ -60,7 +56,6 @@ type Factory interface {
 		fs vfs.FileSystem,
 		ocmconfig *corev1.ConfigMap,
 		secrets []corev1.Secret,
-		sharedCache cache.Cache,
 		localRegistryConfig *config.LocalRegistryConfiguration,
 		ociRegistryConfig *config.OCIConfiguration,
 		inlineCd *types.ComponentDescriptor,
@@ -79,6 +74,5 @@ type Factory interface {
 		ocmconfig *corev1.ConfigMap,
 		ociImageRef string,
 		registryPullSecrets []corev1.Secret,
-		ociConfig *config.OCIConfiguration,
-		sharedCache cache.Cache) (TypedResourceProvider, error)
+		ociConfig *config.OCIConfiguration) (TypedResourceProvider, error)
 }

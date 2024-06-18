@@ -15,7 +15,6 @@ import (
 
 	"k8s.io/utils/ptr"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
@@ -69,7 +68,6 @@ type Helm struct {
 	Context               *lsv1alpha1.Context
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
-	SharedCache           cache.Cache
 
 	TargetKubeClient client.Client
 	TargetRestConfig *rest.Config
@@ -81,8 +79,7 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 	helmconfig helmv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget,
-	lsCtx *lsv1alpha1.Context,
-	sharedCache cache.Cache) (*Helm, error) {
+	lsCtx *lsv1alpha1.Context) (*Helm, error) {
 
 	currOp := "InitHelmOperation"
 
@@ -118,7 +115,6 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 		Context:               lsCtx,
 		ProviderConfiguration: config,
 		ProviderStatus:        status,
-		SharedCache:           sharedCache,
 	}, nil
 }
 
@@ -146,7 +142,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 	useChartCache := helper.HasCacheHelmChartsAnnotation(&h.DeployItem.ObjectMeta)
 
 	ch, err := chartresolver.GetChart(ctx, &h.ProviderConfiguration.Chart, h.lsUncachedClient, h.Context,
-		registryPullSecrets, h.Configuration.OCI, h.SharedCache, useChartCache)
+		registryPullSecrets, h.Configuration.OCI, useChartCache)
 	if err != nil {
 		if h.isDownloadInfoError(err) {
 			return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error(), lsv1alpha1.ErrorForInfoOnly)

@@ -8,7 +8,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -16,14 +15,9 @@ import (
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
-)
-
-const (
-	cacheIdentifier = "container-deployer-controller"
 )
 
 const (
@@ -36,15 +30,6 @@ func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCache
 	log logging.Logger,
 	config containerv1alpha1.Configuration) (*deployer, error) {
 
-	var sharedCache cache.Cache
-	if config.OCI != nil && config.OCI.Cache != nil {
-		var err error
-		sharedCache, err = cache.NewCache(log.Logr(), cnudieutils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
@@ -54,7 +39,6 @@ func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCache
 		hostCachedClient:   hostCachedClient,
 		log:                log,
 		config:             config,
-		sharedCache:        sharedCache,
 		hooks:              extension.ReconcileExtensionHooks{},
 	}
 	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
@@ -67,14 +51,13 @@ type deployer struct {
 	hostUncachedClient client.Client
 	hostCachedClient   client.Client
 
-	log         logging.Logger
-	config      containerv1alpha1.Configuration
-	sharedCache cache.Cache
-	hooks       extension.ReconcileExtensionHooks
+	log    logging.Logger
+	config containerv1alpha1.Configuration
+	hooks  extension.ReconcileExtensionHooks
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
-	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, lsCtx, d.sharedCache, rt)
+	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, lsCtx, rt)
 	if err != nil {
 		return err
 	}
@@ -83,7 +66,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 }
 
 func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
-	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, lsCtx, d.sharedCache, rt)
+	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, lsCtx, rt)
 	if err != nil {
 		return err
 	}
@@ -102,7 +85,7 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
 	// TODO: parse provider configuration directly and do not init the container helper struct
-	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, nil, d.sharedCache, nil)
+	containerOp, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, nil, nil)
 	if err != nil {
 		return nil, err
 	}

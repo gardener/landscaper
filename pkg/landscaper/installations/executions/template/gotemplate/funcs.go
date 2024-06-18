@@ -5,7 +5,6 @@
 package gotemplate
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -17,7 +16,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 	"github.com/open-component-model/ocm/pkg/mime"
@@ -27,7 +25,6 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
@@ -73,7 +70,6 @@ func LandscaperTplFuncMap(blueprint *blueprints.Blueprint,
 		"parseOCIRef":   lstmpl.ParseOCIReference,
 		"ociRefRepo":    getOCIReferenceRepository,
 		"ociRefVersion": getOCIReferenceVersion,
-		"resolve":       resolveArtifactFunc(componentVersion),
 
 		"getResourceKey":       getResourceKeyGoFunc(componentVersion),
 		"getResourceContent":   getResourceContentGoFunc(componentVersion),
@@ -137,34 +133,6 @@ func getOCIReferenceVersion(ref string) string {
 // getOCIReferenceRepository returns the repository of a oci reference
 func getOCIReferenceRepository(ref string) string {
 	return lstmpl.ParseOCIReference(ref)[0]
-}
-
-// resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access
-func resolveArtifactFunc(componentVersion model.ComponentVersion) func(access map[string]interface{}) ([]byte, error) {
-	return func(access map[string]interface{}) ([]byte, error) {
-		ctx := context.Background()
-		defer ctx.Done()
-
-		cv, ok := componentVersion.(*cnudie.ComponentVersion)
-		if !ok {
-			return nil, errors.New("this functionality has been deprecated for usage with the new library ")
-		}
-
-		if componentVersion == nil {
-			return nil, fmt.Errorf("unable to resolve artifact, because no component version is provided")
-		}
-
-		blobResolver, err := cv.GetBlobResolver()
-		if err != nil {
-			return nil, fmt.Errorf("unable to get blob resolver to resolve artifact: %w", err)
-		}
-
-		var data bytes.Buffer
-		if _, err := blobResolver.Resolve(ctx, types.Resource{Access: cdv2.NewUnstructuredType(access["type"].(string), access)}, &data); err != nil {
-			panic(err)
-		}
-		return data.Bytes(), nil
-	}
 }
 
 func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []map[string]interface{} {

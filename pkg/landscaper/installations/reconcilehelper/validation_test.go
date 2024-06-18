@@ -57,7 +57,8 @@ var _ = Describe("Validation", func() {
 		fakeInstallations = state.Installations
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "../testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+			localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(ctx)

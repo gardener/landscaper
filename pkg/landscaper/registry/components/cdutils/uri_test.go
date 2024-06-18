@@ -131,7 +131,7 @@ var _ = Describe("URI", func() {
 		_, err = file.Write(cd2data)
 		Expect(err).ToNot(HaveOccurred())
 
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil, nil,
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil,
 			&config.LocalRegistryConfiguration{RootPath: "./"}, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 

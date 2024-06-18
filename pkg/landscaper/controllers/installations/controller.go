@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,7 +28,6 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
-	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -40,10 +38,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/lock"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"github.com/gardener/landscaper/pkg/utils/verify"
-)
-
-const (
-	cacheIdentifier = "landscaper-installation-Controller"
 )
 
 // NewController creates a new Controller that reconciles Installation resources.
@@ -70,15 +64,6 @@ func NewController(ctx context.Context,
 		lockingEnabled:     lockingEnabled,
 		callerName:         callerName,
 		locker:             *lock.NewLocker(lsUncachedClient, hostUncachedClient, callerName),
-	}
-
-	if lsConfig != nil && lsConfig.Registry.OCI != nil {
-		var err error
-		ctrl.SharedCache, err = cache.NewCache(logger.Logr(), cnudieutils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
-		if err != nil {
-			return nil, err
-		}
-		logger.Debug("setup shared components registry  cache")
 	}
 
 	registries.SetOCMLibraryMode(lsConfig.UseOCMLib)
@@ -164,7 +149,6 @@ type Controller struct {
 	log                 logging.Logger
 	clock               clock.PassiveClock
 	LsConfig            *config.LandscaperConfiguration
-	SharedCache         cache.Cache
 	workerCounter       *utils.WorkerCounter
 	lockingEnabled      bool
 	callerName          string

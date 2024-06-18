@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
+	componentresolvers2 "github.com/gardener/landscaper/pkg/components/testutils"
+
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
@@ -35,7 +37,6 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/mediatype"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
@@ -682,7 +683,7 @@ func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Reso
 	res.Type = ttype
 	res.Relation = cdv2.LocalRelation
 
-	localFsAccess, err := componentresolvers.NewLocalFilesystemBlobAccess(path, mediaType)
+	localFsAccess, err := componentresolvers2.NewLocalFilesystemBlobAccess(path, mediaType)
 	utils.ExpectNoError(err)
 	res.Access = &localFsAccess
 	return res

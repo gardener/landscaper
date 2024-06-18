@@ -62,7 +62,8 @@ var _ = Describe("Constructor", func() {
 		Expect(testutils.CreateExampleDefaultContext(ctx, fakeClient, "test1", "test2", "test3", "test4", "test5", "test6"))
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "../testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+			localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		operation, err := lsoperation.NewBuilder().WithLsUncachedClient(fakeClient).Scheme(api.LandscaperScheme).WithEventRecorder(record.NewFakeRecorder(1024)).ComponentRegistry(registryAccess).Build(ctx)

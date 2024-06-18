@@ -19,7 +19,6 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
 	"github.com/gardener/landscaper/pkg/utils/blueprints"
@@ -49,7 +48,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	// ocmlog.Context().AddRule(logging.NewConditionRule(logging.TraceLevel))
 
 	ocmfactory := &ocmlib.Factory{}
-	cnudiefactory := &cnudie.Factory{}
 	blueprintData := struct {
 		blueprintYaml []byte
 		test          []byte
@@ -72,7 +70,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withBlueprintsComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		res := Must(compvers.GetResource("blueprint-dir", nil))
 
@@ -97,7 +96,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withBlueprintsComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 
 		bptar := Must(compvers.GetResource("blueprint-tar", nil))
@@ -126,7 +126,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(blueprintData.blueprintYaml).To(Equal(blueprintGzipYaml))
 		Expect(blueprintData.test).To(Equal(gzipTest))
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITH_BLUEPRINTS),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITH_BLUEPRINTS),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITH_BLUEPRINTS),
 	)
@@ -135,7 +134,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withBlueprintsComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		res := Must(compvers.GetResource("corrupted-blueprint", nil))
 
@@ -143,7 +143,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(typedContent).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITH_BLUEPRINTS),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITH_BLUEPRINTS),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITH_BLUEPRINTS),
 	)
@@ -153,7 +152,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withBlueprintsComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		res := Must(compvers.GetResource("corrupted-blueprint-tar", nil))
 
@@ -161,7 +161,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(typedContent).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITH_BLUEPRINTS),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITH_BLUEPRINTS),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITH_BLUEPRINTS),
 	)

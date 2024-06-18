@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
+	testutils2 "github.com/gardener/landscaper/pkg/components/testutils"
+
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -42,7 +42,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
@@ -354,7 +353,7 @@ var _ = Describe("jsonschema", func() {
 
 			// first resource: a json schema
 			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default1.json"), schemaBytes, os.ModePerm)).To(Succeed())
-			access1, err := componentresolvers.NewLocalFilesystemBlobAccess("default1.json", mediatype.JSONSchemaArtifactsMediaTypeV1)
+			access1, err := testutils2.NewLocalFilesystemBlobAccess("default1.json", mediatype.JSONSchemaArtifactsMediaTypeV1)
 			Expect(err).ToNot(HaveOccurred())
 			resource1 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -373,7 +372,7 @@ var _ = Describe("jsonschema", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(w.Close()).To(Succeed())
 			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default2.json"), compressedSchema.Bytes(), os.ModePerm)).To(Succeed())
-			access2, err := componentresolvers.NewLocalFilesystemBlobAccess("default2.json",
+			access2, err := testutils2.NewLocalFilesystemBlobAccess("default2.json",
 				mediatype.NewBuilder(mediatype.JSONSchemaArtifactsMediaTypeV1).Compression(mediatype.GZipCompression).Build().String())
 			Expect(err).ToNot(HaveOccurred())
 			resource2 := types.Resource{
@@ -388,7 +387,7 @@ var _ = Describe("jsonschema", func() {
 
 			// third resource: like the first resource, but with an unknown mediatype
 			Expect(vfs.WriteFile(blobFs, ctf.BlobPath("default3.json"), schemaBytes, os.ModePerm)).To(Succeed())
-			access3, err := componentresolvers.NewLocalFilesystemBlobAccess("default3.json", "application/unknown")
+			access3, err := testutils2.NewLocalFilesystemBlobAccess("default3.json", "application/unknown")
 			Expect(err).ToNot(HaveOccurred())
 			resource3 := types.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -401,7 +400,7 @@ var _ = Describe("jsonschema", func() {
 			}
 
 			// prepare component descriptor and registry
-			repoCtx, err := componentresolvers.NewOCIRepositoryContext("example.com/reg")
+			repoCtx, err := testutils2.NewOCIRepositoryContext("example.com/reg")
 			Expect(err).ToNot(HaveOccurred())
 
 			cd = &types.ComponentDescriptor{
@@ -418,8 +417,8 @@ var _ = Describe("jsonschema", func() {
 				},
 			}
 
-			blobResolver := componentresolvers.NewLocalFilesystemBlobResolver(blobFs)
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, blobFs, nil, nil, nil,
+			blobResolver := testutils2.NewLocalFilesystemBlobResolver(blobFs)
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, blobFs, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, cd, blobResolver)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -470,12 +469,7 @@ var _ = Describe("jsonschema", func() {
 			data := []byte(`"valid"`)
 
 			err := jsonschema.ValidateBytes(schemaBytes, data, config)
-			if _, ok := config.RegistryAccess.(*cnudie.RegistryAccess); ok {
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("unknown media type"))
-			} else {
-				Expect(err).ToNot(HaveOccurred())
-			}
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 	})
@@ -574,7 +568,8 @@ var _ = Describe("jsonschema", func() {
 `, strings.Split(testenv.Addr, ":")[0], strings.Split(testenv.Addr, ":")[1], testenv.BasicAuth.Username, testenv.BasicAuth.Password, testenv.Certificate.CA))
 			secrets := []corev1.Secret{{
 				Data: map[string][]byte{`.ocmcredentialconfig`: config}}}
-			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, nil, secrets, nil, nil, ociconfig, nil)
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, fs, nil, secrets, nil,
+				ociconfig, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -880,7 +875,8 @@ var _ = Describe("jsonschema", func() {
 			var err error
 
 			localregistryconfig := &apiconfig.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+				localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
@@ -895,7 +891,8 @@ var _ = Describe("jsonschema", func() {
 		})
 
 		It("should resolve with explicit repository context", func() {
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+				localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
@@ -913,7 +910,8 @@ var _ = Describe("jsonschema", func() {
 		})
 
 		It("should not resolve without explicit repository context", func() {
-			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+			registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+				localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
@@ -980,7 +978,7 @@ func buildLocalFilesystemResource(name, ttype, mediaType, path string) types.Res
 	res.Type = ttype
 	res.Relation = cdv2.LocalRelation
 
-	localFsAccess, err := componentresolvers.NewLocalFilesystemBlobAccess(path, mediaType)
+	localFsAccess, err := testutils2.NewLocalFilesystemBlobAccess(path, mediaType)
 	testutils.ExpectNoError(err)
 	res.Access = &localFsAccess
 	return res

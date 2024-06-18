@@ -23,7 +23,6 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
 )
 
@@ -49,7 +48,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		octx ocm.Context
 	)
 	ocmfactory := &ocmlib.Factory{}
-	cnudiefactory := &cnudie.Factory{}
 	jsonschemaData := Must(vfs.ReadFile(osfs.New(), "testdata/localcnudierepos/components-with-jsonschemas/blobs/jsonschema.json"))
 
 	BeforeEach(func() {
@@ -63,7 +61,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withJSONSchemasComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 
 		jsonschema := Must(compvers.GetResource("jsonschema", nil))
@@ -84,7 +83,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(ok).To(BeTrue())
 		Expect(jsonschemaData).To(Equal(schemaGzip))
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITH_JSONSCHEMAS),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITH_JSONSCHEMAS),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITH_JSONSCHEMAS),
 	)
@@ -93,7 +91,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withJSONSchemasComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 
 		jsonschemaUnknown := Must(compvers.GetResource("jsonschema-unknown-mediatype", nil))
@@ -116,25 +115,5 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	},
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITH_JSONSCHEMAS),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITH_JSONSCHEMAS),
-	)
-
-	DescribeTable("error when resolving jsonschema with unknown mediatype with component-cli facade implementation", func(factory model.Factory, registryRootPath string) {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withJSONSchemasComponentReference), cdref))
-
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
-		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
-
-		jsonschemaUnknown := Must(compvers.GetResource("jsonschema-unknown-mediatype", nil))
-		typedContentUnknown, err := jsonschemaUnknown.GetTypedContent(ctx)
-		Expect(err).To(HaveOccurred())
-		Expect(typedContentUnknown).To(BeNil())
-
-		jsonschemagzip := Must(compvers.GetResource("jsonschema-compressed-unknown-mediatype", nil))
-		typedContentGzip, err := jsonschemagzip.GetTypedContent(ctx)
-		Expect(err).To(HaveOccurred())
-		Expect(typedContentGzip).To(BeNil())
-	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITH_JSONSCHEMAS),
 	)
 })

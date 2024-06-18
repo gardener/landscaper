@@ -7,20 +7,15 @@ package registries
 import (
 	"os"
 
-	"github.com/open-component-model/ocm/pkg/utils"
-
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
 
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
 )
 
 var (
-	ocmFactory    model.Factory = &ocmlib.Factory{}
-	cnudieFactory model.Factory = &cnudie.Factory{}
-
+	ocmFactory     model.Factory = &ocmlib.Factory{}
 	ocmLibraryMode *bool
 )
 
@@ -44,20 +39,6 @@ func SetOCMLibraryMode(useOCMLib bool) {
 func GetFactory(useOCM ...bool) model.Factory {
 	log, _ := logging.GetLogger()
 
-	var ocmLibraryModeBool bool
-	if ocmLibraryMode != nil {
-		ocmLibraryModeBool = *ocmLibraryMode
-	} else {
-		ocmLibraryModeBool = true
-		log.Info("useOCMLib flag not set and therefore defaulted!", "ocmLibraryMode", ocmLibraryModeBool)
-	}
-	useOCMBool := utils.OptionalDefaultedBool(true, useOCM...)
-
-	if useOCMBool || ocmLibraryModeBool {
-		log.Info("using ocm")
-		return ocmFactory
-	} else {
-		log.Info("using cnudie")
-		return cnudieFactory
-	}
+	log.Info("using ocm")
+	return ocmFactory
 }

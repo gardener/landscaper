@@ -7,6 +7,8 @@ package context_test
 import (
 	"context"
 
+	testutils2 "github.com/gardener/landscaper/pkg/components/testutils"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +20,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -35,7 +36,7 @@ var _ = Describe("Reconcile", func() {
 	BeforeEach(func() {
 		var err error
 
-		repoCtx, err = componentresolvers.NewOCIRepositoryContext("example.com")
+		repoCtx, err = testutils2.NewOCIRepositoryContext("example.com")
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl, err = contextctrl.NewDefaulterController(

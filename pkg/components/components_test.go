@@ -21,7 +21,6 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/cnudie"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
@@ -144,7 +143,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		octx ocm.Context
 	)
 	ocmfactory := &ocmlib.Factory{}
-	cnudiefactory := &cnudie.Factory{}
 
 	BeforeEach(func() {
 		ctx = logging.NewContext(context.Background(), logging.Discard())
@@ -160,74 +158,54 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref))
 
-		oRaForCnudie := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH_VALID}, nil, nil))
-		oRaForOcm := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH_VALID}, nil, nil))
-		cnudieRa := Must(cnudiefactory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH_VALID}, nil, nil))
+		oRaForCnudie := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH_VALID}, nil, nil))
+		oRaForOcm := Must(ocmfactory.NewRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH_VALID}, nil, nil))
 
 		// the 3 registry accesses should all behave the same and the interface methods should return the same data
 		oRaForCnudieCv := Must(oRaForCnudie.GetComponentVersion(ctx, cdref))
 		oRaForOcmCv := Must(oRaForOcm.GetComponentVersion(ctx, cdref))
-		cnudieRaCv := Must(cnudieRa.GetComponentVersion(ctx, cdref))
 
 		Expect(oRaForCnudieCv.GetName()).To(Equal(oRaForOcmCv.GetName()))
-		Expect(oRaForCnudieCv.GetName()).To(Equal(cnudieRaCv.GetName()))
 
 		Expect(oRaForCnudieCv.GetVersion()).To(Equal(oRaForOcmCv.GetVersion()))
-		Expect(oRaForCnudieCv.GetVersion()).To(Equal(cnudieRaCv.GetVersion()))
 
 		Expect(oRaForCnudieCv.GetComponentDescriptor()).To(Equal(oRaForOcmCv.GetComponentDescriptor()))
-		Expect(oRaForCnudieCv.GetComponentDescriptor()).To(Equal(cnudieRaCv.GetComponentDescriptor()))
 
 		Expect(oRaForCnudieCv.GetRepositoryContext()).To(Equal(oRaForOcmCv.GetRepositoryContext()))
-		Expect(oRaForCnudieCv.GetRepositoryContext()).To(Equal(cnudieRaCv.GetRepositoryContext()))
 
 		Expect(oRaForCnudieCv.GetComponentReferences()).To(Equal(oRaForOcmCv.GetComponentReferences()))
-		Expect(oRaForCnudieCv.GetComponentReferences()).To(Equal(cnudieRaCv.GetComponentReferences()))
 
 		Expect(oRaForCnudieCv.GetComponentReference(REFERENCED_COMPONENT_NAME)).To(Equal(oRaForOcmCv.GetComponentReference(REFERENCED_COMPONENT_NAME)))
-		Expect(oRaForCnudieCv.GetComponentReference(REFERENCED_COMPONENT_NAME)).To(Equal(cnudieRaCv.GetComponentReference(REFERENCED_COMPONENT_NAME)))
 
 		repoCtx := &cdv2.UnstructuredTypedObject{}
 		Expect(repoCtx.UnmarshalJSON([]byte(repositoryContext))).To(Succeed())
 
 		oRaForCnudieRefCv := Must(oRaForCnudieCv.GetReferencedComponentVersion(ctx, oRaForCnudieCv.GetComponentReference(REFERENCED_COMPONENT_NAME), repoCtx, nil))
 		oRaForOcmRefCv := Must(oRaForOcmCv.GetReferencedComponentVersion(ctx, oRaForOcmCv.GetComponentReference(REFERENCED_COMPONENT_NAME), repoCtx, nil))
-		cnudieRaRefCv := Must(cnudieRaCv.GetReferencedComponentVersion(ctx, cnudieRaCv.GetComponentReference(REFERENCED_COMPONENT_NAME), repoCtx, nil))
 		Expect(reflect.DeepEqual(oRaForCnudieRefCv.GetComponentDescriptor(), oRaForOcmRefCv.GetComponentDescriptor()))
-		Expect(reflect.DeepEqual(oRaForCnudieRefCv.GetComponentDescriptor(), cnudieRaRefCv.GetComponentDescriptor()))
 
 		oRaForCnudieRs := Must(oRaForCnudieCv.GetResource(BLUEPRINT_RESOURCE_NAME, nil))
 		oRaForOcmRs := Must(oRaForOcmCv.GetResource(BLUEPRINT_RESOURCE_NAME, nil))
-		cnudieRaRs := Must(cnudieRaCv.GetResource(BLUEPRINT_RESOURCE_NAME, nil))
 
 		Expect(oRaForCnudieRs.GetName()).To(Equal(oRaForOcmRs.GetName()))
-		Expect(oRaForCnudieRs.GetName()).To(Equal(cnudieRaRs.GetName()))
 
 		Expect(oRaForCnudieRs.GetType()).To(Equal(oRaForOcmRs.GetType()))
-		Expect(oRaForCnudieRs.GetType()).To(Equal(cnudieRaRs.GetType()))
 
 		Expect(oRaForCnudieRs.GetVersion()).To(Equal(oRaForOcmRs.GetVersion()))
-		Expect(oRaForCnudieRs.GetVersion()).To(Equal(cnudieRaRs.GetVersion()))
 
 		Expect(oRaForCnudieRs.GetAccessType()).To(Equal(oRaForOcmRs.GetAccessType()))
-		Expect(oRaForCnudieRs.GetAccessType()).To(Equal(cnudieRaRs.GetAccessType()))
 
 		res1 := Must(oRaForCnudieRs.GetResource())
 		res2 := Must(oRaForOcmRs.GetResource())
-		res3 := Must(cnudieRaRs.GetResource())
 
 		blueprint1 := Must(oRaForCnudieRs.GetTypedContent(ctx)).Resource.(*blueprints.Blueprint)
 		blueprint2 := Must(oRaForOcmRs.GetTypedContent(ctx)).Resource.(*blueprints.Blueprint)
-		blueprint3 := Must(cnudieRaRs.GetTypedContent(ctx)).Resource.(*blueprints.Blueprint)
 		Expect(Must(vfs.ReadFile(blueprint1.Fs, filepath.Join("/blueprint.yaml")))).To(Equal(Must(vfs.ReadFile(blueprint2.Fs, filepath.Join("/blueprint.yaml")))))
-		Expect(Must(vfs.ReadFile(blueprint1.Fs, filepath.Join("/blueprint.yaml")))).To(Equal(Must(vfs.ReadFile(blueprint3.Fs, filepath.Join("/blueprint.yaml")))))
 
 		// ignore raw value as the order of the values might vary
 		res1.Access.Raw = []byte{}
 		res2.Access.Raw = []byte{}
-		res3.Access.Raw = []byte{}
 		Expect(reflect.DeepEqual(res1, res2))
-		Expect(reflect.DeepEqual(res1, res3))
 	})
 
 	// Resolve component referenced by an inline component descriptor
@@ -261,11 +239,11 @@ var _ = Describe("facade implementation compatibility tests", func() {
 			Version:           "1.0.0",
 		}
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: "./"}, nil, inlineDescriptor))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: "./"}, nil, inlineDescriptor))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		Expect(compvers.GetComponentDescriptor()).To(YAMLEqual(inlineDescriptor))
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), inlineRepoCtxCnudie),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), inlineRepoCtxCnudie),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), inlineRepoCtxOCM),
 	)
@@ -274,13 +252,13 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		res, err := compvers.GetResource("non-existent-resource", nil)
 		Expect(err).To(HaveOccurred())
 		Expect(res).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_VALID),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_VALID),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_VALID),
 	)
@@ -291,7 +269,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 		res := Must(compvers.GetResource(GENERIC_RESOURCE_NAME, nil))
 
@@ -299,7 +278,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(typedContent).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_VALID),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_VALID),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_VALID),
 	)
@@ -311,12 +289,12 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withoutRepoctxComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers, err := registryAccess.GetComponentVersion(ctx, cdref)
 		Expect(err).To(HaveOccurred())
 		Expect(compvers).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITHOUT_REPOCTX),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITHOUT_REPOCTX),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITHOUT_REPOCTX),
 	)
@@ -325,7 +303,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withInvalidAccessTypeComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers, err := registryAccess.GetComponentVersion(ctx, cdref)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(compvers).ToNot(BeNil())
@@ -338,7 +317,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(content).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITH_INVALID_ACCESS_TYPE),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITH_INVALID_ACCESS_TYPE),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITH_INVALID_ACCESS_TYPE),
 	)
@@ -347,7 +325,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withInvalidReferenceComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers, err := registryAccess.GetComponentVersion(ctx, cdref)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(compvers).ToNot(BeNil())
@@ -362,7 +341,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(referencedComponent).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITH_INVALID_REFERENCE),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITH_INVALID_REFERENCE),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITH_INVALID_REFERENCE),
 	)
@@ -374,12 +352,12 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(invalidComponentComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
+		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers, err := registryAccess.GetComponentVersion(ctx, cdref)
 		Expect(err).To(HaveOccurred())
 		Expect(compvers).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_WITH_INVALID_COMPONENT),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_WITH_INVALID_COMPONENT),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_WITH_INVALID_COMPONENT),
 	)
@@ -398,7 +376,8 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		// Organize a valid component version
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref))
-		registryAccess, err = factory.NewRegistryAccess(ctx, nil, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil)
+		registryAccess, err = factory.NewRegistryAccess(ctx, nil, nil, nil,
+			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil)
 		Expect(registryAccess).ToNot(BeNil())
 		Expect(err).ToNot(HaveOccurred())
 
@@ -413,7 +392,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(referencedComponent).To(BeNil())
 	},
-		Entry("with cnudie and v2 descriptors", model.Factory(cnudiefactory), LOCALCNUDIEREPOPATH_VALID),
 		Entry("with ocm and v2 descriptors", model.Factory(ocmfactory), LOCALCNUDIEREPOPATH_VALID),
 		Entry("with ocm and v3 descriptors", model.Factory(ocmfactory), LOCALOCMREPOPATH_VALID),
 	)

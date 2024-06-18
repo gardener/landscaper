@@ -26,7 +26,6 @@ import (
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
@@ -220,9 +219,9 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
-			imageAccess1, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
+			imageAccess1, err := testutils.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
-			imageAccess2, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/yourimage:1.0.0")
+			imageAccess2, err := testutils.NewOCIRegistryAccess("quay.io/example/yourimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &types.ComponentDescriptor{
 				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
@@ -258,7 +257,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				},
 			}
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
-			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd)
 
 			res, err := op.TemplateDeployExecutions(
 				template.NewDeployExecutionOptions(
@@ -295,7 +294,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(stateHandler, nil), spiff.New(stateHandler, nil))
 
-			imageAccess, err := componentresolvers.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
+			imageAccess, err := testutils.NewOCIRegistryAccess("quay.io/example/myimage:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &types.ComponentDescriptor{
 				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
@@ -316,7 +315,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				},
 			}
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
-			componentVersion := testutils.NewTestComponentVersionFromReader(cd, nil, nil)
+			componentVersion := testutils.NewTestComponentVersionFromReader(cd)
 
 			cd2 := types.ComponentDescriptor{
 				Metadata: types.Metadata{Version: cdv2.SchemaVersion},
@@ -341,7 +340,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				},
 			}
 			Expect(cdv2.DefaultComponent(&cd2)).To(Succeed())
-			componentVersion2 := testutils.NewTestComponentVersionFromReader(&cd2, nil, nil)
+			componentVersion2 := testutils.NewTestComponentVersionFromReader(&cd2)
 
 			componentVersionList := &model.ComponentVersionList{
 				Components: []model.ComponentVersion{
@@ -365,7 +364,8 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil,
+				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix, Version: "1.0.0"})
@@ -427,7 +427,8 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-mixed", Version: "1.0.0"})
@@ -482,7 +483,8 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-mixed", Version: "1.0.0"})
@@ -537,7 +539,8 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
@@ -572,7 +575,8 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
@@ -607,7 +611,8 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
@@ -645,7 +650,8 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil, nil, &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
