@@ -240,3 +240,4 @@ The controllers handle the delete-without-uninstall annotation in the following 
 
 To prevent fetching Component Descriptors (CDs) several times, an [OCM context cache](../../pkg/utils/cache/ocm_context_cache.go)
 was introduced which caches an OCM context and registry access for the duration of a particular jobID of an Installation.
+The OCM context cache also caches blueprints during one processing cycle of an Installation.
