@@ -6,7 +6,6 @@ package model
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
@@ -74,11 +73,6 @@ func getTransitiveComponentReferencesRecursively(ctx context.Context,
 		return nil
 	}
 	cds[cid] = cd
-
-	cdRepositoryContext := cd.GetRepositoryContext()
-	if cdRepositoryContext == nil {
-		return errors.New("component descriptor must at least contain one repository context with a base url")
-	}
 
 	cdComponentReferences := cd.GetComponentReferences()
 

@@ -7,26 +7,22 @@ package installations_test
 import (
 	"context"
 
-	testutils2 "github.com/gardener/landscaper/pkg/components/testutils"
-
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"github.com/gardener/landscaper/apis/config"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/registries"
+	testutils2 "github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -175,7 +171,7 @@ var _ = Describe("Context", func() {
 			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
-			Expect(extCtx.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
+			Expect(extCtx.ResultingRepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 		})
 
 		It("should throw an error if a component name and version is defined but no repository context", func() {
@@ -243,8 +239,10 @@ var _ = Describe("Context", func() {
 
 				extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(cdv2.UnstructuredTypesEqual(inst.Spec.ComponentDescriptor.Reference.RepositoryContext, repoCtx)).To(BeTrue())
-				Expect(cdv2.UnstructuredTypesEqual(extCtx.RepositoryContext, repoCtx)).To(BeTrue())
+				// the installation should remain unchanged
+				Expect(cdv2.UnstructuredTypesEqual(inst.Spec.ComponentDescriptor.Reference.RepositoryContext, testutils.ExampleRepositoryContext())).To(BeTrue())
+				// the resulting repository context should contain the result of the overwriting
+				Expect(cdv2.UnstructuredTypesEqual(extCtx.ResultingRepositoryContext, repoCtx)).To(BeTrue())
 			})
 
 			It("should overwrite a repository context defined by the external context", func() {
@@ -288,8 +286,10 @@ var _ = Describe("Context", func() {
 
 				extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(cdv2.UnstructuredTypesEqual(inst.Spec.ComponentDescriptor.Reference.RepositoryContext, repoCtx)).To(BeTrue())
-				Expect(cdv2.UnstructuredTypesEqual(extCtx.RepositoryContext, repoCtx)).To(BeTrue())
+				// the installation should remain unchanged
+				Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext).To(BeNil())
+				// the resulting repository context should contain the result of the overwriting
+				Expect(cdv2.UnstructuredTypesEqual(extCtx.ResultingRepositoryContext, repoCtx)).To(BeTrue())
 			})
 		})
 
@@ -315,20 +315,16 @@ var _ = Describe("Context", func() {
 	Context("InjectComponentDescriptorRef", func() {
 		It("should inject the component ref", func() {
 			extCtx := installations.ExternalContext{
-				Context: lsv1alpha1.Context{
-					ContextConfiguration: lsv1alpha1.ContextConfiguration{
-						RepositoryContext: testutils.ExampleRepositoryContext(),
-					},
-				},
-				ComponentName:    "example.com/a",
-				ComponentVersion: "0.0.1",
+				ResultingRepositoryContext: testutils.ExampleRepositoryContext(),
+				ComponentName:              "example.com/a",
+				ComponentVersion:           "0.0.1",
 			}
 
 			inst := &lsv1alpha1.Installation{}
 			extCtx.InjectComponentDescriptorRef(inst)
 			Expect(inst.Spec.ComponentDescriptor).ToNot(BeNil())
 			Expect(inst.Spec.ComponentDescriptor.Reference).To(gstruct.PointTo(gstruct.MatchAllFields(gstruct.Fields{
-				"RepositoryContext": Equal(extCtx.RepositoryContext),
+				"RepositoryContext": Equal(extCtx.ResultingRepositoryContext),
 				"ComponentName":     Equal("example.com/a"),
 				"Version":           Equal("0.0.1"),
 			})))
@@ -336,13 +332,9 @@ var _ = Describe("Context", func() {
 
 		It("should overwrite the component ref", func() {
 			extCtx := installations.ExternalContext{
-				Context: lsv1alpha1.Context{
-					ContextConfiguration: lsv1alpha1.ContextConfiguration{
-						RepositoryContext: testutils.ExampleRepositoryContext(),
-					},
-				},
-				ComponentName:    "example.com/a",
-				ComponentVersion: "0.0.1",
+				ResultingRepositoryContext: testutils.ExampleRepositoryContext(),
+				ComponentName:              "example.com/a",
+				ComponentVersion:           "0.0.1",
 			}
 
 			inst := &lsv1alpha1.Installation{}
@@ -355,7 +347,7 @@ var _ = Describe("Context", func() {
 			extCtx.InjectComponentDescriptorRef(inst)
 			Expect(inst.Spec.ComponentDescriptor).ToNot(BeNil())
 			Expect(inst.Spec.ComponentDescriptor.Reference).To(gstruct.PointTo(gstruct.MatchAllFields(gstruct.Fields{
-				"RepositoryContext": Equal(extCtx.RepositoryContext),
+				"RepositoryContext": Equal(extCtx.ResultingRepositoryContext),
 				"ComponentName":     Equal("example.com/a"),
 				"Version":           Equal("0.0.1"),
 			})))

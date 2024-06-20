@@ -71,7 +71,7 @@ func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context,
 	executions, err := tmpl.TemplateDeployExecutions(
 		template.NewDeployExecutionOptions(
 			template.NewBlueprintExecutionOptions(
-				o.Context().External.InjectComponentDescriptorRef(inst.GetInstallation()),
+				o.Context().External.InjectComponentDescriptorRef(inst.GetInstallation().DeepCopy()),
 				inst.GetBlueprint(),
 				o.ComponentVersion,
 				o.ResolvedComponentDescriptorList,

@@ -9,19 +9,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/utils"
-
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -133,6 +132,9 @@ type ExternalContext struct {
 	ComponentName string
 	// ComponentVersion defines the version of the component.
 	ComponentVersion string
+	// ResultingRepositoryContext is the repository context, taking into account the repository context in the
+	// installation, the repository context in the context resource, and the overwriter.
+	ResultingRepositoryContext *cdv2.UnstructuredTypedObject
 	// Overwriter is the component version overwriter used for this installation.
 	Overwriter componentoverwrites.Overwriter
 }
@@ -143,7 +145,7 @@ func (c *ExternalContext) ComponentDescriptorRef() *lsv1alpha1.ComponentDescript
 		return nil
 	}
 	ref := &lsv1alpha1.ComponentDescriptorReference{}
-	ref.RepositoryContext = c.RepositoryContext
+	ref.RepositoryContext = c.ResultingRepositoryContext
 	ref.ComponentName = c.ComponentName
 	ref.Version = c.ComponentVersion
 	return ref
@@ -232,15 +234,6 @@ func GetParent(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.I
 	return parent, nil
 }
 
-// GetInstallationContextName returns the name of the context of an installation.
-// The context name is basically the name of the parent component.
-func GetInstallationContextName(inst *lsv1alpha1.Installation) string {
-	if IsRootInstallation(inst) {
-		return ""
-	}
-	return lsv1alpha1helper.DataObjectSourceFromInstallationName(GetParentInstallationName(inst))
-}
-
 // IsRoot returns if the current component is a root component
 func (o *Operation) IsRoot() bool {
 	return o.Context().Parent == nil
@@ -287,6 +280,9 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		}, nil
 	}
 
+	// Avoid that component overwrite modifies the installation
+	cdRef = cdRef.DeepCopy()
+
 	cond, err := ApplyComponentOverwrite(ctx, inst, overwriter, lsCtx, cdRef)
 	if err != nil {
 		return ExternalContext{}, lserrors.NewWrappedError(err,
@@ -298,12 +294,13 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 	if cdRef.RepositoryContext == nil {
 		return ExternalContext{}, MissingRepositoryContextError
 	}
-	lsCtx.RepositoryContext = cdRef.RepositoryContext
+	//lsCtx.RepositoryContext = cdRef.RepositoryContext
 	return ExternalContext{
-		Context:          *lsCtx,
-		ComponentName:    cdRef.ComponentName,
-		ComponentVersion: cdRef.Version,
-		Overwriter:       overwriter,
+		Context:                    *lsCtx,
+		ComponentName:              cdRef.ComponentName,
+		ComponentVersion:           cdRef.Version,
+		ResultingRepositoryContext: cdRef.RepositoryContext,
+		Overwriter:                 overwriter,
 	}, nil
 }
 
