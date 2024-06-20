@@ -25,8 +25,8 @@ import (
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, contextObj lsv1alpha1.Context, pullSecrets []lsv1alpha1.ObjectReference,
-	installation *lsv1alpha1.Installation) error {
+func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, contextObj lsv1alpha1.Context,
+	pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "SetupRegistries")
