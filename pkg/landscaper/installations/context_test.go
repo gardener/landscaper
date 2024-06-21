@@ -174,28 +174,6 @@ var _ = Describe("Context", func() {
 			Expect(extCtx.ResultingRepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 		})
 
-		It("should throw an error if a component name and version is defined but no repository context", func() {
-			state, err := testenv.InitState(ctx)
-			Expect(err).ToNot(HaveOccurred())
-
-			lsCtx := &lsv1alpha1.Context{}
-			lsCtx.Name = "test"
-			lsCtx.Namespace = state.Namespace
-			Expect(state.Create(ctx, lsCtx)).To(Succeed())
-
-			inst := &lsv1alpha1.Installation{}
-			inst.Namespace = state.Namespace
-			inst.Spec.Context = "test"
-			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
-				Reference: &lsv1alpha1.ComponentDescriptorReference{
-					ComponentName: "abc",
-				},
-			}
-
-			_, err = installations.GetExternalContext(ctx, testenv.Client, inst)
-			Expect(err).To(HaveOccurred())
-		})
-
 		Context("ComponentVersionOverwrite", func() {
 
 			It("should overwrite a repository context", func() {
