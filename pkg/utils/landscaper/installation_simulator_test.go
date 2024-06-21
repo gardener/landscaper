@@ -94,7 +94,7 @@ var _ = Describe("Installation Simulator", func() {
 		var err error
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: testDataDir}
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+		registryAccess, err = registries.GetFactory().CreateRegistryAccess(ctx, nil, nil, nil,
 			localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 

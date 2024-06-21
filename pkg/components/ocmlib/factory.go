@@ -50,7 +50,7 @@ type Factory struct{}
 
 var _ model.Factory = &Factory{}
 
-func (*Factory) NewRegistryAccess(ctx context.Context,
+func (*Factory) CreateRegistryAccess(ctx context.Context,
 	fs vfs.FileSystem,
 	ocmconfig *corev1.ConfigMap,
 	secrets []corev1.Secret,
@@ -60,7 +60,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 
 	logger, _ := logging.FromContextOrNew(ctx, nil)
-	pm := utils.StartPerformanceMeasurement(&logger, "NewRegistryAccess")
+	pm := utils.StartPerformanceMeasurement(&logger, "CreateRegistryAccess")
 	defer pm.StopDebug()
 
 	if fs == nil {

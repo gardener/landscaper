@@ -61,7 +61,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withJSONSchemasComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+		registryAccess := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil,
 			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 
@@ -91,7 +91,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withJSONSchemasComponentReference), cdref))
 
-		registryAccess := Must(factory.NewRegistryAccess(ctx, nil, nil, nil,
+		registryAccess := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil,
 			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
 		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
 

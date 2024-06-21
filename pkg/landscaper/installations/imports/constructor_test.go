@@ -60,7 +60,7 @@ var _ = Describe("Constructor", func() {
 		fakeInstallations = state.Installations
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "../testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+		registryAccess, err := registries.GetFactory().CreateRegistryAccess(ctx, nil, nil, nil,
 			localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 

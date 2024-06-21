@@ -158,7 +158,7 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			}
 		}
 
-		registryAccess, err = registries.GetFactory(opts.UseOCM).NewRegistryAccess(ctx, fs, ocmConfig, nil, nil,
+		registryAccess, err = registries.GetFactory(opts.UseOCM).CreateRegistryAccess(ctx, fs, ocmConfig, nil, nil,
 			ociconfig, providerConfig.ComponentDescriptor.Inline)
 		if err != nil {
 			return err

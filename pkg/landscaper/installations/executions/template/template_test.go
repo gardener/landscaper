@@ -364,7 +364,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(useOCM).CreateRegistryAccess(ctx, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -427,7 +427,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -483,7 +483,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -539,7 +539,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -575,7 +575,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -611,7 +611,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -650,7 +650,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, nil, nil, nil,
+			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 

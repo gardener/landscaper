@@ -42,7 +42,7 @@ var _ = Describe("cdutils Tests", func() {
 
 	It("should return each referenced component only once when resolving component references", func() {
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-		registryAccess, err = GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+		registryAccess, err = GetFactory().CreateRegistryAccess(ctx, nil, nil, nil,
 			localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
