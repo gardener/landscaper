@@ -204,15 +204,14 @@ func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, cu
 	if rr.RegistryAccess == nil {
 		return nil, errors.New("no component reference resolver defined to resolve the ref")
 	}
+	if rr.RepositoryContext == nil {
+		return nil, errors.New("no repository context defined to resolve the ref")
+	}
 	cdUri, err := cdutils.ParseURI(uri.String())
 	if err != nil {
 		return nil, err
 	}
-	repositoryContext := rr.RepositoryContext
-	if repositoryContext == nil {
-		repositoryContext = rr.ComponentVersion.GetRepositoryContext()
-	}
-	cd, resource, err := cdUri.GetResource(rr.ComponentVersion, repositoryContext)
+	cd, resource, err := cdUri.GetResource(rr.ComponentVersion, rr.RepositoryContext)
 	if err != nil {
 		return nil, err
 	}
