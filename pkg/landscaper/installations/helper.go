@@ -104,7 +104,7 @@ func CreateInternalInstallationWithContext(ctx context.Context,
 		return nil, err
 	}
 	blueprintCacheID := utilscache.NewBlueprintCacheID(inst)
-	blue, err := blueprints.Resolve(ctx, registry, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint, blueprintCacheID)
+	blue, err := blueprints.Resolve(ctx, registry, lsCtx.ComponentVersionKey(), inst.Spec.Blueprint, blueprintCacheID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

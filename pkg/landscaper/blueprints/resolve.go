@@ -74,9 +74,10 @@ func ResolveBlueprint(ctx context.Context,
 		return nil, fmt.Errorf("did not get a working component descriptor resolver")
 	}
 
-	componentVersion, err := registry.GetComponentVersion(ctx, cdRef)
+	compKey := types.ComponentVersionKeyFromReference(cdRef)
+	componentVersion, err := registry.GetComponentVersion(ctx, compKey)
 	if err != nil {
-		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
+		return nil, fmt.Errorf("unable to resolve component descriptor for ref %s: %w", compKey.String(), err)
 	}
 	resource, err := componentVersion.GetResource(bpDef.Reference.ResourceName, nil)
 	if err != nil {
@@ -98,7 +99,7 @@ func ResolveBlueprint(ctx context.Context,
 func Resolve(
 	ctx context.Context,
 	registryAccess model.RegistryAccess,
-	cdRef *lsv1alpha1.ComponentDescriptorReference,
+	compKey *types.ComponentVersionKey,
 	bpDef lsv1alpha1.BlueprintDefinition,
 	bpCacheID *cache.BlueprintCacheID,
 ) (*blueprints.Blueprint, error) {
@@ -138,22 +139,15 @@ func Resolve(
 		return cachedBlueprint, nil
 	}
 
-	if cdRef == nil {
+	if compKey == nil {
 		return nil, fmt.Errorf("no component descriptor reference defined")
-	}
-	if cdRef.RepositoryContext == nil {
-		return nil, fmt.Errorf("no respository context defined")
 	}
 	if registryAccess == nil {
 		return nil, fmt.Errorf("did not get a working component descriptor resolver")
 	}
-	componentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-		RepositoryContext: cdRef.RepositoryContext,
-		ComponentName:     cdRef.ComponentName,
-		Version:           cdRef.Version,
-	})
+	componentVersion, err := registryAccess.GetComponentVersion(ctx, compKey)
 	if err != nil {
-		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
+		return nil, fmt.Errorf("unable to resolve component version %s: %w", compKey.String(), err)
 	}
 
 	pm1 := utils.StartPerformanceMeasurement(&logger, "ResolveBlueprint-GetResource")

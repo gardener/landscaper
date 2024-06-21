@@ -362,7 +362,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 
 	if runVerify && verify.IsVerifyEnabled(inst, c.LsConfig) {
-		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentDescriptorRef())
+		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentVersionKey())
 		if err != nil {
 			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
 		}
@@ -381,7 +381,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 
 	blueprintCacheID := utilscache.NewBlueprintCacheID(inst)
-	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint, blueprintCacheID)
+	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentVersionKey(), inst.Spec.Blueprint, blueprintCacheID)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "ResolveBlueprint", err.Error())
 	}

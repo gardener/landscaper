@@ -6,13 +6,14 @@ package model
 
 import (
 	"context"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 )
 
 type RegistryAccess interface {
-	GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (ComponentVersion, error)
+	GetComponentVersion(ctx context.Context, compKey *types.ComponentVersionKey) (ComponentVersion, error)
 
 	//VerifySignature calls the ocm lib to verify the named signature in the component version with the public key or ca cert data.
 	VerifySignature(componentVersion ComponentVersion, name string, pkeyData []byte, caCertData []byte) error
@@ -28,5 +29,8 @@ func GetComponentVersionWithOverwriter(ctx context.Context,
 		overwriter.Replace(cdRef)
 	}
 
-	return registryAccess.GetComponentVersion(ctx, cdRef)
+	return registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+		Name:    cdRef.ComponentName,
+		Version: cdRef.Version,
+	})
 }

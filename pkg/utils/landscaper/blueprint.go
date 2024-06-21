@@ -379,7 +379,8 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 		}
 
 		subCd.Reference.RepositoryContext = subInstRepositoryContext
-		subBlueprint, err := lsblueprints.Resolve(ctx, r.registryAccess, subCd.Reference, *subBlueprintDef, nil)
+		subCompKey := types.ComponentVersionKeyFromReference(subCd.Reference)
+		subBlueprint, err := lsblueprints.Resolve(ctx, r.registryAccess, subCompKey, *subBlueprintDef, nil)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to resolve blueprint for subinstallation %q: %w", subInstTmpl.Name, err)
 		}
@@ -396,10 +397,9 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 			subComponentVersion = subInst.Spec.ComponentDescriptor.Inline.Version
 		}
 
-		subComponentDescriptor, err := r.registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: subInstRepositoryContext,
-			ComponentName:     subComponentName,
-			Version:           subComponentVersion,
+		subComponentDescriptor, err := r.registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+			Name:    subComponentName,
+			Version: subComponentVersion,
 		})
 		if err != nil {
 			return nil, nil, err

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -135,6 +136,16 @@ type ExternalContext struct {
 	ComponentVersion string
 	// Overwriter is the component version overwriter used for this installation.
 	Overwriter componentoverwrites.Overwriter
+}
+
+func (c *ExternalContext) ComponentVersionKey() *types.ComponentVersionKey {
+	if c == nil || len(c.ComponentName) == 0 || len(c.ComponentVersion) == 0 {
+		return nil
+	}
+	return &types.ComponentVersionKey{
+		Name:    c.ComponentName,
+		Version: c.ComponentVersion,
+	}
 }
 
 // ComponentDescriptorRef returns the component descriptor reference for the current installation

@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	types2 "github.com/gardener/landscaper/pkg/components/model/types"
 	"strconv"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -598,9 +599,10 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 		}
 
 		compRef := deployerlegacy.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
+		compKey := types2.ComponentVersionKeyFromReference(compRef)
 		blueprintName := c.ProviderConfiguration.Blueprint.Reference.ResourceName
 
-		componentVersion, err := registryAccess.GetComponentVersion(ctx, compRef)
+		componentVersion, err := registryAccess.GetComponentVersion(ctx, compKey)
 		if err != nil {
 			erro = fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return

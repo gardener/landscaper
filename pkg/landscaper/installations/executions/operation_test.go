@@ -56,17 +56,17 @@ var _ = Describe("Execution Operation", func() {
 		kClient = testenv.Client
 		testInstallations = state.Installations
 
-		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry/root"}
-		registryAccess, err = registries.GetFactory().CreateRegistryAccess(ctx, nil, nil, nil,
-			localregistryconfig, nil, nil)
+		localRegistryConfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry/root"}
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			LocalRegistryConfig: localRegistryConfig,
+		})
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
-		componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &repositoryContext,
-			ComponentName:     "example.com/root",
-			Version:           "v1.0.0",
+		componentVersion, err = registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+			Name:    "example.com/root",
+			Version: "v1.0.0",
 		})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(componentVersion).ToNot(BeNil())
@@ -95,7 +95,7 @@ var _ = Describe("Execution Operation", func() {
 
 		inst := testInstallations["test1/root"]
 		Expect(inst).ToNot(BeNil())
-		intBlueprint, err := blueprints.Resolve(ctx, registryAccess, lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint, nil)
+		intBlueprint, err := blueprints.Resolve(ctx, registryAccess, lsCtx.External.ComponentVersionKey(), inst.Spec.Blueprint, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		internalInst := installations.NewInstallationImportsAndBlueprint(inst, intBlueprint)

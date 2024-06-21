@@ -7,7 +7,6 @@ package installations
 import (
 	"context"
 	"errors"
-
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -139,12 +138,12 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 
 	if instOp.ComponentVersion == nil {
 		registryAccess := instOp.ComponentsRegistry()
-		cdRef := instOp.Context().External.ComponentDescriptorRef()
-		if cdRef == nil || registryAccess == nil {
+		compKey := instOp.Context().External.ComponentVersionKey()
+		if compKey == nil || registryAccess == nil {
 			return instOp, nil
 		}
 
-		componentVersion, err := registryAccess.GetComponentVersion(ctx, cdRef)
+		componentVersion, err := registryAccess.GetComponentVersion(ctx, compKey)
 		if err != nil {
 			return nil, err
 		}
