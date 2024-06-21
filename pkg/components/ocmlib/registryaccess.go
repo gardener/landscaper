@@ -10,24 +10,22 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
-
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm/signing"
+	"github.com/open-component-model/ocm/pkg/runtime"
 	"github.com/open-component-model/ocm/pkg/signing/handlers/rsa"
 	"github.com/open-component-model/ocm/pkg/signing/signutils"
 
-	"github.com/gardener/landscaper/pkg/components/model/types"
-
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/runtime"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	_ "github.com/gardener/landscaper/pkg/components/ocmlib/repository/inline"
 	_ "github.com/gardener/landscaper/pkg/components/ocmlib/repository/local"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 type RegistryAccess struct {
@@ -36,6 +34,7 @@ type RegistryAccess struct {
 	inlineSpec       ocm.RepositorySpec
 	inlineRepository ocm.Repository
 	resolver         ocm.ComponentVersionResolver
+	Overwriter       componentoverwrites.Overwriter
 }
 
 var _ model.RegistryAccess = (*RegistryAccess)(nil)

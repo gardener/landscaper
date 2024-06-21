@@ -8,13 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	ocmutils "github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
-
-	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
-
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -24,11 +17,13 @@ import (
 	ocmcommon "github.com/open-component-model/ocm/pkg/common"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials"
 	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
+	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
 	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
 	"github.com/open-component-model/ocm/pkg/contexts/oci"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	ocmutils "github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
 	"github.com/open-component-model/ocm/pkg/errors"
 	"github.com/open-component-model/ocm/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
@@ -39,18 +34,20 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/components/common"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/ocmlib/inlinecompdesc"
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 type Factory struct{}
 
 var _ model.Factory = &Factory{}
 
-func (*Factory) NewRegistryAccess(ctx context.Context, options model.RegistryAccessOptions) (model.RegistryAccess, error) {
+func (*Factory) NewRegistryAccess(ctx context.Context, options *model.RegistryAccessOptions) (model.RegistryAccess, error) {
 	logger, _ := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "CreateRegistryAccess")
 	defer pm.StopDebug()
@@ -69,6 +66,12 @@ func (*Factory) NewRegistryAccess(ctx context.Context, options model.RegistryAcc
 	if err := ApplyOCMConfigMapToOCMContext(registryAccess.octx, options.OcmConfig); err != nil {
 		return nil, err
 	}
+
+	if err := applyAdditionalRepositoryContexts(registryAccess.octx, options.AdditionalRepositoryContexts); err != nil {
+		return nil, err
+	}
+
+	registryAccess.Overwriter = options.Overwriter
 
 	// If a local registry configuration is provided, the vfsattr (= virtual file system attribute) in the ocm context's
 	// data context is set to projection of the hosts file system which has the specified path as its root.
@@ -158,9 +161,9 @@ func (f *Factory) CreateRegistryAccess(ctx context.Context,
 	localRegistryConfig *config.LocalRegistryConfiguration,
 	ociRegistryConfig *config.OCIConfiguration,
 	inlineCd *types.ComponentDescriptor,
-	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
+	_ ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
 
-	return f.NewRegistryAccess(ctx, model.RegistryAccessOptions{
+	return f.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 		Fs:                  fs,
 		OcmConfig:           ocmconfig,
 		Secrets:             secrets,
@@ -345,6 +348,18 @@ func ApplyOCMConfigMapToOCMContext(octx ocm.Context, ocmconfig *corev1.ConfigMap
 				return fmt.Errorf("cannot apply ocm config in \"%s\" in namespace \"%s\": %w", ocmconfig.Name, ocmconfig.Namespace, err)
 			}
 		}
+	}
+	return nil
+}
+
+func applyAdditionalRepositoryContexts(octx ocm.Context, additionalRepositoryContexts []types.PrioritizedRepositoryContext) error {
+	for i := range additionalRepositoryContexts {
+		a := &additionalRepositoryContexts[i]
+		spec, err := octx.RepositorySpecForConfig(a.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
+		if err != nil {
+			return err
+		}
+		octx.AddResolverRule("", spec, a.Priority)
 	}
 	return nil
 }

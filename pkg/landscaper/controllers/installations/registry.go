@@ -6,27 +6,32 @@ package installations
 
 import (
 	"context"
-
-	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/utils/cache"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
-
-	"github.com/gardener/landscaper/pkg/components/registries"
+	"math"
 
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/registries"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/cache"
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, contextObj lsv1alpha1.Context,
-	pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
+func (c *Controller) SetupRegistries(
+	ctx context.Context,
+	op *operation.Operation,
+	externalCtx *installations.ExternalContext,
+	installation *lsv1alpha1.Installation,
+) error {
+
+	contextObj := &externalCtx.Context
+	pullSecrets := externalCtx.RegistryPullSecrets()
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	pm := utils.StartPerformanceMeasurement(&logger, "SetupRegistries")
@@ -60,7 +65,31 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	}
 
 	if registry == nil {
-		registry, err = registries.GetFactory(contextObj.UseOCM).CreateRegistryAccess(ctx, nil, ocmConfig, secrets, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
+
+		additionalRepositoryContexts := []types.PrioritizedRepositoryContext{}
+		if installation.Spec.ComponentDescriptor != nil && installation.Spec.ComponentDescriptor.Reference != nil &&
+			installation.Spec.ComponentDescriptor.Reference.RepositoryContext != nil {
+			additionalRepositoryContexts = append(additionalRepositoryContexts, types.PrioritizedRepositoryContext{
+				RepositoryContext: installation.Spec.ComponentDescriptor.Reference.RepositoryContext,
+				Priority:          math.MaxInt,
+			})
+		}
+		if contextObj.RepositoryContext != nil {
+			additionalRepositoryContexts = append(additionalRepositoryContexts, types.PrioritizedRepositoryContext{
+				RepositoryContext: contextObj.RepositoryContext,
+				Priority:          math.MaxInt - 1,
+			})
+		}
+
+		registry, err = registries.GetFactory(contextObj.UseOCM).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			OcmConfig:                    ocmConfig,
+			AdditionalRepositoryContexts: additionalRepositoryContexts,
+			Overwriter:                   externalCtx.Overwriter,
+			Secrets:                      secrets,
+			LocalRegistryConfig:          c.LsConfig.Registry.Local,
+			OciRegistryConfig:            c.LsConfig.Registry.OCI,
+			InlineCd:                     inlineCd,
+		})
 		if err != nil {
 			return err
 		}

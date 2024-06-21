@@ -7,25 +7,27 @@ package model
 import (
 	"context"
 
-	"github.com/mandelsoft/vfs/pkg/vfs"
-
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 type RegistryAccessOptions struct {
-	Fs                  vfs.FileSystem
-	OcmConfig           *corev1.ConfigMap
-	Secrets             []corev1.Secret
-	LocalRegistryConfig *config.LocalRegistryConfiguration
-	OciRegistryConfig   *config.OCIConfiguration
-	InlineCd            *types.ComponentDescriptor
+	Fs                           vfs.FileSystem
+	OcmConfig                    *corev1.ConfigMap
+	AdditionalRepositoryContexts []types.PrioritizedRepositoryContext
+	Overwriter                   componentoverwrites.Overwriter
+	Secrets                      []corev1.Secret
+	LocalRegistryConfig          *config.LocalRegistryConfiguration
+	OciRegistryConfig            *config.OCIConfiguration
+	InlineCd                     *types.ComponentDescriptor
 }
 
 type Factory interface {
@@ -60,7 +62,7 @@ type Factory interface {
 	//
 	// [component-cli]: https://github.com/gardener/component-cli
 	// [ocmlib]: https://github.com/open-component-model/ocm
-	NewRegistryAccess(ctx context.Context, options RegistryAccessOptions) (RegistryAccess, error)
+	NewRegistryAccess(ctx context.Context, options *RegistryAccessOptions) (RegistryAccess, error)
 
 	CreateRegistryAccess(ctx context.Context,
 		fs vfs.FileSystem,

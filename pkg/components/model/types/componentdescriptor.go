@@ -19,3 +19,8 @@ type Resource = cdv2.Resource
 type Source = cdv2.Source
 
 type UnstructuredTypedObject = cdv2.UnstructuredTypedObject
+
+type PrioritizedRepositoryContext struct {
+	RepositoryContext *UnstructuredTypedObject
+	Priority          int
+}
