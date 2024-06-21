@@ -19,8 +19,17 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
+type RegistryAccessOptions struct {
+	Fs                  vfs.FileSystem
+	OcmConfig           *corev1.ConfigMap
+	Secrets             []corev1.Secret
+	LocalRegistryConfig *config.LocalRegistryConfiguration
+	OciRegistryConfig   *config.OCIConfiguration
+	InlineCd            *types.ComponentDescriptor
+}
+
 type Factory interface {
-	// CreateRegistryAccess provides an instance of a RegistryAccess, which is an interface for dealing with ocm
+	// NewRegistryAccess provides an instance of a RegistryAccess, which is an interface for dealing with ocm
 	// components.Technically, it is a facade either backed by the [component-cli] or by the [ocmlib].
 	//
 	// fs allows to pass a file system that is considered for resolving local components or artifacts as well as other
@@ -51,7 +60,8 @@ type Factory interface {
 	//
 	// [component-cli]: https://github.com/gardener/component-cli
 	// [ocmlib]: https://github.com/open-component-model/ocm
-	// TODO: rework this constructor method and replace essentially all parameters with an Option, so that this can easily be extended in the future
+	NewRegistryAccess(ctx context.Context, options RegistryAccessOptions) (RegistryAccess, error)
+
 	CreateRegistryAccess(ctx context.Context,
 		fs vfs.FileSystem,
 		ocmconfig *corev1.ConfigMap,
