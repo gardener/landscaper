@@ -10,7 +10,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/components/registries"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -18,15 +17,10 @@ import (
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	cnudieutils "github.com/gardener/landscaper/pkg/components/cnudie/utils"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
-)
-
-const (
-	cacheIdentifier = "helm-deployer-controller"
 )
 
 const (
@@ -48,15 +42,6 @@ func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCache
 	log logging.Logger,
 	config helmv1alpha1.Configuration) (deployerlib.Deployer, error) {
 
-	var sharedCache cache.Cache
-	if config.OCI != nil && config.OCI.Cache != nil {
-		var err error
-		sharedCache, err = cache.NewCache(log.Logr(), cnudieutils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
@@ -66,7 +51,6 @@ func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCache
 		hostCachedClient:   hostCachedClient,
 		log:                log,
 		config:             config,
-		sharedCache:        sharedCache,
 		hooks:              extension.ReconcileExtensionHooks{},
 	}
 	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
@@ -79,10 +63,9 @@ type deployer struct {
 	hostUncachedClient client.Client
 	hostCachedClient   client.Client
 
-	log         logging.Logger
-	config      helmv1alpha1.Configuration
-	sharedCache cache.Cache
-	hooks       extension.ReconcileExtensionHooks
+	log    logging.Logger
+	config helmv1alpha1.Configuration
+	hooks  extension.ReconcileExtensionHooks
 }
 
 func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, rt *lsv1alpha1.ResolvedTarget) error {
@@ -90,7 +73,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 		return err
 	}
 
-	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, rt, lsCtx, d.sharedCache)
+	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, rt, lsCtx)
 	if err != nil {
 		err = lserrors.NewWrappedError(err, "Reconcile", "newRootLogger", err.Error())
 		return err
@@ -127,7 +110,7 @@ func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *ls
 		return err
 	}
 
-	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, rt, lsCtx, d.sharedCache)
+	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, rt, lsCtx)
 	if err != nil {
 		return err
 	}
@@ -150,7 +133,7 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
 	// todo: directly parse deploy items
-	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, nil, nil, d.sharedCache)
+	helm, err := New(d.lsUncachedClient, d.lsCachedClient, d.hostUncachedClient, d.hostCachedClient, d.config, di, nil, nil)
 	if err != nil {
 		return nil, err
 	}

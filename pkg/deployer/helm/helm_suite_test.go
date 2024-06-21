@@ -100,7 +100,7 @@ var _ = Describe("Template", func() {
 		lsCtx := &lsv1alpha1.Context{}
 		lsCtx.Name = lsv1alpha1.DefaultContextName
 		lsCtx.Namespace = item.Namespace
-		h, err := helm.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, helmv1alpha1.Configuration{}, item, nil, lsCtx, nil)
+		h, err := helm.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, helmv1alpha1.Configuration{}, item, nil, lsCtx)
 		Expect(err).ToNot(HaveOccurred())
 		files, crds, _, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())

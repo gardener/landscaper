@@ -10,11 +10,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	testutils2 "github.com/gardener/landscaper/pkg/components/testutils"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
 
@@ -25,7 +26,7 @@ func TestConfig(t *testing.T) {
 
 func createDefaultContextsForNamespace(kubeClient client.Client) {
 	// create default repo for all namespaces
-	repoCtx := componentresolvers.NewLocalRepository("../testdata/registry")
+	repoCtx := testutils2.NewLocalRepository("../testdata/registry")
 	list, err := os.ReadDir("./testdata/state")
 	Expect(err).To(Succeed())
 	for _, d := range list {

@@ -146,15 +146,6 @@ The following additional functions are available:
 - **`ociRefVersion(ref string): string`**
   parses an oci reference and returns the version.
   e.g. `host:5000/myrepo/myimage:1.0.0` -> `"1.0.0"`
-- **`resolve(access Access): []byte`**
-  resolves an artifact defined by a typed access definition.
-   The resolve function is currently able to handle artifacts of type `ociRegistry`, others may be added in the future.
-   The function always returns a byte array of the artifact response
-   ```
-   # e.g for a oci registry artifact
-   type: ociRegistry
-   imageReference: host:5000/myrepo/myimage:1.0.0
-   ```
   
 - **`getShootAdminKubeconfig(shootName, shootNamespace string, expirationSeconds int, target Target): string`**  
   returns a temporary admin kubeconfig for a Gardener Shoot cluster as described 

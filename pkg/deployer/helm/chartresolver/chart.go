@@ -29,7 +29,6 @@ import (
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"helm.sh/helm/v3/pkg/chart"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +50,6 @@ func GetChart(ctx context.Context,
 	contextObj *lsv1alpha1.Context,
 	registryPullSecrets []corev1.Secret,
 	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache,
 	useChartCache bool) (*chart.Chart, error) {
 
 	var ocmConfig *corev1.ConfigMap
@@ -82,7 +80,7 @@ func GetChart(ctx context.Context,
 
 	if chart == nil {
 		if len(chartConfig.Ref) != 0 {
-			chart, err = getChartFromOCIRef(ctx, ocmConfig, contextObj, chartConfig.Ref, registryPullSecrets, ociConfig, sharedCache)
+			chart, err = getChartFromOCIRef(ctx, ocmConfig, contextObj, chartConfig.Ref, registryPullSecrets, ociConfig)
 		} else if chartConfig.HelmChartRepo != nil {
 			chart, err = getChartFromHelmChartRepo(ctx, ocmConfig, lsClient, contextObj, chartConfig.HelmChartRepo)
 		} else if chartConfig.FromResource != nil {
@@ -241,10 +239,9 @@ func getChartFromOCIRef(ctx context.Context,
 	contextObj *lsv1alpha1.Context,
 	ociImageRef string,
 	registryPullSecrets []corev1.Secret,
-	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache) (*chart.Chart, error) {
+	ociConfig *config.OCIConfiguration) (*chart.Chart, error) {
 
-	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmOCIResource(ctx, nil, ocmConfig, ociImageRef, registryPullSecrets, ociConfig, sharedCache)
+	resource, err := registries.GetFactory(contextObj.UseOCM).NewHelmOCIResource(ctx, nil, ocmConfig, ociImageRef, registryPullSecrets, ociConfig)
 	if err != nil {
 		return nil, err
 	}

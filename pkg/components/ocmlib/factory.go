@@ -15,7 +15,6 @@ import (
 
 	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
 
-	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -55,7 +54,6 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	fs vfs.FileSystem,
 	ocmconfig *corev1.ConfigMap,
 	secrets []corev1.Secret,
-	sharedCache cache.Cache,
 	localRegistryConfig *config.LocalRegistryConfiguration,
 	ociRegistryConfig *config.OCIConfiguration,
 	inlineCd *types.ComponentDescriptor,
@@ -233,8 +231,7 @@ func (f *Factory) NewHelmOCIResource(ctx context.Context,
 	ocmconfig *corev1.ConfigMap,
 	ociImageRef string,
 	registryPullSecrets []corev1.Secret,
-	ociConfig *config.OCIConfiguration,
-	sharedCache cache.Cache) (model.TypedResourceProvider, error) {
+	ociConfig *config.OCIConfiguration) (model.TypedResourceProvider, error) {
 
 	octx := ocm.FromContext(ctx)
 	if err := ApplyOCMConfigMapToOCMContext(octx, ocmconfig); err != nil {

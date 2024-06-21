@@ -8,6 +8,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/gardener/landscaper/pkg/components/testutils"
+
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 
@@ -26,8 +28,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/components/cnudie/componentresolvers"
-
 	lstypes "github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -54,7 +54,7 @@ var _ = Describe("SubInstallation", func() {
 
 			repoCtx := &cdv2.OCIRegistryRepository{
 				ObjectType: cdv2.ObjectType{
-					Type: componentresolvers.LocalRepositoryType,
+					Type: testutils.LocalRepositoryType,
 				},
 				BaseURL: "./testdata/registry",
 			}
@@ -136,7 +136,8 @@ var _ = Describe("SubInstallation", func() {
 		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12")).To(Succeed())
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil, nil, localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+			localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		op, err = lsoperation.NewBuilder().

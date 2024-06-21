@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 
 	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
 
@@ -23,36 +22,15 @@ import (
 type TestComponentVersion struct {
 	registryAccess      model.RegistryAccess
 	componentDescriptor *types.ComponentDescriptor
-	blobResolver        model.BlobResolver
 }
 
 var _ model.ComponentVersion = &TestComponentVersion{}
 
-// NewTestComponentVersion returns a ComponentVersion for test purposes.
-// It cannot be used to access referenced components.
-func NewTestComponentVersion(cd *types.ComponentDescriptor, blobResolver model.BlobResolver) model.ComponentVersion {
-	return &TestComponentVersion{
-		componentDescriptor: cd,
-		blobResolver:        blobResolver,
-	}
-}
-
 // NewTestComponentVersionFromReader returns a ComponentVersion for test purposes.
 // It cannot be used to access referenced components.
-func NewTestComponentVersionFromReader(cd *types.ComponentDescriptor, reader io.Reader, info *types.BlobInfo) model.ComponentVersion {
+func NewTestComponentVersionFromReader(cd *types.ComponentDescriptor) model.ComponentVersion {
 	return &TestComponentVersion{
 		componentDescriptor: cd,
-		blobResolver:        newTestBlobResolverFromReader(reader, info),
-	}
-}
-
-// newTestComponentVersionWithRegistryAccess returns a ComponentVersion for test purposes.
-// The provided registryAccess is used to get referenced components.
-func newTestComponentVersionWithRegistryAccess(cd *types.ComponentDescriptor, blobResolver model.BlobResolver, registryAccess model.RegistryAccess) model.ComponentVersion {
-	return &TestComponentVersion{
-		registryAccess:      registryAccess,
-		componentDescriptor: cd,
-		blobResolver:        blobResolver,
 	}
 }
 
@@ -123,9 +101,5 @@ func (t *TestComponentVersion) GetResource(name string, identity map[string]stri
 		return nil, fmt.Errorf("there is more than one resource with name %s and extra identities %v", name, identity)
 	}
 
-	return newTestResource(&resources[0], t.blobResolver), nil
-}
-
-func (t *TestComponentVersion) GetBlobResolver() (model.BlobResolver, error) {
-	return t.blobResolver, nil
+	return newTestResource(&resources[0]), nil
 }

@@ -5,7 +5,6 @@
 package container
 
 import (
-	"github.com/gardener/component-cli/ociclient/cache"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,8 +55,6 @@ type Container struct {
 
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
-
-	sharedCache cache.Cache
 }
 
 // New creates a new internal container item
@@ -65,7 +62,6 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 	config containerv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
 	lsCtx *lsv1alpha1.Context,
-	sharedCache cache.Cache,
 	rt *lsv1alpha1.ResolvedTarget) (*Container, error) {
 
 	currOp := "InitContainerOperation"
@@ -100,7 +96,6 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 		Context:               lsCtx,
 		ProviderStatus:        status,
 		ProviderConfiguration: providerConfig,
-		sharedCache:           sharedCache,
 		Target:                rt,
 	}, nil
 }

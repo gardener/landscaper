@@ -70,7 +70,7 @@ var _ = Describe("GetChart", func() {
 		It("should resolve a chart from public readable helm ociClient artifact", func() {
 			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0"
 
-			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil, nil)
+			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -78,7 +78,8 @@ var _ = Describe("GetChart", func() {
 		It("should resolve a legacy chart from public readable helm ociClient artifact", func() {
 			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 
-			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil, nil)
+			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}},
+				ref, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -105,7 +106,7 @@ var _ = Describe("GetChart", func() {
 
 			chart1, err := GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
-				nil, nil, nil, true)
+				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 
 			cacheEntries1, size1, _ := helmChartCache.GetEntries()
@@ -122,7 +123,7 @@ var _ = Describe("GetChart", func() {
 
 			chart2, err := GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
-				nil, nil, nil, true)
+				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 
 			chart1.Raw = nil
@@ -146,7 +147,7 @@ var _ = Describe("GetChart", func() {
 
 			chart3, err := GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
-				nil, nil, nil, true)
+				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(reflect.DeepEqual(chart2, chart3)).To(BeTrue())
@@ -163,7 +164,7 @@ var _ = Describe("GetChart", func() {
 
 			chart4, err := GetChart(ctx, chartAccess4, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
-				nil, nil, nil, true)
+				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart4).ToNot(BeNil())
 
@@ -190,7 +191,7 @@ var _ = Describe("GetChart", func() {
 
 			_, err = GetChart(ctx, chartAccess5, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
-				nil, nil, nil, true)
+				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 			cacheEntries5, size5, _ := helmChartCache.GetEntries()
 			Expect(len(cacheEntries5)).To(Equal(2))
@@ -215,7 +216,7 @@ var _ = Describe("GetChart", func() {
 
 			_, _ = GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
-				nil, nil, nil, true)
+				nil, nil, true)
 
 			outdatedDuration := time.Since(timeBefore) + time.Duration(500)*time.Millisecond
 			helmChartCache.SetOutdatedDuration(outdatedDuration)
@@ -223,7 +224,7 @@ var _ = Describe("GetChart", func() {
 
 			_, _ = GetChart(ctx, chartAccess1, nil,
 				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
-				nil, nil, nil, true)
+				nil, nil, true)
 
 			contained, err = helmChartCache.HasKey(chartAccess1.Ref, chartAccess1.HelmChartRepo, chartAccess1.ResourceRef)
 			Expect(err).ToNot(HaveOccurred())
@@ -321,7 +322,7 @@ var _ = Describe("GetChart", func() {
 			localCtx = localOctx.BindTo(localCtx)
 
 			// Setup Test
-			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, nil, nil, nil, nil,
+			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"}, nil, nil)
 			Expect(err).To(BeNil())
 
