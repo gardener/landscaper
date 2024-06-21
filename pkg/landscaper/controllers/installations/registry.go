@@ -60,7 +60,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	}
 
 	if registry == nil {
-		registry, err = registries.GetFactory(contextObj.UseOCM).NewRegistryAccess(ctx, nil, ocmConfig, secrets, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
+		registry, err = registries.GetFactory().NewRegistryAccess(ctx, nil, ocmConfig, secrets, c.LsConfig.Registry.Local, c.LsConfig.Registry.OCI, inlineCd)
 		if err != nil {
 			return err
 		}

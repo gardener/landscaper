@@ -36,7 +36,7 @@ func SetOCMLibraryMode(useOCMLib bool) {
 	}
 }
 
-func GetFactory(useOCM ...bool) model.Factory {
+func GetFactory() model.Factory {
 	log, _ := logging.GetLogger()
 
 	log.Info("using ocm")
