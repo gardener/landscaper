@@ -274,7 +274,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	subBlueprint, subCdDef, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
 		subInstTmpl,
 		o.ComponentVersion,
-		o.Context().External.RepositoryContext,
+		o.Context().External.ResultingRepositoryContext,
 		o.Context().External.Overwriter)
 	if err != nil {
 		return nil, err
