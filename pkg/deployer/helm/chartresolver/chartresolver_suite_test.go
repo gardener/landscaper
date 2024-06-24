@@ -27,6 +27,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/utils/blueprints"
@@ -328,7 +329,9 @@ var _ = Describe("GetChart", func() {
 
 			cdref := &lsv1alpha1.ComponentDescriptorReference{}
 			Expect(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref)).To(BeNil())
-			cv, err := registry.GetComponentVersion(localCtx, cdref)
+			compKey := types.ComponentVersionKeyFromReference(cdref)
+
+			cv, err := registry.GetComponentVersion(localCtx, compKey)
 			Expect(err).To(BeNil())
 			Expect(cv).ToNot(BeNil())
 

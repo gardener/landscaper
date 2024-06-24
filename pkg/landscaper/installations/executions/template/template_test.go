@@ -362,17 +362,14 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		DescribeTable("templating against specific component descriptor schema versions", func(useOCM bool, schemaVersion string, templateFileName string, schemaVersionSuffix string) {
 			// Preparation to conveniently be able to access the respective component versions
-			repositoryContext := &cdv2.UnstructuredTypedObject{}
-			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(useOCM).CreateRegistryAccess(ctx, nil, nil, nil,
-				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := testutils.NewLocalRegistryAccess(ctx, filepath.Join(sharedTestdataDir, "localocmrepository"))
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix, Version: "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-" + schemaVersionSuffix, Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix + "-ref1", Version: "1.0.0"})
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-" + schemaVersionSuffix + "-ref1", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-" + schemaVersionSuffix + "-ref2", Version: "1.0.0"})
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-" + schemaVersionSuffix + "-ref2", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersionList := &model.ComponentVersionList{
@@ -425,17 +422,14 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		It("templating against v2 with mixed component descriptor schema versions", func() {
 			// Preparation to conveniently be able to access the respective component versions
-			repositoryContext := &cdv2.UnstructuredTypedObject{}
-			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
-				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := testutils.NewLocalRegistryAccess(ctx, filepath.Join(sharedTestdataDir, "localocmrepository"))
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-mixed", Version: "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-v2-mixed", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-ref1", Version: "1.0.0"})
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-v2-ref1", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-ref2", Version: "1.0.0"})
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-v3alpha1-ref2", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersionList := &model.ComponentVersionList{
@@ -481,17 +475,14 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 
 		It("templating against v3alpha1 with mixed component descriptor schema versions", func() {
 			// Preparation to conveniently be able to access the respective component versions
-			repositoryContext := &cdv2.UnstructuredTypedObject{}
-			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
-				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")}, nil, nil)
+			registry, err := testutils.NewLocalRegistryAccess(ctx, filepath.Join(sharedTestdataDir, "localocmrepository"))
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-mixed", Version: "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-v3alpha1-mixed", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef1, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v2-ref1", Version: "1.0.0"})
+			componentVersionRef1, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-v2-ref1", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
-			componentVersionRef2, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "example.com/landscaper-component-v3alpha1-ref2", Version: "1.0.0"})
+			componentVersionRef2, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "example.com/landscaper-component-v3alpha1-ref2", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			componentVersionList := &model.ComponentVersionList{
@@ -539,11 +530,18 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
-				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")},
+				AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+					{
+						RepositoryContext: repositoryContext,
+						Priority:          10,
+					},
+				},
+			})
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "github.com/root", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-32.yaml"))
@@ -575,11 +573,18 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
-				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")},
+				AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+					{
+						RepositoryContext: repositoryContext,
+						Priority:          10,
+					},
+				},
+			})
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "github.com/root", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-34.yaml"))
@@ -611,11 +616,18 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
-				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")},
+				AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+					{
+						RepositoryContext: repositoryContext,
+						Priority:          10,
+					},
+				},
+			})
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "github.com/root", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-33.yaml"))
@@ -650,11 +662,18 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).CreateRegistryAccess(ctx, nil, nil, nil,
-				&apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")},
+				AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+					{
+						RepositoryContext: repositoryContext,
+						Priority:          10,
+					},
+				},
+			})
 			Expect(err).ToNot(HaveOccurred())
 
-			componentVersion, err := registry.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{RepositoryContext: repositoryContext, ComponentName: "github.com/root", Version: "1.0.0"})
+			componentVersion, err := registry.GetComponentVersion(ctx, &types.ComponentVersionKey{Name: "github.com/root", Version: "1.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 
 			tmpl, err := os.ReadFile(filepath.Join(testdataDir, "template-35.yaml"))

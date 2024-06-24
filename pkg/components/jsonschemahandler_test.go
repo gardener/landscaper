@@ -7,6 +7,9 @@ package components_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/testutils"
+
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 
@@ -16,13 +19,10 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/open-component-model/ocm/pkg/runtime"
 	. "github.com/open-component-model/ocm/pkg/testutils"
 
 	"github.com/gardener/landscaper/pkg/components/model"
 
-	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
 )
 
@@ -30,16 +30,10 @@ var (
 	LOCALCNUDIEREPOPATH_WITH_JSONSCHEMAS = "./testdata/localcnudierepos/components-with-jsonschemas"
 	LOCALOCMREPOPATH_WITH_JSONSCHEMAS    = "./testdata/localocmrepos/components-with-jsonschemas"
 
-	withJSONSchemasComponentReference = `
-{
-  "repositoryContext": {
-    "type": "local",
-    "filePath": "./"
-  },
-  "componentName": "example.com/landscaper-component-with-jsonschemas",
-  "version": "1.0.0"
-}
-`
+	jsonSchemaComponentVersionKey = types.ComponentVersionKey{
+		Name:    "example.com/landscaper-component-with-jsonschemas",
+		Version: "1.0.0",
+	}
 )
 
 var _ = Describe("facade implementation compatibility tests", func() {
@@ -58,12 +52,10 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	// JsonSchema Handler
 	DescribeTable("resolve jsonschema", func(factory model.Factory, registryRootPath string) {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withJSONSchemasComponentReference), cdref))
+		registryAccess, err := testutils.NewLocalRegistryAccess(ctx, registryRootPath)
+		Expect(err).ToNot(HaveOccurred())
 
-		registryAccess := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil,
-			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
-		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		compvers := Must(registryAccess.GetComponentVersion(ctx, &jsonSchemaComponentVersionKey))
 
 		jsonschema := Must(compvers.GetResource("jsonschema", nil))
 		typedContent, err := jsonschema.GetTypedContent(ctx)
@@ -88,12 +80,10 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	)
 
 	DescribeTable("resolve jsonschema with unknown mediatype with ocmlib facade implementation", func(factory model.Factory, registryRootPath string) {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withJSONSchemasComponentReference), cdref))
+		registryAccess, err := testutils.NewLocalRegistryAccess(ctx, registryRootPath)
+		Expect(err).ToNot(HaveOccurred())
 
-		registryAccess := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil,
-			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
-		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		compvers := Must(registryAccess.GetComponentVersion(ctx, &jsonSchemaComponentVersionKey))
 
 		jsonschemaUnknown := Must(compvers.GetResource("jsonschema-unknown-mediatype", nil))
 		typedContentUnknown, err := jsonschemaUnknown.GetTypedContent(ctx)

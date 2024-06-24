@@ -6,10 +6,10 @@ package model
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 )
 
 type RegistryAccess interface {

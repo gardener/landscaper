@@ -9,10 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	types2 "github.com/gardener/landscaper/pkg/components/model/types"
 	"strconv"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	dockerreference "github.com/containerd/containerd/reference/docker"
 	dockerconfig "github.com/docker/cli/cli/config"
@@ -26,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -37,6 +35,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
+	types2 "github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"

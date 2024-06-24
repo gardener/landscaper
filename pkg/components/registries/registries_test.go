@@ -17,7 +17,6 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
@@ -48,10 +47,10 @@ var _ = Describe("cdutils Tests", func() {
 
 		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
-		componentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &repositoryContext,
-			ComponentName:     "example.com/root",
-			Version:           "v1.0.0",
+		componentVersion, err := registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+			//RepositoryContext: &repositoryContext,
+			Name:    "example.com/root",
+			Version: "v1.0.0",
 		})
 		Expect(err).NotTo(HaveOccurred())
 

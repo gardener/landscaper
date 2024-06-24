@@ -139,10 +139,10 @@ var _ = Describe("URI", func() {
 		err = repositorySpec.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./"}`))
 		Expect(err).ToNot(HaveOccurred())
 
-		componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: repositorySpec,
-			ComponentName:     cd.GetName(),
-			Version:           cd.GetVersion(),
+		//TODO CONTEXTS: add repositorySpec to registry
+		componentVersion, err = registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+			Name:    cd.GetName(),
+			Version: cd.GetVersion(),
 		})
 		Expect(err).ToNot(HaveOccurred())
 	})

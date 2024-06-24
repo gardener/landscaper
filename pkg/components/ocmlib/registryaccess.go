@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
@@ -18,7 +17,6 @@ import (
 	"github.com/open-component-model/ocm/pkg/signing/handlers/rsa"
 	"github.com/open-component-model/ocm/pkg/signing/signutils"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
@@ -107,55 +105,60 @@ func (r *RegistryAccess) VerifySignature(componentVersion model.ComponentVersion
 	return nil
 }
 
-func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (_ model.ComponentVersion, rerr error) {
+func (r *RegistryAccess) GetComponentVersion(ctx context.Context, compKey *types.ComponentVersionKey) (_ model.ComponentVersion, rerr error) {
+	//cdRef *lsv1alpha1.ComponentDescriptorReference
+	if compKey == nil {
+		return nil, errors.New("component version key cannot be nil")
+	}
+
 	logger, _ := logging.FromContextOrNew(ctx, nil)
-	if cdRef != nil {
-		logger = logger.WithValues("componentRefName", cdRef.ComponentName, "componentRefVersion", cdRef.Version)
+	if compKey != nil {
+		logger = logger.WithValues("componentRefName", compKey.Name, "componentRefVersion", compKey.Version)
 	}
 	pm := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion")
 	defer pm.StopDebug()
 
-	if cdRef == nil {
-		return nil, errors.New("component descriptor reference cannot be nil")
-	}
-
 	var resolver ocm.ComponentVersionResolver
 
-	if cdRef.RepositoryContext != nil {
-		spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
-		if err != nil {
-			return nil, err
-		}
+	//if cdRef.RepositoryContext != nil {
+	//	spec, err := r.octx.RepositorySpecForConfig(cdRef.RepositoryContext.Raw, runtime.DefaultYAMLEncoding)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	// check if repository context from inline component descriptor should be used
+	//	if r.inlineRepository != nil && reflect.DeepEqual(spec, r.inlineSpec) {
+	//		// in this case, resolver knows an inline repository as well as the repository specified by the repository
+	//		// context of the inline component descriptor
+	//		resolver = r.resolver
+	//	} else {
+	//		pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
+	//		// if there is no inline repository or the repository context is different from the one specified in the inline
+	//		// component descriptor, we need to look up the repository specified by the component descriptor reference
+	//
+	//		// if rule-a.prio > rule-b.prio, then rule-a is preferred
+	//		// ensure, that this has the highest prio (int(^uint(0)>>1) == MaxInt), since the component version
+	//		// overwrite depends on that
+	//		r.octx.AddResolverRule("", spec, int(^uint(0)>>1))
+	//		resolver = r.octx.GetResolver()
+	//		pm1.StopDebug()
+	//	}
+	//} else {
+	//	pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
+	//	resolver = r.octx.GetResolver()
+	//	pm1.StopDebug()
+	//}
 
-		// check if repository context from inline component descriptor should be used
-		if r.inlineRepository != nil && reflect.DeepEqual(spec, r.inlineSpec) {
-			// in this case, resolver knows an inline repository as well as the repository specified by the repository
-			// context of the inline component descriptor
-			resolver = r.resolver
-		} else {
-			pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
-			// if there is no inline repository or the repository context is different from the one specified in the inline
-			// component descriptor, we need to look up the repository specified by the component descriptor reference
-
-			// if rule-a.prio > rule-b.prio, then rule-a is preferred
-			// ensure, that this has the highest prio (int(^uint(0)>>1) == MaxInt), since the component version
-			// overwrite depends on that
-			r.octx.AddResolverRule("", spec, int(^uint(0)>>1))
-			resolver = r.octx.GetResolver()
-			pm1.StopDebug()
-		}
-	} else {
-		pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
-		resolver = r.octx.GetResolver()
-		pm1.StopDebug()
-	}
+	pm1 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupRepository")
+	resolver = r.octx.GetResolver()
+	pm1.StopDebug()
 
 	if resolver == nil {
 		return nil, errors.New("no repository or ocm resolvers found")
 	}
 
 	pm2 := utils.StartPerformanceMeasurement(&logger, "GetComponentVersion-LookupComponentVersion")
-	cv, err := r.session.LookupComponentVersion(resolver, cdRef.ComponentName, cdRef.Version)
+	cv, err := r.session.LookupComponentVersion(resolver, compKey.Name, compKey.Version)
 	pm2.StopDebug()
 	if err != nil {
 		return nil, err

@@ -30,6 +30,7 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/utils/blueprints"
 )
@@ -155,9 +156,17 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		// method can deal with the legacy ComponentDescriptorReference type rather than testing ocmlib functionality
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
 
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 10),
+			},
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 		Expect(cv).NotTo(BeNil())
 	})
 
@@ -169,8 +178,17 @@ var _ = Describe("ocm-lib facade implementation", func() {
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
+
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 10),
+			},
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 
 		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
 	})
@@ -185,8 +203,17 @@ var _ = Describe("ocm-lib facade implementation", func() {
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH}, nil, nil, nil))
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
+
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 10),
+			},
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 
 		Expect(reflect.DeepEqual(cv.GetComponentDescriptor(), compdesc)).To(BeTrue())
 	})
@@ -202,10 +229,16 @@ var _ = Describe("ocm-lib facade implementation", func() {
 			Expect(f.Close()).To(Succeed())
 		}
 		// Create a Registry Access and check whether credentials are properly set and can be found
-		r := Must(factory.CreateRegistryAccess(ctx, fs, nil, nil, nil, &config.OCIConfiguration{
-			ConfigFiles: []string{"testdata/dockerconfig.json"},
-		}, nil)).(*RegistryAccess)
-		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			Fs: fs,
+			OciRegistryConfig: &config.OCIConfiguration{
+				ConfigFiles: []string{"testdata/dockerconfig.json"},
+			},
+			InlineCd: nil,
+		})
+		Expect(err).ToNot(HaveOccurred())
+		r2 := r.(*RegistryAccess)
+		creds := Must(ociid.GetCredentials(r2.octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
@@ -217,8 +250,12 @@ var _ = Describe("ocm-lib facade implementation", func() {
 			Data: map[string][]byte{corev1.DockerConfigJsonKey: dockerconfigdata},
 		}}
 		// Create a Registry Access and check whether credentials are properly set and can be found
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, secrets, nil, nil, nil)).(*RegistryAccess)
-		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			Secrets: secrets,
+		})
+		Expect(err).ToNot(HaveOccurred())
+		r2 := r.(*RegistryAccess)
+		creds := Must(ociid.GetCredentials(r2.octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
@@ -229,8 +266,11 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		secrets := []corev1.Secret{{
 			Data: map[string][]byte{".ocmcredentialconfig": ociocmconfigdata},
 		}}
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, secrets, nil, nil, nil, nil)).(*RegistryAccess)
-		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			Secrets: secrets,
+		})
+		Expect(err).ToNot(HaveOccurred())
+		creds := Must(ociid.GetCredentials(r.(*RegistryAccess).octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
@@ -240,8 +280,11 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		ocmconfig := &corev1.ConfigMap{
 			Data: map[string]string{`.ocmconfig`: string(ociocmconfigdata)},
 		}
-		r := Must(factory.CreateRegistryAccess(ctx, nil, ocmconfig, nil, nil, nil, nil)).(*RegistryAccess)
-		creds := Must(ociid.GetCredentials(r.octx, HOSTNAME1, "/test/repo"))
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			OcmConfig: ocmconfig,
+		})
+		Expect(err).ToNot(HaveOccurred())
+		creds := Must(ociid.GetCredentials(r.(*RegistryAccess).octx, HOSTNAME1, "/test/repo"))
 		props := creds.Properties()
 		Expect(props["username"]).To(Equal(USERNAME))
 		Expect(props["password"]).To(Equal(PASSWORD))
@@ -403,8 +446,16 @@ version: 1.0.0
 `
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil, nil, nil, nil, nil))
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
+
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 10),
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 		Expect(cv).NotTo(BeNil())
 		res := Must(cv.GetResource("blueprint", nil))
 		content := Must(res.GetTypedContent(ctx))
@@ -493,8 +544,16 @@ version: 1.0.0
 `
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil, nil, nil, nil, nil))
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
+
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 10),
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 		Expect(cv).NotTo(BeNil())
 		res := Must(cv.GetResource("blueprint", nil))
 		content := Must(res.GetTypedContent(ctx))
@@ -507,11 +566,18 @@ version: 1.0.0
 	It("ocm config is nil", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
-
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 10),
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 		Expect(cv).NotTo(BeNil())
 	})
+
 	It("repository context is prioritized when ocm config sets resolvers", func() {
 		ocmconfig := &corev1.ConfigMap{
 			Data: map[string]string{`.ocmconfig`: `
@@ -527,11 +593,21 @@ configurations:
 		}
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, ocmconfig, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
 
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			OcmConfig:           ocmconfig,
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 20), // higher prio than ocm config
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 		Expect(cv).NotTo(BeNil())
 	})
+
 	It("repository context is not set and ocm config sets resolvers", func() {
 		ocmconfig := &corev1.ConfigMap{
 			Data: map[string]string{`.ocmconfig`: `
@@ -547,11 +623,18 @@ configurations:
 		}
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, ocmconfig, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
 
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			OcmConfig:           ocmconfig,
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 		Expect(cv).NotTo(BeNil())
 	})
+
 	It("repository context is set but component cannot be found there and ocm config sets resolvers", func() {
 		ocmconfig := &corev1.ConfigMap{
 			Data: map[string]string{`.ocmconfig`: `
@@ -567,11 +650,21 @@ configurations:
 		}
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, ocmconfig, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
 
-		cv := Must(r.GetComponentVersion(ctx, cdref))
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			OcmConfig:           ocmconfig,
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 20),
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		cv := Must(r.GetComponentVersion(ctx, compKey))
 		Expect(cv).NotTo(BeNil())
 	})
+
 	It("repository context is set and ocm config sets resolvers but component cannot be found in either", func() {
 		ocmconfig := &corev1.ConfigMap{
 			Data: map[string]string{`.ocmconfig`: `
@@ -587,19 +680,35 @@ configurations:
 		}
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, ocmconfig, nil, &config.LocalRegistryConfiguration{RootPath: "./testdata/localcnudierepos/other"}, nil, nil, nil))
+		compKey := types.ComponentVersionKeyFromReference(cdref)
 
-		cv, err := r.GetComponentVersion(ctx, cdref)
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			OcmConfig:           ocmconfig,
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: "./testdata/localcnudierepos/other"},
+			AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+				*types.NewPrioritizedRepositoryContext(cdref.RepositoryContext, 20),
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		cv, err := r.GetComponentVersion(ctx, compKey)
 		Expect(cv).To(BeNil())
 
 		var notfounderr *errors.NotFoundError
 		Expect(errors.As(err, &notfounderr)).To(BeTrue())
 	})
+
 	It("repository context is not set and ocm config does not set resolvers", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
 		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
-		r := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil, &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH}, nil, nil, nil))
-		cv, err := r.GetComponentVersion(ctx, cdref)
+		compKey := types.ComponentVersionKeyFromReference(cdref)
+
+		r, err := factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		cv, err := r.GetComponentVersion(ctx, compKey)
 		Expect(cv).To(BeNil())
 		Expect(err).ToNot(BeNil())
 	})

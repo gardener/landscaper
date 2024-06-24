@@ -418,15 +418,15 @@ var _ = Describe("jsonschema", func() {
 			}
 
 			blobResolver := testutils2.NewLocalFilesystemBlobResolver(blobFs)
+			//TODO CONTEXTS: add repositoryContext to registry
 			registryAccess, err := registries.GetFactory().CreateRegistryAccess(ctx, blobFs, nil, nil,
 				&apiconfig.LocalRegistryConfiguration{RootPath: "./blobs"}, nil, cd, blobResolver)
 			Expect(err).ToNot(HaveOccurred())
 
 			// read component from registry
-			componentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-				RepositoryContext: &repoCtx,
-				ComponentName:     cd.GetName(),
-				Version:           cd.GetVersion(),
+			componentVersion, err := registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+				Name:    cd.GetName(),
+				Version: cd.GetVersion(),
 			})
 			Expect(err).To(Not(HaveOccurred()))
 
@@ -697,10 +697,10 @@ var _ = Describe("jsonschema", func() {
 
 			cd := buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, secondRefConfig.ComponentNameInRegistry, secondRefConfig.Version, cdRef, cdRes, blobfs, ociClient, ociCache)
 
-			secondComponentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-				RepositoryContext: cd.GetEffectiveRepositoryContext(),
-				ComponentName:     cd.GetName(),
-				Version:           cd.GetVersion(),
+			//TODO CONTEXTS: add repositoryContext cd.GetEffectiveRepositoryContext() to registry
+			secondComponentVersion, err := registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+				Name:    cd.GetName(),
+				Version: cd.GetVersion(),
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -811,10 +811,10 @@ var _ = Describe("jsonschema", func() {
 
 			cd := buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, "example.com/testcd", "v0.0.0", cdRef, cdResSource, blobfs, ociClient, ociCache)
 
-			componentVersion, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-				RepositoryContext: cd.GetEffectiveRepositoryContext(),
-				ComponentName:     cd.GetName(),
-				Version:           cd.GetVersion(),
+			//TODO CONTEXTS: add repositoryContext cd.GetEffectiveRepositoryContext() to registry
+			componentVersion, err := registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+				Name:    cd.GetName(),
+				Version: cd.GetVersion(),
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -881,10 +881,10 @@ var _ = Describe("jsonschema", func() {
 
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
-			componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-				RepositoryContext: &repositoryContext,
-				ComponentName:     "example.com/root",
-				Version:           "v0.1.0",
+			//TODO CONTEXTS: add repositoryContext repositoryContext to registry
+			componentVersion, err = registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+				Name:    "example.com/root",
+				Version: "v0.1.0",
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(componentVersion).ToNot(BeNil())

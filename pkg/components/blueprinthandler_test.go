@@ -13,14 +13,13 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
 	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/runtime"
 	. "github.com/open-component-model/ocm/pkg/testutils"
 
-	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/ocmlib"
+	"github.com/gardener/landscaper/pkg/components/testutils"
 	"github.com/gardener/landscaper/pkg/utils/blueprints"
 )
 
@@ -28,16 +27,10 @@ var (
 	LOCALCNUDIEREPOPATH_WITH_BLUEPRINTS = "./testdata/localcnudierepos/components-with-blueprints"
 	LOCALOCMREPOPATH_WITH_BLUEPRINTS    = "./testdata/localocmrepos/components-with-blueprints"
 
-	withBlueprintsComponentReference = `
-{
-  "repositoryContext": {
-    "type": "local",
-    "filePath": "./"
-  },
-  "componentName": "example.com/landscaper-component-with-blueprints",
-  "version": "1.0.0"
-}
-`
+	blueprintsComponentVersionKey = types.ComponentVersionKey{
+		Name:    "example.com/landscaper-component-with-blueprints",
+		Version: "1.0.0",
+	}
 )
 
 var _ = Describe("facade implementation compatibility tests", func() {
@@ -67,12 +60,9 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	// Blueprint Handler
 	// The ocmlib backed implementation can automatically convert a directory to a tar, this functionality is tested
 	DescribeTable("resolve blueprint dir", func(factory model.Factory, registryRootPath string) {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withBlueprintsComponentReference), cdref))
-
-		registryAccess := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil,
-			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
-		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		registryAccess, err := testutils.NewLocalRegistryAccess(ctx, registryRootPath)
+		Expect(err).ToNot(HaveOccurred())
+		compvers := Must(registryAccess.GetComponentVersion(ctx, &blueprintsComponentVersionKey))
 		res := Must(compvers.GetResource("blueprint-dir", nil))
 
 		typedContent, err := res.GetTypedContent(ctx)
@@ -93,12 +83,9 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	// Both implementations should be able to resolve blueprints in several representations
 	DescribeTable("resolve blueprint", func(factory model.Factory, registryRootPath string) {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withBlueprintsComponentReference), cdref))
-
-		registryAccess := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil,
-			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
-		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		registryAccess, err := testutils.NewLocalRegistryAccess(ctx, registryRootPath)
+		Expect(err).ToNot(HaveOccurred())
+		compvers := Must(registryAccess.GetComponentVersion(ctx, &blueprintsComponentVersionKey))
 
 		bptar := Must(compvers.GetResource("blueprint-tar", nil))
 		typedContentTar, err := bptar.GetTypedContent(ctx)
@@ -131,12 +118,9 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	)
 
 	DescribeTable("error with corrupted blueprint", func(factory model.Factory, registryRootPath string) {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withBlueprintsComponentReference), cdref))
-
-		registryAccess := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil,
-			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
-		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		registryAccess, err := testutils.NewLocalRegistryAccess(ctx, registryRootPath)
+		Expect(err).ToNot(HaveOccurred())
+		compvers := Must(registryAccess.GetComponentVersion(ctx, &blueprintsComponentVersionKey))
 		res := Must(compvers.GetResource("corrupted-blueprint", nil))
 
 		typedContent, err := res.GetTypedContent(ctx)
@@ -149,12 +133,9 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	// Here, the error is not that it is not a valid tar
 	DescribeTable("error with corrupted blueprint tar", func(factory model.Factory, registryRootPath string) {
-		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withBlueprintsComponentReference), cdref))
-
-		registryAccess := Must(factory.CreateRegistryAccess(ctx, nil, nil, nil,
-			&config.LocalRegistryConfiguration{RootPath: registryRootPath}, nil, nil))
-		compvers := Must(registryAccess.GetComponentVersion(ctx, cdref))
+		registryAccess, err := testutils.NewLocalRegistryAccess(ctx, registryRootPath)
+		Expect(err).ToNot(HaveOccurred())
+		compvers := Must(registryAccess.GetComponentVersion(ctx, &blueprintsComponentVersionKey))
 		res := Must(compvers.GetResource("corrupted-blueprint-tar", nil))
 
 		typedContent, err := res.GetTypedContent(ctx)

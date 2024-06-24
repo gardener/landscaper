@@ -4,7 +4,9 @@
 
 package types
 
-import cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+import (
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+)
 
 type ComponentDescriptor = cdv2.ComponentDescriptor
 
@@ -23,4 +25,11 @@ type UnstructuredTypedObject = cdv2.UnstructuredTypedObject
 type PrioritizedRepositoryContext struct {
 	RepositoryContext *UnstructuredTypedObject
 	Priority          int
+}
+
+func NewPrioritizedRepositoryContext(repositoryContext *UnstructuredTypedObject, priority int) *PrioritizedRepositoryContext {
+	return &PrioritizedRepositoryContext{
+		RepositoryContext: repositoryContext,
+		Priority:          priority,
+	}
 }
