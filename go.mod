@@ -1,6 +1,6 @@
 module github.com/gardener/landscaper
 
-go 1.22.2
+go 1.22.4
 
 require (
 	dario.cat/mergo v1.0.0
