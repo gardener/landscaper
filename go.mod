@@ -1,6 +1,8 @@
 module github.com/gardener/landscaper
 
-go 1.22.4
+go 1.22.0
+
+toolchain go1.22.4
 
 require (
 	dario.cat/mergo v1.0.0
