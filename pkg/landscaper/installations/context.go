@@ -295,7 +295,7 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 	if cond != nil {
 		inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, *cond)
 	}
-	if cdRef.RepositoryContext == nil {
+	if cdRef.RepositoryContext == nil && (lsCtx.OCMConfig == nil || len(lsCtx.OCMConfig.Name) == 0) {
 		return ExternalContext{}, MissingRepositoryContextError
 	}
 	lsCtx.RepositoryContext = cdRef.RepositoryContext
