@@ -1,0 +1,23 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
+
+imports:
+  - name: cluster
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+  - name: cluster2
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+  - name: gitRepositoryName
+    type: data
+    schema:
+      type: string
+  - name: secretName
+    type: data
+    schema:
+      type: string
+
+subinstallations:
+  - file: /subinst-tokenprovider.yaml
+  - file: /subinst-tokenconsumer.yaml

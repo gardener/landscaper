@@ -1,0 +1,88 @@
+{{- $requestedAt := now | date "2006-01-02T15:04:05.999Z" }}
+deployItems:
+  - name: item
+    type: landscaper.gardener.cloud/kubernetes-manifest
+
+    target:
+      import: cluster
+
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      manifests:
+        - policy: manage
+          patchAfterDeployment:
+            spec:
+              suspend: true
+          patchBeforeDelete:
+            spec:
+              suspend: false
+          manifest:
+            apiVersion: kustomize.toolkit.fluxcd.io/v1
+            kind: Kustomization
+            metadata:
+              name: dataflow-tokenprovider
+              namespace: flux-system
+              annotations:
+                reconcile.fluxcd.io/requestedAt: {{ $requestedAt }}
+            spec:
+              force: false
+              interval: 876000h
+              path: ./docs/guided-tour/kustomize/03-dataflow/resources/first
+              prune: true
+              retryInterval: 2m0s
+              sourceRef:
+                kind: GitRepository
+                name: {{ .imports.gitRepositoryName }}
+              targetNamespace: cu-dataflow
+              timeout: 3m0s
+              wait: true
+              kubeConfig:
+                secretRef:
+                  name: cluster2
+                  key: kubeconfig
+
+      readinessChecks:
+        disableDefault: true
+        custom:
+          - name: KustomizationReady
+            resourceSelector:
+              - apiVersion: kustomize.toolkit.fluxcd.io/v1
+                kind: Kustomization
+                name: dataflow-tokenprovider
+                namespace: flux-system
+            requirements:
+              - jsonPath: .status.conditions[?(@.type == 'Ready')].status
+                operator: ==
+                values:
+                  - value: "True"
+              - jsonPath: .status.conditions[?(@.type == 'Healthy')].status
+                operator: ==
+                values:
+                  - value: "True"
+              - jsonPath: .status.lastHandledReconcileAt
+                operator: ==
+                values:
+                  - value: {{ $requestedAt }}
+          - name: TokenGenerated
+            targetName: {{ .imports.cluster2.metadata.name }}
+            resourceSelector:
+              - apiVersion: v1
+                kind: Secret
+                name: test-secret
+                namespace: cu-dataflow
+            requirements:
+              - jsonPath: .data.token
+                operator: exists
+
+      exports:
+        exports:
+          - key: test-token
+            targetName: {{ .imports.cluster2.metadata.name }}
+            fromResource:
+              apiVersion: v1
+              kind: Secret
+              name: test-secret
+              namespace: cu-dataflow
+            jsonPath: .data.token

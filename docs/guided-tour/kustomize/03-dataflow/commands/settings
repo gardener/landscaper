@@ -1,0 +1,12 @@
+# base url of the component repository
+REPO_BASE_URL="eu.gcr.io/gardener-project/landscaper/examples"
+
+# path to the kubeconfig of the resource cluster for Installations, Targets as well as the first
+# target cluster on which the Flux CRs are deployed
+TARGET_CLUSTER_KUBECONFIG_PATH="/Users/${USER}/tmp/kubes/kubeconfig.yaml"
+
+# path to the kubeconfig of the second target cluster on which Flux deploy the resources created via kustomize
+TARGET_CLUSTER_KUBECONFIG_PATH_2="/Users/${USER}/tmp/kubes/kubeconfig2.yaml"
+
+# namespace for resources in the resource cluster
+NAMESPACE="cu-example"

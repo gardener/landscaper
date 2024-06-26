@@ -1,0 +1,29 @@
+deployItems:
+  - name: item
+    type: landscaper.gardener.cloud/helm
+
+    target:
+      import: cluster
+
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      name: flux-installation
+      namespace: flux-system
+      createNamespace: true
+
+      chart:
+        resourceRef: {{ getResourceKey `cd://resources/flux-chart` }}
+      values:
+        helmController:
+          create: false
+        imageAutomationController:
+          create: false
+        imageReflectionController:
+          create: false
+        kustomizeController:
+          create: true
+        notificationController:
+          create: false
+        sourceController:
+          create: true

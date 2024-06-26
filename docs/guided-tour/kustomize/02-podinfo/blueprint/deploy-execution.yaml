@@ -1,0 +1,69 @@
+deployItems:
+  - name: item-1
+    type: landscaper.gardener.cloud/kubernetes-manifest
+    target:
+      import: cluster
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: cluster2
+              namespace: flux-system
+            stringData:
+              kubeconfig: |
+                {{ .imports.cluster2.spec.config.kubeconfig | nindent 16 }}
+
+  - name: item-2
+    type: landscaper.gardener.cloud/kubernetes-manifest
+    dependsOn:
+      - item-1
+    target:
+      import: cluster
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: source.toolkit.fluxcd.io/v1
+            kind: GitRepository
+            metadata:
+              name: podinfo
+              namespace: flux-system
+            spec:
+              {{- $res := getResource .cd "name" "podinfo-gitrepo" }}
+              url: {{ $res.access.repoUrl }}
+              ref:
+                tag: {{ $res.access.ref }}
+              interval: 60m
+              timeout: 60s
+        - policy: manage
+          manifest:
+            apiVersion: kustomize.toolkit.fluxcd.io/v1
+            kind: Kustomization
+            metadata:
+              name: podinfo
+              namespace: flux-system
+            spec:
+              force: false
+              interval: 30m
+              path: ./kustomize
+              prune: true
+              retryInterval: 2m0s
+              sourceRef:
+                kind: GitRepository
+                name: podinfo
+              targetNamespace: cu-podinfo
+              timeout: 3m0s
+              wait: true
+              kubeConfig:
+                secretRef:
+                  name: cluster2
+                  key: kubeconfig
