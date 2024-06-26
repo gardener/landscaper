@@ -1,0 +1,25 @@
+deployItems:
+  - name: item
+    type: landscaper.gardener.cloud/kubernetes-manifest
+
+    target:
+      import: cluster
+
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: source.toolkit.fluxcd.io/v1
+            kind: GitRepository
+            metadata:
+              name: landscaper
+              namespace: flux-system
+            spec:
+              url: https://github.com/gardener/landscaper
+              ref:
+                branch: guided-tour/flux
+              interval: 60m
+              timeout: 60s
