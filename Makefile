@@ -146,7 +146,7 @@ API_REF_GEN_VERSION ?= v0.0.12
 # renovate: datasource=github-releases depName=jqlang/jq
 JQ_VERSION ?= v1.7.1
 # renovate: datasource=github-releases depName=open-component-model/ocm
-OCM_VERSION ?= v0.8.0
+OCM_VERSION ?= v0.11.0
 # renovate: datasource=github-releases depName=golang/mock
 MOCKGEN_VERSION ?= v1.6.0
 # renovate: datasource=github-releases depName=distribution/distribution
