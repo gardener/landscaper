@@ -49,6 +49,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 		}
 
 		// resolve component descriptor list
+		// TODO: why is the overwriter not relevant here?
 		_, res, err := uri.Get(componentVersion, repositoryContext)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", componentVersion.GetName(), err)
@@ -85,7 +86,16 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 
 		if cdDef.Inline == nil {
 			cdDef = &lsv1alpha1.ComponentDescriptorDefinition{
-				Reference: subInstCdRef,
+				Reference: &lsv1alpha1.ComponentDescriptorReference{
+					ComponentName: subInstCdRef.ComponentName,
+					Version:       subInstCdRef.Version,
+				},
+			}
+
+			// Usually, the repository context of the parent installation is specified in the context resource or ocm config.
+			// Only if it is specified directly in the parent installation, we specify the same repository context in the subinstallation.
+			if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Reference != nil {
+				cdDef.Reference.RepositoryContext = inst.Spec.ComponentDescriptor.Reference.RepositoryContext
 			}
 		}
 

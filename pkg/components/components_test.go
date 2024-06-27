@@ -171,8 +171,6 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 		Expect(oRaForCnudieCv.GetComponentDescriptor()).To(Equal(oRaForOcmCv.GetComponentDescriptor()))
 
-		Expect(oRaForCnudieCv.GetRepositoryContext()).To(Equal(oRaForOcmCv.GetRepositoryContext()))
-
 		Expect(oRaForCnudieCv.GetComponentReferences()).To(Equal(oRaForOcmCv.GetComponentReferences()))
 
 		Expect(oRaForCnudieCv.GetComponentReference(REFERENCED_COMPONENT_NAME)).To(Equal(oRaForOcmCv.GetComponentReference(REFERENCED_COMPONENT_NAME)))

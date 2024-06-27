@@ -132,13 +132,11 @@ func (u *URI) Get(cd model.ComponentVersion, repositoryContext *types.Unstructur
 func (u *URI) GetComponent(cd model.ComponentVersion, repositoryContext *types.UnstructuredTypedObject,
 	overwriter componentoverwrites.Overwriter) (model.ComponentVersion, *lsv1alpha1.ComponentDescriptorReference, error) {
 
-	cdRepositoryContext := cd.GetRepositoryContext()
-
 	var (
 		ctx       = context.Background()
 		component = cd
 		cdRef     = &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: cdRepositoryContext,
+			RepositoryContext: repositoryContext,
 			ComponentName:     cd.GetName(),
 			Version:           cd.GetVersion(),
 		}

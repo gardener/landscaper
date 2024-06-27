@@ -25,14 +25,6 @@ type ComponentVersion interface {
 	// Cannot be nil
 	GetComponentDescriptor() *types.ComponentDescriptor
 
-	// GetRepositoryContext return the current repository context,
-	// i.e. the last entry in the list of repository contexts.
-	// TODO: Remove this method
-	// ocm-spec specifies that the Repository Context is supposed to be informational about the transport history. The
-	// spec does not mandate to set this property and therefore, we should not program against it.
-	// Cannot be nil as component versions without repository context cannot be created (for now).
-	GetRepositoryContext() *types.UnstructuredTypedObject
-
 	// GetComponentReferences returns the list of component references of the present component version.
 	// (not transitively; only the references of the present component version)
 	GetComponentReferences() []types.ComponentReference

@@ -141,9 +141,6 @@ func Resolve(
 	if cdRef == nil {
 		return nil, fmt.Errorf("no component descriptor reference defined")
 	}
-	if cdRef.RepositoryContext == nil {
-		return nil, fmt.Errorf("no respository context defined")
-	}
 	if registryAccess == nil {
 		return nil, fmt.Errorf("did not get a working component descriptor resolver")
 	}

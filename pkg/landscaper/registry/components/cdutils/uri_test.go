@@ -154,8 +154,7 @@ var _ = Describe("URI", func() {
 	It("should resolve a direct local resource", func() {
 		uri, err := cdutils.ParseURI("cd://resources/r1")
 		Expect(err).ToNot(HaveOccurred())
-		repoContext := componentVersion.GetRepositoryContext()
-		kind, res, err := uri.Get(componentVersion, repoContext)
+		kind, res, err := uri.Get(componentVersion, repositoryContext)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))
 		resource, ok := res.(model.Resource)
@@ -171,8 +170,6 @@ var _ = Describe("URI", func() {
 	It("should return an error if a resource is unknown", func() {
 		uri, err := cdutils.ParseURI("cd://resources/r3")
 		Expect(err).ToNot(HaveOccurred())
-		//repoContext, err := componentVersion.GetRepositoryContext()
-		//Expect(err).NotTo(HaveOccurred())
 		_, _, err = uri.Get(componentVersion, repositorySpec)
 		Expect(err).To(HaveOccurred())
 	})
@@ -180,8 +177,6 @@ var _ = Describe("URI", func() {
 	It("should return an error if a keyword is unknown", func() {
 		uri, err := cdutils.ParseURI("cd://fail/r1")
 		Expect(err).ToNot(HaveOccurred())
-		//repoContext, err := componentVersion.GetRepositoryContext()
-		//Expect(err).NotTo(HaveOccurred())
 		_, _, err = uri.Get(componentVersion, repositorySpec)
 		Expect(err).To(HaveOccurred())
 	})
@@ -189,8 +184,6 @@ var _ = Describe("URI", func() {
 	It("should resolve a component reference", func() {
 		uri, err := cdutils.ParseURI("cd://componentReferences/comp1")
 		Expect(err).ToNot(HaveOccurred())
-		//repoContext, err := componentVersion.GetRepositoryContext()
-		//Expect(err).NotTo(HaveOccurred())
 		kind, res, err := uri.Get(componentVersion, repositorySpec)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ComponentResourceKind))
@@ -208,8 +201,6 @@ var _ = Describe("URI", func() {
 	It("should resolve a resource in a component reference", func() {
 		uri, err := cdutils.ParseURI("cd://componentReferences/comp1/resources/r2")
 		Expect(err).ToNot(HaveOccurred())
-		//repoContext, err := componentVersion.GetRepositoryContext()
-		//Expect(err).NotTo(HaveOccurred())
 		kind, res, err := uri.Get(componentVersion, repositorySpec)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))

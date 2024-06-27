@@ -468,7 +468,6 @@ func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports
 // The priority is as following:
 // 1. explicitly user defined repository context
 // 2. repository context defined in the installation
-// 3. effective repository context defined in the component descriptor.
 func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) (*types.UnstructuredTypedObject, error) {
 	if r.repositoryContext != nil {
 		return r.repositoryContext, nil
@@ -481,12 +480,6 @@ func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) (*
 		if input.Installation.Spec.ComponentDescriptor.Inline != nil {
 			return input.Installation.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext(), nil
 		}
-	}
-
-	if input.ComponentVersion != nil {
-		repositoryContext := input.ComponentVersion.GetRepositoryContext()
-
-		return repositoryContext, nil
 	}
 
 	return nil, nil

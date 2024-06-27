@@ -83,13 +83,9 @@ var _ = Describe("Execution Operation", func() {
 			Name:   "default",
 			Parent: nil,
 			External: installations.ExternalContext{
-				Context: lsv1alpha1.Context{
-					ContextConfiguration: lsv1alpha1.ContextConfiguration{
-						RepositoryContext: &repositoryContext,
-					},
-				},
-				ComponentName:    "example.com/root",
-				ComponentVersion: "v1.0.0",
+				ResultingRepositoryContext: &repositoryContext,
+				ComponentName:              "example.com/root",
+				ComponentVersion:           "v1.0.0",
 			},
 		}
 

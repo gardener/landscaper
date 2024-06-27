@@ -50,14 +50,6 @@ func (t *TestComponentVersion) GetComponentDescriptor() *types.ComponentDescript
 	return t.componentDescriptor
 }
 
-func (t *TestComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
-	context := t.componentDescriptor.GetEffectiveRepositoryContext()
-	if context == nil {
-		return nil
-	}
-	return context
-}
-
 func (t *TestComponentVersion) GetComponentReferences() []types.ComponentReference {
 	return t.componentDescriptor.ComponentReferences
 }

@@ -172,8 +172,9 @@ var _ = Describe("SubInstallation", func() {
 			Expect(subinsts[0].Spec.ComponentDescriptor.Reference.ComponentName).To(Equal("example.com/root"))
 			Expect(subinsts[0].Spec.ComponentDescriptor.Reference.Version).To(Equal("1.0.0"))
 
-			Expect(subinsts[0].Spec.ComponentDescriptor.Reference.RepositoryContext.Object["baseUrl"]).To(Equal("./testdata/registry"))
-			Expect(subinsts[0].Spec.ComponentDescriptor.Reference.RepositoryContext.Object["type"]).To(Equal("ociRegistry"))
+			// expecting the same repository context as in the root installation
+			Expect(subinsts[0].Spec.ComponentDescriptor.Reference.RepositoryContext.Object["baseUrl"]).To(Equal("../testdata/registry"))
+			Expect(subinsts[0].Spec.ComponentDescriptor.Reference.RepositoryContext.Object["type"]).To(Equal("local"))
 
 			Expect(subinsts[0].Spec.Blueprint.Reference.ResourceName).To(Equal("def-1"))
 

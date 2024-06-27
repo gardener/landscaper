@@ -354,7 +354,7 @@ func (c *Constructor) RenderImportExecutions() error {
 		spiff.New(templateStateHandler, targetResolver))
 	errors, bindings, err := tmpl.TemplateImportExecutions(
 		template.NewBlueprintExecutionOptions(
-			c.Operation.Context().External.InjectComponentDescriptorRef(c.Operation.Inst.GetInstallation()),
+			c.Operation.Context().External.InjectComponentDescriptorRef(c.Operation.Inst.GetInstallation().DeepCopy()),
 			c.Operation.Inst.GetBlueprint(),
 			c.Operation.ComponentVersion,
 			c.Operation.ResolvedComponentDescriptorList,

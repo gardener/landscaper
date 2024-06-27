@@ -42,10 +42,6 @@ func (c *ComponentVersion) GetComponentDescriptor() *types.ComponentDescriptor {
 	return &c.componentDescriptorV2
 }
 
-func (c *ComponentVersion) GetRepositoryContext() *types.UnstructuredTypedObject {
-	return c.componentDescriptorV2.GetEffectiveRepositoryContext()
-}
-
 func (c *ComponentVersion) GetComponentReferences() []types.ComponentReference {
 	return c.componentDescriptorV2.ComponentReferences
 }
