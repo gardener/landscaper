@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	dockerreference "github.com/containerd/containerd/reference/docker"
@@ -591,7 +593,12 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 			}
 		}
 
-		registryAccess, err := registries.GetFactory(c.Context.UseOCM).NewRegistryAccess(ctx, fs, ocmConfig, nil, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		registryAccess, err := registries.GetFactory(c.Context.UseOCM).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			Fs:                fs,
+			OcmConfig:         ocmConfig,
+			OciRegistryConfig: c.Configuration.OCI,
+			InlineCd:          c.ProviderConfiguration.ComponentDescriptor.Inline,
+		})
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return

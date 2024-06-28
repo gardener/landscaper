@@ -15,7 +15,6 @@ import (
 
 	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -41,7 +40,6 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/components/common"
 	"github.com/gardener/landscaper/pkg/components/model"
-	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/ocmlib/inlinecompdesc"
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 )
@@ -50,19 +48,12 @@ type Factory struct{}
 
 var _ model.Factory = &Factory{}
 
-func (*Factory) NewRegistryAccess(ctx context.Context,
-	fs vfs.FileSystem,
-	ocmconfig *corev1.ConfigMap,
-	secrets []corev1.Secret,
-	localRegistryConfig *config.LocalRegistryConfiguration,
-	ociRegistryConfig *config.OCIConfiguration,
-	inlineCd *types.ComponentDescriptor,
-	additionalBlobResolvers ...ctf.TypedBlobResolver) (model.RegistryAccess, error) {
-
+func (*Factory) NewRegistryAccess(ctx context.Context, options *model.RegistryAccessOptions) (model.RegistryAccess, error) {
 	logger, _ := logging.FromContextOrNew(ctx, nil)
-	pm := utils.StartPerformanceMeasurement(&logger, "NewRegistryAccess")
+	pm := utils.StartPerformanceMeasurement(&logger, "CreateRegistryAccess")
 	defer pm.StopDebug()
 
+	fs := options.Fs
 	if fs == nil {
 		fs = osfs.New()
 	}
@@ -73,7 +64,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	registryAccess.session = ocm.NewSession(datacontext.NewSession())
 
 	// If a config map containing the data of an ocm config file is provided, apply its configuration.
-	if err := ApplyOCMConfigMapToOCMContext(registryAccess.octx, ocmconfig); err != nil {
+	if err := ApplyOCMConfigMapToOCMContext(registryAccess.octx, options.OcmConfig); err != nil {
 		return nil, err
 	}
 
@@ -83,9 +74,9 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	// landscaper) from spec.
 	// For more details, check pkg/components/ocmlib/repository and pkg/components/ocmlib/repository/local.
 	var localfs vfs.FileSystem
-	if localRegistryConfig != nil {
+	if options.LocalRegistryConfig != nil {
 		var err error
-		localfs, err = projectionfs.New(fs, localRegistryConfig.RootPath)
+		localfs, err = projectionfs.New(fs, options.LocalRegistryConfig.RootPath)
 		if err != nil {
 			return nil, err
 		}
@@ -106,8 +97,8 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 	// Thus, a compound resolver consisting of the inline repository and the repository specified by the repository
 	// context is added to the registry access. This resolver is used if the repository context in the
 	// component descriptor reference is equal to the repository context of the inline component descriptor.
-	if inlineCd != nil {
-		cd, err := runtime.DefaultYAMLEncoding.Marshal(inlineCd)
+	if options.InlineCd != nil {
+		cd, err := runtime.DefaultYAMLEncoding.Marshal(options.InlineCd)
 		if err != nil {
 			return nil, err
 		}
@@ -128,8 +119,8 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 		_ = registryAccess.session.AddCloser(registryAccess.inlineRepository)
 
 		registryAccess.resolver = registryAccess.inlineRepository
-		if len(inlineCd.RepositoryContexts) > 0 {
-			repoCtx := inlineCd.GetEffectiveRepositoryContext()
+		if len(options.InlineCd.RepositoryContexts) > 0 {
+			repoCtx := options.InlineCd.GetEffectiveRepositoryContext()
 			registryAccess.inlineSpec, err = registryAccess.octx.RepositorySpecForConfig(repoCtx.Raw, nil)
 			if err != nil {
 				return nil, err
@@ -143,15 +134,15 @@ func (*Factory) NewRegistryAccess(ctx context.Context,
 
 	}
 
-	if ociRegistryConfig != nil {
+	if options.OciRegistryConfig != nil {
 		// set credentials from pull secrets
-		if err := addConfigFileCredsToCredContext(fs, ociRegistryConfig.ConfigFiles, registryAccess.octx); err != nil {
+		if err := addConfigFileCredsToCredContext(fs, options.OciRegistryConfig.ConfigFiles, registryAccess.octx); err != nil {
 			return nil, err
 		}
 	}
 
 	// set credentials from pull secrets
-	if err := AddSecretCredsToCredContext(secrets, registryAccess.octx); err != nil {
+	if err := AddSecretCredsToCredContext(options.Secrets, registryAccess.octx); err != nil {
 		return nil, err
 	}
 
