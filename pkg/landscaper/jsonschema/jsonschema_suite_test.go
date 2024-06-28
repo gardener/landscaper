@@ -874,7 +874,7 @@ var _ = Describe("jsonschema", func() {
 		BeforeEach(func() {
 			var err error
 
-			localregistryconfig := &apiconfig.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
+			localregistryconfig = &apiconfig.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
 			registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
 				localregistryconfig, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
