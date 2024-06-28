@@ -141,8 +141,11 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 			// if rule-a.prio > rule-b.prio, then rule-a is preferred
 			// ensure, that this has the highest prio (int(^uint(0)>>1) == MaxInt), since the component version
 			// overwrite depends on that
-			r.octx.AddResolverRule("", spec, int(^uint(0)>>1))
-			resolver = r.octx.GetResolver()
+			repo, err := r.octx.RepositoryForSpec(spec)
+			if err != nil {
+				return nil, err
+			}
+			resolver = ocm.NewCompoundResolver(repo, r.octx.GetResolver())
 			pm1.StopDebug()
 		}
 	} else {
