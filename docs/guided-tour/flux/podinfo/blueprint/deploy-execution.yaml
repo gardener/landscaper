@@ -30,9 +30,11 @@ deployItems:
             metadata:
               name: podinfo
               namespace: flux-system
+              annotations:
+                reconcile.fluxcd.io/requestedAt: {{ now }}
             spec:
               force: false
-              interval: 30m0s
+              interval: 1440m
               path: ./kustomize
               prune: true
               retryInterval: 2m0s

@@ -17,9 +17,11 @@ deployItems:
             metadata:
               name: dataflow-first
               namespace: flux-system
+              annotations:
+                reconcile.fluxcd.io/requestedAt: {{ now }}
             spec:
               force: false
-              interval: 30m0s
+              interval: 1440m
               path: ./docs/guided-tour/flux/dataflow/resources/first
               prune: true
               retryInterval: 2m0s
