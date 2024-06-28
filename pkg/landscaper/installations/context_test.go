@@ -7,6 +7,8 @@ package installations_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+
 	testutils2 "github.com/gardener/landscaper/pkg/components/testutils"
 
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
@@ -60,8 +62,9 @@ var _ = Describe("Context", func() {
 		fakeClient = testenv.Client
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
-			localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			LocalRegistryConfig: localregistryconfig,
+		})
 		Expect(err).ToNot(HaveOccurred())
 		op = lsoperation.NewOperation(api.LandscaperScheme, record.NewFakeRecorder(1024), fakeClient).SetComponentsRegistry(registryAccess)
 	})
