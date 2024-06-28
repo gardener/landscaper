@@ -131,7 +131,7 @@ var _ = Describe("URI", func() {
 		_, err = file.Write(cd2data)
 		Expect(err).ToNot(HaveOccurred())
 
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil,
+		registryAccess, err = registries.GetFactory().CreateRegistryAccess(ctx, memFs, nil, nil,
 			&config.LocalRegistryConfiguration{RootPath: "./"}, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -139,10 +139,10 @@ var _ = Describe("URI", func() {
 		err = repositorySpec.UnmarshalJSON([]byte(`{"type": "local", "filepath": "./"}`))
 		Expect(err).ToNot(HaveOccurred())
 
-		componentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: repositorySpec,
-			ComponentName:     cd.GetName(),
-			Version:           cd.GetVersion(),
+		//TODO CONTEXTS: add repositorySpec to registry
+		componentVersion, err = registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+			Name:    cd.GetName(),
+			Version: cd.GetVersion(),
 		})
 		Expect(err).ToNot(HaveOccurred())
 	})

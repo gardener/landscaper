@@ -357,12 +357,12 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
 
-	if err := c.SetupRegistries(ctx, op, lsCtx.External.Context, lsCtx.External.RegistryPullSecrets(), inst); err != nil {
+	if err := c.SetupRegistries(ctx, op, &lsCtx.External, inst); err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
 	if runVerify && verify.IsVerifyEnabled(inst, c.LsConfig) {
-		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentDescriptorRef())
+		componentVersion, err := op.ComponentsRegistry().GetComponentVersion(ctx, lsCtx.External.ComponentVersionKey())
 		if err != nil {
 			return nil, lserrors.NewWrappedError(err, currOp, "GetComponentVersion", err.Error())
 		}
@@ -381,7 +381,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 
 	blueprintCacheID := utilscache.NewBlueprintCacheID(inst)
-	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint, blueprintCacheID)
+	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentVersionKey(), inst.Spec.Blueprint, blueprintCacheID)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "ResolveBlueprint", err.Error())
 	}

@@ -94,32 +94,30 @@ var _ = Describe("Installation Simulator", func() {
 		var err error
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: testDataDir}
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+		registryAccess, err = registries.GetFactory().CreateRegistryAccess(ctx, nil, nil, nil,
 			localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(repositoryContext.UnmarshalJSON([]byte(`{"type":"local"}`))).To(Succeed())
 
-		rootComponentVersion, err = registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &repositoryContext,
-			ComponentName:     "example.com/root",
-			Version:           "v0.1.0",
+		//TODO CONTEXTS: add repositoryContext repositoryContext to registry
+		rootComponentVersion, err = registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+			Name:    "example.com/root",
+			Version: "v0.1.0",
 		})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(rootComponentVersion).ToNot(BeNil())
 
-		componentVersionA, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &repositoryContext,
-			ComponentName:     "example.com/componenta",
-			Version:           "v0.1.0",
+		componentVersionA, err := registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+			Name:    "example.com/componenta",
+			Version: "v0.1.0",
 		})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(componentVersionA).ToNot(BeNil())
 
-		componentVersionB, err := registryAccess.GetComponentVersion(ctx, &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &repositoryContext,
-			ComponentName:     "example.com/componentb",
-			Version:           "v0.1.0",
+		componentVersionB, err := registryAccess.GetComponentVersion(ctx, &types.ComponentVersionKey{
+			Name:    "example.com/componentb",
+			Version: "v0.1.0",
 		})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(componentVersionA).ToNot(BeNil())

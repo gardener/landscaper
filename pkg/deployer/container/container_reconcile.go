@@ -11,8 +11,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	dockerreference "github.com/containerd/containerd/reference/docker"
 	dockerconfig "github.com/docker/cli/cli/config"
 	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
@@ -25,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -36,6 +35,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
+	types2 "github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
@@ -591,16 +591,17 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 			}
 		}
 
-		registryAccess, err := registries.GetFactory(c.Context.UseOCM).NewRegistryAccess(ctx, fs, ocmConfig, nil, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		registryAccess, err := registries.GetFactory(c.Context.UseOCM).CreateRegistryAccess(ctx, fs, ocmConfig, nil, nil, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
 		}
 
 		compRef := deployerlegacy.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
+		compKey := types2.ComponentVersionKeyFromReference(compRef)
 		blueprintName := c.ProviderConfiguration.Blueprint.Reference.ResourceName
 
-		componentVersion, err := registryAccess.GetComponentVersion(ctx, compRef)
+		componentVersion, err := registryAccess.GetComponentVersion(ctx, compKey)
 		if err != nil {
 			erro = fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return

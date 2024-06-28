@@ -7,17 +7,28 @@ package model
 import (
 	"context"
 
-	"github.com/mandelsoft/vfs/pkg/vfs"
-
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )
+
+type RegistryAccessOptions struct {
+	Fs                           vfs.FileSystem
+	OcmConfig                    *corev1.ConfigMap
+	AdditionalRepositoryContexts []types.PrioritizedRepositoryContext
+	Overwriter                   componentoverwrites.Overwriter
+	Secrets                      []corev1.Secret
+	LocalRegistryConfig          *config.LocalRegistryConfiguration
+	OciRegistryConfig            *config.OCIConfiguration
+	InlineCd                     *types.ComponentDescriptor
+}
 
 type Factory interface {
 	// NewRegistryAccess provides an instance of a RegistryAccess, which is an interface for dealing with ocm
@@ -51,8 +62,9 @@ type Factory interface {
 	//
 	// [component-cli]: https://github.com/gardener/component-cli
 	// [ocmlib]: https://github.com/open-component-model/ocm
-	// TODO: rework this constructor method and replace essentially all parameters with an Option, so that this can easily be extended in the future
-	NewRegistryAccess(ctx context.Context,
+	NewRegistryAccess(ctx context.Context, options *RegistryAccessOptions) (RegistryAccess, error)
+
+	CreateRegistryAccess(ctx context.Context,
 		fs vfs.FileSystem,
 		ocmconfig *corev1.ConfigMap,
 		secrets []corev1.Secret,

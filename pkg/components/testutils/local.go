@@ -15,9 +15,30 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
+	apiconfig "github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/tar"
 	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/components/registries"
 )
+
+func NewLocalRegistryAccess(ctx context.Context, rootPath string) (model.RegistryAccess, error) {
+	repositoryContext := &cdv2.UnstructuredTypedObject{}
+	if err := repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`)); err != nil {
+		return nil, err
+	}
+	return registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+		LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: rootPath},
+		AdditionalRepositoryContexts: []types.PrioritizedRepositoryContext{
+			{
+				RepositoryContext: repositoryContext,
+				Priority:          10,
+			},
+		},
+	})
+}
+
+////////////////////////////////////////////////////////////
 
 // LocalRepositoryType defines the local repository context type.
 const LocalRepositoryType = "local"

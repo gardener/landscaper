@@ -9,19 +9,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/utils"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
-
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/components/model/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -135,6 +134,16 @@ type ExternalContext struct {
 	ComponentVersion string
 	// Overwriter is the component version overwriter used for this installation.
 	Overwriter componentoverwrites.Overwriter
+}
+
+func (c *ExternalContext) ComponentVersionKey() *types.ComponentVersionKey {
+	if c == nil || len(c.ComponentName) == 0 || len(c.ComponentVersion) == 0 {
+		return nil
+	}
+	return &types.ComponentVersionKey{
+		Name:    c.ComponentName,
+		Version: c.ComponentVersion,
+	}
 }
 
 // ComponentDescriptorRef returns the component descriptor reference for the current installation

@@ -62,7 +62,7 @@ var _ = Describe("Constructor", func() {
 		Expect(testutils.CreateExampleDefaultContext(ctx, fakeClient, "test1", "test2", "test3", "test4", "test5", "test6"))
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "../testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
+		registryAccess, err := registries.GetFactory().CreateRegistryAccess(ctx, nil, nil, nil,
 			localregistryconfig, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 

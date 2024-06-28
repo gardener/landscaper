@@ -29,6 +29,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/components/model"
+	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
@@ -158,7 +159,7 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			}
 		}
 
-		registryAccess, err = registries.GetFactory(opts.UseOCM).NewRegistryAccess(ctx, fs, ocmConfig, nil, nil,
+		registryAccess, err = registries.GetFactory(opts.UseOCM).CreateRegistryAccess(ctx, fs, ocmConfig, nil, nil,
 			ociconfig, providerConfig.ComponentDescriptor.Inline)
 		if err != nil {
 			return err
@@ -176,7 +177,8 @@ func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.Fi
 			return fmt.Errorf("unable to create projection filesystem for path %s: %w", opts.ContentDirPath, err)
 		}
 
-		bp, err := blueprints.Resolve(ctx, registryAccess, cdReference, *providerConfig.Blueprint, nil)
+		compKey := types.ComponentVersionKeyFromReference(cdReference)
+		bp, err := blueprints.Resolve(ctx, registryAccess, compKey, *providerConfig.Blueprint, nil)
 		if err != nil {
 			return fmt.Errorf("unable to resolve blueprint and component descriptor: %w", err)
 		}
@@ -225,7 +227,8 @@ func fetchComponentDescriptor(
 	}
 
 	log.Info("Resolving component descriptor")
-	componentVersion, err := registryAccess.GetComponentVersion(ctx, cdRef)
+	compKey := types.ComponentVersionKeyFromReference(cdRef)
+	componentVersion, err := registryAccess.GetComponentVersion(ctx, compKey)
 	if err != nil {
 		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", string(cdRef.RepositoryContext.Raw), cdRef.ComponentName, cdRef.Version, err)
 	}
