@@ -5,7 +5,7 @@ go 1.22.4
 require (
 	dario.cat/mergo v1.0.0
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/containerd/containerd v1.7.17
+	github.com/containerd/containerd v1.7.18
 	github.com/docker/cli v26.1.3+incompatible
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.98
@@ -127,6 +127,7 @@ require (
 	github.com/cloudflare/cfssl v1.6.5 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
+	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/containers/image/v5 v5.31.0 // indirect
