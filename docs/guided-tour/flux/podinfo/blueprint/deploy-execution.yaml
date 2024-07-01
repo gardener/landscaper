@@ -1,3 +1,4 @@
+{{- $requestedAt := now | date "2006-01-02T15:04:05.999Z" }}
 deployItems:
   - name: item
     type: landscaper.gardener.cloud/kubernetes-manifest
@@ -31,10 +32,10 @@ deployItems:
               name: podinfo
               namespace: flux-system
               annotations:
-                reconcile.fluxcd.io/requestedAt: {{ now }}
+                reconcile.fluxcd.io/requestedAt: {{ $requestedAt }}
             spec:
               force: false
-              interval: 1440m
+              interval: 876000h
               path: ./kustomize
               prune: true
               retryInterval: 2m0s
@@ -60,3 +61,11 @@ deployItems:
                 operator: ==
                 values:
                   - value: "True"
+              - jsonPath: .status.conditions[?(@.type == 'Healthy')].status
+                operator: ==
+                values:
+                  - value: "True"
+              - jsonPath: .status.lastHandledReconcileAt
+                operator: ==
+                values:
+                  - value: {{ $requestedAt }}
