@@ -36,6 +36,8 @@ type CustomReadinessCheckConfiguration struct {
 	LabelSelector *LabelSelectorSpec `json:"labelSelector,omitempty"`
 	// Requirements is the actual readiness check which compares an object's property to a value
 	Requirements []RequirementSpec `json:"requirements"`
+	// +optional
+	TargetName *string `json:"targetName,omitempty"`
 }
 
 // LabelSelectorSpec contains paramters used to select objects by their labels
