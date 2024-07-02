@@ -15560,6 +15560,12 @@ func schema_apis_deployer_utils_managedresource_CustomResourceGroup(ref common.R
 							Format: "",
 						},
 					},
+					"targetName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
@@ -15625,6 +15631,13 @@ func schema_apis_deployer_utils_managedresource_Export(ref common.ReferenceCallb
 						SchemaProps: spec.SchemaProps{
 							Description: "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference"),
+						},
+					},
+					"targetName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetName specifies the target from which the objects for the export are read. The value typically comes from a target import parameter, for example: {{.imports.myCluster.metadata.name}}. TargetName is optional; the default is the target specified in the deployitem.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -15725,6 +15738,12 @@ func schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref common
 							},
 						},
 					},
+					"patchBeforeDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PatchBeforeDelete defines a patch that is being applied before an object is being deleted.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
 					"policy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Policy defines the manage policy for that resource.",
@@ -15744,7 +15763,7 @@ func schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref common
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference"},
+			"k8s.io/api/core/v1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -15798,6 +15817,18 @@ func schema_apis_deployer_utils_managedresource_Manifest(ref common.ReferenceCal
 									},
 								},
 							},
+						},
+					},
+					"patchAfterDeployment": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PatchAfterDeployment defines a patch that is being applied after an object has been deployed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
+					"patchBeforeDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PatchBeforeDelete defines a patch that is being applied before an object is being deleted.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
 				},
@@ -15938,6 +15969,13 @@ func schema_apis_deployer_utils_readinesschecks_CustomReadinessCheckConfiguratio
 									},
 								},
 							},
+						},
+					},
+					"targetName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetName specifies the target from which the objects for the readiness check are read. The value typically comes from a target import parameter, for example: {{.imports.myCluster.metadata.name}}. TargetName is optional; the default is the target specified in the deployitem.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},

@@ -40,6 +40,9 @@ type CustomResourceGroup struct {
 
 	// +optional
 	DeleteAllResources bool `json:"deleteAllResources,omitempty"`
+
+	// +optional
+	TargetName *string `json:"targetName,omitempty"`
 }
 
 type ResourceType struct {

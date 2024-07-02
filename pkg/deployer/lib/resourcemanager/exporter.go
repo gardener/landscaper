@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -18,18 +16,22 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	"github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // ExporterOptions defines the options for the exporter.
 type ExporterOptions struct {
 	KubeClient          client.Client
 	InterruptionChecker interruption.InterruptionChecker
+	LsClient            client.Client
 	DeployItem          *lsv1alpha1.DeployItem
 }
 
@@ -37,6 +39,7 @@ type ExporterOptions struct {
 type Exporter struct {
 	kubeClient          client.Client
 	interruptionChecker interruption.InterruptionChecker
+	lsClient            client.Client
 	deployItem          *lsv1alpha1.DeployItem
 }
 
@@ -45,6 +48,7 @@ func NewExporter(opts ExporterOptions) *Exporter {
 	exporter := &Exporter{
 		kubeClient:          opts.KubeClient,
 		interruptionChecker: opts.InterruptionChecker,
+		lsClient:            opts.LsClient,
 		deployItem:          opts.DeployItem,
 	}
 
@@ -104,9 +108,39 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 }
 
 func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) (map[string]interface{}, error) {
+	// determine client
+	cl := e.kubeClient
+	if export.TargetName != nil {
+		if e.lsClient == nil {
+			return nil, fmt.Errorf("unable to get secondary target %s, because lsClient is not initialized", *export.TargetName)
+		}
+
+		target := &lsv1alpha1.Target{}
+		targetKey := client.ObjectKey{
+			Name:      *export.TargetName,
+			Namespace: e.deployItem.Namespace,
+		}
+		err := read_write_layer.GetTarget(ctx, e.lsClient, targetKey, target, read_write_layer.R000005)
+		if err != nil {
+			return nil, err
+		}
+
+		resolvedTarget, err := targetresolver.Resolve(ctx, target, e.lsClient)
+		if err != nil {
+			return nil, err
+		}
+
+		_, kubeClient, _, err := lib.GetClientMud(ctx, resolvedTarget, e.lsClient)
+		if err != nil {
+			return nil, err
+		}
+
+		cl = kubeClient
+	}
+
 	// get resource from client
 	obj := kutil.ObjectFromTypedObjectReference(export.FromResource)
-	if err := read_write_layer.GetUnstructured(ctx, e.kubeClient, kutil.ObjectKeyFromObject(obj), obj,
+	if err := read_write_layer.GetUnstructured(ctx, cl, kutil.ObjectKeyFromObject(obj), obj,
 		read_write_layer.R000046); err != nil {
 		return nil, err
 	}
@@ -118,7 +152,7 @@ func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) 
 
 	if export.FromObjectReference != nil {
 		var err error
-		val, err = e.exportFromReferencedResource(ctx, export, val)
+		val, err = e.exportFromReferencedResource(ctx, cl, export, val)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +165,7 @@ func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) 
 	return newValue, nil
 }
 
-func (e *Exporter) exportFromReferencedResource(ctx context.Context, export managedresource.Export, ref interface{}) (interface{}, error) {
+func (e *Exporter) exportFromReferencedResource(ctx context.Context, cl client.Client, export managedresource.Export, ref interface{}) (interface{}, error) {
 	// check if the ref is of the right type
 	refMap, ok := ref.(map[string]interface{})
 	if !ok {
@@ -165,7 +199,7 @@ func (e *Exporter) exportFromReferencedResource(ctx context.Context, export mana
 		},
 	})
 
-	if err := read_write_layer.GetUnstructured(ctx, e.kubeClient, kutil.ObjectKeyFromObject(obj), obj,
+	if err := read_write_layer.GetUnstructured(ctx, cl, kutil.ObjectKeyFromObject(obj), obj,
 		read_write_layer.R000047); err != nil {
 		return nil, err
 	}

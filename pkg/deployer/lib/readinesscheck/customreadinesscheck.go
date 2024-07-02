@@ -23,6 +23,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	lserror "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -30,26 +32,53 @@ import (
 
 // CustomReadinessCheck contains all the data and methods required to kick off a custom readiness check
 type CustomReadinessCheck struct {
-	Context             context.Context
 	Client              client.Client
 	CurrentOp           string
 	Timeout             *lsv1alpha1.Duration
 	ManagedResources    []lsv1alpha1.TypedObjectReference
 	Configuration       health.CustomReadinessCheckConfiguration
 	InterruptionChecker interruption.InterruptionChecker
+	LsClient            client.Client
+	DeployItem          *lsv1alpha1.DeployItem
 }
 
 // CheckResourcesReady starts a custom readiness check by checking the readiness of the submitted resources
-func (c *CustomReadinessCheck) CheckResourcesReady() error {
+func (c *CustomReadinessCheck) CheckResourcesReady(ctx context.Context) error {
 	if c.Configuration.Disabled {
 		// nothing to do
 		return nil
 	}
 
+	// Determine the client to read the resources for this readiness check. By default, it is the target client.
+	cl := c.Client
+	if c.Configuration.TargetName != nil {
+		target := &lsv1alpha1.Target{}
+		targetKey := client.ObjectKey{
+			Name:      *c.Configuration.TargetName,
+			Namespace: c.DeployItem.Namespace,
+		}
+		err := read_write_layer.GetTarget(ctx, c.LsClient, targetKey, target, read_write_layer.R000005)
+		if err != nil {
+			return err
+		}
+
+		resolvedTarget, err := targetresolver.Resolve(ctx, target, c.LsClient)
+		if err != nil {
+			return err
+		}
+
+		_, kubeClient, _, err := lib.GetClientMud(ctx, resolvedTarget, c.LsClient)
+		if err != nil {
+			return err
+		}
+
+		cl = kubeClient
+	}
+
 	var objects []*unstructured.Unstructured
 	getObjectsFunc := func() ([]*unstructured.Unstructured, error) {
 		if c.Configuration.Resource != nil {
-			o, err := getObjectsByTypedReference(c.Context, c.Client, c.Configuration.Resource)
+			o, err := getObjectsByTypedReference(ctx, cl, c.Configuration.Resource)
 			if err != nil {
 				return nil, err
 			}
@@ -57,7 +86,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady() error {
 		}
 
 		if c.Configuration.LabelSelector != nil {
-			o, err := getObjectsByLabels(c.Context, c.Client, c.Configuration.LabelSelector)
+			o, err := getObjectsByLabels(ctx, cl, c.Configuration.LabelSelector)
 			if err != nil {
 				return nil, err
 			}
@@ -68,7 +97,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady() error {
 	}
 
 	timeout := c.Timeout.Duration
-	if err := WaitForObjectsReady(c.Context, timeout, c.Client, getObjectsFunc, c.CheckObject, c.InterruptionChecker, c.CurrentOp); err != nil {
+	if err := WaitForObjectsReady(ctx, timeout, cl, getObjectsFunc, c.CheckObject, c.InterruptionChecker, c.CurrentOp); err != nil {
 		return err
 	}
 

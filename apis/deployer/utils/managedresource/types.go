@@ -43,6 +43,12 @@ type Manifest struct {
 	// AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.
 	// +optional
 	AnnotateBeforeDelete map[string]string `json:"annotateBeforeDelete,omitempty"`
+	// PatchAfterDeployment defines a patch that is being applied after an object has been deployed.
+	// +optional
+	PatchAfterDeployment *runtime.RawExtension `json:"patchAfterDeployment,omitempty"`
+	// PatchBeforeDelete defines a patch that is being applied before an object is being deleted.
+	// +optional
+	PatchBeforeDelete *runtime.RawExtension `json:"patchBeforeDelete,omitempty"`
 }
 
 // ManagedResourceStatusList describes a list of managed resource statuses.
@@ -78,6 +84,9 @@ type ManagedResourceStatus struct {
 	// AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.
 	// +optional
 	AnnotateBeforeDelete map[string]string `json:"annotateBeforeDelete,omitempty"`
+	// PatchBeforeDelete defines a patch that is being applied before an object is being deleted.
+	// +optional
+	PatchBeforeDelete *runtime.RawExtension `json:"patchBeforeDelete,omitempty"`
 	// Policy defines the manage policy for that resource.
 	Policy ManifestPolicy `json:"policy,omitempty"`
 	// Resources describes the managed kubernetes resource.
@@ -104,6 +113,12 @@ type Export struct {
 	// FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from.
 	// This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.
 	FromObjectReference *FromObjectReference `json:"fromObjectRef,omitempty"`
+
+	// TargetName specifies the target from which the objects for the export are read.
+	// The value typically comes from a target import parameter, for example: {{.imports.myCluster.metadata.name}}.
+	// TargetName is optional; the default is the target specified in the deployitem.
+	// +optional
+	TargetName *string `json:"targetName,omitempty"`
 }
 
 // FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from.

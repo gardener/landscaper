@@ -147,9 +147,10 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 		},
 		DeletionGroupsDuringUpdate: h.ProviderConfiguration.DeletionGroupsDuringUpdate,
 		InterruptionChecker:        interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
+		LsUncachedClient:           h.lsUncachedClient,
 	})
 
-	err := applier.Apply(ctx)
+	_, err := applier.Apply(ctx)
 	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
 
 	return err
@@ -245,15 +246,16 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 				return lserr
 			}
 			customReadinessCheck := health.CustomReadinessCheck{
-				Context:             ctx,
 				Client:              client,
 				CurrentOp:           "CustomCheckResourcesReadinessHelm",
 				Timeout:             &lsv1alpha1.Duration{Duration: t},
 				ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:       customReadinessCheckConfig,
 				InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
+				LsClient:            h.lsUncachedClient,
+				DeployItem:          h.DeployItem,
 			}
-			err := customReadinessCheck.CheckResourcesReady()
+			err := customReadinessCheck.CheckResourcesReady(ctx)
 			if err != nil {
 				return err
 			}
@@ -275,11 +277,11 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 		opts := resourcemanager.ExporterOptions{
 			KubeClient:          targetClient,
 			InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
+			LsClient:            h.lsUncachedClient,
 			DeployItem:          h.DeployItem,
 		}
 
-		resourceExports, err := resourcemanager.NewExporter(opts).
-			Export(ctx, exportDefinition)
+		resourceExports, err := resourcemanager.NewExporter(opts).Export(ctx, exportDefinition)
 		if err != nil {
 			return lserrors.NewWrappedError(err,
 				currOp, "ReadExportValues", err.Error())
@@ -323,6 +325,7 @@ func (h *Helm) deleteManifestsInGroups(ctx context.Context) error {
 
 	err = resourcemanager.DeleteManagedResources(
 		ctx,
+		h.lsUncachedClient,
 		h.ProviderStatus.ManagedResources,
 		h.ProviderConfiguration.DeletionGroups,
 		targetClient,

@@ -66,6 +66,8 @@ readinessChecks:
       - value: 1
       - value: 2
       - value: 3
+    # alternative cluster to get the resource values
+    targetName: someOtherTargetName
 ```
 
 ## Default readiness checks
@@ -104,3 +106,8 @@ A field that is specified by its `jsonPath` will be extracted from each of the s
 - `notIn`: the given field mut _not_ match _to any_ of the given values
 
 Allowed values are given as a list of key-value pairs with the key always being `value` and the value being a valid desired value. Values can be either primitives like ints, strings or bools as well as complex types.
+
+If some values of k8s resources are checked, the default target of a DeployItem determines the cluster
+from where these values are fetched. You can specify another `targetName`, which is used to get these values 
+from a different cluster. This is helpful if your DeployItem deploys something to some cluster which itself
+deploys some stuff to a second cluster and your check requires to access the resources on this second cluster.

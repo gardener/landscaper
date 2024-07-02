@@ -249,6 +249,23 @@ deletionGroups:
       type: crds
 ```
 
+### Deleting resources from a second cluster
+
+By default, the resources are deleted from the cluster specified in the target of the DeployItem.
+You can specify another `targetName`, which is used to determine a different cluster from where the resources are
+removed. This is helpful if your DeployItem deploys something to some cluster which itself
+deploys some stuff to a second cluster, and you must clean up the resources on this second cluster.
+This additional setting is only allowed in combination with `deleteAllResources: true`.
+
+```yaml
+deletionGroups:
+  - customResourceGroup:
+      resources:
+        - apiVersion: v1
+          kind: mycustomresource
+      deleteAllResources: true
+      targetName: someOtherTarget # optional different target
+
 ## Deletion Behaviour During Update
 
 During an update of a DeployItem, resources which belonged to the old version, but no longer to the new version,
@@ -299,6 +316,7 @@ deletionGroups:
             - namespace2
       forceDelete: (true | false)
       deleteAllResources: (true | false)
+      targetName: ... (optional)
 ```
 
 #### Deletion groups

@@ -54,17 +54,23 @@ func (m *EmptyMatcher) Match(*managedresource.ManagedResourceStatus) bool {
 	return false
 }
 
-func newCustomMatcher(custom *managedresource.CustomResourceGroup) Matcher {
+func newCustomMatcher(custom *managedresource.CustomResourceGroup, isCustomWithDifferentTarget bool) Matcher {
 	return &CustomMatcher{
-		resourceTypes: custom.Resources,
+		resourceTypes:               custom.Resources,
+		isCustomWithDifferentTarget: isCustomWithDifferentTarget,
 	}
 }
 
 type CustomMatcher struct {
-	resourceTypes []managedresource.ResourceType
+	resourceTypes               []managedresource.ResourceType
+	isCustomWithDifferentTarget bool
 }
 
 func (m *CustomMatcher) Match(res *managedresource.ManagedResourceStatus) bool {
+	if m.isCustomWithDifferentTarget {
+		return false
+	}
+
 	for _, t := range m.resourceTypes {
 		if t.Kind == res.Resource.Kind &&
 			t.APIVersion == res.Resource.APIVersion &&
