@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -322,8 +324,9 @@ var _ = Describe("GetChart", func() {
 			localCtx = localOctx.BindTo(localCtx)
 
 			// Setup Test
-			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, nil, nil, nil,
-				&config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"}, nil, nil)
+			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, &model.RegistryAccessOptions{
+				LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"},
+			})
 			Expect(err).To(BeNil())
 
 			cdref := &lsv1alpha1.ComponentDescriptorReference{}

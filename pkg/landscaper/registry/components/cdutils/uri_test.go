@@ -131,8 +131,10 @@ var _ = Describe("URI", func() {
 		_, err = file.Write(cd2data)
 		Expect(err).ToNot(HaveOccurred())
 
-		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, memFs, nil, nil,
-			&config.LocalRegistryConfiguration{RootPath: "./"}, nil, nil)
+		registryAccess, err = registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			Fs:                  memFs,
+			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: "./"},
+		})
 		Expect(err).ToNot(HaveOccurred())
 
 		repositorySpec = &cdv2.UnstructuredTypedObject{}

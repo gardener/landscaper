@@ -8,6 +8,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/gardener/landscaper/pkg/components/model"
+
 	"github.com/gardener/landscaper/pkg/components/testutils"
 
 	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
@@ -136,8 +138,9 @@ var _ = Describe("SubInstallation", func() {
 		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12")).To(Succeed())
 
 		localregistryconfig := &config.LocalRegistryConfiguration{RootPath: "./testdata/registry"}
-		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, nil, nil, nil,
-			localregistryconfig, nil, nil)
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			LocalRegistryConfig: localregistryconfig,
+		})
 		Expect(err).ToNot(HaveOccurred())
 
 		op, err = lsoperation.NewBuilder().
