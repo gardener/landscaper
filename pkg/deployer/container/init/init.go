@@ -231,9 +231,7 @@ func fetchComponentDescriptor(
 	}
 
 	resolvedComponentVersions, err := model.GetTransitiveComponentReferences(ctx,
-		componentVersion,
-		cdRef.RepositoryContext,
-		nil)
+		componentVersion, cdRef.RepositoryContext, nil, nil)
 	if err != nil {
 		return errors.Wrapf(err, "unable to resolve transitive component references for component version %s:%s", componentVersion.GetName(), componentVersion.GetVersion())
 	}

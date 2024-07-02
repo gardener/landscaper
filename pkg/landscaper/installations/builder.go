@@ -156,7 +156,7 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 		componentVersions, err := model.GetTransitiveComponentReferences(ctx,
 			instOp.ComponentVersion,
 			instOp.Context().External.RepositoryContext,
-			instOp.Context().External.Overwriter)
+			instOp.Context().External.Overwriter, nil)
 		if err != nil {
 			return nil, err
 		}

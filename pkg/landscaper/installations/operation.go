@@ -89,7 +89,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 	dependentComponentVersions, err := model.GetTransitiveComponentReferences(ctx,
 		componentVersion,
 		o.Context().External.RepositoryContext,
-		o.Context().External.Overwriter)
+		o.Context().External.Overwriter, nil)
 	if err != nil {
 		return err
 	}
