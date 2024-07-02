@@ -322,7 +322,7 @@ var _ = Describe("GetChart", func() {
 			localCtx = localOctx.BindTo(localCtx)
 
 			// Setup Test
-			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, nil, nil, nil,
+			registry, err := registries.GetFactory().NewRegistryAccess(localCtx, nil, nil, nil,
 				&config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"}, nil, nil)
 			Expect(err).To(BeNil())
 
