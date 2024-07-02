@@ -3,11 +3,12 @@
 ## Problem Description
 
 Many potential customers deploy their k8s resources with kustomize, which is currently not supported by Landscaper.
-To also support kustomize, it would be possible to develop a particular kustomize deployer based on the kustomize
-golang library, similar to the already existing helm deployer. Such an approach would require some effort not 
-only during development but also during maintenance. Therefore, this proposal discusses how to reuse the 
-[Flux customize controller](https://fluxcd.io/flux/components/kustomize/) in combination with the already existing
-Landscaper manifest deployer. 
+To also support kustomize, it is possible to develop a particular kustomize deployer based on the kustomize
+golang library, similar to the already existing helm deployer. Such an approach requires some effort not 
+only during development but also during maintenance. Therefore, this proposal discusses how to use the 
+[Flux kustomize controller](https://fluxcd.io/flux/components/kustomize/) in combination with the already existing
+Landscaper manifest deployer. This approach will probably require much less resources and might also be a blueprint 
+for further Landscaper/third party combinations to integrate further deployment technologies without much effort. 
 
 ## Solution Overview
 
@@ -39,7 +40,7 @@ or readiness checks in the Deploy Items.
 The first question is, can this setup somehow break the Landscaper execution strategy resulting
 in inconsistent states of the execution graph of Installations, Subinstallations and Deploy Items? The simple answer is
 no. Though, Flux brings its own opinionated control strategy, this does not change the overall setup completely.
-Also with a Helm deployment, it would be possible to deploy some operator which modifies export data etc. even if
+Already with a Helm deployment, it is possible to deploy some operator which modifies export data etc. even if
 the corresponding Deploy Item is already finished. If the export data of a Deploy Item available and the readiness 
 checks are successful, a Deploy Item is successfully finished and all subsequent changes at the data are ignored.
 
