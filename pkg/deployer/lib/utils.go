@@ -14,11 +14,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -33,6 +36,38 @@ import (
 	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
+
+func GetClientMud(ctx context.Context, resolvedTarget *lsv1alpha1.ResolvedTarget, lsUncachedClient client.Client) (*rest.Config, client.Client, kubernetes.Interface, error) {
+	targetConfig := &targettypes.KubernetesClusterTargetConfig{}
+	if err := yaml.Unmarshal([]byte(resolvedTarget.Content), targetConfig); err != nil {
+		return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
+	}
+
+	kubeconfigBytes, err := GetKubeconfigFromTargetConfig(ctx, targetConfig, resolvedTarget.Namespace, lsUncachedClient)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	restConfig, err := kubeconfig.ClientConfig()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	kubeClient, err := client.New(restConfig, client.Options{})
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return restConfig, kubeClient, clientset, nil
+}
 
 // GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
 // If the config defines the target from a secret that secret is read from all provided clients.
@@ -73,16 +108,6 @@ func GetKubeconfigFromSecretRef(ctx context.Context, ref *lsv1alpha1.SecretRefer
 		return nil, fmt.Errorf("secret found but key %q not found", ref.Key)
 	}
 	return kubeconfig, nil
-}
-
-// SetProviderStatus sets the provider specific status for a deploy item.
-func SetProviderStatus(di *lsv1alpha1.DeployItem, status runtime.Object, scheme *runtime.Scheme) error {
-	rawStatus, err := kutil.ConvertToRawExtension(status, scheme)
-	if err != nil {
-		return err
-	}
-	di.Status.ProviderStatus = rawStatus
-	return nil
 }
 
 // CreateOrUpdateExport creates or updates the export of a deploy item.

@@ -35,7 +35,6 @@ var _ = Describe("Custom health checks", func() {
 
 	BeforeEach(func() {
 		customHealthCheck = CustomReadinessCheck{
-			Context:             logging.NewContext(ctx, logging.Discard()),
 			Client:              testenv.Client,
 			CurrentOp:           "custom health check test",
 			Timeout:             &lsv1alpha1.Duration{Duration: 180 * time.Second},
@@ -275,22 +274,22 @@ var _ = Describe("Custom health checks", func() {
 		go func() {
 			defer GinkgoRecover()
 			cm := &corev1.ConfigMap{}
-			Expect(state.Client.Get(customHealthCheck.Context,
+			Expect(state.Client.Get(ctx,
 				types.NamespacedName{
 					Name:      customHealthCheck.ManagedResources[0].Name,
 					Namespace: state.Namespace}, cm)).To(Succeed())
 
 			time.Sleep(1 * time.Second)
 			cm.Data["readyOne"] = "created"
-			Expect(state.Client.Update(customHealthCheck.Context, cm)).To(Succeed())
+			Expect(state.Client.Update(ctx, cm)).To(Succeed())
 
 			time.Sleep(1 * time.Second)
 			cm.Data["readyTwo"] = "No"
-			Expect(state.Client.Update(customHealthCheck.Context, cm)).To(Succeed())
+			Expect(state.Client.Update(ctx, cm)).To(Succeed())
 
 			time.Sleep(1 * time.Second)
 			cm.Data["readyTwo"] = "Yes"
-			Expect(state.Client.Update(customHealthCheck.Context, cm)).To(Succeed())
+			Expect(state.Client.Update(ctx, cm)).To(Succeed())
 		}()
 
 		Eventually(func() bool {
@@ -301,7 +300,7 @@ var _ = Describe("Custom health checks", func() {
 					"kind":       "ConfigMap",
 				},
 			}
-			Expect(state.Client.Get(customHealthCheck.Context,
+			Expect(state.Client.Get(ctx,
 				types.NamespacedName{
 					Name:      customHealthCheck.ManagedResources[0].Name,
 					Namespace: state.Namespace}, cm)).To(Succeed())
@@ -379,7 +378,7 @@ var _ = Describe("Custom health checks", func() {
 		}()
 
 		Eventually(func() bool {
-			return customHealthCheck.CheckResourcesReady() == nil
+			return customHealthCheck.CheckResourcesReady(ctx) == nil
 		}).WithTimeout(1 * time.Minute).Should(BeTrue())
 
 	})

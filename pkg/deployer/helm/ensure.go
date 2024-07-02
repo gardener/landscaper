@@ -245,15 +245,16 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 				return lserr
 			}
 			customReadinessCheck := health.CustomReadinessCheck{
-				Context:             ctx,
 				Client:              client,
 				CurrentOp:           "CustomCheckResourcesReadinessHelm",
 				Timeout:             &lsv1alpha1.Duration{Duration: t},
 				ManagedResources:    h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:       customReadinessCheckConfig,
 				InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
+				LsClient:            h.lsUncachedClient,
+				DeployItem:          h.DeployItem,
 			}
-			err := customReadinessCheck.CheckResourcesReady()
+			err := customReadinessCheck.CheckResourcesReady(ctx)
 			if err != nil {
 				return err
 			}
