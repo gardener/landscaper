@@ -50,7 +50,7 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.0
-	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20240322212309-b815d8309940
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20240620174524-b456828f718b
 )
 
 require (
