@@ -18,6 +18,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -38,7 +39,7 @@ var (
 
 var _ = BeforeSuite(func() {
 	var err error
-	ctx = context.Background()
+	ctx = logging.NewContext(context.Background(), logging.Discard())
 
 	testenv, err = envtest.New(projectRoot)
 	Expect(err).ToNot(HaveOccurred())

@@ -163,15 +163,16 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 			}
 
 			customReadinessCheck := health.CustomReadinessCheck{
-				Context:             ctx,
 				Client:              client,
 				CurrentOp:           "CustomCheckResourcesReadinessManifest",
 				Timeout:             &lsv1alpha1.Duration{Duration: timeout},
 				ManagedResources:    managedresources,
 				Configuration:       customReadinessCheckConfig,
 				InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient),
+				LsClient:            m.lsUncachedClient,
+				DeployItem:          m.DeployItem,
 			}
-			err := customReadinessCheck.CheckResourcesReady()
+			err := customReadinessCheck.CheckResourcesReady(ctx)
 			if err != nil {
 				return err
 			}
