@@ -1,0 +1,21 @@
+components:
+  - name: github.com/gardener/landscaper-examples/guided-tour/kustomize/flux
+    version: 1.0.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: flux-chart
+        type: helmChart
+        version: 2.13.0
+        relation: external
+        access:
+          type: helm
+          helmChart: flux2:2.13.0
+          helmRepository: https://fluxcd-community.github.io/helm-charts
