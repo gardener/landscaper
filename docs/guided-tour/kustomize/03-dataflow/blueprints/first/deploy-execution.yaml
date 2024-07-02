@@ -56,7 +56,7 @@ deployItems:
                 values:
                   - value: {{ $requestedAt }}
           - name: TokenGenerated
-            targetName: cluster2
+            targetName: {{ .imports.cluster2.metadata.name }}
             resourceSelector:
               - apiVersion: v1
                 kind: Secret

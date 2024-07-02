@@ -22,6 +22,8 @@ spec:
     targets:
       - name: cluster
         target: my-cluster
+      - name: cluster2
+        target: my-cluster
     data:
       - name: gitRepositoryName
         dataRef: git-repository-name
