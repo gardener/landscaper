@@ -72,7 +72,7 @@ var _ = Describe("GetChart", func() {
 		It("should resolve a chart from public readable helm ociClient artifact", func() {
 			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0"
 
-			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}}, ref, nil, nil)
+			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}}, ref, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -80,7 +80,7 @@ var _ = Describe("GetChart", func() {
 		It("should resolve a legacy chart from public readable helm ociClient artifact", func() {
 			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 
-			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: false}},
+			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				ref, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
@@ -107,7 +107,7 @@ var _ = Describe("GetChart", func() {
 			}
 
 			chart1, err := GetChart(ctx, chartAccess1, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -124,7 +124,7 @@ var _ = Describe("GetChart", func() {
 			time.Sleep(time.Duration(10) * time.Millisecond)
 
 			chart2, err := GetChart(ctx, chartAccess1, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -148,7 +148,7 @@ var _ = Describe("GetChart", func() {
 			time.Sleep(time.Duration(10) * time.Millisecond)
 
 			chart3, err := GetChart(ctx, chartAccess1, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -165,7 +165,7 @@ var _ = Describe("GetChart", func() {
 			}
 
 			chart4, err := GetChart(ctx, chartAccess4, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart4).ToNot(BeNil())
@@ -192,7 +192,7 @@ var _ = Describe("GetChart", func() {
 			}
 
 			_, err = GetChart(ctx, chartAccess5, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				nil, nil, true)
 			Expect(err).ToNot(HaveOccurred())
 			cacheEntries5, size5, _ := helmChartCache.GetEntries()
@@ -217,7 +217,7 @@ var _ = Describe("GetChart", func() {
 			helmChartCache.SetMaxSizeInByte(MaxSizeInByteDefault)
 
 			_, _ = GetChart(ctx, chartAccess1, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				nil, nil, true)
 
 			outdatedDuration := time.Since(timeBefore) + time.Duration(500)*time.Millisecond
@@ -225,7 +225,7 @@ var _ = Describe("GetChart", func() {
 			helmChartCache.SetLastCleanup(time.Now().Add(-(time.Duration(61) * time.Minute)))
 
 			_, _ = GetChart(ctx, chartAccess1, nil,
-				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{UseOCM: true}},
+				&lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				nil, nil, true)
 
 			contained, err = helmChartCache.HasKey(chartAccess1.Ref, chartAccess1.HelmChartRepo, chartAccess1.ResourceRef)
@@ -324,7 +324,7 @@ var _ = Describe("GetChart", func() {
 			localCtx = localOctx.BindTo(localCtx)
 
 			// Setup Test
-			registry, err := registries.GetFactory(true).NewRegistryAccess(localCtx, &model.RegistryAccessOptions{
+			registry, err := registries.GetFactory().NewRegistryAccess(localCtx, &model.RegistryAccessOptions{
 				LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: "./testdata/ocmrepo"},
 			})
 			Expect(err).To(BeNil())

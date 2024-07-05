@@ -128,7 +128,6 @@ type PodOptions struct {
 	ComponentDescriptorPullSecret     string
 
 	OCMConfigConfigMapName string
-	UseOCM                 bool
 
 	Name                 string
 	Namespace            string
@@ -258,10 +257,6 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		{
 			Name:  container.RegistrySecretBasePathName,
 			Value: container.RegistrySecretBasePath,
-		},
-		{
-			Name:  container.UseOCMName,
-			Value: fmt.Sprint(opts.UseOCM),
 		},
 		{
 			Name:  container.OCMConfigPathName,

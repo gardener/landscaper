@@ -360,11 +360,11 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			Entry("template with component descriptor v3alpha1", common.SCHEMA_VERSION_V3ALPHA1),
 		)
 
-		DescribeTable("templating against specific component descriptor schema versions", func(useOCM bool, schemaVersion string, templateFileName string, schemaVersionSuffix string) {
+		DescribeTable("templating against specific component descriptor schema versions", func(schemaVersion string, templateFileName string, schemaVersionSuffix string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(useOCM).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			registry, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -416,19 +416,17 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				map[string]interface{}{"name": "example.com/landscaper-component-" + schemaVersionSuffix + "-ref2"},
 			}))
 		},
-			Entry("default to schema version v2 with cnudie facade implementation", false, "", "template-30.yaml", "v2"),
-			Entry("default to schema version v2 with ocmlib facade implementation", true, "", "template-30.yaml", "v2"),
-			Entry("default to schema version v3alpha1 with ocmlib facade implementation", true, "", "template-31.yaml", "v3alpha1"),
-			Entry("set schema version through blueprint to v2 - with cnudie facade implementation", false, common.SCHEMA_VERSION_V2, "template-30.yaml", "v2"),
-			Entry("set schema version through blueprint to v2 - with ocmlib facade implementation", true, common.SCHEMA_VERSION_V2, "template-30.yaml", "v2"),
-			Entry("set schema version through blueprint to v3alpha1 - with ocmlib facade implementation", true, common.SCHEMA_VERSION_V3ALPHA1, "template-31.yaml", "v3alpha1"),
+			Entry("default to schema version v2", "", "template-30.yaml", "v2"),
+			Entry("default to schema version v3alpha1", "", "template-31.yaml", "v3alpha1"),
+			Entry("set schema version through blueprint to v2", common.SCHEMA_VERSION_V2, "template-30.yaml", "v2"),
+			Entry("set schema version through blueprint to v3alpha1", common.SCHEMA_VERSION_V3ALPHA1, "template-31.yaml", "v3alpha1"),
 		)
 
 		It("templating against v2 with mixed component descriptor schema versions", func() {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			registry, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -485,7 +483,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "local","filePath": "./"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			registry, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "localocmrepository")},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -542,7 +540,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			registry, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -579,7 +577,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			registry, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -616,7 +614,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			registry, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -656,7 +654,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			// Preparation to conveniently be able to access the respective component versions
 			repositoryContext := &cdv2.UnstructuredTypedObject{}
 			Expect(repositoryContext.UnmarshalJSON([]byte(`{"type": "CommonTransportFormat/v1","filePath": "testdata/shared_data/ctf-local-blobs", "fileFormat": "directory"}`))).To(Succeed())
-			registry, err := registries.GetFactory(true).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+			registry, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 				LocalRegistryConfig: &apiconfig.LocalRegistryConfiguration{RootPath: filepath.Join(sharedTestdataDir, "ctf-local-blobs")},
 			})
 			Expect(err).ToNot(HaveOccurred())

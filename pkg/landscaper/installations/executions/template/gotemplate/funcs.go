@@ -178,7 +178,7 @@ func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (
 
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
 		if !ok {
-			return "", errors.New("unable to use this function without useOCM set to true")
+			return "", errors.New("unable to use this function without ocm component version")
 		}
 		compvers := ocmlibCv.GetOCMObject()
 
@@ -235,7 +235,7 @@ func getResourceContentGoFunc(cv model.ComponentVersion) func(args ...interface{
 
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
 		if !ok {
-			return "", errors.New("unable to use this function without useOCM set to true")
+			return "", errors.New("unable to use this function without ocm component version")
 		}
 		compvers := ocmlibCv.GetOCMObject()
 

@@ -1860,12 +1860,6 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.HPAMainConfiguration"),
 						},
 					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
 					"signatureVerificationEnforcementPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.\n\nPossible enum values:\n - `\"Disabled\"` explcitly disables signature verification. Enabling the verification on installation level will not have an effect and the verification will still be disabled.\n - `\"DoNotEnforce\"` does not enforce a global policy. Signature verification can be enabled in the installation if desired. [DEFAULT]\n - `\"Enforce\"` will enforce all instalations to have valid signatures before being worked on. Disabling the verification on installation level has no impact.",
@@ -2615,12 +2609,6 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 						SchemaProps: spec.SchemaProps{
 							Description: "HPAMainConfiguration contains the HPA configuration (horizontal pod autoscaling) for the main controllers (Installation and Execution controller).",
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.HPAMainConfiguration"),
-						},
-					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
 						},
 					},
 					"signatureVerificationEnforcementPolicy": {
@@ -3549,13 +3537,6 @@ func schema_gardener_landscaper_apis_core_Context(ref common.ReferenceCallback) 
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
-					"useOCM": {
-						SchemaProps: spec.SchemaProps{
-							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
 					"ocmConfig": {
 						SchemaProps: spec.SchemaProps{
 							Description: "OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an ocm configfile. For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md",
@@ -3631,13 +3612,6 @@ func schema_gardener_landscaper_apis_core_ContextConfiguration(ref common.Refere
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
-						},
-					},
-					"useOCM": {
-						SchemaProps: spec.SchemaProps{
-							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
-							Type:        []string{"boolean"},
-							Format:      "",
 						},
 					},
 					"ocmConfig": {
@@ -8132,13 +8106,6 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
-					"useOCM": {
-						SchemaProps: spec.SchemaProps{
-							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
 					"ocmConfig": {
 						SchemaProps: spec.SchemaProps{
 							Description: "OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an ocm configfile. For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md",
@@ -8214,13 +8181,6 @@ func schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref common.Refere
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
-						},
-					},
-					"useOCM": {
-						SchemaProps: spec.SchemaProps{
-							Description: "UseOCM defines whether OCM is used to process installations that reference this context.",
-							Type:        []string{"boolean"},
-							Format:      "",
 						},
 					},
 					"ocmConfig": {
@@ -12120,12 +12080,6 @@ func schema_landscaper_apis_deployer_container_Configuration(ref common.Referenc
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container.Controller"),
 						},
 					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
 				},
 				Required: []string{"namespace", "defaultImage", "initContainer", "waitContainer", "garbageCollection"},
 			},
@@ -12660,12 +12614,6 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 							Description: "Controller contains configuration concerning the controller framework.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Controller"),
-						},
-					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
 						},
 					},
 				},
@@ -13284,12 +13232,6 @@ func schema_landscaper_apis_deployer_helm_Configuration(ref common.ReferenceCall
 							Description: "Controller contains configuration concerning the controller framework.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm.Controller"),
-						},
-					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
 						},
 					},
 				},
@@ -13964,12 +13906,6 @@ func schema_apis_deployer_helm_v1alpha1_Configuration(ref common.ReferenceCallba
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Controller"),
 						},
 					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
 				},
 			},
 		},
@@ -14537,12 +14473,6 @@ func schema_landscaper_apis_deployer_manifest_Configuration(ref common.Reference
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest.Controller"),
 						},
 					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
 				},
 			},
 		},
@@ -14856,12 +14786,6 @@ func schema_apis_deployer_manifest_v1alpha1_Configuration(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Controller"),
 						},
 					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
 				},
 			},
 		},
@@ -15133,12 +15057,6 @@ func schema_apis_deployer_manifest_v1alpha2_Configuration(ref common.ReferenceCa
 							Description: "Controller contains configuration concerning the controller framework.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Controller"),
-						},
-					},
-					"useOCMLib": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
 						},
 					},
 				},

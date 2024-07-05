@@ -42,8 +42,6 @@ type LandscaperConfiguration struct {
 	// for the main controllers (Installation and Execution controller).
 	// +optional
 	HPAMainConfiguration *HPAMainConfiguration `json:"hpaMain,omitempty"`
-	// +optional
-	UseOCMLib bool `json:"useOCMLib,omitempty"`
 	// SignatureVerificationEnforcementPolicy defines how the landscaper handles signature verification.
 	SignatureVerificationEnforcementPolicy SignatureVerificationEnforcementPolicy `json:"signatureVerificationEnforcementPolicy,omitempty"`
 }

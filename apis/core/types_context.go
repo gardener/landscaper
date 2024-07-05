@@ -36,9 +36,6 @@ type ContextConfiguration struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
-	// UseOCM defines whether OCM is used to process installations that reference this context.
-	// +optional
-	UseOCM bool `json:"useOCM,omitempty"`
 	// OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an
 	// ocm configfile.
 	// For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md

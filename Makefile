@@ -63,7 +63,7 @@ test: envtest registry ## Runs unit tests.
 
 .PHONY: integration-test
 integration-test: ## Runs integration tests.
-	@$(REPO_ROOT)/hack/local-integration-test $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION) $(USE_OCM_LIB)
+	@$(REPO_ROOT)/hack/local-integration-test $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION)
 
 .PHONY: integration-test-pure
 integration-test-pure: ## Runs integration tests without installing the Landscaper first.
@@ -71,7 +71,7 @@ integration-test-pure: ## Runs integration tests without installing the Landscap
 
 .PHONY: integration-test-with-cluster-creation
 integration-test-with-cluster-creation: ## Runs integration tests and creates a cluster first.
-	@$(REPO_ROOT)/hack/local-integration-test-with-cluster-creation $(KUBECONFIG_PATH) garden-laas $(EFFECTIVE_VERSION) 0 $(USE_OCM_LIB)
+	@$(REPO_ROOT)/hack/local-integration-test-with-cluster-creation $(KUBECONFIG_PATH) garden-laas $(EFFECTIVE_VERSION) 0
 
 ##@ Build
 

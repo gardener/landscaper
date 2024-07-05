@@ -108,5 +108,3 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-useOCMLib: true
