@@ -17,6 +17,9 @@ spec:
       apiVersion: gcp.provider.extensions.gardener.cloud/v1alpha1
       kind: ControlPlaneConfig
       zone: europe-west1-b
+    workersSettings:
+      sshAccess:
+        enabled: false
     workers:
       - name: worker-r27th
         minimum: 1
