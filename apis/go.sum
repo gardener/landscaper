@@ -194,6 +194,8 @@ k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 h1:BZqlfIlq5YbRMFko6/PM7F
 k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340/go.mod h1:yD4MZYeKMBwQKVht279WycxKyM84kkAx2DPrTXaeb98=
 k8s.io/kube-openapi v0.0.0-20240620174524-b456828f718b h1:Q9xmGWBvOGd8UJyccgpYlLosk/JlfP3xQLNkQlHJeXw=
 k8s.io/kube-openapi v0.0.0-20240620174524-b456828f718b/go.mod h1:UxDHUPsUwTOOxSU+oXURfFBcAS6JwiRXTYqYwfuGowc=
+k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f h1:2sXuKesAYbRHxL3aE2PN6zX/gcJr22cjrsej+W784Tc=
+k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f/go.mod h1:UxDHUPsUwTOOxSU+oXURfFBcAS6JwiRXTYqYwfuGowc=
 k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0 h1:jgGTlFYnhF1PM1Ax/lAlxUPE+KfCIXHaathvJg1C3ak=
 k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=
