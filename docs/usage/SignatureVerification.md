@@ -4,20 +4,12 @@ Landscaper can verify the signature of a component version and only continue wit
 
 > **IMPORTANT**: In the current state, the landscaper can only verify the signature and content when the installation is created/modified. Later controllers such as deployer will access the resources WITHOUT further verification. This implies that a potential malicious manipulation between creating the installation (and verifying the signature) and subsequent resource access can NOT be detected/prevented. Therefore, it is advisable to use this feature with a trusted repository only.
 
-## Requirement
-
-Verification only works when using OCM lib and OCM components. This is enabled as useOCMLib in the `landscaper-config.yaml`:
-```yaml
-useOCMLib: true
-```
-
 ## Enable Verification of Component Versions
 
 ### Landscaper Config Signature Verification Enforcement Policy
 
 In the landscaper config, a verification enforcement policy can be specified:
 ```yaml
-useOCMLib: true
 signatureVerificationEnforcementPolicy: DoNotEnforce # DoNotEnforce(DEFAULT)|Enforce|Disabled
 ```
 The following values are possible:
@@ -52,8 +44,6 @@ metadata:
   name: default-context
   namespace: default
 # ...
-
-useOCM: true
 
 verificationSignatures:
   acme-sig:

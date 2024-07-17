@@ -145,7 +145,6 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			ComponentDescriptorPullSecret: componentDescriptorSecret,
 
 			OCMConfigConfigMapName: OCMConfigConfigMapName(c.DeployItem.Namespace, c.DeployItem.Name),
-			UseOCM:                 c.Context.UseOCM,
 
 			Name:                 c.DeployItem.Name,
 			Namespace:            c.Configuration.Namespace,
@@ -593,7 +592,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 			}
 		}
 
-		registryAccess, err := registries.GetFactory(c.Context.UseOCM).NewRegistryAccess(ctx, &model.RegistryAccessOptions{
+		registryAccess, err := registries.GetFactory().NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			Fs:                fs,
 			OcmConfig:         ocmConfig,
 			OciRegistryConfig: c.Configuration.OCI,

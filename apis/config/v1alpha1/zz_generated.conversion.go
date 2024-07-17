@@ -621,7 +621,6 @@ func autoConvert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfigurat
 	out.DeployItemTimeouts = (*config.DeployItemTimeouts)(unsafe.Pointer(in.DeployItemTimeouts))
 	out.LsDeployments = (*config.LsDeployments)(unsafe.Pointer(in.LsDeployments))
 	out.HPAMainConfiguration = (*config.HPAMainConfiguration)(unsafe.Pointer(in.HPAMainConfiguration))
-	out.UseOCMLib = in.UseOCMLib
 	out.SignatureVerificationEnforcementPolicy = config.SignatureVerificationEnforcementPolicy(in.SignatureVerificationEnforcementPolicy)
 	return nil
 }
@@ -649,7 +648,6 @@ func autoConvert_config_LandscaperConfiguration_To_v1alpha1_LandscaperConfigurat
 	out.DeployItemTimeouts = (*DeployItemTimeouts)(unsafe.Pointer(in.DeployItemTimeouts))
 	out.LsDeployments = (*LsDeployments)(unsafe.Pointer(in.LsDeployments))
 	out.HPAMainConfiguration = (*HPAMainConfiguration)(unsafe.Pointer(in.HPAMainConfiguration))
-	out.UseOCMLib = in.UseOCMLib
 	out.SignatureVerificationEnforcementPolicy = SignatureVerificationEnforcementPolicy(in.SignatureVerificationEnforcementPolicy)
 	return nil
 }

@@ -138,7 +138,7 @@ func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}
 
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
 		if !ok {
-			return info.Error("unable to use this function without useOCM set to true")
+			return info.Error("unable to use this function without ocm component version")
 		}
 		compvers := ocmlibCv.GetOCMObject()
 
@@ -201,7 +201,7 @@ func spiffGetResourceContent(cv model.ComponentVersion) func(arguments []interfa
 
 		ocmlibCv, ok := cv.(*ocmlib.ComponentVersion)
 		if !ok {
-			return info.Error("unable to use this function without useOCM set to true")
+			return info.Error("unable to use this function without ocm component version")
 		}
 		compvers := ocmlibCv.GetOCMObject()
 

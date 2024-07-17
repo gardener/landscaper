@@ -15,7 +15,6 @@ import (
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
@@ -29,8 +28,6 @@ const (
 func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	log logging.Logger,
 	config containerv1alpha1.Configuration) (*deployer, error) {
-
-	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
 		lsUncachedClient:   lsUncachedClient,

@@ -355,7 +355,6 @@ func HelmDeployerTests(f *framework.Framework) {
 					},
 					ContextConfiguration: lsv1alpha1.ContextConfiguration{
 						RepositoryContext:   repoCtx,
-						UseOCM:              true,
 						RegistryPullSecrets: []corev1.LocalObjectReference{{Name: "private-registry-key"}},
 					},
 				}

@@ -85,8 +85,6 @@ landscaper:
 #        kind: DeployerRegistration
 #        ...
 
-  useOCMLib: true
-
   deployItemTimeouts:
     # how long deployers may take to react on changes to deploy items
     pickup: 60m

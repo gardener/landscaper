@@ -30,7 +30,6 @@ landscaper:
     deployItemTimeouts:
       pickup: 30s
       abort: 30s
-    useOCMLib: true
 " > $TMP/landscaper-values.yaml
 
 touch $TMP/registry-values.yaml
@@ -85,7 +84,6 @@ printf "
 nameOverride: manifest-deployer
 fullnameOverride: manifest-default-manifest-deployer
 identity: manifest-default
-useOCMLib: true
 
 deployer:
   verbosityLevel: debug
@@ -98,7 +96,6 @@ printf "
 nameOverride: helm-deployer
 fullnameOverride: helm-default-helm-deployer
 identity: helm-default
-useOCMLib: true
 
 deployer:
   verbosityLevel: debug
@@ -111,7 +108,6 @@ printf "
 nameOverride: container-deployer
 fullnameOverride: container-default-container-deployer
 identity: container-default
-useOCMLib: true
 
 deployer:
   verbosityLevel: debug
@@ -124,7 +120,6 @@ printf "
 nameOverride: mock-deployer
 fullnameOverride: mock-default-mock-deployer
 identity: mock-default
-useOCMLib: true
 
 deployer:
   verbosityLevel: debug

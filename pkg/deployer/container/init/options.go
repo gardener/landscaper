@@ -32,8 +32,6 @@ type options struct {
 	RegistrySecretBasePath      string
 	OCMConfigFilePath           string
 
-	UseOCM bool
-
 	podNamespace string
 
 	deployItemName      string
@@ -53,8 +51,6 @@ func (o *options) Complete() {
 	o.StateDirPath = os.Getenv(container.StatePathName)
 	o.RegistrySecretBasePath = os.Getenv(container.RegistrySecretBasePathName)
 	o.OCMConfigFilePath = os.Getenv(container.OCMConfigPathName)
-
-	o.UseOCM = os.Getenv(container.UseOCMName) == "true"
 
 	o.podNamespace = os.Getenv(container.PodNamespaceName)
 	o.deployItemName = os.Getenv(container.DeployItemName)

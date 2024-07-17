@@ -8,8 +8,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/components/registries"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -41,8 +39,6 @@ const (
 func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	log logging.Logger,
 	config helmv1alpha1.Configuration) (deployerlib.Deployer, error) {
-
-	registries.SetOCMLibraryMode(config.UseOCMLib)
 
 	dep := &deployer{
 		lsUncachedClient:   lsUncachedClient,

@@ -28,7 +28,6 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
@@ -65,8 +64,6 @@ func NewController(ctx context.Context,
 		callerName:         callerName,
 		locker:             *lock.NewLocker(lsUncachedClient, hostUncachedClient, callerName),
 	}
-
-	registries.SetOCMLibraryMode(lsConfig.UseOCMLib)
 
 	op := operation.NewOperation(scheme, eventRecorder, lsUncachedClient)
 	ctrl.Operation = *op
