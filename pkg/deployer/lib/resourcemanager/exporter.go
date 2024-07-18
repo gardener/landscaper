@@ -16,7 +16,6 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	"github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib"
@@ -108,39 +107,14 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 }
 
 func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) (map[string]interface{}, error) {
-	// determine client
-	cl := e.kubeClient
-	if export.TargetName != nil {
-		if e.lsClient == nil {
-			return nil, fmt.Errorf("unable to get secondary target %s, because lsClient is not initialized", *export.TargetName)
-		}
-
-		target := &lsv1alpha1.Target{}
-		targetKey := client.ObjectKey{
-			Name:      *export.TargetName,
-			Namespace: e.deployItem.Namespace,
-		}
-		err := read_write_layer.GetTarget(ctx, e.lsClient, targetKey, target, read_write_layer.R000005)
-		if err != nil {
-			return nil, err
-		}
-
-		resolvedTarget, err := targetresolver.Resolve(ctx, target, e.lsClient)
-		if err != nil {
-			return nil, err
-		}
-
-		_, kubeClient, _, err := lib.GetClientMud(ctx, resolvedTarget, e.lsClient)
-		if err != nil {
-			return nil, err
-		}
-
-		cl = kubeClient
+	targetClient, err := lib.GetTargetClient(ctx, e.kubeClient, e.lsClient, e.deployItem.Namespace, export.TargetName)
+	if err != nil {
+		return nil, err
 	}
 
 	// get resource from client
 	obj := kutil.ObjectFromTypedObjectReference(export.FromResource)
-	if err := read_write_layer.GetUnstructured(ctx, cl, kutil.ObjectKeyFromObject(obj), obj,
+	if err := read_write_layer.GetUnstructured(ctx, targetClient, kutil.ObjectKeyFromObject(obj), obj,
 		read_write_layer.R000046); err != nil {
 		return nil, err
 	}
@@ -152,7 +126,7 @@ func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) 
 
 	if export.FromObjectReference != nil {
 		var err error
-		val, err = e.exportFromReferencedResource(ctx, cl, export, val)
+		val, err = e.exportFromReferencedResource(ctx, targetClient, export, val)
 		if err != nil {
 			return nil, err
 		}

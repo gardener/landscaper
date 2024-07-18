@@ -7,16 +7,14 @@ import (
 	"slices"
 	"time"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
-	"github.com/gardener/landscaper/pkg/deployer/lib"
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -43,7 +41,7 @@ func NewDeletionGroup(
 	lsUncachedClient client.Client,
 	definition managedresource.DeletionGroupDefinition,
 	deployItem *lsv1alpha1.DeployItem,
-	targetClient client.Client,
+	primaryTargetClient client.Client,
 	interruptionChecker interruption.InterruptionChecker,
 ) (group *DeletionGroup, err error) {
 	if definition.IsPredefined() && definition.IsCustom() {
@@ -53,41 +51,26 @@ func NewDeletionGroup(
 		return nil, fmt.Errorf("invalid deletion group: either predefinedResourceGroup or customResourceGroup must be set")
 	}
 
-	isCustomWithDifferentTarget := definition.IsCustom() && definition.CustomResourceGroup.TargetName != nil
-	if isCustomWithDifferentTarget && !definition.CustomResourceGroup.DeleteAllResources {
+	hasSecondaryTarget := definition.IsCustom() && definition.CustomResourceGroup.TargetName != nil
+	if hasSecondaryTarget && !definition.CustomResourceGroup.DeleteAllResources {
+		// Resources on a secondary target cluster were not deployed by the Landscaper (assuming that primary and secondary cluster are different).
+		// Therefore, a deletion group with secondary target makes only sense in combination with DeleteAllResources.
 		return nil, fmt.Errorf("invalid deletion group: customResourceGroup.DeleteAllResources must be true if TargetName is set")
 	}
 
-	cl := targetClient
-	if isCustomWithDifferentTarget {
-		target := &lsv1alpha1.Target{}
-		targetKey := client.ObjectKey{
-			Name:      *definition.CustomResourceGroup.TargetName,
-			Namespace: deployItem.Namespace,
-		}
-		err := read_write_layer.GetTarget(ctx, lsUncachedClient, targetKey, target, read_write_layer.R000007)
+	targetClient := primaryTargetClient
+	if hasSecondaryTarget {
+		targetClient, err = lib.GetTargetClient(ctx, primaryTargetClient, lsUncachedClient, deployItem.Namespace, definition.CustomResourceGroup.TargetName)
 		if err != nil {
 			return nil, err
 		}
-
-		resolvedTarget, err := targetresolver.Resolve(ctx, target, lsUncachedClient)
-		if err != nil {
-			return nil, err
-		}
-
-		_, kubeClient, _, err := lib.GetClientMud(ctx, resolvedTarget, lsUncachedClient)
-		if err != nil {
-			return nil, err
-		}
-
-		cl = kubeClient
 	}
 
 	group = &DeletionGroup{
 		definition:          definition,
 		managedResources:    []*managedresource.ManagedResourceStatus{},
 		deployItem:          deployItem,
-		targetClient:        cl,
+		targetClient:        targetClient,
 		interruptionChecker: interruptionChecker,
 	}
 
@@ -97,7 +80,7 @@ func NewDeletionGroup(
 			return nil, err
 		}
 	} else if definition.IsCustom() {
-		group.matcher = newCustomMatcher(definition.CustomResourceGroup, isCustomWithDifferentTarget)
+		group.matcher = newCustomMatcher(definition.CustomResourceGroup, hasSecondaryTarget)
 	}
 
 	return group, nil
