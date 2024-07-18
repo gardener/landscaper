@@ -218,7 +218,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 		return restConfig, kubeClient, clientset, nil
 	}
 	if h.Target != nil {
-		restConfig, kubeClient, clientset, err := lib.GetClientMud(ctx, h.Target, h.lsUncachedClient)
+		restConfig, kubeClient, clientset, err := lib.GetRestConfigAndClientAndClientSet(ctx, h.Target, h.lsUncachedClient)
 		if err != nil {
 			return nil, nil, nil, err
 		}

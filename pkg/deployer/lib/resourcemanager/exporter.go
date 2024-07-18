@@ -107,7 +107,7 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 }
 
 func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) (map[string]interface{}, error) {
-	targetClient, err := lib.GetTargetClient(ctx, e.kubeClient, e.lsClient, e.deployItem.Namespace, export.TargetName)
+	targetClient, err := lib.GetTargetClient(ctx, e.kubeClient, e.lsClient, e.deployItem, export.TargetName)
 	if err != nil {
 		return nil, err
 	}

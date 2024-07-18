@@ -37,7 +37,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
-func GetClientMud(ctx context.Context, resolvedTarget *lsv1alpha1.ResolvedTarget, lsUncachedClient client.Client) (*rest.Config, client.Client, kubernetes.Interface, error) {
+func GetRestConfigAndClientAndClientSet(ctx context.Context, resolvedTarget *lsv1alpha1.ResolvedTarget, lsUncachedClient client.Client) (*rest.Config, client.Client, kubernetes.Interface, error) {
 	targetConfig := &targettypes.KubernetesClusterTargetConfig{}
 	if err := yaml.Unmarshal([]byte(resolvedTarget.Content), targetConfig); err != nil {
 		return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)

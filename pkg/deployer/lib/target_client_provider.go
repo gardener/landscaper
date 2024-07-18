@@ -19,7 +19,7 @@ func GetTargetClient(
 	ctx context.Context,
 	primaryTargetClient client.Client,
 	lsClient client.Client,
-	namespace string,
+	deployItem *lsv1alpha1.DeployItem,
 	secondaryTargetName *string) (targetClient client.Client, err error) {
 
 	if secondaryTargetName == nil {
@@ -30,10 +30,14 @@ func GetTargetClient(
 		return nil, fmt.Errorf("unable to get secondary target %s, because lsClient is not initialized", *secondaryTargetName)
 	}
 
+	if deployItem == nil {
+		return nil, fmt.Errorf("unable to get secondary target %s, because deployItem is not initialized", *secondaryTargetName)
+	}
+
 	target := &lsv1alpha1.Target{}
 	targetKey := client.ObjectKey{
 		Name:      *secondaryTargetName,
-		Namespace: namespace,
+		Namespace: deployItem.Namespace,
 	}
 	err = read_write_layer.GetTarget(ctx, lsClient, targetKey, target, read_write_layer.R000005)
 	if err != nil {
@@ -45,7 +49,7 @@ func GetTargetClient(
 		return nil, fmt.Errorf("unable to resolve secondary target %s: %w", *secondaryTargetName, err)
 	}
 
-	_, targetClient, _, err = GetClientMud(ctx, resolvedTarget, lsClient)
+	_, targetClient, _, err = GetRestConfigAndClientAndClientSet(ctx, resolvedTarget, lsClient)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get secondary target client %s: %w", *secondaryTargetName, err)
 	}

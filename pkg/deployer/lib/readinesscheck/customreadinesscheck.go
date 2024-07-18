@@ -48,7 +48,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady(ctx context.Context) error {
 		return nil
 	}
 
-	targetClient, err := lib.GetTargetClient(ctx, c.Client, c.LsClient, c.DeployItem.Namespace, c.Configuration.TargetName)
+	targetClient, err := lib.GetTargetClient(ctx, c.Client, c.LsClient, c.DeployItem, c.Configuration.TargetName)
 	if err != nil {
 		return err
 	}

@@ -137,7 +137,7 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 		return restConfig, kubeClient, clientset, nil
 	}
 	if m.Target != nil {
-		restConfig, kubeClient, clientset, err := lib.GetClientMud(ctx, m.Target, m.lsUncachedClient)
+		restConfig, kubeClient, clientset, err := lib.GetRestConfigAndClientAndClientSet(ctx, m.Target, m.lsUncachedClient)
 		if err != nil {
 			return nil, nil, nil, err
 		}
