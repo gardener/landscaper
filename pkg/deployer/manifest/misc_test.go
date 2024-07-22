@@ -221,6 +221,7 @@ var _ = Describe("", func() {
 			Key(state.Namespace, "myitem").
 			ProviderConfig(manifestConfig).
 			Target(target.Namespace, target.Name).
+			WithTimeout(12 * time.Second).
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
@@ -517,6 +518,7 @@ var _ = Describe("", func() {
 			Key(state.Namespace, "myitem").
 			ProviderConfig(manifestConfig).
 			Target(target.Namespace, target.Name).
+			WithTimeout(12 * time.Second).
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
@@ -594,5 +596,109 @@ var _ = Describe("", func() {
 		Eventually(func() error {
 			return m.Delete(ctx)
 		}, 1*time.Second).WithTimeout(1 * time.Minute).Should(Succeed())
+	})
+
+	It("should patch a manifest after deployment and before delete", func() {
+		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		sr := genericresolver.New(state.Client)
+		rt, err := sr.Resolve(ctx, target)
+		Expect(err).ToNot(HaveOccurred())
+
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "my-cm",
+				Namespace:  state.Namespace,
+				Finalizers: []string{"kubernetes.io/test"},
+			},
+			Data: map[string]string{
+				"key1": "val1a",
+				"key2": "val2",
+			},
+		}
+		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+
+		patchA := map[string]map[string]string{
+			"data": {
+				"key1": "val1b",
+				"key3": "val3",
+			},
+		}
+		patchABytes, err := json.Marshal(patchA)
+		Expect(err).ToNot(HaveOccurred())
+		patchARaw := &runtime.RawExtension{
+			Raw: patchABytes,
+		}
+
+		patchB := map[string]map[string]string{
+			"data": {
+				"key1": "val1c",
+				"key4": "val4",
+			},
+		}
+		patchBBytes, err := json.Marshal(patchB)
+		Expect(err).ToNot(HaveOccurred())
+		patchBRaw := &runtime.RawExtension{
+			Raw: patchBBytes,
+		}
+
+		manifestConfig := &manifestv1alpha2.ProviderConfiguration{}
+		manifestConfig.Manifests = []managedresource.Manifest{
+			{
+				Policy:               managedresource.ManagePolicy,
+				Manifest:             rawCM,
+				PatchAfterDeployment: patchARaw,
+				PatchBeforeDelete:    patchBRaw,
+			},
+		}
+		item, err := manifest.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(manifestConfig).
+			Target(target.Namespace, target.Name).
+			WithTimeout(12 * time.Second).
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.SetInitTime(ctx, item)).To(Succeed())
+
+		m, err := manifest.New(testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, rt)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(m.Reconcile(ctx)).To(Succeed())
+		Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)).To(Succeed())
+		Expect(cm.Data).To(HaveLen(3))
+		Expect(cm.Data).To(HaveKeyWithValue("key1", "val1b"))
+		Expect(cm.Data).To(HaveKeyWithValue("key2", "val2"))
+		Expect(cm.Data).To(HaveKeyWithValue("key3", "val3"))
+
+		// We delete the deployitem. This should merge-overwrite the data and add a deletion timestamp at the deployed
+		// configmap. A finalizer prevents that the configmap vanishes. This allows us to check the configmap in
+		// parallel. As soon as the before-delete annotation and a deletion timestamp are there, we remove
+		// the finalizer, so that the deletion can finish. (The Delete method does not return until the deployitem is
+		// gone or the timeout is reached.)
+		go func() {
+			defer GinkgoRecover()
+			Eventually(func(g Gomega) {
+				obj := &corev1.ConfigMap{}
+				g.Expect(state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), obj)).To(Succeed())
+				g.Expect(obj.DeletionTimestamp.IsZero()).To(BeFalse())
+				g.Expect(obj.Data).To(HaveLen(4))
+				g.Expect(obj.Data).To(HaveKeyWithValue("key1", "val1c"))
+				g.Expect(obj.Data).To(HaveKeyWithValue("key2", "val2"))
+				g.Expect(obj.Data).To(HaveKeyWithValue("key3", "val3"))
+				g.Expect(obj.Data).To(HaveKeyWithValue("key4", "val4"))
+
+				obj.ObjectMeta.Finalizers = nil
+				g.Expect(state.Client.Update(ctx, obj)).To(Succeed())
+			}, 10*time.Second, time.Second).Should(Succeed())
+		}()
+
+		Expect(m.Delete(ctx)).To(Succeed())
+
+		err = state.Client.Get(ctx, k8sclient.ObjectKeyFromObject(cm), cm)
+		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "configmap should be deleted")
 	})
 })

@@ -12,6 +12,7 @@ import (
 
 func DeleteManagedResources(
 	ctx context.Context,
+	lsUncachedClient client.Client,
 	managedResources managedresource.ManagedResourceStatusList,
 	groupDefinitions []managedresource.DeletionGroupDefinition,
 	targetClient client.Client,
@@ -31,7 +32,7 @@ func DeleteManagedResources(
 	groups := make([]*DeletionGroup, len(groupDefinitions))
 	for i := range groupDefinitions {
 		var err error
-		groups[i], err = NewDeletionGroup(groupDefinitions[i], deployItem, targetClient, interruptionChecker)
+		groups[i], err = NewDeletionGroup(ctx, lsUncachedClient, groupDefinitions[i], deployItem, targetClient, interruptionChecker)
 		if err != nil {
 			return err
 		}

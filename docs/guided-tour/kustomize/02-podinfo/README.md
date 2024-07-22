@@ -45,7 +45,7 @@ shown in the second row.
         type: gitHub
         repoUrl: https://github.com/stefanprodan/podinfo
         commit: 0b1481aa8ed0a6c34af84f779824a74200d5c1d6  # required
-        ref: 6.7.0                                        # optional
+        ref: 6.7.0
     ```
 
   The [template for the deploy item](blueprint/deploy-execution.yaml) takes them from there:

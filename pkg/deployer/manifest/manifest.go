@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -22,10 +21,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils"
 
-	"k8s.io/apimachinery/pkg/util/yaml"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 
@@ -141,30 +137,7 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 		return restConfig, kubeClient, clientset, nil
 	}
 	if m.Target != nil {
-		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-		if err := yaml.Unmarshal([]byte(m.Target.Content), targetConfig); err != nil {
-			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
-		}
-
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.Target.Namespace, m.lsUncachedClient)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		restConfig, err := kubeconfig.ClientConfig()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeClient, err := client.New(restConfig, client.Options{})
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		clientset, err := kubernetes.NewForConfig(restConfig)
+		restConfig, kubeClient, clientset, err := lib.GetRestConfigAndClientAndClientSet(ctx, m.Target, m.lsUncachedClient)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -172,6 +145,7 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 		m.TargetRestConfig = restConfig
 		m.TargetKubeClient = kubeClient
 		m.TargetClientSet = clientset
+
 		return restConfig, kubeClient, clientset, nil
 	}
 	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")

@@ -48,7 +48,7 @@ const (
 func ApplyManifests(ctx context.Context, opts ManifestApplierOptions) (managedresource.ManagedResourceStatusList, error) {
 	opts.InterruptionChecker = interruption.NewIgnoreInterruptionChecker()
 	applier := NewManifestApplier(opts)
-	if err := applier.Apply(ctx); err != nil {
+	if _, err := applier.Apply(ctx); err != nil {
 		return nil, err
 	}
 	return applier.GetManagedResourcesStatus(), nil
@@ -70,6 +70,8 @@ type ManifestApplierOptions struct {
 	Labels                     map[string]string
 	DeletionGroupsDuringUpdate []managedresource.DeletionGroupDefinition
 	InterruptionChecker        interruption.InterruptionChecker
+
+	LsUncachedClient client.Client
 }
 
 // ManifestApplier creates or updated manifest based on their definition.
@@ -86,6 +88,7 @@ type ManifestApplier struct {
 	labels                     map[string]string
 	deletionGroupsDuringUpdate []managedresource.DeletionGroupDefinition
 	interruptionChecker        interruption.InterruptionChecker
+	lsUncachedClient           client.Client
 
 	// properties created during runtime
 
@@ -115,6 +118,10 @@ type Manifest struct {
 	AnnotateBeforeCreate map[string]string `json:"annotateBeforeCreate,omitempty"`
 	// AnnotateBeforeDelete defines annotations that are being set before the manifest is being deleted.
 	AnnotateBeforeDelete map[string]string `json:"annotateBeforeDelete,omitempty"`
+	// PatchAfterDeployment defines a patch that is being applied after an object has been deployed.
+	PatchAfterDeployment *runtime.RawExtension `json:"patchAfterDeployment,omitempty"`
+	// PatchBeforeDelete defines a patch that is being applied before an object is being deleted.
+	PatchBeforeDelete *runtime.RawExtension `json:"patchBeforeDelete,omitempty"`
 }
 
 // NewManifestApplier creates a new manifest deployer
@@ -132,6 +139,7 @@ func NewManifestApplier(opts ManifestApplierOptions) *ManifestApplier {
 		deletionGroupsDuringUpdate: opts.DeletionGroupsDuringUpdate,
 		interruptionChecker:        opts.InterruptionChecker,
 		apiResourceHandler:         CreateApiResourceHandler(opts.Clientset),
+		lsUncachedClient:           opts.LsUncachedClient,
 	}
 }
 
@@ -141,14 +149,15 @@ func (a *ManifestApplier) GetManagedResourcesStatus() managedresource.ManagedRes
 }
 
 // Apply creates or updates all configured manifests.
-func (a *ManifestApplier) Apply(ctx context.Context) error {
+func (a *ManifestApplier) Apply(ctx context.Context) ([]*PatchInfo, error) {
 	if err := a.prepareManifests(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	var (
-		allErrs []error
-		errMux  sync.Mutex
+		allErrs    []error
+		errMux     sync.Mutex
+		patchInfos = make([]*PatchInfo, 0)
 	)
 	// Keep track of the current managed resources before applying so
 	// we can then compare which one need to be cleaned up.
@@ -156,6 +165,7 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 	a.managedResources = make(managedresource.ManagedResourceStatusList, 0)
 
 	var timeoutErr lserrors.LsError
+
 	for _, list := range a.manifestExecutions {
 		var (
 			wg               = sync.WaitGroup{}
@@ -171,7 +181,7 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 			wg.Add(1)
 			go func(m *Manifest) {
 				defer wg.Done()
-				mr, err := a.applyObject(ctx, m)
+				mr, patchInfo, err := a.applyObject(ctx, m)
 				if err != nil {
 					errMux.Lock()
 					defer errMux.Unlock()
@@ -180,6 +190,9 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 				if mr != nil {
 					mux.Lock()
 					managedResources = append(managedResources, *mr)
+					if patchInfo != nil {
+						patchInfos = append(patchInfos, patchInfo)
+					}
 					mux.Unlock()
 				}
 			}(m)
@@ -187,7 +200,7 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 		wg.Wait()
 
 		if timeoutErr != nil {
-			return timeoutErr
+			return nil, timeoutErr
 		}
 
 		sort.Sort(managesResourceList(managedResources))
@@ -196,25 +209,155 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 
 	if len(allErrs) != 0 {
 		aggErr := apimacherrors.NewAggregate(allErrs)
-		return lserrors.NewWrappedError(apimacherrors.NewAggregate(allErrs),
-			"ApplyObjects", "ApplyNewObject", aggErr.Error())
+		return nil, lserrors.NewWrappedError(apimacherrors.NewAggregate(allErrs), "ApplyObjects", "ApplyNewObject", aggErr.Error())
 	}
 
 	// remove old objects
 	if err := a.cleanupOrphanedResourcesInGroups(ctx, oldManagedResources); err != nil {
 		err = fmt.Errorf("unable to cleanup orphaned resources: %w", err)
-		return lserrors.NewWrappedError(err,
-			"ApplyObjects", "cleanupOrphanedResourcesInGroups", err.Error())
+		return nil, lserrors.NewWrappedError(err, "ApplyObjects", "cleanupOrphanedResourcesInGroups", err.Error())
 	}
-	return nil
+	return patchInfos, nil
 }
 
 // applyObject applies a managed resource to the target cluster.
-func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (*managedresource.ManagedResourceStatus, error) {
+func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (*managedresource.ManagedResourceStatus, *PatchInfo, error) {
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "applyObject")
 	if manifest.Policy == managedresource.IgnorePolicy {
-		return nil, nil
+		return nil, nil, nil
 	}
+
+	obj, err := a.getUnstructuredManifestObject(ctx, manifest)
+	if err != nil {
+		return nil, nil, err
+	}
+	key := client.ObjectKeyFromObject(obj)
+
+	currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
+	currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
+	if err := read_write_layer.GetUnstructured(ctx, a.kubeClient, key, &currObj, read_write_layer.R000048); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return nil, nil, fmt.Errorf("unable to get object: %w", err)
+		}
+		// inject labels
+		a.injectLabels(obj)
+		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
+
+		if manifest.AnnotateBeforeCreate != nil {
+			objAnnotations := obj.GetAnnotations()
+			if objAnnotations == nil {
+				objAnnotations = manifest.AnnotateBeforeCreate
+			} else {
+				if err := mergo.Merge(&objAnnotations, manifest.AnnotateBeforeCreate, mergo.WithOverride); err != nil {
+					return nil, nil, fmt.Errorf("unable to set annotations before create for resource %s: %w", key.String(), err)
+				}
+			}
+
+			obj.SetAnnotations(objAnnotations)
+		}
+
+		if err := a.kubeClient.Create(ctx, obj); err != nil {
+			return nil, nil, fmt.Errorf("unable to create resource %s: %w", key.String(), err)
+		}
+
+		var patchInfo *PatchInfo
+		if manifest.PatchAfterDeployment != nil {
+			patchInfo = &PatchInfo{
+				Resource: obj,
+				Patch:    manifest.PatchAfterDeployment,
+			}
+		}
+
+		return &managedresource.ManagedResourceStatus{
+			AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
+			PatchBeforeDelete:    manifest.PatchBeforeDelete,
+			Policy:               manifest.Policy,
+			Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
+		}, patchInfo, nil
+	}
+
+	mr := &managedresource.ManagedResourceStatus{
+		AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
+		PatchBeforeDelete:    manifest.PatchBeforeDelete,
+		Policy:               manifest.Policy,
+		Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
+	}
+
+	// if fallback policy is set and the resource is already managed by another deployer
+	// we are not allowed to manage that resource
+	if manifest.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(&currObj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
+		logger.Info("Resource is already managed, skip update", lc.KeyResource, key.String())
+		return nil, nil, nil
+	}
+
+	if manifest.Policy == managedresource.ImmutablePolicy {
+		logger.Info("Resource is immutable, skip update", lc.KeyResource, key.String())
+		return mr, nil, nil
+	}
+
+	switch a.updateStrategy {
+	case manifestv1alpha2.UpdateStrategyUpdate:
+		fallthrough
+	case manifestv1alpha2.UpdateStrategyPatch:
+		// inject manifest specific labels
+		a.injectLabels(obj)
+		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
+
+		// Set the required and immutable fields from the current object.
+		// Update fails if these fields are missing
+		if err := kutil.SetRequiredNestedFieldsFromObj(&currObj, obj); err != nil {
+			return mr, nil, err
+		}
+
+		if a.updateStrategy == manifestv1alpha2.UpdateStrategyUpdate {
+			if err := a.kubeClient.Update(ctx, obj); err != nil {
+				return mr, nil, fmt.Errorf("unable to update resource %s: %w", key.String(), err)
+			}
+		} else {
+			if err := a.kubeClient.Patch(ctx, obj, client.MergeFrom(&currObj)); err != nil {
+				return mr, nil, fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
+			}
+		}
+	case manifestv1alpha2.UpdateStrategyMerge:
+		fallthrough
+	case manifestv1alpha2.UpdateStrategyMergeOverwrite:
+		var mergeOpts []func(*mergo.Config)
+		if a.updateStrategy == manifestv1alpha2.UpdateStrategyMergeOverwrite {
+			mergeOpts = []func(*mergo.Config){
+				mergo.WithOverride,
+			}
+		} else {
+			mergeOpts = []func(*mergo.Config){}
+		}
+
+		if err := mergo.Merge(&currObj.Object, obj.Object, mergeOpts...); err != nil {
+			return mr, nil, fmt.Errorf("unable to merge changes for resource %s: %w", key.String(), err)
+		}
+
+		// inject manifest specific labels
+		a.injectLabels(&currObj)
+		kutil.SetMetaDataLabel(&currObj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
+
+		if err := a.kubeClient.Update(ctx, &currObj); err != nil {
+			return mr, nil, fmt.Errorf("unable to update resource %s: %w", key.String(), err)
+		}
+	default:
+		return mr, nil, fmt.Errorf("%s is not a valid update strategy", a.updateStrategy)
+	}
+
+	var patchInfo *PatchInfo
+	if manifest.PatchAfterDeployment != nil {
+		patchInfo = &PatchInfo{
+			Resource: &currObj,
+			Patch:    manifest.PatchAfterDeployment,
+		}
+	}
+
+	return mr, patchInfo, nil
+}
+
+func (a *ManifestApplier) getUnstructuredManifestObject(ctx context.Context, manifest *Manifest) (*unstructured.Unstructured, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "getManifestObjectKey")
 
 	gvk := manifest.TypeMeta.GetObjectKind().GroupVersionKind().String()
 	obj := &unstructured.Unstructured{}
@@ -237,109 +380,7 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 
 	logger.Debug("Applying manifest", lc.KeyResource, kutil.ObjectKeyFromObject(obj).String(), lc.KeyGroupVersionKind, gvk)
 
-	currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
-	currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
-	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-
-	if err := read_write_layer.GetUnstructured(ctx, a.kubeClient, key, &currObj, read_write_layer.R000048); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("unable to get object: %w", err)
-		}
-		// inject labels
-		a.injectLabels(obj)
-		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
-
-		if manifest.AnnotateBeforeCreate != nil {
-			objAnnotations := obj.GetAnnotations()
-			if objAnnotations == nil {
-				objAnnotations = manifest.AnnotateBeforeCreate
-			} else {
-				if err := mergo.Merge(&objAnnotations, manifest.AnnotateBeforeCreate, mergo.WithOverride); err != nil {
-					return nil, fmt.Errorf("unable to set annotations before create for resource %s: %w", key.String(), err)
-				}
-			}
-
-			obj.SetAnnotations(objAnnotations)
-		}
-
-		if err := a.kubeClient.Create(ctx, obj); err != nil {
-			return nil, fmt.Errorf("unable to create resource %s: %w", key.String(), err)
-		}
-		return &managedresource.ManagedResourceStatus{
-			AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
-			Policy:               manifest.Policy,
-			Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
-		}, nil
-	}
-
-	mr := &managedresource.ManagedResourceStatus{
-		AnnotateBeforeDelete: manifest.AnnotateBeforeDelete,
-		Policy:               manifest.Policy,
-		Resource:             *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
-	}
-
-	// if fallback policy is set and the resource is already managed by another deployer
-	// we are not allowed to manage that resource
-	if manifest.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(&currObj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
-		logger.Info("Resource is already managed, skip update", lc.KeyResource, key.String())
-		return nil, nil
-	}
-
-	if manifest.Policy == managedresource.ImmutablePolicy {
-		logger.Info("Resource is immutable, skip update", lc.KeyResource, key.String())
-		return mr, nil
-	}
-
-	switch a.updateStrategy {
-	case manifestv1alpha2.UpdateStrategyUpdate:
-		fallthrough
-	case manifestv1alpha2.UpdateStrategyPatch:
-		// inject manifest specific labels
-		a.injectLabels(obj)
-		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
-
-		// Set the required and immutable fields from the current object.
-		// Update fails if these fields are missing
-		if err := kutil.SetRequiredNestedFieldsFromObj(&currObj, obj); err != nil {
-			return mr, err
-		}
-
-		if a.updateStrategy == manifestv1alpha2.UpdateStrategyUpdate {
-			if err := a.kubeClient.Update(ctx, obj); err != nil {
-				return mr, fmt.Errorf("unable to update resource %s: %w", key.String(), err)
-			}
-		} else {
-			if err := a.kubeClient.Patch(ctx, obj, client.MergeFrom(&currObj)); err != nil {
-				return mr, fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
-			}
-		}
-	case manifestv1alpha2.UpdateStrategyMerge:
-		fallthrough
-	case manifestv1alpha2.UpdateStrategyMergeOverwrite:
-		var mergeOpts []func(*mergo.Config)
-		if a.updateStrategy == manifestv1alpha2.UpdateStrategyMergeOverwrite {
-			mergeOpts = []func(*mergo.Config){
-				mergo.WithOverride,
-			}
-		} else {
-			mergeOpts = []func(*mergo.Config){}
-		}
-
-		if err := mergo.Merge(&currObj.Object, obj.Object, mergeOpts...); err != nil {
-			return mr, fmt.Errorf("unable to merge changes for resource %s: %w", key.String(), err)
-		}
-
-		// inject manifest specific labels
-		a.injectLabels(&currObj)
-		kutil.SetMetaDataLabel(&currObj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
-
-		if err := a.kubeClient.Update(ctx, &currObj); err != nil {
-			return mr, fmt.Errorf("unable to update resource %s: %w", key.String(), err)
-		}
-	default:
-		return mr, fmt.Errorf("%s is not a valid update strategy", a.updateStrategy)
-	}
-	return mr, nil
+	return obj, nil
 }
 
 func (a *ManifestApplier) injectLabels(obj client.Object) {
@@ -356,7 +397,9 @@ func (a *ManifestApplier) injectLabels(obj client.Object) {
 	obj.SetLabels(labels)
 }
 
-func (a *ManifestApplier) cleanupOrphanedResourcesInGroups(ctx context.Context, oldManagedResources []managedresource.ManagedResourceStatus) error {
+func (a *ManifestApplier) cleanupOrphanedResourcesInGroups(ctx context.Context,
+	oldManagedResources []managedresource.ManagedResourceStatus) error {
+
 	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "cleanupOrphanedResourcesInGroups")
 	orphanedManagedResources := []managedresource.ManagedResourceStatus{}
 
@@ -390,8 +433,17 @@ func (a *ManifestApplier) cleanupOrphanedResourcesInGroups(ctx context.Context, 
 		orphanedManagedResources = append(orphanedManagedResources, *mr)
 	}
 
+	for i := range orphanedManagedResources {
+		mr := &orphanedManagedResources[i]
+
+		if _, err := AnnotateAndPatchBeforeDelete(ctx, mr, a.kubeClient); err != nil {
+			return err
+		}
+	}
+
 	return DeleteManagedResources(
 		ctx,
+		a.lsUncachedClient,
 		orphanedManagedResources,
 		a.deletionGroupsDuringUpdate,
 		a.kubeClient,
@@ -433,9 +485,97 @@ func FilterByPolicy(ctx context.Context, mr *managedresource.ManagedResourceStat
 	return true, nil
 }
 
+func AnnotateAndPatchBeforeDelete(ctx context.Context, mr *managedresource.ManagedResourceStatus, targetClient client.Client) (notFound bool, err error) {
+	if mr.AnnotateBeforeDelete == nil && mr.PatchBeforeDelete == nil {
+		return false, nil
+	}
+
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
+	ref := mr.Resource
+	obj := kutil.ObjectFromCoreObjectReference(&ref)
+	currObj := unstructured.Unstructured{}
+	currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
+	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
+	if err := read_write_layer.GetUnstructured(ctx, targetClient, key, &currObj, read_write_layer.R000052); err != nil {
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, fmt.Errorf("unable to get resource with before-delete annotations %s %s: %w",
+			obj.GroupVersionKind().String(), obj.GetName(), err)
+	}
+
+	// annotate before delete
+	if mr.AnnotateBeforeDelete != nil {
+		objAnnotations := currObj.GetAnnotations()
+		if objAnnotations == nil {
+			objAnnotations = mr.AnnotateBeforeDelete
+		} else {
+			if err := mergo.Merge(&objAnnotations, mr.AnnotateBeforeDelete, mergo.WithOverride); err != nil {
+				logger.Error(err, "unable to merge resource annotations with before-delete annotations")
+				return false, fmt.Errorf("unable to merge resource annotations with before-delete annotations %s %s: %w",
+					obj.GroupVersionKind().String(), obj.GetName(), err)
+			}
+		}
+		currObj.SetAnnotations(objAnnotations)
+	}
+
+	// patch before delete
+	if mr.PatchBeforeDelete != nil {
+		patchObj := make(map[string]interface{})
+		if err := json.Unmarshal(mr.PatchBeforeDelete.Raw, &patchObj); err != nil {
+			return false, fmt.Errorf("error while decoding patch: %w", err)
+		}
+
+		if err := mergo.Merge(&currObj.Object, patchObj, mergo.WithOverride); err != nil {
+			return false, fmt.Errorf("unable to merge changes changes before delete for resource %s: %w", key.String(), err)
+		}
+	}
+
+	if err := targetClient.Update(ctx, &currObj); err != nil {
+		if apierrors.IsConflict(err) {
+			logger.Info("unable to update resource with before-delete annotations due to a conflict", lc.KeyError, err.Error())
+			return false, fmt.Errorf("unable to update resource with before-delete annotations due to a conflict %s %s: %w",
+				obj.GroupVersionKind().String(), obj.GetName(), err)
+		} else {
+			logger.Error(err, "unable to update resource with before-delete annotations")
+			return false, fmt.Errorf("unable to update resource with before-delete annotations %s %s: %w",
+				obj.GroupVersionKind().String(), obj.GetName(), err)
+		}
+	}
+
+	return false, nil
+}
+
 // filterOrphaned returns true if the resource is orphaned, i.e. not contained in a.managedResources.
 func (a *ManifestApplier) filterOrphaned(mr *managedresource.ManagedResourceStatus) bool {
 	return !containsObjectRef(mr.Resource, a.managedResources)
+}
+
+func (a *ManifestApplier) PatchAfterDeployment(ctx context.Context, patchInfos []*PatchInfo) error {
+	for i := range patchInfos {
+		patchInfo := patchInfos[i]
+		key := client.ObjectKeyFromObject(patchInfo.Resource)
+		if err := read_write_layer.GetUnstructured(ctx, a.kubeClient, key, patchInfo.Resource, read_write_layer.R000011); err != nil {
+			return err
+		}
+
+		patchObj := make(map[string]interface{})
+
+		if err := json.Unmarshal(patchInfo.Patch.Raw, &patchObj); err != nil {
+			return fmt.Errorf("error while decoding patch: %w", err)
+		}
+
+		if err := mergo.Merge(&patchInfo.Resource.Object, patchObj, mergo.WithOverride); err != nil {
+			return fmt.Errorf("unable to patch changes for resource %s: %w", key.String(), err)
+		}
+
+		if err := a.kubeClient.Update(ctx, patchInfo.Resource); err != nil {
+			return fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
+		}
+	}
+
+	return nil
 }
 
 // crdIdentifier generates an identifier string from a GroupVersionKind object
@@ -474,6 +614,8 @@ func (a *ManifestApplier) prepareManifests(ctx context.Context) error {
 			Manifest:             obj.Manifest,
 			AnnotateBeforeCreate: obj.AnnotateBeforeCreate,
 			AnnotateBeforeDelete: obj.AnnotateBeforeDelete,
+			PatchAfterDeployment: obj.PatchAfterDeployment,
+			PatchBeforeDelete:    obj.PatchBeforeDelete,
 		}
 		// add to specific execution group
 		if kind == "CustomResourceDefinition" {
@@ -555,4 +697,9 @@ func containsObjectRef(obj corev1.ObjectReference, objects []managedresource.Man
 		}
 	}
 	return false
+}
+
+type PatchInfo struct {
+	Resource *unstructured.Unstructured
+	Patch    *runtime.RawExtension
 }

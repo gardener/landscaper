@@ -45,4 +45,4 @@ components:
         access:
           type: gitHub
           repoUrl: https://github.com/gardener/landscaper
-          commit: 4e7052d9739e7f122eecf346b0f0729d0dae50d1
+          commit: 2d9a02e1e3d0d36cbfedb28975dde8f4d6fdbb11

@@ -111,6 +111,8 @@ spec:
           - value: 1
           - value: 2
           - value: 3
+        # alternative cluster to get the resource values
+        targetName: someOtherTargetName
 
     # Name of the release: helm install [name]
     name: my-release
@@ -158,6 +160,38 @@ The value is taken from a rendered resource and a jsonpath to the value.
 For a complete documentation of the available jsonPath see here (https://kubernetes.io/docs/reference/kubectl/jsonpath/).
 
 :warning: Only unique identifiable resources (_apiVersion_, _kind_, _name_ and _namespace_).
+
+If some values of k8s resources are exported, the default target of a DeployItem determines the cluster
+from where these values are fetched. You can specify another `targetName`, which is used to get these values
+from a different cluster. This is helpful if your DeployItem deploys something to some cluster which itself
+deploys some stuff to a second cluster and your check requires to access the resources on this second cluster.
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: myDeployItemName
+spec:
+  ...
+  
+  target: 
+    import: my-cluster
+
+  config:
+    ...
+    
+    exports:
+      exports:
+      - key: someKey
+        jsonPath: .data.somekey 
+        fromResource: 
+          apiVersion: someVersion
+          kind: someKind
+          name: someName
+          namespace: someNamespace
+        # optional: other target cluster to fetch the export data  
+        targetName: otherTargetName
+```
 
 ## Manifest-Only Deployment
 

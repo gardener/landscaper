@@ -26,6 +26,8 @@ func ExpandManagedResourceManifests(origManifests []managedresource.Manifest) ([
 				Manifest:             rawExtensions[k],
 				AnnotateBeforeCreate: origManifest.AnnotateBeforeCreate,
 				AnnotateBeforeDelete: origManifest.AnnotateBeforeDelete,
+				PatchAfterDeployment: origManifest.PatchAfterDeployment,
+				PatchBeforeDelete:    origManifest.PatchBeforeDelete,
 			})
 		}
 	}

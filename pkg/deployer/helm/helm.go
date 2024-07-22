@@ -8,12 +8,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"strings"
-
-	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
-	"k8s.io/utils/ptr"
 
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -23,10 +18,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	helmv1alpha1validation "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation"
@@ -222,30 +218,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 		return restConfig, kubeClient, clientset, nil
 	}
 	if h.Target != nil {
-		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-		if err := yaml.Unmarshal([]byte(h.Target.Content), targetConfig); err != nil {
-			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
-		}
-
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.Target.Namespace, h.lsUncachedClient)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		restConfig, err := kubeconfig.ClientConfig()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeClient, err := client.New(restConfig, client.Options{})
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		clientset, err := kubernetes.NewForConfig(restConfig)
+		restConfig, kubeClient, clientset, err := lib.GetRestConfigAndClientAndClientSet(ctx, h.Target, h.lsUncachedClient)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -253,6 +226,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 		h.TargetRestConfig = restConfig
 		h.TargetKubeClient = kubeClient
 		h.TargetClientSet = clientset
+
 		return restConfig, kubeClient, clientset, nil
 	}
 	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
