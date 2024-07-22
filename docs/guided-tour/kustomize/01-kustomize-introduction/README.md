@@ -67,6 +67,9 @@ in the [deploy item](blueprint/deploy-execution.yaml).
 
 ## Cleanup
 
+> The Flux controllers that have been installed here, are a prerequisite for the next two examples.
+  Therefore, if you want to continue with them, skip the cleanup.
+
 You can remove the Installation with the script
 [commands/delete-installation.sh](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/kustomize/01-kustomize-introduction/commands/delete-installation.sh).
 

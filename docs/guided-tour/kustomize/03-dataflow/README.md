@@ -15,7 +15,6 @@ Furthermore, the Landscaper checks the readiness of resources on the second targ
 
 For the usual prerequisites, see [here](../../README.md).
 In addition, we use a second target cluster (which may coincide with the first).
-The first target cluster is for the Flux resources, and the second for the podinfo application.
 
 Moreover, we assume that Flux is installed on the first target cluster.
 We need the [source controller][1] and the [kustomize controller][2] of Flux.
