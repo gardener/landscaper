@@ -1,0 +1,48 @@
+components:
+  - name: github.com/gardener/landscaper-examples/guided-tour/kustomize/dataflow
+    version: 1.0.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint-gitrepository
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprints/gitrepository
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-secret
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprints/secret
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-root
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprints/root
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-tokenprovider
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprints/tokenprovider
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: blueprint-tokenconsumer
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprints/tokenconsumer
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: landscaper-gitrepo
+        type: blob
+        version: 0.108.0
+        access:
+          type: gitHub
+          repoUrl: https://github.com/gardener/landscaper
+          commit: 4e7052d9739e7f122eecf346b0f0729d0dae50d1

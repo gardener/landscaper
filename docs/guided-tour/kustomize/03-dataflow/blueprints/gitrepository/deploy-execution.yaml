@@ -1,0 +1,30 @@
+{{- $requestedAt := now | date "2006-01-02T15:04:05.999Z" }}
+deployItems:
+  - name: item
+    type: landscaper.gardener.cloud/kubernetes-manifest
+
+    target:
+      import: cluster
+
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: source.toolkit.fluxcd.io/v1
+            kind: GitRepository
+            metadata:
+              name: landscaper
+              namespace: flux-system
+              annotations:
+                reconcile.fluxcd.io/requestedAt: {{ $requestedAt }}
+            spec:
+              {{- $res := getResource .cd "name" "landscaper-gitrepo" }}
+              url: {{ $res.access.repoUrl }}
+              ref:
+                tag: {{ $res.access.ref }}
+              path: ./docs/guided-tour/kustomize/03-dataflow/resources
+              interval: 876000h
+              timeout: 60s
