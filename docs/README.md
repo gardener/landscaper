@@ -50,6 +50,11 @@
 - [Scaling of Landscaper Pods](technical/scaling.md)
 - [Target Types](technical/target_types.md)
 
+## Troubleshooting
+
+- [Common Issues](troubleshooting/common-issues.md)
+- [Troubleshooting](troubleshooting/troubleshooting.md)
+
 ## Usage
 
 - [Accessing Blueprints](usage/AccessingBlueprints.md)

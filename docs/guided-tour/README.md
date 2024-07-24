@@ -53,7 +53,8 @@ jump to the [original github repository](https://github.com/gardener/landscaper/
 
 [7. Handling a Delete Error](./error-handling/delete-error)
 
-You can find a list of error messages and corresponding solutions [here](./error-handling/problem_analysis.md).
+You can find a list of error messages and corresponding solutions in
+[Common Issues](../troubleshooting/common-issues.md).
 
 ### Blueprints and Components
 
