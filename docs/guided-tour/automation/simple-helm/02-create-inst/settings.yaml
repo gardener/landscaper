@@ -5,7 +5,15 @@ echo-server-extended:
   release-name: automation-simple
   release-namespace: example
 
+  target: my-cluster
+
+  # optional
   values:
     text: first example
 
+target:
+  - name: my-cluster
+    kubeconfig-path: ...
 
+context:
+  create: true
