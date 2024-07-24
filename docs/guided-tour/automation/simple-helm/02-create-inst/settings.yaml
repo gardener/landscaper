@@ -1,0 +1,11 @@
+echo-server-extended:
+  installation-name: automation-simple-helm
+  installation-namespace: cu-example
+
+  release-name: automation-simple
+  release-namespace: example
+
+  values:
+    text: first example
+
+

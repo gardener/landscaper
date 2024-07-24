@@ -43,7 +43,7 @@ items:
     predefinedValues:
       valName1: ttt
       sub1:
-        sub2: (($images.echo-server-image))
+        sub2: (($images.echo-server-image.access.imageReference))
 ```
 
 ls-cli component create path-to-config-yaml path-to-output-dir:
@@ -52,6 +52,7 @@ ls-cli component create path-to-config-yaml path-to-output-dir:
 
 ls-cli component upload path-to-input-dir path-to-settings (repo-base-url) 
   - add and upload component 
+  - perhaps use just the two ocm commands
 
 ls-cli component installation path-to-input-dir path-to-values path-to-config (instname, instnamespace, targetname)
   - creates installation yaml
