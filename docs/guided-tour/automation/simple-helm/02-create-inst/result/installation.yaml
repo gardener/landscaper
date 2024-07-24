@@ -16,7 +16,7 @@ spec:
 
   blueprint:
     ref:
-      resourceName: blueprint
+      resourceName: blueprint-echo-server-extended
 
   # Set values for the import parameters of the blueprint
   imports:

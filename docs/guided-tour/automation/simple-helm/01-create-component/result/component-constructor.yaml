@@ -4,11 +4,11 @@ components:
     provider:
       name: internal
     resources:
-      - name: blueprint
+      - name: blueprint-echo-server-extended
         type: landscaper.gardener.cloud/blueprint
         input:
           type: dir
-          path: ../blueprint
+          path: ../blueprint-echo-server-extended
           compress: true
           mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
       - name: echo-server-chart

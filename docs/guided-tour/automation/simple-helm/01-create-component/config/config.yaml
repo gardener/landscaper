@@ -2,6 +2,7 @@ component:
   repository-base-url: eu.gcr.io/gardener-project/landscaper/examples
   name: github.com/gardener/landscaper-examples/guided-tour/automation/simple-helm
   version: 1.0.0
+
 items:
   - name: echo-server-extended
     type: helm
@@ -21,4 +22,22 @@ items:
           type: ociArtifact
           imageReference: hashicorp/http-echo:0.2.3
         chartValuesPath: .image
-    predefinedValues: {}
+    additionalValues:
+      sub1:
+        sub2: |
+          {{- .echo-server-extended.exports.token... }}
+        sub3: 42
+
+
+
+
+    exports:
+      - name: token
+        fromResource:
+          apiVersion: v1
+          kind: Secret
+          name: test-secret
+          namespace: example
+        jsonPath: .data.token
+        transformation: |
+          {{ . | b64dec }}
