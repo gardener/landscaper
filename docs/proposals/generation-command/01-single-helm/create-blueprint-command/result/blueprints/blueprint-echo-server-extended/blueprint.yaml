@@ -1,0 +1,34 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+imports:
+  - name: cluster
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: release
+    type: data
+    schema:
+      type: object
+
+  - name: values
+    type: data
+    schema:
+      type: object
+
+importExecutions:
+  - name: additionalValues
+    type: GoTemplate
+    template:
+      {{ $imageResource := getResource .cd "name" "echo-server-echo-server-image" }}
+      {{ $images := dict "echo-server-image" $imageResource.access.imageReference }}
+
+      foo:
+        ima: {{ $images.echo-server-image }}
+        bar: 42
+
+deployExecutions:
+  - name: default
+    type: GoTemplate
+    file: /deploy-execution.yaml

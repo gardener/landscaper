@@ -1,0 +1,21 @@
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+    name: subinstallation-next-chart
+    blueprint:
+      ref: cd://resources/blueprint-next-chart
+
+    imports:
+      targets:
+        - name: cluster
+          target: cluster-next-chart
+
+      data:
+        - name: release
+          dataRef: release-next-chart
+
+        - name: values
+          dataRef: values-next-chart
+
+        - name: imported-token
+          dataRef: token-echo-server-extended

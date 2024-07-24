@@ -1,0 +1,20 @@
+component:
+  repositoryBaseUrl: eu.gcr.io/gardener-project/landscaper/examples
+  name: github.com/gardener/landscaper-examples/guided-tour/automation/simple-helm
+  version: 1.0.0
+
+items:
+  echo-server:
+    type: helm
+    createNamespace: true
+    chart:
+      name: echo-server-chart
+      access:
+        type: ociArtifact
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+    images:
+      echo-server-image: hashicorp/http-echo:0.2.3
+    additionalValues: |
+      foo:
+        img: {{ $images.echo-server-image }}
+        bar: 42
