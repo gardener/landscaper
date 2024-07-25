@@ -21,23 +21,26 @@ items:
         access:
           type: ociArtifact
           imageReference: hashicorp/http-echo:0.2.3
-        chartValuesPath: .image
     additionalValues:
       sub1:
-        sub2: |
-          {{- .echo-server-extended.exports.token... }}
+        ima: {{ .echo-server-extended.images.access.imageReference }}
         sub3: 42
-
-
-
-
     exports:
       - name: token
         fromResource:
           apiVersion: v1
           kind: Secret
           name: test-secret
-          namespace: example
+          isNamespaces: #true/false
+          namespace: example #optional: if isNamespaced==true and not set use the relase namespace
         jsonPath: .data.token
         transformation: |
           {{ . | b64dec }}
+
+  - name: next-chart
+    type: helm
+    ...
+    additionalValues:
+      sub1:
+        sub2: |
+          {{- .echo-server-extended.exports.token... }}

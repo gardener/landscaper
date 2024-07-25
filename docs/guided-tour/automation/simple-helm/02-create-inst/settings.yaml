@@ -11,9 +11,10 @@ echo-server-extended:
   values:
     text: first example
 
-target:
+targets:
   - name: my-cluster
     kubeconfig-path: ...
+  ...
 
 context:
   create: true
