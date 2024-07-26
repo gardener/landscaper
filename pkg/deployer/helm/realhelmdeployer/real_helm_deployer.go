@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -60,6 +61,7 @@ type RealHelmDeployer struct {
 	helmSecretManager  *HelmSecretManager
 	di                 *lsv1alpha1.DeployItem
 	messages           []string
+	mutex              sync.RWMutex
 }
 
 func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration, targetRestConfig *rest.Config,
@@ -341,6 +343,8 @@ func (c *RealHelmDeployer) getStorageType(ctx context.Context, clientset *kubern
 func (c *RealHelmDeployer) createLogFunc(ctx context.Context) func(format string, v ...interface{}) {
 	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "RealHelmDeployer.createLogFunc"})
 	return func(format string, v ...interface{}) {
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
 		msg := fmt.Sprintf(format, v)
 
 		found := false
@@ -474,6 +478,8 @@ func (c *RealHelmDeployer) unblockPendingHelmRelease(ctx context.Context, logger
 }
 
 func (c *RealHelmDeployer) getMessages() string {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	result := ""
 	for i := range c.messages {
 		result += "\n" + c.messages[i]
