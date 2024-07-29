@@ -13430,6 +13430,12 @@ func schema_landscaper_apis_deployer_helm_HelmInstallConfiguration(ref common.Re
 							Format: "",
 						},
 					},
+					"force": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the timeout for the operation in minutes.",
@@ -14097,6 +14103,12 @@ func schema_apis_deployer_helm_v1alpha1_HelmInstallConfiguration(ref common.Refe
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"atomic": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"force": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"boolean"},
 							Format: "",

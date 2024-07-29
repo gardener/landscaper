@@ -56,8 +56,10 @@ spec:
     helmDeploymentConfig:
       install: # see  https://helm.sh/docs/helm/helm_install/#options
         atomic: true
+        force: true
       upgrade: # see https://helm.sh/docs/helm/helm_upgrade/#options
         atomic: true
+        force: true
       uninstall: {} # see https://helm.sh/docs/helm/helm_uninstall/#options
  
     # base64 encoded kubeconfig pointing to the cluster to install the chart

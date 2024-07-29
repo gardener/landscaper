@@ -19,6 +19,7 @@ import (
 
 const (
 	helmArgumentAtomic  = "atomic"
+	helmArgumentForce   = "force"
 	helmArgumentTimeout = "timeout"
 )
 
