@@ -7,12 +7,16 @@ package app
 import (
 	"context"
 	"fmt"
-
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/version"
 )
 
@@ -43,6 +47,16 @@ func (o *options) run(ctx context.Context) error {
 		o.DeployerOptions.Log, o.DeployerOptions.LsMgr, o.DeployerOptions.HostMgr,
 		o.Config, "helm"); err != nil {
 		return fmt.Errorf("unable to setup helm controller")
+	}
+
+	if os.Getenv("ENABLE_PROFILER") == "true" {
+		go func() {
+			o.DeployerOptions.Log.Info("Starting profiler for helm deployer")
+			err := http.ListenAndServe("localhost:8081", nil)
+			o.DeployerOptions.Log.Error(err, "helm deployer profiler stopped")
+		}()
+
+		go utils.LogMemStatsPeriodically(ctx, o.DeployerOptions.Log, 60*time.Second)
 	}
 
 	o.DeployerOptions.Log.Info("Starting helm deployer manager")
