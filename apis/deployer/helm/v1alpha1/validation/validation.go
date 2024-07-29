@@ -107,11 +107,11 @@ func ValidateHelmDeploymentConfiguration(fldPath *field.Path, deployConfig *helm
 }
 
 func ValidateInstallConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {
-	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout})
+	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce})
 }
 
 func ValidateUpgradeConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {
-	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout})
+	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce})
 }
 
 func ValidateUninstallConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {
