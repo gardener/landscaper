@@ -347,7 +347,7 @@ func (c *RealHelmDeployer) createLogFunc(ctx context.Context) func(format string
 	return func(format string, v ...interface{}) {
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
-		msg := fmt.Sprintf(format, v)
+		msg := fmt.Sprintf(format, v...)
 
 		found := false
 		for i := range c.messages {
