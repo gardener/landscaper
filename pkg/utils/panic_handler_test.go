@@ -58,7 +58,9 @@ var _ = Describe("Panic Handler", func() {
 
 			problemTime := problems.Spec.CriticalProblems[numOfProblems-1].CreationTime.Time
 
-			if !problemTime.Before(before) {
+			before = before.Truncate(time.Second)
+
+			if problemTime.Before(before) {
 				return fmt.Errorf("Critical problems time not ok - before: %s, problemTime: %s",
 					before.Format(time.RFC3339), problemTime.Format(time.RFC3339))
 			}
