@@ -80,8 +80,7 @@ func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) e
 func ValidateChart(fldPath *field.Path, chart helmv1alpha1.Chart) field.ErrorList {
 	allErrs := field.ErrorList{}
 	if len(chart.Ref) == 0 && chart.Archive == nil && chart.FromResource == nil && chart.HelmChartRepo == nil && chart.ResourceRef == "" {
-		subPath := fldPath.Child("ref", "archive", "fromResource", "helmChartRepo", "resourceRef")
-		err := field.Required(subPath, "must not be empty")
+		err := field.Required(fldPath, "must not be empty: either ref, fromResource, helmChartRepo or resourceRef must be set")
 		return append(allErrs, err)
 	}
 
