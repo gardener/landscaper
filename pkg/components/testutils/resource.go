@@ -47,7 +47,3 @@ func (r *TestResource) GetResource() (*types.Resource, error) {
 func (r *TestResource) GetTypedContent(ctx context.Context) (*model.TypedResourceContent, error) {
 	return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
 }
-
-func (r *TestResource) GetCachingIdentity(ctx context.Context) string {
-	return ""
-}
