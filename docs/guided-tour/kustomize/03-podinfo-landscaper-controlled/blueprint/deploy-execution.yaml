@@ -1,3 +1,4 @@
+{{- $requestedAt := now | date "2006-01-02T15:04:05.999Z" }}
 deployItems:
   - name: item-1
     type: landscaper.gardener.cloud/kubernetes-manifest
@@ -35,12 +36,14 @@ deployItems:
             metadata:
               name: podinfo
               namespace: flux-system
+              annotations:
+                reconcile.fluxcd.io/requestedAt: {{ $requestedAt }}
             spec:
               {{- $res := getResource .cd "name" "podinfo-gitrepo" }}
               url: {{ $res.access.repoUrl }}
               ref:
                 tag: {{ $res.access.ref }}
-              interval: 60m
+              interval: 876000h
               timeout: 60s
 
   - name: item-3
@@ -56,21 +59,30 @@ deployItems:
       updateStrategy: update
       manifests:
         - policy: manage
+          patchAfterDeployment:
+            spec:
+              suspend: true
+          patchBeforeDelete:
+            spec:
+              suspend: false
           manifest:
             apiVersion: kustomize.toolkit.fluxcd.io/v1
             kind: Kustomization
             metadata:
               name: podinfo
               namespace: flux-system
+              annotations:
+                reconcile.fluxcd.io/requestedAt: {{ $requestedAt }}
             spec:
               force: false
-              interval: 30m
+              interval: 876000h
               path: ./kustomize
               prune: true
               retryInterval: 2m0s
               sourceRef:
                 kind: GitRepository
                 name: podinfo
+              suspend: false
               targetNamespace: cu-podinfo
               timeout: 3m0s
               wait: true
@@ -78,3 +90,25 @@ deployItems:
                 secretRef:
                   name: cluster2
                   key: kubeconfig
+      readinessChecks:
+        disableDefault: true
+        custom:
+          - name: KustomizationReady
+            resourceSelector:
+              - apiVersion: kustomize.toolkit.fluxcd.io/v1
+                kind: Kustomization
+                name: podinfo
+                namespace: flux-system
+            requirements:
+              - jsonPath: .status.conditions[?(@.type == 'Ready')].status
+                operator: ==
+                values:
+                  - value: "True"
+              - jsonPath: .status.conditions[?(@.type == 'Healthy')].status
+                operator: ==
+                values:
+                  - value: "True"
+              - jsonPath: .status.lastHandledReconcileAt
+                operator: ==
+                values:
+                  - value: {{ $requestedAt }}

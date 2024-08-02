@@ -35,6 +35,7 @@ deployItems:
               sourceRef:
                 kind: GitRepository
                 name: {{ .imports.gitRepositoryName }}
+              suspend: false
               targetNamespace: cu-dataflow
               timeout: 3m0s
               wait: true

@@ -1,15 +1,17 @@
 ---
 title: Dataflow Example
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # Dataflow Example
 
 In this example, Landscaper creates again Flux custom resources on a first target cluster, and based on them, 
-Flux installs resources on a second target cluster. 
+Flux installs resources on a second target cluster. Landscaper controls the deployment as in the 
+[previous example](../03-podinfo-landscaper-controlled/README.md).
 
-In contrast to the previous example, this time Landscaper controls when a deployment is done.
-Furthermore, the Landscaper checks the readiness of resources on the second target cluster, and exports values from there.
+This example is more complex as there are two subinstallations with a dataflow between them.
+The new feature here is that resources from the second target cluster are taken into account for 
+a custom readiness check and for the collection of export parameters.
 
 ## Prerequisites
 
@@ -213,59 +215,6 @@ exports:
 ```
 
 As a consequence, the export value is read from a resource on the second target cluster.
-
-
-## Controlling the Deployment
-
-Normally, if Flux deploys an application, it controls when the application is being deployed,
-namely in intervals and upon changes in the source repository. 
-However, in this example we demonstrate how Landscaper can take the control.
-
- 1. In the deploy items which create the GitRepository and Kustomization resources, we ensure that the resources get the 
-    following ["reconcile.fluxcd.io/requestedAt" annotation](https://fluxcd.io/flux/components/kustomize/kustomizations/#triggering-a-reconcile):
-
-    ```yaml
-    {{- $requestedAt := now | date "2006-01-02T15:04:05.999Z" }}
-    ...
-    
-    annotations:
-      reconcile.fluxcd.io/requestedAt: {{ $requestedAt }}
-    ```
-
-    Whenever Landscaper creates or updates the Flux resources, it set a new value for the annotation (the current timestamp) and
-    thereby triggers a reconcile by Flux.
-
-    
- 2. In the deploy items which create the Kustomization resources, we add sections `patchAfterDeployment` and `patchBeforeDelete`:
-
-    ```yaml
-      manifests:
-        - policy: manage
-          patchAfterDeployment:
-            spec:
-              suspend: true
-          patchBeforeDelete:
-            spec:
-              suspend: false
-          manifest:
-            apiVersion: kustomize.toolkit.fluxcd.io/v1
-            kind: Kustomization
-            ...
-    ```
-
-    After the resource has been deployed successfully, the readiness check is done, and the export values have been collected, 
-    Landscaper modifies the resource. It merges the `patchAfterDeployment` section into the resource. 
-    In our case, it sets the field `spec.suspend` of the Kustomization resource to `true`. In this way, further 
-    deployments by Flux are suspended until Landscaper reconciles the next time.
-    
-    Moreover, before a deletion, the `patchBeforeDelete` section is merged into the resource.
-    In our case, it sets the field `spec.suspend` of the Kustomization resource to `false`. Consequently, the Kustomization
-    is no longer suspended and Flux performs the deletion.
-
-
- 3. We also have set large values for the field `interval` in the Flux resources.
-    It ensures that Flux deploys only once when triggered by the Landscaper. However, most of the time, Flux activities are
-    anyhow suspended as described above.
 
 
 ## Cleanup
