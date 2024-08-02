@@ -35,6 +35,8 @@ Platform specific process memory info: {"rss":109842432,"vms":5707378688,"shared
 
 You can search for `MemStats` in the logs to find these entries.
 
+The comments in [MemStats](https://pkg.go.dev/runtime#MemStats) explain the fields of the MemStats structure.
+
 
 ## Heap Dump
 
@@ -62,6 +64,8 @@ If the environment variable `ENABLE_PROFILER` is set as described above, you can
 
 
 ## References
+
+https://pkg.go.dev/runtime#MemStats
 
 https://pkg.go.dev/runtime/pprof
 
