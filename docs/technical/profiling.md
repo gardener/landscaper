@@ -45,13 +45,13 @@ If the environment variable `ENABLE_PROFILER` is set as described above, you can
 1. On the Landscaper host cluster define a port-forward:
 
    ```shell
-   kubectl port-forward -n <LANDSCAPER_NAMESPACE> pod/<POD_NAME> 8081:8081
+   kubectl port-forward -n <LANDSCAPER_NAMESPACE> <POD_NAME> 8081:8081
    ```
 
-2. Generate a heap dump and download it to some file (here `heap.out`):
+2. Trigger a garbage collection first, generate a heap dump and download it to some file (here `heap.out`):
 
    ```shell
-   curl http://localhost:8081/debug/pprof/heap > heap.out
+   curl 'http://localhost:8081/debug/pprof/heap?gc=1' > heap.out
    ```
 
    Afterwards, you can stop the `port-forward`.
@@ -61,7 +61,26 @@ If the environment variable `ENABLE_PROFILER` is set as described above, you can
    ```shell
    go tool pprof -http=:8082 heap.out
    ```
+## Some other important commands
 
+Sometimes it might be interesting to see the memory consumption of a pod and the containers running in it.
+
+To see the memory usage of a pod use:
+
+   ```shell
+   kubectl top pods -n <LANDSCAPER_NAMESPACE>
+   ```
+If you want to see the memory consumption of a particular container in a pod call:
+
+   ```shell
+   kubectl debug <POD_NAME> -n <LANDSCAPER_NAMESPACE> -it --image=jonbaldie/htop --share-processes=true --target <CONTAINER_NAME>
+   ```
+
+The names of the containers of a pod cou be found with:
+
+   ```shell
+   kubectl describe pods -n <LANDSCAPER_NAMESPACE> <POD_NAME>
+   ```
 
 ## References
 
