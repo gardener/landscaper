@@ -92,6 +92,16 @@ You can find a list of error messages and corresponding solutions in
 
 [20. Target Maps: Other Target Map Examples](./target-maps/05-other-examples)
 
+### Kustomize
+
+[21. Introduction to Kustomize Examples](./kustomize/01-kustomize-introduction)
+
+[22. Deploying the PodInfo Application with Landscaper and Flux](./kustomize/02-podinfo)
+
+[23. Deploying the PodInfo Application with Landscaper and Flux - controlled by Landscaper](./kustomize/03-podinfo-landscaper-controlled)
+
+[24. Dataflow Example](./kustomize/04-dataflow)
+
 ### Optimization
 
-[21. Optimization Hints ](../usage/Optimization.md)
+[25. Optimization Hints ](../usage/Optimization.md)

@@ -28,8 +28,8 @@ The diagram below provides an overview of the clusters and resources in this exa
 ![diagram](diagram.drawio.png)
 
 The first row of the diagram shows the Landscaper resource cluster, where we will create an Installation.
-The Installation uses the manifest deployer to deploy the following resources on the first target cluster, 
-shown in the second row.
+The Installation has three DeployItems, each using the manifest deployer. They deploy the following three resources on 
+the first target cluster, shown in the middle row of the diagram.
 
 - a Secret that contains the kubeconfig of the second target cluster. This Secret is referenced by the Kustomization 
   below, so that Flux can access the second target cluster and deploy the podinfo application there.
@@ -93,7 +93,7 @@ shown in the second row.
     ```
 
 The creation of the `GitRepository` and `Kustomization` resources starts a gitops process, which reconciles the resources of 
-the podinfo application periodically (specified in field `spec.interval`), and also when the sources are changed. 
+the PodInfo application periodically (specified in field `spec.interval`), and also when the sources are changed. 
 As a consequence, the status of the `GitRepository` and `Kustomization` resources can change over time. This 
 process is controlled by Flux, and not monitored by the Landscaper.
 The task of the Landscaper in this scenario is only to create the `GitRepository` and `Kustomization` resources. 
@@ -120,15 +120,17 @@ until a new reconcile of the Installation is triggered.
    
 ## Inspect the Result
 
-On the resource cluster you can inspect the Installation:
+On the resource cluster you can inspect the Installation and its three DeployItems, 
+creating the Secret, the GitRepository, and the Kustomization:
 
 ```shell
 ❯ landscaper-cli inst inspect -n cu-example podinfo
 
 [✅ Succeeded] Installation podinfo
     └── [✅ Succeeded] Execution podinfo
-        ├── [✅ Succeeded] DeployItem podinfo-item-1-9lvzt
-        └── [✅ Succeeded] DeployItem podinfo-item-2-6tz9v
+        ├── [✅ Succeeded] DeployItem podinfo-item-1-rqsfn
+        ├── [✅ Succeeded] DeployItem podinfo-item-2-gps2r
+        └── [✅ Succeeded] DeployItem podinfo-item-3-fb4pt
 ```
 
 On the first target cluster:
