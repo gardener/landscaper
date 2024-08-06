@@ -498,7 +498,7 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 		allSucceeded = allSucceeded && (exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded)
 
 		if exec.Status.ExecutionPhase.IsFailed() {
-			executionFailed = false
+			executionFailed = true
 		}
 	}
 
