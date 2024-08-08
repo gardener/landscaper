@@ -1,0 +1,8 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  name: automation-simple-helm-release
+  namespace: cu-example
+data:
+  name: echo
+  namespace: example

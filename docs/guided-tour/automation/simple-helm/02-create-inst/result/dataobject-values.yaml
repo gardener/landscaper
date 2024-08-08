@@ -1,0 +1,7 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  name: automation-simple-helm-values
+  namespace: cu-example
+data:
+  text: Hello, Landscaper!

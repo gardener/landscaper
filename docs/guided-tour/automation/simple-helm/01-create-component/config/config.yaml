@@ -1,0 +1,46 @@
+component:
+  repository-base-url: eu.gcr.io/gardener-project/landscaper/examples
+  name: github.com/gardener/landscaper-examples/guided-tour/automation/simple-helm
+  version: 1.0.0
+
+items:
+  - name: echo-server-extended
+    type: helm
+    createNamespace: true
+    chart:
+      name: echo-server-chart
+      type: helmChart
+      version: 1.0.0
+      access:
+        type: ociArtifact
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server-extended:1.0.0
+    images:
+      - name: echo-server-image
+        type: ociImage
+        version: v0.2.3
+        access:
+          type: ociArtifact
+          imageReference: hashicorp/http-echo:0.2.3
+    additionalValues:
+      sub1:
+        ima: {{ .echo-server-extended.images.access.imageReference }}
+        sub3: 42
+    exports:
+      - name: token
+        fromResource:
+          apiVersion: v1
+          kind: Secret
+          name: test-secret
+          isNamespaces: #true/false
+          namespace: example #optional: if isNamespaced==true and not set use the relase namespace
+        jsonPath: .data.token
+        transformation: |
+          {{ . | b64dec }}
+
+  - name: next-chart
+    type: helm
+    ...
+    additionalValues:
+      sub1:
+        sub2: |
+          {{- .echo-server-extended.exports.token... }}

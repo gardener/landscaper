@@ -1,0 +1,22 @@
+deployItems:
+  - name: item1
+    type: landscaper.gardener.cloud/helm
+
+    target:
+      import: cluster
+
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      name: {{ .imports.release.name }}
+      namespace: {{ .imports.release.namespace }}
+      createNamespace: true
+
+      chart:
+        resourceRef: {{ getResourceKey `cd://resources/echo-server-chart` }}
+
+      values:
+        # TODO merge the values
+        {{ $imageResource := getResource .cd "name" "echo-server-image" }}
+        image: {{ $imageResource.access.imageReference }}
+        {{- .imports.values | toYaml | nindent 8 }}
