@@ -19,24 +19,41 @@
   "packageRules": [
     {
       "description": "Combine landscaper updates in a single PR",
-      "matchManagers": ["gomod"],
-      "matchSourceUrls": ["https://github.com/gardener/landscaper"]
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchSourceUrls": [
+        "https://github.com/gardener/landscaper"
+      ]
     },
     {
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
       "rebaseWhen": "auto"
     },
     {
       "description": "Fixed version for component-cli v0.44.0",
-      "matchPackagePatterns": ["github.com/gardener/component-cli"],
-      "matchManagers": ["gomod"],
-      "enabled": false
+      "matchManagers": [
+        "gomod"
+      ],
+      "enabled": false,
+      "matchPackageNames": [
+        "/github.com/gardener/component-cli/"
+      ]
     },
     {
       "description": "Ignore version for landscpaer/apis and controller-utils as used locally",
-      "matchPackagePatterns": ["github.com/gardener/landscaper/.*"],
-      "matchManagers": ["gomod"],
-      "enabled": false
+      "matchManagers": [
+        "gomod"
+      ],
+      "enabled": false,
+      "matchPackageNames": [
+        "/github.com/gardener/landscaper/.*/"
+      ]
     }
   ],
   "customManagers": [
