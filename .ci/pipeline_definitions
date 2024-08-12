@@ -86,7 +86,7 @@ landscaper:
           output_dir: 'integration_test'
         update_release:
           inputs:
-            INTEGRATION_TEST_PATH: integration_test_path
+            INTEGRATION_TEST_PATH: integration_test
           execute:
           - update_release.py
           trait_depends:
