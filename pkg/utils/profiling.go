@@ -1,10 +1,13 @@
 package utils
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/pprof"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +17,8 @@ import (
 )
 
 const separator = " ***** "
+
+var maxHeapInUse uint64 = 1000 * 1000 * 1000
 
 func LogMemStatsPeriodically(ctx context.Context, log logging.Logger, interval time.Duration) {
 	log.Info("Starting LogMemStats loop")
@@ -30,15 +35,17 @@ func LogMemStatsPeriodically(ctx context.Context, log logging.Logger, interval t
 
 func LogMemStats(log logging.Logger) {
 	w := &strings.Builder{}
-	writeMemStats(w)
+	writeMemStats(w, log)
 	writeProcessMemoryInfo(w)
 	log.Info(w.String())
 }
 
-func writeMemStats(w *strings.Builder) {
+func writeMemStats(w *strings.Builder, log logging.Logger) {
 	// See: https://golang.org/pkg/runtime/#MemStats
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
+
+	storeHeap(&m, log)
 
 	w.WriteString("MemStats: ")
 	fmt.Fprintf(w, "Alloc: %v MiB, ", bToMiB(m.Alloc))
@@ -117,4 +124,25 @@ func writePlatformSpecificProcessMemoryInfo(w *strings.Builder, p *process.Proce
 
 func bToMiB(numOfBytes uint64) uint64 {
 	return numOfBytes / (1024 * 1024)
+}
+
+func storeHeap(m *runtime.MemStats, log logging.Logger) {
+	if maxHeapInUse < m.HeapInuse {
+		var buf bytes.Buffer
+		if err := pprof.WriteHeapProfile(&buf); err != nil {
+			log.Error(err, "Failed to get heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
+			return
+		}
+
+		if err := storeHeapProfile(&buf); err != nil {
+			log.Error(err, "Failed to write heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
+			return
+		}
+
+		maxHeapInUse = m.HeapInuse
+	}
+}
+
+func storeHeapProfile(b *bytes.Buffer) error {
+	return nil
 }
