@@ -175,7 +175,7 @@ func (o *Options) startMainController(ctx context.Context,
 		})
 
 		eg.Go(func() error {
-			lsutils.LogMemStatsPeriodically(ctx, setupLogger, 60*time.Second)
+			lsutils.LogMemStatsPeriodically(logging.NewContext(ctx, setupLogger), 60*time.Second, hostUncachedClient, "main-landscaper")
 			return nil
 		})
 	}
@@ -234,7 +234,7 @@ func (o *Options) startCentralLandscaper(ctx context.Context,
 		})
 
 		eg.Go(func() error {
-			lsutils.LogMemStatsPeriodically(ctx, setupLogger, 60*time.Second)
+			lsutils.LogMemStatsPeriodically(logging.NewContext(ctx, setupLogger), 60*time.Second, hostUncachedClient, "central-landscaper")
 			return nil
 		})
 	}

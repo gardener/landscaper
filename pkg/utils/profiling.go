@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/cloudflare/cfssl/log"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
 	"time"
@@ -20,7 +23,9 @@ const separator = " ***** "
 
 var maxHeapInUse uint64 = 1000 * 1000 * 1000
 
-func LogMemStatsPeriodically(ctx context.Context, log logging.Logger, interval time.Duration) {
+func LogMemStatsPeriodically(ctx context.Context, interval time.Duration, hostUncachedClient client.Client, prefix string) {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+
 	log.Info("Starting LogMemStats loop")
 	for {
 		if err := ctx.Err(); err != nil {
@@ -28,24 +33,24 @@ func LogMemStatsPeriodically(ctx context.Context, log logging.Logger, interval t
 			return
 		}
 
-		LogMemStats(log)
+		LogMemStats(ctx, hostUncachedClient, prefix)
 		time.Sleep(interval)
 	}
 }
 
-func LogMemStats(log logging.Logger) {
+func LogMemStats(ctx context.Context, hostUncachedClient client.Client, prefix string) {
 	w := &strings.Builder{}
-	writeMemStats(w, log)
+	writeMemStats(ctx, w, hostUncachedClient, prefix)
 	writeProcessMemoryInfo(w)
 	log.Info(w.String())
 }
 
-func writeMemStats(w *strings.Builder, log logging.Logger) {
+func writeMemStats(ctx context.Context, w *strings.Builder, hostUncachedClient client.Client, prefix string) {
 	// See: https://golang.org/pkg/runtime/#MemStats
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
-	storeHeap(&m, log)
+	storeHeap(ctx, &m, hostUncachedClient, prefix)
 
 	w.WriteString("MemStats: ")
 	fmt.Fprintf(w, "Alloc: %v MiB, ", bToMiB(m.Alloc))
@@ -126,7 +131,9 @@ func bToMiB(numOfBytes uint64) uint64 {
 	return numOfBytes / (1024 * 1024)
 }
 
-func storeHeap(m *runtime.MemStats, log logging.Logger) {
+func storeHeap(ctx context.Context, m *runtime.MemStats, hostUncachedClient client.Client, prefix string) {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
+
 	if maxHeapInUse < m.HeapInuse {
 		var buf bytes.Buffer
 		if err := pprof.WriteHeapProfile(&buf); err != nil {
@@ -134,7 +141,7 @@ func storeHeap(m *runtime.MemStats, log logging.Logger) {
 			return
 		}
 
-		if err := storeHeapProfile(&buf); err != nil {
+		if err := storeHeapProfile(ctx, &buf, hostUncachedClient, prefix); err != nil {
 			log.Error(err, "Failed to write heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
 			return
 		}
@@ -143,6 +150,25 @@ func storeHeap(m *runtime.MemStats, log logging.Logger) {
 	}
 }
 
-func storeHeapProfile(b *bytes.Buffer) error {
+func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient client.Client, prefix string) error {
+
+	data := buf.Bytes()
+
+	const chunkSize = 500 * 1024 // 500 kB
+
+	// Split the byte array into chunks
+	var chunks [][]byte
+	for i := 0; i < len(data); i += chunkSize {
+		end := i + chunkSize
+
+		if end > len(data) {
+			end = len(data)
+		}
+
+		chunks = append(chunks, data[i:end])
+	}
+
+	read_write_layer.GetSecret()
+
 	return nil
 }
