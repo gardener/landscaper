@@ -4,15 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/cloudflare/cfssl/log"
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 	"os"
 	"runtime"
 	"runtime/pprof"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/cloudflare/cfssl/log"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
@@ -20,6 +23,10 @@ import (
 )
 
 const separator = " ***** "
+const suffix = "-heap"
+const keyNumberOfDataSecrets = "keyNumberOfDataSecrets"
+const keyHeapInUse = "keyHeapInUse"
+const keyBytes = "keyBytes"
 
 var maxHeapInUse uint64 = 1000 * 1000 * 1000
 
@@ -134,14 +141,14 @@ func bToMiB(numOfBytes uint64) uint64 {
 func storeHeap(ctx context.Context, m *runtime.MemStats, hostUncachedClient client.Client, prefix string) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
-	if maxHeapInUse < m.HeapInuse {
+	if maxHeapInUse+maxHeapInUse/10 < m.HeapInuse {
 		var buf bytes.Buffer
 		if err := pprof.WriteHeapProfile(&buf); err != nil {
 			log.Error(err, "Failed to get heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
 			return
 		}
 
-		if err := storeHeapProfile(ctx, &buf, hostUncachedClient, prefix); err != nil {
+		if err := storeHeapProfile(ctx, &buf, hostUncachedClient, prefix, m.HeapInuse); err != nil {
 			log.Error(err, "Failed to write heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
 			return
 		}
@@ -150,8 +157,7 @@ func storeHeap(ctx context.Context, m *runtime.MemStats, hostUncachedClient clie
 	}
 }
 
-func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient client.Client, prefix string) error {
-
+func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient client.Client, prefix string, heapInuse uint64) error {
 	data := buf.Bytes()
 
 	const chunkSize = 500 * 1024 // 500 kB
@@ -168,7 +174,118 @@ func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient
 		chunks = append(chunks, data[i:end])
 	}
 
-	read_write_layer.GetSecret()
+	// fetch or create base secret
+	heapSecret, err := fetchOrCreateSecret(ctx, hostUncachedClient, prefix)
+	if err != nil {
+		return err
+	}
+
+	// cleanup old data secrets
+	if err = cleanupOldDataSecrets(ctx, hostUncachedClient, prefix, heapSecret); err != nil {
+		return err
+	}
+
+	// update base secret
+	if err = updateSecret(ctx, hostUncachedClient, heapSecret, heapInuse, len(chunks)); err != nil {
+		return err
+	}
+
+	// create data secrets
+	if err = createDataSecrets(ctx, hostUncachedClient, prefix, chunks); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func createDataSecrets(ctx context.Context, hostUncachedClient client.Client, prefix string, chunks [][]byte) error {
+	for i := 0; i < len(chunks); i++ {
+		nextDataSecret := &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      getHeapSecretDataName(prefix, i),
+				Namespace: GetCurrentPodNamespace(),
+			},
+			Data: map[string][]byte{
+				keyBytes: chunks[i],
+			},
+		}
+
+		if err := hostUncachedClient.Create(ctx, nextDataSecret); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func updateSecret(ctx context.Context, hostUncachedClient client.Client, heapSecret *v1.Secret, heapInuse uint64, numOfChunks int) error {
+	heapSecret.Data = map[string][]byte{
+		keyNumberOfDataSecrets: []byte(strconv.Itoa(numOfChunks)),
+		keyHeapInUse:           []byte(strconv.FormatUint(heapInuse, 10)),
+	}
+
+	if err := hostUncachedClient.Update(ctx, heapSecret); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func cleanupOldDataSecrets(ctx context.Context, hostUncachedClient client.Client, prefix string, heapSecret *v1.Secret) error {
+	numOfDataSecrets, err := strconv.Atoi(string(heapSecret.Data[keyNumberOfDataSecrets]))
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < numOfDataSecrets; i++ {
+		heapSecretData := &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      getHeapSecretDataName(prefix, i),
+				Namespace: GetCurrentPodNamespace(),
+			},
+		}
+		if err = hostUncachedClient.Delete(ctx, heapSecretData); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func fetchOrCreateSecret(ctx context.Context, hostUncachedClient client.Client, prefix string) (*v1.Secret, error) {
+	heapSecret := &v1.Secret{}
+	key := client.ObjectKey{Namespace: GetCurrentPodNamespace(), Name: getHeapSecretName(prefix)}
+	if err := hostUncachedClient.Get(ctx, key, heapSecret); err != nil {
+		if !errors.IsNotFound(err) {
+			return nil, err
+		}
+
+		heapSecret = &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      getHeapSecretName(prefix),
+				Namespace: GetCurrentPodNamespace(),
+			},
+
+			Data: map[string][]byte{
+				keyNumberOfDataSecrets: []byte("0"),
+				keyHeapInUse:           []byte("0"),
+			},
+		}
+
+		if err := hostUncachedClient.Create(ctx, heapSecret); err != nil {
+			return nil, err
+		}
+	}
+
+	return heapSecret, nil
+}
+
+func getHeapSecretName(prefix string) string {
+	return prefix + suffix
+}
+
+func getHeapSecretDataName(prefix string, i int) string {
+	return getHeapSecretName(prefix) + "-" + strconv.Itoa(i)
 }

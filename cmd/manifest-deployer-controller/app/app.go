@@ -7,11 +7,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/spf13/cobra"
 
