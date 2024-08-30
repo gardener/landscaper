@@ -141,18 +141,17 @@ func bToMiB(numOfBytes uint64) uint64 {
 func storeHeap(ctx context.Context, m *runtime.MemStats, hostUncachedClient client.Client, prefix string) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
 
-	log.Info("storeHeapProfile check with", "maxHeapInUse+maxHeapInUse/10", maxHeapInUse+maxHeapInUse/10, "m.HeapInuse", m.HeapInuse)
 	if maxHeapInUse+maxHeapInUse/10 < m.HeapInuse {
+		log.Info("storeHeapProfile check with", "maxHeapInUse+maxHeapInUse/10", maxHeapInUse+maxHeapInUse/10, "m.HeapInuse", m.HeapInuse)
+
 		var buf bytes.Buffer
 		if err := pprof.WriteHeapProfile(&buf); err != nil {
 			log.Error(err, "Failed to get heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
 			return
 		}
 
-		log.Info("storeHeapProfile before")
 		if err := storeHeapProfile(ctx, &buf, hostUncachedClient, prefix, m.HeapInuse); err != nil {
-			log.Info("storeHeapProfile failed")
-			log.Error(err, "Failed to write heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
+			log.Error(err, "storeHeapProfile failed to write heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
 			return
 		}
 
