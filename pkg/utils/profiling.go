@@ -164,7 +164,7 @@ func storeHeap(ctx context.Context, m *runtime.MemStats, hostUncachedClient clie
 func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient client.Client, prefix string, heapInuse uint64) error {
 	data := buf.Bytes()
 
-	const chunkSize = 500 * 1024 // 500 kB
+	const chunkSize = 200 * 1024 // 500 kB
 
 	// Split the byte array into chunks
 	var chunks [][]byte
