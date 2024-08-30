@@ -28,7 +28,7 @@ const keyNumberOfDataSecrets = "keyNumberOfDataSecrets"
 const keyHeapInUse = "keyHeapInUse"
 const keyBytes = "keyBytes"
 
-var maxHeapInUse uint64 = 1000 * 1000 * 1000
+var maxHeapInUse uint64 = 1000 * 1000 * 300
 
 func LogMemStatsPeriodically(ctx context.Context, interval time.Duration, hostUncachedClient client.Client, prefix string) {
 	log, ctx := logging.FromContextOrNew(ctx, nil)
