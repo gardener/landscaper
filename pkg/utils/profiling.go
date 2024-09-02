@@ -26,7 +26,10 @@ const separator = " ***** "
 const suffix = "-heap"
 const keyNumberOfDataSecrets = "keyNumberOfDataSecrets"
 const keyHeapInUse = "keyHeapInUse"
+const keyHeapAlloc = "keyHeapAlloc"
 const keyBytes = "keyBytes"
+const keyPodname = "keyPodname"
+const keyStorageDate = "keyStorageDate"
 
 var maxHeapInUse uint64 = 1000 * 1000 * 300
 
@@ -150,7 +153,7 @@ func storeHeap(ctx context.Context, m *runtime.MemStats, hostUncachedClient clie
 			return
 		}
 
-		if err := storeHeapProfile(ctx, &buf, hostUncachedClient, prefix, m.HeapInuse); err != nil {
+		if err := storeHeapProfile(ctx, &buf, hostUncachedClient, prefix, m); err != nil {
 			log.Error(err, "storeHeapProfile failed to write heap profile with HeapInuse "+strconv.FormatUint(m.HeapInuse, 10)+" bytes")
 			return
 		}
@@ -161,7 +164,7 @@ func storeHeap(ctx context.Context, m *runtime.MemStats, hostUncachedClient clie
 	}
 }
 
-func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient client.Client, prefix string, heapInuse uint64) error {
+func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient client.Client, prefix string, m *runtime.MemStats) error {
 	data := buf.Bytes()
 
 	const chunkSize = 500 * 1024
@@ -190,7 +193,7 @@ func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient
 	}
 
 	// update base secret
-	if err = updateSecret(ctx, hostUncachedClient, heapSecret, heapInuse, len(chunks)); err != nil {
+	if err = updateSecret(ctx, hostUncachedClient, heapSecret, m, len(chunks)); err != nil {
 		return err
 	}
 
@@ -222,10 +225,13 @@ func createDataSecrets(ctx context.Context, hostUncachedClient client.Client, pr
 	return nil
 }
 
-func updateSecret(ctx context.Context, hostUncachedClient client.Client, heapSecret *v1.Secret, heapInuse uint64, numOfChunks int) error {
+func updateSecret(ctx context.Context, hostUncachedClient client.Client, heapSecret *v1.Secret, m *runtime.MemStats, numOfChunks int) error {
 	heapSecret.Data = map[string][]byte{
 		keyNumberOfDataSecrets: []byte(strconv.Itoa(numOfChunks)),
-		keyHeapInUse:           []byte(strconv.FormatUint(heapInuse, 10)),
+		keyHeapInUse:           []byte(strconv.FormatUint(m.HeapInuse, 10)),
+		keyHeapAlloc:           []byte(strconv.FormatUint(m.HeapAlloc, 10)),
+		keyPodname:             []byte(GetCurrentPodName()),
+		keyStorageDate:         []byte(time.Now().String()),
 	}
 
 	if err := hostUncachedClient.Update(ctx, heapSecret); err != nil {
@@ -275,6 +281,9 @@ func fetchOrCreateSecret(ctx context.Context, hostUncachedClient client.Client, 
 			Data: map[string][]byte{
 				keyNumberOfDataSecrets: []byte("0"),
 				keyHeapInUse:           []byte("0"),
+				keyHeapAlloc:           []byte("0"),
+				keyPodname:             []byte(GetCurrentPodName()),
+				keyStorageDate:         []byte(time.Now().String()),
 			},
 		}
 
