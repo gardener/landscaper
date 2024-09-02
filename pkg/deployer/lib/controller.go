@@ -10,11 +10,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -183,12 +182,6 @@ func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCac
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
 	_, ctx = logging.MustStartReconcileFromContext(ctx, req, nil)
 
-	octx := ocm.New(datacontext.MODE_EXTENDED)
-	defer func() {
-		err = goerrors.Join(err, octx.Finalize())
-	}()
-	ctx = octx.BindTo(ctx)
-
 	result = reconcile.Result{}
 	defer lsutil.HandlePanics(ctx, &result, c.hostUncachedClient)
 
@@ -262,7 +255,7 @@ func (c *controller) innerReconcile(ctx context.Context, req reconcile.Request) 
 }
 
 func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.PartialObjectMetadata,
-	rt *lsv1alpha1.ResolvedTarget, targetNotFound bool) (reconcile.Result, error) {
+	rt *lsv1alpha1.ResolvedTarget, targetNotFound bool) (_ reconcile.Result, err error) {
 
 	op := "reconcilePrivate"
 
@@ -339,6 +332,13 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 			}
 		}
 	}
+
+	// Create OCM context
+	octx := ocm.New(datacontext.MODE_EXTENDED)
+	defer func() {
+		err = goerrors.Join(err, octx.Finalize())
+	}()
+	ctx = octx.BindTo(ctx)
 
 	// Deployitem has been initialized, proceed with reconcile/delete
 
