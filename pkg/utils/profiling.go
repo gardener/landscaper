@@ -12,14 +12,15 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/log"
+	"github.com/shirou/gopsutil/v4/process"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"github.com/shirou/gopsutil/v4/process"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 const separator = " ***** "
@@ -30,6 +31,10 @@ const keyHeapAlloc = "keyHeapAlloc"
 const keyBytes = "keyBytes"
 const keyPodname = "keyPodname"
 const keyStorageDate = "keyStorageDate"
+
+// labelKeyProfilingPrefix is a label of secrets that store a chunk of a heap dump.
+// The value is the prefix of the controller.
+const labelProfilingPrefix = v1alpha1.LandscaperDomain + "/profiling-prefix"
 
 var maxHeapInUse uint64 = 1000 * 1000 * 300
 
@@ -188,7 +193,7 @@ func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient
 	}
 
 	// cleanup old data secrets
-	if err = cleanupOldDataSecrets(ctx, hostUncachedClient, prefix, heapSecret); err != nil {
+	if err = cleanupOldDataSecrets(ctx, hostUncachedClient, prefix); err != nil {
 		return err
 	}
 
@@ -211,6 +216,9 @@ func createDataSecrets(ctx context.Context, hostUncachedClient client.Client, pr
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      getHeapSecretDataName(prefix, i),
 				Namespace: GetCurrentPodNamespace(),
+				Labels: map[string]string{
+					labelProfilingPrefix: prefix,
+				},
 			},
 			Data: map[string][]byte{
 				keyBytes: chunks[i],
@@ -241,20 +249,17 @@ func updateSecret(ctx context.Context, hostUncachedClient client.Client, heapSec
 	return nil
 }
 
-func cleanupOldDataSecrets(ctx context.Context, hostUncachedClient client.Client, prefix string, heapSecret *v1.Secret) error {
-	numOfDataSecrets, err := strconv.Atoi(string(heapSecret.Data[keyNumberOfDataSecrets]))
+func cleanupOldDataSecrets(ctx context.Context, hostUncachedClient client.Client, prefix string) error {
+	secretList := &v1.SecretList{}
+	err := read_write_layer.ListSecrets(ctx, hostUncachedClient, secretList, read_write_layer.R000007,
+		client.InNamespace(GetCurrentPodNamespace()),
+		client.MatchingLabels{labelProfilingPrefix: prefix})
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < numOfDataSecrets; i++ {
-		heapSecretData := &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      getHeapSecretDataName(prefix, i),
-				Namespace: GetCurrentPodNamespace(),
-			},
-		}
-		if err = hostUncachedClient.Delete(ctx, heapSecretData); err != nil {
+	for i := range secretList.Items {
+		if err = hostUncachedClient.Delete(ctx, &secretList.Items[i]); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}

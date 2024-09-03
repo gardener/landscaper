@@ -73,7 +73,7 @@ If the environment variable `ENABLE_PROFILER` is set as described above a heap d
 An automatic heap dump is written into a set of secrets, consisting of a base secret with some meta data and several
 data secrets containing the byte data of the heap dump. 
 
-The base secret is stored in the same namespace as the corresponding pob. Its name is as follows for the different 
+The base secret is stored in the same namespace as the corresponding pod. Its name is as follows for the different 
 pods:
 
 - Landscaper main pod with Installation and Execution controllers: main-landscaper-heap
