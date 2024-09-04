@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	"github.com/cloudflare/cfssl/log"
 	"github.com/shirou/gopsutil/v4/process"
 	v1 "k8s.io/api/core/v1"
@@ -31,6 +33,7 @@ const keyHeapAlloc = "keyHeapAlloc"
 const keyBytes = "keyBytes"
 const keyPodname = "keyPodname"
 const keyStorageDate = "keyStorageDate"
+const keyLockTime = "keyLockTime"
 
 // labelKeyProfilingPrefix is a label of secrets that store a chunk of a heap dump.
 // The value is the prefix of the controller.
@@ -186,7 +189,7 @@ func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient
 		chunks = append(chunks, data[i:end])
 	}
 
-	// fetch or create base secret
+	// create base secret or take over base secret and lock it
 	heapSecret, err := fetchOrCreateSecret(ctx, hostUncachedClient, prefix)
 	if err != nil {
 		return err
@@ -207,7 +210,9 @@ func storeHeapProfile(ctx context.Context, buf *bytes.Buffer, hostUncachedClient
 		return err
 	}
 
-	return nil
+	// unlock base secret
+	delete(heapSecret.Data, keyLockTime)
+	return hostUncachedClient.Update(ctx, heapSecret)
 }
 
 func createDataSecrets(ctx context.Context, hostUncachedClient client.Client, prefix string, chunks [][]byte) error {
@@ -240,6 +245,7 @@ func updateSecret(ctx context.Context, hostUncachedClient client.Client, heapSec
 		keyHeapAlloc:           []byte(strconv.FormatUint(m.HeapAlloc, 10)),
 		keyPodname:             []byte(GetCurrentPodName()),
 		keyStorageDate:         []byte(time.Now().String()),
+		keyLockTime:            heapSecret.Data[keyLockTime],
 	}
 
 	if err := hostUncachedClient.Update(ctx, heapSecret); err != nil {
@@ -289,15 +295,48 @@ func fetchOrCreateSecret(ctx context.Context, hostUncachedClient client.Client, 
 				keyHeapAlloc:           []byte("0"),
 				keyPodname:             []byte(GetCurrentPodName()),
 				keyStorageDate:         []byte(time.Now().String()),
+				keyLockTime:            []byte(time.Now().Format(time.RFC3339)),
 			},
 		}
 
 		if err := hostUncachedClient.Create(ctx, heapSecret); err != nil {
 			return nil, err
 		}
+
+		// return new secret
+		return heapSecret, nil
 	}
 
-	return heapSecret, nil
+	lockTimeBytes, contained := heapSecret.Data[keyLockTime]
+	if isEmptyOrOutdated(ctx, contained, lockTimeBytes) {
+		heapSecret.Data[keyLockTime] = []byte(time.Now().Format(time.RFC3339))
+		if err := hostUncachedClient.Update(ctx, heapSecret); err != nil {
+			return nil, err
+		}
+		return heapSecret, nil
+	}
+
+	return nil, lserrors.NewError("fetchOrCreateSecret", "HeapSecretLocked", "heap secret locked")
+}
+
+func isEmptyOrOutdated(ctx context.Context, contained bool, lockTimeBytes []byte) bool {
+	log, _ := logging.FromContextOrNew(ctx, nil)
+
+	if !contained {
+		return true
+	}
+
+	lockTime, err := time.Parse(time.RFC3339, string(lockTimeBytes))
+	if err != nil {
+		log.Error(err, "Failed to parse lock time"+string(lockTimeBytes))
+		return false
+	}
+
+	if lockTime.Add(time.Hour).Before(time.Now()) {
+		return true
+	}
+
+	return false
 }
 
 func getHeapSecretName(prefix string) string {
