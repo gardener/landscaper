@@ -46,13 +46,13 @@ if [[ -z $TARGET_SHOOT_KUBECONFIG_PATH ]]; then
     exit 1
 fi
 
-if [[ -z RESOURCE_SHOOT_KUBECONFIG_PATH ]]; then
+if [[ -z $RESOURCE_SHOOT_KUBECONFIG_PATH ]]; then
     echo "Resource shoot kubeconfig path (-r) is required" >&2
     print_help
     exit 1
 fi
 
-if [[ -z INGRESS_URL ]]; then
+if [[ -z $INGRESS_URL ]]; then
     echo "Ingress url (-i) is required" >&2
     print_help
     exit 1
@@ -190,24 +190,53 @@ helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --c
   -f "${WORKDIR}/landscaper-controller-values.yaml" -f "${WORKDIR}/registry-values.yaml" landscaper-controller "${WORKDIR}/landscaper-controller"
 
 
+# Wait until landscaper and the ingress for the webhook are ready.
+# To allow retries, we must not exit at the first error.
+set +e
+
 echo "> Wait for Landscaper being ready"
 landscaper_ready=false
 retries_left=20
-
 while [ "$landscaper_ready" = false ]; do
+  echo "Is landscaper ready: ${retries_left} tries left"
   kubectl --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" get customresourcedefinitions.apiextensions.k8s.io deployitems.landscaper.gardener.cloud
   if [ "$?" = 0 ]; then
+    echo "Landscaper is ready"
     landscaper_ready=true
   fi
 
-  if [ "retries_left" == 0 ]; then
-    >&2 echo "landscaper is not ready after max retries"
+  retries_left="$((${retries_left}-1))"
+  if [ ${retries_left} == 0 ]; then
+    >&2 echo "Landscaper is not ready after max retries"
     exit 1
   fi
 
-  retries_left="$((${retries_left}-1))"
   sleep 1
 done
+
+
+echo "> Wait for ingress being ready: ${INGRESS_URL}"
+ingress_ready=false
+retries_left=300
+
+while [ "$ingress_ready" = false ]; do
+  echo "Is ingress ready: ${retries_left} tries left"
+  LOADBALANCER_IP=$(kubectl --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" get ingress -n ls-system landscaper-controller-webhooks -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  if [ "$?" = 0 -a -n "${LOADBALANCER_IP}" ]; then
+    echo "Ingress is ready"
+    ingress_ready=true
+  fi
+
+  retries_left="$((${retries_left}-1))"
+  if [ ${retries_left} == 0 ]; then
+    >&2 echo "Ingress is not ready after max retries"
+    exit 1
+  fi
+
+  sleep 1
+done
+
+set -e
 
 
 echo "> Deploy Helm Deployer"
