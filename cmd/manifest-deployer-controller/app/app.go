@@ -12,6 +12,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+
 	"github.com/spf13/cobra"
 
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
@@ -57,7 +59,8 @@ func (o *options) run(ctx context.Context) error {
 			o.DeployerOptions.Log.Error(err, "manifest deployer profiler stopped")
 		}()
 
-		go utils.LogMemStatsPeriodically(ctx, o.DeployerOptions.Log, 60*time.Second)
+		go utils.LogMemStatsPeriodically(logging.NewContext(ctx, o.DeployerOptions.Log), 60*time.Second,
+			o.DeployerOptions.HostUncachedClient, "manifest-deployer")
 	}
 
 	o.DeployerOptions.Log.Info("Starting manifest deployer manager")

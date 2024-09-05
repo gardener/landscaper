@@ -61,6 +61,52 @@ If the environment variable `ENABLE_PROFILER` is set as described above, you can
    ```shell
    go tool pprof -http=:8082 heap.out
    ```
+
+## Automatic Heap Dump
+
+If the environment variable `ENABLE_PROFILER` is set as described above a heap dump is automatically created if
+
+- there was no automatic heap dump created for the pod since it started and the current HeapInUse is more than 330 MB
+- there was already an automatic heap dump created for the pod since it started and the current HeapInUse is more than
+  10 percentage higher than for the formerly created heap dump. The older heap dump is overwritten by the newer one.
+
+An automatic heap dump is written into a set of secrets, consisting of a base secret with some meta data and several
+data secrets containing the byte data of the heap dump. 
+
+The base secret is stored in the same namespace as the corresponding pod. Its name is as follows for the different 
+pods:
+
+- Landscaper main pod with Installation and Execution controllers: main-landscaper-heap
+- Landscaper pod for rest: central-landscaper-heap
+- Helm deployer pod: helm-deployer-heap
+- Manifest deployer pod: manifest-deployer-heap
+
+A base secret contains the following entries:
+
+- keyNumberOfDataSecrets: number of secrets containing the data of the profile
+- keyHeapInUse: heap in use in bytes
+- keyHeapAlloc: heap alloc in bytes
+- keyPodname: name of the pod for which a heap dump was stored
+- keyStorageDate: timestamp when the heap dump was stored
+
+For every base secret with Name `<prefix>-heap` there is a set of secrets with names `<prefix>-heap-0`, `<prefix>-heap-1`
+etc. containing the heap data. 
+
+To analyse a heap dump you have to execute the following commands:
+
+``` bash
+# store the heap data in different files
+kubectl get secret -n <namespace> <prefix>-heap-0 -o jsonpath="{.data.keyBytes}" | base64 -d > heap0.out
+kubectl get secret -n <namespace> <prefix>-heap-1 -o jsonpath="{.data.keyBytes}" | base64 -d > heap1.out
+...
+
+# concatenate the files
+cat heap0.out heap1.out ... > heap.out
+
+# analyse the result
+go tool pprof -http=:8082 heap.out
+```
+
 ## Some other important commands
 
 Sometimes it might be interesting to see the memory consumption of a pod and the containers running in it.
