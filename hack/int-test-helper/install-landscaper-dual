@@ -195,18 +195,18 @@ helm upgrade --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" --install --wait --c
 set +e
 
 echo "> Wait for Landscaper being ready"
-landscaper_ready=false
 retries_left=20
-while [ "$landscaper_ready" = false ]; do
+
+while true; do
   echo "Is landscaper ready: ${retries_left} tries left"
   kubectl --kubeconfig="${RESOURCE_SHOOT_KUBECONFIG_PATH}" get customresourcedefinitions.apiextensions.k8s.io deployitems.landscaper.gardener.cloud
   if [ "$?" = 0 ]; then
     echo "Landscaper is ready"
-    landscaper_ready=true
+    break
   fi
 
   retries_left="$((${retries_left}-1))"
-  if [ ${retries_left} == 0 ]; then
+  if [ "${retries_left}" -eq 0 ]; then
     >&2 echo "Landscaper is not ready after max retries"
     exit 1
   fi
@@ -216,19 +216,18 @@ done
 
 
 echo "> Wait for ingress being ready: ${INGRESS_URL}"
-ingress_ready=false
 retries_left=300
 
-while [ "$ingress_ready" = false ]; do
+while true; do
   echo "Is ingress ready: ${retries_left} tries left"
-  LOADBALANCER_IP=$(kubectl --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" get ingress -n ls-system landscaper-controller-webhooks -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  if [ "$?" = 0 -a -n "${LOADBALANCER_IP}" ]; then
+  loadbalancer_ip=$(kubectl --kubeconfig="${TARGET_SHOOT_KUBECONFIG_PATH}" get ingress -n ls-system landscaper-controller-webhooks -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  if [ "$?" = 0 -a -n "${loadbalancer_ip}" ]; then
     echo "Ingress is ready"
-    ingress_ready=true
+    break
   fi
 
   retries_left="$((${retries_left}-1))"
-  if [ ${retries_left} == 0 ]; then
+  if [ "${retries_left}" -eq 0 ]; then
     >&2 echo "Ingress is not ready after max retries"
     exit 1
   fi
