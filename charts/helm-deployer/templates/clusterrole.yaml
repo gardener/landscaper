@@ -71,4 +71,5 @@ rules:
   - list
   - watch
   - update
+  - delete
 {{- end }}
