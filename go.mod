@@ -5,8 +5,8 @@ go 1.22.4
 toolchain go1.23.1
 
 require (
-	dario.cat/mergo v1.0.0
-	github.com/Masterminds/sprig/v3 v3.2.3
+	dario.cat/mergo v1.0.1
+	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/containerd/containerd v1.7.18
 	github.com/docker/cli v26.1.5+incompatible
@@ -77,7 +77,7 @@ require (
 	github.com/InfiniteLoopSpace/go_S-MIME v0.0.0-20181221134359-3f58f9a4b2b6 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.2.1 // indirect
+	github.com/Masterminds/semver/v3 v3.3.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.12.3 // indirect
@@ -215,7 +215,7 @@ require (
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-5 // indirect
 	github.com/hashicorp/vault-client-go v0.4.3 // indirect
-	github.com/huandu/xstrings v1.4.0 // indirect
+	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -282,7 +282,7 @@ require (
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
-	github.com/shopspring/decimal v1.3.1 // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sigstore/cosign/v2 v2.2.4 // indirect
 	github.com/sigstore/fulcio v1.4.5 // indirect
 	github.com/sigstore/rekor v1.3.6 // indirect
@@ -292,7 +292,7 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
-	github.com/spf13/cast v1.6.0 // indirect
+	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/viper v1.18.2 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.2.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
