@@ -136,7 +136,7 @@ REGISTRY_BINARY ?= $(LOCALBIN)/registry
 ## Tool Versions
 CODE_GEN_VERSION ?= $(shell  $(REPO_ROOT)/hack/extract-module-version.sh k8s.io/code-generator)
 # renovate: datasource=github-releases depName=kubernetes-sigs/controller-tools
-CONTROLLER_TOOLS_VERSION ?= v0.16.2
+CONTROLLER_TOOLS_VERSION ?= v0.16.3
 # renovate: datasource=github-tags depName=golang/tools
 FORMATTER_VERSION ?= v0.25.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
