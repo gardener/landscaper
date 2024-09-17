@@ -165,6 +165,16 @@ var _ = Describe("Blueprint", func() {
 				"Detail": Equal("conditional imports on required import"),
 			}))))
 		})
+
+		It("should validate a targetMap import type", func() {
+			importDefinition := core.ImportDefinition{}
+			importDefinition.Name = "myimport"
+			importDefinition.TargetType = "test"
+			importDefinition.Type = core.ImportTypeTargetMap
+
+			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{importDefinition})
+			Expect(allErrs).To(HaveLen(0))
+		})
 	})
 
 	Context("ExportDefinitions", func() {
