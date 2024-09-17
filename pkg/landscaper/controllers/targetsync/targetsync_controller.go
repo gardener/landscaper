@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"time"
 
+	errors2 "github.com/pkg/errors"
+
 	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -249,7 +251,7 @@ func (c *TargetSyncController) handleSecretsAndShoots(ctx context.Context, targe
 	if targetSync.Spec.SecretNameExpression != "" && targetSync.Spec.ShootNameExpression != "" {
 		msg := "a targetsync object with both, secretNameExpression and shootNameExpression, is not allowed"
 		logger.Error(nil, msg)
-		errors = append(errors, fmt.Errorf(msg))
+		errors = append(errors, errors2.New(msg))
 		return errors
 	}
 
