@@ -57,7 +57,7 @@ func (i *InstallationImportsAndBlueprint) getFlattenedImports(importList lsv1alp
 	res := lsv1alpha1.ImportDefinitionList{}
 	for _, def := range importList {
 		res = append(res, def)
-		if def.ConditionalImports != nil && len(def.ConditionalImports) > 0 {
+		if len(def.ConditionalImports) > 0 {
 			res = append(res, i.getFlattenedImports(def.ConditionalImports)...)
 		}
 	}

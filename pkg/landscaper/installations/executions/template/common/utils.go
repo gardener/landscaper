@@ -92,7 +92,7 @@ func ConvertMapCdToCompDescV2(mapCd map[string]interface{}) (*types.ComponentDes
 
 	data, err := json.Marshal(mapCd)
 	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
+		return nil, fmt.Errorf("invalid component descriptor: %s", err.Error())
 	}
 
 	switch ocmSchemaVersion {
@@ -128,7 +128,7 @@ func ConvertMapCdToCompDescV2(mapCd map[string]interface{}) (*types.ComponentDes
 func ConvertCompDescV2ToMapCd(cd cdv2.ComponentDescriptor, ocmSchemaVersion string) (map[string]interface{}, error) {
 	data, err := json.Marshal(cd)
 	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
+		return nil, fmt.Errorf("invalid component descriptor: %s", err.Error())
 	}
 	switch ocmSchemaVersion {
 	case SCHEMA_VERSION_V3ALPHA1:

@@ -95,7 +95,7 @@ func isOptionalParentImport(impRef string, impDefs lsv1alpha1.ImportDefinitionLi
 		if imp.Name == impRef {
 			return isConditional || (imp.Required != nil && !*imp.Required)
 		}
-		if imp.ConditionalImports != nil && len(imp.ConditionalImports) > 0 {
+		if len(imp.ConditionalImports) > 0 {
 			if ok := isOptionalParentImport(impRef, imp.ConditionalImports, true); ok {
 				return true
 			}

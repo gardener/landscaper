@@ -136,7 +136,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 
 	// exportDataMappings
-	if c.Inst.GetInstallation().Spec.ExportDataMappings != nil && len(c.Inst.GetInstallation().Spec.ExportDataMappings) > 0 {
+	if len(c.Inst.GetInstallation().Spec.ExportDataMappings) > 0 {
 		exportDataMappings, err := c.templateDataMappings(fldPath, exports)
 		if err != nil {
 			return nil, nil, err
