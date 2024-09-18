@@ -4,8 +4,11 @@ metadata:
   namespace: {{ .namespace }}
   name: {{ .name }}
   annotations:
+    authentication.gardener.cloud/issuer: managed
     shoot.gardener.cloud/cleanup-extended-apis-finalize-grace-period-seconds: '180'
 spec:
+  extensions:
+    - type: shoot-oidc-service
   provider:
     type: gcp
     infrastructureConfig:

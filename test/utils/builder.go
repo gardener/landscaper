@@ -69,6 +69,24 @@ func CreateInstallationFromFile(ctx context.Context, state *envtest.State, inst 
 	return nil
 }
 
+func CreateServiceAccount(ctx context.Context, state *envtest.State, name, namespace string) (*k8sv1.ServiceAccount, error) {
+	s := &k8sv1.ServiceAccount{}
+	s.SetName(name)
+	s.SetNamespace(namespace)
+	if err := state.Client.Create(ctx, s); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func DeleteServiceAccount(ctx context.Context, state *envtest.State, name, namespace string) error {
+	s := &k8sv1.ServiceAccount{}
+	s.SetName(name)
+	s.SetNamespace(namespace)
+	err := state.Client.Delete(ctx, s)
+	return err
+}
+
 func UpdateInstallationFromFile(ctx context.Context, state *envtest.State, inst *lsv1alpha1.Installation, path string) error {
 	instOld := &lsv1alpha1.Installation{}
 	if err := state.Client.Get(ctx, client.ObjectKeyFromObject(inst), instOld); err != nil {

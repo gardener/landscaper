@@ -20,6 +20,8 @@ const KubernetesClusterTargetType v1alpha1.TargetType = core.GroupName + "/kuber
 type KubernetesClusterTargetConfig struct {
 	// Kubeconfig defines kubeconfig as string.
 	Kubeconfig ValueRef `json:"kubeconfig"`
+
+	OIDCConfig *OIDCConfig `json:"oidcConfig,omitempty"`
 }
 
 // DefaultKubeconfigKey is the default that is used to hold a kubeconfig.
@@ -32,7 +34,8 @@ type ValueRef struct {
 
 // kubeconfigJSON is a helper struct for decoding.
 type kubeconfigJSON struct {
-	Kubeconfig *ValueRef `json:"kubeconfig"`
+	Kubeconfig *ValueRef   `json:"kubeconfig"`
+	OIDCConfig *OIDCConfig `json:"oidcConfig,omitempty"`
 }
 
 // MarshalJSON implements the json marshaling for a JSON
@@ -56,9 +59,12 @@ func (v *ValueRef) UnmarshalJSON(data []byte) error {
 func (kc *KubernetesClusterTargetConfig) UnmarshalJSON(data []byte) error {
 	kj := &kubeconfigJSON{}
 	err := json.Unmarshal(data, kj)
-	if err == nil && kj.Kubeconfig != nil {
+	if err == nil && (kj.Kubeconfig != nil || kj.OIDCConfig != nil) {
 		// parsing was successful
-		kc.Kubeconfig = *kj.Kubeconfig
+		if kj.Kubeconfig != nil {
+			kc.Kubeconfig = *kj.Kubeconfig
+		}
+		kc.OIDCConfig = kj.OIDCConfig
 		return nil
 	}
 	return kc.Kubeconfig.UnmarshalJSON(data)
@@ -70,4 +76,13 @@ func (v ValueRef) OpenAPISchemaType() []string {
 		"string",
 	}
 }
+
 func (v ValueRef) OpenAPISchemaFormat() string { return "" }
+
+type OIDCConfig struct {
+	Server            string                   `json:"server,omitempty"`
+	CAData            []byte                   `json:"caData,omitempty"`
+	ServiceAccount    v1alpha1.ObjectReference `json:"serviceAccount,omitempty"`
+	Audience          []string                 `json:"audience,omitempty"`
+	ExpirationSeconds *int64                   `json:"expirationSeconds,omitempty"`
+}

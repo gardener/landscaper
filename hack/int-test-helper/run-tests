@@ -12,6 +12,7 @@ KUBECONFIG_PATH=$1
 REGISTRY_CONFIG=$2
 VERSION=$3
 SKIP_WAITING_FOR_SYSTEM_COMPONENTS=$4
+OIDC_ISSUER_URL_PATH=$5
 
 # to disable set on 1
 DISABLE_CLEANUP=0
@@ -30,6 +31,5 @@ ginkgo -timeout=60m -v -progress -no-color -seed=17 -fail-fast ./test/integratio
   --ls-namespace=ls-system  \
   --ls-version=$VERSION  \
   --ls-run-on-shoot  \
-  --disable-cleanup=$DISABLE_CLEANUP
-
-
+  --disable-cleanup=$DISABLE_CLEANUP \
+  --oidc-issuer-url-path="$OIDC_ISSUER_URL_PATH"
