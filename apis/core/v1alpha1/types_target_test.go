@@ -2,11 +2,13 @@ package v1alpha1_test
 
 import (
 	"encoding/json"
-	"github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/utils/ptr"
+
+	"github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 )
 
 var _ = Describe("Target", func() {
