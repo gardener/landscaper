@@ -28,9 +28,6 @@ const DefaultKubeconfigKey = "kubeconfig"
 // ValueRef holds a value that can be either defined by string or by a secret ref.
 type ValueRef struct {
 	StrVal *string `json:"-"`
-
-	// deprecated
-	SecretRef *v1alpha1.SecretReference `json:"secretRef,omitempty"`
 }
 
 // kubeconfigJSON is a helper struct for decoding.
@@ -38,34 +35,16 @@ type kubeconfigJSON struct {
 	Kubeconfig *ValueRef `json:"kubeconfig"`
 }
 
-// valueRefJSON is a helper struct to decode json into a secret ref object.
-type valueRefJSON struct {
-	SecretRef *v1alpha1.SecretReference `json:"secretRef,omitempty"`
-}
-
 // MarshalJSON implements the json marshaling for a JSON
 func (v ValueRef) MarshalJSON() ([]byte, error) {
-	if v.StrVal != nil {
-		return json.Marshal(v.StrVal)
-	}
-	ref := valueRefJSON{
-		SecretRef: v.SecretRef,
-	}
-	return json.Marshal(ref)
+	return json.Marshal(v.StrVal)
 }
 
 // UnmarshalJSON implements json unmarshaling for a JSON
 func (v *ValueRef) UnmarshalJSON(data []byte) error {
-	ref := &valueRefJSON{}
-	err := json.Unmarshal(data, ref)
-	if err == nil && ref.SecretRef != nil {
-		// parsing into secret reference was successful
-		v.SecretRef = ref.SecretRef
-		return nil
-	}
 	// parse into string instead
 	var strVal string
-	err = json.Unmarshal(data, &strVal)
+	err := json.Unmarshal(data, &strVal)
 	if err == nil {
 		v.StrVal = &strVal
 		return nil

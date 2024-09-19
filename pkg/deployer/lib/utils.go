@@ -14,7 +14,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -43,7 +42,7 @@ func GetRestConfigAndClientAndClientSet(ctx context.Context, resolvedTarget *lsv
 		return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 	}
 
-	kubeconfigBytes, err := GetKubeconfigFromTargetConfig(ctx, targetConfig, resolvedTarget.Namespace, lsUncachedClient)
+	kubeconfigBytes, err := GetKubeconfigFromTargetConfig(targetConfig)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -71,43 +70,11 @@ func GetRestConfigAndClientAndClientSet(ctx context.Context, resolvedTarget *lsv
 
 // GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
 // If the config defines the target from a secret that secret is read from all provided clients.
-func GetKubeconfigFromTargetConfig(ctx context.Context, config *targettypes.KubernetesClusterTargetConfig,
-	targetNamespace string, lsClient client.Client) ([]byte, error) {
+func GetKubeconfigFromTargetConfig(config *targettypes.KubernetesClusterTargetConfig) ([]byte, error) {
 	if config.Kubeconfig.StrVal != nil {
 		return []byte(*config.Kubeconfig.StrVal), nil
 	}
-	if config.Kubeconfig.SecretRef == nil {
-		return nil, errors.New("kubeconfig not defined")
-	}
-
-	return GetKubeconfigFromSecretRef(ctx, config.Kubeconfig.SecretRef, targetNamespace, lsClient)
-}
-
-func GetKubeconfigFromSecretRef(ctx context.Context, ref *lsv1alpha1.SecretReference, targetNamespace string,
-	lsClient client.Client) ([]byte, error) {
-
-	if len(ref.Namespace) > 0 && ref.Namespace != targetNamespace {
-		return nil, fmt.Errorf("namespace of secret ref %s differs from target namespace %s",
-			ref.Namespace, targetNamespace)
-	}
-
-	secret := &corev1.Secret{}
-	secretKey := client.ObjectKey{Name: ref.Name, Namespace: targetNamespace}
-	if err := read_write_layer.GetSecret(ctx, lsClient, secretKey, secret, read_write_layer.R000050); err != nil {
-		return nil, apierrors.NewNotFound(schema.GroupResource{
-			Resource: "secret",
-		}, ref.Name)
-	}
-
-	if len(ref.Key) == 0 {
-		ref.Key = targettypes.DefaultKubeconfigKey
-	}
-
-	kubeconfig, ok := secret.Data[ref.Key]
-	if !ok {
-		return nil, fmt.Errorf("secret found but key %q not found", ref.Key)
-	}
-	return kubeconfig, nil
+	return nil, errors.New("kubeconfig not defined")
 }
 
 // CreateOrUpdateExport creates or updates the export of a deploy item.
