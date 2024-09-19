@@ -1,0 +1,76 @@
+component:
+  repositoryBaseUrl: eu.gcr.io/gardener-project/landscaper/examples
+  name: github.com/gardener/landscaper-examples/guided-tour/automation/simple-helm
+  version: 1.0.0
+
+items:
+  echo-server-extended:
+    type: helm
+    createNamespace: true
+    chart:
+      name: echo-server-chart
+      access:
+        type: ociArtifact
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server-extended:1.0.0
+    images:
+      echo-server-image: hashicorp/http-echo:0.2.3
+    additionalValues:
+      sub1:
+        ima: {{ $images.echo-server-image }}
+        sub3: 42
+    readinessChecks:
+      ...
+    exports:
+      token:
+        schema:
+          type: string
+        fromResource:
+          apiVersion: v1
+          kind: Secret
+          name: test-secret
+          isNamespaced: true
+          # namespace: example #optional: if isNamespaced==true and not set use the relase namespace
+        jsonPath: .data.token
+
+  next-chart:
+    type: helm
+    createNamespace: true
+    chart:
+      name: next-chart
+      access:
+        type: ociArtifact
+        imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/next-chart:1.0.0
+    images:
+      next-chart-image: guided-tour/next-image:0.2.3
+    imports:
+      imported-token:
+        schema:
+          type: string
+        from-item: echo-server-extended
+        from-export: token
+    additionalValues:
+      sub1:
+        image: {{ $images.next-chart-image }}
+        sub2: {{ $imports.imported-token }}
+
+#  next-manifest:
+#    type: manifest
+#    createNamespace: true
+#    imports:
+#      imported-token:
+#        schema:
+#          type: string
+#        from-item: echo-server-extended
+#        from-export: token
+#    manifests:
+#      - policy: manage
+#        manifest:
+#          apiVersion: v1
+#          kind: ConfigMap
+#          metadata:
+#            name: hello-world
+#            namespace: example
+#          data:
+#            testData: {{ $imports.imported-token }}
+#            testData2: {{ $imports.values.someValue }}
+

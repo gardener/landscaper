@@ -1,0 +1,16 @@
+charts:
+  echo-server:
+    installation-name: automation-simple-helm
+    installation-namespace: cu-example
+
+    release-name: automation-simple
+    release-namespace: example
+
+    target: my-cluster
+
+    values:
+      text: first example
+
+targets:
+  - name: my-cluster
+    kubeconfig-path: ...

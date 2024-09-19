@@ -1,0 +1,54 @@
+dataImports:
+  imported-val-1:
+    fromResource:
+      apiVersion: v1
+      kind: Secret
+      name: test-secret-1
+      isNamespaces: true
+      # namespace: example #optional: if isNamespaced==true and not set use the relase namespace
+    jsonPath: .data.token
+  imported-val-2:
+    fromResource:
+      apiVersion: v1
+      kind: Secret
+      name: test-secret-2
+      isNamespaces: true
+      # namespace: example #optional: if isNamespaced==true and not set use the relase namespace
+    jsonPath: .data.token
+
+mappedImports:
+  imported-token: |
+    tik: {{ $dataImports.imported-val-1.data.token }}
+    tok: {{ $dataImports.imported-val-2.data.token }}
+
+dataExports:
+  public-token:
+    toConfigMap:
+      name: ...
+      key: ...
+
+charts:
+  echo-server-extended:
+    installation-name: automation-simple-helm
+    installation-namespace: cu-example
+
+    release-name: automation-simple
+    release-namespace: example
+
+    # This target need not necessarily occur in the targets section,
+    target: my-cluster
+
+    # optional
+    values:
+      text: first example
+
+  next-chart:
+    ...
+
+targets:
+  - name: my-cluster
+    kubeconfig-path: ...
+  ...
+
+credentials:
+  # credentials to read resources (helm chart, component version, ...)

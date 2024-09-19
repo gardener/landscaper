@@ -1,0 +1,29 @@
+deployItems:
+  - name: item-echo-server-extended
+    type: landscaper.gardener.cloud/helm
+
+    target:
+      import: cluster
+
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      name: {{ .imports.release.name }}
+      namespace: {{ .imports.release.namespace }}
+      createNamespace: true
+
+      chart:
+        resourceRef: {{ getResourceKey `cd://resources/echo-server-chart` }}
+
+      values:
+        {{- mergeOverwrite .imports.values .imports.additionalValues | toYaml | nindent 8 }}
+
+      exports:
+        exports:
+          - key: token
+            fromResource:
+              apiVersion: v1
+              kind: Secret
+              name: test-secret
+              namespace: {{ .imports.release.namespace }}
+            jsonPath: .data.token

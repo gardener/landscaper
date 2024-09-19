@@ -1,0 +1,23 @@
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+    name: subinstallation-echo-server-extended
+    blueprint:
+      ref: cd://resources/blueprint-echo-server-extended
+
+    imports:
+      targets:
+        - name: cluster
+          target: cluster-echo-server-extended
+
+      data:
+        - name: release
+          dataRef: release-echo-server-extended
+
+        - name: values
+          dataRef: values-echo-server-extended
+
+    exports:
+      data:
+        - name: token
+          dataRef: token-echo-server-extended

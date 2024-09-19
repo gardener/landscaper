@@ -1,0 +1,47 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+imports:
+  - name: cluster-echo-server-extended
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: release-echo-server-extended
+    type: data
+    schema:
+      type: object
+
+  - name: values-echo-server-extended
+    type: data
+    schema:
+      type: object
+
+  - name: cluster-next-chart
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: release-next-chart
+    type: data
+    schema:
+      type: object
+
+  - name: values-next-chart
+    type: data
+    schema:
+      type: object
+
+importExecutions:
+  - name: images
+    type: GoTemplate
+    template:
+      {{ $imageResource := getResource .cd "name" "next-chart--next-chart-image" }}
+      next-chart-image: {{ $imageResource.access.imageReference }}
+
+subinstallationExecutions:
+  - name: subinstallation-echo-server-extended
+    type: GoTemplate
+    file: /subinstallation-echo-server-extended.yaml
+  - name: subinstallation-next-chart
+    type: GoTemplate
+    file: /subinstallation-next-chart.yaml
