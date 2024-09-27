@@ -11,7 +11,7 @@ spec:
   imports:
     targets:
       - name: cluster
-        target: my-cluster
+        target: my-cluster-oidc
     data:
       - name: namespace
         dataRef: do-namespace

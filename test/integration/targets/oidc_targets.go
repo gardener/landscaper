@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -40,19 +41,19 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 
 		createOpenIDConnect := func(name, clientID, issuerURL, prefix string) (*unstructured.Unstructured, error) {
 			unstr := &unstructured.Unstructured{}
-			unstr.SetAPIVersion(openIDConnectApiVersion)
-			unstr.SetKind(openIDConnectKind)
-			unstr.SetName(name)
 			unstr.SetUnstructuredContent(map[string]interface{}{
 				"spec": map[string]interface{}{
 					"clientID":             clientID,
-					"issuerURL":            issuerURL,
+					"issuerURL":            strings.TrimSpace(issuerURL),
 					"supportedSigningAlgs": []string{"RS256"},
 					"usernameClaim":        "sub",
 					"usernamePrefix":       prefix,
 				},
 			})
-			err := f.TargetClient.Create(ctx, unstr)
+			unstr.SetAPIVersion(openIDConnectApiVersion)
+			unstr.SetKind(openIDConnectKind)
+			unstr.SetName(name)
+			err := f.Client.Create(ctx, unstr)
 			return unstr, err
 		}
 
@@ -61,7 +62,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 			unstr.SetAPIVersion(openIDConnectApiVersion)
 			unstr.SetKind(openIDConnectKind)
 			unstr.SetName(name)
-			return f.TargetClient.Delete(ctx, unstr)
+			return f.Client.Delete(ctx, unstr)
 		}
 
 		createAdminClusterRoleBinding := func(name, saName, saNamespace, prefix string) error {
@@ -72,7 +73,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 			}
 			b.SetName(name)
 			b.RoleRef = v12.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io/v1",
+				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
 				Name:     "cluster-admin",
 			}
@@ -84,7 +85,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 				},
 			}
 
-			return f.TargetClient.Create(ctx, b)
+			return f.Client.Create(ctx, b)
 		}
 
 		createOIDCTarget := func(ctx context.Context, name, namespace, saName, saNamespace, audience string) (*lsv1alpha1.Target, error) {
@@ -124,7 +125,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 		It("should use an oidc target", func() {
 			const (
 				openIDConnectName  = "resource-cluster-oidc"
-				targetName         = "target-oidc"
+				targetName         = "my-cluster-oidc"
 				serviceAccountName = "service-account-oidc"
 				bindingName        = "binding-oidc"
 				audience           = "target-cluster-oidc"
@@ -161,7 +162,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 			By("Check deployed configmaps")
 			cm := &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "cm-1", Namespace: state.Namespace}}
 			key := kutil.ObjectKeyFromObject(cm)
-			Expect(f.TargetClient.Get(ctx, key, cm)).To(Succeed())
+			Expect(f.Client.Get(ctx, key, cm)).To(Succeed())
 
 			By("Delete installation")
 			Expect(state.Client.Delete(ctx, inst)).To(Succeed())
