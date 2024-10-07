@@ -8,7 +8,7 @@ FROM gcr.io/distroless/static-debian11:nonroot AS base
 #RUN apt install -y --no-cache ca-certificates
 
 #### Landscaper Controller ####
-FROM base as landscaper-controller
+FROM base AS landscaper-controller
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -19,7 +19,7 @@ USER 65532:65532
 ENTRYPOINT ["/landscaper-controller"]
 
 #### Landsacper webhooks server ####
-FROM base as landscaper-webhooks-server
+FROM base AS landscaper-webhooks-server
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -30,7 +30,7 @@ USER 65532:65532
 ENTRYPOINT ["/landscaper-webhooks-server"]
 
 #### Container Deployer Controller ####
-FROM base as container-deployer-controller
+FROM base AS container-deployer-controller
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -41,7 +41,7 @@ USER 65532:65532
 ENTRYPOINT ["/container-deployer-controller"]
 
 #### Container Deployer Init ####
-FROM base as container-deployer-init
+FROM base AS container-deployer-init
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -52,7 +52,7 @@ USER 65532:65532
 ENTRYPOINT ["/container-deployer-init"]
 
 #### Container Deployer wait ####
-FROM base as container-deployer-wait
+FROM base AS container-deployer-wait
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -63,7 +63,7 @@ USER 65532:65532
 ENTRYPOINT ["/container-deployer-wait"]
 
 #### Helm Deployer Controller ####
-FROM base as helm-deployer-controller
+FROM base AS helm-deployer-controller
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -74,7 +74,7 @@ USER 65532:65532
 ENTRYPOINT ["/helm-deployer-controller"]
 
 #### Manifest Deployer Controller ####
-FROM base as manifest-deployer-controller
+FROM base AS manifest-deployer-controller
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -85,7 +85,7 @@ USER 65532:65532
 ENTRYPOINT ["/manifest-deployer-controller"]
 
 #### Mock Deployer Controller ####
-FROM base as mock-deployer-controller
+FROM base AS mock-deployer-controller
 
 ARG TARGETOS
 ARG TARGETARCH
