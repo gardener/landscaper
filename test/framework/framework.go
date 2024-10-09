@@ -224,7 +224,7 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 			return nil, fmt.Errorf("unable to read file with oidc issuer url: %w", err)
 		}
 
-		f.OIDCIssuerURL = string(data)
+		f.OIDCIssuerURL = strings.TrimSpace(string(data))
 	}
 
 	return f, nil

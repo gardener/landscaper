@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -44,7 +43,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 			unstr.SetUnstructuredContent(map[string]interface{}{
 				"spec": map[string]interface{}{
 					"clientID":             clientID,
-					"issuerURL":            strings.TrimSpace(issuerURL),
+					"issuerURL":            issuerURL,
 					"supportedSigningAlgs": []string{"RS256"},
 					"usernameClaim":        "sub",
 					"usernamePrefix":       prefix,
@@ -91,8 +90,8 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 		createOIDCTarget := func(ctx context.Context, name, namespace, saName, saNamespace, audience string) (*lsv1alpha1.Target, error) {
 			config := &targettypes.KubernetesClusterTargetConfig{
 				OIDCConfig: &targettypes.OIDCConfig{
-					Server: "",
-					CAData: nil,
+					Server: f.RestConfig.Host,
+					CAData: f.RestConfig.CAData,
 					ServiceAccount: lsv1alpha1.ObjectReference{
 						Name:      saName,
 						Namespace: saNamespace,
