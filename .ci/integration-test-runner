@@ -104,6 +104,7 @@ fi
 
 TARGET_SHOOT_KUBECONFIG_PATH="${TARGET_SHOOT_DIR}/kubeconfig.yaml"
 RESOURCE_SHOOT_KUBECONFIG_PATH="${RESOURCE_SHOOT_DIR}/kubeconfig.yaml"
+OIDC_ISSUER_URL_PATH="${RESOURCE_SHOOT_DIR}/oidc-issuer-url"
 
 echo "Target Shoot Cluster Name: $(cat ${TARGET_SHOOT_DIR}/clustername)"
 echo "Resource Shoot Cluster Name: $(cat ${RESOURCE_SHOOT_DIR}/clustername)"
@@ -121,7 +122,7 @@ echo "Installing Landscaper"
 
 exit_on_error $? "installing landscaper failed"
 
-"${PROJECT_ROOT}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH ${TARGET_SHOOT_DIR}/docker.config $VERSION true
+"${PROJECT_ROOT}/hack/int-test-helper/run-tests" $RESOURCE_SHOOT_KUBECONFIG_PATH ${TARGET_SHOOT_DIR}/docker.config $VERSION true "$OIDC_ISSUER_URL_PATH"
 exit_on_error $? "run-tests failed"
 
 "${PROJECT_ROOT}/hack/int-test-helper/delete-shoot-cluster" $GARDENER_KUBECONFIG_PATH $NAMESPACE $TARGET_SHOOT_DIR
