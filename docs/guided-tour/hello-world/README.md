@@ -27,10 +27,10 @@ First of all, we need to create two custom resources:
       i.e. the cluster on which the deployment will be done.
 
    > **Note:**  
-   > If your target cluster is a Gardener Shoot cluster, it is **not** possible to use an oidc / gardenlogin kubeconfig in a Target.  
+   > If your target cluster is a Gardener Shoot cluster, it is **not** possible to use a gardenlogin kubeconfig in a Target.  
    > If you have only such a kubeconfig, see 
    > ["Constructing a Target Resource"](https://github.com/gardener/landscaper/blob/master/docs/guided-tour//targets/README.md)
-   > how to construct a kubeconfig and a Target, that you can use with the Landscaper.
+   > how to construct a Target, that you can use with the Landscaper.
 
 2. On the Landscaper resource cluster, create a namespace `cu-example`.
 

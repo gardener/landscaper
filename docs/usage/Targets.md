@@ -160,17 +160,18 @@ The deployers have to take care of resolving secret references in Targets. If th
 
 If you write your own deployer without using the deployer library, you will have to take care of resolving secret references in Targets yourself.
 
+
 ## OIDC Target to Kubernetes Target Cluster
 
 Instead of storing credentials in Targets or Secrets to get access to a target cluster it is possible to configure
 a trust relationship between the target cluster (where you want to install your software) and the resource cluster
-(where the Landscaper Installations and Targets resides). This allows to use OIDC Targets which do not require
+(where the Landscaper Installations and Targets reside). This allows to use OIDC Targets which do not require
 any credentials to be stored somewhere. 
 
 In the following we show how to set up such a trust relationship and create OIDC Targets. The description assumes that
 both, the target and the resource cluster are [Gardener shoot clusters](https://gardener.cloud/). 
 
-To configure a trust relationship between a target cluster with Name `target-x` and a resource cluster `resource-x`
+To configure a trust relationship between a target cluster with name `target-x` and a resource cluster `resource-x`
 you need the following preparation steps:
 
 - Configure the resource shoot cluster as a 
@@ -193,7 +194,7 @@ you need the following preparation steps:
 Both cluster must be reconciled after the modifications.
   
 After these cluster preparation steps, you can now configure the trust between the target and the resource cluster by
-creating an OpenIDConnect resource on the target cluster
+creating an OpenIDConnect resource on the target cluster:
 
 ```yaml
 apiVersion: authentication.gardener.cloud/v1alpha1
@@ -202,12 +203,12 @@ metadata:
   name: <someName>
 
 spec:
-  clientID: <someID> # e.g. name of the resource cluster resource-x
+  clientID: <someID>
   issuerURL: <issuerUrl>
   supportedSigningAlgs:
   - RS256
   usernameClaim: sub
-  usernamePrefix: <somePrefix> # e.g. pre-resource-x
+  usernamePrefix: <somePrefix> # e.g. resource-x:
 ```
 
 After the former modification and a reconciliation of the resource cluster you find the `issuerURL` of the resource cluster in
@@ -243,12 +244,12 @@ roleRef:
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: User
-  name: <prefix defined in OpenIDConnect resource>:system:serviceaccount:<namespace of service account>:<name of service account>
+  name: <prefix defined in OpenIDConnect resource>system:serviceaccount:<namespace of service account>:<name of service account>
 ```
 
 If required, instead of a ClusterRoleBinding you could also define a RoleBinding.
 
-And now it is time to define an OIDC target on the resource cluster with:
+And now it is time to define an OIDC Target on the resource cluster:
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -267,11 +268,11 @@ spec:
     serviceAccount: 
       name: <name of Service Account>
       namespace: <namespace of Service Account> # might be different from the Target namespace
-    expirationSeconds: <some integer> # defaults to 86400 = 60 * 60 * 24, if not set
+    expirationSeconds: <some integer> # optional, defaults to 86400 = 60 * 60 * 24
   type: landscaper.gardener.cloud/kubernetes-cluster
 ```
 
-This target can be used in Landscaper Installations as other Targets of this type with credentials. 
+This target can be used in Landscaper Installations in the same way as other Targets of this type with credentials.
 
 The following picture gives an overview about the cluster settings and k8s resources required to set up a 
 trust relationship between the resource and the target cluster.
