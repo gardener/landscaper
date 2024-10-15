@@ -11,6 +11,9 @@ import (
 	"fmt"
 	"reflect"
 
+	authenticationv1 "k8s.io/api/authentication/v1"
+	"k8s.io/utils/ptr"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,24 +39,69 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
-func GetRestConfigAndClientAndClientSet(ctx context.Context, resolvedTarget *lsv1alpha1.ResolvedTarget, lsUncachedClient client.Client) (*rest.Config, client.Client, kubernetes.Interface, error) {
+func GetRestConfigAndClientAndClientSet(ctx context.Context, resolvedTarget *lsv1alpha1.ResolvedTarget, lsUncachedClient client.Client) (_ *rest.Config, _ client.Client, _ kubernetes.Interface, err error) {
+	var restConfig *rest.Config
+
+	if resolvedTarget.Target == nil {
+		return nil, nil, nil, fmt.Errorf("resolved target does not contain the original target")
+	}
+
 	targetConfig := &targettypes.KubernetesClusterTargetConfig{}
 	if err := yaml.Unmarshal([]byte(resolvedTarget.Content), targetConfig); err != nil {
 		return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 	}
 
-	kubeconfigBytes, err := GetKubeconfigFromTargetConfig(targetConfig)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	if targetConfig.Kubeconfig.StrVal != nil {
+		kubeconfigBytes, err := GetKubeconfigFromTargetConfig(targetConfig)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 
-	kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	restConfig, err := kubeconfig.ClientConfig()
-	if err != nil {
-		return nil, nil, nil, err
+		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		restConfig, err = kubeconfig.ClientConfig()
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+	} else if targetConfig.OIDCConfig != nil {
+		serviceAccount := &corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: targetConfig.OIDCConfig.ServiceAccount.Namespace,
+				Name:      targetConfig.OIDCConfig.ServiceAccount.Name,
+			},
+		}
+
+		expirationSeconds := targetConfig.OIDCConfig.ExpirationSeconds
+		if expirationSeconds == nil {
+			// use 1 day as default
+			expirationSeconds = ptr.To[int64](86400)
+		}
+
+		tokenRequest := &authenticationv1.TokenRequest{
+			Spec: authenticationv1.TokenRequestSpec{
+				Audiences:         targetConfig.OIDCConfig.Audience,
+				ExpirationSeconds: expirationSeconds,
+			},
+		}
+
+		if err = lsUncachedClient.SubResource("token").Create(ctx, serviceAccount, tokenRequest); err != nil {
+			return nil, nil, nil, fmt.Errorf("unable to create token: %w", err)
+		}
+
+		restConfig = &rest.Config{
+			Host:        targetConfig.OIDCConfig.Server,
+			BearerToken: tokenRequest.Status.Token,
+			TLSClientConfig: rest.TLSClientConfig{
+				CAData: targetConfig.OIDCConfig.CAData,
+			},
+		}
+
+	} else {
+		return nil, nil, nil, fmt.Errorf("unable build rest config from resolved target")
 	}
 
 	kubeClient, err := client.New(restConfig, client.Options{})

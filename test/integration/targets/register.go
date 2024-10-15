@@ -17,4 +17,5 @@ func RegisterTests(f *framework.Framework) {
 
 	TargetTests(f)
 	TargetMapTests(ctx, f)
+	OIDCTargetTests(ctx, f)
 }
