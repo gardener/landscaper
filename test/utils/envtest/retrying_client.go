@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
@@ -116,7 +117,7 @@ func retrySporadic(ctx context.Context, log utils.Logger, fn func() error) error
 
 	for i := 0; i < retries; i++ {
 		if err := ctx.Err(); err != nil {
-			log.Logfln("retrying client: context is closed: %w", err)
+			log.Logfln("retrying client: context is closed: %v", err)
 			return err
 		}
 
@@ -124,16 +125,19 @@ func retrySporadic(ctx context.Context, log utils.Logger, fn func() error) error
 		if err == nil {
 			return nil
 		} else if i == retries-1 {
-			log.Logfln("retrying client: all attempts failed: %w", err)
+			log.Logfln("retrying client: all attempts failed: %v", err)
+			return err
+		} else if apierrors.IsNotFound(err) {
+			log.Logfln("retrying client: %v", err)
 			return err
 		} else if !isSporadicError(err) {
-			log.Logfln("retrying client: stop retrying after non-sporadic error: %w", err)
+			log.Logfln("retrying client: stop retrying after non-sporadic error: %v", err)
 			return err
 		} else if ctxError := ctx.Err(); ctxError != nil {
-			log.Logfln("retrying client: stop retrying because context is closed: %w", ctxError)
+			log.Logfln("retrying client: stop retrying because context is closed: %v", ctxError)
 			return ctxError
 		} else {
-			log.Logfln("retrying client: continue retrying after sporadic error: %w", err)
+			log.Logfln("retrying client: continue retrying after sporadic error: %v", err)
 			time.Sleep(3 * time.Second)
 		}
 	}
