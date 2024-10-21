@@ -1,0 +1,20 @@
+# base url of the component repository
+REPO_BASE_URL="eu.gcr.io/gardener-project/landscaper/examples"
+
+# path to the kubeconfig of the target cluster used in the target of the resource cluster
+TARGET_CLUSTER_KUBECONFIG_PATH="/Users/${USER}/tmp/kubes/kubeconfig.yaml"
+
+# namespace for resources in the resource cluster
+NAMESPACE="cu-example"
+
+# helm repository url, for example "https://charts.bitnami.com/bitnami"
+HELM_REPOSITORY=......
+
+# helm chart in the format <chart name>:<chart version>, for example "mariadb:12.2.7"
+HELM_CHART=......
+
+# common prefix for the url of the index.yaml and chart
+HELM_URL_PREFIX=......
+
+# path to a file which contains the auth header to access index.yaml and chart
+HELM_AUTH_HEADER_FILE_PATH="/Users/${USER}/tmp/helmrepos/auth-header"
