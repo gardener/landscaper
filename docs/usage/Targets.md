@@ -221,7 +221,6 @@ On the resource cluster you define a Service Account like the following:
 
 ```yaml
 apiVersion: v1
-
 kind: ServiceAccount
 metadata:
   name: <someName> # e.g. test-service-account
@@ -232,6 +231,7 @@ On the target cluster (not the resource cluster!) you define the cluster role bi
 service account on the resource cluster, e.g. as follows:
 
 ```yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: <someName>
@@ -253,7 +253,6 @@ And now it is time to define an OIDC Target on the resource cluster:
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
-
 kind: Target
 metadata:
   name: <targetName>
@@ -261,14 +260,15 @@ metadata:
 
 spec:
   config:
-    audience:
-    - <clientID of OpenIDConnect on the target cluster>
-    caData: LS... # ca data of the target cluster
-    server: <ApiServerUrl of the target cluster> # https://api.<clusterName>...
-    serviceAccount: 
-      name: <name of Service Account>
-      namespace: <namespace of Service Account> # might be different from the Target namespace
-    expirationSeconds: <some integer> # optional, defaults to 86400 = 60 * 60 * 24
+    oidcConfig:
+      audience:
+        - <clientID of OpenIDConnect on the target cluster>
+      caData: LS... # ca data of the target cluster
+      server: <ApiServerUrl of the target cluster> # https://api.<clusterName>...
+      serviceAccount: 
+        name: <name of Service Account>
+        namespace: <namespace of Service Account> # might be different from the Target namespace
+      expirationSeconds: <some integer> # optional, defaults to 86400 = 60 * 60 * 24
   type: landscaper.gardener.cloud/kubernetes-cluster
 ```
 
