@@ -217,14 +217,15 @@ the status of its shoot yaml with the following command:
   kubectl -n my-project get shoot resource-x -o jsonpath='{.status.advertisedAddresses[?(@.name=="service-account-issuer")].url}'
   ```
 
-On the resource cluster you define a Service Account like the following:
+On the resource cluster you define a Service Account as below. Note that this ServiceAccount must have the same namespace
+as the Target that we are going to create.
 
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: <someName> # e.g. test-service-account
-  namespace: <someNamespace> # e.g. ls-user
+  namespace: <someNamespace> # namespace of the Target
 ```
 
 On the target cluster (not the resource cluster!) you define the cluster role binding (and cluster roles) for this
@@ -266,8 +267,7 @@ spec:
       caData: LS... # ca data of the target cluster
       server: <ApiServerUrl of the target cluster> # https://api.<clusterName>...
       serviceAccount: 
-        name: <name of Service Account>
-        namespace: <namespace of Service Account> # might be different from the Target namespace
+        name: <name of Service Account in the same namespace>
       expirationSeconds: <some integer> # optional, defaults to 86400 = 60 * 60 * 24
   type: landscaper.gardener.cloud/kubernetes-cluster
 ```

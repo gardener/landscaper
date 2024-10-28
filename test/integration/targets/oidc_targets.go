@@ -92,9 +92,8 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 				OIDCConfig: &targettypes.OIDCConfig{
 					Server: f.RestConfig.Host,
 					CAData: f.RestConfig.CAData,
-					ServiceAccount: lsv1alpha1.ObjectReference{
-						Name:      saName,
-						Namespace: saNamespace,
+					ServiceAccount: v1.LocalObjectReference{
+						Name: saName,
 					},
 					Audience:          []string{audience},
 					ExpirationSeconds: ptr.To[int64](86400),

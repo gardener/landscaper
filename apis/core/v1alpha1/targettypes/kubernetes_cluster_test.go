@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"testing"
 
-	"k8s.io/utils/ptr"
-
-	"github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
+
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 )
 
 func TestConfig(t *testing.T) {
@@ -47,20 +46,19 @@ var _ = Describe("Kubernetes Cluster Target Types", func() {
 			OIDCConfig: &targettypes.OIDCConfig{
 				Server: "test-server",
 				CAData: []byte("test-cert"),
-				ServiceAccount: v1alpha1.ObjectReference{
-					Name:      "test-account",
-					Namespace: "test-namespace",
+				ServiceAccount: v1.LocalObjectReference{
+					Name: "test-account",
 				},
 				Audience: []string{"test-audience"},
 			},
 		}
 		targetConfigJSON, err := json.Marshal(targetConfig)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(targetConfigJSON).To(MatchJSON(`{"kubeconfig":null,"oidcConfig":{"server":"test-server","caData":"dGVzdC1jZXJ0","serviceAccount":{"name":"test-account","namespace":"test-namespace"},"audience":["test-audience"]}}`))
+		Expect(targetConfigJSON).To(MatchJSON(`{"kubeconfig":null,"oidcConfig":{"server":"test-server","caData":"dGVzdC1jZXJ0","serviceAccount":{"name":"test-account"},"audience":["test-audience"]}}`))
 	})
 
 	It("should unmarshal an oidc config", func() {
-		configJSON := []byte(`{"kubeconfig":{},"oidcConfig":{"server":"test-server","caData":"dGVzdC1jZXJ0","serviceAccount":{"name":"test-account","namespace":"test-namespace"},"audience":["test-audience"]}}`)
+		configJSON := []byte(`{"kubeconfig":{},"oidcConfig":{"server":"test-server","caData":"dGVzdC1jZXJ0","serviceAccount":{"name":"test-account"},"audience":["test-audience"]}}`)
 		config := &targettypes.KubernetesClusterTargetConfig{}
 		Expect(json.Unmarshal(configJSON, config)).To(Succeed())
 		Expect(config).To(Equal(&targettypes.KubernetesClusterTargetConfig{
@@ -70,9 +68,8 @@ var _ = Describe("Kubernetes Cluster Target Types", func() {
 			OIDCConfig: &targettypes.OIDCConfig{
 				Server: "test-server",
 				CAData: []byte("test-cert"),
-				ServiceAccount: v1alpha1.ObjectReference{
-					Name:      "test-account",
-					Namespace: "test-namespace",
+				ServiceAccount: v1.LocalObjectReference{
+					Name: "test-account",
 				},
 				Audience: []string{"test-audience"},
 			},
