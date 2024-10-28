@@ -70,7 +70,7 @@ func GetRestConfigAndClientAndClientSet(ctx context.Context, resolvedTarget *lsv
 	} else if targetConfig.OIDCConfig != nil {
 		serviceAccount := &corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: targetConfig.OIDCConfig.ServiceAccount.Namespace,
+				Namespace: resolvedTarget.Namespace,
 				Name:      targetConfig.OIDCConfig.ServiceAccount.Name,
 			},
 		}

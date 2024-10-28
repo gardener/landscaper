@@ -7,6 +7,7 @@ package targettypes
 import (
 	"encoding/json"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/apis/core"
@@ -80,9 +81,9 @@ func (v ValueRef) OpenAPISchemaType() []string {
 func (v ValueRef) OpenAPISchemaFormat() string { return "" }
 
 type OIDCConfig struct {
-	Server            string                   `json:"server,omitempty"`
-	CAData            []byte                   `json:"caData,omitempty"`
-	ServiceAccount    v1alpha1.ObjectReference `json:"serviceAccount,omitempty"`
-	Audience          []string                 `json:"audience,omitempty"`
-	ExpirationSeconds *int64                   `json:"expirationSeconds,omitempty"`
+	Server            string                  `json:"server,omitempty"`
+	CAData            []byte                  `json:"caData,omitempty"`
+	ServiceAccount    v1.LocalObjectReference `json:"serviceAccount,omitempty"`
+	Audience          []string                `json:"audience,omitempty"`
+	ExpirationSeconds *int64                  `json:"expirationSeconds,omitempty"`
 }

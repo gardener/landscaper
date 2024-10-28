@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"testing"
 
-	"k8s.io/utils/ptr"
-
-	"github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
+
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 )
 
 func TestConfig(t *testing.T) {
@@ -47,9 +46,8 @@ var _ = Describe("Kubernetes Cluster Target Types", func() {
 			OIDCConfig: &targettypes.OIDCConfig{
 				Server: "test-server",
 				CAData: []byte("test-cert"),
-				ServiceAccount: v1alpha1.ObjectReference{
-					Name:      "test-account",
-					Namespace: "test-namespace",
+				ServiceAccount: v1.LocalObjectReference{
+					Name: "test-account",
 				},
 				Audience: []string{"test-audience"},
 			},
@@ -70,9 +68,8 @@ var _ = Describe("Kubernetes Cluster Target Types", func() {
 			OIDCConfig: &targettypes.OIDCConfig{
 				Server: "test-server",
 				CAData: []byte("test-cert"),
-				ServiceAccount: v1alpha1.ObjectReference{
-					Name:      "test-account",
-					Namespace: "test-namespace",
+				ServiceAccount: v1.LocalObjectReference{
+					Name: "test-account",
 				},
 				Audience: []string{"test-audience"},
 			},
