@@ -13,7 +13,7 @@ If your target cluster is a Gardener shoot cluster, you typically have a
 for the target cluster. It is **not** possible to use such a kubeconfig in a `Target` custom resource.
 You have the following alternatives:
 
-- Use an [OIDC Target](../../usage/Targets.md#oidc-target-to-kubernetes-target-cluster).
+- Use an [OIDC Target](../../../usage/Targets.md#oidc-target-to-kubernetes-target-cluster)
 - Use a Target whose kubeconfig is based on a ServiceAccount token, as described below.
 
 ## Targets Whose Kubeconfig is Based On a ServiceAccount Token

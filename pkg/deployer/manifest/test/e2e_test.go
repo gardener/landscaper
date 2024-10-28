@@ -52,13 +52,13 @@ var _ = Describe("Manifest Deployer", func() {
 		state, err = testenv.InitState(context.TODO())
 		Expect(err).ToNot(HaveOccurred())
 
-		deployer, err := manifestctlr.NewDeployer(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
+		deployer, err := manifestctlr.NewDeployer(nil, testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			logging.Discard(),
 			manifestv1alpha2.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
 
-		ctrl = deployerlib.NewController(
+		ctrl = deployerlib.NewController(nil,
 			testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			utils.NewFinishedObjectCache(),
 			api.LandscaperScheme,

@@ -2,7 +2,6 @@ package targets
 
 import (
 	"context"
-	"encoding/base64"
 	"path/filepath"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -20,50 +18,38 @@ import (
 	"github.com/gardener/landscaper/test/utils"
 )
 
-func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
+func SelfTargetTests(ctx context.Context, f *framework.Framework) {
 
-	Describe("OIDC Targets", func() {
+	Describe("Self Targets", func() {
 
 		var (
-			testdataDir = filepath.Join(f.RootPath, "test", "integration", "testdata", "targets", "oidc-targets")
+			testdataDir = filepath.Join(f.RootPath, "test", "integration", "testdata", "targets", "self-targets")
 			state       = f.Register()
 		)
 
-		It("should use an oidc target", func() {
+		It("should use a self target", func() {
 			const (
-				audience      = "oidc-target-cluster"
-				configMapName = "oidc-target-test"
+				configMapName = "self-target-test"
 			)
 
 			settings := map[string]any{
 				"namespace":              state.Namespace,
-				"openIDConnectName":      "landscaper-integration-test-oidc-targets",
-				"clusterRoleBindingName": "landscaper:integration-test:oidc-targets",
-				"serviceAccountName":     "oidc-serviceaccount",
-				"targetName":             "oidc-target",
-				"installationName":       "oidc-inst",
 				"configMapName":          configMapName,
-				"audience":               audience,
-				"clientID":               audience,
-				"issuerURL":              f.OIDCIssuerURL,
-				"server":                 f.RestConfig.Host,
-				"caData":                 base64.StdEncoding.EncodeToString(f.RestConfig.CAData),
-				"prefix":                 "resource-cluster-oidc:",
+				"clusterRoleBindingName": "landscaper:integration-test:self-targets",
+				"installationName":       "self-inst",
+				"serviceAccountName":     "self-serviceaccount",
+				"targetName":             "self-target",
 			}
-
-			By("Create OpenIDConnect resource so that the target cluster trusts the resource cluster")
-			openIDConnect := &unstructured.Unstructured{}
-			Expect(utils.CreateClientObjectFromTemplate(ctx, f.Client, filepath.Join(testdataDir, "openidconnect.yaml"), settings, openIDConnect)).To(Succeed())
-
-			By("Create ClusterRoleBinding on resource cluster")
-			clusterRoleBinding := &v12.ClusterRoleBinding{}
-			Expect(utils.CreateClientObjectFromTemplate(ctx, f.Client, filepath.Join(testdataDir, "clusterrolebinding.yaml"), settings, clusterRoleBinding)).To(Succeed())
 
 			By("Create ServiceAccount on resource cluster")
 			serviceAccount := &v1.ServiceAccount{}
 			Expect(utils.CreateStateObjectFromTemplate(ctx, state.State, filepath.Join(testdataDir, "serviceaccount.yaml"), settings, serviceAccount)).To(Succeed())
 
-			By("Create OIDC Target on resource cluster")
+			By("Create ClusterRoleBinding on resource cluster")
+			clusterRoleBinding := &v12.ClusterRoleBinding{}
+			Expect(utils.CreateStateObjectFromTemplate(ctx, state.State, filepath.Join(testdataDir, "clusterrolebinding.yaml"), settings, clusterRoleBinding)).To(Succeed())
+
+			By("Create Self Target")
 			target := &lsv1alpha1.Target{}
 			Expect(utils.CreateStateObjectFromTemplate(ctx, state.State, filepath.Join(testdataDir, "target.yaml"), settings, target)).To(Succeed())
 
@@ -89,10 +75,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 			Expect(state.Client.Delete(ctx, serviceAccount)).To(Succeed())
 
 			By("Delete ClusterRoleBinding")
-			Expect(f.Client.Delete(ctx, clusterRoleBinding)).To(Succeed())
-
-			By("Delete OpenIDConnect resource")
-			Expect(f.Client.Delete(ctx, openIDConnect)).To(Succeed())
+			Expect(state.Client.Delete(ctx, clusterRoleBinding)).To(Succeed())
 		})
 	})
 }

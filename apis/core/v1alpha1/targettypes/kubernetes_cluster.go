@@ -23,6 +23,9 @@ type KubernetesClusterTargetConfig struct {
 	Kubeconfig ValueRef `json:"kubeconfig"`
 
 	OIDCConfig *OIDCConfig `json:"oidcConfig,omitempty"`
+
+	// SelfConfig contains the config for a Target that points to the landscaper resource cluster.
+	SelfConfig *SelfConfig `json:"selfConfig,omitempty"`
 }
 
 // DefaultKubeconfigKey is the default that is used to hold a kubeconfig.
@@ -37,6 +40,7 @@ type ValueRef struct {
 type kubeconfigJSON struct {
 	Kubeconfig *ValueRef   `json:"kubeconfig"`
 	OIDCConfig *OIDCConfig `json:"oidcConfig,omitempty"`
+	SelfConfig *SelfConfig `json:"selfConfig,omitempty"`
 }
 
 // MarshalJSON implements the json marshaling for a JSON
@@ -60,12 +64,15 @@ func (v *ValueRef) UnmarshalJSON(data []byte) error {
 func (kc *KubernetesClusterTargetConfig) UnmarshalJSON(data []byte) error {
 	kj := &kubeconfigJSON{}
 	err := json.Unmarshal(data, kj)
-	if err == nil && (kj.Kubeconfig != nil || kj.OIDCConfig != nil) {
+	if err == nil && (kj.Kubeconfig != nil || kj.OIDCConfig != nil || kj.SelfConfig != nil) {
 		// parsing was successful
 		if kj.Kubeconfig != nil {
 			kc.Kubeconfig = *kj.Kubeconfig
 		}
-		kc.OIDCConfig = kj.OIDCConfig
+		if kj.OIDCConfig != nil {
+			kc.OIDCConfig = kj.OIDCConfig
+		}
+		kc.SelfConfig = kj.SelfConfig
 		return nil
 	}
 	return kc.Kubeconfig.UnmarshalJSON(data)
@@ -85,5 +92,10 @@ type OIDCConfig struct {
 	CAData            []byte                  `json:"caData,omitempty"`
 	ServiceAccount    v1.LocalObjectReference `json:"serviceAccount,omitempty"`
 	Audience          []string                `json:"audience,omitempty"`
+	ExpirationSeconds *int64                  `json:"expirationSeconds,omitempty"`
+}
+
+type SelfConfig struct {
+	ServiceAccount    v1.LocalObjectReference `json:"serviceAccount,omitempty"`
 	ExpirationSeconds *int64                  `json:"expirationSeconds,omitempty"`
 }

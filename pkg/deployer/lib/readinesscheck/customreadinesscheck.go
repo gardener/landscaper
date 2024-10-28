@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"strings"
 
+	"k8s.io/client-go/rest"
+
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -39,6 +41,7 @@ type CustomReadinessCheck struct {
 	InterruptionChecker interruption.InterruptionChecker
 	LsClient            client.Client
 	DeployItem          *lsv1alpha1.DeployItem
+	LsRestConfig        *rest.Config
 }
 
 // CheckResourcesReady starts a custom readiness check by checking the readiness of the submitted resources
@@ -48,7 +51,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady(ctx context.Context) error {
 		return nil
 	}
 
-	targetClient, err := lib.GetTargetClient(ctx, c.Client, c.LsClient, c.DeployItem, c.Configuration.TargetName)
+	targetClient, err := lib.GetTargetClientConsideringSecondaryTarget(ctx, c.Client, c.LsClient, c.DeployItem, c.Configuration.TargetName, c.LsRestConfig)
 	if err != nil {
 		return err
 	}

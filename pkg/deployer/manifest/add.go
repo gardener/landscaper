@@ -39,7 +39,7 @@ func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, 
 	}
 	log.Info("access to critical problems allowed")
 
-	d, err := NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+	d, err := NewDeployer(lsMgr.GetConfig(), lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		log,
 		config,
 	)

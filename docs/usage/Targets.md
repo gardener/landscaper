@@ -278,3 +278,65 @@ The following picture gives an overview about the cluster settings and k8s resou
 trust relationship between the resource and the target cluster.
 
 ![OIDC Targets](images/oidc-targets.png)
+
+
+## Targets to the Landscaper Resource Cluster ("Self Targets")
+
+You can use the Landscaper to deploy resources to the Landscaper resource cluster itself, i.e. the cluster on which the 
+Installations and Targets reside. You can achieve this with a special sort of Target, a so-called "Self Target".
+
+First, create a ServiceAccount on the resource cluster in some namespace. Note that this ServiceAccount must belong to 
+the same namespace as the Self Target that we are going to create, and any Installation that uses the Target.
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: <serviceAccountName>
+  namespace: <namespace>
+```
+
+The ServiceAccount must have enough permissions on the resource cluster to perform the deployment, which your
+Installation defines. There are the following alternatives to grant the ServiceAccount permissions:
+
+- You can create a (Cluster)RoleBinding, that binds the ServiceAccount to an appropriate (Cluster)Role. 
+
+- If you are using a Landscaper instance managed by the 
+  [Landscaper-as-a-Service](https://github.com/gardener/landscaper-service),
+  just add the ServiceAccount to the SubjectList `subjects` in namespace `ls-user` on the resource cluster. 
+  It will then automatically get the same roles as a user of the Landscaper instance.
+
+  ```yaml
+  apiVersion: landscaper-service.gardener.cloud/v1alpha1
+  kind: SubjectList
+  metadata:
+    name: subjects
+    namespace: ls-user
+  ...
+  spec:
+    subjects:
+      - kind: ServiceAccount
+        name: <serviceAccountName>
+        namespace: <namespace>
+      - ...
+  ```
+
+Next, create the Self Target. It is a special sort of Target with the following structure:
+
+  ```yaml
+  apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: Target
+  metadata:
+    name: <targetName>
+    namespace: <namespace>
+  spec:
+    config:
+      selfConfig:
+        serviceAccount: 
+          name: <serviceAccountName>
+        expirationSeconds: <some integer> # optional, defaults to 86400 = 60 * 60 * 24
+    type: landscaper.gardener.cloud/kubernetes-cluster
+  ```
+
+Now you can use this Target as usual in Installations. 
+There is an [example in the Guided-Tour](../guided-tour/targets/02-self-targets).

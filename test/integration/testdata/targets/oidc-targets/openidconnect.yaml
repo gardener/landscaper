@@ -1,0 +1,11 @@
+apiVersion: authentication.gardener.cloud/v1alpha1
+kind: OpenIDConnect
+metadata:
+  name: {{ .openIDConnectName }}
+spec:
+  clientID: {{ .clientID }}
+  issuerURL: {{ .issuerURL }}
+  supportedSigningAlgs:
+    - RS256
+  usernameClaim: sub
+  usernamePrefix: '{{ .prefix }}'

@@ -8,13 +8,13 @@ import (
 	"context"
 	"time"
 
-	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
@@ -30,11 +30,13 @@ const (
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.
-func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+func NewDeployer(lsRestConfig *rest.Config,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	log logging.Logger,
 	config manifestv1alpha2.Configuration) (deployerlib.Deployer, error) {
 
 	dep := &deployer{
+		lsRestConfig:       lsRestConfig,
 		lsUncachedClient:   lsUncachedClient,
 		lsCachedClient:     lsCachedClient,
 		hostUncachedClient: hostUncachedClient,
@@ -48,6 +50,7 @@ func NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCache
 }
 
 type deployer struct {
+	lsRestConfig       *rest.Config
 	lsUncachedClient   client.Client
 	lsCachedClient     client.Client
 	hostUncachedClient client.Client
@@ -62,6 +65,7 @@ func (d *deployer) Reconcile(ctx context.Context, _ *lsv1alpha1.Context, di *lsv
 	if err != nil {
 		return err
 	}
+	manifest.SetLsRestConfig(d.lsRestConfig)
 	return manifest.Reconcile(ctx)
 }
 
@@ -70,6 +74,7 @@ func (d deployer) Delete(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alp
 	if err != nil {
 		return err
 	}
+	manifest.SetLsRestConfig(d.lsRestConfig)
 	return manifest.Delete(ctx)
 }
 
@@ -87,6 +92,7 @@ func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1al
 	if err != nil {
 		return nil, err
 	}
+	manifest.SetLsRestConfig(d.lsRestConfig)
 	if crval.ContinuousReconcileSpecIsEmpty(manifest.ProviderConfiguration.ContinuousReconcile) {
 		// no continuous reconciliation configured
 		return nil, nil
