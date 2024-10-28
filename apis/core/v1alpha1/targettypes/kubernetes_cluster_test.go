@@ -54,11 +54,11 @@ var _ = Describe("Kubernetes Cluster Target Types", func() {
 		}
 		targetConfigJSON, err := json.Marshal(targetConfig)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(targetConfigJSON).To(MatchJSON(`{"kubeconfig":null,"oidcConfig":{"server":"test-server","caData":"dGVzdC1jZXJ0","serviceAccount":{"name":"test-account","namespace":"test-namespace"},"audience":["test-audience"]}}`))
+		Expect(targetConfigJSON).To(MatchJSON(`{"kubeconfig":null,"oidcConfig":{"server":"test-server","caData":"dGVzdC1jZXJ0","serviceAccount":{"name":"test-account"},"audience":["test-audience"]}}`))
 	})
 
 	It("should unmarshal an oidc config", func() {
-		configJSON := []byte(`{"kubeconfig":{},"oidcConfig":{"server":"test-server","caData":"dGVzdC1jZXJ0","serviceAccount":{"name":"test-account","namespace":"test-namespace"},"audience":["test-audience"]}}`)
+		configJSON := []byte(`{"kubeconfig":{},"oidcConfig":{"server":"test-server","caData":"dGVzdC1jZXJ0","serviceAccount":{"name":"test-account"},"audience":["test-audience"]}}`)
 		config := &targettypes.KubernetesClusterTargetConfig{}
 		Expect(json.Unmarshal(configJSON, config)).To(Succeed())
 		Expect(config).To(Equal(&targettypes.KubernetesClusterTargetConfig{
