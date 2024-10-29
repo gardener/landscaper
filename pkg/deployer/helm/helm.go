@@ -6,7 +6,6 @@ package helm
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"strings"
 
@@ -17,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -187,35 +185,6 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {
 	if h.TargetKubeClient != nil {
 		return h.TargetRestConfig, h.TargetKubeClient, h.TargetClientSet, nil
-	}
-	// use the configured kubeconfig over the target if defined
-	if len(h.ProviderConfiguration.Kubeconfig) != 0 {
-		kubeconfig, err := base64.StdEncoding.DecodeString(h.ProviderConfiguration.Kubeconfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		cConfig, err := clientcmd.NewClientConfigFromBytes(kubeconfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		restConfig, err := cConfig.ClientConfig()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeClient, err := client.New(restConfig, client.Options{})
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		clientset, err := kubernetes.NewForConfig(restConfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		h.TargetRestConfig = restConfig
-		h.TargetKubeClient = kubeClient
-		return restConfig, kubeClient, clientset, nil
 	}
 	if h.Target != nil {
 		restConfig, kubeClient, clientset, err := lib.GetRestConfigAndClientAndClientSet(ctx, h.Target, h.lsUncachedClient)

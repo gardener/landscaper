@@ -13492,14 +13492,6 @@ func schema_landscaper_apis_deployer_helm_ProviderConfiguration(ref common.Refer
 							Format:      "",
 						},
 					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"readinessChecks": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ReadinessChecks configures the readiness checks.",
@@ -14170,14 +14162,6 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 							Format:      "",
 						},
 					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"updateStrategy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UpdateStrategy defines the strategy how the manifests are updated in the cluster. Defaults to \"update\".",
@@ -14576,14 +14560,6 @@ func schema_landscaper_apis_deployer_manifest_ProviderConfiguration(ref common.R
 							Format:      "",
 						},
 					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"updateStrategy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UpdateStrategy defines the strategy how the manifest are updated in the cluster.",
@@ -14889,14 +14865,6 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 							Format:      "",
 						},
 					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"updateStrategy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UpdateStrategy defines the strategy how the manifest are updated in the cluster. Defaults to \"update\".",
@@ -15158,14 +15126,6 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
 							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},

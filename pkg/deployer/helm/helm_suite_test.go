@@ -14,10 +14,6 @@ import (
 	"testing"
 	"time"
 
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-
-	"k8s.io/utils/ptr"
-
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -30,10 +26,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -84,7 +83,6 @@ var _ = Describe("Template", func() {
 		chartData, closer := utils.ReadChartFrom("./testdata/testchart")
 		defer closer()
 		helmConfig := &helmv1alpha1.ProviderConfiguration{}
-		helmConfig.Kubeconfig = base64.StdEncoding.EncodeToString(kubeconfig)
 		helmConfig.Chart.Archive = &helmv1alpha1.ArchiveAccess{
 			Raw: base64.StdEncoding.EncodeToString(chartData),
 		}
@@ -97,10 +95,26 @@ var _ = Describe("Template", func() {
 		item := &lsv1alpha1.DeployItem{}
 		item.Spec.Configuration = providerConfig
 
+		// build target
+		targetConfig := targettypes.KubernetesClusterTargetConfig{
+			Kubeconfig: targettypes.ValueRef{
+				StrVal: ptr.To[string](string(kubeconfig)),
+			},
+		}
+		targetConfigRaw, err := json.Marshal(targetConfig)
+		Expect(err).NotTo(HaveOccurred())
+		target := &lsv1alpha1.Target{
+			Spec: lsv1alpha1.TargetSpec{
+				Type:          targettypes.KubernetesClusterTargetType,
+				Configuration: lsv1alpha1.NewAnyJSONPointer(targetConfigRaw),
+			},
+		}
+		rt := lsv1alpha1.NewResolvedTarget(target)
+
 		lsCtx := &lsv1alpha1.Context{}
 		lsCtx.Name = lsv1alpha1.DefaultContextName
 		lsCtx.Namespace = item.Namespace
-		h, err := helm.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, helmv1alpha1.Configuration{}, item, nil, lsCtx)
+		h, err := helm.New(testenv.Client, testenv.Client, testenv.Client, testenv.Client, helmv1alpha1.Configuration{}, item, rt, lsCtx)
 		Expect(err).ToNot(HaveOccurred())
 		files, crds, _, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())

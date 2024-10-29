@@ -6,13 +6,11 @@ package manifest
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
@@ -106,35 +104,6 @@ func New(lsUncachedClient client.Client, hostUncachedClient client.Client,
 func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {
 	if m.TargetKubeClient != nil {
 		return m.TargetRestConfig, m.TargetKubeClient, m.TargetClientSet, nil
-	}
-	// use the configured kubeconfig over the target if defined
-	if len(m.ProviderConfiguration.Kubeconfig) != 0 {
-		kubeconfig, err := base64.StdEncoding.DecodeString(m.ProviderConfiguration.Kubeconfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		cConfig, err := clientcmd.NewClientConfigFromBytes(kubeconfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		restConfig, err := cConfig.ClientConfig()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeClient, err := client.New(restConfig, client.Options{})
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		clientset, err := kubernetes.NewForConfig(restConfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		m.TargetRestConfig = restConfig
-		m.TargetKubeClient = kubeClient
-		return restConfig, kubeClient, clientset, nil
 	}
 	if m.Target != nil {
 		restConfig, kubeClient, clientset, err := lib.GetRestConfigAndClientAndClientSet(ctx, m.Target, m.lsUncachedClient)

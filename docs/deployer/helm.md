@@ -61,9 +61,6 @@ spec:
         atomic: true
         force: true
       uninstall: {} # see https://helm.sh/docs/helm/helm_uninstall/#options
- 
-    # base64 encoded kubeconfig pointing to the cluster to install the chart
-    kubeconfig: xxx
 
     updateStrategy: update | patch # optional; defaults to update
 

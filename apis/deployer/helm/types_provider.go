@@ -26,11 +26,6 @@ const HelmChartRepoCredentialsKey = "helmChartRepoCredentials"
 type ProviderConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// Kubeconfig is the base64 encoded kubeconfig file.
-	// By default the configured target is used to deploy the resources
-	// +optional
-	Kubeconfig string `json:"kubeconfig"`
-
 	// ReadinessChecks configures the readiness checks.
 	// +optional
 	ReadinessChecks health.ReadinessCheckConfiguration `json:"readinessChecks,omitempty"`
