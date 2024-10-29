@@ -23,7 +23,6 @@ var _ = Describe("Conversion", func() {
 
 		var (
 			v1alpha1Config = &manifestv1alpha1.ProviderConfiguration{
-				Kubeconfig:     "my-kubeconfig",
 				UpdateStrategy: manifestv1alpha1.UpdateStrategyPatch,
 				Manifests: []*runtime.RawExtension{
 					{
@@ -36,7 +35,6 @@ var _ = Describe("Conversion", func() {
 			}
 
 			manifestConfig = &manifestcore.ProviderConfiguration{
-				Kubeconfig:     "my-kubeconfig",
 				UpdateStrategy: manifestcore.UpdateStrategyPatch,
 				Manifests: []managedresource.Manifest{
 					{

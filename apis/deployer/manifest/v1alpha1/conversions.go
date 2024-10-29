@@ -18,7 +18,6 @@ import (
 
 // Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration is an manual conversion function.
 func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifestcore.ProviderConfiguration, s conversion.Scope) error {
-	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifestcore.UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
 	if in.Manifests != nil {
@@ -38,7 +37,6 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 
 // Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration is an manual conversion function.
 func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifestcore.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
-	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
 	if in.Manifests != nil {
