@@ -87,7 +87,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 			return f.Client.Create(ctx, b)
 		}
 
-		createOIDCTarget := func(ctx context.Context, name, namespace, saName, saNamespace, audience string) (*lsv1alpha1.Target, error) {
+		createOIDCTarget := func(ctx context.Context, name, namespace, saName, audience string) (*lsv1alpha1.Target, error) {
 			config := &targettypes.KubernetesClusterTargetConfig{
 				OIDCConfig: &targettypes.OIDCConfig{
 					Server: f.RestConfig.Host,
@@ -143,7 +143,7 @@ func OIDCTargetTests(ctx context.Context, f *framework.Framework) {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Create oidc target on resource cluster")
-			target, err := createOIDCTarget(ctx, targetName, state.Namespace, serviceAccountName, state.Namespace, audience)
+			target, err := createOIDCTarget(ctx, targetName, state.Namespace, serviceAccountName, audience)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Create DataObject for namespace import")
