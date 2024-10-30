@@ -133,7 +133,8 @@ The `imports` section contains the reference to the target object and the `bluep
 
 ## Delete Installation
 
-You can uninstall the hello-world Helm chart by deleting the `Installation` custom resource from the Landscaper resource cluster:
+You can uninstall the hello-world Helm chart by deleting the `Installation` custom resource from the Landscaper resource 
+cluster:
 
 ```shell
 kubectl delete inst -n cu-example hello-world
@@ -146,6 +147,9 @@ You can keep the `Target`, because we will use it again in the next example. But
 ```shell
 kubectl delete target -n cu-example my-cluster
 ```
+
+Remark: The k8s resources created in some example of the Guided Tour should be always deleted before continuing with 
+the next.
 
 ## Automatic Reconcile
 
