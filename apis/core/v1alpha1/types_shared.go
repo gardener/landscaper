@@ -178,6 +178,7 @@ var UnrecoverableErrorCodes = []ErrorCode{
 	ErrorConfigurationProblem,
 	ErrorInternalProblem,
 	ErrorTimeout,
+	ErrorUnauthorized,
 	ErrorCyclicDependencies,
 }
 
