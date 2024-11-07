@@ -129,9 +129,16 @@ The following additional functions are available:
   returns all files and directories in the given directory of the blueprint's filesystem.
 - **`toYaml(interface{}): string`**
   converts the given object to valid yaml
-- **`getResource(ComponentDescriptor, keyValuePairs ...string): Resource`**
+- **`getResource(ComponentDescriptor, keyValuePairs ...string): GlobalIdentity`**
   searches a resource in the given component descriptors that matches the specified selector. The selector are key-value pairs that describe the resource's identity.
   e.g. `getResource .cd "name" "myResource"` -> returns the resource with the name `myResource`
+- **`getResourceKey(ComponentDescriptor, reference ...string): Resource`**:
+  Resolves a [resource reference](https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references).
+  `reference` is either a relative artifact reference in the format described by ocm or a file-path like expression
+  like `cd://componentReferences/referenceName1/componentReferences/referenceName2/resources/resourceName1`.
+  It constructs the [global identity](https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/01-model/03-elements-sub.md#identifiers)
+  of the resource and returns a base64 encoded string representation of that global identity. This base64 encoded string acts as key
+  which can be used by the deployers to fetch the resource content.
 - **`getComponent(componentDescriptor, keyValuePairs ...string): ComponentDescriptor`**
   searches a component in the given component descriptors that matches the specified selector. The selector are key-value pairs that describe the component reference's identity.
   e.g. `getComponent .cd "name" "myComp"` -> seraches in the component descriptor for a component reference with the name `myComp` and returns the referenced component descriptor.
@@ -273,6 +280,13 @@ or
 - **`getResource(ComponentDescriptor, keyValuePairs ...string): Resource`**
   searches a resource in the given component descriptors that matches the specified selector. The selector are key-value pairs that describe the resource's identity.
   e.g. `getResource .cd "name" "myResource"` -> returns the resource with the name `myResource`
+- **`getResourceKey(ComponentDescriptor, reference ...string): Resource`**:
+  Resolves a [resource reference](https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references).
+  `reference` is either a relative artifact reference in the format described by ocm or a file-path like expression
+  like `cd://componentReferences/referenceName1/componentReferences/referenceName2/resources/resourceName1`.
+  It constructs the [global identity](https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/01-model/03-elements-sub.md#identifiers)
+  of the resource and returns a base64 encoded string representation of that global identity. This base64 encoded string acts as key
+  which can be used by the deployers to fetch the resource content.
 - **`getComponent(componentDescriptor, keyValuePairs ...string): ComponentDescriptor`**
   searches a component in the given component descriptors that matches the specified selector. The selector are key-value pairs that describe the component reference's identity.
   e.g. `getComponent .cd "name" "myComp"` -> seraches in the component descriptor for a component reference with the name `myComp` and returns the referenced component descriptor.
