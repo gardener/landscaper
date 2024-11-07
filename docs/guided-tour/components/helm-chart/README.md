@@ -162,7 +162,8 @@ spec:
   each of which has a name. Field `blueprint.ref.resourceName` in the Installation specifies the name of the blueprint
   resource in the component descriptor.
 
-
+How to configure the credentials to access OCM repositories in a private OCI registry is described 
+[here](../../../usage/Context.md#private-oci-registries).  
 
 ## The Blueprint
 
@@ -284,8 +285,6 @@ we maintain the image reference in the component version. In detail, the connect
 > a pod cannot be embedded into the component as a local blob (though it make sense to do so, as an intermediate step
 > during transport of the component).
 
-
-
 ## Procedure
 
 The procedure to install the echo server is as follows:
@@ -344,8 +343,6 @@ resources:
       helmChart: echo-server:1.0.0
       helmRepository: https://example.helm.repo.com/landscaper
 ```
-
-
 
 ## References
 
