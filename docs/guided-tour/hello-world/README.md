@@ -149,7 +149,7 @@ kubectl delete target -n cu-example my-cluster
 ```
 
 Remark: The k8s resources created in some example of the Guided Tour should be always deleted before continuing with 
-the next.
+the next. This is mandatory for `Installation` but of course you could reuse your `Context` and `Target` resources.
 
 ## Automatic Reconcile
 
