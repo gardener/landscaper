@@ -6,7 +6,6 @@ package clusters
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
@@ -56,7 +56,7 @@ func NewShootClientFromTarget(ctx context.Context, gardenTarget *v1alpha1.Target
 	}
 
 	targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-	err = json.Unmarshal([]byte(resolvedTarget.Content), targetConfig)
+	err = yaml.Unmarshal([]byte(resolvedTarget.Content), targetConfig)
 	if err != nil {
 		return nil, fmt.Errorf("shoot client: failed to unmarshal target config: %w", err)
 	}
