@@ -71,7 +71,8 @@ func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCac
 		return nil, err
 	}
 
-	return deployerlib.NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+	return deployerlib.NewController(nil,
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		finishedObjectCache,
 		scheme, eventRecorder, scheme,
 		deployerlib.DeployerArgs{

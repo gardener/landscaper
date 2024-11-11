@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,9 +43,8 @@ func (h *Helm) ApplyFiles(ctx context.Context, filesForManifestDeployer, crdsFor
 	currOp := "ApplyFile"
 	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, currOp})
 
-	_, targetClient, targetClientSet, err := h.TargetClient(ctx)
-	if err != nil {
-		return lserrors.NewWrappedError(err, currOp, "TargetClusterClient", err.Error())
+	if err := h.ensureTargetAccess(ctx); err != nil {
+		return lserrors.NewWrappedError(err, currOp, "ensureTargetAccess", err.Error())
 	}
 
 	if h.ProviderStatus == nil {
@@ -66,7 +64,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, filesForManifestDeployer, crdsFor
 	if shouldUseRealHelmDeployer {
 		// Apply helm install/upgrade. Afterwards get the list of deployed resources by helm get release.
 		// The list is filtered, i.e. it contains only the resources that are needed for the default readiness check.
-		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, h.TargetRestConfig, targetClientSet, h.DeployItem)
+		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, h.targetAccess, h.DeployItem)
 		deployErr = realHelmDeployer.Deploy(ctx)
 		if deployErr == nil {
 			managedResourceStatusList, err := realHelmDeployer.GetManagedResourcesStatus(ctx)
@@ -82,7 +80,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, filesForManifestDeployer, crdsFor
 			return err
 		}
 
-		deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
+		deployErr = h.applyManifests(ctx, manifests)
 	}
 
 	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
@@ -95,6 +93,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, filesForManifestDeployer, crdsFor
 		return deployErr
 	}
 
+	var err error
 	h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
 	if err != nil {
 		return lserrors.NewWrappedError(err, currOp, "ProviderStatus", err.Error())
@@ -108,7 +107,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, filesForManifestDeployer, crdsFor
 		return err
 	}
 
-	if err := h.checkResourcesReady(ctx, targetClient, !shouldUseRealHelmDeployer); err != nil {
+	if err := h.checkResourcesReady(ctx, h.targetAccess.TargetClient(), !shouldUseRealHelmDeployer); err != nil {
 		return err
 	}
 
@@ -116,7 +115,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, filesForManifestDeployer, crdsFor
 		return err
 	}
 
-	if err := h.readExportValues(ctx, currOp, targetClient, exports); err != nil {
+	if err := h.readExportValues(ctx, currOp, h.targetAccess.TargetClient(), exports); err != nil {
 		return err
 	}
 
@@ -125,8 +124,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, filesForManifestDeployer, crdsFor
 	return nil
 }
 
-func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, targetClientSet kubernetes.Interface,
-	manifests []managedresource.Manifest) error {
+func (h *Helm) applyManifests(ctx context.Context, manifests []managedresource.Manifest) error {
 
 	if _, err := timeout.TimeoutExceeded(ctx, h.DeployItem, TimeoutCheckpointHelmStartApplyManifests); err != nil {
 		return err
@@ -134,8 +132,8 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 
 	applier := resourcemanager.NewManifestApplier(resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
-		KubeClient:       targetClient,
-		Clientset:        targetClientSet,
+		KubeClient:       h.targetAccess.TargetClient(),
+		Clientset:        h.targetAccess.TargetClientSet(),
 		DefaultNamespace: h.ProviderConfiguration.Namespace,
 		DeployItemName:   h.DeployItem.Name,
 		DeployItem:       h.DeployItem,
@@ -148,6 +146,7 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 		DeletionGroupsDuringUpdate: h.ProviderConfiguration.DeletionGroupsDuringUpdate,
 		InterruptionChecker:        interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
 		LsUncachedClient:           h.lsUncachedClient,
+		LsRestConfig:               h.lsRestConfig,
 	})
 
 	_, err := applier.Apply(ctx)
@@ -254,6 +253,7 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client, fa
 				InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
 				LsClient:            h.lsUncachedClient,
 				DeployItem:          h.DeployItem,
+				LsRestConfig:        h.lsRestConfig,
 			}
 			err := customReadinessCheck.CheckResourcesReady(ctx)
 			if err != nil {
@@ -279,6 +279,7 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 			InterruptionChecker: interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient),
 			LsClient:            h.lsUncachedClient,
 			DeployItem:          h.DeployItem,
+			LsRestConfig:        h.lsRestConfig,
 		}
 
 		resourceExports, err := resourcemanager.NewExporter(opts).Export(ctx, exportDefinition)
@@ -316,21 +317,21 @@ func (h *Helm) deleteManifestsInGroups(ctx context.Context) error {
 		return h.Writer().UpdateDeployItem(ctx, read_write_layer.W000067, h.DeployItem)
 	}
 
-	_, targetClient, _, err := h.TargetClient(ctx)
-	if err != nil {
+	if err := h.ensureTargetAccess(ctx); err != nil {
 		return err
 	}
 
 	interruptionChecker := interruption.NewStandardInterruptionChecker(h.DeployItem, h.lsUncachedClient)
 
-	err = resourcemanager.DeleteManagedResources(
+	err := resourcemanager.DeleteManagedResources(
 		ctx,
 		h.lsUncachedClient,
 		h.ProviderStatus.ManagedResources,
 		h.ProviderConfiguration.DeletionGroups,
-		targetClient,
+		h.targetAccess.TargetClient(),
 		h.DeployItem,
-		interruptionChecker)
+		interruptionChecker,
+		h.lsRestConfig)
 	if err != nil {
 		return fmt.Errorf("failed deleting managed resources: %w", err)
 	}
@@ -351,15 +352,13 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context, di *lsv1
 		return h.Writer().UpdateDeployItem(ctx, read_write_layer.W000047, h.DeployItem)
 	}
 
-	_, _, targetClientSet, err := h.TargetClient(ctx)
-	if err != nil {
+	if err := h.ensureTargetAccess(ctx); err != nil {
 		return err
 	}
 
-	realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(nil, h.ProviderConfiguration,
-		h.TargetRestConfig, targetClientSet, di)
+	realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(nil, h.ProviderConfiguration, h.targetAccess, di)
 
-	err = realHelmDeployer.Undeploy(ctx)
+	err := realHelmDeployer.Undeploy(ctx)
 	if err != nil {
 		return err
 	}

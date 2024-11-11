@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/kube"
@@ -64,8 +66,8 @@ type RealHelmDeployer struct {
 	mutex              sync.RWMutex
 }
 
-func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration, targetRestConfig *rest.Config,
-	clientset kubernetes.Interface, di *lsv1alpha1.DeployItem) *RealHelmDeployer {
+func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration,
+	targetAccess *lib.TargetAccess, di *lsv1alpha1.DeployItem) *RealHelmDeployer {
 
 	return &RealHelmDeployer{
 		chart:              ch,
@@ -75,8 +77,8 @@ func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderC
 		rawValues:          providerConfig.Values,
 		helmConfig:         providerConfig.HelmDeploymentConfig,
 		createNamespace:    providerConfig.CreateNamespace,
-		targetRestConfig:   targetRestConfig,
-		apiResourceHandler: resourcemanager.CreateApiResourceHandler(clientset),
+		targetRestConfig:   targetAccess.TargetRestConfig(),
+		apiResourceHandler: resourcemanager.CreateApiResourceHandler(targetAccess.TargetClientSet()),
 		helmSecretManager:  nil,
 		di:                 di,
 		messages:           make([]string, 0),

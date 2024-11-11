@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -40,10 +39,7 @@ func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, 
 	}
 	log.Info("access to critical problems allowed")
 
-	d, err := NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
-		log,
-		config,
-	)
+	d, err := NewDeployer(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient, lsMgr.GetConfig(), log, config)
 	if err != nil {
 		return err
 	}

@@ -53,13 +53,11 @@ var _ = Describe("Helm Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		deployer, err := helmctrl.NewDeployer(testenv.Client, testenv.Client, testenv.Client, testenv.Client,
-			logging.Discard(),
-			helmv1alpha1.Configuration{},
-		)
+		deployer, err := helmctrl.NewDeployer(testenv.Client, testenv.Client, testenv.Client, testenv.Client, nil,
+			logging.Discard(), helmv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 
-		ctrl := deployerlib.NewController(
+		ctrl := deployerlib.NewController(nil,
 			testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			utils.NewFinishedObjectCache(),
 			api.LandscaperScheme,

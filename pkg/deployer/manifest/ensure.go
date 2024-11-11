@@ -39,10 +39,8 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	m.DeployItem.Status.Phase = lsv1alpha1.DeployItemPhases.Progressing
 
-	_, targetClient, targetClientSet, err := m.TargetClient(ctx)
-	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "TargetClusterClient", err.Error())
+	if err := m.ensureTargetAccess(ctx); err != nil {
+		return lserrors.NewWrappedError(err, currOp, "ensureTargetAccess", err.Error())
 	}
 
 	if m.ProviderStatus == nil {
@@ -57,8 +55,8 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	applier := resourcemanager.NewManifestApplier(resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(Scheme).UniversalDecoder(),
-		KubeClient:       targetClient,
-		Clientset:        targetClientSet,
+		KubeClient:       m.targetAccess.TargetClient(),
+		Clientset:        m.targetAccess.TargetClientSet(),
 		DeployItemName:   m.DeployItem.Name,
 		DeployItem:       m.DeployItem,
 		UpdateStrategy:   m.ProviderConfiguration.UpdateStrategy,
@@ -70,6 +68,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		DeletionGroupsDuringUpdate: m.ProviderConfiguration.DeletionGroupsDuringUpdate,
 		InterruptionChecker:        interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient),
 		LsUncachedClient:           m.lsUncachedClient,
+		LsRestConfig:               m.lsRestConfig,
 	})
 
 	patchInfos, err := applier.Apply(ctx)
@@ -97,7 +96,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := m.CheckResourcesReady(ctx, targetClient); err != nil {
+	if err := m.CheckResourcesReady(ctx, m.targetAccess.TargetClient()); err != nil {
 		return err
 	}
 
@@ -107,10 +106,11 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		}
 
 		opts := resourcemanager.ExporterOptions{
-			KubeClient:          targetClient,
+			KubeClient:          m.targetAccess.TargetClient(),
 			InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient),
 			LsClient:            m.lsUncachedClient,
 			DeployItem:          m.DeployItem,
+			LsRestConfig:        m.lsRestConfig,
 		}
 
 		exporter := resourcemanager.NewExporter(opts)
@@ -175,6 +175,7 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 				InterruptionChecker: interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient),
 				LsClient:            m.lsUncachedClient,
 				DeployItem:          m.DeployItem,
+				LsRestConfig:        m.lsRestConfig,
 			}
 			err := customReadinessCheck.CheckResourcesReady(ctx)
 			if err != nil {
@@ -205,9 +206,8 @@ func (m *Manifest) deleteManifestsInGroups(ctx context.Context) error {
 		return err
 	}
 
-	_, targetClient, _, err := m.TargetClient(ctx)
-	if err != nil {
-		return lserrors.NewWrappedError(err, op, "TargetClusterClient", err.Error())
+	if err := m.ensureTargetAccess(ctx); err != nil {
+		return lserrors.NewWrappedError(err, op, "ensureTargetAccess", err.Error())
 	}
 
 	managedResources := []managedresource.ManagedResourceStatus{}
@@ -219,7 +219,7 @@ func (m *Manifest) deleteManifestsInGroups(ctx context.Context) error {
 			lc.KeyResourceKind, mr.Resource.Kind)
 		mrLogger.Debug("Checking resource")
 
-		ok, err := resourcemanager.FilterByPolicy(mrCtx, mr, targetClient, m.DeployItem.Name)
+		ok, err := resourcemanager.FilterByPolicy(mrCtx, mr, m.targetAccess.TargetClient(), m.DeployItem.Name)
 		if err != nil {
 			return err
 		}
@@ -227,7 +227,7 @@ func (m *Manifest) deleteManifestsInGroups(ctx context.Context) error {
 			continue
 		}
 
-		notFound, err := resourcemanager.AnnotateAndPatchBeforeDelete(ctx, mr, targetClient)
+		notFound, err := resourcemanager.AnnotateAndPatchBeforeDelete(ctx, mr, m.targetAccess.TargetClient())
 		if err != nil {
 			return err
 		}
@@ -241,14 +241,15 @@ func (m *Manifest) deleteManifestsInGroups(ctx context.Context) error {
 
 	interruptionChecker := interruption.NewStandardInterruptionChecker(m.DeployItem, m.lsUncachedClient)
 
-	err = resourcemanager.DeleteManagedResources(
+	err := resourcemanager.DeleteManagedResources(
 		ctx,
 		m.lsUncachedClient,
 		managedResources,
 		m.ProviderConfiguration.DeletionGroups,
-		targetClient,
+		m.targetAccess.TargetClient(),
 		m.DeployItem,
 		interruptionChecker,
+		m.lsRestConfig,
 	)
 	if err != nil {
 		return fmt.Errorf("failed deleting managed resources: %w", err)

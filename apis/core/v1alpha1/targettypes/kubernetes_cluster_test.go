@@ -75,4 +75,35 @@ var _ = Describe("Kubernetes Cluster Target Types", func() {
 			},
 		}))
 	})
+
+	It("should marshal a self config", func() {
+		targetConfig := &targettypes.KubernetesClusterTargetConfig{
+			SelfConfig: &targettypes.SelfConfig{
+				ServiceAccount: v1.LocalObjectReference{
+					Name: "test-account",
+				},
+				ExpirationSeconds: ptr.To[int64](300),
+			},
+		}
+		targetConfigJSON, err := json.Marshal(targetConfig)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(targetConfigJSON).To(MatchJSON(`{"kubeconfig":null,"selfConfig":{"serviceAccount":{"name":"test-account"},"expirationSeconds":300}}`))
+	})
+
+	It("should unmarshal a self config", func() {
+		configJSON := []byte(`{"selfConfig":{"serviceAccount":{"name":"test-account"},"expirationSeconds":300}}`)
+		config := &targettypes.KubernetesClusterTargetConfig{}
+		Expect(json.Unmarshal(configJSON, config)).To(Succeed())
+		Expect(config).To(Equal(&targettypes.KubernetesClusterTargetConfig{
+			Kubeconfig: targettypes.ValueRef{
+				StrVal: nil,
+			},
+			SelfConfig: &targettypes.SelfConfig{
+				ServiceAccount: v1.LocalObjectReference{
+					Name: "test-account",
+				},
+				ExpirationSeconds: ptr.To[int64](300),
+			},
+		}))
+	})
 })

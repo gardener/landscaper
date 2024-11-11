@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -72,6 +73,7 @@ type ManifestApplierOptions struct {
 	InterruptionChecker        interruption.InterruptionChecker
 
 	LsUncachedClient client.Client
+	LsRestConfig     *rest.Config
 }
 
 // ManifestApplier creates or updated manifest based on their definition.
@@ -89,6 +91,7 @@ type ManifestApplier struct {
 	deletionGroupsDuringUpdate []managedresource.DeletionGroupDefinition
 	interruptionChecker        interruption.InterruptionChecker
 	lsUncachedClient           client.Client
+	lsRestConfig               *rest.Config
 
 	// properties created during runtime
 
@@ -140,6 +143,7 @@ func NewManifestApplier(opts ManifestApplierOptions) *ManifestApplier {
 		interruptionChecker:        opts.InterruptionChecker,
 		apiResourceHandler:         CreateApiResourceHandler(opts.Clientset),
 		lsUncachedClient:           opts.LsUncachedClient,
+		lsRestConfig:               opts.LsRestConfig,
 	}
 }
 
@@ -449,6 +453,7 @@ func (a *ManifestApplier) cleanupOrphanedResourcesInGroups(ctx context.Context,
 		a.kubeClient,
 		a.deployItem,
 		a.interruptionChecker,
+		a.lsRestConfig,
 	)
 }
 

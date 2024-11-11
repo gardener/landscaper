@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -98,7 +99,8 @@ func Add(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 	if err := args.Validate(); err != nil {
 		return err
 	}
-	con := NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+	con := NewController(lsMgr.GetConfig(),
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		finishedObjectCache,
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor(args.Name),
@@ -119,6 +121,7 @@ func Add(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 
 // controller reconciles deployitems and delegates the business logic to the configured Deployer.
 type controller struct {
+	lsRestConfig       *rest.Config
 	lsUncachedClient   client.Client
 	lsCachedClient     client.Client
 	hostUncachedClient client.Client
@@ -143,7 +146,8 @@ type controller struct {
 }
 
 // NewController creates a new generic deployitem controller.
-func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+func NewController(lsRestConfig *rest.Config,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	finishedObjectCache *lsutil.FinishedObjectCache,
 	lsScheme *runtime.Scheme,
 	lsEventRecorder record.EventRecorder,
@@ -156,6 +160,7 @@ func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCac
 	wc := lsutil.NewWorkerCounter(maxNumberOfWorkers)
 
 	return &controller{
+		lsRestConfig:        lsRestConfig,
 		lsUncachedClient:    lsUncachedClient,
 		lsCachedClient:      lsCachedClient,
 		hostUncachedClient:  hostUncachedClient,

@@ -6,16 +6,13 @@ import (
 	"encoding/json"
 	"time"
 
-	"k8s.io/utils/ptr"
-
-	"github.com/gardener/landscaper/pkg/utils"
-
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -27,6 +24,7 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/helm"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
+	"github.com/gardener/landscaper/pkg/utils"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 	"github.com/gardener/landscaper/test/utils/matchers"
@@ -67,10 +65,10 @@ var _ = Describe("Deletion Manager", func() {
 		Expect(err).ToNot(HaveOccurred())
 		resources = &resourceBuilder{state.Namespace}
 
-		deployer, err := helm.NewDeployer(testenv.Client, testenv.Client, testenv.Client, testenv.Client, logging.Discard(), helmv1alpha1.Configuration{})
+		deployer, err := helm.NewDeployer(testenv.Client, testenv.Client, testenv.Client, testenv.Client, nil, logging.Discard(), helmv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 
-		ctrl = deployerlib.NewController(
+		ctrl = deployerlib.NewController(nil,
 			testenv.Client, testenv.Client, testenv.Client, testenv.Client,
 			utils.NewFinishedObjectCache(),
 			api.LandscaperScheme,

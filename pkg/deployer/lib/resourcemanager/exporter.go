@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -32,6 +33,7 @@ type ExporterOptions struct {
 	InterruptionChecker interruption.InterruptionChecker
 	LsClient            client.Client
 	DeployItem          *lsv1alpha1.DeployItem
+	LsRestConfig        *rest.Config
 }
 
 // Exporter defines the export of data from manifests.
@@ -40,6 +42,7 @@ type Exporter struct {
 	interruptionChecker interruption.InterruptionChecker
 	lsClient            client.Client
 	deployItem          *lsv1alpha1.DeployItem
+	lsRestConfig        *rest.Config
 }
 
 // NewExporter creates a new exporter.
@@ -49,6 +52,7 @@ func NewExporter(opts ExporterOptions) *Exporter {
 		interruptionChecker: opts.InterruptionChecker,
 		lsClient:            opts.LsClient,
 		deployItem:          opts.DeployItem,
+		lsRestConfig:        opts.LsRestConfig,
 	}
 
 	if exporter.interruptionChecker == nil {
@@ -107,7 +111,7 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 }
 
 func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) (map[string]interface{}, error) {
-	targetClient, err := lib.GetTargetClient(ctx, e.kubeClient, e.lsClient, e.deployItem, export.TargetName)
+	targetClient, err := lib.GetTargetClientConsideringSecondaryTarget(ctx, e.kubeClient, e.lsClient, e.deployItem, export.TargetName, e.lsRestConfig)
 	if err != nil {
 		return nil, err
 	}
