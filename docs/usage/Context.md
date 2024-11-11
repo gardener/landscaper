@@ -92,6 +92,8 @@ stored in `docker.io/ocm-example-repo-2`. For further details, check the
 > The ocm configfile allows to influence almost all parts of the ocm tooling's behavior. While several of these features 
 > work technically already, only the configuration of resolvers is officially supported for now. 
 
+### Private OCI registries
+
 These registry pull secrets are references to secrets in the same namespace as the context. It is expected that the 
 secrets contain oci registry access credentials. These credentials are used by the Landscaper to access component 
 descriptors, blueprints, images or even deployable artifacts like helm charts stored in an OCI registry.
