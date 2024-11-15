@@ -12,7 +12,7 @@ landscaper:
         preprocess: 'inject-commit-hash'
         inject_effective_version: true
       component_descriptor:
-        ocm_repository: landscaper
+        ocm_repository: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper
     steps:
       verify:
         image: 'golang:1.22.7'
