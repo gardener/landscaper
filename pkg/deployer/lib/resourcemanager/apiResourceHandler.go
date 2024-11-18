@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"sync"
 
-	lserror "github.com/gardener/landscaper/apis/errors"
-
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/gardener/landscaper/apis/core/v1alpha1"
+	lserror "github.com/gardener/landscaper/apis/errors"
 )
 
 type ApiResourceHandler struct {
@@ -60,6 +62,11 @@ func (a *ApiResourceHandler) GetApiResourceForType(typeMeta metav1.TypeMeta) (me
 	apiResourceList, err := a.clientset.Discovery().ServerResourcesForGroupVersion(groupVersion)
 	if err != nil {
 		err2 := fmt.Errorf("unable to get api resources for %s: %w", groupVersion, err)
+		if apierrors.IsUnauthorized(err) {
+			// In case of an unauthorized error, the DeployItem should fail directly. This is achieved by the
+			// error code v1alpha1.ErrorUnauthorized, which belongs to the v1alpha1.UnrecoverableErrorCodes.
+			return metav1.APIResource{}, lserror.NewWrappedError(err2, currOp, "GetApiResourceList", err2.Error(), v1alpha1.ErrorUnauthorized)
+		}
 		return metav1.APIResource{}, lserror.NewWrappedError(err2, currOp, "GetApiResourceList", err2.Error())
 	}
 
