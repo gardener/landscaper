@@ -7,7 +7,7 @@
     "every weekday"
   ],
   "prHourlyLimit": 1,
-  "prConcurrentLimit": 0,
+  "prConcurrentLimit": 10,
   "timezone": "Europe/Berlin",
   "extends": [
     "config:best-practices",
