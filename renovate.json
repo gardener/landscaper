@@ -2,12 +2,12 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "configMigration": true,
   "schedule": [
-    "after 10:30am",
-    "before 03:30pm",
+    "after 07:30am",
+    "before 07:15pm",
     "every weekday"
   ],
   "prHourlyLimit": 1,
-  "prConcurrentLimit": 10,
+  "prConcurrentLimit": 0,
   "timezone": "Europe/Berlin",
   "extends": [
     "config:best-practices",
@@ -48,7 +48,8 @@
         "go"
       ],
       "matchUpdateTypes": [
-        "patch"
+        "patch",
+        "digest"
       ],
       "rebaseWhen": "auto"
     },
