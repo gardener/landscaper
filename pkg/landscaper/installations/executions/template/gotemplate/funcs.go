@@ -65,7 +65,8 @@ func LandscaperTplFuncMap(blueprint *blueprints.Blueprint,
 		"readFile": readFileFunc(blueprint.Fs),
 		"readDir":  readDir(blueprint.Fs),
 
-		"toYaml": toYAML,
+		"toYaml":   toYAML,
+		"fromYaml": fromYAML,
 
 		"parseOCIRef":   lstmpl.ParseOCIReference,
 		"ociRefRepo":    getOCIReferenceRepository,
@@ -123,6 +124,13 @@ func toYAML(v interface{}) string {
 		return ""
 	}
 	return strings.TrimSuffix(string(data), "\n")
+}
+
+// fromYAML takes a string, unmarshals it from yaml, and returns an interface.
+func fromYAML(input string) (any, error) {
+	var output any
+	err := yaml.Unmarshal([]byte(input), &output)
+	return output, err
 }
 
 // getOCIReferenceVersion returns the version of a oci reference
