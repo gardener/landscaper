@@ -8,7 +8,7 @@ require (
 	dario.cat/mergo v1.0.1
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/cloudflare/cfssl v1.6.5
-	github.com/containerd/containerd v1.7.18
+	github.com/containerd/containerd v1.7.24
 	github.com/docker/cli v26.1.5+incompatible
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.98
@@ -20,8 +20,8 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
 	github.com/mandelsoft/goutils v0.0.0-20241005173814-114fa825bbdc
-	github.com/mandelsoft/spiff v1.7.0-beta-5
-	github.com/mandelsoft/vfs v0.4.3
+	github.com/mandelsoft/spiff v1.7.0-beta-6
+	github.com/mandelsoft/vfs v0.4.4
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.21.0
 	github.com/onsi/gomega v1.34.2
@@ -29,9 +29,9 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.20.4
+	github.com/prometheus/client_golang v1.20.5
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v4 v4.24.9
+	github.com/shirou/gopsutil/v4 v4.24.10
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -45,7 +45,7 @@ require (
 	k8s.io/apimachinery v0.30.3
 	k8s.io/client-go v0.30.3
 	k8s.io/code-generator v0.30.3
-	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
+	k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078
 	sigs.k8s.io/controller-runtime v0.18.4
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -54,7 +54,7 @@ replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.0
-	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20240730131305-7a9a4e85957e
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f
 )
 
 require (
@@ -130,8 +130,9 @@ require (
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/containerd/errdefs v0.1.0 // indirect
+	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
+	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/containers/image/v5 v5.31.0 // indirect
 	github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 // indirect
@@ -154,7 +155,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/drone/envsubst v1.0.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/ebitengine/purego v0.8.0 // indirect
+	github.com/ebitengine/purego v0.8.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
@@ -356,14 +357,14 @@ require (
 	k8s.io/apiserver v0.30.3 // indirect
 	k8s.io/cli-runtime v0.30.3 // indirect
 	k8s.io/component-base v0.30.3 // indirect
-	k8s.io/gengo/v2 v2.0.0-20240228010128-51d4e06bde70 // indirect
+	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20240730131305-7a9a4e85957e // indirect
+	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	k8s.io/kubectl v0.30.3 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.17.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.17.0 // indirect
 	sigs.k8s.io/release-utils v0.7.7 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
 )
