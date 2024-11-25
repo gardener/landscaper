@@ -6,7 +6,7 @@ require (
 	github.com/gardener/component-spec/bindings-go v0.0.98
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/ginkgo/v2 v2.22.0
-	github.com/onsi/gomega v1.35.1
+	github.com/onsi/gomega v1.36.0
 	github.com/robfig/cron/v3 v3.0.1
 	k8s.io/api v0.30.3
 	k8s.io/apiextensions-apiserver v0.30.3
