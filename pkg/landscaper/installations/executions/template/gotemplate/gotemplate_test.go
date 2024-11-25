@@ -67,4 +67,18 @@ var _ = Describe("TemplateDeployExecutions", func() {
 		Expect(res).To(BeEquivalentTo("config:\n  value: foo\n  const: bar"))
 	})
 
+	It("should render a go template with a fromYaml function", func() {
+		bp := blueprints.New(nil, memoryfs.New())
+		tmpl := `{{ $yamlData := fromYaml .values.yamlString }}{{ $yamlData.foo }}`
+		t, err := gotemplate.NewTemplateExecution(bp, nil, nil, nil)
+		Expect(err).ToNot(HaveOccurred())
+		values := map[string]interface{}{
+			"values": map[string]interface{}{
+				"yamlString": `foo: bar`,
+			},
+		}
+		res, err := t.Execute(tmpl, values)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(string(res)).To(Equal("bar"))
+	})
 })
