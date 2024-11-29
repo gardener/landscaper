@@ -36,9 +36,9 @@ component:
 ```
 
 We have uploaded these three component descriptors into an OCI registry, so that the Landscaper can read them from there
-([root](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-root), 
-[core](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-core), 
-[extension](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-extension)).
+([root](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-root), 
+[core](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-core), 
+[extension](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-extension)).
 
 
 ## The Blueprint
@@ -105,7 +105,7 @@ The resources that we have collected from the component descriptors look for exa
 
 ```yaml
 - access:
-    imageReference: eu.gcr.io/gardener-project/landscaper/examples/images/image-a:1.0.0
+    imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/images/image-a:1.0.0
     type: ociRegistry
   labels:
     - name: landscaper.gardener.cloud/guided-tour/type

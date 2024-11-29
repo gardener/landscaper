@@ -16,7 +16,7 @@ components:
         version: 1.0.0
         access:
           type: ociArtifact
-          imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+          imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/guided-tour/echo-server:1.0.0
       - name: echo-server-image
         type: ociImage
         version: v0.2.3
