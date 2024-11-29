@@ -20,4 +20,4 @@ echo "Login"
 gcloud auth print-access-token | helm registry login -u oauth2accesstoken --password-stdin https://eu.gcr.io
 
 echo "Pushing helm chart"
-helm push "${temp_dir}/hello-world-1.0.1.tgz" oci://eu.gcr.io/gardener-project/landscaper/examples/charts
+helm push "${temp_dir}/hello-world-1.0.1.tgz" oci://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts

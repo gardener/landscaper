@@ -19,7 +19,7 @@ configuration data for every input target. The import data are forwarded to a Su
 For every input target, the Subinstallation creates a DeployItem which deploys a config map with the right data.
 
 The example component version is stored 
-[here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-subinst). 
+[here](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-subinst). 
 If you want to upload the component version to another registry, you can just adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/03-multiple-subinst/component/commands/settings) 
 file and execute the component version build and upload script [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/03-multiple-subinst/component/commands/component.sh).
 

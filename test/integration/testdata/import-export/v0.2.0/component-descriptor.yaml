@@ -6,7 +6,7 @@ component:
 
   repositoryContexts:
     - type: 'ociRegistry'
-      baseUrl: 'eu.gcr.io/gardener-project/landscaper/integration-tests'
+      baseUrl: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/integration-tests'
 
   provider: 'internal'
 

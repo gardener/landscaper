@@ -4,7 +4,7 @@ metadata:
   name: ocm-config-context
   namespace: example
 repositoryContext:
-  baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+  baseUrl: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/integration-tests
   type: ociRegistry
 ocmConfig:
   name: ocm-config

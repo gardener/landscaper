@@ -130,8 +130,8 @@ status:
     - lastTransitionTime: "2024-07-24T14:10:40Z"
       lastUpdateTime: "2024-07-24T14:10:40Z"
       message: 'Op: TemplateChart - Reason: GetHelmChart - Message: downloading helm
-      chart "eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5":
-      oci artifact "eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5"
+      chart "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:0.0.5":
+      oci artifact "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:0.0.5"
       not found in gardener-project/landscaper/examples/charts/hello-world'
       operation: Reconcile
       reason: Template

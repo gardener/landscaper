@@ -32,7 +32,7 @@ status:
     message: 'unable to resolve component descriptor for ref &v1alpha1.ComponentDescriptorReference{RepositoryContext:(*v2.UnstructuredTypedObject)(0xc00086d9e0),
       ComponentName:"github.com/gardener/landscaper-examples/guided-tour/helm-chart",
       Version:"1.0.99"}: component version "github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.99"
-      not found: oci artifact "eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.99"
+      not found: oci artifact "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.99"
       not found in component-descriptors/github.com/gardener/landscaper-examples/guided-tour/helm-chart'
     operation: InitPrerequisites
     reason: ResolveBlueprint
@@ -62,7 +62,7 @@ command [ocm get component][1] of the OCM CLI:
   ❯ ocm get component <BASE_URL>//<COMPONENT_NAME>:<COMPONENT_VERSION>
   
   # Example
-  ❯ ocm get component eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0
+  ❯ ocm get component europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0
   
   COMPONENT                                                      VERSION PROVIDER
   github.com/gardener/landscaper-examples/guided-tour/helm-chart 1.0.0   internal
@@ -114,7 +114,7 @@ with the command [ocm get resources][2] of the OCM CLI:
 ❯ ocm get resources <BASE_URL>//<COMPONENT_NAME>:<COMPONENT_VERSION>
 
 # Example
-❯ ocm get resources eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0
+❯ ocm get resources europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0
 
 NAME              VERSION IDENTITY TYPE                                RELATION
 blueprint         1.0.0            landscaper.gardener.cloud/blueprint local

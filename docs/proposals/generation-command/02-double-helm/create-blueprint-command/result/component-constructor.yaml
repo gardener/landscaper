@@ -30,7 +30,7 @@ components:
         version: 1.0.0
         access:
           type: ociArtifact
-          imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server-extended:1.0.0
+          imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/guided-tour/echo-server-extended:1.0.0
       - name: echo-server-extended-echo-server-image
         type: ociImage
         version: v0.2.3
@@ -42,7 +42,7 @@ components:
         version: 1.0.0
         access:
           type: ociArtifact
-          imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/next-chart:1.0.0
+          imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/guided-tour/next-chart:1.0.0
       - name: next-chart-next-chart-image
         type: ociImage
         version: v0.2.3

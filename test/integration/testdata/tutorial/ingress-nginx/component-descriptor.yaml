@@ -13,7 +13,7 @@ component:
 
   repositoryContexts:
   - type: ociRegistry
-    baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+    baseUrl: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/components
 
   sources: [ ]
   componentReferences: [ ]
@@ -25,11 +25,11 @@ component:
     relation: local
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/ingress-nginx:v0.3.2
+      imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/blueprints/ingress-nginx:v0.3.2
   - type: helm
     name: ingress-nginx-chart
     version: 4.0.17
     relation: external
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
+      imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/charts/ingress-nginx:4.0.17

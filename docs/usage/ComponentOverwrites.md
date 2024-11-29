@@ -51,7 +51,7 @@ spec:
     ref:
       componentName: github.com/gardener/landscaper/echo-server
       repositoryContext:
-        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+        baseUrl: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/components
         type: ociRegistry
       version: v0.2.0
   context: default
@@ -80,7 +80,7 @@ metadata:
 overwrites:
 - source:
     repositoryContext:
-      baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+      baseUrl: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/components
       type: ociRegistry
     componentName: github.com/gardener/landscaper/echo-server
   substitution:
@@ -95,7 +95,7 @@ overwrites:
     version: v1.2.3
 ```
 
-The first overwrite matches all components named `github.com/gardener/landscaper/echo-server` from the OCI repository at `eu.gcr.io/gardener-project/landscaper/tutorials/components` and replaces the repository as well as the name. The second overwrite matches all components named `github.com/gardener/landscaper/echo-server` and overwrites their name and version, without changing the repository context.
+The first overwrite matches all components named `github.com/gardener/landscaper/echo-server` from the OCI repository at `europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/components` and replaces the repository as well as the name. The second overwrite matches all components named `github.com/gardener/landscaper/echo-server` and overwrites their name and version, without changing the repository context.
 
 This combination of resources results in the following condition on the Installation:
 ```yaml
@@ -112,7 +112,7 @@ spec:
     ref:
       componentName: github.com/gardener/landscaper/echo-server
       repositoryContext:
-        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+        baseUrl: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/components
         type: ociRegistry
       version: v0.2.0
   context: default
@@ -123,7 +123,7 @@ status:
     lastUpdateTime: ...
     message: |-
       Component reference has been overwritten:
-      eu.gcr.io/gardener-project/landscaper/tutorials/components () -> example.org/my-own-registry/components ()
+      europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/components () -> example.org/my-own-registry/components ()
       github.com/gardener/landscaper/echo-server -> my-own-echo-server
       Version has not been overwritten
     reason: FoundOverwrite

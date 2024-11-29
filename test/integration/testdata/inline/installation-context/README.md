@@ -8,7 +8,7 @@ In most of our test scenarios, the Installation has specified its component like
     ref:
       componentName: github.com/gardener/landscaper/integration-tests/inline-base
       repositoryContext:
-        baseUrl: eu.gcr.io/gardener-project/landscaper/integration-tests
+        baseUrl: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/integration-tests
         type: ociRegistry
       version: v0.1.0
 ```
