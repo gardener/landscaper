@@ -38,4 +38,4 @@ ocm add components --create --file "${ctf_dir}" ${cc_output_file}
 ocm transfer ctf --overwrite "${ctf_dir}" "${REPO_BASE_URL}"
 
 ## Download
-# ocm download component eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0 -O ./archive-helm-chart
+# ocm download component europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0 -O ./archive-helm-chart
