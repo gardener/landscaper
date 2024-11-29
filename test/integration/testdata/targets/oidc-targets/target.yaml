@@ -1,0 +1,16 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  name: {{ .targetName }}
+  namespace: {{ .namespace }}
+spec:
+  config:
+    oidcConfig:
+      server: {{ .server }}
+      caData: {{ .caData }}
+      audience:
+        - {{ .audience }}
+      serviceAccount:
+        name: {{ .serviceAccountName }}
+      expirationSeconds: 3600
+  type: landscaper.gardener.cloud/kubernetes-cluster

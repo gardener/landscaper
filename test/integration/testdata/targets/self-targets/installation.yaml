@@ -1,0 +1,45 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+  name: {{ .installationName }}
+  namespace: {{ .namespace }}
+spec:
+  imports:
+    targets:
+      - name: cluster
+        target: {{ .targetName }}
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+          jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+          imports:
+            - name: cluster
+              targetType: landscaper.gardener.cloud/kubernetes-cluster
+          deployExecutions:
+            - name: default
+              type: GoTemplate
+              template: |
+                deployItems:
+                  - name: item-1
+                    type: landscaper.gardener.cloud/kubernetes-manifest
+                    target:
+                      import: cluster
+                    config:
+                      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+                      kind: ProviderConfiguration
+                      updateStrategy: update
+                      manifests:
+                        - policy: manage
+                          manifest:
+                            apiVersion: v1
+                            kind: ConfigMap
+                            metadata:
+                              name: {{ .configMapName }}
+                              namespace: {{ .namespace }}
+                            data:
+                              foo: bar

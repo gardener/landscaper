@@ -24,11 +24,6 @@ const HelmChartRepoCredentialsKey = "helmChartRepoCredentials"
 type ProviderConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// Kubeconfig is the base64 encoded kubeconfig file.
-	// By default the configured target is used to deploy the resources
-	// +optional
-	Kubeconfig string `json:"kubeconfig"`
-
 	// UpdateStrategy defines the strategy how the manifests are updated in the cluster.
 	// Defaults to "update".
 	// +optional
@@ -163,6 +158,8 @@ type HelmDeploymentConfiguration struct {
 // HelmInstallConfiguration defines settings for a helm install operation.
 type HelmInstallConfiguration struct {
 	Atomic bool `json:"atomic,omitempty"`
+	Force  bool `json:"force,omitempty"`
+
 	// Timeout is the timeout for the operation in minutes.
 	// +optional
 	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`

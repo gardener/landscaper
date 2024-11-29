@@ -30,8 +30,6 @@ type Resource interface {
 
 	// GetResource returns the entry in the component descriptor that corresponds to the present resource.
 	GetResource() (*types.Resource, error)
-
-	GetCachingIdentity(ctx context.Context) string
 }
 
 type TypedResourceProvider interface {

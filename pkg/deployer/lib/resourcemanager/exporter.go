@@ -9,9 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -20,24 +19,30 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // ExporterOptions defines the options for the exporter.
 type ExporterOptions struct {
 	KubeClient          client.Client
 	InterruptionChecker interruption.InterruptionChecker
+	LsClient            client.Client
 	DeployItem          *lsv1alpha1.DeployItem
+	LsRestConfig        *rest.Config
 }
 
 // Exporter defines the export of data from manifests.
 type Exporter struct {
 	kubeClient          client.Client
 	interruptionChecker interruption.InterruptionChecker
+	lsClient            client.Client
 	deployItem          *lsv1alpha1.DeployItem
+	lsRestConfig        *rest.Config
 }
 
 // NewExporter creates a new exporter.
@@ -45,7 +50,9 @@ func NewExporter(opts ExporterOptions) *Exporter {
 	exporter := &Exporter{
 		kubeClient:          opts.KubeClient,
 		interruptionChecker: opts.InterruptionChecker,
+		lsClient:            opts.LsClient,
 		deployItem:          opts.DeployItem,
+		lsRestConfig:        opts.LsRestConfig,
 	}
 
 	if exporter.interruptionChecker == nil {
@@ -104,9 +111,14 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 }
 
 func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) (map[string]interface{}, error) {
+	targetClient, err := lib.GetTargetClientConsideringSecondaryTarget(ctx, e.kubeClient, e.lsClient, e.deployItem, export.TargetName, e.lsRestConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	// get resource from client
 	obj := kutil.ObjectFromTypedObjectReference(export.FromResource)
-	if err := read_write_layer.GetUnstructured(ctx, e.kubeClient, kutil.ObjectKeyFromObject(obj), obj,
+	if err := read_write_layer.GetUnstructured(ctx, targetClient, kutil.ObjectKeyFromObject(obj), obj,
 		read_write_layer.R000046); err != nil {
 		return nil, err
 	}
@@ -118,7 +130,7 @@ func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) 
 
 	if export.FromObjectReference != nil {
 		var err error
-		val, err = e.exportFromReferencedResource(ctx, export, val)
+		val, err = e.exportFromReferencedResource(ctx, targetClient, export, val)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +143,7 @@ func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) 
 	return newValue, nil
 }
 
-func (e *Exporter) exportFromReferencedResource(ctx context.Context, export managedresource.Export, ref interface{}) (interface{}, error) {
+func (e *Exporter) exportFromReferencedResource(ctx context.Context, cl client.Client, export managedresource.Export, ref interface{}) (interface{}, error) {
 	// check if the ref is of the right type
 	refMap, ok := ref.(map[string]interface{})
 	if !ok {
@@ -165,7 +177,7 @@ func (e *Exporter) exportFromReferencedResource(ctx context.Context, export mana
 		},
 	})
 
-	if err := read_write_layer.GetUnstructured(ctx, e.kubeClient, kutil.ObjectKeyFromObject(obj), obj,
+	if err := read_write_layer.GetUnstructured(ctx, cl, kutil.ObjectKeyFromObject(obj), obj,
 		read_write_layer.R000047); err != nil {
 		return nil, err
 	}

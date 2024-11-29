@@ -437,6 +437,7 @@ func Convert_helm_HelmDeploymentConfiguration_To_v1alpha1_HelmDeploymentConfigur
 
 func autoConvert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration(in *HelmInstallConfiguration, out *helm.HelmInstallConfiguration, s conversion.Scope) error {
 	out.Atomic = in.Atomic
+	out.Force = in.Force
 	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
@@ -448,6 +449,7 @@ func Convert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration(
 
 func autoConvert_helm_HelmInstallConfiguration_To_v1alpha1_HelmInstallConfiguration(in *helm.HelmInstallConfiguration, out *HelmInstallConfiguration, s conversion.Scope) error {
 	out.Atomic = in.Atomic
+	out.Force = in.Force
 	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
@@ -478,7 +480,6 @@ func Convert_helm_HelmUninstallConfiguration_To_v1alpha1_HelmUninstallConfigurat
 }
 
 func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in *ProviderConfiguration, out *helm.ProviderConfiguration, s conversion.Scope) error {
-	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = helm.UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
 	if err := Convert_v1alpha1_Chart_To_helm_Chart(&in.Chart, &out.Chart, s); err != nil {
@@ -504,7 +505,6 @@ func Convert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in *Pr
 }
 
 func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *helm.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
-	out.Kubeconfig = in.Kubeconfig
 	out.ReadinessChecks = in.ReadinessChecks
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	if err := Convert_helm_Chart_To_v1alpha1_Chart(&in.Chart, &out.Chart, s); err != nil {

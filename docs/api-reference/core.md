@@ -111,7 +111,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `ref` _[ComponentDescriptorReference](#componentdescriptorreference)_ | ComponentDescriptorReference is the reference to a component descriptor |  |  |
-| `inline` _[ComponentDescriptor](#componentdescriptor)_ | InlineDescriptorReference defines an inline component descriptor |  | Schemaless: {} <br />Type: object <br /> |
+| `inline` _[ComponentDescriptor](#componentdescriptor)_ | InlineDescriptorReference defines an inline component descriptor |  | Schemaless: \{\} <br />Type: object <br /> |
 
 
 
@@ -130,7 +130,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |  | Schemaless: {} <br />Type: object <br /> |
+| `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |  | Schemaless: \{\} <br />Type: object <br /> |
 | `componentName` _string_ | ComponentName defines the unique of the component containing the resource. |  |  |
 | `version` _string_ | Version defines the version of the component. |  |  |
 
@@ -182,7 +182,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |  | Schemaless: {} <br /> |
+| `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |  | Schemaless: \{\} <br /> |
 | `componentName` _string_ | ComponentName defines the unique of the component containing the resource. |  |  |
 | `version` _string_ | Version defines the version of the component. |  |  |
 
@@ -242,6 +242,18 @@ ConditionType is a string alias.
 _Appears in:_
 - [Condition](#condition)
 
+| Field | Description |
+| --- | --- |
+| `DeployItemValidation` |  |
+| `ReconcileDeployItems` |  |
+| `EnsureSubInstallations` |  |
+| `ReconcileExecution` |  |
+| `ValidateImports` |  |
+| `CreateImports` |  |
+| `CreateExports` |  |
+| `EnsureExecutions` |  |
+| `ValidateExport` |  |
+| `ComponentReferenceOverwrite` |  |
 
 
 
@@ -262,10 +274,10 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |  | Schemaless: {} <br /> |
+| `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |  | Schemaless: \{\} <br /> |
 | `ocmConfig` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core)_ | OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an<br />ocm configfile.<br />For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md |  |  |
 | `registryPullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core) array_ | RegistryPullSecrets defines a list of registry credentials that are used to<br />pull blueprints, component descriptors and jsonschemas from the respective registry.<br />For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/<br />Note that the type information is used to determine the secret key and the type of the secret. |  |  |
-| `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key.<br />The key should use a dns-like syntax to express the purpose and avoid conflicts. |  | Schemaless: {} <br />Type: object <br /> |
+| `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key.<br />The key should use a dns-like syntax to express the purpose and avoid conflicts. |  | Schemaless: \{\} <br />Type: object <br /> |
 | `componentVersionOverwrites` _string_ | ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object<br />The overwrites object has to be in the same namespace as the context.<br />If the string is empty, no overwrites will be used. |  |  |
 | `verificationSignatures` _object (keys:string, values:[VerificationSignature](#verificationsignature))_ | VerificationSignatures maps a signature name to the trusted verification information |  |  |
 
@@ -283,10 +295,10 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |  | Schemaless: {} <br /> |
+| `repositoryContext` _[UnstructuredTypedObject](#unstructuredtypedobject)_ | RepositoryContext defines the context of the component repository to resolve blueprints. |  | Schemaless: \{\} <br /> |
 | `ocmConfig` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core)_ | OCMConfig references a k8s config map object that contains the ocm configuration data in the format of an<br />ocm configfile.<br />For more info see: https://github.com/open-component-model/ocm/blob/main/docs/reference/ocm_configfile.md |  |  |
 | `registryPullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core) array_ | RegistryPullSecrets defines a list of registry credentials that are used to<br />pull blueprints, component descriptors and jsonschemas from the respective registry.<br />For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/<br />Note that the type information is used to determine the secret key and the type of the secret. |  |  |
-| `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key.<br />The key should use a dns-like syntax to express the purpose and avoid conflicts. |  | Schemaless: {} <br />Type: object <br /> |
+| `configurations` _object (keys:string, values:[AnyJSON](#anyjson))_ | Configurations contains arbitrary configuration information for dedicated purposes given by a string key.<br />The key should use a dns-like syntax to express the purpose and avoid conflicts. |  | Schemaless: \{\} <br />Type: object <br /> |
 | `componentVersionOverwrites` _string_ | ComponentVersionOverwritesReference is a reference to a ComponentVersionOverwrites object<br />The overwrites object has to be in the same namespace as the context.<br />If the string is empty, no overwrites will be used. |  |  |
 | `verificationSignatures` _object (keys:string, values:[VerificationSignature](#verificationsignature))_ | VerificationSignatures maps a signature name to the trusted verification information |  |  |
 
@@ -399,7 +411,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `data` _[AnyJSON](#anyjson)_ | Data contains the data of the object as string. |  | Schemaless: {} <br /> |
+| `data` _[AnyJSON](#anyjson)_ | Data contains the data of the object as string. |  | Schemaless: \{\} <br /> |
 
 
 
@@ -503,7 +515,7 @@ _Appears in:_
 | `type` _[DeployItemType](#deployitemtype)_ | Type is the type of the deployer that should handle the item. |  |  |
 | `target` _[ObjectReference](#objectreference)_ | Target specifies an optional target of the deploy item.<br />In most cases it contains the secrets to access a evironment.<br />It is also used by the deployers to determine the ownernship. |  |  |
 | `context` _string_ | Context defines the current context of the deployitem. |  |  |
-| `config` _[RawExtension](#rawextension)_ | Configuration contains the deployer type specific configuration. |  | EmbeddedResource: {} <br /> |
+| `config` _[RawExtension](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#rawextension-runtime-pkg)_ | Configuration contains the deployer type specific configuration. |  | EmbeddedResource: \{\} <br /> |
 | `timeout` _[Duration](#duration)_ | Timeout specifies how long the deployer may take to apply the deploy item.<br />When the time is exceeded, the deploy item fails.<br />Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).<br />Defaults to ten minutes if not specified. |  | Type: string <br /> |
 | `updateOnChangeOnly` _boolean_ | UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed. |  |  |
 | `onDelete` _[OnDeleteConfig](#ondeleteconfig)_ | OnDelete specifies particular setting when deleting a deploy item |  |  |
@@ -528,7 +540,7 @@ _Appears in:_
 | `type` _[DeployItemType](#deployitemtype)_ | DataType is the DeployItem type of the execution. |  |  |
 | `target` _[ObjectReference](#objectreference)_ | Target is the object reference to the target that the deploy item should deploy to. |  |  |
 | `labels` _object (keys:string, values:string)_ | Labels is the map of labels to be added to the deploy item. |  |  |
-| `config` _[RawExtension](#rawextension)_ | ProviderConfiguration contains the type specific configuration for the execution. |  | EmbeddedResource: {} <br /> |
+| `config` _[RawExtension](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#rawextension-runtime-pkg)_ | ProviderConfiguration contains the type specific configuration for the execution. |  | EmbeddedResource: \{\} <br /> |
 | `dependsOn` _string array_ | DependsOn lists deploy items that need to be executed before this one |  |  |
 | `timeout` _[Duration](#duration)_ | Timeout specifies how long the deployer may take to apply the deploy item.<br />When the time is exceeded, the deploy item fails.<br />Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).<br />Defaults to ten minutes if not specified. |  | Type: string <br /> |
 | `updateOnChangeOnly` _boolean_ | UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed. |  |  |
@@ -552,7 +564,7 @@ _Appears in:_
 | `type` _[DeployItemType](#deployitemtype)_ | DataType is the DeployItem type of the execution. |  |  |
 | `target` _[ObjectReference](#objectreference)_ | Target is the object reference to the target that the deploy item should deploy to. |  |  |
 | `labels` _object (keys:string, values:string)_ | Labels is the map of labels to be added to the deploy item. |  |  |
-| `config` _[RawExtension](#rawextension)_ | ProviderConfiguration contains the type specific configuration for the execution. |  | EmbeddedResource: {} <br /> |
+| `config` _[RawExtension](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#rawextension-runtime-pkg)_ | ProviderConfiguration contains the type specific configuration for the execution. |  | EmbeddedResource: \{\} <br /> |
 | `dependsOn` _string array_ | DependsOn lists deploy items that need to be executed before this one |  |  |
 | `timeout` _[Duration](#duration)_ | Timeout specifies how long the deployer may take to apply the deploy item.<br />When the time is exceeded, the deploy item fails.<br />Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).<br />Defaults to ten minutes if not specified. |  | Type: string <br /> |
 | `updateOnChangeOnly` _boolean_ | UpdateOnChangeOnly specifies if redeployment is executed only if the specification of the deploy item has changed. |  |  |
@@ -661,6 +673,18 @@ _Appears in:_
 - [Condition](#condition)
 - [Error](#error)
 
+| Field | Description |
+| --- | --- |
+| `ERR_UNAUTHORIZED` | ErrorUnauthorized indicates that the last error occurred due to invalid credentials.<br /> |
+| `ERR_CLEANUP` | ErrorCleanupResources indicates that the last error occurred due to resources are stuck in deletion.<br /> |
+| `ERR_CONFIGURATION_PROBLEM` | ErrorConfigurationProblem indicates that the last error occurred due a configuration problem.<br /> |
+| `ERR_INTERNAL_PROBLEM` | ErrorInternalProblem indicates that the last error occurred due to a servere internal error<br /> |
+| `ERR_TIMEOUT` | ErrorTimeout indicates that an operation timed out.<br /> |
+| `ERR_CYCLIC_DEPENDENCIES` | ErrorCyclicDependencies indicates that there are cyclic dependencies between multiple installations/deployitems.<br /> |
+| `ERR_WEBHOOK` | ErrorWebhook indicates that there is an intermediate problem with the webhook.<br /> |
+| `ERR_UNFINISHED` | ErrorUnfinished indicates that there are unfinished sub-objects.<br /> |
+| `ERR_FOR_INFO_ONLY` | ErrorForInfoOnly indicates that the error is no real error but an info and should be logged only on infor level.<br /> |
+| `ERR_NO_RETRY` | ErrorNoRetry indicates that no retry is required.<br /> |
 
 
 #### Execution
@@ -876,7 +900,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `filesystem` _[AnyJSON](#anyjson)_ | Filesystem defines a inline yaml filesystem with a blueprint. |  | Schemaless: {} <br /> |
+| `filesystem` _[AnyJSON](#anyjson)_ | Filesystem defines a inline yaml filesystem with a blueprint. |  | Schemaless: \{\} <br /> |
 
 
 #### Installation
@@ -965,9 +989,9 @@ _Appears in:_
 | `componentDescriptor` _[ComponentDescriptorDefinition](#componentdescriptordefinition)_ | ComponentDescriptor is a reference to the installation's component descriptor |  |  |
 | `blueprint` _[BlueprintDefinition](#blueprintdefinition)_ | Blueprint is the resolved reference to the definition. |  |  |
 | `imports` _[InstallationImports](#installationimports)_ | Imports define the imported data objects and targets. |  |  |
-| `importDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ImportDataMappings contains a template for restructuring imports.<br />It is expected to contain a key for every blueprint-defined data import.<br />Missing keys will be defaulted to their respective data import.<br />Example: namespace: (( installation.imports.namespace )) |  | Schemaless: {} <br />Type: object <br /> |
+| `importDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ImportDataMappings contains a template for restructuring imports.<br />It is expected to contain a key for every blueprint-defined data import.<br />Missing keys will be defaulted to their respective data import.<br />Example: namespace: (( installation.imports.namespace )) |  | Schemaless: \{\} <br />Type: object <br /> |
 | `exports` _[InstallationExports](#installationexports)_ | Exports define the exported data objects and targets. |  |  |
-| `exportDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ExportDataMappings contains a template for restructuring exports.<br />It is expected to contain a key for every blueprint-defined data export.<br />Missing keys will be defaulted to their respective data export.<br />Example: namespace: (( blueprint.exports.namespace )) |  | Schemaless: {} <br />Type: object <br /> |
+| `exportDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ExportDataMappings contains a template for restructuring exports.<br />It is expected to contain a key for every blueprint-defined data export.<br />Missing keys will be defaulted to their respective data export.<br />Example: namespace: (( blueprint.exports.namespace )) |  | Schemaless: \{\} <br />Type: object <br /> |
 | `automaticReconcile` _[AutomaticReconcile](#automaticreconcile)_ | AutomaticReconcile allows to configure automatically repeated reconciliations. |  |  |
 | `optimization` _[Optimization](#optimization)_ | Optimization contains settings to improve execution performance. |  |  |
 
@@ -991,9 +1015,9 @@ _Appears in:_
 | `name` _string_ | Name is the unique name of the step |  |  |
 | `blueprint` _[InstallationTemplateBlueprintDefinition](#installationtemplateblueprintdefinition)_ | Reference defines a reference to a Blueprint.<br />The blueprint can reside in an OCI or other supported location. |  |  |
 | `imports` _[InstallationImports](#installationimports)_ | Imports define the imported data objects and targets. |  |  |
-| `importDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ImportDataMappings contains a template for restructuring imports.<br />It is expected to contain a key for every blueprint-defined data import.<br />Missing keys will be defaulted to their respective data import.<br />Example: namespace: (( installation.imports.namespace )) |  | Schemaless: {} <br />Type: object <br /> |
+| `importDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ImportDataMappings contains a template for restructuring imports.<br />It is expected to contain a key for every blueprint-defined data import.<br />Missing keys will be defaulted to their respective data import.<br />Example: namespace: (( installation.imports.namespace )) |  | Schemaless: \{\} <br />Type: object <br /> |
 | `exports` _[InstallationExports](#installationexports)_ | Exports define the exported data objects and targets. |  |  |
-| `exportDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ExportDataMappings contains a template for restructuring exports.<br />It is expected to contain a key for every blueprint-defined data export.<br />Missing keys will be defaulted to their respective data export.<br />Example: namespace: (( blueprint.exports.namespace )) |  | Schemaless: {} <br />Type: object <br /> |
+| `exportDataMappings` _object (keys:string, values:[AnyJSON](#anyjson))_ | ExportDataMappings contains a template for restructuring exports.<br />It is expected to contain a key for every blueprint-defined data export.<br />Missing keys will be defaulted to their respective data export.<br />Example: namespace: (( blueprint.exports.namespace )) |  | Schemaless: \{\} <br />Type: object <br /> |
 | `optimization` _[Optimization](#optimization)_ | Optimization contains settings to improve execution performance. |  |  |
 
 
@@ -1011,7 +1035,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `ref` _string_ | Ref is a reference to a blueprint.<br />Only blueprints that are defined by the component descriptor of the current blueprint can be referenced here.<br />Example: cd://componentReference/dns/resources/blueprint |  |  |
-| `filesystem` _[AnyJSON](#anyjson)_ | Filesystem defines a virtual filesystem with all files needed for a blueprint.<br />The filesystem must be a YAML filesystem. |  | Schemaless: {} <br /> |
+| `filesystem` _[AnyJSON](#anyjson)_ | Filesystem defines a virtual filesystem with all files needed for a blueprint.<br />The filesystem must be a YAML filesystem. |  | Schemaless: \{\} <br /> |
 
 
 
@@ -1182,7 +1206,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `key` _string_ |  |  |  |
-| `operator` _[Operator](#operator)_ |  |  |  |
+| `operator` _[Operator](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#operator-selection-pkg)_ |  |  |  |
 | `values` _string array_ | In huge majority of cases we have at most one value here.<br />It is generally faster to operate on a single-element slice<br />than on a single-element map, so we have a slice here. |  |  |
 
 
@@ -1461,7 +1485,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `type` _[TargetType](#targettype)_ | Type is the type of the target that defines its data structure.<br />The actual schema may be defined by a target type crd in the future. |  |  |
-| `config` _[AnyJSON](#anyjson)_ | Configuration contains the target type specific configuration.<br />Exactly one of the fields Configuration and SecretRef must be set |  | Schemaless: {} <br /> |
+| `config` _[AnyJSON](#anyjson)_ | Configuration contains the target type specific configuration.<br />Exactly one of the fields Configuration and SecretRef must be set |  | Schemaless: \{\} <br /> |
 | `secretRef` _[LocalSecretReference](#localsecretreference)_ | Reference to a secret containing the target type specific configuration.<br />Exactly one of the fields Configuration and SecretRef must be set |  |  |
 
 
@@ -1554,6 +1578,10 @@ TemplateType describes the template mechanism.
 _Appears in:_
 - [TemplateExecutor](#templateexecutor)
 
+| Field | Description |
+| --- | --- |
+| `GoTemplate` |  |
+| `Spiff` |  |
 
 
 #### TokenRotation

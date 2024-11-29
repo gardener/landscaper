@@ -1,0 +1,5 @@
+# path to the kubeconfig of the resource cluster, i.e. the cluster on which installations, targets, etc. are created
+RESOURCE_CLUSTER_KUBECONFIG_PATH="/Users/${USER}/tmp/kubes/kubeconfig.yaml"
+
+# namespace for resources in the resource cluster
+NAMESPACE="cu-example"

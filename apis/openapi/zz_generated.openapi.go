@@ -13430,6 +13430,12 @@ func schema_landscaper_apis_deployer_helm_HelmInstallConfiguration(ref common.Re
 							Format: "",
 						},
 					},
+					"force": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the timeout for the operation in minutes.",
@@ -13482,14 +13488,6 @@ func schema_landscaper_apis_deployer_helm_ProviderConfiguration(ref common.Refer
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
 							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -14102,6 +14100,12 @@ func schema_apis_deployer_helm_v1alpha1_HelmInstallConfiguration(ref common.Refe
 							Format: "",
 						},
 					},
+					"force": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the timeout for the operation in minutes.",
@@ -14154,14 +14158,6 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
 							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -14564,14 +14560,6 @@ func schema_landscaper_apis_deployer_manifest_ProviderConfiguration(ref common.R
 							Format:      "",
 						},
 					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"updateStrategy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UpdateStrategy defines the strategy how the manifest are updated in the cluster.",
@@ -14877,14 +14865,6 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 							Format:      "",
 						},
 					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"updateStrategy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UpdateStrategy defines the strategy how the manifest are updated in the cluster. Defaults to \"update\".",
@@ -15146,14 +15126,6 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
 							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"kubeconfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -15560,6 +15532,12 @@ func schema_apis_deployer_utils_managedresource_CustomResourceGroup(ref common.R
 							Format: "",
 						},
 					},
+					"targetName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
@@ -15625,6 +15603,13 @@ func schema_apis_deployer_utils_managedresource_Export(ref common.ReferenceCallb
 						SchemaProps: spec.SchemaProps{
 							Description: "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference"),
+						},
+					},
+					"targetName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetName specifies the target from which the objects for the export are read. The value typically comes from a target import parameter, for example: {{.imports.myCluster.metadata.name}}. TargetName is optional; the default is the target specified in the deployitem.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -15725,6 +15710,12 @@ func schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref common
 							},
 						},
 					},
+					"patchBeforeDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PatchBeforeDelete defines a patch that is being applied before an object is being deleted.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
 					"policy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Policy defines the manage policy for that resource.",
@@ -15744,7 +15735,7 @@ func schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref common
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference"},
+			"k8s.io/api/core/v1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -15798,6 +15789,18 @@ func schema_apis_deployer_utils_managedresource_Manifest(ref common.ReferenceCal
 									},
 								},
 							},
+						},
+					},
+					"patchAfterDeployment": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PatchAfterDeployment defines a patch that is being applied after an object has been deployed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
+					"patchBeforeDelete": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PatchBeforeDelete defines a patch that is being applied before an object is being deleted.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
 				},
@@ -15938,6 +15941,13 @@ func schema_apis_deployer_utils_readinesschecks_CustomReadinessCheckConfiguratio
 									},
 								},
 							},
+						},
+					},
+					"targetName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetName specifies the target from which the objects for the readiness check are read. The value typically comes from a target import parameter, for example: {{.imports.myCluster.metadata.name}}. TargetName is optional; the default is the target specified in the deployitem.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},

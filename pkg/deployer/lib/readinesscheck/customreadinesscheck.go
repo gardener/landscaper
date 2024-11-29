@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"strings"
 
+	"k8s.io/client-go/rest"
+
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,6 +25,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	lserror "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/interruption"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -30,26 +33,33 @@ import (
 
 // CustomReadinessCheck contains all the data and methods required to kick off a custom readiness check
 type CustomReadinessCheck struct {
-	Context             context.Context
 	Client              client.Client
 	CurrentOp           string
 	Timeout             *lsv1alpha1.Duration
 	ManagedResources    []lsv1alpha1.TypedObjectReference
 	Configuration       health.CustomReadinessCheckConfiguration
 	InterruptionChecker interruption.InterruptionChecker
+	LsClient            client.Client
+	DeployItem          *lsv1alpha1.DeployItem
+	LsRestConfig        *rest.Config
 }
 
 // CheckResourcesReady starts a custom readiness check by checking the readiness of the submitted resources
-func (c *CustomReadinessCheck) CheckResourcesReady() error {
+func (c *CustomReadinessCheck) CheckResourcesReady(ctx context.Context) error {
 	if c.Configuration.Disabled {
 		// nothing to do
 		return nil
 	}
 
+	targetClient, err := lib.GetTargetClientConsideringSecondaryTarget(ctx, c.Client, c.LsClient, c.DeployItem, c.Configuration.TargetName, c.LsRestConfig)
+	if err != nil {
+		return err
+	}
+
 	var objects []*unstructured.Unstructured
 	getObjectsFunc := func() ([]*unstructured.Unstructured, error) {
 		if c.Configuration.Resource != nil {
-			o, err := getObjectsByTypedReference(c.Context, c.Client, c.Configuration.Resource)
+			o, err := getObjectsByTypedReference(ctx, targetClient, c.Configuration.Resource)
 			if err != nil {
 				return nil, err
 			}
@@ -57,7 +67,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady() error {
 		}
 
 		if c.Configuration.LabelSelector != nil {
-			o, err := getObjectsByLabels(c.Context, c.Client, c.Configuration.LabelSelector)
+			o, err := getObjectsByLabels(ctx, targetClient, c.Configuration.LabelSelector)
 			if err != nil {
 				return nil, err
 			}
@@ -68,7 +78,7 @@ func (c *CustomReadinessCheck) CheckResourcesReady() error {
 	}
 
 	timeout := c.Timeout.Duration
-	if err := WaitForObjectsReady(c.Context, timeout, c.Client, getObjectsFunc, c.CheckObject, c.InterruptionChecker, c.CurrentOp); err != nil {
+	if err := WaitForObjectsReady(ctx, timeout, targetClient, getObjectsFunc, c.CheckObject, c.InterruptionChecker, c.CurrentOp); err != nil {
 		return err
 	}
 

@@ -61,6 +61,13 @@ rules:
     - list
 
 - apiGroups:
+    - ""
+  resources:
+    - "serviceaccounts/token"
+  verbs:
+    - create
+
+- apiGroups:
   - ""
   resources:
   - "secrets"
@@ -70,4 +77,5 @@ rules:
   - list
   - watch
   - update
+  - delete
 {{- end }}

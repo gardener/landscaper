@@ -34,6 +34,11 @@ func (in *CustomReadinessCheckConfiguration) DeepCopyInto(out *CustomReadinessCh
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.TargetName != nil {
+		in, out := &in.TargetName, &out.TargetName
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 

@@ -8,8 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	"github.com/open-component-model/ocm/pkg/common"
@@ -94,26 +92,6 @@ func (r *Resource) GetTypedContent(ctx context.Context) (*model.TypedResourceCon
 		return handler.GetResourceContent(ctx, r, r.resourceAccess)
 	}
 	return nil, fmt.Errorf("no handler found for resource type %s", r.GetType())
-}
-
-func (r *Resource) GetCachingIdentity(ctx context.Context) string {
-	log, _ := logging.FromContextOrNew(ctx, nil)
-
-	spec, err := r.resourceAccess.Access()
-	if err != nil {
-		return ""
-	}
-	cv, err := r.resourceAccess.GetComponentVersion()
-	if err != nil {
-		return ""
-	}
-	defer func() {
-		err = cv.Close()
-		if err != nil {
-			log.Log(logging.DEBUG, "unable to close reference to component version")
-		}
-	}()
-	return spec.GetInexpensiveContentVersionIdentity(cv)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

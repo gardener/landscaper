@@ -1,0 +1,32 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: automation-simple-helm
+  namespace: cu-example
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+
+spec:
+  context: automation-simple-helm
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper-examples/guided-tour/automation/simple-helm
+      version: 1.0.0
+
+  blueprint:
+    ref:
+      resourceName: blueprint-echo-server-extended
+
+  # Set values for the import parameters of the blueprint
+  imports:
+    targets:
+      - name: cluster
+        target: automation-simple-helm
+
+    data:
+      - name: release
+        dataRef: automation-simple-helm-release
+
+      - name: values
+        dataRef: automation-simple-helm-values

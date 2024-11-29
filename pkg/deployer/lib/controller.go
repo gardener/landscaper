@@ -10,15 +10,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
+	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
+	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,7 +99,8 @@ func Add(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 	if err := args.Validate(); err != nil {
 		return err
 	}
-	con := NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+	con := NewController(lsMgr.GetConfig(),
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		finishedObjectCache,
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor(args.Name),
@@ -120,6 +121,7 @@ func Add(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 
 // controller reconciles deployitems and delegates the business logic to the configured Deployer.
 type controller struct {
+	lsRestConfig       *rest.Config
 	lsUncachedClient   client.Client
 	lsCachedClient     client.Client
 	hostUncachedClient client.Client
@@ -144,7 +146,8 @@ type controller struct {
 }
 
 // NewController creates a new generic deployitem controller.
-func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+func NewController(lsRestConfig *rest.Config,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	finishedObjectCache *lsutil.FinishedObjectCache,
 	lsScheme *runtime.Scheme,
 	lsEventRecorder record.EventRecorder,
@@ -157,6 +160,7 @@ func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCac
 	wc := lsutil.NewWorkerCounter(maxNumberOfWorkers)
 
 	return &controller{
+		lsRestConfig:        lsRestConfig,
 		lsUncachedClient:    lsUncachedClient,
 		lsCachedClient:      lsCachedClient,
 		hostUncachedClient:  hostUncachedClient,
@@ -182,12 +186,6 @@ func NewController(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCac
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (result reconcile.Result, err error) {
 	_, ctx = logging.MustStartReconcileFromContext(ctx, req, nil)
-
-	octx := ocm.New(datacontext.MODE_EXTENDED)
-	defer func() {
-		err = goerrors.Join(err, octx.Finalize())
-	}()
-	ctx = octx.BindTo(ctx)
 
 	result = reconcile.Result{}
 	defer lsutil.HandlePanics(ctx, &result, c.hostUncachedClient)
@@ -262,7 +260,7 @@ func (c *controller) innerReconcile(ctx context.Context, req reconcile.Request) 
 }
 
 func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.PartialObjectMetadata,
-	rt *lsv1alpha1.ResolvedTarget, targetNotFound bool) (reconcile.Result, error) {
+	rt *lsv1alpha1.ResolvedTarget, targetNotFound bool) (_ reconcile.Result, err error) {
 
 	op := "reconcilePrivate"
 
@@ -339,6 +337,13 @@ func (c *controller) reconcilePrivate(ctx context.Context, metadata *metav1.Part
 			}
 		}
 	}
+
+	// Create OCM context
+	octx := ocm.New(datacontext.MODE_EXTENDED)
+	defer func() {
+		err = goerrors.Join(err, octx.Finalize())
+	}()
+	ctx = octx.BindTo(ctx)
 
 	// Deployitem has been initialized, proceed with reconcile/delete
 

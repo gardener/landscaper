@@ -11,6 +11,9 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
+
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -59,10 +62,12 @@ type RealHelmDeployer struct {
 	apiResourceHandler *resourcemanager.ApiResourceHandler
 	helmSecretManager  *HelmSecretManager
 	di                 *lsv1alpha1.DeployItem
+	messages           []string
+	mutex              sync.RWMutex
 }
 
-func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration, targetRestConfig *rest.Config,
-	clientset kubernetes.Interface, di *lsv1alpha1.DeployItem) *RealHelmDeployer {
+func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration,
+	targetAccess *lib.TargetAccess, di *lsv1alpha1.DeployItem) *RealHelmDeployer {
 
 	return &RealHelmDeployer{
 		chart:              ch,
@@ -72,14 +77,16 @@ func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderC
 		rawValues:          providerConfig.Values,
 		helmConfig:         providerConfig.HelmDeploymentConfig,
 		createNamespace:    providerConfig.CreateNamespace,
-		targetRestConfig:   targetRestConfig,
-		apiResourceHandler: resourcemanager.CreateApiResourceHandler(clientset),
+		targetRestConfig:   targetAccess.TargetRestConfig(),
+		apiResourceHandler: resourcemanager.CreateApiResourceHandler(targetAccess.TargetClientSet()),
 		helmSecretManager:  nil,
 		di:                 di,
+		messages:           make([]string, 0),
 	}
 }
 
 func (c *RealHelmDeployer) Deploy(ctx context.Context) error {
+	op := "RealHelmDeployer.Deploy"
 	values := make(map[string]interface{})
 	if err := yaml.Unmarshal(c.rawValues, &values); err != nil {
 		return lserrors.NewWrappedError(
@@ -89,12 +96,23 @@ func (c *RealHelmDeployer) Deploy(ctx context.Context) error {
 	_, err := c.getRelease(ctx)
 	if err != nil && c.isReleaseNotFoundErr(err) {
 		_, err = c.installRelease(ctx, values)
-		return err
+
+		if err != nil {
+			helmMsg := c.getMessages()
+			helmMsg = helmMsg + "\n" + err.Error()
+			return lserrors.NewWrappedError(err, op, "installRelease", helmMsg)
+		}
+		return nil
 	} else if err != nil {
 		return err
 	} else {
 		_, err = c.upgradeRelease(ctx, values)
-		return err
+		if err != nil {
+			helmMsg := c.getMessages()
+			helmMsg = helmMsg + "\n" + err.Error()
+			return lserrors.NewWrappedError(err, op, "upgradeRelease", helmMsg)
+		}
+		return nil
 	}
 }
 
@@ -149,6 +167,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 	install.Namespace = c.defaultNamespace
 	install.CreateNamespace = c.createNamespace
 	install.Atomic = installConfig.Atomic
+	install.Force = installConfig.Force
 
 	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeInstallingRelease)
 	if err != nil {
@@ -201,6 +220,7 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 	upgrade.Namespace = c.defaultNamespace
 	upgrade.MaxHistory = 10
 	upgrade.Atomic = upgradeConfig.Atomic
+	upgrade.Force = upgradeConfig.Force
 
 	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeUpgradingRelease)
 	if err != nil {
@@ -325,9 +345,29 @@ func (c *RealHelmDeployer) getStorageType(ctx context.Context, clientset *kubern
 }
 
 func (c *RealHelmDeployer) createLogFunc(ctx context.Context) func(format string, v ...interface{}) {
-	logger, _ := logging.FromContextOrNew(ctx, nil)
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "RealHelmDeployer.createLogFunc"})
 	return func(format string, v ...interface{}) {
-		logger.Info(fmt.Sprintf(format, v))
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
+		msg := fmt.Sprintf(format, v...)
+
+		found := false
+		for i := range c.messages {
+			if c.messages[i] == msg {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			c.messages = append(c.messages, msg)
+			length := len(c.messages)
+			if length > 10 {
+				c.messages = c.messages[length-10:]
+			}
+		}
+
+		logger.Info(msg)
 	}
 }
 
@@ -439,4 +479,14 @@ func (c *RealHelmDeployer) unblockPendingHelmRelease(ctx context.Context, logger
 			logger.Error(err, "delete helm secret", lc.KeyResource, types.NamespacedName{Name: c.releaseName, Namespace: c.defaultNamespace}.String())
 		}
 	}
+}
+
+func (c *RealHelmDeployer) getMessages() string {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	result := ""
+	for i := range c.messages {
+		result += "\n" + c.messages[i]
+	}
+	return result
 }

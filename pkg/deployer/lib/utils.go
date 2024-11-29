@@ -7,22 +7,18 @@ package lib
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/landscaper/targetresolver"
@@ -33,57 +29,6 @@ import (
 	lsutil "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
-
-// GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
-// If the config defines the target from a secret that secret is read from all provided clients.
-func GetKubeconfigFromTargetConfig(ctx context.Context, config *targettypes.KubernetesClusterTargetConfig,
-	targetNamespace string, lsClient client.Client) ([]byte, error) {
-	if config.Kubeconfig.StrVal != nil {
-		return []byte(*config.Kubeconfig.StrVal), nil
-	}
-	if config.Kubeconfig.SecretRef == nil {
-		return nil, errors.New("kubeconfig not defined")
-	}
-
-	return GetKubeconfigFromSecretRef(ctx, config.Kubeconfig.SecretRef, targetNamespace, lsClient)
-}
-
-func GetKubeconfigFromSecretRef(ctx context.Context, ref *lsv1alpha1.SecretReference, targetNamespace string,
-	lsClient client.Client) ([]byte, error) {
-
-	if len(ref.Namespace) > 0 && ref.Namespace != targetNamespace {
-		return nil, fmt.Errorf("namespace of secret ref %s differs from target namespace %s",
-			ref.Namespace, targetNamespace)
-	}
-
-	secret := &corev1.Secret{}
-	secretKey := client.ObjectKey{Name: ref.Name, Namespace: targetNamespace}
-	if err := read_write_layer.GetSecret(ctx, lsClient, secretKey, secret, read_write_layer.R000050); err != nil {
-		return nil, apierrors.NewNotFound(schema.GroupResource{
-			Resource: "secret",
-		}, ref.Name)
-	}
-
-	if len(ref.Key) == 0 {
-		ref.Key = targettypes.DefaultKubeconfigKey
-	}
-
-	kubeconfig, ok := secret.Data[ref.Key]
-	if !ok {
-		return nil, fmt.Errorf("secret found but key %q not found", ref.Key)
-	}
-	return kubeconfig, nil
-}
-
-// SetProviderStatus sets the provider specific status for a deploy item.
-func SetProviderStatus(di *lsv1alpha1.DeployItem, status runtime.Object, scheme *runtime.Scheme) error {
-	rawStatus, err := kutil.ConvertToRawExtension(status, scheme)
-	if err != nil {
-		return err
-	}
-	di.Status.ProviderStatus = rawStatus
-	return nil
-}
 
 // CreateOrUpdateExport creates or updates the export of a deploy item.
 func CreateOrUpdateExport(ctx context.Context, kubeWriter *read_write_layer.Writer, kubeClient client.Client, deployItem *lsv1alpha1.DeployItem, values interface{}) error {

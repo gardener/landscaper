@@ -3,6 +3,7 @@ package resourcemanager
 import (
 	"context"
 
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -12,11 +13,13 @@ import (
 
 func DeleteManagedResources(
 	ctx context.Context,
+	lsUncachedClient client.Client,
 	managedResources managedresource.ManagedResourceStatusList,
 	groupDefinitions []managedresource.DeletionGroupDefinition,
 	targetClient client.Client,
 	deployItem *lsv1alpha1.DeployItem,
 	interruptionChecker interruption.InterruptionChecker,
+	lsRestConfig *rest.Config,
 ) error {
 	if len(managedResources) == 0 {
 		return nil
@@ -31,7 +34,7 @@ func DeleteManagedResources(
 	groups := make([]*DeletionGroup, len(groupDefinitions))
 	for i := range groupDefinitions {
 		var err error
-		groups[i], err = NewDeletionGroup(groupDefinitions[i], deployItem, targetClient, interruptionChecker)
+		groups[i], err = NewDeletionGroup(ctx, lsUncachedClient, groupDefinitions[i], deployItem, targetClient, interruptionChecker, lsRestConfig)
 		if err != nil {
 			return err
 		}

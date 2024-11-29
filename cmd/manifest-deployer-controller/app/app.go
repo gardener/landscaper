@@ -7,11 +7,18 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"time"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/spf13/cobra"
 
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/version"
 )
 
@@ -43,6 +50,17 @@ func (o *options) run(ctx context.Context) error {
 		o.DeployerOptions.Log, o.DeployerOptions.LsMgr,
 		o.DeployerOptions.HostMgr, o.Config, "manifest"); err != nil {
 		return fmt.Errorf("unable to setup manifest controller")
+	}
+
+	if os.Getenv("ENABLE_PROFILER") == "true" {
+		go func() {
+			o.DeployerOptions.Log.Info("Starting profiler for manifest deployer")
+			err := http.ListenAndServe("localhost:8081", nil)
+			o.DeployerOptions.Log.Error(err, "manifest deployer profiler stopped")
+		}()
+
+		go utils.LogMemStatsPeriodically(logging.NewContext(ctx, o.DeployerOptions.Log), 60*time.Second,
+			o.DeployerOptions.HostUncachedClient, "manifest-deployer")
 	}
 
 	o.DeployerOptions.Log.Info("Starting manifest deployer manager")

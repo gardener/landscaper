@@ -18,19 +18,17 @@ import (
 	"text/template"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/json"
-
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/yaml"
+
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 )
 
 var (
@@ -52,6 +50,9 @@ const (
 
 	// name of the file that will be created in the auth directory, containing the name of the shoot cluster
 	filenameForClusterName = "clustername"
+
+	// name of the file that will be created in the auth directory, containing the oidc issuer url
+	filenameForOIDCIssuerURL = "oidc-issuer-url"
 
 	subresourceAdminKubeconfig  = "adminkubeconfig"
 	kubeconfigExpirationSeconds = 24 * 60 * 60
@@ -184,9 +185,23 @@ func (o *ShootClusterManager) CreateShootCluster(ctx context.Context) error {
 		return err
 	}
 
+	o.log.Logfln("read shoot extract for test cluster")
+	shootExtract, err := o.readShootExtract(ctx, gardenClientForShoots, clusterName)
+	if err != nil {
+		o.log.Logfln("failed to read shoot extract for test cluster: %w", err)
+		return err
+	}
+
+	o.log.Logfln("write oidc issuer url for test cluster")
+	if err := o.writeOIDCIssuerURL(shootExtract); err != nil {
+		o.log.Logfln("failed to write oidc issuer url for test cluster: %w", err)
+		return err
+	}
+
 	if o.nginxIngressEnabled {
 		o.log.Logfln("write ingress domain for test cluster")
-		if err := o.writeIngressDomain(ctx, gardenClientForShoots, clusterName); err != nil {
+		if err := o.writeIngressDomain(shootExtract); err != nil {
+			o.log.Logfln("failed to write ingress domain for test cluster: %w", err)
 			return err
 		}
 	}
@@ -651,7 +666,8 @@ func (o *ShootClusterManager) deleteOldestShootCluster(ctx context.Context, gard
 }
 
 type shootType struct {
-	Spec shootSpec `json:"spec"`
+	Spec   shootSpec   `json:"spec"`
+	Status shootStatus `json:"status"`
 }
 
 type shootSpec struct {
@@ -662,28 +678,68 @@ type shootDNS struct {
 	Domain string `json:"domain"`
 }
 
-func (o *ShootClusterManager) writeIngressDomain(ctx context.Context, gardenClient dynamic.ResourceInterface, clusterName string) error {
+type shootStatus struct {
+	AdvertisedAddresses []advertisedAddress `json:"advertisedAddresses"`
+}
+
+type advertisedAddress struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
+func (o *ShootClusterManager) readShootExtract(ctx context.Context, gardenClient dynamic.ResourceInterface, clusterName string) (*shootType, error) {
 
 	shoot, err := gardenClient.Get(ctx, clusterName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	shootRaw, err := shoot.MarshalJSON()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	var shootDns shootType
-	if err := json.Unmarshal(shootRaw, &shootDns); err != nil {
-		return err
+	var shootExtract shootType
+	if err := json.Unmarshal(shootRaw, &shootExtract); err != nil {
+		return nil, err
 	}
 
-	if len(shootDns.Spec.DNS.Domain) == 0 {
+	return &shootExtract, nil
+}
+
+func (o *ShootClusterManager) writeOIDCIssuerURL(shootExtract *shootType) error {
+
+	issuerUrl := ""
+	for _, a := range shootExtract.Status.AdvertisedAddresses {
+		if a.Name == "service-account-issuer" {
+			issuerUrl = a.URL
+			break
+		}
+	}
+
+	if len(issuerUrl) == 0 {
+		return fmt.Errorf("no service-account-issuer found in advertised addresses of shoot")
+	}
+
+	if !strings.Contains(issuerUrl, "issuer") {
+		return fmt.Errorf("no oidc issuer found in advertised addresses of shoot")
+	}
+
+	filePath := path.Join(o.authDirectoryPath, filenameForOIDCIssuerURL)
+	if err := os.WriteFile(filePath, []byte(issuerUrl), os.ModePerm); err != nil {
+		return fmt.Errorf("failed to write oidc issuer url to file %s: %w", filePath, err)
+	}
+
+	return nil
+}
+
+func (o *ShootClusterManager) writeIngressDomain(shootExtract *shootType) error {
+
+	if len(shootExtract.Spec.DNS.Domain) == 0 {
 		return fmt.Errorf("dns domaint not available")
 	}
 
-	ingressDomain := "ingress." + shootDns.Spec.DNS.Domain
+	ingressDomain := "ingress." + shootExtract.Spec.DNS.Domain
 
 	filePath := path.Join(o.authDirectoryPath, filenameForIngressDomain)
 	if err := os.WriteFile(filePath, []byte(ingressDomain), os.ModePerm); err != nil {

@@ -1,0 +1,22 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+name: dataflow-tokenprovider
+blueprint:
+  ref: cd://resources/blueprint-tokenprovider
+
+imports:
+  targets:
+    - name: cluster
+      target: cluster
+    - name: cluster2
+      target: cluster2
+  data:
+    - name: gitRepositoryName
+      dataRef: gitRepositoryName
+    - name: secretName
+      dataRef: secretName
+
+exports:
+  data:
+    - name: token
+      dataRef: token

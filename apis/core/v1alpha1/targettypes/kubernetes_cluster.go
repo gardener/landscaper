@@ -7,6 +7,7 @@ package targettypes
 import (
 	"encoding/json"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/gardener/landscaper/apis/core"
@@ -20,6 +21,11 @@ const KubernetesClusterTargetType v1alpha1.TargetType = core.GroupName + "/kuber
 type KubernetesClusterTargetConfig struct {
 	// Kubeconfig defines kubeconfig as string.
 	Kubeconfig ValueRef `json:"kubeconfig"`
+
+	OIDCConfig *OIDCConfig `json:"oidcConfig,omitempty"`
+
+	// SelfConfig contains the config for a Target that points to the landscaper resource cluster.
+	SelfConfig *SelfConfig `json:"selfConfig,omitempty"`
 }
 
 // DefaultKubeconfigKey is the default that is used to hold a kubeconfig.
@@ -28,44 +34,25 @@ const DefaultKubeconfigKey = "kubeconfig"
 // ValueRef holds a value that can be either defined by string or by a secret ref.
 type ValueRef struct {
 	StrVal *string `json:"-"`
-
-	// deprecated
-	SecretRef *v1alpha1.SecretReference `json:"secretRef,omitempty"`
 }
 
 // kubeconfigJSON is a helper struct for decoding.
 type kubeconfigJSON struct {
-	Kubeconfig *ValueRef `json:"kubeconfig"`
-}
-
-// valueRefJSON is a helper struct to decode json into a secret ref object.
-type valueRefJSON struct {
-	SecretRef *v1alpha1.SecretReference `json:"secretRef,omitempty"`
+	Kubeconfig *ValueRef   `json:"kubeconfig"`
+	OIDCConfig *OIDCConfig `json:"oidcConfig,omitempty"`
+	SelfConfig *SelfConfig `json:"selfConfig,omitempty"`
 }
 
 // MarshalJSON implements the json marshaling for a JSON
 func (v ValueRef) MarshalJSON() ([]byte, error) {
-	if v.StrVal != nil {
-		return json.Marshal(v.StrVal)
-	}
-	ref := valueRefJSON{
-		SecretRef: v.SecretRef,
-	}
-	return json.Marshal(ref)
+	return json.Marshal(v.StrVal)
 }
 
 // UnmarshalJSON implements json unmarshaling for a JSON
 func (v *ValueRef) UnmarshalJSON(data []byte) error {
-	ref := &valueRefJSON{}
-	err := json.Unmarshal(data, ref)
-	if err == nil && ref.SecretRef != nil {
-		// parsing into secret reference was successful
-		v.SecretRef = ref.SecretRef
-		return nil
-	}
 	// parse into string instead
 	var strVal string
-	err = json.Unmarshal(data, &strVal)
+	err := json.Unmarshal(data, &strVal)
 	if err == nil {
 		v.StrVal = &strVal
 		return nil
@@ -77,9 +64,15 @@ func (v *ValueRef) UnmarshalJSON(data []byte) error {
 func (kc *KubernetesClusterTargetConfig) UnmarshalJSON(data []byte) error {
 	kj := &kubeconfigJSON{}
 	err := json.Unmarshal(data, kj)
-	if err == nil && kj.Kubeconfig != nil {
+	if err == nil && (kj.Kubeconfig != nil || kj.OIDCConfig != nil || kj.SelfConfig != nil) {
 		// parsing was successful
-		kc.Kubeconfig = *kj.Kubeconfig
+		if kj.Kubeconfig != nil {
+			kc.Kubeconfig = *kj.Kubeconfig
+		}
+		if kj.OIDCConfig != nil {
+			kc.OIDCConfig = kj.OIDCConfig
+		}
+		kc.SelfConfig = kj.SelfConfig
 		return nil
 	}
 	return kc.Kubeconfig.UnmarshalJSON(data)
@@ -91,4 +84,18 @@ func (v ValueRef) OpenAPISchemaType() []string {
 		"string",
 	}
 }
+
 func (v ValueRef) OpenAPISchemaFormat() string { return "" }
+
+type OIDCConfig struct {
+	Server            string                  `json:"server,omitempty"`
+	CAData            []byte                  `json:"caData,omitempty"`
+	ServiceAccount    v1.LocalObjectReference `json:"serviceAccount,omitempty"`
+	Audience          []string                `json:"audience,omitempty"`
+	ExpirationSeconds *int64                  `json:"expirationSeconds,omitempty"`
+}
+
+type SelfConfig struct {
+	ServiceAccount    v1.LocalObjectReference `json:"serviceAccount,omitempty"`
+	ExpirationSeconds *int64                  `json:"expirationSeconds,omitempty"`
+}

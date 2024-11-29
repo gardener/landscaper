@@ -6,27 +6,19 @@ package helm
 
 import (
 	"context"
-	"encoding/base64"
-	"errors"
-	"fmt"
 	"strings"
-
-	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
-	"k8s.io/utils/ptr"
 
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	helmv1alpha1validation "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation"
@@ -60,6 +52,7 @@ type Helm struct {
 	lsCachedClient     client.Client
 	hostUncachedClient client.Client
 	hostCachedClient   client.Client
+	lsRestConfig       *rest.Config
 
 	Configuration helmv1alpha1.Configuration
 
@@ -69,13 +62,13 @@ type Helm struct {
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
 
-	TargetKubeClient client.Client
-	TargetRestConfig *rest.Config
-	TargetClientSet  kubernetes.Interface
+	targetAccess *lib.TargetAccess
 }
 
 // New creates a new internal helm item
-func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+func New(
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+	lsRestConfig *rest.Config,
 	helmconfig helmv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
 	rt *lsv1alpha1.ResolvedTarget,
@@ -105,6 +98,7 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 	}
 
 	return &Helm{
+		lsRestConfig:          lsRestConfig,
 		lsUncachedClient:      lsUncachedClient,
 		lsCachedClient:        lsCachedClient,
 		hostUncachedClient:    hostUncachedClient,
@@ -118,15 +112,21 @@ func New(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 	}, nil
 }
 
+func (h *Helm) ensureTargetAccess(ctx context.Context) (err error) {
+	if h.targetAccess == nil {
+		h.targetAccess, err = lib.NewTargetAccess(ctx, h.Target, h.lsUncachedClient, h.lsRestConfig)
+	}
+	return err
+}
+
 // Template loads the specified helm chart
 // and templates it with the given values.
 func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, lserrors.LsError) {
 
 	currOp := "TemplateChart"
 
-	restConfig, _, _, err := h.TargetClient(ctx)
-	if err != nil {
-		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetTargetClient", err.Error())
+	if err := h.ensureTargetAccess(ctx); err != nil {
+		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "ensureTargetAccess", err.Error())
 	}
 
 	// download chart
@@ -174,7 +174,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 	crdsForManifestDeployer := map[string]string{}
 	shouldUseRealHelmDeployer := ptr.Deref[bool](h.ProviderConfiguration.HelmDeployment, true)
 	if !shouldUseRealHelmDeployer {
-		filesForManifestDeployer, err = engine.RenderWithClient(ch, values, restConfig)
+		filesForManifestDeployer, err = engine.RenderWithClient(ch, values, h.targetAccess.TargetRestConfig())
 		if err != nil {
 			return nil, nil, nil, nil, lserrors.NewWrappedError(
 				err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
@@ -186,76 +186,6 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 	}
 
 	return filesForManifestDeployer, crdsForManifestDeployer, values, ch, nil
-}
-
-func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {
-	if h.TargetKubeClient != nil {
-		return h.TargetRestConfig, h.TargetKubeClient, h.TargetClientSet, nil
-	}
-	// use the configured kubeconfig over the target if defined
-	if len(h.ProviderConfiguration.Kubeconfig) != 0 {
-		kubeconfig, err := base64.StdEncoding.DecodeString(h.ProviderConfiguration.Kubeconfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		cConfig, err := clientcmd.NewClientConfigFromBytes(kubeconfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		restConfig, err := cConfig.ClientConfig()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeClient, err := client.New(restConfig, client.Options{})
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		clientset, err := kubernetes.NewForConfig(restConfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		h.TargetRestConfig = restConfig
-		h.TargetKubeClient = kubeClient
-		return restConfig, kubeClient, clientset, nil
-	}
-	if h.Target != nil {
-		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-		if err := yaml.Unmarshal([]byte(h.Target.Content), targetConfig); err != nil {
-			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
-		}
-
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.Target.Namespace, h.lsUncachedClient)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		restConfig, err := kubeconfig.ClientConfig()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeClient, err := client.New(restConfig, client.Options{})
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		clientset, err := kubernetes.NewForConfig(restConfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		h.TargetRestConfig = restConfig
-		h.TargetKubeClient = kubeClient
-		h.TargetClientSet = clientset
-		return restConfig, kubeClient, clientset, nil
-	}
-	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
 
 func (h *Helm) isDownloadInfoError(err error) bool {

@@ -86,6 +86,8 @@ spec:
           - value: 1
           - value: 2
           - value: 3
+        # alternative cluster to get the resource values
+        targetName: someOtherTargetName
 
     manifests: # list of kubernetes manifests
     - policy: manage | fallback | ignore | keep | immutable
@@ -98,6 +100,18 @@ spec:
       annotateBeforeDelete:
         annotationA: valueA
         annotationB: valueB
+      # Optional: The specified yaml is merged into the manifest and the manifest is updated. This is executed after 
+      # all manifests of the DeployItem were deployed
+      patchAfterDeployment:
+        # example
+        spec:
+          suspend: true
+      # Optional: The specified yaml is merged into the manifest and the manifest is updated. This is executed before
+      # the manifest is deleted.
+      patchBeforeDelete:
+        # example
+        spec:
+          suspend: false
       # the manifest specification
       manifest:
         apiVersion: v1
@@ -139,6 +153,38 @@ spec:
     deletionGroups: []
     # Optional. Allows to customize the deletion behaviour during an update.
     deletionGroupsDuringUpdate: []
+```
+
+If some values of k8s resources are exported, the default target of a DeployItem determines the cluster
+from where these values are fetched. You can specify another `targetName`, which is used to get these values
+from a different cluster. This is helpful if your DeployItem deploys something to some cluster which itself
+deploys some stuff to a second cluster and your check requires to access the resources on this second cluster.
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: myDeployItemName
+spec:
+  ...
+  
+  target: 
+    import: my-cluster
+
+  config:
+    ...
+    
+    exports:
+      exports:
+      - key: someKey
+        jsonPath: .data.somekey 
+        fromResource: 
+          apiVersion: someVersion
+          kind: someKind
+          name: someName
+          namespace: someNamespace
+        # optional: other target cluster to fetch the export data  
+        targetName: otherTargetName
 ```
 
 ### Update Strategy

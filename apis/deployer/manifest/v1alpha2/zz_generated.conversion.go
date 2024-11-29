@@ -187,7 +187,6 @@ func Convert_manifest_HPAConfiguration_To_v1alpha2_HPAConfiguration(in *manifest
 }
 
 func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
-	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
@@ -204,7 +203,6 @@ func Convert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 }
 
 func autoConvert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
-	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))

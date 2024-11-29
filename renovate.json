@@ -1,13 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "configMigration": true,
+  "stopUpdatingLabel": "take-a-break-renovate",
   "schedule": [
-    "after 10:30am",
-    "before 03:30pm",
+    "after 07:30am",
+    "before 07:15pm",
     "every weekday"
   ],
   "prHourlyLimit": 1,
-  "prConcurrentLimit": 2,
+  "prConcurrentLimit": 0,
   "timezone": "Europe/Berlin",
   "extends": [
     "config:best-practices",
@@ -18,30 +18,54 @@
   ],
   "packageRules": [
     {
-      "description": "Combine landscaper updates in a single PR",
-      "matchManagers": ["gomod"],
-      "matchSourceUrls": ["https://github.com/gardener/landscaper"]
-    },
-    {
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "rebaseWhen": "auto"
-    },
-    {
       "description": "Fixed version for component-cli v0.44.0",
-      "matchPackagePatterns": ["github.com/gardener/component-cli"],
-      "matchManagers": ["gomod"],
-      "enabled": false
+      "matchManagers": [
+        "gomod"
+      ],
+      "enabled": false,
+      "matchPackageNames": [
+        "/github.com/gardener/component-cli/"
+      ]
     },
     {
       "description": "Ignore version for landscpaer/apis and controller-utils as used locally",
-      "matchPackagePatterns": ["github.com/gardener/landscaper/.*"],
-      "matchManagers": ["gomod"],
-      "enabled": false
+      "matchManagers": [
+        "gomod"
+      ],
+      "enabled": false,
+      "matchPackageNames": [
+        "/github.com/gardener/landscaper/.*/"
+      ]
+    },
+    {
+      "description": "Combine all patch updates in GO in a single PR",
+      "groupName": "all patch dependencies",
+      "groupSlug": "all-patch",
+      "matchPackageNames": [
+        "*"
+      ],
+      "matchDatasources": [
+        "go"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "digest"
+      ],
+      "rebaseWhen": "auto"
+    },
+    {
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "rebaseWhen": "auto"
     }
   ],
   "customManagers": [
     {
-      "description": "Match in Makefile",
+      "description": "Match in Makefile and Dockerfile",
       "customType": "regex",
       "fileMatch": [
         "(^|/|\\.)([Dd]ocker|[Cc]ontainer)file$",

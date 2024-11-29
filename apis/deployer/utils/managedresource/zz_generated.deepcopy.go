@@ -24,6 +24,11 @@ func (in *CustomResourceGroup) DeepCopyInto(out *CustomResourceGroup) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.TargetName != nil {
+		in, out := &in.TargetName, &out.TargetName
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 
@@ -74,6 +79,11 @@ func (in *Export) DeepCopyInto(out *Export) {
 	if in.FromObjectReference != nil {
 		in, out := &in.FromObjectReference, &out.FromObjectReference
 		*out = new(FromObjectReference)
+		**out = **in
+	}
+	if in.TargetName != nil {
+		in, out := &in.TargetName, &out.TargetName
+		*out = new(string)
 		**out = **in
 	}
 	return
@@ -138,6 +148,11 @@ func (in *ManagedResourceStatus) DeepCopyInto(out *ManagedResourceStatus) {
 			(*out)[key] = val
 		}
 	}
+	if in.PatchBeforeDelete != nil {
+		in, out := &in.PatchBeforeDelete, &out.PatchBeforeDelete
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
 	out.Resource = in.Resource
 	return
 }
@@ -195,6 +210,16 @@ func (in *Manifest) DeepCopyInto(out *Manifest) {
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.PatchAfterDeployment != nil {
+		in, out := &in.PatchAfterDeployment, &out.PatchAfterDeployment
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.PatchBeforeDelete != nil {
+		in, out := &in.PatchBeforeDelete, &out.PatchBeforeDelete
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }

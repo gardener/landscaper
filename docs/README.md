@@ -47,6 +47,7 @@
 - [Execution Controller](technical/execution_controller.md)
 - [Installation Controller](technical/installation_controller.md)
 - [Performance Analysis](technical/performance.md)
+- [Profiling Landscaper Pods](technical/profiling.md)
 - [Scaling of Landscaper Pods](technical/scaling.md)
 - [Target Types](technical/target_types.md)
 

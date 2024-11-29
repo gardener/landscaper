@@ -1,0 +1,23 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+jsonSchema: "https://json-schema.org/draft/2019-09/schema"
+
+imports:
+  - name: cluster-echo-server
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: release-echo-server
+    type: data
+    schema:
+      type: object
+
+  - name: values-echo-server
+    type: data
+    schema:
+      type: object
+
+subinstallationExecutions:
+  - name: subinstallation-echo-server
+    type: GoTemplate
+    file: /subinstallation-echo-server.yaml

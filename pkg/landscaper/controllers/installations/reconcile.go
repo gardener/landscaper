@@ -7,6 +7,7 @@ package installations
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -120,7 +121,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Progressing {
-		allSucceeded, err := c.handlePhaseProgressing(ctx, inst)
+		allSucceeded, failedSubInsts, isExecFailed, err := c.handlePhaseProgressing(ctx, inst)
 		if err != nil {
 			// error or unfinished subobjects => phase remains progressing
 			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err,
@@ -128,13 +129,16 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		}
 
 		var nextPhase lsv1alpha1.InstallationPhase
+		var lsError lserrors.LsError
+
 		if allSucceeded {
 			nextPhase = lsv1alpha1.InstallationPhases.Completing
 		} else {
+			lsError = buildErrorIfFailedChild(failedSubInsts, isExecFailed)
 			nextPhase = lsv1alpha1.InstallationPhases.Failed
 		}
 
-		if err := c.setInstallationPhaseAndUpdate(ctx, inst, nextPhase, nil,
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, nextPhase, lsError,
 			read_write_layer.W000119, false); err != nil {
 			return err
 		}
@@ -222,6 +226,23 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		}
 	}
 
+	return nil
+}
+
+func buildErrorIfFailedChild(failedSubInsts []string, isExecFailed bool) lserrors.LsError {
+	if len(failedSubInsts) > 0 || isExecFailed {
+		msg := ""
+
+		if len(failedSubInsts) > 0 {
+			joined := strings.Join(failedSubInsts, ", ")
+			msg = "Failed sub-installation(s): " + joined
+		}
+
+		if isExecFailed {
+			msg += "Execution is failed"
+		}
+		return lserrors.NewError("buildErrorIfFailedChild", "children failed", msg)
+	}
 	return nil
 }
 
@@ -432,44 +453,56 @@ func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1al
 	return nil
 }
 
-func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha1.Installation) (allSucceeded bool, lsErr lserrors.LsError) {
+func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha1.Installation) (allSucceeded bool, failedSubInstNames []string, executionFailed bool, lsErr lserrors.LsError) {
 	currentOperation := "handlePhaseProgressing"
 
 	allSucceeded = true
 
 	subInsts, err := installations.ListSubinstallations(ctx, c.LsUncachedClient(), inst, inst.Status.SubInstCache, read_write_layer.R000087)
 	if err != nil {
-		return false, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
+		return false, nil, false, lserrors.NewWrappedError(err, currentOperation, "ListSubinstallations", err.Error())
 	}
+
+	failedSubInstNames = []string{}
 
 	for _, next := range subInsts {
 		if next.Status.JobIDFinished != next.Status.JobID {
 			// Hack: being unfinished should not be treated as an error
 			message := fmt.Sprintf("installation %s / %s is not finished yet", next.Namespace, next.Name)
-			return false, lserrors.NewError(currentOperation, "JobIDFinished", message,
+			return false, nil, false, lserrors.NewError(currentOperation, "JobIDFinished", message,
 				lsv1alpha1.ErrorUnfinished, lsv1alpha1.ErrorForInfoOnly, lsv1alpha1.ErrorNoRetry)
 		}
 
 		allSucceeded = allSucceeded && (next.Status.InstallationPhase == lsv1alpha1.InstallationPhases.Succeeded)
+
+		if next.Status.InstallationPhase.IsFailed() {
+			failedSubInstNames = append(failedSubInstNames, next.Name)
+		}
 	}
+
+	executionFailed = false
 
 	if inst.Status.ExecutionReference != nil {
 		key := client.ObjectKey{Namespace: inst.Status.ExecutionReference.Namespace, Name: inst.Status.ExecutionReference.Name}
 		exec := &lsv1alpha1.Execution{}
 		if err := read_write_layer.GetExecution(ctx, c.LsUncachedClient(), key, exec, read_write_layer.R000024); err != nil {
-			return false, lserrors.NewWrappedError(err, currentOperation, "GetExecution", err.Error())
+			return false, nil, false, lserrors.NewWrappedError(err, currentOperation, "GetExecution", err.Error())
 		}
 
 		if exec.Status.JobIDFinished != exec.Status.JobID {
 			message := fmt.Sprintf("execution %s / %s is not finished yet", exec.Namespace, exec.Name)
-			return false, lserrors.NewError(currentOperation, "JobIDFinished", message,
+			return false, nil, false, lserrors.NewError(currentOperation, "JobIDFinished", message,
 				lsv1alpha1.ErrorUnfinished, lsv1alpha1.ErrorForInfoOnly, lsv1alpha1.ErrorNoRetry)
 		}
 
 		allSucceeded = allSucceeded && (exec.Status.ExecutionPhase == lsv1alpha1.ExecutionPhases.Succeeded)
+
+		if exec.Status.ExecutionPhase.IsFailed() {
+			executionFailed = true
+		}
 	}
 
-	return allSucceeded, nil
+	return allSucceeded, failedSubInstNames, executionFailed, nil
 }
 
 func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {

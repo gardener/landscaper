@@ -6,31 +6,19 @@ package manifest
 
 import (
 	"context"
-	"encoding/base64"
-	"errors"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
-	"github.com/gardener/landscaper/pkg/deployer/lib"
-
-	"github.com/gardener/landscaper/pkg/utils"
-
-	"k8s.io/apimachinery/pkg/util/yaml"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
-
 	manifestvalidation "github.com/gardener/landscaper/apis/deployer/manifest/validation"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 const (
@@ -46,6 +34,7 @@ func init() {
 
 // Manifest is the internal representation of a DeployItem of Type Manifest
 type Manifest struct {
+	lsRestConfig       *rest.Config
 	lsUncachedClient   client.Client
 	hostUncachedClient client.Client
 
@@ -56,9 +45,7 @@ type Manifest struct {
 	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
 	ProviderStatus        *manifestv1alpha2.ProviderStatus
 
-	TargetKubeClient client.Client
-	TargetRestConfig *rest.Config
-	TargetClientSet  kubernetes.Interface
+	targetAccess *lib.TargetAccess
 }
 
 // NewDeployItemBuilder creates a new deployitem builder for manifest deployitems
@@ -107,72 +94,13 @@ func New(lsUncachedClient client.Client, hostUncachedClient client.Client,
 	}, nil
 }
 
-func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {
-	if m.TargetKubeClient != nil {
-		return m.TargetRestConfig, m.TargetKubeClient, m.TargetClientSet, nil
+func (m *Manifest) SetLsRestConfig(lsRestConfig *rest.Config) {
+	m.lsRestConfig = lsRestConfig
+}
+
+func (m *Manifest) ensureTargetAccess(ctx context.Context) (err error) {
+	if m.targetAccess == nil {
+		m.targetAccess, err = lib.NewTargetAccess(ctx, m.Target, m.lsUncachedClient, m.lsRestConfig)
 	}
-	// use the configured kubeconfig over the target if defined
-	if len(m.ProviderConfiguration.Kubeconfig) != 0 {
-		kubeconfig, err := base64.StdEncoding.DecodeString(m.ProviderConfiguration.Kubeconfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		cConfig, err := clientcmd.NewClientConfigFromBytes(kubeconfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		restConfig, err := cConfig.ClientConfig()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeClient, err := client.New(restConfig, client.Options{})
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		clientset, err := kubernetes.NewForConfig(restConfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		m.TargetRestConfig = restConfig
-		m.TargetKubeClient = kubeClient
-		return restConfig, kubeClient, clientset, nil
-	}
-	if m.Target != nil {
-		targetConfig := &targettypes.KubernetesClusterTargetConfig{}
-		if err := yaml.Unmarshal([]byte(m.Target.Content), targetConfig); err != nil {
-			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
-		}
-
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.Target.Namespace, m.lsUncachedClient)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		restConfig, err := kubeconfig.ClientConfig()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		kubeClient, err := client.New(restConfig, client.Options{})
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		clientset, err := kubernetes.NewForConfig(restConfig)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		m.TargetRestConfig = restConfig
-		m.TargetKubeClient = kubeClient
-		m.TargetClientSet = clientset
-		return restConfig, kubeClient, clientset, nil
-	}
-	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
+	return err
 }

@@ -27,10 +27,10 @@ First of all, we need to create two custom resources:
       i.e. the cluster on which the deployment will be done.
 
    > **Note:**  
-   > If your target cluster is a Gardener Shoot cluster, it is **not** possible to use an oidc / gardenlogin kubeconfig in a Target.  
+   > If your target cluster is a Gardener Shoot cluster, it is **not** possible to use a gardenlogin kubeconfig in a Target.  
    > If you have only such a kubeconfig, see 
    > ["Constructing a Target Resource"](https://github.com/gardener/landscaper/blob/master/docs/guided-tour//targets/README.md)
-   > how to construct a kubeconfig and a Target, that you can use with the Landscaper.
+   > how to construct a Target, that you can use with the Landscaper.
 
 2. On the Landscaper resource cluster, create a namespace `cu-example`.
 
@@ -133,7 +133,8 @@ The `imports` section contains the reference to the target object and the `bluep
 
 ## Delete Installation
 
-You can uninstall the hello-world Helm chart by deleting the `Installation` custom resource from the Landscaper resource cluster:
+You can uninstall the hello-world Helm chart by deleting the `Installation` custom resource from the Landscaper resource 
+cluster:
 
 ```shell
 kubectl delete inst -n cu-example hello-world
@@ -146,6 +147,9 @@ You can keep the `Target`, because we will use it again in the next example. But
 ```shell
 kubectl delete target -n cu-example my-cluster
 ```
+
+Remark: The k8s resources created in some example of the Guided Tour should be always deleted before continuing with 
+the next. This is mandatory for `Installation` but of course you could reuse your `Context` and `Target` resources.
 
 ## Automatic Reconcile
 

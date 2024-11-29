@@ -56,6 +56,7 @@ type Options struct {
 	LsNamespace                    string
 	LsVersion                      string
 	DockerConfigPath               string
+	OIDCIssuerURLPath              string
 	DisableCleanup                 bool
 	RunOnShoot                     bool
 	DisableCleanupBefore           bool
@@ -73,6 +74,7 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.LsNamespace, "ls-namespace", "", "Namespace where the landscaper controller is running")
 	fs.StringVar(&o.LsVersion, "ls-version", "", "the version to use in integration tests")
 	fs.StringVar(&o.DockerConfigPath, "registry-config", "", "path to the docker config file")
+	fs.StringVar(&o.OIDCIssuerURLPath, "oidc-issuer-url-path", "", "path to the file containing the oidc issuer url of the resource cluster")
 	fs.BoolVar(&o.DisableCleanup, "disable-cleanup", false, "skips the cleanup of resources.")
 	fs.BoolVar(&o.RunOnShoot, "ls-run-on-shoot", false, "runs on a shoot and not a k3s cluster")
 	fs.BoolVar(&o.DisableCleanupBefore, "ls-disable-cleanup-before", false, "disables cleanup of all namespaces with prefix `test` before the tests are started")
@@ -116,6 +118,10 @@ type Framework struct {
 	DisableCleanup bool
 	// RunOnShoot tests are executed on shoot and not a k3s cluster (only for compatibility with old setup)
 	RunOnShoot bool
+
+	// OIDCIssuerURL is the issuer url of the resource cluster serving as a provider for oidc tokens.
+	// Used in test cases in which deployers access the target cluster via oidc.
+	OIDCIssuerURL string
 
 	// RegistryConfig defines the oci registry config file.
 	// It is expected that the configfile contains exactly one server.
@@ -211,6 +217,16 @@ func New(logger utils2.Logger, cfg *Options) (*Framework, error) {
 			return nil, fmt.Errorf("unable to build oci client: %w", err)
 		}
 	}
+
+	if len(cfg.OIDCIssuerURLPath) != 0 {
+		data, err := os.ReadFile(cfg.OIDCIssuerURLPath)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read file with oidc issuer url: %w", err)
+		}
+
+		f.OIDCIssuerURL = strings.TrimSpace(string(data))
+	}
+
 	return f, nil
 }
 

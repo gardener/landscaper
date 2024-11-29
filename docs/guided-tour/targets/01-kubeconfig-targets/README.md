@@ -8,11 +8,15 @@ sidebar_position: 50
 Suppose you want to use the Landscaper to deploy an application on some kubernetes cluster, the so-called *target cluster*.
 You need to create a `Target` custom resource which contains a kubeconfig for the target cluster.
 
-If your target cluster is a Gardener shoot cluster, you typically have an oidc / gardenlogin kubeconfig for the target cluster.
-It is **not** possible to use such a kubeconfig in a `Target` custom resource.
-In the following we describe how to build a kubeconfig which you can use in a `Target`.
-It will be based on a ServiceAccount token.
+If your target cluster is a Gardener shoot cluster, you typically have a 
+[gardenlogin kubeconfig](https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/clusterops-with-kubectl/connect-kubectl) 
+for the target cluster. It is **not** possible to use such a kubeconfig in a `Target` custom resource.
+You have the following alternatives:
 
+- Use an [OIDC Target](../../../usage/Targets.md#oidc-target-to-kubernetes-target-cluster)
+- Use a Target whose kubeconfig is based on a ServiceAccount token, as described below.
+
+## Targets Whose Kubeconfig is Based On a ServiceAccount Token
 
 ### Define Names
 

@@ -7,6 +7,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"time"
 
@@ -164,6 +166,20 @@ func (o *Options) startMainController(ctx context.Context,
 
 	eg, ctx := errgroup.WithContext(ctx)
 
+	if os.Getenv("ENABLE_PROFILER") == "true" {
+		eg.Go(func() error {
+			setupLogger.Info("Starting profiler for main landscaper")
+			err := http.ListenAndServe("localhost:8081", nil)
+			setupLogger.Error(err, "main landscaper profiler stopped")
+			return err
+		})
+
+		eg.Go(func() error {
+			lsutils.LogMemStatsPeriodically(logging.NewContext(ctx, setupLogger), 60*time.Second, hostUncachedClient, "main-landscaper")
+			return nil
+		})
+	}
+
 	setupLogger.Info("starting the controllers")
 	if lsMgr != hostMgr {
 		eg.Go(func() error {
@@ -208,6 +224,20 @@ func (o *Options) startCentralLandscaper(ctx context.Context,
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
+
+	if os.Getenv("ENABLE_PROFILER") == "true" {
+		eg.Go(func() error {
+			setupLogger.Info("Starting profiler for central landscaper")
+			err := http.ListenAndServe("localhost:8081", nil)
+			setupLogger.Error(err, "central landscaper profiler stopped")
+			return err
+		})
+
+		eg.Go(func() error {
+			lsutils.LogMemStatsPeriodically(logging.NewContext(ctx, setupLogger), 60*time.Second, hostUncachedClient, "central-landscaper")
+			return nil
+		})
+	}
 
 	eg.Go(func() error {
 		healthChecker := healthcheck.NewHealthChecker(o.Config.LsDeployments, hostUncachedClient)
