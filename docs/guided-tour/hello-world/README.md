@@ -11,7 +11,7 @@ For prerequisites, see [here](../README.md).
 
 Our [hello-world Helm chart](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/hello-world/chart/hello-world) 
 is minimalistic on purpose, in order to concentrate on Landscaper rather than Helm features. Therefore, the chart only 
-deploys a ConfigMap. We have uploaded the chart to a [public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0) 
+deploys a ConfigMap. We have uploaded the chart to a [public registry](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:1.0.0) 
 from where the Landscaper reads it during the deployment.
 
 ## Procedure

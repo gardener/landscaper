@@ -29,9 +29,9 @@ fi
 # this is the default that we fall back on in case the version information is not maintained
 # in the blueprint file
 blueprints=(
-  "eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/ingress-nginx;./docs/tutorials/resources/ingress-nginx/blueprint;v0.2.1"
-  "eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server;./docs/tutorials/resources/echo-server/blueprint;v0.1.1"
-  "eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated;./docs/tutorials/resources/aggregated/blueprint;v0.1.1"
+  "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/blueprints/ingress-nginx;./docs/tutorials/resources/ingress-nginx/blueprint;v0.2.1"
+  "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/blueprints/echo-server;./docs/tutorials/resources/echo-server/blueprint;v0.1.1"
+  "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/blueprints/simple-aggregated;./docs/tutorials/resources/aggregated/blueprint;v0.1.1"
 )
 component_descriptors=(
   "./docs/tutorials/resources/ingress-nginx"

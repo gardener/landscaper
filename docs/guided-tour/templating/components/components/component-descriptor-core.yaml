@@ -9,7 +9,7 @@ component:
     type: OCIRegistry
   resources:
   - access:
-      imageReference: eu.gcr.io/gardener-project/landscaper/examples/images/image-a:1.0.0
+      imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/images/image-a:1.0.0
       type: ociArtifact
     labels:
     - name: landscaper.gardener.cloud/guided-tour/type
@@ -19,7 +19,7 @@ component:
     type: ociImage
     version: 1.0.0
   - access:
-      imageReference: eu.gcr.io/gardener-project/landscaper/examples/images/image-b:1.0.0
+      imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/images/image-b:1.0.0
       type: ociArtifact
     labels:
     - name: landscaper.gardener.cloud/guided-tour/auxiliary

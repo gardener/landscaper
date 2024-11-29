@@ -44,7 +44,7 @@ To give an example, we build a component version for an echo server. It has the 
 - A blueprint, which you can find [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/components/helm-chart/blueprint), 
   and which will be stored as local resource together with the component descriptor.
 - A Helm chart, which you can find [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/components/helm-chart/chart/echo-server). 
-  We have uploaded it [in an OCI registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server).
+  We have uploaded it [in an OCI registry](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/guided-tour/echo-server).
   It will be an external resource of our component version.
 - The Docker image [hashicorp/http-echo](https://hub.docker.com/r/hashicorp/http-echo). It will be another external resource.
 
@@ -74,7 +74,7 @@ components:
         version: 1.0.0
         access:
           type: ociArtifact
-          imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+          imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/guided-tour/echo-server:1.0.0
       - name: echo-server-image
         type: ociImage
         version: v0.2.3
@@ -113,7 +113,7 @@ in our public OCI registry. You can download the component version from there wi
 you its file system representation:
 
 ```
-ocm download componentversions eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0 -O <your location on the file system>
+ocm download componentversions europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples//github.com/gardener/landscaper-examples/guided-tour/helm-chart:1.0.0 -O <your location on the file system>
 ```
 
 [Here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/components/component) you can see the 
@@ -152,7 +152,7 @@ spec:
     kind: Context
     repositoryContext:
       type: ociRegistry
-      baseUrl: eu.gcr.io/gardener-project/landscaper/examples
+      baseUrl: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples
     ```
 
 - The fields `componentDescriptor.ref.componentName` and `componentDescriptor.ref.version` are then used to locate the
@@ -185,7 +185,7 @@ resources:
     version: 1.0.0
     access:
       type: ociArtifact
-      imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+      imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/guided-tour/echo-server:1.0.0
 ```
 
 In the [deploy item template](./blueprint/deploy-execution.yaml), we reference this resource of the component version 
