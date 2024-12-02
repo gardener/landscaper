@@ -21,7 +21,7 @@ echo "target cluster kubeconfig: ${TARGET_CLUSTER_KUBECONFIG_PATH_1}"
 outputFile="${TMP_DIR}/target-1.yaml"
 export name="my-cluster-1"
 export namespace="${NAMESPACE}"
-export kubeconfig=`sed 's/^/      /' TARGET_CLUSTER_KUBECONFIG_PATH_1`
+export kubeconfig=`sed 's/^/      /' ${TARGET_CLUSTER_KUBECONFIG_PATH_1}`
 inputFile="${COMPONENT_DIR}/installation/target.yaml.tpl"
 envsubst < ${inputFile} > ${outputFile}
 kubectl apply -f "${outputFile}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
@@ -31,7 +31,7 @@ echo "target cluster kubeconfig: ${TARGET_CLUSTER_KUBECONFIG_PATH_2}"
 outputFile="${TMP_DIR}/target-2.yaml"
 export name="my-cluster-2"
 export namespace="${NAMESPACE}"
-export kubeconfig=`sed 's/^/      /' TARGET_CLUSTER_KUBECONFIG_PATH_2`
+export kubeconfig=`sed 's/^/      /' ${TARGET_CLUSTER_KUBECONFIG_PATH_2}`
 inputFile="${COMPONENT_DIR}/installation/target.yaml.tpl"
 envsubst < ${inputFile} > ${outputFile}
 kubectl apply -f "${outputFile}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
@@ -39,6 +39,6 @@ kubectl apply -f "${outputFile}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PAT
 echo "creating installation"
 outputFile="${TMP_DIR}/installation.yaml.tpl"
 export namespace="${NAMESPACE}"
-inputFile=""${COMPONENT_DIR}/installation/installation.yaml.tpl"
+inputFile="${COMPONENT_DIR}/installation/installation.yaml.tpl"
 envsubst < ${inputFile} > ${outputFile}
-kubectl apply -f ${outputFile} --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"
+kubectl apply -f "${outputFile}" --kubeconfig="${RESOURCE_CLUSTER_KUBECONFIG_PATH}"

@@ -128,7 +128,9 @@ The following additional functions are available:
 - **`readDir(path string): []FileInfo`**
   returns all files and directories in the given directory of the blueprint's filesystem.
 - **`toYaml(interface{}): string`**
-  converts the given object to valid yaml
+  converts the given object to valid yaml.
+- **`fromYaml(string): interface{}`**
+  unmarshals a given yaml string into an object.
 - **`getResource(ComponentDescriptor, keyValuePairs ...string): GlobalIdentity`**
   searches a resource in the given component descriptors that matches the specified selector. The selector are key-value pairs that describe the resource's identity.
   e.g. `getResource .cd "name" "myResource"` -> returns the resource with the name `myResource`

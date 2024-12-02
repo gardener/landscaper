@@ -57,7 +57,7 @@ hello-world-default-deploy-item-tslq8   landscaper.gardener.cloud/helm   Progres
 status:
   lastError:
     message: 'Op: TemplateChart - Reason: GetHelmChart - Message: unable to get manifest:
-      eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5: not
+      europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:0.0.5: not
       found'
   phase: Progressing
 ```
@@ -71,7 +71,7 @@ and DeployItems, together with status information:
     Last error: execution example / hello-world is not finished yet
     └── [🏗️ Progressing] DeployItem hello-world-default-deploy-item-tslq8
         Last error: Op: TemplateChart - Reason: GetHelmChart - Message: unable to get manifest: 
-        eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:0.0.5: not found
+        europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:0.0.5: not found
 ```
 
 After a few minutes, the DeployItem and the Installation will fail due to a timeout. In this example, we have set the 

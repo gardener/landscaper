@@ -70,7 +70,7 @@ var _ = Describe("GetChart", func() {
 
 	Context("FromOCIRegistry", func() {
 		It("should resolve a chart from public readable helm ociClient artifact", func() {
-			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0"
+			ref := "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/charts/ingress-nginx:3.29.0"
 
 			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}}, ref, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
@@ -78,7 +78,7 @@ var _ = Describe("GetChart", func() {
 		})
 
 		It("should resolve a legacy chart from public readable helm ociClient artifact", func() {
-			ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
+			ref := "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/charts/ingress-nginx:v3.29.0"
 
 			chart, err := getChartFromOCIRef(ctx, nil, &lsv1alpha1.Context{ContextConfiguration: lsv1alpha1.ContextConfiguration{}},
 				ref, nil, nil)
@@ -103,7 +103,7 @@ var _ = Describe("GetChart", func() {
 
 			// fetch a 1. time
 			chartAccess1 := &helmv1alpha1.Chart{
-				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
+				Ref: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/charts/ingress-nginx:v3.29.0",
 			}
 
 			chart1, err := GetChart(ctx, chartAccess1, nil,
@@ -161,7 +161,7 @@ var _ = Describe("GetChart", func() {
 			time.Sleep(time.Duration(10) * time.Millisecond)
 
 			chartAccess4 := &helmv1alpha1.Chart{
-				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17",
+				Ref: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/charts/ingress-nginx:4.0.17",
 			}
 
 			chart4, err := GetChart(ctx, chartAccess4, nil,
@@ -188,7 +188,7 @@ var _ = Describe("GetChart", func() {
 			newMaxSize := int64(100000)
 			helmChartCache.SetMaxSizeInByte(newMaxSize)
 			chartAccess5 := &helmv1alpha1.Chart{
-				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.18",
+				Ref: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/charts/ingress-nginx:4.0.18",
 			}
 
 			_, err = GetChart(ctx, chartAccess5, nil,

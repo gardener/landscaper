@@ -47,6 +47,6 @@ spec:
                       namespace: example
                       createNamespace: true
                       chart:
-                        ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0  # version exists
+                        ref: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:1.0.0  # version exists
                       values:
                         testData: hello

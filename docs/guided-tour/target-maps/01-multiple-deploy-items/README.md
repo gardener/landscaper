@@ -17,7 +17,7 @@ a config map on the target cluster specified by one of the input targets. The da
 corresponding data provided as another import.
 
 The example component version is stored 
-[here](https://eu.gcr.io/gardener-project/landscaper/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-deploy-items). 
+[here](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/guided-tour/targetmaps/guided-tour-multiple-deploy-items). 
 If you want to upload the component version to another registry, you can just adapt the [settings](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/commands/settings) 
 file and execute the component veresion build and upload script [here](https://github.com/gardener/landscaper/blob/master/docs/guided-tour/target-maps/01-multiple-deploy-items/component/commands/component.sh).
 

@@ -49,7 +49,7 @@ The config file specifies:
 
 ```yaml
 component:
-  repositoryBaseUrl: eu.gcr.io/gardener-project/landscaper/examples
+  repositoryBaseUrl: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples
   name: github.com/gardener/landscaper-examples/guided-tour/automation/simple-helm
   version: 1.0.0
 
@@ -74,7 +74,7 @@ items:
       name: echo-server-chart
       access:
         type: ociArtifact
-        imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server-extended:1.0.0
+        imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/guided-tour/echo-server-extended:1.0.0
     images:
       echo-server-image: hashicorp/http-echo:0.2.3
     additionalValues: |
