@@ -59,8 +59,7 @@ The `blueprint.yaml` file describes:
 - generation of subinstallations (again calling some Blueprint with particular input parameters)
 
 The following snippet shows the structure of a `blueprint.yaml` file. 
-Refer to [apis/.schemes/core-v1alpha1-Blueprint.json](../../apis/.schemes/core-v1alpha1-Blueprint.json) 
-for the automatically generated jsonschema definition.
+Refer to [apis/.schemes/core-v1alpha1-Blueprint.json](https://github.com/gardener/landscaper/blob/master/apis/.schemes/core-v1alpha1-Blueprint.json) for the automatically generated jsonschema definition.
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
