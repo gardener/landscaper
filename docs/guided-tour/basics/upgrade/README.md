@@ -12,7 +12,7 @@ For prerequisites see [here](../../README.md).
 
 You can find the new Helm chart [here](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/basics/upgrade/chart/hello-world). It replaces the ConfigMap of the original chart version by
 a Secret. The new chart version can be found in our
-[public registry](https://eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.1).
+[public registry](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:1.0.1).
 
 
 ## Procedure

@@ -31,4 +31,4 @@ ocm transfer ctf --overwrite "${ctf_dir}" "${REPO_BASE_URL}"
 
 
 ## Download
-# ocm download component eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/echo-server:2.2.0 -O ./archive-echo-server
+# ocm download component europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples//github.com/gardener/landscaper-examples/guided-tour/echo-server:2.2.0 -O ./archive-echo-server

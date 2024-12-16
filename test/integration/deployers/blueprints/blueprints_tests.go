@@ -130,7 +130,7 @@ func DeployerBlueprintTests(f *framework.Framework) {
 				ComponentDescriptorName: "github.com/gardener/landscaper/helm-deployer",
 				BlueprintResourceName:   "helm-deployer-blueprint",
 				DeployItem: func(state *envtest.State, target *lsv1alpha1.Target) (*lsv1alpha1.DeployItem, error) {
-					ref := "eu.gcr.io/gardener-project/landscaper/integration-tests/charts/hello-world:1.0.0"
+					ref := "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/integration-tests/charts/hello-world:1.0.0"
 					return helm.NewDeployItemBuilder().
 						Key(state.Namespace, "my-di").
 						Target(target.Namespace, target.Name).

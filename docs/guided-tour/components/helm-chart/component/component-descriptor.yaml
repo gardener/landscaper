@@ -21,7 +21,7 @@ component:
     type: landscaper.gardener.cloud/blueprint
     version: 1.0.0
   - access:
-      imageReference: eu.gcr.io/gardener-project/landscaper/examples/charts/guided-tour/echo-server:1.0.0
+      imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/guided-tour/echo-server:1.0.0
       type: ociArtifact
     digest:
       hashAlgorithm: SHA-256

@@ -27,7 +27,7 @@ We are also building OCI charts so a specific version of Landscaper can be insta
 
 ```
 export LS_VERSION="v0.15.0" # use the latest available version
-helm pull oci://eu.gcr.io/gardener-project/landscaper/charts/landscaper --version $LS_VERSION
+helm pull oci://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/charts/landscaper --version $LS_VERSION
 tar -xvf landscaper-v0.15.0.tgz
 helm install -n ls-system landscaper ./landscaper
 ```

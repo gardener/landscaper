@@ -572,7 +572,7 @@ func buildAndUploadNginxComponentDescriptorWithArtifacts(ctx context.Context, f 
 	resource.Access = &cdv2.UnstructuredTypedObject{}
 	err = resource.Access.UnmarshalJSON([]byte(`{
 	"type": "ociRegistry",
-	"imageReference": "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17"
+	"imageReference": "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/charts/ingress-nginx:4.0.17"
 }
 `))
 	utils.ExpectNoError(err)

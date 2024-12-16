@@ -51,7 +51,7 @@ spec:
                       namespace: example-1
                       createNamespace: true
                       chart:
-                        ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
+                        ref: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:1.0.0
                       values:
                         testData: foo
 
@@ -71,6 +71,6 @@ spec:
                       namespace: example-2
                       createNamespace: true
                       chart:
-                        ref: eu.gcr.io/gardener-project/landscaper/examples/charts/hello-world:1.0.0
+                        ref: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/charts/hello-world:1.0.0
                       values:
                         testData: bar

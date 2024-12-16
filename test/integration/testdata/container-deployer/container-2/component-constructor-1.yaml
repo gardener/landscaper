@@ -17,7 +17,7 @@ components:
         relation: external
         access:
           type: ociRegistry
-          imageReference: eu.gcr.io/gardener-project/landscaper/integration-tests/images/container-deployer:v0.1.0
+          imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/integration-tests/images/container-deployer:v0.1.0
     componentReferences:
       - name: reference
         version: 1.0.0

@@ -30,11 +30,11 @@ ocm create componentarchive ${component_name} ${component_version} --provider ${
     --file "${ca_dir}" --scheme "v2"
 
 ocm add resource "${ca_dir}" --skip-digest-generation --type ociImage --name image-a --version 1.0.0 \
-    --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/images/image-a:1.0.0 \
+    --accessType ociArtifact --reference europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/images/image-a:1.0.0 \
     --label landscaper.gardener.cloud/guided-tour/type='type-a'
 
 ocm add resource "${ca_dir}" --skip-digest-generation --type ociImage --name image-b --version 1.0.0 \
-    --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/images/image-b:1.0.0 \
+    --accessType ociArtifact --reference europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/images/image-b:1.0.0 \
     --label landscaper.gardener.cloud/guided-tour/auxiliary='aux-b'
 
 echo "transferring core component"
@@ -53,11 +53,11 @@ ocm create componentarchive ${component_name} ${component_version} --provider ${
     --file "${ca_dir}" --scheme "v2"
 
 ocm add resource "${ca_dir}" --skip-digest-generation --type ociImage --name image-c --version 1.0.0 \
-    --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/images/image-c:1.0.0 \
+    --accessType ociArtifact --reference europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/images/image-c:1.0.0 \
     --label landscaper.gardener.cloud/guided-tour/auxiliary='aux-c'
 
 ocm add resource "${ca_dir}" --skip-digest-generation --type ociImage --name image-d --version 1.0.0 \
-    --accessType ociArtifact --reference eu.gcr.io/gardener-project/landscaper/examples/images/image-d:1.0.0 \
+    --accessType ociArtifact --reference europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/images/image-d:1.0.0 \
     --label landscaper.gardener.cloud/guided-tour/type='type-d'
 
 echo "transferring extension component"
@@ -75,6 +75,6 @@ ocm transfer ctf --overwrite "${ctf_dir}" "${REPO_BASE_URL}"
 
 
 ## Download
-# ocm download component eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/templating-components-root:2.2.0 -O ./archive-root
-# ocm download component eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/templating-components-core:2.2.0 -O ./archive-core
-# ocm download component eu.gcr.io/gardener-project/landscaper/examples//github.com/gardener/landscaper-examples/guided-tour/templating-components-extension:2.2.0 -O ./archive-ext
+# ocm download component europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples//github.com/gardener/landscaper-examples/guided-tour/templating-components-root:2.2.0 -O ./archive-root
+# ocm download component europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples//github.com/gardener/landscaper-examples/guided-tour/templating-components-core:2.2.0 -O ./archive-core
+# ocm download component europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples//github.com/gardener/landscaper-examples/guided-tour/templating-components-extension:2.2.0 -O ./archive-ext
