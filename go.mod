@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/containerd/containerd v1.7.18
-	github.com/docker/cli v26.1.5+incompatible
+	github.com/docker/cli v27.3.1+incompatible
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.98
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
