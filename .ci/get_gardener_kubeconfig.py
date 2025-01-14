@@ -7,7 +7,7 @@
 import tempfile
 import yaml
 
-from util import ctx
+from ci.util import ctx
 
 factory = ctx().cfg_factory()
 landscape_kubeconfig = factory.kubernetes("landscaper-integration-test")
