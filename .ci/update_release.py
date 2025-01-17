@@ -31,7 +31,7 @@ github_api = ccc.github.github_api(github_cfg)
 github_repo_helper = GitHubRepositoryHelper(
     owner=repo_owner,
     name=repo_name,
-    github_cfg=github_cfg,
+    github_api=github_api,
 )
 
 gh_release = github_repo_helper.repository.release_from_tag(version_file_contents)
