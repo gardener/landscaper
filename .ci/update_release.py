@@ -5,6 +5,7 @@ from ci.util import (
     check_env,
     ctx,
 )
+import ccc.github
 
 import os
 
@@ -25,6 +26,7 @@ version_file_contents = version_file_path.read_text()
 
 cfg_factory = ctx().cfg_factory()
 github_cfg = cfg_factory.github('github_com')
+github_api = ccc.github.github_api(github_cfg)
 
 github_repo_helper = GitHubRepositoryHelper(
     owner=repo_owner,
