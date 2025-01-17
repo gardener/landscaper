@@ -3,12 +3,11 @@ module github.com/gardener/landscaper/controller-utils
 go 1.22.7
 
 require (
-	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/apis v0.124.0
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo v1.14.0
-	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
