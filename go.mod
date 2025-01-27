@@ -1,8 +1,6 @@
 module github.com/gardener/landscaper
 
-go 1.22.7
-
-toolchain go1.23.5
+go 1.23.5
 
 require (
 	dario.cat/mergo v1.0.1
@@ -22,7 +20,7 @@ require (
 	github.com/mandelsoft/goutils v0.0.0-20241005173814-114fa825bbdc
 	github.com/mandelsoft/spiff v1.7.0-beta-5
 	github.com/mandelsoft/vfs v0.4.3
-	github.com/onsi/ginkgo/v2 v2.22.2
+	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/open-component-model/ocm v0.11.0
