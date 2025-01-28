@@ -44,11 +44,15 @@ func NewManifestDeployerControllerCommand(ctx context.Context) *cobra.Command {
 
 func (o *options) run(ctx context.Context) error {
 	o.DeployerOptions.Log.Info("Starting Manifest Deployer", lc.KeyVersion, version.Get().GitVersion)
+
+	callerName := "manifest"
+	controllerName := "deployitem"
+
 	if err := manifestctlr.AddDeployerToManager(
 		o.DeployerOptions.LsUncachedClient, o.DeployerOptions.LsCachedClient, o.DeployerOptions.HostUncachedClient, o.DeployerOptions.HostCachedClient,
 		o.DeployerOptions.FinishedObjectCache,
 		o.DeployerOptions.Log, o.DeployerOptions.LsMgr,
-		o.DeployerOptions.HostMgr, o.Config, "manifest"); err != nil {
+		o.DeployerOptions.HostMgr, o.Config, callerName, controllerName); err != nil {
 		return fmt.Errorf("unable to setup manifest controller")
 	}
 

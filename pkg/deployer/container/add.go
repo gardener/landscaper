@@ -23,7 +23,7 @@ import (
 func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	finishedObjectCache *utils.FinishedObjectCache,
 	logger logging.Logger, hostMgr, lsMgr manager.Manager, config containerv1alpha1.Configuration,
-	callerName string) (*GarbageCollector, error) {
+	callerName, controllerName string) (*GarbageCollector, error) {
 	log := logger.WithName("container")
 
 	lockingEnabled := config.HPAConfiguration != nil && config.HPAConfiguration.MaxReplicas > 1
@@ -63,7 +63,7 @@ func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient
 			Deployer:        containerDeployer,
 			TargetSelectors: config.TargetSelector,
 			Options:         options,
-		}, config.Controller.Workers, lockingEnabled, callerName)
+		}, config.Controller.Workers, lockingEnabled, callerName, controllerName)
 	if err != nil {
 		return nil, err
 	}

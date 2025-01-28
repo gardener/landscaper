@@ -26,7 +26,7 @@ import (
 func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	finishedObjectCache *utils.FinishedObjectCache,
 	logger logging.Logger, lsMgr, hostMgr manager.Manager, config mockv1alpha1.Configuration,
-	callerName string) error {
+	callerName, controllerName string) error {
 	log := logger.WithName("mock")
 
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()))
@@ -54,7 +54,7 @@ func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, 
 			Type:            Type,
 			Deployer:        d,
 			TargetSelectors: config.TargetSelector,
-		}, 5, false, callerName)
+		}, 5, false, callerName, controllerName)
 }
 
 // NewController creates a new simple controller.

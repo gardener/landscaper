@@ -148,10 +148,16 @@ var _ = Describe("Template", func() {
 				NewClient: lsutils.NewUncachedClient(lsutils.LsResourceClientBurstDefault, lsutils.LsResourceClientQpsDefault),
 			})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(helm.AddDeployerToManager(mgr.GetClient(), mgr.GetClient(), mgr.GetClient(), mgr.GetClient(),
+
+			counter := utils.GetNextCounter()
+			callerName := fmt.Sprintf("helmintegration%s", counter)
+			controllerName := fmt.Sprintf("helm-testcontroller-%s", counter)
+
+			Expect(helm.AddDeployerToManager(
+				mgr.GetClient(), mgr.GetClient(), mgr.GetClient(), mgr.GetClient(),
 				lsutils.NewFinishedObjectCache(),
 				logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{},
-				"helmintegration"+utils.GetNextCounter())).To(Succeed())
+				callerName, controllerName)).To(Succeed())
 
 			timeout.ActivateStandardTimeoutChecker()
 

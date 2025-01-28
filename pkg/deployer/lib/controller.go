@@ -93,7 +93,8 @@ func (args DeployerArgs) Validate() error {
 // Add adds a deployer to the given managers using the given args.
 func Add(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	finishedObjectCache *lsutil.FinishedObjectCache,
-	log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, lockingEnabled bool, callerName string) error {
+	log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs, maxNumberOfWorkers int, lockingEnabled bool,
+	callerName, controllerName string) error {
 
 	args.Default()
 	if err := args.Validate(); err != nil {
@@ -113,6 +114,7 @@ func Add(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient 
 	log = log.Reconciles("", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
 
 	return builder.ControllerManagedBy(lsMgr).
+		Named(controllerName).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type)), builder.OnlyMetadata).
 		WithOptions(args.Options).
 		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).

@@ -20,10 +20,11 @@ import (
 )
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
-func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+func AddDeployerToManager(
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	finishedObjectCache *utils.FinishedObjectCache,
 	logger logging.Logger, lsMgr, hostMgr manager.Manager,
-	config helmv1alpha1.Configuration, callerName string) error {
+	config helmv1alpha1.Configuration, callerName, controllerName string) error {
 	log := logger.WithName("helm")
 
 	lockingEnabled := config.HPAConfiguration != nil && config.HPAConfiguration.MaxReplicas > 1
@@ -61,5 +62,5 @@ func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, 
 			Deployer:        d,
 			TargetSelectors: config.TargetSelector,
 			Options:         options,
-		}, config.Controller.Workers, lockingEnabled, callerName)
+		}, config.Controller.Workers, lockingEnabled, callerName, controllerName)
 }
