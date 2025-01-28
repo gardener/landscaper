@@ -154,7 +154,9 @@ func (o *Options) startMainController(ctx context.Context,
 	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	lsMgr, hostMgr manager.Manager, ctrlLogger, setupLogger logging.Logger) error {
 
-	if err := installationsctrl.AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
+	controllerName := "installation"
+	if err := installationsctrl.AddControllerToManager(controllerName,
+		lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient,
 		ctrlLogger, lsMgr, o.Config, "installations"); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
