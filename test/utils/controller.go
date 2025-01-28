@@ -241,8 +241,12 @@ func (c *MimicKCMSecretController) Reconcile(ctx context.Context, req reconcile.
 }
 
 // AddMimicKCMSecretControllerToManager adds the mock kcm controller to a manager.
-func AddMimicKCMSecretControllerToManager(mgr manager.Manager) error {
-	return controllerruntime.NewControllerManagedBy(mgr).For(&corev1.Secret{}).Complete(&MimicKCMSecretController{
-		client: mgr.GetClient(),
-	})
+func AddMimicKCMSecretControllerToManager(mgr manager.Manager, controllerName string) error {
+	return controllerruntime.NewControllerManagedBy(mgr).
+		Named(controllerName).
+		For(&corev1.Secret{}).
+		Complete(&MimicKCMSecretController{
+			client: mgr.GetClient(),
+		},
+		)
 }

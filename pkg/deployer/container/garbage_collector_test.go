@@ -48,6 +48,7 @@ var _ = Describe("GarbageCollector", func() {
 		gc        *containerctlr.GarbageCollector
 		ctx       context.Context
 		cancel    context.CancelFunc
+		counter   int = 0
 	)
 
 	BeforeEach(func() {
@@ -83,7 +84,9 @@ var _ = Describe("GarbageCollector", func() {
 				RequeueTimeSeconds: 1,
 			}, false)
 
-		Expect(testutils.AddMimicKCMSecretControllerToManager(hostMgr)).To(Succeed())
+		controllerName := fmt.Sprintf("container-gc-testcontroller-%d", counter)
+		counter++
+		Expect(testutils.AddMimicKCMSecretControllerToManager(hostMgr, controllerName)).To(Succeed())
 
 		go func() {
 			Expect(lsMgr.Start(ctx)).To(Succeed())
