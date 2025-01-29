@@ -24,7 +24,8 @@ import (
 )
 
 // AddControllerToManager register the installation Controller in a manager.
-func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
+func AddControllerToManager(controllerName string,
+	lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	logger logging.Logger, lsMgr manager.Manager, config *config.LandscaperConfiguration, callerName string) error {
 
 	log := logger.Reconciles("installation", "Installation")
@@ -58,6 +59,7 @@ func AddControllerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient
 	}
 
 	return builder.ControllerManagedBy(lsMgr).
+		Named(controllerName).
 		For(&v1alpha1.Installation{}, builder.OnlyMetadata).
 		Owns(&v1alpha1.Execution{}, builder.OnlyMetadata).
 		Owns(&v1alpha1.Installation{}, builder.OnlyMetadata).

@@ -24,7 +24,7 @@ import (
 func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, hostCachedClient client.Client,
 	finishedObjectCache *utils.FinishedObjectCache,
 	logger logging.Logger, lsMgr, hostMgr manager.Manager, config manifestv1alpha2.Configuration,
-	callerName string) error {
+	callerName, controllerName string) error {
 	log := logger.WithName("k8sManifest")
 
 	lockingEnabled := config.HPAConfiguration != nil && config.HPAConfiguration.MaxReplicas > 1
@@ -64,5 +64,5 @@ func AddDeployerToManager(lsUncachedClient, lsCachedClient, hostUncachedClient, 
 			Deployer:        d,
 			TargetSelectors: config.TargetSelector,
 			Options:         options,
-		}, config.Controller.Workers, lockingEnabled, callerName)
+		}, config.Controller.Workers, lockingEnabled, callerName, controllerName)
 }

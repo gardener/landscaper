@@ -79,9 +79,13 @@ var _ = Describe("Template", func() {
 		})
 		Expect(err).ToNot(HaveOccurred())
 
+		counter := utils.GetNextCounter()
+		callerName := fmt.Sprintf("template-%s", counter)
+		controllerName := fmt.Sprintf("container-testcontroller-%s", counter)
+
 		_, err = containerctlr.AddControllerToManager(mgr.GetClient(), mgr.GetClient(), mgr.GetClient(), mgr.GetClient(),
 			lsutils.NewFinishedObjectCache(), logging.Discard(), mgr, mgr,
-			containerv1alpha1.Configuration{}, "template-"+utils.GetNextCounter())
+			containerv1alpha1.Configuration{}, callerName, controllerName)
 		Expect(err).To(BeNil())
 
 		state, err = testenv.InitState(ctx)
