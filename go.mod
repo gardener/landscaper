@@ -31,7 +31,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v4 v4.24.12
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.32.0
 	golang.org/x/sync v0.10.0
