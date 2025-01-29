@@ -8,6 +8,7 @@ require (
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/containerd/containerd v1.7.24
 	github.com/docker/cli v27.3.1+incompatible
+	github.com/distribution/reference v0.6.0
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.98
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
@@ -17,7 +18,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
-	github.com/mandelsoft/goutils v0.0.0-20241005173814-114fa825bbdc
+	github.com/mandelsoft/goutils v0.0.0-20241227142622-83a787399095
 	github.com/mandelsoft/spiff v1.7.0-beta-6
 	github.com/mandelsoft/vfs v0.4.4
 	github.com/onsi/ginkgo v1.16.5
@@ -28,7 +29,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v4 v4.24.9
+	github.com/shirou/gopsutil/v4 v4.24.12
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -44,7 +45,7 @@ require (
 	k8s.io/code-generator v0.32.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	ocm.software/ocm v0.19.1
-	sigs.k8s.io/controller-runtime v0.20.0
+	sigs.k8s.io/controller-runtime v0.20.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -133,6 +134,8 @@ require (
 	github.com/cloudflare/circl v1.5.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
+	github.com/containerd/containerd v1.7.17 // indirect
+	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
@@ -148,7 +151,6 @@ require (
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
-	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker v27.3.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
@@ -158,8 +160,8 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/drone/envsubst v1.0.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/ebitengine/purego v0.8.0 // indirect
 	github.com/elliotchance/orderedmap v1.6.0 // indirect
+	github.com/ebitengine/purego v0.8.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/evanphx/json-patch v5.9.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
@@ -376,7 +378,6 @@ require (
 	k8s.io/component-base v0.32.1 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240911193312-2b36238f13e9 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	k8s.io/kubectl v0.31.1 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect

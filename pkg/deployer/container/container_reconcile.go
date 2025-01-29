@@ -11,11 +11,12 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/distribution/reference"
+
 	"github.com/gardener/landscaper/pkg/components/model"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	dockerreference "github.com/containerd/containerd/reference/docker"
 	dockerconfig "github.com/docker/cli/cli/config"
 	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/types"
@@ -454,12 +455,12 @@ func (c *Container) syncSecrets(ctx context.Context,
 		return "", nil
 	}
 
-	imageref, err := dockerreference.ParseDockerRef(imageReference)
+	imageref, err := reference.ParseDockerRef(imageReference)
 	if err != nil {
 		return "", fmt.Errorf("not a valid imageReference reference %s: %w", imageReference, err)
 	}
 
-	host := dockerreference.Domain(imageref)
+	host := reference.Domain(imageref)
 	// this is how containerd translates the old domain for DockerHub to the new one, taken from containerd/reference/docker/reference.go:674
 	if host == dockerHubDomain {
 		host = dockerHubLegacyDomain
