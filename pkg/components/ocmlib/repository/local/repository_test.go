@@ -12,14 +12,14 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/open-component-model/ocm/pkg/env/builder"
-	. "github.com/open-component-model/ocm/pkg/testutils"
+	. "ocm.software/ocm/api/helper/builder"
+	. "ocm.software/ocm/api/utils"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository/local"
 
-	tenv "github.com/open-component-model/ocm/pkg/env"
-	"github.com/open-component-model/ocm/pkg/runtime"
+	tenv "ocm.software/ocm/api/helper/env"
+	"ocm.software/ocm/api/utils/runtime"
 )
 
 const (

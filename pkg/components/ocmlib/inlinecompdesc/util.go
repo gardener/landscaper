@@ -5,7 +5,7 @@
 package inlinecompdesc
 
 import (
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
+	"ocm.software/ocm/api/ocm/compdesc"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )

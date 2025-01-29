@@ -6,13 +6,13 @@ package inline
 
 import (
 	"encoding/json"
+	"errors"
 
 	. "github.com/mandelsoft/goutils/exception"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
-	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/runtime"
+	"ocm.software/ocm/api/ocm/cpi"
+	"ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 )

@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 
-	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
+	v2 "ocm.software/ocm/api/ocm/compdesc/versions/v2"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
