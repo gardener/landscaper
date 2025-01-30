@@ -48,10 +48,7 @@ func (c *InlineCompDesc) Expand() error {
 // expand is an auxiliary method to transparently pass the root Inline Component Descriptor. This allows to build a
 // flat list of all involved Component Descriptors while traversing the references
 func (c *InlineCompDesc) expand(root *InlineCompDesc) error {
-	refs, err := c.ComponentDescriptor.GetComponentReferences()
-	if err != nil {
-		return err
-	}
+	refs := c.ComponentDescriptor.GetReferences()
 	for _, ref := range refs {
 		label, exists := ref.GetLabels().Get(lsv1alpha1.InlineComponentDescriptorLabel)
 		if exists {
