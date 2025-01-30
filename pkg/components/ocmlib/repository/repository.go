@@ -10,20 +10,20 @@ import (
 	"path"
 	"sync"
 
-	"github.com/open-component-model/ocm/pkg/blobaccess"
+	"ocm.software/ocm/api/utils/blobaccess"
 
-	"github.com/open-component-model/ocm/pkg/mime"
-	"github.com/open-component-model/ocm/pkg/utils/tarutils"
+	"ocm.software/ocm/api/utils/mime"
+	"ocm.software/ocm/api/utils/tarutils"
 
+	"github.com/mandelsoft/goutils/errors"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
-	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/common/accessio"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/accessmethods/localblob"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/cpi"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/repositories/virtual"
-	"github.com/open-component-model/ocm/pkg/errors"
+	"ocm.software/ocm/api/ocm/compdesc"
+	"ocm.software/ocm/api/ocm/cpi"
+	"ocm.software/ocm/api/ocm/extensions/accessmethods/localblob"
+	"ocm.software/ocm/api/ocm/extensions/repositories/virtual"
+	"ocm.software/ocm/api/utils/accessio"
+	common "ocm.software/ocm/api/utils/misc"
 )
 
 type Index = virtual.Index[any]

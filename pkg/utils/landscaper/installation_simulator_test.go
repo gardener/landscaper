@@ -15,9 +15,9 @@ import (
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"ocm.software/ocm/api/datacontext"
+	"ocm.software/ocm/api/ocm"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/config"

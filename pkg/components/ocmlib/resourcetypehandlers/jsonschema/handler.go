@@ -9,8 +9,8 @@ import (
 	"context"
 
 	"github.com/mandelsoft/goutils/finalizer"
-	"github.com/open-component-model/ocm/pkg/common/compression"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"ocm.software/ocm/api/ocm"
+	"ocm.software/ocm/api/utils/compression"
 
 	"github.com/gardener/landscaper/apis/mediatype"
 	"github.com/gardener/landscaper/pkg/components/model"

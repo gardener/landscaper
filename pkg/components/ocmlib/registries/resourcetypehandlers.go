@@ -8,7 +8,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"ocm.software/ocm/api/ocm"
 
 	"github.com/gardener/landscaper/pkg/components/model"
 )

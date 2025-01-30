@@ -9,11 +9,11 @@ import (
 	"fmt"
 
 	"github.com/gardener/component-spec/bindings-go/codec"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
-	_ "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
-	ocmruntime "github.com/open-component-model/ocm/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime"
+	"ocm.software/ocm/api/ocm/compdesc"
+	_ "ocm.software/ocm/api/ocm/compdesc/versions/ocm.software/v3alpha1"
+	_ "ocm.software/ocm/api/ocm/compdesc/versions/v2"
+	ocmruntime "ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
