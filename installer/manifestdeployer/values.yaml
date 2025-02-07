@@ -1,0 +1,50 @@
+values:
+  nameOverride: manifest-deployer
+  fullnameOverride: manifest-{{ .imports.hostingClusterNamespace }}-manifest-deployer
+
+  identity: manifest-{{ .imports.hostingClusterNamespace }}
+
+  deployer:
+    verbosityLevel: {{ .imports.landscaperConfig.landscaper.verbosity | default "info" }}
+    {{- if (dig "landscaperConfig" "deployersConfig" "manifest" "deployer" "controller" false .imports) }}
+    controller:
+    {{- toYaml .imports.landscaperConfig.deployersConfig.manifest.deployer.controller | nindent 12 }}
+    {{- end }}
+    landscaperClusterKubeconfig:
+      kubeconfig: |
+  {{ .imports.landscaperControllerKubeconfigYaml | indent 14 }}
+
+    {{- if (dig "landscaperConfig" "deployersConfig" "manifest" "deployer" "k8sClientSettings" false .imports) }}
+  k8sClientSettings:
+    {{- toYaml .imports.landscaperConfig.deployersConfig.manifest.deployer.k8sClientSettings | nindent 12 }}
+    {{- end }}
+
+  image:
+    {{ $image := getResource $manifestDeployerComponent "name" "manifest-deployer-image" }}
+      {{ $imageRepo := ociRefRepo $image.access.imageReference }}
+      {{ $imageTag := ociRefVersion $image.access.imageReference }}
+      repository: {{ $imageRepo }}
+      tag: {{ $imageTag }}
+      pullPolicy: IfNotPresent
+
+    {{- if (dig "landscaperConfig" "deployersConfig" "manifest" "resources" false .imports) }}
+  resources:
+    {{- toYaml .imports.landscaperConfig.deployersConfig.manifest.resources | nindent 10 }}
+    {{- end }}
+
+    {{- if (dig "landscaperConfig" "deployersConfig" "manifest" "hpa" false .imports) }}
+  hpa:
+    {{- if (dig "landscaperConfig" "deployersConfig" "manifest" "hpa" "maxReplicas" false .imports) }}
+    maxReplicas: {{ .imports.landscaperConfig.deployersConfig.manifest.hpa.maxReplicas }}
+    {{- end }}
+    {{- if (dig "landscaperConfig" "deployersConfig" "manifest" "hpa" "averageCpuUtilization" false .imports) }}
+    averageCpuUtilization: {{ .imports.landscaperConfig.deployersConfig.manifest.hpa.averageCpuUtilization }}
+    {{- end }}
+    {{- if (dig "landscaperConfig" "deployersConfig" "manifest" "hpa" "averageMemoryUtilization" false .imports) }}
+    averageMemoryUtilization: {{ .imports.landscaperConfig.deployersConfig.manifest.hpa.averageMemoryUtilization }}
+    {{- end }}
+    {{- end }}
+
+    {{- if (dig "landscaperConfig" "landscaper" "useOCMLib" false .imports) }}
+  useOCMLib: true
+    {{- end }}
