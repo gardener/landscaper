@@ -371,8 +371,8 @@ github.com/fvbommel/sortorder v1.1.0 h1:fUmoe+HLsBTctBDoaBwpQo5N+nrCp8g/BjKb/6ZQ
 github.com/fvbommel/sortorder v1.1.0/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui720w+kxuqRs0=
 github.com/fxamacker/cbor/v2 v2.7.0 h1:iM5WgngdRBanHcxugY4JySA0nk1wZorNOpTgCMedv5E=
 github.com/fxamacker/cbor/v2 v2.7.0/go.mod h1:pxXPTn3joSm21Gbwsv0w9OSA2y1HFR9qXEeXQVeNoDQ=
-github.com/gardener/component-cli v0.44.0 h1:19w703QNyV0VRhoqbRv6NgibK/t6OZxoLqkBWO/JrFM=
-github.com/gardener/component-cli v0.44.0/go.mod h1:TMYFZYiopyvbgVzaMALgUcJvup3LP/qOl/NQpS7uvjM=
+github.com/gardener/component-cli v0.55.0 h1:Qda3NAdfItMbFGpvHf/sRvZ2/7B3cxWFvO1m+T2AN8I=
+github.com/gardener/component-cli v0.55.0/go.mod h1:IcDgykOfbPSqWs8yovnAGYOAU3xPbrS4St+iVxrOU94=
 github.com/gardener/component-spec/bindings-go v0.0.98 h1:noougWGxAQHr3ipqA2vbZ3qwodZ7wWX24QTD+zcZf7M=
 github.com/gardener/component-spec/bindings-go v0.0.98/go.mod h1:qr7kADDXbXB0huul+ih/B43YkwyiMFYQepp/tqJ331c=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
