@@ -10,8 +10,8 @@ require (
 	github.com/docker/cli v26.1.5+incompatible
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.98
-	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
-	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/apis v0.127.0
+	github.com/gardener/landscaper/controller-utils v0.127.0
 	github.com/go-logr/logr v1.4.2
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
@@ -77,7 +77,6 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/Microsoft/hcsshim v0.12.3 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/ThalesIgnite/crypto11 v1.2.5 // indirect
 	github.com/alibabacloud-go/alibabacloud-gateway-spi v0.0.4 // indirect
@@ -329,7 +328,6 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.34.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
-	go.starlark.net v0.0.0-20231121155337-90ade8b19d09 // indirect
 	go.step.sm/crypto v0.44.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
