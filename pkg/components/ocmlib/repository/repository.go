@@ -167,8 +167,8 @@ func (v *ComponentVersionAccess) AddBlob(blob cpi.BlobAccess) (string, error) {
 	return "", accessio.ErrReadOnly
 }
 
-func (v *ComponentVersionAccess) Update() error {
-	return nil
+func (v *ComponentVersionAccess) Update() (bool, error) {
+	return false, nil
 }
 
 func (v *ComponentVersionAccess) Close() error {

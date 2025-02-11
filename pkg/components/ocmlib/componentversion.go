@@ -11,6 +11,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"ocm.software/ocm/api/ocm"
+	"ocm.software/ocm/api/ocm/selectors/rscsel"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
@@ -79,7 +80,7 @@ func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, re
 }
 
 func (c *ComponentVersion) GetResource(name string, identity map[string]string) (model.Resource, error) {
-	resources, err := c.componentVersionAccess.GetResourcesByName(name, cdv2.Identity(identity))
+	resources, err := c.componentVersionAccess.SelectResources(rscsel.Name(name), rscsel.Identity(identity))
 	if err != nil {
 		return nil, err
 	}

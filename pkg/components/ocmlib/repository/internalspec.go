@@ -37,6 +37,10 @@ type RepositorySpec struct {
 	BlobDirPath     string
 }
 
+func (s *RepositorySpec) Validate(ctx cpi.Context, creds credentials.Credentials, context ...credentials.UsageContext) error {
+	return nil
+}
+
 func (r RepositorySpec) MarshalJSON() ([]byte, error) {
 	return runtime.MarshalVersionedTypedObject(&r)
 }

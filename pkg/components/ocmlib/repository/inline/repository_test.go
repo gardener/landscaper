@@ -16,6 +16,7 @@ import (
 	. "ocm.software/ocm/api/helper/builder"
 	tenv "ocm.software/ocm/api/helper/env"
 	"ocm.software/ocm/api/ocm/compdesc"
+	"ocm.software/ocm/api/ocm/selectors/rscsel"
 	"ocm.software/ocm/api/utils/runtime"
 	"ocm.software/ocm/api/utils/tarutils"
 
@@ -55,7 +56,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		ref := Must(cv.GetReferenceByIndex(0))
 		refcv := Must(repo.LookupComponentVersion(ref.ComponentName, ref.Version))
 		defer refcv.Close()
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
 		defer acc.Close()
 		data := Must(acc.Get())
@@ -73,7 +74,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		ref := Must(cv.GetReferenceByIndex(0))
 		refcv := Must(repo.LookupComponentVersion(ref.ComponentName, ref.Version))
 		defer refcv.Close()
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
 		defer acc.Close()
 		data := Must(acc.Get())
@@ -92,7 +93,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		memfs := memoryfs.New()
 		r1 := Must(memfs.Create("blob1"))
 		Must(r1.Write(resource1))
-		Must(r1.Close(), nil)
+		MustBeSuccessful(r1.Close())
 
 		repo := Must(repository.NewRepository(env.OCMContext(), repository.NewMemoryCompDescProvider(list), memfs))
 		defer repo.Close()
@@ -101,10 +102,10 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		ref := Must(cv.GetReferenceByIndex(0))
 		refcv := Must(repo.LookupComponentVersion(ref.ComponentName, ref.Version))
 		defer refcv.Close()
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
 		defer acc.Close()
-		data := Must(acc.Get(), nil)
+		data := Must(acc.Get())
 		Expect(string(data)).To(Equal("test"))
 	})
 
@@ -114,7 +115,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
 		defer cv.Close()
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
 		defer acc.Close()
 		bufferA := Must(acc.Get())
@@ -129,7 +130,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
 		defer cv.Close()
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
 		defer acc.Close()
 		data := Must(acc.Reader())

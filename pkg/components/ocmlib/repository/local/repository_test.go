@@ -15,6 +15,8 @@ import (
 	. "github.com/onsi/gomega"
 	. "ocm.software/ocm/api/helper/builder"
 
+	"ocm.software/ocm/api/ocm/selectors/rscsel"
+
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository/local"
 
@@ -77,7 +79,7 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
 		defer cv.Close()
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
 		defer acc.Close()
 		bytesA := Must(acc.Get())
