@@ -13,7 +13,8 @@ import (
 	. "github.com/onsi/gomega"
 	"ocm.software/ocm/api/datacontext"
 	"ocm.software/ocm/api/ocm"
-	. "ocm.software/ocm/api/utils"
+
+	. "github.com/mandelsoft/goutils/testutils"
 	"ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/apis/config"

@@ -702,8 +702,8 @@ github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0
 github.com/mailru/easyjson v0.7.7/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
 github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3 h1:oo9nIgnyiBgYPbcZslRT4y29siuL5EoNJ/t1tr0xEVQ=
 github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3/go.mod h1:LxhqC7khDoRENwooP6f/vWvia9ivj6TqLYrR39zqkN0=
-github.com/mandelsoft/goutils v0.0.0-20241227142622-83a787399095 h1:Vvdz+jvOC7OMSmjcHYgHeNr0CrQmwIZSuoAo0lVcORw=
-github.com/mandelsoft/goutils v0.0.0-20241227142622-83a787399095/go.mod h1:UeYhFI0gRoiTcmZH7VD/Oy5dYz4O8vyOv5tsiBTEUPo=
+github.com/mandelsoft/goutils v0.0.0-20241005173814-114fa825bbdc h1:706IHCvAg6DjmG4cQ24CRNpvNVJ8+KQkcGEdQiLyJbU=
+github.com/mandelsoft/goutils v0.0.0-20241005173814-114fa825bbdc/go.mod h1:9TJgkwSY43RWHiIAAz7fL8SEIHf0L13Pk4w8fDIt+i4=
 github.com/mandelsoft/logging v0.0.0-20240618075559-fdca28a87b0a h1:MAvh0gbP2uwKmf7wWCkYCzrYa6vPjBvYeGhoUlVHwtI=
 github.com/mandelsoft/logging v0.0.0-20240618075559-fdca28a87b0a/go.mod h1:uO460C1lIB3IOOgrbXhAlz3AKsOv4T2K6ALBn3PwuSg=
 github.com/mandelsoft/spiff v1.7.0-beta-6 h1:0h2Si4u73Ys1TDK9MFzwzcsVZTviN3xHWvLk2HGrPLk=

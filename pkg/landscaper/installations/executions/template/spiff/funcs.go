@@ -16,7 +16,7 @@ import (
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"ocm.software/ocm/api/ocm/compdesc/versions/ocm.software/v3alpha1"
-	utils "ocm.software/ocm/api/ocm/ocmutils"
+	"ocm.software/ocm/api/ocm/resourcerefs"
 	"ocm.software/ocm/api/utils/mime"
 	"ocm.software/ocm/api/utils/runtime"
 	"sigs.k8s.io/yaml"
@@ -161,7 +161,7 @@ func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}
 		// which the deployer would forward to the webserver and the webserver determines the root component to resolve
 		// this reference by watching the installation (this way, we would ensure that the deployer can only get
 		// resources from its legitimate component)
-		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
+		resource, resourceCv, err := resourcerefs.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return info.Error("unable to resolve relative resource reference: %w", err)
 		}
@@ -219,7 +219,7 @@ func spiffGetResourceContent(cv model.ComponentVersion) func(arguments []interfa
 			return info.Error(err)
 		}
 
-		resource, _, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
+		resource, _, err := resourcerefs.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return info.Error("unable to resolve relative resource reference: %w", err)
 		}

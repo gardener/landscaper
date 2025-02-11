@@ -15,6 +15,7 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model"
 
 	"github.com/mandelsoft/goutils/errors"
+	. "github.com/mandelsoft/goutils/testutils"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -25,8 +26,7 @@ import (
 	"ocm.software/ocm/api/ocm"
 	helmid "ocm.software/ocm/api/tech/helm/identity"
 	ociid "ocm.software/ocm/api/tech/oci/identity"
-	. "ocm.software/ocm/api/utils"
-	"ocm.software/ocm/api/utils/runtime"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -156,7 +156,7 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		// as this test uses the local repository implementation, it tests that the ocmlib-facade's GetComponentVersion
 		// method can deal with the legacy ComponentDescriptorReference type rather than testing ocmlib functionality
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReference), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
 		})).(*RegistryAccess)
@@ -168,10 +168,10 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		// check that the component descriptor is not altered by the ocmlib-facade
 		compdesc := &types.ComponentDescriptor{}
 		compdescData := Must(vfs.ReadFile(osfs.New(), filepath.Join(LOCALCNUDIEREPOPATH, COMPDESC_V2_FILENAME)))
-		Expect(runtime.DefaultYAMLEncoding.Unmarshal(compdescData, compdesc)).To(Succeed())
+		Expect(yaml.Unmarshal(compdescData, compdesc)).To(Succeed())
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReference), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
 		})).(*RegistryAccess)
@@ -186,10 +186,10 @@ var _ = Describe("ocm-lib facade implementation", func() {
 		// v2 representation
 		compdesc := &types.ComponentDescriptor{}
 		compdescData := Must(vfs.ReadFile(osfs.New(), filepath.Join(LOCALCNUDIEREPOPATH, COMPDESC_V2_FILENAME)))
-		Expect(runtime.DefaultYAMLEncoding.Unmarshal(compdescData, compdesc)).To(Succeed())
+		Expect(yaml.Unmarshal(compdescData, compdesc)).To(Succeed())
 
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReference), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALOCMREPOPATH},
 		})).(*RegistryAccess)
@@ -419,7 +419,7 @@ componentName: example.com/landscaper-component
 version: 1.0.0
 `
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(inlineComponentReference), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{})).(*RegistryAccess)
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 		Expect(cv).NotTo(BeNil())
@@ -509,7 +509,7 @@ componentName: example.com/landscaper-component
 version: 1.0.0
 `
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(inlineComponentReference), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(inlineComponentReference), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{})).(*RegistryAccess)
 		cv := Must(r.GetComponentVersion(ctx, cdref))
 		Expect(cv).NotTo(BeNil())
@@ -523,7 +523,7 @@ version: 1.0.0
 
 	It("ocm config is nil", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReference), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
 		})).(*RegistryAccess)
@@ -544,7 +544,7 @@ configurations:
 `},
 		}
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReference), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			OcmConfig:           ocmconfig,
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
@@ -566,7 +566,7 @@ configurations:
 `},
 		}
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			OcmConfig:           ocmconfig,
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
@@ -588,7 +588,7 @@ configurations:
 `},
 		}
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			OcmConfig:           ocmconfig,
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
@@ -610,7 +610,7 @@ configurations:
 `},
 		}
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReferenceWithWrongContext), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			OcmConfig:           ocmconfig,
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: "./testdata/localcnudierepos/other"},
@@ -624,7 +624,7 @@ configurations:
 	})
 	It("repository context is not set and ocm config does not set resolvers", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
+		MustBeSuccessful(yaml.Unmarshal([]byte(componentReferenceWithoutContext), &cdref))
 		r := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH},
 		})).(*RegistryAccess)

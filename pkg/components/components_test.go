@@ -10,12 +10,13 @@ import (
 	"reflect"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	. "github.com/mandelsoft/goutils/testutils"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"ocm.software/ocm/api/datacontext"
 	"ocm.software/ocm/api/ocm"
-	. "ocm.software/ocm/api/utils"
 	"ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -156,7 +157,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	// Test for the expected "straight forward" cases
 	It("compatibility of facade implementations and component descriptor versions", func() {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref))
+		Must(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref), nil)
 
 		oRaForCnudie := Must(ocmfactory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: LOCALCNUDIEREPOPATH_VALID},
@@ -256,7 +257,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	DescribeTable("error when trying to access unknown resource", func(factory model.Factory, registryRootPath string) {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
+		Must(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref), nil)
 
 		registryAccess := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: registryRootPath},
@@ -274,7 +275,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	// implements against the resource type.
 	DescribeTable("error when accessing resources with unknown resource type", func(factory model.Factory, registryRootPath string) {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref))
+		Must(runtime.DefaultYAMLEncoding.Unmarshal([]byte(referencedComponentReference), cdref), nil)
 
 		registryAccess := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: registryRootPath},
@@ -295,7 +296,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	// context (as per ocm spec)
 	DescribeTable("error when component descriptor has no repository context", func(factory model.Factory, registryRootPath string) {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withoutRepoctxComponentReference), cdref))
+		Must(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withoutRepoctxComponentReference), cdref), nil)
 
 		registryAccess := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: registryRootPath},
@@ -310,7 +311,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	DescribeTable("error when component descriptor has invalid access type", func(factory model.Factory, registryRootPath string) {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withInvalidAccessTypeComponentReference), cdref))
+		Must(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withInvalidAccessTypeComponentReference), cdref), nil)
 
 		registryAccess := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: registryRootPath},
@@ -333,7 +334,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 	DescribeTable("error when component descriptor has invalid reference", func(factory model.Factory, registryRootPath string) {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withInvalidReferenceComponentReference), cdref))
+		Must(runtime.DefaultYAMLEncoding.Unmarshal([]byte(withInvalidReferenceComponentReference), cdref), nil)
 
 		registryAccess := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: registryRootPath},
@@ -361,7 +362,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 	// This check shall check the general handling of an invalid component descriptor.
 	DescribeTable("error when component descriptor is invalid (does not adhere to its json schema)", func(factory model.Factory, registryRootPath string) {
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(invalidComponentComponentReference), cdref))
+		Must(runtime.DefaultYAMLEncoding.Unmarshal([]byte(invalidComponentComponentReference), cdref), nil)
 
 		registryAccess := Must(factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: registryRootPath},
@@ -387,7 +388,7 @@ var _ = Describe("facade implementation compatibility tests", func() {
 
 		// Organize a valid component version
 		cdref := &v1alpha1.ComponentDescriptorReference{}
-		MustBeSuccessful(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref))
+		Must(runtime.DefaultYAMLEncoding.Unmarshal([]byte(componentReference), cdref), nil)
 		registryAccess, err = factory.NewRegistryAccess(ctx, &model.RegistryAccessOptions{
 			LocalRegistryConfig: &config.LocalRegistryConfiguration{RootPath: registryRootPath},
 		})

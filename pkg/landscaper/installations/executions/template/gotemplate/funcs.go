@@ -18,7 +18,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utils "ocm.software/ocm/api/ocm/ocmutils"
+	"ocm.software/ocm/api/ocm/resourcerefs"
 	"ocm.software/ocm/api/utils/mime"
 	"ocm.software/ocm/api/utils/runtime"
 	"sigs.k8s.io/yaml"
@@ -205,7 +205,7 @@ func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (
 		// which the deployer would forward to the webserver and the webserver determines the root component to resolve
 		// this reference by watching the installation (this way, we would ensure that the deployer can only get
 		// resources from its legitimate component)
-		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
+		resource, resourceCv, err := resourcerefs.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return "", fmt.Errorf("unable to resolve relative resource reference: %w", err)
 		}
@@ -257,7 +257,7 @@ func getResourceContentGoFunc(cv model.ComponentVersion) func(args ...interface{
 			return "", err
 		}
 
-		resource, _, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
+		resource, _, err := resourcerefs.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return "", fmt.Errorf("unable to resolve relative resource reference: %w", err)
 		}

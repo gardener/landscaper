@@ -9,11 +9,11 @@ import (
 	"fmt"
 
 	"github.com/mandelsoft/filepath/pkg/filepath"
+	. "github.com/mandelsoft/goutils/testutils"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "ocm.software/ocm/api/helper/builder"
-	. "ocm.software/ocm/api/utils"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository/local"
@@ -74,12 +74,12 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		//vfsattr.Set(env.OCMContext(), env)
 		spec := Must(local.NewRepositorySpecV1(TAR_REPOSITORY, env))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
-		defer Close(repo)
+		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
-		defer Close(cv)
+		defer cv.Close()
 		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
 		acc := Must(res[0].AccessMethod())
-		defer Close(acc)
+		defer acc.Close()
 		bytesA := Must(acc.Get())
 
 		bytesB := Must(vfs.ReadFile(env, filepath.Join(TAR_REPOSITORY, "blobs", "sha256.3ed99e50092c619823e2c07941c175ea2452f1455f570c55510586b387ec2ff2")))

@@ -12,11 +12,11 @@ import (
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
+	. "github.com/mandelsoft/goutils/testutils"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "ocm.software/ocm/api/utils"
 	"ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/pkg/components/model"

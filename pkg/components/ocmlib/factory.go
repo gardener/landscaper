@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	ocmutils "ocm.software/ocm/api/ocm/ocmutils"
+	"ocm.software/ocm/api/ocm/resolvers"
 
 	"github.com/pkg/errors"
 
@@ -130,7 +131,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context, options *model.RegistryAc
 			if err != nil {
 				return nil, err
 			}
-			registryAccess.resolver = ocm.NewCompoundResolver(registryAccess.inlineRepository, registryAccess.resolver)
+			registryAccess.resolver = resolvers.NewCompoundResolver(registryAccess.inlineRepository, registryAccess.resolver)
 		}
 
 	}
