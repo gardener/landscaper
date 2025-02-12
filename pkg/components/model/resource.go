@@ -7,7 +7,7 @@ package model
 import (
 	"context"
 
-	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
+	v1 "ocm.software/ocm/api/ocm/compdesc/meta/v1"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )

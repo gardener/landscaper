@@ -7,17 +7,17 @@ package components_test
 import (
 	"context"
 
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"ocm.software/ocm/api/datacontext"
+	"ocm.software/ocm/api/ocm"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
+	. "github.com/mandelsoft/goutils/testutils"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/open-component-model/ocm/pkg/runtime"
-	. "github.com/open-component-model/ocm/pkg/testutils"
+	"ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/pkg/components/model"
 

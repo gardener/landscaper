@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	v1 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/meta/v1"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
-	v2 "github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/v2"
-	"github.com/open-component-model/ocm/pkg/runtime"
+	"ocm.software/ocm/api/ocm/compdesc"
+	v1 "ocm.software/ocm/api/ocm/compdesc/meta/v1"
+	"ocm.software/ocm/api/ocm/compdesc/versions/ocm.software/v3alpha1"
+	v2 "ocm.software/ocm/api/ocm/compdesc/versions/v2"
+	"ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"
@@ -167,7 +167,7 @@ func ParseResourceReference(ref string) (*v1.ResourceReference, error) {
 		}
 	} else {
 		// assume that the resource is specified through a relative artifact reference
-		// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references)
+		// (https://ocm.software/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references)
 		err := runtime.DefaultYAMLEncoding.Unmarshal([]byte(ref), resourceRef)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal argument into a relative resource reference: %w", err)

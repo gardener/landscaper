@@ -9,14 +9,14 @@ import (
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/goutils/errors"
 
-	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/contexts/oci"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/helm"
-	"github.com/open-component-model/ocm/pkg/helm/loader"
-	"github.com/open-component-model/ocm/pkg/runtime"
+	"ocm.software/ocm/api/oci"
+	"ocm.software/ocm/api/ocm"
+	"ocm.software/ocm/api/tech/helm"
+	"ocm.software/ocm/api/tech/helm/loader"
+	common "ocm.software/ocm/api/utils/misc"
+	"ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/pkg/components/model"
 	"github.com/gardener/landscaper/pkg/components/model/types"

@@ -14,15 +14,16 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/signing"
-	"github.com/open-component-model/ocm/pkg/signing/handlers/rsa"
-	"github.com/open-component-model/ocm/pkg/signing/signutils"
+	"ocm.software/ocm/api/ocm/compdesc"
+	"ocm.software/ocm/api/ocm/resolvers"
+	"ocm.software/ocm/api/ocm/tools/signing"
+	"ocm.software/ocm/api/tech/signing/handlers/rsa"
+	"ocm.software/ocm/api/tech/signing/signutils"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/runtime"
+	"ocm.software/ocm/api/ocm"
+	"ocm.software/ocm/api/utils/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
@@ -145,7 +146,7 @@ func (r *RegistryAccess) GetComponentVersion(ctx context.Context, cdRef *lsv1alp
 			if err != nil {
 				return nil, err
 			}
-			resolver = ocm.NewCompoundResolver(repo, r.octx.GetResolver())
+			resolver = resolvers.NewCompoundResolver(repo, r.octx.GetResolver())
 			pm1.StopDebug()
 		}
 	} else {

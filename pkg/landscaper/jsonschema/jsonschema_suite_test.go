@@ -19,8 +19,8 @@ import (
 
 	testutils2 "github.com/gardener/landscaper/pkg/components/testutils"
 
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"ocm.software/ocm/api/datacontext"
+	"ocm.software/ocm/api/ocm"
 
 	corev1 "k8s.io/api/core/v1"
 

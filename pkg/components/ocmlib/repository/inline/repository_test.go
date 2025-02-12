@@ -6,18 +6,19 @@ package inline_test
 
 import (
 	"github.com/mandelsoft/filepath/pkg/filepath"
+	. "github.com/mandelsoft/goutils/testutils"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc"
-	tenv "github.com/open-component-model/ocm/pkg/env"
-	. "github.com/open-component-model/ocm/pkg/env/builder"
-	"github.com/open-component-model/ocm/pkg/runtime"
-	. "github.com/open-component-model/ocm/pkg/testutils"
-	"github.com/open-component-model/ocm/pkg/utils/tarutils"
+	"ocm.software/ocm/api/datacontext/attrs/vfsattr"
+	. "ocm.software/ocm/api/helper/builder"
+	tenv "ocm.software/ocm/api/helper/env"
+	"ocm.software/ocm/api/ocm/compdesc"
+	"ocm.software/ocm/api/ocm/selectors/rscsel"
+	"ocm.software/ocm/api/utils/runtime"
+	"ocm.software/ocm/api/utils/tarutils"
 
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository"
 	"github.com/gardener/landscaper/pkg/components/ocmlib/repository/inline"
@@ -49,15 +50,15 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		vfsattr.Set(env.OCMContext(), env)
 		spec := Must(env.OCMContext().RepositorySpecForConfig(specdata, runtime.DefaultYAMLEncoding))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
-		defer Close(repo)
+		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
-		defer Close(cv)
+		defer cv.Close()
 		ref := Must(cv.GetReferenceByIndex(0))
 		refcv := Must(repo.LookupComponentVersion(ref.ComponentName, ref.Version))
-		defer Close(refcv)
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		defer refcv.Close()
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
-		defer Close(acc)
+		defer acc.Close()
 		data := Must(acc.Get())
 		Expect(string(data)).To(Equal("test"))
 	})
@@ -67,15 +68,15 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 
 		spec := Must(env.OCMContext().RepositorySpecForConfig(specdata, runtime.DefaultYAMLEncoding))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
-		defer Close(repo)
+		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
-		defer Close(cv)
+		defer cv.Close()
 		ref := Must(cv.GetReferenceByIndex(0))
 		refcv := Must(repo.LookupComponentVersion(ref.ComponentName, ref.Version))
-		defer Close(refcv)
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		defer refcv.Close()
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
-		defer Close(acc)
+		defer acc.Close()
 		data := Must(acc.Get())
 		Expect(string(data)).To(Equal("test"))
 	})
@@ -95,15 +96,15 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 		MustBeSuccessful(r1.Close())
 
 		repo := Must(repository.NewRepository(env.OCMContext(), repository.NewMemoryCompDescProvider(list), memfs))
-		defer Close(repo)
+		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
-		defer Close(cv)
+		defer cv.Close()
 		ref := Must(cv.GetReferenceByIndex(0))
 		refcv := Must(repo.LookupComponentVersion(ref.ComponentName, ref.Version))
-		defer Close(refcv)
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		defer refcv.Close()
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
-		defer Close(acc)
+		defer acc.Close()
 		data := Must(acc.Get())
 		Expect(string(data)).To(Equal("test"))
 	})
@@ -111,12 +112,12 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 	It("repository with component descriptors and resources stored in distinct directories", func() {
 		spec := Must(inline.NewRepositorySpecV1(env, filepath.Join(DISTINCT_REPOSITORY, "compdescs"), nil, filepath.Join(DISTINCT_REPOSITORY, "blobs")))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
-		defer Close(repo)
+		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
-		defer Close(cv)
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		defer cv.Close()
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
-		defer Close(acc)
+		defer acc.Close()
 		bufferA := Must(acc.Get())
 
 		bufferB := Must(vfs.ReadFile(env, filepath.Join(DISTINCT_REPOSITORY, "blobs", "blob1")))
@@ -126,14 +127,14 @@ var _ = Describe("ocm-lib based landscaper local repository", func() {
 	It("repository with a directory resource", func() {
 		spec := Must(inline.NewRepositorySpecV1(env, DIRECTORY_REPOSITORY, nil, DIRECTORY_REPOSITORY))
 		repo := Must(spec.Repository(env.OCMContext(), nil))
-		defer Close(repo)
+		defer repo.Close()
 		cv := Must(repo.LookupComponentVersion(COMPONENT_NAME, COMPONENT_VERSION))
-		defer Close(cv)
-		res := Must(cv.GetResourcesByName(RESOURCE_NAME))
+		defer cv.Close()
+		res := Must(cv.SelectResources(rscsel.Name(RESOURCE_NAME)))
 		acc := Must(res[0].AccessMethod())
-		defer Close(acc)
+		defer acc.Close()
 		data := Must(acc.Reader())
-		defer Close(data)
+		defer data.Close()
 
 		mfs := memoryfs.New()
 		_, _, err := tarutils.ExtractTarToFsWithInfo(mfs, data)

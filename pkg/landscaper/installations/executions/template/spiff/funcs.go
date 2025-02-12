@@ -14,11 +14,11 @@ import (
 	"github.com/mandelsoft/spiff/dynaml"
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/compdesc/versions/ocm.software/v3alpha1"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
-	"github.com/open-component-model/ocm/pkg/mime"
-	"github.com/open-component-model/ocm/pkg/runtime"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"ocm.software/ocm/api/ocm/compdesc/versions/ocm.software/v3alpha1"
+	"ocm.software/ocm/api/ocm/resourcerefs"
+	"ocm.software/ocm/api/utils/mime"
+	"ocm.software/ocm/api/utils/runtime"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -117,12 +117,12 @@ func spiffResolveResources(cd *types.ComponentDescriptor) func(arguments []inter
 }
 
 // getResourceKeyGoFunc returns a function that resolves a relative resource reference
-// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references).
+// (https://ocm.software/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references).
 // Its input is either a relative artifact reference in the format described by ocm or a file-path like expression
 // like cd://componentReferences/referenceName1/componentReferences/referenceName2/resources/resourceName1 as defined
 // here pkg/landscaper/registry/components/cdutils/uri.go.
 // Based on an ocm component version given as input parameter, it constructs the global identity of this resource
-// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/01-model/03-elements-sub.md#identifiers) and
+// (https://ocm.software/ocm-spec/blob/restruc3/doc/01-model/03-elements-sub.md#identifiers) and
 // returns a base64 encoded string representation of that global identity. This base64 encoded string acts as key
 // which can be used by the deployers to fetch the resource content.
 func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
@@ -161,7 +161,7 @@ func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}
 		// which the deployer would forward to the webserver and the webserver determines the root component to resolve
 		// this reference by watching the installation (this way, we would ensure that the deployer can only get
 		// resources from its legitimate component)
-		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
+		resource, resourceCv, err := resourcerefs.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return info.Error("unable to resolve relative resource reference: %w", err)
 		}
@@ -186,7 +186,7 @@ func spiffGetResourceKey(cv model.ComponentVersion) func(arguments []interface{}
 }
 
 // getResourceContentGoFunc returns a function that resolves a relative resource reference
-// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references),
+// (https://ocm.software/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references),
 // based on an ocm component version given as input parameter and returns the content of the corresponding resource.
 func spiffGetResourceContent(cv model.ComponentVersion) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
@@ -219,7 +219,7 @@ func spiffGetResourceContent(cv model.ComponentVersion) func(arguments []interfa
 			return info.Error(err)
 		}
 
-		resource, _, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
+		resource, _, err := resourcerefs.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return info.Error("unable to resolve relative resource reference: %w", err)
 		}
