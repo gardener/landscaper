@@ -80,9 +80,13 @@ func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, re
 }
 
 func (c *ComponentVersion) GetResource(name string, identity map[string]string) (model.Resource, error) {
+	if len(identity) > 0 {
+		return nil, fmt.Errorf("failed to get resource with name %s and extra identities %v: extra identity is not supported", name, identity)
+	}
+
 	resource, err := c.componentVersionAccess.GetResource(v1.NewIdentity(name))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get resource with name %s and extra identities %v", name, identity)
+		return nil, fmt.Errorf("failed to get resource with name %s", name)
 	}
 	return NewResource(resource), nil
 }
