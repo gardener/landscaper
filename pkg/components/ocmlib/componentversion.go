@@ -11,7 +11,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"ocm.software/ocm/api/ocm"
-	"ocm.software/ocm/api/ocm/selectors/rscsel"
+	v1 "ocm.software/ocm/api/ocm/compdesc/meta/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/components/model"
@@ -80,18 +80,12 @@ func (c *ComponentVersion) GetReferencedComponentVersion(ctx context.Context, re
 }
 
 func (c *ComponentVersion) GetResource(name string, identity map[string]string) (model.Resource, error) {
-	resources, err := c.componentVersionAccess.SelectResources(rscsel.Name(name), rscsel.Identity(identity))
+	resource, err := c.componentVersionAccess.GetResource(v1.NewIdentity(name))
 	if err != nil {
-		return nil, err
-	}
-	if len(resources) < 1 {
-		return nil, fmt.Errorf("no resource with name %s and extra identities %v found", name, identity)
-	}
-	if len(resources) > 1 {
-		return nil, fmt.Errorf("there is more than one resource with name %s and extra identities %v", name, identity)
+		return nil, fmt.Errorf("failed to get resource with name %s and extra identities %v", name, identity)
 	}
 
-	return NewResource(resources[0]), nil
+	return NewResource(resource), nil
 }
 
 func (c *ComponentVersion) GetOCMObject() ocm.ComponentVersionAccess {
