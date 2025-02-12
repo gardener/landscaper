@@ -84,7 +84,6 @@ func (c *ComponentVersion) GetResource(name string, identity map[string]string) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource with name %s and extra identities %v", name, identity)
 	}
-
 	return NewResource(resource), nil
 }
 
