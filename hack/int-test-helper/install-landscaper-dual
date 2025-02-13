@@ -143,7 +143,7 @@ landscaper:
 controller:
   image:
     repository: $(echo $LANDSCAPER_CONTROLLER_IMGTAG | cut -d ":" -f 1)
-    tag: $(echo $LANDSCAPER_CONTROLLER_IMGTAG | cut -d ":" -f 2)
+    tag: $(echo $LANDSCAPER_CONTROLLER_IMGTAG | cut -d ":" -f 2 | cut -d "@" -f 1)
 
   landscaperKubeconfig:
     kubeconfig: |
@@ -152,7 +152,7 @@ $(cat "$LANDSCAPER_CONTROLLER_KUBECONFIG_PATH" | sed "s/^/      /")
 webhooksServer:
   image:
     repository: $(echo $LANDSCAPER_WEBHOOKS_SERVER_IMGTAG | cut -d ":" -f 1)
-    tag: $(echo $LANDSCAPER_WEBHOOKS_SERVER_IMGTAG | cut -d ":" -f 2)
+    tag: $(echo $LANDSCAPER_WEBHOOKS_SERVER_IMGTAG | cut -d ":" -f 2 | cut -d "@" -f 1)
 
   landscaperKubeconfig:
     kubeconfig: |
@@ -245,7 +245,7 @@ HELM_DEPLOYER_IMGTAG="$(cat ${WORKDIR}/helm-deployer-image-resource.json | jq -r
 printf "
 image:
   repository: $(echo $HELM_DEPLOYER_IMGTAG | cut -d ":" -f 1)
-  tag: $(echo $HELM_DEPLOYER_IMGTAG | cut -d ":" -f 2)
+  tag: $(echo $HELM_DEPLOYER_IMGTAG | cut -d ":" -f 2 | cut -d "@" -f 1)
 
 deployer:
   verbosityLevel: debug
@@ -266,7 +266,7 @@ MANIFEST_DEPLOYER_IMGTAG="$(cat ${WORKDIR}/manifest-deployer-image-resource.json
 printf "
 image:
   repository: $(echo $MANIFEST_DEPLOYER_IMGTAG | cut -d ":" -f 1)
-  tag: $(echo $MANIFEST_DEPLOYER_IMGTAG | cut -d ":" -f 2)
+  tag: $(echo $MANIFEST_DEPLOYER_IMGTAG | cut -d ":" -f 2 | cut -d "@" -f 1)
 
 deployer:
   verbosityLevel: debug
@@ -291,18 +291,18 @@ CONTAINER_WAIT_IMGTAG="$(cat ${WORKDIR}/container-wait-image-resource.json | jq 
 printf "
 image:
   repository: $(echo $CONTAINER_DEPLOYER_IMGTAG | cut -d ":" -f 1)
-  tag: $(echo $CONTAINER_DEPLOYER_IMGTAG | cut -d ":" -f 2)
+  tag: $(echo $CONTAINER_DEPLOYER_IMGTAG | cut -d ":" -f 2 | cut -d "@" -f 1)
 
 deployer:
   verbosityLevel: debug
 
   initContainer:
     repository:  $(echo $CONTAINER_INIT_IMGTAG | cut -d ":" -f 1)
-    tag: $(echo $CONTAINER_INIT_IMGTAG | cut -d ":" -f 2)
+    tag: $(echo $CONTAINER_INIT_IMGTAG | cut -d ":" -f 2 | cut -d "@" -f 1)
 
   waitContainer:
     repository:  $(echo $CONTAINER_WAIT_IMGTAG | cut -d ":" -f 1)
-    tag: $(echo $CONTAINER_WAIT_IMGTAG | cut -d ":" -f 2)
+    tag: $(echo $CONTAINER_WAIT_IMGTAG | cut -d ":" -f 2 | cut -d "@" -f 1)
 
   landscaperClusterKubeconfig:
     kubeconfig: |
@@ -320,7 +320,7 @@ MOCK_DEPLOYER_IMGTAG="$(cat ${WORKDIR}/mock-deployer-image-resource.json | jq -r
 printf "
 image:
   repository: $(echo $MOCK_DEPLOYER_IMGTAG | cut -d ":" -f 1)
-  tag: $(echo $MOCK_DEPLOYER_IMGTAG | cut -d ":" -f 2)
+  tag: $(echo $MOCK_DEPLOYER_IMGTAG | cut -d ":" -f 2 | cut -d "@" -f 1)
 
 deployer:
   verbosityLevel: debug

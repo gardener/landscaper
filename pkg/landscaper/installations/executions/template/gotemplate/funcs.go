@@ -17,10 +17,10 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
-	"github.com/open-component-model/ocm/pkg/mime"
-	"github.com/open-component-model/ocm/pkg/runtime"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"ocm.software/ocm/api/ocm/resourcerefs"
+	"ocm.software/ocm/api/utils/mime"
+	"ocm.software/ocm/api/utils/runtime"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -167,12 +167,12 @@ func getResourcesGoFunc(cd *types.ComponentDescriptor) func(...interface{}) []ma
 }
 
 // getResourceKeyGoFunc returns a function that resolves a relative resource reference
-// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references).
+// (https://ocm.software/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references).
 // Its input is either a relative artifact reference in the format described by ocm or a file-path like expression
 // like cd://componentReferences/referenceName1/componentReferences/referenceName2/resources/resourceName1 as defined
 // here pkg/landscaper/registry/components/cdutils/uri.go.
 // Based on an ocm component version given as input parameter, it constructs the global identity of this resource
-// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/01-model/03-elements-sub.md#identifiers) and
+// (https://ocm.software/ocm-spec/blob/restruc3/doc/01-model/03-elements-sub.md#identifiers) and
 // returns a base64 encoded string representation of that global identity. This base64 encoded string acts as key
 // which can be used by the deployers to fetch the resource content.
 func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (string, error) {
@@ -205,7 +205,7 @@ func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (
 		// which the deployer would forward to the webserver and the webserver determines the root component to resolve
 		// this reference by watching the installation (this way, we would ensure that the deployer can only get
 		// resources from its legitimate component)
-		resource, resourceCv, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
+		resource, resourceCv, err := resourcerefs.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return "", fmt.Errorf("unable to resolve relative resource reference: %w", err)
 		}
@@ -230,7 +230,7 @@ func getResourceKeyGoFunc(cv model.ComponentVersion) func(args ...interface{}) (
 }
 
 // getResourceContentGoFunc returns a function that resolves a relative resource reference
-// (https://github.com/open-component-model/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references),
+// (https://ocm.software/ocm-spec/blob/restruc3/doc/05-guidelines/03-references.md#relative-artifact-references),
 // based on an ocm component version given as input parameter and returns the content of the corresponding resource.
 func getResourceContentGoFunc(cv model.ComponentVersion) func(args ...interface{}) (string, error) {
 	return func(args ...interface{}) (string, error) {
@@ -257,7 +257,7 @@ func getResourceContentGoFunc(cv model.ComponentVersion) func(args ...interface{
 			return "", err
 		}
 
-		resource, _, err := utils.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
+		resource, _, err := resourcerefs.ResolveResourceReference(compvers, *resourceRef, compvers.GetContext().GetResolver())
 		if err != nil {
 			return "", fmt.Errorf("unable to resolve relative resource reference: %w", err)
 		}

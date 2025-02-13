@@ -10,13 +10,14 @@ import (
 	"reflect"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	. "github.com/mandelsoft/goutils/testutils"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/runtime"
-	. "github.com/open-component-model/ocm/pkg/testutils"
+	"ocm.software/ocm/api/datacontext"
+	"ocm.software/ocm/api/ocm"
+	"ocm.software/ocm/api/utils/runtime"
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core/v1alpha1"

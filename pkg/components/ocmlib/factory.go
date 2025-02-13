@@ -8,29 +8,31 @@ import (
 	"context"
 	"fmt"
 
-	ocmutils "github.com/open-component-model/ocm/pkg/contexts/ocm/utils"
+	ocmutils "ocm.software/ocm/api/ocm/ocmutils"
+	"ocm.software/ocm/api/ocm/resolvers"
+
+	"github.com/pkg/errors"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
-	credconfig "github.com/open-component-model/ocm/pkg/contexts/credentials/config"
+	credconfig "ocm.software/ocm/api/credentials/config"
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	ocmcommon "github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/contexts/credentials"
-	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
-	"github.com/open-component-model/ocm/pkg/contexts/credentials/repositories/dockerconfig"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext/attrs/vfsattr"
-	"github.com/open-component-model/ocm/pkg/contexts/oci"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/errors"
-	"github.com/open-component-model/ocm/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
+	"ocm.software/ocm/api/credentials"
+	"ocm.software/ocm/api/credentials/extensions/repositories/dockerconfig"
+	"ocm.software/ocm/api/datacontext"
+	"ocm.software/ocm/api/datacontext/attrs/vfsattr"
+	"ocm.software/ocm/api/oci"
+	"ocm.software/ocm/api/ocm"
+	helmid "ocm.software/ocm/api/tech/helm/identity"
+	ocmcommon "ocm.software/ocm/api/utils/misc"
+	"ocm.software/ocm/api/utils/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -129,7 +131,7 @@ func (*Factory) NewRegistryAccess(ctx context.Context, options *model.RegistryAc
 			if err != nil {
 				return nil, err
 			}
-			registryAccess.resolver = ocm.NewCompoundResolver(registryAccess.inlineRepository, registryAccess.resolver)
+			registryAccess.resolver = resolvers.NewCompoundResolver(registryAccess.inlineRepository, registryAccess.resolver)
 		}
 
 	}
@@ -238,10 +240,19 @@ func (f *Factory) NewHelmOCIResource(ctx context.Context,
 		return nil, err
 	}
 
+	if refspec.Tag == nil || *refspec.Tag == "" {
+		return nil, fmt.Errorf("no tag specified in reference %s", ociImageRef)
+	}
+	version := *refspec.Tag
+
+	if refspec.Digest != nil && *refspec.Digest != "" {
+		version = fmt.Sprintf("%s@%s", *refspec.Tag, string(*refspec.Digest))
+	}
+
 	provider := &HelmChartProvider{
 		ocictx:  octx.OCIContext(),
 		ref:     refspec.Repository,
-		version: refspec.Version(),
+		version: version,
 		repourl: fmt.Sprintf("oci://%s", refspec.Host),
 	}
 

@@ -58,7 +58,7 @@ type Factory interface {
 	// backed implementation and are ignored otherwise.
 	//
 	// [component-cli]: https://github.com/gardener/component-cli
-	// [ocmlib]: https://github.com/open-component-model/ocm
+	// [ocmlib]: https://ocm.software/ocm
 	NewRegistryAccess(ctx context.Context, options *RegistryAccessOptions) (RegistryAccess, error)
 
 	// NewHelmRepoResource returns a helm chart resource that is stored in a helm chart repository.
