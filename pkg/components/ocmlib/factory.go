@@ -240,10 +240,19 @@ func (f *Factory) NewHelmOCIResource(ctx context.Context,
 		return nil, err
 	}
 
+	if refspec.Tag == nil || *refspec.Tag == "" {
+		return nil, fmt.Errorf("no tag specified in reference %s", ociImageRef)
+	}
+	version := *refspec.Tag
+
+	if refspec.Digest != nil && *refspec.Digest != "" {
+		version = fmt.Sprintf("%s@%s", *refspec.Tag, string(*refspec.Digest))
+	}
+
 	provider := &HelmChartProvider{
 		ocictx:  octx.OCIContext(),
 		ref:     refspec.Repository,
-		version: refspec.Version(),
+		version: version,
 		repourl: fmt.Sprintf("oci://%s", refspec.Host),
 	}
 
