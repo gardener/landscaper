@@ -7,8 +7,8 @@ package executions_test
 import (
 	"context"
 
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
+	"ocm.software/ocm/api/datacontext"
+	"ocm.software/ocm/api/ocm"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
