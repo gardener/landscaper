@@ -11,9 +11,9 @@ import (
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	"github.com/open-component-model/ocm/pkg/common"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	bpdownload "github.com/open-component-model/ocm/pkg/contexts/ocm/download/handlers/blueprint"
+	"ocm.software/ocm/api/ocm"
+	bpdownload "ocm.software/ocm/api/ocm/extensions/download/handlers/blueprint"
+	common "ocm.software/ocm/api/utils/misc"
 
 	"github.com/gardener/landscaper/apis/mediatype"
 	componentscommon "github.com/gardener/landscaper/pkg/components/common"

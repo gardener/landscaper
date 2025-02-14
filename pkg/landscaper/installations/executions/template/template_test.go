@@ -17,9 +17,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
-	"github.com/open-component-model/ocm/pkg/contexts/datacontext"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/runtime"
+	"ocm.software/ocm/api/datacontext"
+	"ocm.software/ocm/api/ocm"
+	"ocm.software/ocm/api/utils/runtime"
 	"sigs.k8s.io/yaml"
 
 	apiconfig "github.com/gardener/landscaper/apis/config"

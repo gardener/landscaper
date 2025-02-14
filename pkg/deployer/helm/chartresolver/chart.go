@@ -14,13 +14,13 @@ import (
 
 	"github.com/mandelsoft/filepath/pkg/filepath"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm/download"
-	"github.com/open-component-model/ocm/pkg/helm/loader"
+	"ocm.software/ocm/api/ocm/extensions/download"
+	"ocm.software/ocm/api/tech/helm/loader"
 
 	"github.com/mandelsoft/goutils/finalizer"
-	helmid "github.com/open-component-model/ocm/pkg/contexts/credentials/builtin/helm/identity"
-	"github.com/open-component-model/ocm/pkg/contexts/ocm"
-	"github.com/open-component-model/ocm/pkg/runtime"
+	"ocm.software/ocm/api/ocm"
+	helmid "ocm.software/ocm/api/tech/helm/identity"
+	"ocm.software/ocm/api/utils/runtime"
 	"sigs.k8s.io/yaml"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
