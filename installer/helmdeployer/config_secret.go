@@ -1,4 +1,4 @@
-package manifestdeployer
+package helmdeployer
 
 import (
 	"fmt"

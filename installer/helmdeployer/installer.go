@@ -1,4 +1,4 @@
-package manifestdeployer
+package helmdeployer
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func InstallManifestDeployer(ctx context.Context, hostClient client.Client, values *Values) error {
+func InstallHelmDeployer(ctx context.Context, hostClient client.Client, values *Values) error {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
@@ -43,6 +43,12 @@ func InstallManifestDeployer(ctx context.Context, hostClient client.Client, valu
 		}
 	}
 
+	if valHelper.values.OCI != nil {
+		if err := resources.CreateOrUpdateResource(ctx, hostClient, newRegistrySecretMutator(valHelper)); err != nil {
+			return err
+		}
+	}
+
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, newHPAMutator(valHelper)); err != nil {
 		return err
 	}
@@ -54,7 +60,7 @@ func InstallManifestDeployer(ctx context.Context, hostClient client.Client, valu
 	return nil
 }
 
-func UninstallManifestDeployer(ctx context.Context, hostClient client.Client, values *Values) error {
+func UninstallHelmDeployer(ctx context.Context, hostClient client.Client, values *Values) error {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
@@ -95,11 +101,11 @@ func UninstallManifestDeployer(ctx context.Context, hostClient client.Client, va
 func newHostClient() (client.Client, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return nil, fmt.Errorf("unable to load kubeconfig for host cluster of manifest deployer: %v\n", err)
+		return nil, fmt.Errorf("unable to load kubeconfig for host cluster of helm deployer: %v\n", err)
 	}
 	hostClient, err := client.New(cfg, client.Options{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to create kubernetes client for host cluster of manifest deployer: %v\n", err)
+		return nil, fmt.Errorf("unable to create kubernetes client for host cluster of helm deployer: %v\n", err)
 	}
 	return hostClient, nil
 }

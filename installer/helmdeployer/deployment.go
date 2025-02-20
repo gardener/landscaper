@@ -1,4 +1,4 @@
-package manifestdeployer
+package helmdeployer
 
 import (
 	"fmt"
@@ -75,7 +75,7 @@ func (d *deploymentMutator) strategy() appsv1.DeploymentStrategy {
 
 func (d *deploymentMutator) templateLabels() map[string]string {
 	labels := map[string]string{
-		"landscaper.gardener.cloud/topology":    "manifest-deployer",
+		"landscaper.gardener.cloud/topology":    "helm-deployer",
 		"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
 	}
 	maps.Copy(labels, d.selectorLabels())
@@ -84,7 +84,8 @@ func (d *deploymentMutator) templateLabels() map[string]string {
 
 func (d *deploymentMutator) templateAnnotations() map[string]string {
 	annotations := map[string]string{
-		"checksum/config": d.configHash,
+		"checksum/config":          d.configHash,
+		"checksum/registrysecrets": d.registrySecretsHash,
 	}
 	maps.Copy(annotations, d.podAnnotations())
 	return annotations
@@ -92,7 +93,7 @@ func (d *deploymentMutator) templateAnnotations() map[string]string {
 
 func (d *deploymentMutator) containers() []corev1.Container {
 	c := corev1.Container{}
-	c.Name = "manifest-deployer"
+	c.Name = "helm-deployer"
 	c.Image = d.deployerImage()
 	c.Args = d.args()
 	c.Env = d.env()
@@ -113,6 +114,19 @@ func (d *deploymentMutator) volumes() []corev1.Volume {
 				},
 			},
 		},
+	}
+
+	if d.values.OCI != nil {
+		ociRegistryVolume := corev1.Volume{
+			Name: "ociregistry",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: fmt.Sprintf("%s-registries", d.deployerFullName()),
+				},
+			},
+		}
+
+		volumes = append(volumes, ociRegistryVolume)
 	}
 
 	if k := d.values.LandscaperClusterKubeconfig; k != nil {
@@ -145,6 +159,14 @@ func (d *deploymentMutator) volumeMounts() []corev1.VolumeMount {
 			MountPath: "/app/ls/config",
 		},
 	}
+
+	if d.values.OCI != nil {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "ociregistry",
+			MountPath: "/app/ls/registry/secrets",
+		})
+	}
+
 	if d.values.LandscaperClusterKubeconfig != nil {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      "landscaper-cluster-kubeconfig",
@@ -162,7 +184,7 @@ func (d *deploymentMutator) topologySpreadConstraints() []corev1.TopologySpreadC
 			WhenUnsatisfiable: "ScheduleAnyway",
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    "manifest-deployer",
+					"landscaper.gardener.cloud/topology":    "helm-deployer",
 					"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
 				},
 			},
@@ -173,7 +195,7 @@ func (d *deploymentMutator) topologySpreadConstraints() []corev1.TopologySpreadC
 			WhenUnsatisfiable: "ScheduleAnyway",
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    "manifest-deployer",
+					"landscaper.gardener.cloud/topology":    "helm-deployer",
 					"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
 				},
 			},

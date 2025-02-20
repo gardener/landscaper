@@ -1,4 +1,4 @@
-package manifestdeployer
+package helmdeployer
 
 import (
 	"fmt"
@@ -53,7 +53,7 @@ func (b *clusterRoleMutator) Mutate(r *v1.ClusterRole) error {
 		},
 		{
 			APIGroups: []string{""},
-			Resources: []string{"namespaces", "pods"},
+			Resources: []string{"namespaces", "pods", "configmaps"},
 			Verbs:     []string{"get", "list", "watch"},
 		},
 		{

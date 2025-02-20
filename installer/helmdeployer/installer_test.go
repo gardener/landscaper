@@ -1,4 +1,4 @@
-package manifestdeployer
+package helmdeployer
 
 import (
 	"context"
@@ -13,26 +13,26 @@ import (
 
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Manifest Deployer Installer Test Suite")
+	RunSpecs(t, "Helm Deployer Installer Test Suite")
 }
 
-var _ = Describe("Manifest Deployer Installer", func() {
+var _ = Describe("Helm Deployer Installer", func() {
 
 	const id = "test-g23tp"
 
 	newHostClient := func() (client.Client, error) {
 		cfg, err := config.GetConfig()
 		if err != nil {
-			return nil, fmt.Errorf("unable to load kubeconfig for host cluster of manifest deployer: %v\n", err)
+			return nil, fmt.Errorf("unable to load kubeconfig for host cluster of helm deployer: %v\n", err)
 		}
 		hostClient, err := client.New(cfg, client.Options{})
 		if err != nil {
-			return nil, fmt.Errorf("unable to create kubernetes client for host cluster of manifest deployer: %v\n", err)
+			return nil, fmt.Errorf("unable to create kubernetes client for host cluster of helm deployer: %v\n", err)
 		}
 		return hostClient, nil
 	}
 
-	It("should install the manifest deployer", func() {
+	It("should install the helm deployer", func() {
 		ctx := context.Background()
 
 		kubeconfig, err := os.ReadFile(os.Getenv("KUBECONFIG"))
@@ -45,7 +45,7 @@ var _ = Describe("Manifest Deployer Installer", func() {
 				Kubeconfig: string(kubeconfig),
 			},
 			Image: ImageValues{
-				Repository: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/manifest-deployer/images/manifest-deployer-controller",
+				Repository: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/helm-deployer/images/helm-deployer-controller",
 				Tag:        "v0.127.0",
 			},
 			ImagePullSecrets:       nil,
@@ -60,11 +60,11 @@ var _ = Describe("Manifest Deployer Installer", func() {
 		hostCl, err := newHostClient()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = InstallManifestDeployer(ctx, hostCl, values)
+		err = InstallHelmDeployer(ctx, hostCl, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	XIt("should uninstall the manifest deployer", func() {
+	XIt("should uninstall the helm deployer", func() {
 		ctx := context.Background()
 
 		values := &Values{
@@ -74,7 +74,7 @@ var _ = Describe("Manifest Deployer Installer", func() {
 		hostCl, err := newHostClient()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = UninstallManifestDeployer(ctx, hostCl, values)
+		err = UninstallHelmDeployer(ctx, hostCl, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
