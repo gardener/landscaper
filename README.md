@@ -6,7 +6,6 @@
 [![REUSE status](https://api.reuse.software/badge/github.com/gardener/landscaper)](https://api.reuse.software/info/github.com/gardener/landscaper)
 [![CI Build status](https://concourse.ci.gardener.cloud/api/v1/teams/landscaper/pipelines/landscaper-master/jobs/master-head-update-job/badge)](https://concourse.ci.gardener.cloud/teams/landscaper/pipelines/landscaper-master/jobs/master-head-update-job)
 [![Go Report Card](https://goreportcard.com/badge/github.com/landscaper/landscaper)](https://goreportcard.com/report/github.com/landscaper/landscaper)
-[![reuse compliant](https://reuse.software/badge/reuse-compliant.svg)](https://reuse.software/)
 
 <!-- Motivation -->
 _Landscaper_ provides the means to describe, install and maintain cloud-native landscapes. It allows
@@ -22,12 +21,6 @@ Terraform to deploy them. In turn the produced output can be used as input and t
 regardless of the tools used underneath. Since implemented as a set of Kubernetes operators, Landscaper uses the concept
 of reconciliation to enforce a desired state, which also allows for updates to be rolled out smoothly.
 <!-- end -->
-
-> **_NOTE:_** **The Landscaper now also supports [OCM (Open Component Model)](https://ocm.software/) Component
-> Descriptors [Version 3](https://ocm.software/docs/component-descriptors/version-3/), additionally to [Version
-> 2](https://ocm.software/docs/component-descriptors/version-2/).**
-
-**Work in progress... partial and unfinished documentation ahead!**
 
 ### Start Reading
 - The documentation can be found [here](docs/README.md) or you jump directly to the [Guided Tour](docs/guided-tour).
