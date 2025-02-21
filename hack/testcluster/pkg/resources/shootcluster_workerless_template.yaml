@@ -6,7 +6,8 @@ metadata:
   annotations:
     shoot.gardener.cloud/cleanup-extended-apis-finalize-grace-period-seconds: '180'
 spec:
-  cloudProfileName: gcp
+  cloudProfile:
+    name: gcp
   region: europe-west1
   provider:
     type: gcp
