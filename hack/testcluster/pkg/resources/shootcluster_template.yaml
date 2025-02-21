@@ -41,7 +41,8 @@ spec:
   networking:
     nodes: 10.180.0.0/16
     type: calico
-  cloudProfileName: gcp
+  cloudProfile:
+    name: gcp
   region: europe-west1
   secretBindingName: laas-canary
   kubernetes:
