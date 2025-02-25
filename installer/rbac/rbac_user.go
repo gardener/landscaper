@@ -1,0 +1,50 @@
+package rbac
+
+import (
+	"github.com/gardener/landscaper/installer/resources"
+	core "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
+)
+
+const (
+	userServiceAccountName     = "landscaper-user"
+	userClusterRoleName        = "landscaper:landscaper-user"
+	userClusterRoleBindingName = "landscaper:landscaper-user"
+)
+
+func newUserServiceAccountMutator(h *valuesHelper) resources.Mutator[*core.ServiceAccount] {
+	return &resources.ServiceAccountMutator{
+		Name:      userServiceAccountName,
+		Namespace: h.resourceNamespace(),
+		Labels:    h.landscaperLabels(),
+	}
+}
+
+func newUserClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRoleBinding] {
+	return &resources.ClusterRoleBindingMutator{
+		ClusterRoleBindingName:  userClusterRoleBindingName,
+		ClusterRoleName:         userClusterRoleName,
+		ServiceAccountName:      userServiceAccountName,
+		ServiceAccountNamespace: h.resourceNamespace(),
+		Labels:                  h.landscaperLabels(),
+	}
+}
+
+func newUserClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRole] {
+	return &resources.ClusterRoleMutator{
+		Name:   userClusterRoleName,
+		Labels: h.landscaperLabels(),
+		Rules: []rbac.PolicyRule{
+			{
+				APIGroups: []string{"landscaper.gardener.cloud"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "secrets", "configmaps"},
+				Verbs:     []string{"*"},
+			},
+		},
+	}
+}

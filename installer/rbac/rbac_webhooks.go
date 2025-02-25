@@ -1,0 +1,55 @@
+package rbac
+
+import (
+	"github.com/gardener/landscaper/installer/resources"
+	core "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
+)
+
+const (
+	webhooksServiceAccountName     = "landscaper-webhooks"
+	webhooksClusterRoleName        = "landscaper:landscaper-webhooks"
+	webhooksClusterRoleBindingName = "landscaper:landscaper-webhooks"
+)
+
+func newWebhooksServiceAccountMutator(h *valuesHelper) resources.Mutator[*core.ServiceAccount] {
+	return &resources.ServiceAccountMutator{
+		Name:      webhooksServiceAccountName,
+		Namespace: h.resourceNamespace(),
+		Labels:    h.landscaperLabels(),
+	}
+}
+
+func newWebhooksClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRoleBinding] {
+	return &resources.ClusterRoleBindingMutator{
+		ClusterRoleBindingName:  webhooksClusterRoleBindingName,
+		ClusterRoleName:         webhooksClusterRoleName,
+		ServiceAccountName:      webhooksServiceAccountName,
+		ServiceAccountNamespace: h.resourceNamespace(),
+		Labels:                  h.landscaperLabels(),
+	}
+}
+
+func newWebhooksClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRole] {
+	return &resources.ClusterRoleMutator{
+		Name:   webhooksClusterRoleName,
+		Labels: h.landscaperLabels(),
+		Rules: []rbac.PolicyRule{
+			{
+				APIGroups: []string{"landscaper.gardener.cloud"},
+				Resources: []string{"installations"},
+				Verbs:     []string{"list"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"*"},
+			},
+			{
+				APIGroups: []string{"admissionregistration.k8s.io"},
+				Resources: []string{"validatingwebhookconfigurations"},
+				Verbs:     []string{"*"},
+			},
+		},
+	}
+}
