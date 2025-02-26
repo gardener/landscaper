@@ -46,10 +46,20 @@ type ServiceAccountValues struct {
 	Create bool `json:"create,omitempty"`
 }
 
+type DisabledWebhook string
+
+const (
+	allWebhooks         DisabledWebhook = "all"
+	installationWebhook DisabledWebhook = "installation"
+	executionWebhook    DisabledWebhook = "execution"
+	deployitemWebhook   DisabledWebhook = "deployitem"
+)
+
 type WebhooksServerValues struct {
-	Service ServiceValues  `json:"service,omitempty"`
-	Ingress *IngressValues `json:"ingress,omitempty"` // optional - if not set, no ingress will be created.
-	HPA     HPAValues      `json:"hpa,omitempty"`
+	DisableWebhooks []DisabledWebhook `json:"disableWebhooks,omitempty"`
+	Service         ServiceValues     `json:"service,omitempty"`
+	Ingress         *IngressValues    `json:"ingress,omitempty"` // optional - if not set, no ingress will be created.
+	HPA             HPAValues         `json:"hpa,omitempty"`
 }
 
 type ServiceValues struct {

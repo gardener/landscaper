@@ -3,6 +3,7 @@ package landscaper
 import (
 	"fmt"
 	"maps"
+	"slices"
 )
 
 type valuesHelper struct {
@@ -66,4 +67,8 @@ func (h *valuesHelper) webhooksSelectorLabels() map[string]string {
 
 func (h *valuesHelper) isCreateServiceAccount() bool {
 	return h.values.ServiceAccount != nil && h.values.ServiceAccount.Create
+}
+
+func (h *valuesHelper) areAllWebhooksDisabled() bool {
+	return slices.Contains(h.values.WebhooksServer.DisableWebhooks, allWebhooks)
 }

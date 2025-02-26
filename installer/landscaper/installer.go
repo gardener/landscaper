@@ -35,8 +35,10 @@ func InstallLandscaper(ctx context.Context, hostClient client.Client, values *Va
 		return err
 	}
 
-	if err := resources.CreateOrUpdateResource(ctx, hostClient, newWebhooksServiceMutator(valHelper)); err != nil {
-		return err
+	if !valHelper.areAllWebhooksDisabled() {
+		if err := resources.CreateOrUpdateResource(ctx, hostClient, newWebhooksServiceMutator(valHelper)); err != nil {
+			return err
+		}
 	}
 
 	if valHelper.values.WebhooksServer.Ingress != nil {
