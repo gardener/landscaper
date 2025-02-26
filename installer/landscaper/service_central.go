@@ -41,13 +41,13 @@ func (m *serviceMutator) Mutate(r *core.Service) error {
 		Ports: []core.ServicePort{
 			{
 				Name:       "http",
-				Port:       m.values.Service.Port,
+				Port:       m.values.Controller.Service.Port,
 				TargetPort: intstr.IntOrString{StrVal: "http"},
 				Protocol:   "TCP",
 			},
 		},
 		Selector: m.selectorLabels(),
-		Type:     core.ServiceType(m.values.Service.Type),
+		Type:     core.ServiceType(m.values.Controller.Service.Type),
 	}
 	return nil
 }

@@ -31,6 +31,18 @@ func InstallLandscaper(ctx context.Context, hostClient client.Client, values *Va
 		}
 	}
 
+	if len(valHelper.values.Controller.LandscaperKubeconfig.Kubeconfig) > 0 {
+		if err := resources.CreateOrUpdateResource(ctx, hostClient, newControllerKubeconfigSecretMutator(valHelper)); err != nil {
+			return err
+		}
+	}
+
+	if len(valHelper.values.WebhooksServer.LandscaperKubeconfig.Kubeconfig) > 0 {
+		if err := resources.CreateOrUpdateResource(ctx, hostClient, newWebhooksKubeconfigSecretMutator(valHelper)); err != nil {
+			return err
+		}
+	}
+
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, newServiceMutator(valHelper)); err != nil {
 		return err
 	}
@@ -90,6 +102,14 @@ func UninstallLandscaper(ctx context.Context, hostClient client.Client, values *
 	}
 
 	if err := resources.DeleteResource(ctx, hostClient, newServiceMutator(valHelper)); err != nil {
+		return err
+	}
+
+	if err := resources.DeleteResource(ctx, hostClient, newWebhooksKubeconfigSecretMutator(valHelper)); err != nil {
+		return err
+	}
+
+	if err := resources.DeleteResource(ctx, hostClient, newControllerKubeconfigSecretMutator(valHelper)); err != nil {
 		return err
 	}
 

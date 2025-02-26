@@ -238,7 +238,7 @@ func (d *deploymentMutator) env() []corev1.EnvVar {
 			Name: "MY_POD_NAMESPACE",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
+					FieldPath: "metadata.namespace",
 				},
 			},
 		},

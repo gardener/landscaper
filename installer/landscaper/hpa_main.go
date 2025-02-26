@@ -44,7 +44,7 @@ func (m *mainHPAMutator) Mutate(r *v2.HorizontalPodAutoscaler) error {
 			Name:       m.landscaperMainFullName(),
 		},
 		MinReplicas: ptr.To[int32](1),
-		MaxReplicas: m.values.HPAMain.MaxReplicas,
+		MaxReplicas: m.values.Controller.HPAMain.MaxReplicas,
 		Metrics: []v2.MetricSpec{
 			{
 				Type: "Resource",
@@ -52,7 +52,7 @@ func (m *mainHPAMutator) Mutate(r *v2.HorizontalPodAutoscaler) error {
 					Name: "cpu",
 					Target: v2.MetricTarget{
 						Type:               "Utilization",
-						AverageUtilization: m.values.HPAMain.AverageCpuUtilization,
+						AverageUtilization: m.values.Controller.HPAMain.AverageCpuUtilization,
 					},
 				},
 			},
@@ -62,7 +62,7 @@ func (m *mainHPAMutator) Mutate(r *v2.HorizontalPodAutoscaler) error {
 					Name: "memory",
 					Target: v2.MetricTarget{
 						Type:               "Utilization",
-						AverageUtilization: m.values.HPAMain.AverageMemoryUtilization,
+						AverageUtilization: m.values.Controller.HPAMain.AverageMemoryUtilization,
 					},
 				},
 			},

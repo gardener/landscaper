@@ -58,11 +58,27 @@ func (h *valuesHelper) selectorLabels() map[string]string {
 }
 
 // TODO labels for component and topology
+func (h *valuesHelper) mainSelectorLabels() map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/name":     "landscaper",
+		"app.kubernetes.io/instance": h.values.Key.Name,
+	}
+}
+
+// TODO labels for component and topology
 func (h *valuesHelper) webhooksSelectorLabels() map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":     "landscaper",
 		"app.kubernetes.io/instance": h.values.Key.Name,
 	}
+}
+
+func (h *valuesHelper) configSecretName() string {
+	return fmt.Sprintf("%s-config", h.landscaperFullName())
+}
+
+func (h *valuesHelper) controllerKubeconfigSecretName() string {
+	return fmt.Sprintf("%s-controller-cluster-kubeconfig", h.landscaperFullName())
 }
 
 func (h *valuesHelper) isCreateServiceAccount() bool {

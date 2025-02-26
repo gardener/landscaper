@@ -1,15 +1,17 @@
 package landscaper
 
-import "fmt"
+import (
+	"fmt"
+	core "k8s.io/api/core/v1"
+)
 
 type Values struct {
 	Key            *KeyValues            `json:"key,omitempty"`
 	Version        string                `json:"version,omitempty"`
+	VerbosityLevel string                `json:"verbosityLevel,omitempty"`
 	ServiceAccount *ServiceAccountValues `json:"serviceAccount,omitempty"`
-	Service        *ServiceValues        `json:"service,omitempty"`
+	Controller     ControllerValues      `json:"controller,omitempty"`
 	WebhooksServer *WebhooksServerValues `json:"webhooksServer,omitempty"`
-
-	HPAMain HPAValues `json:"hpaMain,omitempty"`
 }
 
 // KeyValues is the key to identify the rbac installation for an update or delete operation.
@@ -42,8 +44,35 @@ func NewKeyFromID(id string) *KeyValues {
 	}
 }
 
+type KubeconfigValues struct {
+	Kubeconfig string `json:"kubeconfig,omitempty"`
+	SecretRef  string `json:"secretRef,omitempty"`
+}
+
 type ServiceAccountValues struct {
 	Create bool `json:"create,omitempty"`
+}
+
+type ControllerValues struct {
+	// LandscaperKubeconfig contains the kubeconfig for the resource cluster (= landscaper cluster).
+	LandscaperKubeconfig   *KubeconfigValues           `json:"landscaperKubeconfig,omitempty"`
+	Service                *ServiceValues              `json:"service,omitempty"`
+	Image                  ImageValues                 `json:"image,omitempty"`
+	ImagePullSecrets       []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ReplicaCount           *int32                      `json:"replicaCount,omitempty"`
+	Resources              core.ResourceRequirements   `json:"resources,omitempty"`
+	ResourcesMain          core.ResourceRequirements   `json:"resourcesMain,omitempty"`
+	PodSecurityContext     *core.PodSecurityContext    `json:"podSecurityContext,omitempty"`
+	SecurityContext        *core.SecurityContext       `json:"securityContext,omitempty"`
+	Metrics                *MetricsValues              `json:"metrics,omitempty"`
+	HostClientSettings     *ClientSettings             `json:"hostClientSettings,omitempty"`
+	ResourceClientSettings *ClientSettings             `json:"resourceClientSettings,omitempty"`
+	// HPAMain contains the values for the HPA of the main deployment.
+	// (There is no configuration for HPACentral, because its values are fix.)
+	HPAMain      HPAValues         `json:"hpaMain,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	Affinity     *core.Affinity    `json:"affinity,omitempty"`
+	Tolerations  []core.Toleration `json:"tolerations,omitempty"`
 }
 
 type DisabledWebhook string
@@ -57,9 +86,17 @@ const (
 
 type WebhooksServerValues struct {
 	DisableWebhooks []DisabledWebhook `json:"disableWebhooks,omitempty"`
-	Service         ServiceValues     `json:"service,omitempty"`
-	Ingress         *IngressValues    `json:"ingress,omitempty"` // optional - if not set, no ingress will be created.
-	HPA             HPAValues         `json:"hpa,omitempty"`
+	// LandscaperKubeconfig contains the kubeconfig for the resource cluster (= landscaper cluster).
+	LandscaperKubeconfig *KubeconfigValues `json:"landscaperKubeconfig,omitempty"`
+	Service              ServiceValues     `json:"service,omitempty"`
+	Ingress              *IngressValues    `json:"ingress,omitempty"` // optional - if not set, no ingress will be created.
+	HPA                  HPAValues         `json:"hpa,omitempty"`
+}
+
+type ImageValues struct {
+	Repository string `json:"repository,omitempty"`
+	Tag        string `json:"tag,omitempty"`
+	PullPolicy string `json:"pullPolicy,omitempty"`
 }
 
 type ServiceValues struct {
@@ -71,6 +108,15 @@ type IngressValues struct {
 	Host      string  `json:"host,omitempty"`
 	ClassName *string `json:"className,omitempty"` // optional - if not set, some annotations are omitted.
 	DNSClass  string  `json:"dnsClass,omitempty"`
+}
+
+type MetricsValues struct {
+	Port int32 `json:"port,omitempty"`
+}
+
+type ClientSettings struct {
+	Burst int32 `json:"burst,omitempty"`
+	QPS   int32 `json:"qps,omitempty"`
 }
 
 type HPAValues struct {

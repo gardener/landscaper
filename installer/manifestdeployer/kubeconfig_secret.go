@@ -18,7 +18,7 @@ func newKubeconfigSecretMutator(b *valuesHelper) resources.Mutator[*v1.Secret] {
 }
 
 func (d *kubeconfigSecretMutator) String() string {
-	return fmt.Sprintf("config secret %s/%s", d.hostNamespace(), d.name())
+	return fmt.Sprintf("kubeconfig secret %s/%s", d.hostNamespace(), d.name())
 }
 
 func (d *kubeconfigSecretMutator) name() string {
