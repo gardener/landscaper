@@ -24,22 +24,22 @@ func (h *valuesHelper) hostNamespace() string {
 }
 
 func (h *valuesHelper) landscaperFullName() string {
-	//TODO also called landscaperCentralFullName()
-	return fmt.Sprintf("%s-%s", h.values.Key.Name, h.values.Key.HostNamespace)
+	return h.values.Key.Name
 }
 
 func (h *valuesHelper) landscaperMainFullName() string {
-	//TODO
-	return fmt.Sprintf("%s-%s", h.values.Key.Name, h.values.Key.HostNamespace)
+	return fmt.Sprintf("%s-main", h.values.Key.Name)
 }
 
 func (h *valuesHelper) landscaperWebhooksFullName() string {
-	//TODO
-	return fmt.Sprintf("%s-%s", h.values.Key.Name, h.values.Key.HostNamespace)
+	return fmt.Sprintf("%s-webhooks", h.values.Key.Name)
+}
+
+func (h *valuesHelper) clusterRoleName() string {
+	return fmt.Sprintf("landscaper:%s-agent", h.values.Key.Name)
 }
 
 func (h *valuesHelper) landscaperLabels() map[string]string {
-	//TODO
 	labels := map[string]string{
 		"app.kubernetes.io/version":    h.values.Version,
 		"app.kubernetes.io/managed-by": "landscaper-installer",
@@ -48,25 +48,14 @@ func (h *valuesHelper) landscaperLabels() map[string]string {
 	return labels
 }
 
+// TODO labels for component and topology
 func (h *valuesHelper) selectorLabels() map[string]string {
-	//TODO
 	return map[string]string{
-		"app.kubernetes.io/name":     "landscaper-rbac",
+		"app.kubernetes.io/name":     "landscaper",
 		"app.kubernetes.io/instance": h.values.Key.Name,
 	}
 }
 
 func (h *valuesHelper) isCreateServiceAccount() bool {
-	//TODO
 	return h.values.ServiceAccount != nil && h.values.ServiceAccount.Create
-}
-
-func (h *valuesHelper) landscaperControllerServiceAccountName() string {
-	//TODO
-	return "landscaper"
-}
-
-func (h *valuesHelper) landscaperAgentFullName() string {
-	//TODO
-	return "landscaper"
 }
