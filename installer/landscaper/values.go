@@ -6,8 +6,10 @@ type Values struct {
 	Key            *KeyValues            `json:"key,omitempty"`
 	Version        string                `json:"version,omitempty"`
 	ServiceAccount *ServiceAccountValues `json:"serviceAccount,omitempty"`
-	HPAMain        HPAValues             `json:"hpaMain,omitempty"`
-	HPAWebhooks    HPAValues             `json:"hpaWebhooks,omitempty"`
+	Service        *ServiceValues        `json:"service,omitempty"`
+	WebhooksServer *WebhooksServerValues `json:"webhooksServer,omitempty"`
+
+	HPAMain HPAValues `json:"hpaMain,omitempty"`
 }
 
 // KeyValues is the key to identify the rbac installation for an update or delete operation.
@@ -42,6 +44,23 @@ func NewKeyFromID(id string) *KeyValues {
 
 type ServiceAccountValues struct {
 	Create bool `json:"create,omitempty"`
+}
+
+type WebhooksServerValues struct {
+	Service ServiceValues  `json:"service,omitempty"`
+	Ingress *IngressValues `json:"ingress,omitempty"` // optional - if not set, no ingress will be created.
+	HPA     HPAValues      `json:"hpa,omitempty"`
+}
+
+type ServiceValues struct {
+	Type string `json:"type,omitempty"`
+	Port int32  `json:"port,omitempty"`
+}
+
+type IngressValues struct {
+	Host      string  `json:"host,omitempty"`
+	ClassName *string `json:"className,omitempty"` // optional - if not set, some annotations are omitted.
+	DNSClass  string  `json:"dnsClass,omitempty"`
 }
 
 type HPAValues struct {

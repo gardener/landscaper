@@ -56,6 +56,14 @@ func (h *valuesHelper) selectorLabels() map[string]string {
 	}
 }
 
+// TODO labels for component and topology
+func (h *valuesHelper) webhooksSelectorLabels() map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/name":     "landscaper",
+		"app.kubernetes.io/instance": h.values.Key.Name,
+	}
+}
+
 func (h *valuesHelper) isCreateServiceAccount() bool {
 	return h.values.ServiceAccount != nil && h.values.ServiceAccount.Create
 }

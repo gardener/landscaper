@@ -44,7 +44,7 @@ func (m *webhooksHPAMutator) Mutate(r *v2.HorizontalPodAutoscaler) error {
 			Name:       m.landscaperWebhooksFullName(),
 		},
 		MinReplicas: ptr.To[int32](2),
-		MaxReplicas: m.values.HPAWebhooks.MaxReplicas,
+		MaxReplicas: m.values.WebhooksServer.HPA.MaxReplicas,
 		Metrics: []v2.MetricSpec{
 			{
 				Type: "Resource",
@@ -52,7 +52,7 @@ func (m *webhooksHPAMutator) Mutate(r *v2.HorizontalPodAutoscaler) error {
 					Name: "cpu",
 					Target: v2.MetricTarget{
 						Type:               "Utilization",
-						AverageUtilization: m.values.HPAWebhooks.AverageCpuUtilization,
+						AverageUtilization: m.values.WebhooksServer.HPA.AverageCpuUtilization,
 					},
 				},
 			},
@@ -62,7 +62,7 @@ func (m *webhooksHPAMutator) Mutate(r *v2.HorizontalPodAutoscaler) error {
 					Name: "memory",
 					Target: v2.MetricTarget{
 						Type:               "Utilization",
-						AverageUtilization: m.values.HPAWebhooks.AverageMemoryUtilization,
+						AverageUtilization: m.values.WebhooksServer.HPA.AverageMemoryUtilization,
 					},
 				},
 			},
