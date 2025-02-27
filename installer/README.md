@@ -22,6 +22,14 @@
 - [ ] Value helper: functions `selectorLabels`, `mainSelectorLabels`, `podAnnotations`
 
 
+## Landscaper Webhooks
+
+The instances use `automountServiceAccountToken: false` in the webhooks pod template. 
+This is because the service account token is not needed for the webhooks. The service account token is mounted in the 
+landscaper pod template.
+
+The webhooks pod template of the core landscaper on the other hand, has a serviceAccountName set.
+
 ## Package Dependencies
 
 ```mermaid

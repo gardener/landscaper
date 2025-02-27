@@ -7,14 +7,14 @@ import (
 )
 
 const (
-	webhooksServiceAccountName     = "landscaper-webhooks"
+	WebhooksServiceAccountName     = "landscaper-webhooks"
 	webhooksClusterRoleName        = "landscaper:landscaper-webhooks"
 	webhooksClusterRoleBindingName = "landscaper:landscaper-webhooks"
 )
 
 func newWebhooksServiceAccountMutator(h *valuesHelper) resources.Mutator[*core.ServiceAccount] {
 	return &resources.ServiceAccountMutator{
-		Name:      webhooksServiceAccountName,
+		Name:      WebhooksServiceAccountName,
 		Namespace: h.resourceNamespace(),
 		Labels:    h.landscaperLabels(),
 	}
@@ -24,7 +24,7 @@ func newWebhooksClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rb
 	return &resources.ClusterRoleBindingMutator{
 		ClusterRoleBindingName:  webhooksClusterRoleBindingName,
 		ClusterRoleName:         webhooksClusterRoleName,
-		ServiceAccountName:      webhooksServiceAccountName,
+		ServiceAccountName:      WebhooksServiceAccountName,
 		ServiceAccountNamespace: h.resourceNamespace(),
 		Labels:                  h.landscaperLabels(),
 	}

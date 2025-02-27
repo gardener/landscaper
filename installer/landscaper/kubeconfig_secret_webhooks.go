@@ -18,11 +18,7 @@ func newWebhooksKubeconfigSecretMutator(b *valuesHelper) resources.Mutator[*v1.S
 }
 
 func (d *webhooksKubeconfigSecretMutator) String() string {
-	return fmt.Sprintf("secret %s/%s", d.hostNamespace(), d.name())
-}
-
-func (d *webhooksKubeconfigSecretMutator) name() string {
-	return fmt.Sprintf("%s-webhooks-cluster-kubeconfig", d.landscaperFullName())
+	return fmt.Sprintf("secret %s/%s", d.hostNamespace(), d.webhooksKubeconfigSecretName())
 }
 
 func (d *webhooksKubeconfigSecretMutator) Empty() *v1.Secret {
@@ -32,7 +28,7 @@ func (d *webhooksKubeconfigSecretMutator) Empty() *v1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.name(),
+			Name:      d.webhooksKubeconfigSecretName(),
 			Namespace: d.hostNamespace(),
 		},
 	}

@@ -101,6 +101,10 @@ func (h *valuesHelper) controllerKubeconfigSecretName() string {
 	return fmt.Sprintf("%s-controller-cluster-kubeconfig", h.landscaperFullName())
 }
 
+func (h *valuesHelper) webhooksKubeconfigSecretName() string {
+	return fmt.Sprintf("%s-webhooks-cluster-kubeconfig", h.landscaperFullName())
+}
+
 func (h *valuesHelper) isCreateServiceAccount() bool {
 	return h.values.ServiceAccount != nil && h.values.ServiceAccount.Create
 }

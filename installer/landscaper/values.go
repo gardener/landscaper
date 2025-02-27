@@ -7,13 +7,19 @@ import (
 )
 
 type Values struct {
-	Key            *KeyValues                       `json:"key,omitempty"`
-	Version        string                           `json:"version,omitempty"`
-	VerbosityLevel string                           `json:"verbosityLevel,omitempty"`
-	Configuration  v1alpha1.LandscaperConfiguration `json:"configuration,omitempty"`
-	ServiceAccount *ServiceAccountValues            `json:"serviceAccount,omitempty"`
-	Controller     ControllerValues                 `json:"controller,omitempty"`
-	WebhooksServer *WebhooksServerValues            `json:"webhooksServer,omitempty"`
+	Key                *KeyValues                       `json:"key,omitempty"`
+	Version            string                           `json:"version,omitempty"`
+	VerbosityLevel     string                           `json:"verbosityLevel,omitempty"`
+	Configuration      v1alpha1.LandscaperConfiguration `json:"configuration,omitempty"`
+	ServiceAccount     *ServiceAccountValues            `json:"serviceAccount,omitempty"`
+	Controller         ControllerValues                 `json:"controller,omitempty"`
+	WebhooksServer     *WebhooksServerValues            `json:"webhooksServer,omitempty"`
+	ImagePullSecrets   []core.LocalObjectReference      `json:"imagePullSecrets,omitempty"`
+	PodSecurityContext *core.PodSecurityContext         `json:"podSecurityContext,omitempty"`
+	SecurityContext    *core.SecurityContext            `json:"securityContext,omitempty"`
+	NodeSelector       map[string]string                `json:"nodeSelector,omitempty"`
+	Affinity           *core.Affinity                   `json:"affinity,omitempty"`
+	Tolerations        []core.Toleration                `json:"tolerations,omitempty"`
 }
 
 // KeyValues is the key to identify the rbac installation for an update or delete operation.
@@ -57,42 +63,39 @@ type ServiceAccountValues struct {
 
 type ControllerValues struct {
 	// LandscaperKubeconfig contains the kubeconfig for the resource cluster (= landscaper cluster).
-	LandscaperKubeconfig   *KubeconfigValues           `json:"landscaperKubeconfig,omitempty"`
-	Service                *ServiceValues              `json:"service,omitempty"`
-	Image                  ImageValues                 `json:"image,omitempty"`
-	ImagePullSecrets       []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	ReplicaCount           *int32                      `json:"replicaCount,omitempty"`
-	Resources              core.ResourceRequirements   `json:"resources,omitempty"`
-	ResourcesMain          core.ResourceRequirements   `json:"resourcesMain,omitempty"`
-	PodSecurityContext     *core.PodSecurityContext    `json:"podSecurityContext,omitempty"`
-	SecurityContext        *core.SecurityContext       `json:"securityContext,omitempty"`
-	Metrics                *MetricsValues              `json:"metrics,omitempty"`
-	HostClientSettings     *ClientSettings             `json:"hostClientSettings,omitempty"`
-	ResourceClientSettings *ClientSettings             `json:"resourceClientSettings,omitempty"`
+	LandscaperKubeconfig   *KubeconfigValues         `json:"landscaperKubeconfig,omitempty"`
+	Service                *ServiceValues            `json:"service,omitempty"`
+	Image                  ImageValues               `json:"image,omitempty"`
+	ReplicaCount           *int32                    `json:"replicaCount,omitempty"`
+	Resources              core.ResourceRequirements `json:"resources,omitempty"`
+	ResourcesMain          core.ResourceRequirements `json:"resourcesMain,omitempty"`
+	Metrics                *MetricsValues            `json:"metrics,omitempty"`
+	HostClientSettings     *ClientSettings           `json:"hostClientSettings,omitempty"`
+	ResourceClientSettings *ClientSettings           `json:"resourceClientSettings,omitempty"`
 	// HPAMain contains the values for the HPA of the main deployment.
 	// (There is no configuration for HPACentral, because its values are fix.)
-	HPAMain      HPAValues         `json:"hpaMain,omitempty"`
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	Affinity     *core.Affinity    `json:"affinity,omitempty"`
-	Tolerations  []core.Toleration `json:"tolerations,omitempty"`
+	HPAMain HPAValues `json:"hpaMain,omitempty"`
 }
 
-type DisabledWebhook string
-
 const (
-	allWebhooks         DisabledWebhook = "all"
-	installationWebhook DisabledWebhook = "installation"
-	executionWebhook    DisabledWebhook = "execution"
-	deployitemWebhook   DisabledWebhook = "deployitem"
+	allWebhooks         = "all"
+	installationWebhook = "installation"
+	executionWebhook    = "execution"
+	deployitemWebhook   = "deployitem"
 )
 
 type WebhooksServerValues struct {
-	DisableWebhooks []DisabledWebhook `json:"disableWebhooks,omitempty"`
+	DisableWebhooks []string `json:"disableWebhooks,omitempty"`
 	// LandscaperKubeconfig contains the kubeconfig for the resource cluster (= landscaper cluster).
-	LandscaperKubeconfig *KubeconfigValues `json:"landscaperKubeconfig,omitempty"`
-	Service              ServiceValues     `json:"service,omitempty"`
-	Ingress              *IngressValues    `json:"ingress,omitempty"` // optional - if not set, no ingress will be created.
-	HPA                  HPAValues         `json:"hpa,omitempty"`
+	LandscaperKubeconfig  *KubeconfigValues         `json:"landscaperKubeconfig,omitempty"`
+	Service               ServiceValues             `json:"service,omitempty"`
+	Image                 ImageValues               `json:"image,omitempty"`
+	ServicePort           int32                     `json:"servicePort,omitempty"` // required unless DisableWebhooks contains "all"
+	CertificatesNamespace string                    `json:"certificatesNamespace,omitempty"`
+	ReplicaCount          *int32                    `json:"replicaCount,omitempty"`
+	Ingress               *IngressValues            `json:"ingress,omitempty"` // optional - if not set, no ingress will be created.
+	Resources             core.ResourceRequirements `json:"resources,omitempty"`
+	HPA                   HPAValues                 `json:"hpa,omitempty"`
 }
 
 type ImageValues struct {

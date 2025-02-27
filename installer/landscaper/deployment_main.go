@@ -56,12 +56,12 @@ func (m *mainDeploymentMutator) Mutate(r *appsv1.Deployment) error {
 			Spec: corev1.PodSpec{
 				Volumes:                   m.volumes(),
 				Containers:                m.containers(),
-				NodeSelector:              m.values.Controller.NodeSelector,
+				NodeSelector:              m.values.NodeSelector,
 				ServiceAccountName:        m.landscaperFullName(),
-				SecurityContext:           m.values.Controller.PodSecurityContext,
-				ImagePullSecrets:          m.values.Controller.ImagePullSecrets,
-				Affinity:                  m.values.Controller.Affinity,
-				Tolerations:               m.values.Controller.Tolerations,
+				SecurityContext:           m.values.PodSecurityContext,
+				ImagePullSecrets:          m.values.ImagePullSecrets,
+				Affinity:                  m.values.Affinity,
+				Tolerations:               m.values.Tolerations,
 				TopologySpreadConstraints: m.topologySpreadConstraints(),
 			},
 		},
@@ -86,7 +86,6 @@ func (m *mainDeploymentMutator) templateLabels() map[string]string {
 	return labels
 }
 
-// TODO
 func (m *mainDeploymentMutator) templateAnnotations() map[string]string {
 	annotations := map[string]string{
 		"checksum/config": m.configHash,
@@ -104,7 +103,7 @@ func (m *mainDeploymentMutator) containers() []corev1.Container {
 	c.Resources = m.values.Controller.ResourcesMain
 	c.VolumeMounts = m.volumeMounts()
 	c.ImagePullPolicy = corev1.PullPolicy(m.values.Controller.Image.PullPolicy)
-	c.SecurityContext = m.values.Controller.SecurityContext
+	c.SecurityContext = m.values.SecurityContext
 	c.Ports = m.ports()
 	return []corev1.Container{c}
 }

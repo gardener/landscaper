@@ -43,6 +43,10 @@ func InstallLandscaper(ctx context.Context, hostClient client.Client, values *Va
 		}
 	}
 
+	if err := resources.CreateOrUpdateResource(ctx, hostClient, newConfigSecretMutator(valHelper)); err != nil {
+		return err
+	}
+
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, newServiceMutator(valHelper)); err != nil {
 		return err
 	}
@@ -57,6 +61,14 @@ func InstallLandscaper(ctx context.Context, hostClient client.Client, values *Va
 		if err := resources.CreateOrUpdateResource(ctx, hostClient, newIngressMutator(valHelper)); err != nil {
 			return err
 		}
+	}
+
+	if err := resources.CreateOrUpdateResource(ctx, hostClient, newCentralDeploymentMutator(valHelper)); err != nil {
+		return err
+	}
+
+	if err := resources.CreateOrUpdateResource(ctx, hostClient, newMainDeploymentMutator(valHelper)); err != nil {
+		return err
 	}
 
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, newMainHPAMutator(valHelper)); err != nil {
@@ -93,6 +105,14 @@ func UninstallLandscaper(ctx context.Context, hostClient client.Client, values *
 		return err
 	}
 
+	if err := resources.DeleteResource(ctx, hostClient, newMainDeploymentMutator(valHelper)); err != nil {
+		return err
+	}
+
+	if err := resources.DeleteResource(ctx, hostClient, newCentralDeploymentMutator(valHelper)); err != nil {
+		return err
+	}
+
 	if err := resources.DeleteResource(ctx, hostClient, newIngressMutator(valHelper)); err != nil {
 		return err
 	}
@@ -102,6 +122,10 @@ func UninstallLandscaper(ctx context.Context, hostClient client.Client, values *
 	}
 
 	if err := resources.DeleteResource(ctx, hostClient, newServiceMutator(valHelper)); err != nil {
+		return err
+	}
+
+	if err := resources.DeleteResource(ctx, hostClient, newConfigSecretMutator(valHelper)); err != nil {
 		return err
 	}
 
