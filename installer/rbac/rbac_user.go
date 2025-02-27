@@ -7,9 +7,7 @@ import (
 )
 
 const (
-	userServiceAccountName     = "landscaper-user"
-	userClusterRoleName        = "landscaper:landscaper-user"
-	userClusterRoleBindingName = "landscaper:landscaper-user"
+	userServiceAccountName = "landscaper-user"
 )
 
 func newUserServiceAccountMutator(h *valuesHelper) resources.Mutator[*core.ServiceAccount] {
@@ -22,8 +20,8 @@ func newUserServiceAccountMutator(h *valuesHelper) resources.Mutator[*core.Servi
 
 func newUserClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRoleBinding] {
 	return &resources.ClusterRoleBindingMutator{
-		ClusterRoleBindingName:  userClusterRoleBindingName,
-		ClusterRoleName:         userClusterRoleName,
+		ClusterRoleBindingName:  h.clusterRoleNameUser(),
+		ClusterRoleName:         h.clusterRoleNameUser(),
 		ServiceAccountName:      userServiceAccountName,
 		ServiceAccountNamespace: h.resourceNamespace(),
 		Labels:                  h.landscaperLabels(),
@@ -32,7 +30,7 @@ func newUserClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rbac.C
 
 func newUserClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRole] {
 	return &resources.ClusterRoleMutator{
-		Name:   userClusterRoleName,
+		Name:   h.clusterRoleNameUser(),
 		Labels: h.landscaperLabels(),
 		Rules: []rbac.PolicyRule{
 			{

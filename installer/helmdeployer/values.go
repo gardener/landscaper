@@ -4,60 +4,30 @@ import (
 	"fmt"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/installer/shared"
-	v1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
 
 type Values struct {
-	Instance                    shared.Instance           `json:"instance,omitempty"`
-	Version                     string                    `json:"version,omitempty"`
-	VerbosityLevel              string                    `json:"verbosityLevel,omitempty"`
-	LandscaperClusterKubeconfig *KubeconfigValues         `json:"landscaperClusterKubeconfig,omitempty"`
-	Image                       ImageValues               `json:"image,omitempty"`
-	ImagePullSecrets            []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	ReplicaCount                *int32                    `json:"replicaCount,omitempty"`
-	Resources                   v1.ResourceRequirements   `json:"resources,omitempty"`
-	PodSecurityContext          *v1.PodSecurityContext    `json:"podSecurityContext,omitempty"`
-	SecurityContext             *v1.SecurityContext       `json:"securityContext,omitempty"`
-	ServiceAccount              *ServiceAccountValues     `json:"serviceAccount,omitempty"`
-	Configuration               v1alpha1.Configuration    `json:"configuration,omitempty"`
-	HostClientSettings          *ClientSettings           `json:"hostClientSettings,omitempty"`
-	ResourceClientSettings      *ClientSettings           `json:"resourceClientSettings,omitempty"`
-	HPA                         HPAValues                 `json:"hpa,omitempty"`
-	NodeSelector                map[string]string         `json:"nodeSelector,omitempty"`
-	Affinity                    *v1.Affinity              `json:"affinity,omitempty"`
-	Tolerations                 []v1.Toleration           `json:"tolerations,omitempty"`
-	OCI                         *OCIValues                `json:"oci,omitempty"`
-}
-
-// KeyValues is the key to identify the installation of the helm deployer for an update or delete operation.
-type KeyValues struct {
-	// Name is the name of the helm deployer installation.
-	Name string `json:"name,omitempty"`
-
-	// HostNamespace is the namespace where the helm deployer will be installed.
-	HostNamespace string `json:"hostNamespace,omitempty"`
-}
-
-func NewKey(instance, hostNamespace string) *KeyValues {
-	return &KeyValues{
-		Name:          instance,
-		HostNamespace: hostNamespace,
-	}
-}
-
-func NewDefaultKey() *KeyValues {
-	return &KeyValues{
-		Name:          "helm-deployer",
-		HostNamespace: "ls-system",
-	}
-}
-
-func NewKeyFromID(id string) *KeyValues {
-	return &KeyValues{
-		Name:          fmt.Sprintf("helm-deployer-%s", id),
-		HostNamespace: fmt.Sprintf("ls-system-%s", id),
-	}
+	Instance                    shared.Instance             `json:"instance,omitempty"`
+	Version                     string                      `json:"version,omitempty"`
+	VerbosityLevel              string                      `json:"verbosityLevel,omitempty"`
+	LandscaperClusterKubeconfig *KubeconfigValues           `json:"landscaperClusterKubeconfig,omitempty"`
+	Image                       ImageValues                 `json:"image,omitempty"`
+	ImagePullSecrets            []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ReplicaCount                *int32                      `json:"replicaCount,omitempty"`
+	Resources                   core.ResourceRequirements   `json:"resources,omitempty"`
+	PodSecurityContext          *core.PodSecurityContext    `json:"podSecurityContext,omitempty"`
+	SecurityContext             *core.SecurityContext       `json:"securityContext,omitempty"`
+	ServiceAccount              *ServiceAccountValues       `json:"serviceAccount,omitempty"`
+	Configuration               v1alpha1.Configuration      `json:"configuration,omitempty"`
+	HostClientSettings          *ClientSettings             `json:"hostClientSettings,omitempty"`
+	ResourceClientSettings      *ClientSettings             `json:"resourceClientSettings,omitempty"`
+	HPA                         HPAValues                   `json:"hpa,omitempty"`
+	NodeSelector                map[string]string           `json:"nodeSelector,omitempty"`
+	Affinity                    *core.Affinity              `json:"affinity,omitempty"`
+	Tolerations                 []core.Toleration           `json:"tolerations,omitempty"`
+	OCI                         *OCIValues                  `json:"oci,omitempty"`
 }
 
 type ReleaseValues struct {

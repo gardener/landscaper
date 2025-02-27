@@ -35,7 +35,7 @@ var _ = Describe("Landscaper RBAC Installer", func() {
 		ctx := context.Background()
 
 		values := &Values{
-			Key:            NewKeyFromID(id),
+			Instance:       id,
 			Version:        "v0.127.0",
 			ServiceAccount: &ServiceAccountValues{Create: true},
 		}
@@ -51,7 +51,7 @@ var _ = Describe("Landscaper RBAC Installer", func() {
 		ctx := context.Background()
 
 		values := &Values{
-			Key: NewKeyFromID(id),
+			Instance: id,
 		}
 
 		resourceCl, err := newResourceClient()

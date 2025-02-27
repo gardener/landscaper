@@ -2,7 +2,12 @@ package rbac
 
 import (
 	"fmt"
+	"github.com/gardener/landscaper/installer/shared"
 	"maps"
+)
+
+const (
+	appNameLandscaperRBAC = "landscaper-rbac"
 )
 
 type valuesHelper struct {
@@ -19,14 +24,30 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	}, nil
 }
 
+func (h *valuesHelper) appAndInstance() string {
+	return fmt.Sprintf("%s-%s", appNameLandscaperRBAC, h.values.Instance)
+}
+
 func (h *valuesHelper) resourceNamespace() string {
-	return h.values.Key.ResourceNamespace
+	return h.values.Instance.Namespace()
+}
+
+func (h *valuesHelper) clusterRoleNameController() string {
+	return h.values.Instance.ClusterScopedResourceName("controller")
+}
+
+func (h *valuesHelper) clusterRoleNameUser() string {
+	return h.values.Instance.ClusterScopedResourceName("user")
+}
+
+func (h *valuesHelper) clusterRoleNameWebhooks() string {
+	return h.values.Instance.ClusterScopedResourceName("webhooks")
 }
 
 func (h *valuesHelper) landscaperLabels() map[string]string {
 	labels := map[string]string{
-		"app.kubernetes.io/version":    h.values.Version,
-		"app.kubernetes.io/managed-by": "landscaper-installer",
+		shared.LabelVersion:   h.values.Version,
+		shared.LabelManagedBy: shared.LabelValueManagedBy,
 	}
 	maps.Copy(labels, h.selectorLabels())
 	return labels
@@ -34,8 +55,8 @@ func (h *valuesHelper) landscaperLabels() map[string]string {
 
 func (h *valuesHelper) selectorLabels() map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/name":     "landscaper-rbac",
-		"app.kubernetes.io/instance": h.values.Key.Name,
+		shared.LabelAppName:     appNameLandscaperRBAC,
+		shared.LabelAppInstance: h.appAndInstance(),
 	}
 }
 
