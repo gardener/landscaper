@@ -20,8 +20,8 @@ func newWebhooksServiceAccountMutator(h *valuesHelper) resources.Mutator[*core.S
 
 func newWebhooksClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRoleBinding] {
 	return &resources.ClusterRoleBindingMutator{
-		ClusterRoleBindingName:  h.clusterRoleNameWebhooks(),
-		ClusterRoleName:         h.clusterRoleNameWebhooks(),
+		ClusterRoleBindingName:  webhooksClusterRoleName(h),
+		ClusterRoleName:         webhooksClusterRoleName(h),
 		ServiceAccountName:      WebhooksServiceAccountName,
 		ServiceAccountNamespace: h.resourceNamespace(),
 		Labels:                  h.landscaperLabels(),
@@ -30,7 +30,7 @@ func newWebhooksClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rb
 
 func newWebhooksClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRole] {
 	return &resources.ClusterRoleMutator{
-		Name:   h.clusterRoleNameWebhooks(),
+		Name:   webhooksClusterRoleName(h),
 		Labels: h.landscaperLabels(),
 		Rules: []rbac.PolicyRule{
 			{
@@ -50,4 +50,8 @@ func newWebhooksClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.Clus
 			},
 		},
 	}
+}
+
+func webhooksClusterRoleName(h *valuesHelper) string {
+	return h.values.Instance.ClusterScopedResourceName(WebhooksServiceAccountName)
 }

@@ -32,18 +32,6 @@ func (h *valuesHelper) resourceNamespace() string {
 	return h.values.Instance.Namespace()
 }
 
-func (h *valuesHelper) clusterRoleNameController() string {
-	return h.values.Instance.ClusterScopedResourceName("controller")
-}
-
-func (h *valuesHelper) clusterRoleNameUser() string {
-	return h.values.Instance.ClusterScopedResourceName("user")
-}
-
-func (h *valuesHelper) clusterRoleNameWebhooks() string {
-	return h.values.Instance.ClusterScopedResourceName("webhooks")
-}
-
 func (h *valuesHelper) landscaperLabels() map[string]string {
 	labels := map[string]string{
 		shared.LabelVersion:   h.values.Version,

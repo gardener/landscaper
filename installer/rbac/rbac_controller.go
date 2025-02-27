@@ -20,8 +20,8 @@ func newControllerServiceAccountMutator(h *valuesHelper) resources.Mutator[*core
 
 func newControllerClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRoleBinding] {
 	return &resources.ClusterRoleBindingMutator{
-		ClusterRoleBindingName:  h.clusterRoleNameController(),
-		ClusterRoleName:         h.clusterRoleNameController(),
+		ClusterRoleBindingName:  controllerClusterRoleName(h),
+		ClusterRoleName:         controllerClusterRoleName(h),
 		ServiceAccountName:      controllerServiceAccountName,
 		ServiceAccountNamespace: h.resourceNamespace(),
 		Labels:                  h.landscaperLabels(),
@@ -30,7 +30,7 @@ func newControllerClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*
 
 func newControllerClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRole] {
 	return &resources.ClusterRoleMutator{
-		Name:   h.clusterRoleNameController(),
+		Name:   controllerClusterRoleName(h),
 		Labels: h.landscaperLabels(),
 		Rules: []rbac.PolicyRule{
 			{
@@ -75,4 +75,8 @@ func newControllerClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.Cl
 			},
 		},
 	}
+}
+
+func controllerClusterRoleName(h *valuesHelper) string {
+	return h.values.Instance.ClusterScopedResourceName(controllerServiceAccountName)
 }
