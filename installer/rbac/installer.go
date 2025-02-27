@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func InstallRBAC(ctx context.Context, resourceClient client.Client, values *Values) error {
+func InstallLandscaperRBACResources(ctx context.Context, resourceClient client.Client, values *Values) error {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
@@ -55,7 +55,7 @@ func InstallRBAC(ctx context.Context, resourceClient client.Client, values *Valu
 	return nil
 }
 
-func UninstallManifestDeployer(ctx context.Context, resourceClient client.Client, values *Values) error {
+func UninstallLandscaperRBACResources(ctx context.Context, resourceClient client.Client, values *Values) error {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {

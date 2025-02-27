@@ -88,7 +88,7 @@ func InstallLandscaper(ctx context.Context, hostClient client.Client, values *Va
 
 func UninstallLandscaper(ctx context.Context, hostClient client.Client, values *Values) error {
 
-	valHelper, err := newValuesHelper(values)
+	valHelper, err := newValuesHelperForDelete(values)
 	if err != nil {
 		return err
 	}

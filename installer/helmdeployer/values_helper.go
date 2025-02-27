@@ -62,6 +62,20 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	}, nil
 }
 
+func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
+	if values == nil {
+		return nil, fmt.Errorf("values must not be nil")
+	}
+	values.Default()
+	if err := values.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid helm deployer values: %w", err)
+	}
+
+	return &valuesHelper{
+		values: values,
+	}, nil
+}
+
 func (h *valuesHelper) hostNamespace() string {
 	return h.values.Key.HostNamespace
 }

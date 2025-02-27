@@ -25,8 +25,8 @@ func (m *ServiceAccountMutator) Empty() *core.ServiceAccount {
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.Namespace,
-			Namespace: m.Name,
+			Name:      m.Name,
+			Namespace: m.Namespace,
 		},
 	}
 }

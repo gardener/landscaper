@@ -40,6 +40,16 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	}, nil
 }
 
+func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
+	if values == nil {
+		return nil, fmt.Errorf("values must not be nil")
+	}
+
+	return &valuesHelper{
+		values: values,
+	}, nil
+}
+
 func (h *valuesHelper) hostNamespace() string {
 	return h.values.Key.HostNamespace
 }
