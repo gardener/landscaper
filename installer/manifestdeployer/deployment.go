@@ -160,23 +160,13 @@ func (d *deploymentMutator) topologySpreadConstraints() []corev1.TopologySpreadC
 			MaxSkew:           1,
 			TopologyKey:       "topology.kubernetes.io/zone",
 			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    "manifest-deployer",
-					"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
-				},
-			},
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: d.topologyLabels()},
 		},
 		{
 			MaxSkew:           1,
 			TopologyKey:       "kubernetes.io/hostname",
 			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    "manifest-deployer",
-					"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
-				},
-			},
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: d.topologyLabels()},
 		},
 	}
 }

@@ -3,12 +3,13 @@ package helmdeployer
 import (
 	"fmt"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/installer/shared"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
 
 type Values struct {
-	Key                         *KeyValues                `json:"key,omitempty"`
+	Instance                    shared.Instance           `json:"instance,omitempty"`
 	Version                     string                    `json:"version,omitempty"`
 	VerbosityLevel              string                    `json:"verbosityLevel,omitempty"`
 	LandscaperClusterKubeconfig *KubeconfigValues         `json:"landscaperClusterKubeconfig,omitempty"`
@@ -112,7 +113,7 @@ func (v *Values) Default() {
 		v.Configuration.Kind = "Configuration"
 	}
 	if v.Configuration.Identity == "" {
-		v.Configuration.Identity = v.Key.Name
+		v.Configuration.Identity = fmt.Sprintf("%s-%s", appNameHelmDeployer, v.Instance)
 	}
 	if v.HostClientSettings == nil {
 		v.HostClientSettings = &ClientSettings{}

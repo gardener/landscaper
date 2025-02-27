@@ -90,6 +90,13 @@ func (h *valuesHelper) selectorLabels() map[string]string {
 	}
 }
 
+func (h *valuesHelper) topologyLabels() map[string]string {
+	return map[string]string{
+		shared.LabelTopology:   appNameManifestDeployer,
+		shared.LabelTopologyNs: h.hostNamespace(),
+	}
+}
+
 func (h *valuesHelper) deployerConfig() ([]byte, error) {
 	configYaml, err := yaml.Marshal(h.values.Configuration)
 	if err != nil {

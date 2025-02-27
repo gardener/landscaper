@@ -74,10 +74,8 @@ func (d *deploymentMutator) strategy() appsv1.DeploymentStrategy {
 }
 
 func (d *deploymentMutator) templateLabels() map[string]string {
-	labels := map[string]string{
-		"landscaper.gardener.cloud/topology":    "helm-deployer",
-		"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
-	}
+	labels := map[string]string{}
+	maps.Copy(labels, d.topologyLabels())
 	maps.Copy(labels, d.selectorLabels())
 	return labels
 }
@@ -182,23 +180,13 @@ func (d *deploymentMutator) topologySpreadConstraints() []corev1.TopologySpreadC
 			MaxSkew:           1,
 			TopologyKey:       "topology.kubernetes.io/zone",
 			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    "helm-deployer",
-					"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
-				},
-			},
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: d.topologyLabels()},
 		},
 		{
 			MaxSkew:           1,
 			TopologyKey:       "kubernetes.io/hostname",
 			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    "helm-deployer",
-					"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
-				},
-			},
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: d.topologyLabels()},
 		},
 	}
 }

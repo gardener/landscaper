@@ -5,8 +5,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/gardener/landscaper/installer/shared"
 	"golang.org/x/exp/maps"
 	"sigs.k8s.io/yaml"
+)
+
+const (
+	appNameHelmDeployer = "helm-deployer"
 )
 
 type valuesHelper struct {
@@ -76,22 +81,26 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 	}, nil
 }
 
+func (h *valuesHelper) appAndInstance() string {
+	return fmt.Sprintf("%s-%s", appNameHelmDeployer, h.values.Instance)
+}
+
 func (h *valuesHelper) hostNamespace() string {
-	return h.values.Key.HostNamespace
+	return h.values.Instance.Namespace()
 }
 
 func (h *valuesHelper) deployerFullName() string {
-	return h.values.Key.Name
+	return h.appAndInstance()
 }
 
 func (h *valuesHelper) clusterRoleName() string {
-	return fmt.Sprintf("landscaper:%s", h.values.Key.Name)
+	return h.values.Instance.ClusterScopedResourceName(appNameHelmDeployer)
 }
 
 func (h *valuesHelper) deployerLabels() map[string]string {
 	labels := map[string]string{
-		"app.kubernetes.io/version":    h.values.Version,
-		"app.kubernetes.io/managed-by": "landscaper-installer",
+		shared.LabelVersion:   h.values.Version,
+		shared.LabelManagedBy: shared.LabelValueManagedBy,
 	}
 	maps.Copy(labels, h.selectorLabels())
 	return labels
@@ -99,13 +108,16 @@ func (h *valuesHelper) deployerLabels() map[string]string {
 
 func (h *valuesHelper) selectorLabels() map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/name":     "helm-deployer",
-		"app.kubernetes.io/instance": h.values.Key.Name,
+		shared.LabelAppName:     appNameHelmDeployer,
+		shared.LabelAppInstance: h.appAndInstance(),
 	}
 }
 
-func (h *valuesHelper) identity() string {
-	return fmt.Sprintf("helm-%s", h.hostNamespace())
+func (h *valuesHelper) topologyLabels() map[string]string {
+	return map[string]string{
+		shared.LabelTopology:   appNameHelmDeployer,
+		shared.LabelTopologyNs: h.hostNamespace(),
+	}
 }
 
 func (h *valuesHelper) deployerConfig() ([]byte, error) {

@@ -39,8 +39,8 @@ var _ = Describe("Helm Deployer Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		values := &Values{
-			Key:     NewKeyFromID(id),
-			Version: "v0.127.0",
+			Instance: id,
+			Version:  "v0.127.0",
 			LandscaperClusterKubeconfig: &KubeconfigValues{
 				Kubeconfig: string(kubeconfig),
 			},
@@ -68,7 +68,7 @@ var _ = Describe("Helm Deployer Installer", func() {
 		ctx := context.Background()
 
 		values := &Values{
-			Key: NewKeyFromID(id),
+			Instance: id,
 		}
 
 		hostCl, err := newHostClient()
