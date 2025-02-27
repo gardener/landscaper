@@ -10,7 +10,6 @@
 
 - [ ] Prevent nilpointer: values.WebhooksServer.LandscaperClusterKubeconfig.Kubeconfig
 
-
 ## RBAC Component
 
 - [ ] Test
@@ -20,6 +19,8 @@
 - [ ] Test
 - [ ] Labels for component and topology
 - [ ] Config Secret
+- [ ] Value helper: functions `selectorLabels`, `mainSelectorLabels`, `podAnnotations`
+
 
 ## Package Dependencies
 

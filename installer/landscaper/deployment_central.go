@@ -46,8 +46,8 @@ func (m *centralDeploymentMutator) Mutate(r *appsv1.Deployment) error {
 		Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels:      m.templateLabels(),      //TODO
-				Annotations: m.templateAnnotations(), //TODO
+				Labels:      m.selectorLabels(),
+				Annotations: m.templateAnnotations(),
 			},
 			Spec: corev1.PodSpec{
 				Volumes:            m.volumes(),
@@ -62,15 +62,6 @@ func (m *centralDeploymentMutator) Mutate(r *appsv1.Deployment) error {
 		},
 	}
 	return nil
-}
-
-func (m *centralDeploymentMutator) templateLabels() map[string]string {
-	labels := map[string]string{
-		"landscaper.gardener.cloud/topology":    "manifest-deployer",
-		"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
-	}
-	maps.Copy(labels, m.selectorLabels())
-	return labels
 }
 
 func (m *centralDeploymentMutator) templateAnnotations() map[string]string {

@@ -2,11 +2,9 @@ package landscaper
 
 import (
 	"fmt"
-	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	"github.com/gardener/landscaper/installer/resources"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 type configSecretMutator struct {
@@ -37,40 +35,35 @@ func (m *configSecretMutator) Empty() *v1.Secret {
 }
 
 func (m *configSecretMutator) Mutate(r *v1.Secret) error {
-	conf, err := m.config()
-	if err != nil {
-		return err
-	}
-
 	r.ObjectMeta.Labels = m.landscaperLabels()
 	r.Data = map[string][]byte{
-		"config.yaml": conf,
+		"config.yaml": m.valuesHelper.configYaml,
 	}
 	return nil
 }
 
-func (m *configSecretMutator) config() ([]byte, error) {
-	conf := v1alpha1.LandscaperConfiguration{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "config.landscaper.gardener.cloud/v1alpha1",
-			Kind:       "LandscaperConfiguration",
-		},
-		Controllers:                            v1alpha1.Controllers{},
-		RepositoryContext:                      nil,
-		Registry:                               v1alpha1.RegistryConfiguration{},
-		BlueprintStore:                         v1alpha1.BlueprintStore{},
-		Metrics:                                nil,
-		CrdManagement:                          v1alpha1.CrdManagementConfiguration{},
-		DeployItemTimeouts:                     nil,
-		LsDeployments:                          nil,
-		HPAMainConfiguration:                   nil,
-		SignatureVerificationEnforcementPolicy: "",
-	}
-
-	confBytes, err := yaml.Marshal(conf)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal landscaper configuration: %w", err)
-	}
-
-	return confBytes, nil
-}
+//func (m *configSecretMutator) config() ([]byte, error) {
+//	conf := v1alpha1.LandscaperConfiguration{
+//		TypeMeta: metav1.TypeMeta{
+//			APIVersion: "config.landscaper.gardener.cloud/v1alpha1",
+//			Kind:       "LandscaperConfiguration",
+//		},
+//		Controllers:                            v1alpha1.Controllers{},
+//		RepositoryContext:                      nil,
+//		Registry:                               v1alpha1.RegistryConfiguration{},
+//		BlueprintStore:                         v1alpha1.BlueprintStore{},
+//		Metrics:                                nil,
+//		CrdManagement:                          v1alpha1.CrdManagementConfiguration{},
+//		DeployItemTimeouts:                     nil,
+//		LsDeployments:                          nil,
+//		HPAMainConfiguration:                   nil,
+//		SignatureVerificationEnforcementPolicy: "",
+//	}
+//
+//	confBytes, err := yaml.Marshal(conf)
+//	if err != nil {
+//		return nil, fmt.Errorf("failed to marshal landscaper configuration: %w", err)
+//	}
+//
+//	return confBytes, nil
+//}

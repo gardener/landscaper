@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+const (
+	mainControllerTopology = "main-controller"
+)
+
 type mainDeploymentMutator struct {
 	*valuesHelper
 }
@@ -46,12 +50,12 @@ func (m *mainDeploymentMutator) Mutate(r *appsv1.Deployment) error {
 		Strategy: m.strategy(),
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels:      m.templateLabels(),      //TODO
-				Annotations: m.templateAnnotations(), //TODO
+				Labels:      m.templateLabels(),
+				Annotations: m.templateAnnotations(),
 			},
 			Spec: corev1.PodSpec{
 				Volumes:                   m.volumes(),
-				Containers:                m.containers(), //TODO
+				Containers:                m.containers(),
 				NodeSelector:              m.values.Controller.NodeSelector,
 				ServiceAccountName:        m.landscaperFullName(),
 				SecurityContext:           m.values.Controller.PodSecurityContext,
@@ -73,13 +77,12 @@ func (m *mainDeploymentMutator) strategy() appsv1.DeploymentStrategy {
 	return strategy
 }
 
-// TODO
 func (m *mainDeploymentMutator) templateLabels() map[string]string {
 	labels := map[string]string{
-		"landscaper.gardener.cloud/topology":    "manifest-deployer",
+		"landscaper.gardener.cloud/topology":    mainControllerTopology,
 		"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
 	}
-	maps.Copy(labels, m.selectorLabels())
+	maps.Copy(labels, m.mainSelectorLabels())
 	return labels
 }
 
@@ -175,7 +178,7 @@ func (m *mainDeploymentMutator) topologySpreadConstraints() []corev1.TopologySpr
 			WhenUnsatisfiable: "ScheduleAnyway",
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    "main-controller",
+					"landscaper.gardener.cloud/topology":    mainControllerTopology,
 					"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
 				},
 			},
@@ -186,7 +189,7 @@ func (m *mainDeploymentMutator) topologySpreadConstraints() []corev1.TopologySpr
 			WhenUnsatisfiable: "ScheduleAnyway",
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    "main-controller",
+					"landscaper.gardener.cloud/topology":    mainControllerTopology,
 					"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
 				},
 			},

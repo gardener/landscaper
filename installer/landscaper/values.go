@@ -2,16 +2,18 @@ package landscaper
 
 import (
 	"fmt"
+	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	core "k8s.io/api/core/v1"
 )
 
 type Values struct {
-	Key            *KeyValues            `json:"key,omitempty"`
-	Version        string                `json:"version,omitempty"`
-	VerbosityLevel string                `json:"verbosityLevel,omitempty"`
-	ServiceAccount *ServiceAccountValues `json:"serviceAccount,omitempty"`
-	Controller     ControllerValues      `json:"controller,omitempty"`
-	WebhooksServer *WebhooksServerValues `json:"webhooksServer,omitempty"`
+	Key            *KeyValues                       `json:"key,omitempty"`
+	Version        string                           `json:"version,omitempty"`
+	VerbosityLevel string                           `json:"verbosityLevel,omitempty"`
+	Configuration  v1alpha1.LandscaperConfiguration `json:"configuration,omitempty"`
+	ServiceAccount *ServiceAccountValues            `json:"serviceAccount,omitempty"`
+	Controller     ControllerValues                 `json:"controller,omitempty"`
+	WebhooksServer *WebhooksServerValues            `json:"webhooksServer,omitempty"`
 }
 
 // KeyValues is the key to identify the rbac installation for an update or delete operation.

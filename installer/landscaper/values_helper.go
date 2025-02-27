@@ -1,13 +1,21 @@
 package landscaper
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	"maps"
+	"sigs.k8s.io/yaml"
 	"slices"
 )
 
 type valuesHelper struct {
 	values *Values
+
+	config     v1alpha1.LandscaperConfiguration
+	configYaml []byte
+	configHash string
 }
 
 func newValuesHelper(values *Values) (*valuesHelper, error) {
@@ -15,8 +23,20 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("values must not be nil")
 	}
 
+	// compute values
+	config := values.Configuration
+	configYaml, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal landscaper config: %w", err)
+	}
+	hash := sha256.Sum256(configYaml)
+	configHash := hex.EncodeToString(hash[:])
+
 	return &valuesHelper{
-		values: values,
+		values:     values,
+		config:     config,
+		configYaml: configYaml,
+		configHash: configHash,
 	}, nil
 }
 
@@ -87,4 +107,8 @@ func (h *valuesHelper) isCreateServiceAccount() bool {
 
 func (h *valuesHelper) areAllWebhooksDisabled() bool {
 	return slices.Contains(h.values.WebhooksServer.DisableWebhooks, allWebhooks)
+}
+
+func (h *valuesHelper) podAnnotations() map[string]string {
+	return make(map[string]string)
 }

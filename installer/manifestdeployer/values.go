@@ -19,7 +19,7 @@ type Values struct {
 	PodSecurityContext          *v1.PodSecurityContext    `json:"podSecurityContext,omitempty"`
 	SecurityContext             *v1.SecurityContext       `json:"securityContext,omitempty"`
 	ServiceAccount              *ServiceAccountValues     `json:"serviceAccount,omitempty"`
-	Configuration               v1alpha2.Configuration    `json:"deployerConfig,omitempty"`
+	Configuration               v1alpha2.Configuration    `json:"configuration,omitempty"`
 	HostClientSettings          *ClientSettings           `json:"hostClientSettings,omitempty"`
 	ResourceClientSettings      *ClientSettings           `json:"resourceClientSettings,omitempty"`
 	HPA                         HPAValues                 `json:"hpa,omitempty"`
