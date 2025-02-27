@@ -3,12 +3,13 @@ package manifestdeployer
 import (
 	"fmt"
 	"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/installer/shared"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
 
 type Values struct {
-	Key                         *KeyValues                `json:"key,omitempty"`
+	Instance                    shared.Instance           `json:"instance,omitempty"`
 	Version                     string                    `json:"version,omitempty"`
 	VerbosityLevel              string                    `json:"verbosityLevel,omitempty"`
 	LandscaperClusterKubeconfig *KubeconfigValues         `json:"landscaperClusterKubeconfig,omitempty"`
@@ -26,36 +27,6 @@ type Values struct {
 	NodeSelector                map[string]string         `json:"nodeSelector,omitempty"`
 	Affinity                    *v1.Affinity              `json:"affinity,omitempty"`
 	Tolerations                 []v1.Toleration           `json:"tolerations,omitempty"`
-}
-
-// KeyValues is the key to identify the installation of the manifest deployer for an update or delete operation.
-type KeyValues struct {
-	// Name is the name of the manifest deployer installation.
-	Name string `json:"name,omitempty"`
-
-	// HostNamespace is the namespace where the manifest deployer will be installed.
-	HostNamespace string `json:"hostNamespace,omitempty"`
-}
-
-func NewKey(instance, hostNamespace string) *KeyValues {
-	return &KeyValues{
-		Name:          instance,
-		HostNamespace: hostNamespace,
-	}
-}
-
-func NewDefaultKey() *KeyValues {
-	return &KeyValues{
-		Name:          "manifest-deployer",
-		HostNamespace: "ls-system",
-	}
-}
-
-func NewKeyFromID(id string) *KeyValues {
-	return &KeyValues{
-		Name:          fmt.Sprintf("manifest-deployer-%s", id),
-		HostNamespace: fmt.Sprintf("ls-system-%s", id),
-	}
 }
 
 type ReleaseValues struct {
@@ -105,7 +76,7 @@ func (v *Values) Default() {
 		v.Configuration.Kind = "Configuration"
 	}
 	if v.Configuration.Identity == "" {
-		v.Configuration.Identity = v.Key.Name
+		v.Configuration.Identity = fmt.Sprintf("%s-%s", appNameManifestDeployer, v.Instance)
 	}
 	if v.HostClientSettings == nil {
 		v.HostClientSettings = &ClientSettings{}
