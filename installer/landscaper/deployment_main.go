@@ -11,10 +11,6 @@ import (
 	"strings"
 )
 
-const (
-	mainControllerTopology = "main-controller"
-)
-
 type mainDeploymentMutator struct {
 	*valuesHelper
 }
@@ -43,14 +39,14 @@ func (m *mainDeploymentMutator) Empty() *appsv1.Deployment {
 }
 
 func (m *mainDeploymentMutator) Mutate(r *appsv1.Deployment) error {
-	r.ObjectMeta.Labels = m.landscaperLabels()
+	r.ObjectMeta.Labels = m.controllerMainComponent.Labels()
 	r.Spec = appsv1.DeploymentSpec{
 		Replicas: m.values.Controller.ReplicaCount,
-		Selector: &metav1.LabelSelector{MatchLabels: m.mainSelectorLabels()},
+		Selector: &metav1.LabelSelector{MatchLabels: m.controllerMainComponent.SelectorLabels()},
 		Strategy: m.strategy(),
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels:      m.templateLabels(),
+				Labels:      m.controllerMainComponent.DeploymentTemplateLabels(),
 				Annotations: m.templateAnnotations(),
 			},
 			Spec: corev1.PodSpec{
@@ -62,7 +58,7 @@ func (m *mainDeploymentMutator) Mutate(r *appsv1.Deployment) error {
 				ImagePullSecrets:          m.values.ImagePullSecrets,
 				Affinity:                  m.values.Affinity,
 				Tolerations:               m.values.Tolerations,
-				TopologySpreadConstraints: m.topologySpreadConstraints(),
+				TopologySpreadConstraints: m.controllerMainComponent.TopologySpreadConstraints(),
 			},
 		},
 	}
@@ -75,15 +71,6 @@ func (m *mainDeploymentMutator) strategy() appsv1.DeploymentStrategy {
 		strategy.Type = appsv1.RecreateDeploymentStrategyType
 	}
 	return strategy
-}
-
-func (m *mainDeploymentMutator) templateLabels() map[string]string {
-	labels := map[string]string{
-		"landscaper.gardener.cloud/topology":    mainControllerTopology,
-		"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
-	}
-	maps.Copy(labels, m.mainSelectorLabels())
-	return labels
 }
 
 func (m *mainDeploymentMutator) templateAnnotations() map[string]string {
@@ -167,33 +154,6 @@ func (m *mainDeploymentMutator) volumeMounts() []corev1.VolumeMount {
 		})
 	}
 	return volumeMounts
-}
-
-func (m *mainDeploymentMutator) topologySpreadConstraints() []corev1.TopologySpreadConstraint {
-	return []corev1.TopologySpreadConstraint{
-		{
-			MaxSkew:           1,
-			TopologyKey:       "topology.kubernetes.io/zone",
-			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    mainControllerTopology,
-					"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
-				},
-			},
-		},
-		{
-			MaxSkew:           1,
-			TopologyKey:       "kubernetes.io/hostname",
-			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    mainControllerTopology,
-					"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
-				},
-			},
-		},
-	}
 }
 
 func (m *mainDeploymentMutator) controllerImage() string {

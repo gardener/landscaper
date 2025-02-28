@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gardener/landscaper/installer/shared"
-	"golang.org/x/exp/maps"
 	"sigs.k8s.io/yaml"
 )
 
@@ -16,6 +15,8 @@ const (
 
 type valuesHelper struct {
 	values *Values
+
+	helmDeployerComponent *shared.Component
 
 	configYaml          []byte
 	configHash          string
@@ -31,6 +32,12 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	values.Default()
 	if err := values.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid helm deployer values: %w", err)
+	}
+
+	helmDeployerComponent := &shared.Component{
+		Instance: values.Instance,
+		Version:  values.Version,
+		Name:     "helm-deployer",
 	}
 
 	// compute values
@@ -58,12 +65,13 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	}
 
 	return &valuesHelper{
-		values:              values,
-		configYaml:          configYaml,
-		configHash:          hex.EncodeToString(configHash[:]),
-		registrySecretsYaml: registrySecretsYaml,
-		registrySecretsHash: hex.EncodeToString(registrySecretsHash[:]),
-		registrySecretsData: registrySecretsData,
+		values:                values,
+		helmDeployerComponent: helmDeployerComponent,
+		configYaml:            configYaml,
+		configHash:            hex.EncodeToString(configHash[:]),
+		registrySecretsYaml:   registrySecretsYaml,
+		registrySecretsHash:   hex.EncodeToString(registrySecretsHash[:]),
+		registrySecretsData:   registrySecretsData,
 	}, nil
 }
 
@@ -76,13 +84,16 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("invalid helm deployer values: %w", err)
 	}
 
-	return &valuesHelper{
-		values: values,
-	}, nil
-}
+	helmDeployerComponent := &shared.Component{
+		Instance: values.Instance,
+		Version:  values.Version,
+		Name:     "helm-deployer",
+	}
 
-func (h *valuesHelper) appAndInstance() string {
-	return fmt.Sprintf("%s-%s", appNameHelmDeployer, h.values.Instance)
+	return &valuesHelper{
+		values:                values,
+		helmDeployerComponent: helmDeployerComponent,
+	}, nil
 }
 
 func (h *valuesHelper) hostNamespace() string {
@@ -90,34 +101,11 @@ func (h *valuesHelper) hostNamespace() string {
 }
 
 func (h *valuesHelper) deployerFullName() string {
-	return h.appAndInstance()
+	return h.helmDeployerComponent.ComponentAndInstance()
 }
 
 func (h *valuesHelper) clusterRoleName() string {
-	return h.values.Instance.ClusterScopedResourceName(appNameHelmDeployer)
-}
-
-func (h *valuesHelper) deployerLabels() map[string]string {
-	labels := map[string]string{
-		shared.LabelVersion:   h.values.Version,
-		shared.LabelManagedBy: shared.LabelValueManagedBy,
-	}
-	maps.Copy(labels, h.selectorLabels())
-	return labels
-}
-
-func (h *valuesHelper) selectorLabels() map[string]string {
-	return map[string]string{
-		shared.LabelAppName:     appNameHelmDeployer,
-		shared.LabelAppInstance: h.appAndInstance(),
-	}
-}
-
-func (h *valuesHelper) topologyLabels() map[string]string {
-	return map[string]string{
-		shared.LabelTopology:   appNameHelmDeployer,
-		shared.LabelTopologyNs: h.hostNamespace(),
-	}
+	return h.helmDeployerComponent.ClusterScopedDefaultResourceName()
 }
 
 func (h *valuesHelper) deployerConfig() ([]byte, error) {

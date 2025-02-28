@@ -14,7 +14,7 @@ func newControllerServiceAccountMutator(h *valuesHelper) resources.Mutator[*core
 	return &resources.ServiceAccountMutator{
 		Name:      controllerServiceAccountName,
 		Namespace: h.resourceNamespace(),
-		Labels:    h.landscaperLabels(),
+		Labels:    h.rbacComponent.Labels(),
 	}
 }
 
@@ -24,14 +24,14 @@ func newControllerClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*
 		ClusterRoleName:         controllerClusterRoleName(h),
 		ServiceAccountName:      controllerServiceAccountName,
 		ServiceAccountNamespace: h.resourceNamespace(),
-		Labels:                  h.landscaperLabels(),
+		Labels:                  h.rbacComponent.Labels(),
 	}
 }
 
 func newControllerClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRole] {
 	return &resources.ClusterRoleMutator{
 		Name:   controllerClusterRoleName(h),
-		Labels: h.landscaperLabels(),
+		Labels: h.rbacComponent.Labels(),
 		Rules: []rbac.PolicyRule{
 			{
 				APIGroups: []string{"apiextensions.k8s.io"},
@@ -78,5 +78,5 @@ func newControllerClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.Cl
 }
 
 func controllerClusterRoleName(h *valuesHelper) string {
-	return h.values.Instance.ClusterScopedResourceName(controllerServiceAccountName)
+	return h.rbacComponent.ClusterScopedResourceName("controller")
 }

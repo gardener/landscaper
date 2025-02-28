@@ -3,15 +3,11 @@ package rbac
 import (
 	"fmt"
 	"github.com/gardener/landscaper/installer/shared"
-	"maps"
-)
-
-const (
-	appNameLandscaperRBAC = "landscaper-rbac"
 )
 
 type valuesHelper struct {
-	values *Values
+	values        *Values
+	rbacComponent *shared.Component
 }
 
 func newValuesHelper(values *Values) (*valuesHelper, error) {
@@ -21,31 +17,16 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 
 	return &valuesHelper{
 		values: values,
+		rbacComponent: &shared.Component{
+			Instance: values.Instance,
+			Version:  values.Version,
+			Name:     "landscaper-rbac",
+		},
 	}, nil
-}
-
-func (h *valuesHelper) appAndInstance() string {
-	return fmt.Sprintf("%s-%s", appNameLandscaperRBAC, h.values.Instance)
 }
 
 func (h *valuesHelper) resourceNamespace() string {
 	return h.values.Instance.Namespace()
-}
-
-func (h *valuesHelper) landscaperLabels() map[string]string {
-	labels := map[string]string{
-		shared.LabelVersion:   h.values.Version,
-		shared.LabelManagedBy: shared.LabelValueManagedBy,
-	}
-	maps.Copy(labels, h.selectorLabels())
-	return labels
-}
-
-func (h *valuesHelper) selectorLabels() map[string]string {
-	return map[string]string{
-		shared.LabelAppName:     appNameLandscaperRBAC,
-		shared.LabelAppInstance: h.appAndInstance(),
-	}
 }
 
 func (h *valuesHelper) isCreateServiceAccount() bool {

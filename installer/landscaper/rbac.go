@@ -10,24 +10,24 @@ func newServiceAccountMutator(h *valuesHelper) resources.Mutator[*core.ServiceAc
 	return &resources.ServiceAccountMutator{
 		Name:      h.landscaperFullName(),
 		Namespace: h.hostNamespace(),
-		Labels:    h.landscaperLabels(),
+		Labels:    h.controllerComponent.Labels(),
 	}
 }
 
 func newClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRoleBinding] {
 	return &resources.ClusterRoleBindingMutator{
-		ClusterRoleBindingName:  h.clusterRoleName(),
-		ClusterRoleName:         h.clusterRoleName(),
+		ClusterRoleBindingName:  h.controllerComponent.ClusterScopedDefaultResourceName(),
+		ClusterRoleName:         h.controllerComponent.ClusterScopedDefaultResourceName(),
 		ServiceAccountName:      h.landscaperFullName(),
 		ServiceAccountNamespace: h.hostNamespace(),
-		Labels:                  h.landscaperLabels(),
+		Labels:                  h.controllerComponent.Labels(),
 	}
 }
 
 func newClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRole] {
 	return &resources.ClusterRoleMutator{
-		Name:   h.clusterRoleName(),
-		Labels: h.landscaperLabels(),
+		Name:   h.controllerComponent.ClusterScopedDefaultResourceName(),
+		Labels: h.controllerComponent.Labels(),
 		Rules: []rbac.PolicyRule{
 			{
 				APIGroups: []string{"landscaper.gardener.cloud"},

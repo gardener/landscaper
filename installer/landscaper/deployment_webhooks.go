@@ -4,16 +4,11 @@ import (
 	"fmt"
 	"github.com/gardener/landscaper/installer/rbac"
 	"github.com/gardener/landscaper/installer/resources"
-	"golang.org/x/exp/maps"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"strings"
-)
-
-const (
-	webhooksServerTopology = "webhook-server"
 )
 
 type webhooksDeploymentMutator struct {
@@ -44,13 +39,13 @@ func (m *webhooksDeploymentMutator) Empty() *appsv1.Deployment {
 }
 
 func (m *webhooksDeploymentMutator) Mutate(r *appsv1.Deployment) error {
-	r.ObjectMeta.Labels = m.landscaperLabels()
+	r.ObjectMeta.Labels = m.webhooksComponent.Labels()
 	r.Spec = appsv1.DeploymentSpec{
 		Replicas: m.values.WebhooksServer.ReplicaCount,
-		Selector: &metav1.LabelSelector{MatchLabels: m.webhooksSelectorLabels()},
+		Selector: &metav1.LabelSelector{MatchLabels: m.webhooksComponent.SelectorLabels()},
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels:      m.templateLabels(),
+				Labels:      m.webhooksComponent.DeploymentTemplateLabels(),
 				Annotations: m.podAnnotations(),
 			},
 			Spec: corev1.PodSpec{
@@ -61,21 +56,12 @@ func (m *webhooksDeploymentMutator) Mutate(r *appsv1.Deployment) error {
 				ImagePullSecrets:          m.values.ImagePullSecrets,
 				Affinity:                  m.values.Affinity,
 				Tolerations:               m.values.Tolerations,
-				TopologySpreadConstraints: m.topologySpreadConstraints(),
+				TopologySpreadConstraints: m.webhooksComponent.TopologySpreadConstraints(),
 			},
 		},
 	}
 	m.setServiceAccount(r.Spec.Template.Spec)
 	return nil
-}
-
-func (m *webhooksDeploymentMutator) templateLabels() map[string]string {
-	labels := map[string]string{
-		"landscaper.gardener.cloud/topology":    webhooksServerTopology,
-		"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
-	}
-	maps.Copy(labels, m.webhooksSelectorLabels())
-	return labels
 }
 
 func (m *webhooksDeploymentMutator) setServiceAccount(podSpec corev1.PodSpec) {
@@ -133,33 +119,6 @@ func (m *webhooksDeploymentMutator) volumeMounts() []corev1.VolumeMount {
 		})
 	}
 	return volumeMounts
-}
-
-func (m *webhooksDeploymentMutator) topologySpreadConstraints() []corev1.TopologySpreadConstraint {
-	return []corev1.TopologySpreadConstraint{
-		{
-			MaxSkew:           1,
-			TopologyKey:       "topology.kubernetes.io/zone",
-			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    webhooksServerTopology,
-					"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
-				},
-			},
-		},
-		{
-			MaxSkew:           1,
-			TopologyKey:       "kubernetes.io/hostname",
-			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"landscaper.gardener.cloud/topology":    webhooksServerTopology,
-					"landscaper.gardener.cloud/topology-ns": m.hostNamespace(),
-				},
-			},
-		},
-	}
 }
 
 func (m *webhooksDeploymentMutator) webhooksServerImage() string {

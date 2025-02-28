@@ -9,9 +9,3 @@ type Instance string
 func (i Instance) Namespace() string {
 	return fmt.Sprintf("ls-system-%s", i)
 }
-
-// ClusterScopedResourceName builds the name of a cluster-scoped resource
-// according to the pattern "landscaper:<instance>:<fragment>".
-func (i Instance) ClusterScopedResourceName(nameFragment string) string {
-	return fmt.Sprintf("landscaper:%s:%s", i, nameFragment)
-}

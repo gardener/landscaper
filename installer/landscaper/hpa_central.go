@@ -36,7 +36,7 @@ func (m *centralHPAMutator) Empty() *v2.HorizontalPodAutoscaler {
 }
 
 func (m *centralHPAMutator) Mutate(r *v2.HorizontalPodAutoscaler) error {
-	r.ObjectMeta.Labels = m.landscaperLabels()
+	r.ObjectMeta.Labels = m.controllerComponent.Labels()
 	r.Spec = v2.HorizontalPodAutoscalerSpec{
 		ScaleTargetRef: v2.CrossVersionObjectReference{
 			APIVersion: "apps/v1",

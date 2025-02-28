@@ -83,7 +83,8 @@ func (v *Values) Default() {
 		v.Configuration.Kind = "Configuration"
 	}
 	if v.Configuration.Identity == "" {
-		v.Configuration.Identity = fmt.Sprintf("%s-%s", appNameHelmDeployer, v.Instance)
+		//TODO
+		v.Configuration.Identity = fmt.Sprintf("helm-deployer-%s", v.Instance)
 	}
 	if v.HostClientSettings == nil {
 		v.HostClientSettings = &ClientSettings{}

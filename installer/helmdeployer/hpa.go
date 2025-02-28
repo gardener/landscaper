@@ -36,7 +36,7 @@ func (d *hpaMutator) Empty() *v2.HorizontalPodAutoscaler {
 }
 
 func (d *hpaMutator) Mutate(r *v2.HorizontalPodAutoscaler) error {
-	r.ObjectMeta.Labels = d.deployerLabels()
+	r.ObjectMeta.Labels = d.helmDeployerComponent.Labels()
 	r.Spec = v2.HorizontalPodAutoscalerSpec{
 		ScaleTargetRef: v2.CrossVersionObjectReference{
 			APIVersion: "apps/v1",

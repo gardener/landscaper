@@ -39,14 +39,14 @@ func (d *deploymentMutator) Empty() *appsv1.Deployment {
 }
 
 func (d *deploymentMutator) Mutate(r *appsv1.Deployment) error {
-	r.ObjectMeta.Labels = d.deployerLabels()
+	r.ObjectMeta.Labels = d.manifestDeployerComponent.Labels()
 	r.Spec = appsv1.DeploymentSpec{
 		Replicas: d.values.ReplicaCount,
-		Selector: &metav1.LabelSelector{MatchLabels: d.selectorLabels()},
+		Selector: &metav1.LabelSelector{MatchLabels: d.manifestDeployerComponent.SelectorLabels()},
 		Strategy: d.strategy(),
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels:      d.templateLabels(),
+				Labels:      d.manifestDeployerComponent.DeploymentTemplateLabels(),
 				Annotations: d.templateAnnotations(),
 			},
 			Spec: corev1.PodSpec{
@@ -58,7 +58,7 @@ func (d *deploymentMutator) Mutate(r *appsv1.Deployment) error {
 				ImagePullSecrets:          d.values.ImagePullSecrets,
 				Affinity:                  d.values.Affinity,
 				Tolerations:               d.values.Tolerations,
-				TopologySpreadConstraints: d.topologySpreadConstraints(),
+				TopologySpreadConstraints: d.manifestDeployerComponent.TopologySpreadConstraints(),
 			},
 		},
 	}
@@ -71,15 +71,6 @@ func (d *deploymentMutator) strategy() appsv1.DeploymentStrategy {
 		strategy.Type = appsv1.RecreateDeploymentStrategyType
 	}
 	return strategy
-}
-
-func (d *deploymentMutator) templateLabels() map[string]string {
-	labels := map[string]string{
-		"landscaper.gardener.cloud/topology":    "manifest-deployer",
-		"landscaper.gardener.cloud/topology-ns": d.hostNamespace(),
-	}
-	maps.Copy(labels, d.selectorLabels())
-	return labels
 }
 
 func (d *deploymentMutator) templateAnnotations() map[string]string {
@@ -152,23 +143,6 @@ func (d *deploymentMutator) volumeMounts() []corev1.VolumeMount {
 		})
 	}
 	return volumeMounts
-}
-
-func (d *deploymentMutator) topologySpreadConstraints() []corev1.TopologySpreadConstraint {
-	return []corev1.TopologySpreadConstraint{
-		{
-			MaxSkew:           1,
-			TopologyKey:       "topology.kubernetes.io/zone",
-			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector:     &metav1.LabelSelector{MatchLabels: d.topologyLabels()},
-		},
-		{
-			MaxSkew:           1,
-			TopologyKey:       "kubernetes.io/hostname",
-			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector:     &metav1.LabelSelector{MatchLabels: d.topologyLabels()},
-		},
-	}
 }
 
 func (d *deploymentMutator) deployerImage() string {

@@ -1,13 +1,13 @@
 package landscaper
 
 import (
-	"fmt"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
+	"github.com/gardener/landscaper/installer/shared"
 	core "k8s.io/api/core/v1"
 )
 
 type Values struct {
-	Key                *KeyValues                       `json:"key,omitempty"`
+	Instance           shared.Instance                  `json:"instance,omitempty"`
 	Version            string                           `json:"version,omitempty"`
 	VerbosityLevel     string                           `json:"verbosityLevel,omitempty"`
 	Configuration      v1alpha1.LandscaperConfiguration `json:"configuration,omitempty"`
@@ -20,36 +20,6 @@ type Values struct {
 	NodeSelector       map[string]string                `json:"nodeSelector,omitempty"`
 	Affinity           *core.Affinity                   `json:"affinity,omitempty"`
 	Tolerations        []core.Toleration                `json:"tolerations,omitempty"`
-}
-
-// KeyValues is the key to identify the rbac installation for an update or delete operation.
-type KeyValues struct {
-	// Name is the name of the landscaper installation, e.g. "landscaper-test0001-abcdefgh".
-	Name string `json:"name,omitempty"`
-
-	// HostNamespace is the namespace on the host cluster where the landscaper will be installed.
-	HostNamespace string `json:"hostNamespace,omitempty"`
-}
-
-func NewKey(name, hostNamespace string) *KeyValues {
-	return &KeyValues{
-		Name:          name,
-		HostNamespace: hostNamespace,
-	}
-}
-
-func NewDefaultKey() *KeyValues {
-	return &KeyValues{
-		Name:          "landscaper",
-		HostNamespace: "ls-system",
-	}
-}
-
-func NewKeyFromID(id string) *KeyValues {
-	return &KeyValues{
-		Name:          fmt.Sprintf("landscaper-%s", id),
-		HostNamespace: fmt.Sprintf("ls-system-%s", id),
-	}
 }
 
 type KubeconfigValues struct {

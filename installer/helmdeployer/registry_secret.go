@@ -39,7 +39,7 @@ func (d *registrySecretMutator) Empty() *v1.Secret {
 }
 
 func (d *registrySecretMutator) Mutate(r *v1.Secret) error {
-	r.ObjectMeta.Labels = d.deployerLabels()
+	r.ObjectMeta.Labels = d.helmDeployerComponent.Labels()
 	r.Data = d.registrySecretsData
 	return nil
 }

@@ -5,13 +5,17 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
-	"maps"
+	"github.com/gardener/landscaper/installer/shared"
 	"sigs.k8s.io/yaml"
 	"slices"
 )
 
 type valuesHelper struct {
 	values *Values
+
+	controllerMainComponent *shared.Component
+	controllerComponent     *shared.Component
+	webhooksComponent       *shared.Component
 
 	config     v1alpha1.LandscaperConfiguration
 	configYaml []byte
@@ -33,7 +37,22 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	configHash := hex.EncodeToString(hash[:])
 
 	return &valuesHelper{
-		values:     values,
+		values: values,
+		controllerMainComponent: &shared.Component{
+			Instance: values.Instance,
+			Version:  values.Version,
+			Name:     "landscaper-controller-main",
+		},
+		controllerComponent: &shared.Component{
+			Instance: values.Instance,
+			Version:  values.Version,
+			Name:     "landscaper-controller",
+		},
+		webhooksComponent: &shared.Component{
+			Instance: values.Instance,
+			Version:  values.Version,
+			Name:     "landscaper-webhooks-server",
+		},
 		config:     config,
 		configYaml: configYaml,
 		configHash: configHash,
@@ -47,60 +66,38 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 
 	return &valuesHelper{
 		values: values,
+		controllerMainComponent: &shared.Component{
+			Instance: values.Instance,
+			Version:  values.Version,
+			Name:     "landscaper-controller-main",
+		},
+		controllerComponent: &shared.Component{
+			Instance: values.Instance,
+			Version:  values.Version,
+			Name:     "landscaper-controller",
+		},
+		webhooksComponent: &shared.Component{
+			Instance: values.Instance,
+			Version:  values.Version,
+			Name:     "landscaper-webhooks-server",
+		},
 	}, nil
 }
 
 func (h *valuesHelper) hostNamespace() string {
-	return h.values.Key.HostNamespace
+	return h.values.Instance.Namespace()
 }
 
 func (h *valuesHelper) landscaperFullName() string {
-	return h.values.Key.Name
+	return h.controllerComponent.ComponentAndInstance()
 }
 
 func (h *valuesHelper) landscaperMainFullName() string {
-	return fmt.Sprintf("%s-main", h.values.Key.Name)
+	return h.controllerMainComponent.ComponentAndInstance()
 }
 
 func (h *valuesHelper) landscaperWebhooksFullName() string {
-	return fmt.Sprintf("%s-webhooks", h.values.Key.Name)
-}
-
-func (h *valuesHelper) clusterRoleName() string {
-	return fmt.Sprintf("landscaper:%s-agent", h.values.Key.Name)
-}
-
-func (h *valuesHelper) landscaperLabels() map[string]string {
-	labels := map[string]string{
-		"app.kubernetes.io/version":    h.values.Version,
-		"app.kubernetes.io/managed-by": "landscaper-installer",
-	}
-	maps.Copy(labels, h.selectorLabels())
-	return labels
-}
-
-// TODO labels for component and topology
-func (h *valuesHelper) selectorLabels() map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name":     "landscaper",
-		"app.kubernetes.io/instance": h.values.Key.Name,
-	}
-}
-
-// TODO labels for component and topology
-func (h *valuesHelper) mainSelectorLabels() map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name":     "landscaper",
-		"app.kubernetes.io/instance": h.values.Key.Name,
-	}
-}
-
-// TODO labels for component and topology
-func (h *valuesHelper) webhooksSelectorLabels() map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name":     "landscaper",
-		"app.kubernetes.io/instance": h.values.Key.Name,
-	}
+	return h.webhooksComponent.ComponentAndInstance()
 }
 
 func (h *valuesHelper) configSecretName() string {

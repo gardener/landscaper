@@ -39,7 +39,7 @@ func (d *kubeconfigSecretMutator) Empty() *v1.Secret {
 }
 
 func (d *kubeconfigSecretMutator) Mutate(r *v1.Secret) error {
-	r.ObjectMeta.Labels = d.deployerLabels()
+	r.ObjectMeta.Labels = d.manifestDeployerComponent.Labels()
 	r.Data = map[string][]byte{
 		"kubeconfig": d.landscaperClusterKubeconfig(),
 	}

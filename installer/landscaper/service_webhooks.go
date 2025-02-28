@@ -36,7 +36,7 @@ func (m *webhooksServiceMutator) Empty() *core.Service {
 }
 
 func (m *webhooksServiceMutator) Mutate(r *core.Service) error {
-	r.ObjectMeta.Labels = m.landscaperLabels()
+	r.ObjectMeta.Labels = m.webhooksComponent.Labels()
 	r.Spec = core.ServiceSpec{
 		Ports: []core.ServicePort{
 			{
@@ -46,7 +46,7 @@ func (m *webhooksServiceMutator) Mutate(r *core.Service) error {
 				Protocol:   "TCP",
 			},
 		},
-		Selector: m.webhooksSelectorLabels(),
+		Selector: m.webhooksComponent.SelectorLabels(),
 		Type:     core.ServiceType(m.values.WebhooksServer.Service.Type),
 	}
 	return nil

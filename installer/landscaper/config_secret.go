@@ -35,7 +35,7 @@ func (m *configSecretMutator) Empty() *v1.Secret {
 }
 
 func (m *configSecretMutator) Mutate(r *v1.Secret) error {
-	r.ObjectMeta.Labels = m.landscaperLabels()
+	r.ObjectMeta.Labels = m.controllerComponent.Labels()
 	r.Data = map[string][]byte{
 		"config.yaml": m.valuesHelper.configYaml,
 	}

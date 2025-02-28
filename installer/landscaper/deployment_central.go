@@ -39,14 +39,14 @@ func (m *centralDeploymentMutator) Empty() *appsv1.Deployment {
 }
 
 func (m *centralDeploymentMutator) Mutate(r *appsv1.Deployment) error {
-	r.ObjectMeta.Labels = m.landscaperLabels()
+	r.ObjectMeta.Labels = m.controllerComponent.Labels()
 	r.Spec = appsv1.DeploymentSpec{
 		Replicas: m.values.Controller.ReplicaCount,
-		Selector: &metav1.LabelSelector{MatchLabels: m.selectorLabels()},
+		Selector: &metav1.LabelSelector{MatchLabels: m.controllerComponent.SelectorLabels()},
 		Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels:      m.selectorLabels(),
+				Labels:      m.controllerComponent.SelectorLabels(),
 				Annotations: m.templateAnnotations(),
 			},
 			Spec: corev1.PodSpec{

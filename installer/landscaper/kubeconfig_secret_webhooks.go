@@ -35,7 +35,7 @@ func (d *webhooksKubeconfigSecretMutator) Empty() *v1.Secret {
 }
 
 func (d *webhooksKubeconfigSecretMutator) Mutate(r *v1.Secret) error {
-	r.ObjectMeta.Labels = d.landscaperLabels()
+	r.ObjectMeta.Labels = d.webhooksComponent.Labels()
 	r.Data = map[string][]byte{
 		"kubeconfig": []byte(d.values.WebhooksServer.LandscaperKubeconfig.Kubeconfig),
 	}

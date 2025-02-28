@@ -71,6 +71,12 @@ func InstallLandscaper(ctx context.Context, hostClient client.Client, values *Va
 		return err
 	}
 
+	if !valHelper.areAllWebhooksDisabled() {
+		if err := resources.CreateOrUpdateResource(ctx, hostClient, newWebhooksDeploymentMutator(valHelper)); err != nil {
+			return err
+		}
+	}
+
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, newMainHPAMutator(valHelper)); err != nil {
 		return err
 	}
@@ -102,6 +108,10 @@ func UninstallLandscaper(ctx context.Context, hostClient client.Client, values *
 	}
 
 	if err := resources.DeleteResource(ctx, hostClient, newMainHPAMutator(valHelper)); err != nil {
+		return err
+	}
+
+	if err := resources.DeleteResource(ctx, hostClient, newWebhooksDeploymentMutator(valHelper)); err != nil {
 		return err
 	}
 

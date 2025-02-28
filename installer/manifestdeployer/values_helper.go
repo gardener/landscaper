@@ -5,16 +5,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/gardener/landscaper/installer/shared"
-	"golang.org/x/exp/maps"
 	"sigs.k8s.io/yaml"
-)
-
-const (
-	appNameManifestDeployer = "manifest-deployer"
 )
 
 type valuesHelper struct {
 	values *Values
+
+	manifestDeployerComponent *shared.Component
 
 	configYaml []byte
 	configHash string
@@ -29,6 +26,12 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("invalid manifest deployer values: %w", err)
 	}
 
+	manifestDeployerComponent := &shared.Component{
+		Instance: values.Instance,
+		Version:  values.Version,
+		Name:     "manifest-deployer",
+	}
+
 	// compute values
 	configYaml, err := yaml.Marshal(values.Configuration)
 	if err != nil {
@@ -38,9 +41,10 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	configHash := hex.EncodeToString(hash[:])
 
 	return &valuesHelper{
-		values:     values,
-		configYaml: configYaml,
-		configHash: configHash,
+		values:                    values,
+		manifestDeployerComponent: manifestDeployerComponent,
+		configYaml:                configYaml,
+		configHash:                configHash,
 	}, nil
 }
 
@@ -53,13 +57,16 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("invalid manifest deployer values: %w", err)
 	}
 
-	return &valuesHelper{
-		values: values,
-	}, nil
-}
+	manifestDeployerComponent := &shared.Component{
+		Instance: values.Instance,
+		Version:  values.Version,
+		Name:     "manifest-deployer",
+	}
 
-func (h *valuesHelper) appAndInstance() string {
-	return fmt.Sprintf("%s-%s", appNameManifestDeployer, h.values.Instance)
+	return &valuesHelper{
+		values:                    values,
+		manifestDeployerComponent: manifestDeployerComponent,
+	}, nil
 }
 
 func (h *valuesHelper) hostNamespace() string {
@@ -67,34 +74,11 @@ func (h *valuesHelper) hostNamespace() string {
 }
 
 func (h *valuesHelper) deployerFullName() string {
-	return h.appAndInstance()
+	return h.manifestDeployerComponent.ComponentAndInstance()
 }
 
 func (h *valuesHelper) clusterRoleName() string {
-	return h.values.Instance.ClusterScopedResourceName(appNameManifestDeployer)
-}
-
-func (h *valuesHelper) deployerLabels() map[string]string {
-	labels := map[string]string{
-		shared.LabelVersion:   h.values.Version,
-		shared.LabelManagedBy: shared.LabelValueManagedBy,
-	}
-	maps.Copy(labels, h.selectorLabels())
-	return labels
-}
-
-func (h *valuesHelper) selectorLabels() map[string]string {
-	return map[string]string{
-		shared.LabelAppName:     appNameManifestDeployer,
-		shared.LabelAppInstance: h.appAndInstance(),
-	}
-}
-
-func (h *valuesHelper) topologyLabels() map[string]string {
-	return map[string]string{
-		shared.LabelTopology:   appNameManifestDeployer,
-		shared.LabelTopologyNs: h.hostNamespace(),
-	}
+	return h.manifestDeployerComponent.ClusterScopedDefaultResourceName()
 }
 
 func (h *valuesHelper) deployerConfig() ([]byte, error) {

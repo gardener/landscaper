@@ -14,7 +14,7 @@ func newWebhooksServiceAccountMutator(h *valuesHelper) resources.Mutator[*core.S
 	return &resources.ServiceAccountMutator{
 		Name:      WebhooksServiceAccountName,
 		Namespace: h.resourceNamespace(),
-		Labels:    h.landscaperLabels(),
+		Labels:    h.rbacComponent.Labels(),
 	}
 }
 
@@ -24,14 +24,14 @@ func newWebhooksClusterRoleBindingMutator(h *valuesHelper) resources.Mutator[*rb
 		ClusterRoleName:         webhooksClusterRoleName(h),
 		ServiceAccountName:      WebhooksServiceAccountName,
 		ServiceAccountNamespace: h.resourceNamespace(),
-		Labels:                  h.landscaperLabels(),
+		Labels:                  h.rbacComponent.Labels(),
 	}
 }
 
 func newWebhooksClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.ClusterRole] {
 	return &resources.ClusterRoleMutator{
 		Name:   webhooksClusterRoleName(h),
-		Labels: h.landscaperLabels(),
+		Labels: h.rbacComponent.Labels(),
 		Rules: []rbac.PolicyRule{
 			{
 				APIGroups: []string{"landscaper.gardener.cloud"},
@@ -53,5 +53,5 @@ func newWebhooksClusterRoleMutator(h *valuesHelper) resources.Mutator[*rbac.Clus
 }
 
 func webhooksClusterRoleName(h *valuesHelper) string {
-	return h.values.Instance.ClusterScopedResourceName(WebhooksServiceAccountName)
+	return h.rbacComponent.ClusterScopedResourceName("webhooks")
 }

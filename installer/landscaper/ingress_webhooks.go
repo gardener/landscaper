@@ -36,7 +36,7 @@ func (m *ingressMutator) Empty() *networking.Ingress {
 }
 
 func (m *ingressMutator) Mutate(r *networking.Ingress) error {
-	r.ObjectMeta.Labels = m.landscaperLabels()
+	r.ObjectMeta.Labels = m.webhooksComponent.Labels()
 	r.ObjectMeta.Annotations = map[string]string{
 		"nginx.ingress.kubernetes.io/ssl-passthrough": "true",
 	}
