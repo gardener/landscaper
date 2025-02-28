@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	appNameHelmDeployer = "helm-deployer"
+	componentHelmDeployer = "helm-deployer"
 )
 
 type valuesHelper struct {
@@ -32,12 +32,6 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	values.Default()
 	if err := values.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid helm deployer values: %w", err)
-	}
-
-	helmDeployerComponent := &shared.Component{
-		Instance: values.Instance,
-		Version:  values.Version,
-		Name:     "helm-deployer",
 	}
 
 	// compute values
@@ -66,7 +60,7 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 
 	return &valuesHelper{
 		values:                values,
-		helmDeployerComponent: helmDeployerComponent,
+		helmDeployerComponent: shared.NewComponent(values.Instance, values.Version, componentHelmDeployer),
 		configYaml:            configYaml,
 		configHash:            hex.EncodeToString(configHash[:]),
 		registrySecretsYaml:   registrySecretsYaml,
@@ -84,15 +78,9 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("invalid helm deployer values: %w", err)
 	}
 
-	helmDeployerComponent := &shared.Component{
-		Instance: values.Instance,
-		Version:  values.Version,
-		Name:     "helm-deployer",
-	}
-
 	return &valuesHelper{
 		values:                values,
-		helmDeployerComponent: helmDeployerComponent,
+		helmDeployerComponent: shared.NewComponent(values.Instance, values.Version, componentHelmDeployer),
 	}, nil
 }
 

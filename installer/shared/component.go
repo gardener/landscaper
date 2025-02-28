@@ -7,37 +7,33 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// application: landscaper
-// components:
-//   - controller (controller-central)
-//   - main-controller (controller-main)
-//   - webhooks-server
-//   - manifest-deployer
-//   - helm-deployer
-
 const (
-	landscaperApplicationName = "landscaper"
+	applicationLandscaper = "landscaper"
 )
 
 const (
-	LabelAppName        = "app.kubernetes.io/name"
-	LabelAppInstance    = "app.kubernetes.io/instance"
-	LabelComponent      = "app.kubernetes.io/component"
-	LabelVersion        = "app.kubernetes.io/version"
-	LabelManagedBy      = "app.kubernetes.io/managed-by"
-	LabelValueManagedBy = "landscaper-provider"
-	LabelTopology       = "landscaper.gardener.cloud/topology"
-	LabelTopologyNs     = "landscaper.gardener.cloud/topology-ns"
+	labelAppName        = "app.kubernetes.io/name"
+	labelAppInstance    = "app.kubernetes.io/instance"
+	labelComponent      = "app.kubernetes.io/component"
+	labelVersion        = "app.kubernetes.io/version"
+	labelManagedBy      = "app.kubernetes.io/managed-by"
+	labelValueManagedBy = "landscaper-provider"
+	labelTopology       = "landscaper.gardener.cloud/topology"
+	labelTopologyNs     = "landscaper.gardener.cloud/topology-ns"
 )
 
 type Component struct {
 	Instance        // for example "test0001-abcdefgh"
 	Version  string // for example "v1.0.0"
-	Name     string // for example "main", "central", "webhooks"
+	Name     string // for example "manifest-deployer"
 }
 
-func (c *Component) applicationAndInstance() string {
-	return fmt.Sprintf("%s-%s", landscaperApplicationName, c.Instance)
+func NewComponent(instance Instance, version, name string) *Component {
+	return &Component{
+		Instance: Instance(instance),
+		Version:  version,
+		Name:     name,
+	}
 }
 
 func (c *Component) ComponentAndInstance() string {
@@ -60,23 +56,23 @@ func (c *Component) DeploymentTemplateLabels() map[string]string {
 
 func (c *Component) SelectorLabels() map[string]string {
 	return map[string]string{
-		LabelAppName:     landscaperApplicationName,
-		LabelAppInstance: c.applicationAndInstance(),
-		LabelComponent:   c.Name,
+		labelAppName:     applicationLandscaper,
+		labelAppInstance: fmt.Sprintf("%s-%s", applicationLandscaper, c.Instance),
+		labelComponent:   c.Name,
 	}
 }
 
 func (c *Component) InfoLabels() map[string]string {
 	return map[string]string{
-		LabelVersion:   c.Version,
-		LabelManagedBy: LabelValueManagedBy,
+		labelVersion:   c.Version,
+		labelManagedBy: labelValueManagedBy,
 	}
 }
 
 func (c *Component) TopologyLabels() map[string]string {
 	return map[string]string{
-		LabelTopology:   c.Name,
-		LabelTopologyNs: c.Namespace(),
+		labelTopology:   c.Name,
+		labelTopologyNs: c.Namespace(),
 	}
 }
 
@@ -100,11 +96,11 @@ func (c *Component) TopologySpreadConstraints() []corev1.TopologySpreadConstrain
 // ClusterScopedDefaultResourceName returns the default name for a cluster-scoped resource:
 // "landscaper:<instance>:<component>", for example "landscaper:test0001-abcdefgh:manifest-deployer".
 func (c *Component) ClusterScopedDefaultResourceName() string {
-	return fmt.Sprintf("%s:%s:%s", landscaperApplicationName, c.Instance, c.Name)
+	return fmt.Sprintf("%s:%s:%s", applicationLandscaper, c.Instance, c.Name)
 }
 
 // ClusterScopedResourceName returns the name for a cluster-scoped resource with a given suffix:
 // "landscaper:<instance>:<component>:<suffix>", for example "landscaper:test0001-abcdefgh:landscaper-rbac:user".
 func (c *Component) ClusterScopedResourceName(suffix string) string {
-	return fmt.Sprintf("%s:%s:%s:%s", landscaperApplicationName, c.Instance, c.Name, suffix)
+	return fmt.Sprintf("%s:%s:%s:%s", applicationLandscaper, c.Instance, c.Name, suffix)
 }

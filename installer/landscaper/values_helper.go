@@ -10,6 +10,12 @@ import (
 	"slices"
 )
 
+const (
+	componentControllerMain = "landscaper-controller-main"
+	componentController     = "landscaper-controller"
+	componentWebhooks       = "landscaper-webhooks-server"
+)
+
 type valuesHelper struct {
 	values *Values
 
@@ -37,25 +43,13 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	configHash := hex.EncodeToString(hash[:])
 
 	return &valuesHelper{
-		values: values,
-		controllerMainComponent: &shared.Component{
-			Instance: values.Instance,
-			Version:  values.Version,
-			Name:     "landscaper-controller-main",
-		},
-		controllerComponent: &shared.Component{
-			Instance: values.Instance,
-			Version:  values.Version,
-			Name:     "landscaper-controller",
-		},
-		webhooksComponent: &shared.Component{
-			Instance: values.Instance,
-			Version:  values.Version,
-			Name:     "landscaper-webhooks-server",
-		},
-		config:     config,
-		configYaml: configYaml,
-		configHash: configHash,
+		values:                  values,
+		controllerMainComponent: shared.NewComponent(values.Instance, values.Version, componentControllerMain),
+		controllerComponent:     shared.NewComponent(values.Instance, values.Version, componentController),
+		webhooksComponent:       shared.NewComponent(values.Instance, values.Version, componentWebhooks),
+		config:                  config,
+		configYaml:              configYaml,
+		configHash:              configHash,
 	}, nil
 }
 
@@ -65,22 +59,10 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 	}
 
 	return &valuesHelper{
-		values: values,
-		controllerMainComponent: &shared.Component{
-			Instance: values.Instance,
-			Version:  values.Version,
-			Name:     "landscaper-controller-main",
-		},
-		controllerComponent: &shared.Component{
-			Instance: values.Instance,
-			Version:  values.Version,
-			Name:     "landscaper-controller",
-		},
-		webhooksComponent: &shared.Component{
-			Instance: values.Instance,
-			Version:  values.Version,
-			Name:     "landscaper-webhooks-server",
-		},
+		values:                  values,
+		controllerMainComponent: shared.NewComponent(values.Instance, values.Version, componentControllerMain),
+		controllerComponent:     shared.NewComponent(values.Instance, values.Version, componentController),
+		webhooksComponent:       shared.NewComponent(values.Instance, values.Version, componentWebhooks),
 	}, nil
 }
 

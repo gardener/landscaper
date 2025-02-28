@@ -8,6 +8,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	componentManifestDeployer = "manifest-deployer"
+)
+
 type valuesHelper struct {
 	values *Values
 
@@ -26,12 +30,6 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("invalid manifest deployer values: %w", err)
 	}
 
-	manifestDeployerComponent := &shared.Component{
-		Instance: values.Instance,
-		Version:  values.Version,
-		Name:     "manifest-deployer",
-	}
-
 	// compute values
 	configYaml, err := yaml.Marshal(values.Configuration)
 	if err != nil {
@@ -42,7 +40,7 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 
 	return &valuesHelper{
 		values:                    values,
-		manifestDeployerComponent: manifestDeployerComponent,
+		manifestDeployerComponent: shared.NewComponent(values.Instance, values.Version, componentManifestDeployer),
 		configYaml:                configYaml,
 		configHash:                configHash,
 	}, nil
@@ -57,15 +55,9 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("invalid manifest deployer values: %w", err)
 	}
 
-	manifestDeployerComponent := &shared.Component{
-		Instance: values.Instance,
-		Version:  values.Version,
-		Name:     "manifest-deployer",
-	}
-
 	return &valuesHelper{
 		values:                    values,
-		manifestDeployerComponent: manifestDeployerComponent,
+		manifestDeployerComponent: shared.NewComponent(values.Instance, values.Version, componentManifestDeployer),
 	}, nil
 }
 

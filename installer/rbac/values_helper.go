@@ -5,6 +5,10 @@ import (
 	"github.com/gardener/landscaper/installer/shared"
 )
 
+const (
+	componentLandscaperRBAC = "landscaper-rbac"
+)
+
 type valuesHelper struct {
 	values        *Values
 	rbacComponent *shared.Component
@@ -16,12 +20,8 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	}
 
 	return &valuesHelper{
-		values: values,
-		rbacComponent: &shared.Component{
-			Instance: values.Instance,
-			Version:  values.Version,
-			Name:     "landscaper-rbac",
-		},
+		values:        values,
+		rbacComponent: shared.NewComponent(values.Instance, values.Version, componentLandscaperRBAC),
 	}, nil
 }
 
