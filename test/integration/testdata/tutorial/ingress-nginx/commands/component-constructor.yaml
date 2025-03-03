@@ -1,0 +1,20 @@
+components:
+  - name: github.com/gardener/landscaper/ingress-nginx
+    version: v0.3.2
+    provider:
+      name: internal
+    resources:
+      - name: ingress-nginx-blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: ingress-nginx-chart
+        type: helm
+        version: 4.0.17
+        relation: external
+        access:
+          type: ociArtifact
+          imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/charts/ingress-nginx:4.0.17

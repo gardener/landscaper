@@ -1,0 +1,17 @@
+components:
+  - name: github.com/gardener/landscaper/integration-tests/inline-root-1
+    version: v0.1.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+    componentReferences:
+      - name: inline-base-component
+        componentName: github.com/gardener/landscaper/integration-tests/inline-base
+        version: v0.1.0
