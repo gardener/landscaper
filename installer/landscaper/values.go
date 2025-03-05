@@ -59,15 +59,14 @@ const (
 type WebhooksServerValues struct {
 	DisableWebhooks []string `json:"disableWebhooks,omitempty"`
 	// LandscaperKubeconfig contains the kubeconfig for the resource cluster (= landscaper cluster).
-	LandscaperKubeconfig  *KubeconfigValues         `json:"landscaperKubeconfig,omitempty"`
-	Service               *ServiceValues            `json:"service,omitempty"` // optional, has default value
-	Image                 ImageValues               `json:"image,omitempty"`
-	ServicePort           int32                     `json:"servicePort,omitempty"` // required unless DisableWebhooks contains "all"
-	CertificatesNamespace string                    `json:"certificatesNamespace,omitempty"`
-	ReplicaCount          *int32                    `json:"replicaCount,omitempty"` // optional - has default value
-	Ingress               *IngressValues            `json:"ingress,omitempty"`      // optional - if nil, no ingress will be created.
-	Resources             core.ResourceRequirements `json:"resources,omitempty"`    // optional - has default value
-	HPA                   HPAValues                 `json:"hpa,omitempty"`          // optional - has default value
+	LandscaperKubeconfig *KubeconfigValues         `json:"landscaperKubeconfig,omitempty"`
+	Service              *ServiceValues            `json:"service,omitempty"` // optional, has default value
+	Image                ImageValues               `json:"image,omitempty"`
+	ServicePort          int32                     `json:"servicePort,omitempty"`  // required unless DisableWebhooks contains "all"
+	ReplicaCount         *int32                    `json:"replicaCount,omitempty"` // optional - has default value
+	Ingress              *IngressValues            `json:"ingress,omitempty"`      // optional - if nil, no ingress will be created.
+	Resources            core.ResourceRequirements `json:"resources,omitempty"`    // optional - has default value
+	HPA                  HPAValues                 `json:"hpa,omitempty"`          // optional - has default value
 }
 
 type ImageValues struct {
@@ -143,6 +142,9 @@ func (v *Values) Default() error {
 	}
 	if v.WebhooksServer.Service.Port == 0 {
 		v.WebhooksServer.Service.Port = 80
+	}
+	if v.WebhooksServer.ServicePort == 0 {
+		v.WebhooksServer.ServicePort = 9443
 	}
 	if v.WebhooksServer.ReplicaCount == nil {
 		v.WebhooksServer.ReplicaCount = ptr.To[int32](2)

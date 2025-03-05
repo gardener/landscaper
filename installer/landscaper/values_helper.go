@@ -71,6 +71,10 @@ func (h *valuesHelper) hostNamespace() string {
 	return h.values.Instance.Namespace()
 }
 
+func (h *valuesHelper) resourceNamespace() string {
+	return h.values.Instance.Namespace()
+}
+
 func (h *valuesHelper) landscaperFullName() string {
 	return h.controllerComponent.ComponentAndInstance()
 }
