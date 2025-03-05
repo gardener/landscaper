@@ -140,7 +140,7 @@ func (m *webhooksDeploymentMutator) args() []string {
 			a = append(a, fmt.Sprintf("--webhook-url=https://%s.%s:%d", m.landscaperWebhooksFullName(), m.hostNamespace(), m.values.WebhooksServer.ServicePort))
 		}
 
-		a = append(a, fmt.Sprintf("--cert-ns=%s", m.values.WebhooksServer.CertificatesNamespace))
+		a = append(a, fmt.Sprintf("--cert-ns=%s", m.resourceNamespace()))
 	} else {
 		a = append(a, fmt.Sprintf("--webhook-service=%s/%s", m.hostNamespace(), m.landscaperWebhooksFullName()))
 		a = append(a, fmt.Sprintf("--webhook-service-port=%d", m.values.WebhooksServer.ServicePort))
