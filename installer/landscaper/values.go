@@ -53,8 +53,9 @@ type ControllerValues struct {
 	ResourceClientSettings ClientSettings            `json:"resourceClientSettings,omitempty"` // optional, has default value
 	// HPAMain contains the values for the HPA of the main deployment.
 	// (There is no configuration for HPACentral, because its values are fix.)
-	HPAMain            HPAValues                    `json:"hpaMain,omitempty"`            // optional, has default value
-	DeployItemTimeouts *v1alpha1.DeployItemTimeouts `json:"deployItemTimeouts,omitempty"` // optional, has default value
+	HPAMain            HPAValues                       `json:"hpaMain,omitempty"`            // optional, has default value
+	DeployItemTimeouts *v1alpha1.DeployItemTimeouts    `json:"deployItemTimeouts,omitempty"` // optional, has default value
+	HealthChecks       *v1alpha1.AdditionalDeployments `json:"healthChecks,omitempty"`       // optional, has default value
 }
 
 const (
