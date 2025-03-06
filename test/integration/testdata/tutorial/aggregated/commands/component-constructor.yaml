@@ -1,0 +1,23 @@
+components:
+  - name: github.com/gardener/landscaper/simple-aggregated
+    version: v0.2.2
+    provider:
+      name: internal
+    resources:
+      - name: simple-aggregated
+        type: landscaper.gardener.cloud/blueprint
+        version: v0.2.2
+        relation: local
+        input:
+          type: dir
+          path: ../blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+
+    componentReferences:
+      - name: ingress
+        componentName: github.com/gardener/landscaper/ingress-nginx
+        version: v0.3.2
+      - name: server
+        componentName: github.com/gardener/landscaper/echo-server
+        version: v0.2.0

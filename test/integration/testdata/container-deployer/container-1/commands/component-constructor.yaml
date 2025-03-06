@@ -1,0 +1,20 @@
+components:
+  - name: github.com/gardener/landscaper/integration-tests/container-deployer/container-1
+    version: v0.1.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      - name: container-deployer-base
+        type: ociImage
+        version: v0.1.0
+        relation: external
+        access:
+          type: ociRegistry
+          imageReference: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/integration-tests/images/container-deployer:v0.1.0

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2025 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# base url of the component repository for integration tests
+REPO_BASE_URL_INTEGRATION_TESTS="europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/integration-tests"
+
+# base url of the component repository for tutorials
+REPO_BASE_URL_TUTORIAL_COMPONENTS="europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/tutorials/components"
