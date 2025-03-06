@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	"github.com/gardener/landscaper/installer/shared"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 	"slices"
 )
@@ -23,7 +25,7 @@ type valuesHelper struct {
 	controllerComponent     *shared.Component
 	webhooksComponent       *shared.Component
 
-	config     v1alpha1.LandscaperConfiguration
+	config     *v1alpha1.LandscaperConfiguration
 	configYaml []byte
 	configHash string
 }
@@ -34,24 +36,18 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	}
 	values.Default()
 
-	// compute values
-	config := values.Configuration
-	configYaml, err := yaml.Marshal(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal landscaper config: %w", err)
-	}
-	hash := sha256.Sum256(configYaml)
-	configHash := hex.EncodeToString(hash[:])
-
-	return &valuesHelper{
+	h := &valuesHelper{
 		values:                  values,
 		controllerMainComponent: shared.NewComponent(values.Instance, values.Version, componentControllerMain),
 		controllerComponent:     shared.NewComponent(values.Instance, values.Version, componentController),
 		webhooksComponent:       shared.NewComponent(values.Instance, values.Version, componentWebhooks),
-		config:                  config,
-		configYaml:              configYaml,
-		configHash:              configHash,
-	}, nil
+	}
+
+	if err := h.computeConfiguration(); err != nil {
+		return nil, err
+	}
+
+	return h, nil
 }
 
 func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
@@ -105,4 +101,55 @@ func (h *valuesHelper) isCreateServiceAccount() bool {
 
 func (h *valuesHelper) areAllWebhooksDisabled() bool {
 	return slices.Contains(h.values.WebhooksServer.DisableWebhooks, allWebhooks)
+}
+
+func (h *valuesHelper) computeConfiguration() (err error) {
+	h.config = &v1alpha1.LandscaperConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "config.landscaper.gardener.cloud/v1alpha1",
+			Kind:       "LandscaperConfiguration",
+		},
+		Controllers: v1alpha1.Controllers{
+			Installations: h.values.Controller.Installations,
+			Executions:    h.values.Controller.Executions,
+			DeployItems:   h.values.Controller.DeployItems,
+			Contexts:      h.values.Controller.Contexts,
+		},
+		Registry: v1alpha1.RegistryConfiguration{
+			OCI: &v1alpha1.OCIConfiguration{
+				Cache: &v1alpha1.OCICacheConfiguration{
+					UseInMemoryOverlay: false,
+					Path:               "/app/ls/oci-cache/",
+				},
+				AllowPlainHttp:     false,
+				InsecureSkipVerify: false,
+			},
+		},
+		CrdManagement: v1alpha1.CrdManagementConfiguration{
+			DeployCustomResourceDefinitions: ptr.To(true),
+			ForceUpdate:                     ptr.To(true),
+		},
+		DeployItemTimeouts: h.values.Controller.DeployItemTimeouts,
+		LsDeployments: &v1alpha1.LsDeployments{
+			LsController:          h.landscaperFullName(),
+			LsMainController:      h.landscaperMainFullName(),
+			WebHook:               h.landscaperWebhooksFullName(),
+			DeploymentsNamespace:  h.hostNamespace(),
+			LsHealthCheckName:     "",  // TODO: add health check name
+			AdditionalDeployments: nil, // TODO: add additional deployments
+		},
+		HPAMainConfiguration: &v1alpha1.HPAMainConfiguration{
+			MaxReplicas: h.values.Controller.HPAMain.MaxReplicas,
+		},
+	}
+
+	h.configYaml, err = yaml.Marshal(h.config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal landscaper configuration: %w", err)
+	}
+
+	hash := sha256.Sum256(h.configYaml)
+	h.configHash = hex.EncodeToString(hash[:])
+
+	return nil
 }

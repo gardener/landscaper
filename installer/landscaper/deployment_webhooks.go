@@ -135,7 +135,7 @@ func (m *webhooksDeploymentMutator) args() []string {
 		a = append(a, "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig")
 
 		if m.values.WebhooksServer.Ingress != nil {
-			a = append(a, fmt.Sprintf("--webhook-url=%s", m.values.WebhooksServer.Ingress.Host))
+			a = append(a, fmt.Sprintf("--webhook-url=https://%s", m.values.WebhooksServer.Ingress.Host))
 		} else {
 			a = append(a, fmt.Sprintf("--webhook-url=https://%s.%s:%d", m.landscaperWebhooksFullName(), m.hostNamespace(), m.values.WebhooksServer.ServicePort))
 		}

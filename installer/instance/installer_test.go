@@ -2,6 +2,7 @@ package instance
 
 import (
 	"context"
+	"fmt"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	"github.com/gardener/landscaper/installer/helmdeployer"
 	"github.com/gardener/landscaper/installer/landscaper"
@@ -11,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"os"
 	"testing"
 )
@@ -76,8 +78,12 @@ var _ = Describe("Landscaper Instance Installer", func() {
 						Repository: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-webhooks-server",
 						Tag:        "v0.127.0",
 					},
-					ServicePort: 0,
-					Ingress:     nil,
+					ServicePort: 9443,
+					Ingress: &landscaper.IngressValues{
+						Host:      fmt.Sprintf("ls-system-%s.%s", id, os.Getenv("HOST_CLUSTER_DOMAIN")),
+						DNSClass:  "garden",
+						ClassName: ptr.To("nginx"),
+					},
 				},
 				ImagePullSecrets:   nil,
 				PodSecurityContext: nil,
