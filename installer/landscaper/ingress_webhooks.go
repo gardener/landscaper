@@ -59,7 +59,7 @@ func (m *ingressMutator) Mutate(r *networking.Ingress) error {
 									Service: &networking.IngressServiceBackend{
 										Name: m.landscaperWebhooksFullName(),
 										Port: networking.ServiceBackendPort{
-											Number: m.values.WebhooksServer.Service.Port,
+											Number: m.values.WebhooksServer.ServicePort,
 										},
 									},
 								},

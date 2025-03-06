@@ -2,10 +2,12 @@ package landscaper
 
 import (
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
+	lscore "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/installer/shared"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
+	"time"
 )
 
 type Values struct {
@@ -34,6 +36,11 @@ type ServiceAccountValues struct {
 }
 
 type ControllerValues struct {
+	Installations v1alpha1.InstallationsController `json:"installations,omitempty"` // optional, has default value
+	Executions    v1alpha1.ExecutionsController    `json:"executions,omitempty"`    // optional, has default value
+	DeployItems   v1alpha1.DeployItemsController   `json:"deployItems,omitempty"`   // optional, has default value
+	Contexts      v1alpha1.ContextsController      `json:"contexts,omitempty"`      // optional, has default value
+
 	// LandscaperKubeconfig contains the kubeconfig for the resource cluster (= landscaper cluster).
 	LandscaperKubeconfig   *KubeconfigValues         `json:"landscaperKubeconfig,omitempty"`
 	Service                *ServiceValues            `json:"service,omitempty"` // optional, has default values
@@ -46,7 +53,8 @@ type ControllerValues struct {
 	ResourceClientSettings ClientSettings            `json:"resourceClientSettings,omitempty"` // optional, has default value
 	// HPAMain contains the values for the HPA of the main deployment.
 	// (There is no configuration for HPACentral, because its values are fix.)
-	HPAMain HPAValues `json:"hpaMain,omitempty"` // optional, has default value
+	HPAMain            HPAValues                    `json:"hpaMain,omitempty"`            // optional, has default value
+	DeployItemTimeouts *v1alpha1.DeployItemTimeouts `json:"deployItemTimeouts,omitempty"` // optional, has default value
 }
 
 const (
@@ -67,6 +75,10 @@ type WebhooksServerValues struct {
 	Ingress              *IngressValues            `json:"ingress,omitempty"`      // optional - if nil, no ingress will be created.
 	Resources            core.ResourceRequirements `json:"resources,omitempty"`    // optional - has default value
 	HPA                  HPAValues                 `json:"hpa,omitempty"`          // optional - has default value
+}
+
+type CommonControllerValues struct {
+	Workers int32 `json:"workers,omitempty"`
 }
 
 type ImageValues struct {
@@ -102,6 +114,21 @@ type HPAValues struct {
 }
 
 func (v *Values) Default() error {
+	if v.Controller.Installations.Workers == 0 {
+		v.Controller.Installations.Workers = 30
+	}
+	if v.Controller.Executions.Workers == 0 {
+		v.Controller.Executions.Workers = 30
+	}
+	if v.Controller.DeployItems.Workers == 0 {
+		v.Controller.DeployItems.Workers = 5
+	}
+	if v.Controller.Contexts.Workers == 0 {
+		v.Controller.Contexts.Workers = 5
+	}
+	v.Controller.Contexts.Config.Default.Disable = false
+	v.Controller.Contexts.Config.Default.ExcludedNamespaces = []string{"kube-system"}
+
 	if v.Controller.Service == nil {
 		v.Controller.Service = &ServiceValues{}
 	}
@@ -133,7 +160,11 @@ func (v *Values) Default() error {
 	if v.Controller.HPAMain.AverageMemoryUtilization == nil {
 		v.Controller.HPAMain.AverageMemoryUtilization = ptr.To(int32(80))
 	}
-
+	if v.Controller.DeployItemTimeouts == nil {
+		v.Controller.DeployItemTimeouts = &v1alpha1.DeployItemTimeouts{
+			Pickup: &lscore.Duration{Duration: 60 * time.Minute},
+		}
+	}
 	if v.WebhooksServer.Service == nil {
 		v.WebhooksServer.Service = &ServiceValues{}
 	}

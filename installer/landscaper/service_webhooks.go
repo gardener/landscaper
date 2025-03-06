@@ -41,8 +41,8 @@ func (m *webhooksServiceMutator) Mutate(r *core.Service) error {
 		Ports: []core.ServicePort{
 			{
 				Name:       "webhooks",
-				Port:       m.values.WebhooksServer.Service.Port,
-				TargetPort: intstr.FromInt32(m.values.WebhooksServer.Service.Port),
+				Port:       m.values.WebhooksServer.ServicePort,
+				TargetPort: intstr.FromInt32(m.values.WebhooksServer.ServicePort),
 				Protocol:   "TCP",
 			},
 		},

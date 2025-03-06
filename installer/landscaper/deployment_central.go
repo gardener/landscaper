@@ -169,6 +169,10 @@ func (m *centralDeploymentMutator) args() []string {
 func (m *centralDeploymentMutator) env() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
+			Name:  "LANDSCAPER_MODE",
+			Value: "central-landscaper",
+		},
+		{
 			Name: "MY_POD_NAME",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
