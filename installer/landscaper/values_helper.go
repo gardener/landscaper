@@ -135,8 +135,8 @@ func (h *valuesHelper) computeConfiguration() (err error) {
 			LsMainController:      h.landscaperMainFullName(),
 			WebHook:               h.landscaperWebhooksFullName(),
 			DeploymentsNamespace:  h.hostNamespace(),
-			LsHealthCheckName:     "",  // TODO: add health check name
-			AdditionalDeployments: nil, // TODO: add additional deployments
+			LsHealthCheckName:     h.landscaperFullName(),
+			AdditionalDeployments: h.values.Controller.HealthChecks,
 		},
 		HPAMainConfiguration: &v1alpha1.HPAMainConfiguration{
 			MaxReplicas: h.values.Controller.HPAMain.MaxReplicas,

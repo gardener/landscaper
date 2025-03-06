@@ -8,58 +8,65 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func InstallHelmDeployer(ctx context.Context, hostCluster *resources.Cluster, values *Values) error {
+type Exports struct {
+	DeploymentName string
+}
+
+func InstallHelmDeployer(ctx context.Context, hostCluster *resources.Cluster, values *Values) (*Exports, error) {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	hostClient := hostCluster.Client()
 
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, resources.NewNamespaceMutator(valHelper.hostNamespace())); err != nil {
-		return err
+		return nil, err
 	}
 
 	if valHelper.isCreateServiceAccount() {
 		if err := resources.CreateOrUpdateResource(ctx, hostClient, newClusterRoleMutator(valHelper)); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := resources.CreateOrUpdateResource(ctx, hostClient, newServiceAccountMutator(valHelper)); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := resources.CreateOrUpdateResource(ctx, hostClient, newClusterRoleBindingMutator(valHelper)); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, newConfigSecretMutator(valHelper)); err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(valHelper.landscaperClusterKubeconfig()) > 0 {
 		if err := resources.CreateOrUpdateResource(ctx, hostClient, newKubeconfigSecretMutator(valHelper)); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if valHelper.values.OCI != nil {
 		if err := resources.CreateOrUpdateResource(ctx, hostClient, newRegistrySecretMutator(valHelper)); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, newHPAMutator(valHelper)); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, newDeploymentMutator(valHelper)); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &Exports{
+		// needed for health checks
+		DeploymentName: valHelper.deployerFullName(),
+	}, nil
 }
 
 func UninstallHelmDeployer(ctx context.Context, hostCluster *resources.Cluster, values *Values) error {

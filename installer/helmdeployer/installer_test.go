@@ -50,7 +50,7 @@ var _ = Describe("Helm Deployer Installer", func() {
 			NodeSelector:           nil,
 		}
 
-		err = InstallHelmDeployer(ctx, hostCluster, values)
+		_, err = InstallHelmDeployer(ctx, hostCluster, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

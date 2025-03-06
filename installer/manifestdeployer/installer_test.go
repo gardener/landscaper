@@ -50,7 +50,7 @@ var _ = Describe("Manifest Deployer Installer", func() {
 			NodeSelector:           nil,
 		}
 
-		err = InstallManifestDeployer(ctx, hostCluster, values)
+		_, err = InstallManifestDeployer(ctx, hostCluster, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
