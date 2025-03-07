@@ -3,6 +3,7 @@ package instance
 import (
 	"context"
 	"github.com/gardener/landscaper/installer/resources"
+	"github.com/gardener/landscaper/installer/shared"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"os"
@@ -40,6 +41,11 @@ var _ = Describe("Landscaper Instance Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 		config.ResourceCluster, err = newResourceCluster()
 		Expect(err).ToNot(HaveOccurred())
+
+		// Add optional values
+		config.HelmDeployer.HPA = shared.HPAValues{
+			MaxReplicas: 3,
+		}
 
 		err = InstallLandscaperInstance(ctx, config)
 		Expect(err).ToNot(HaveOccurred())

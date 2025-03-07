@@ -55,7 +55,7 @@ type ControllerValues struct {
 	ResourceClientSettings ClientSettings            `json:"resourceClientSettings,omitempty"` // optional, has default value
 	// HPAMain contains the values for the HPA of the main deployment.
 	// (There is no configuration for HPACentral, because its values are fix.)
-	HPAMain            HPAValues                       `json:"hpaMain,omitempty"`            // optional, has default value
+	HPAMain            shared.HPAValues                `json:"hpaMain,omitempty"`            // optional, has default value
 	DeployItemTimeouts *v1alpha1.DeployItemTimeouts    `json:"deployItemTimeouts,omitempty"` // optional, has default value
 	HealthChecks       *v1alpha1.AdditionalDeployments `json:"healthChecks,omitempty"`       // optional, has default value
 }
@@ -77,7 +77,7 @@ type WebhooksServerValues struct {
 	ReplicaCount         *int32                    `json:"replicaCount,omitempty"` // optional - has default value
 	Ingress              *IngressValues            `json:"ingress,omitempty"`      // optional - if nil, no ingress will be created.
 	Resources            core.ResourceRequirements `json:"resources,omitempty"`    // optional - has default value
-	HPA                  HPAValues                 `json:"hpa,omitempty"`          // optional - has default value
+	HPA                  shared.HPAValues          `json:"hpa,omitempty"`          // optional - has default value
 }
 
 type CommonControllerValues struct {
@@ -102,12 +102,6 @@ type MetricsValues struct {
 type ClientSettings struct {
 	Burst int32 `json:"burst,omitempty"`
 	QPS   int32 `json:"qps,omitempty"`
-}
-
-type HPAValues struct {
-	MaxReplicas              int32  `json:"maxReplicas,omitempty"`
-	AverageCpuUtilization    *int32 `json:"averageCpuUtilization,omitempty"`
-	AverageMemoryUtilization *int32 `json:"averageMemoryUtilization,omitempty"`
 }
 
 func (v *Values) Default() error {
@@ -148,6 +142,7 @@ func (v *Values) Default() error {
 	if v.Controller.ResourceClientSettings.QPS == 0 {
 		v.Controller.ResourceClientSettings.QPS = 40
 	}
+
 	if v.Controller.HPAMain.MaxReplicas == 0 {
 		v.Controller.HPAMain.MaxReplicas = 1
 	}
@@ -157,6 +152,7 @@ func (v *Values) Default() error {
 	if v.Controller.HPAMain.AverageMemoryUtilization == nil {
 		v.Controller.HPAMain.AverageMemoryUtilization = ptr.To(int32(80))
 	}
+
 	if v.Controller.DeployItemTimeouts == nil {
 		v.Controller.DeployItemTimeouts = &v1alpha1.DeployItemTimeouts{
 			Pickup: &lscore.Duration{Duration: 60 * time.Minute},
@@ -191,6 +187,7 @@ func (v *Values) Default() error {
 			core.ResourceMemory: memory,
 		}
 	}
+
 	if v.WebhooksServer.HPA.MaxReplicas == 0 {
 		v.WebhooksServer.HPA.MaxReplicas = 2
 	}

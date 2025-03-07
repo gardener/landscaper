@@ -30,9 +30,6 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("values must not be nil")
 	}
 	values.Default()
-	if err := values.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid helm deployer values: %w", err)
-	}
 
 	// compute values
 	configYaml, err := yaml.Marshal(values.Configuration)
@@ -74,9 +71,6 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 		return nil, fmt.Errorf("values must not be nil")
 	}
 	values.Default()
-	if err := values.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid helm deployer values: %w", err)
-	}
 
 	return &valuesHelper{
 		values:                values,

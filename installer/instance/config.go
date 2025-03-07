@@ -67,17 +67,21 @@ type LandscaperConfig struct {
 }
 
 type ControllerConfig struct {
-	Image shared.ImageConfig
+	Image   shared.ImageConfig
+	HPAMain shared.HPAValues
 }
 
 type WebhooksServerConfig struct {
 	Image shared.ImageConfig
+	HPA   shared.HPAValues
 }
 
 type ManifestDeployerConfig struct {
 	Image shared.ImageConfig
+	HPA   shared.HPAValues
 }
 
 type HelmDeployerConfig struct {
 	Image shared.ImageConfig
+	HPA   shared.HPAValues
 }
