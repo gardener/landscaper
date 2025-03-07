@@ -3,32 +3,51 @@ package instance
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	"github.com/gardener/landscaper/installer/helmdeployer"
 	"github.com/gardener/landscaper/installer/landscaper"
 	"github.com/gardener/landscaper/installer/manifestdeployer"
 	"github.com/gardener/landscaper/installer/rbac"
-	"github.com/gardener/landscaper/installer/resources"
+	"slices"
 )
 
-func InstallLandscaperInstance(ctx context.Context, hostCluster, resourceCluster *resources.Cluster, values *Values) error {
+func InstallLandscaperInstance(ctx context.Context, config *Configuration) error {
 
-	kubeconfigs, err := rbac.InstallLandscaperRBACResources(ctx, resourceCluster, rbacValues(values))
+	// RBAC resources
+	kubeconfigs, err := rbac.InstallLandscaperRBACResources(ctx, config.ResourceCluster, rbacValues(config))
 	if err != nil {
 		return fmt.Errorf("failed to install landscaper rbac resources: %v", err)
 	}
 
-	manifestExports, err := manifestdeployer.InstallManifestDeployer(ctx, hostCluster, manifestDeployerValues(values, kubeconfigs))
-	if err != nil {
-		return fmt.Errorf("failed to install manifest deployer: %w", err)
+	// Manifest deployer
+	var manifestExports *manifestdeployer.Exports
+	if slices.Contains(config.Deployers, manifest) {
+		manifestExports, err = manifestdeployer.InstallManifestDeployer(ctx, config.HostCluster, manifestDeployerValues(config, kubeconfigs))
+		if err != nil {
+			return fmt.Errorf("failed to install manifest deployer: %w", err)
+		}
+	} else {
+		err = manifestdeployer.UninstallManifestDeployer(ctx, config.HostCluster, manifestDeployerValues(config, kubeconfigs))
+		if err != nil {
+			return fmt.Errorf("failed to uninstall manifest deployer: %w", err)
+		}
 	}
 
-	helmExports, err := helmdeployer.InstallHelmDeployer(ctx, hostCluster, helmDeployerValues(values, kubeconfigs))
-	if err != nil {
-		return fmt.Errorf("failed to install helm deployer: %w", err)
+	// Helm deployer
+	var helmExports *helmdeployer.Exports
+	if slices.Contains(config.Deployers, helm) {
+		helmExports, err = helmdeployer.InstallHelmDeployer(ctx, config.HostCluster, helmDeployerValues(config, kubeconfigs))
+		if err != nil {
+			return fmt.Errorf("failed to install helm deployer: %w", err)
+		}
+	} else {
+		err = helmdeployer.UninstallHelmDeployer(ctx, config.HostCluster, helmDeployerValues(config, kubeconfigs))
+		if err != nil {
+			return fmt.Errorf("failed to uninstall helm deployer: %w", err)
+		}
 	}
 
-	err = landscaper.InstallLandscaper(ctx, hostCluster, landscaperValues(values, kubeconfigs, manifestExports, helmExports))
+	// Landscaper
+	err = landscaper.InstallLandscaper(ctx, config.HostCluster, landscaperValues(config, kubeconfigs, manifestExports, helmExports))
 	if err != nil {
 		return fmt.Errorf("failed to install landscaper controllers: %w", err)
 	}
@@ -36,88 +55,28 @@ func InstallLandscaperInstance(ctx context.Context, hostCluster, resourceCluster
 	return nil
 }
 
-func UninstallLandscaperInstance(ctx context.Context, hostCluster, resourceCluster *resources.Cluster, values *Values) error {
+func UninstallLandscaperInstance(ctx context.Context, config *Configuration) error {
 	kubeconfigs := &rbac.Kubeconfigs{}
 
-	err := landscaper.UninstallLandscaper(ctx, hostCluster, landscaperValues(values, kubeconfigs, nil, nil))
+	err := landscaper.UninstallLandscaper(ctx, config.HostCluster, landscaperValues(config, kubeconfigs, nil, nil))
 	if err != nil {
 		return fmt.Errorf("failed to uninstall landscaper controllers: %w", err)
 	}
 
-	err = helmdeployer.UninstallHelmDeployer(ctx, hostCluster, helmDeployerValues(values, kubeconfigs))
+	err = helmdeployer.UninstallHelmDeployer(ctx, config.HostCluster, helmDeployerValues(config, kubeconfigs))
 	if err != nil {
 		return fmt.Errorf("failed to uninstall helm deployer: %w", err)
 	}
 
-	err = manifestdeployer.UninstallManifestDeployer(ctx, hostCluster, manifestDeployerValues(values, kubeconfigs))
+	err = manifestdeployer.UninstallManifestDeployer(ctx, config.HostCluster, manifestDeployerValues(config, kubeconfigs))
 	if err != nil {
 		return fmt.Errorf("failed to uninstall manifest deployer: %w", err)
 	}
 
-	err = rbac.UninstallLandscaperRBACResources(ctx, resourceCluster, rbacValues(values))
+	err = rbac.UninstallLandscaperRBACResources(ctx, config.ResourceCluster, rbacValues(config))
 	if err != nil {
 		return fmt.Errorf("failed to uninstall landscaper rbac resources: %v", err)
 	}
 
 	return nil
-}
-
-func rbacValues(v *Values) *rbac.Values {
-	return v.RBACValues
-}
-
-func landscaperValues(v *Values, kubeconfigs *rbac.Kubeconfigs, manifestExports *manifestdeployer.Exports, helmExports *helmdeployer.Exports) *landscaper.Values {
-	lv := v.LandscaperValues
-	if lv == nil {
-		lv = &landscaper.Values{}
-	}
-	if lv.Controller.LandscaperKubeconfig == nil {
-		lv.Controller.LandscaperKubeconfig = &landscaper.KubeconfigValues{}
-	}
-	lv.Controller.LandscaperKubeconfig.Kubeconfig = string(kubeconfigs.ControllerKubeconfig)
-
-	if lv.WebhooksServer.LandscaperKubeconfig == nil {
-		lv.WebhooksServer.LandscaperKubeconfig = &landscaper.KubeconfigValues{}
-	}
-	lv.WebhooksServer.LandscaperKubeconfig.Kubeconfig = string(kubeconfigs.WebhooksKubeconfig)
-
-	// deployments to be considered by the health checks
-	deployments := []string{}
-	if manifestExports != nil {
-		deployments = append(deployments, manifestExports.DeploymentName)
-	}
-	if helmExports != nil {
-		deployments = append(deployments, helmExports.DeploymentName)
-	}
-	lv.Controller.HealthChecks = &v1alpha1.AdditionalDeployments{
-		Deployments: deployments,
-	}
-
-	return lv
-}
-
-func manifestDeployerValues(v *Values, kubeconfigs *rbac.Kubeconfigs) *manifestdeployer.Values {
-	mv := v.ManifestDeployerValues
-	if mv == nil {
-		mv = &manifestdeployer.Values{}
-	}
-	if mv.LandscaperClusterKubeconfig == nil {
-		mv.LandscaperClusterKubeconfig = &manifestdeployer.KubeconfigValues{}
-	}
-	mv.LandscaperClusterKubeconfig.Kubeconfig = string(kubeconfigs.ControllerKubeconfig)
-
-	return mv
-}
-
-func helmDeployerValues(v *Values, kubeconfigs *rbac.Kubeconfigs) *helmdeployer.Values {
-	hv := v.HelmDeployerValues
-	if hv == nil {
-		hv = &helmdeployer.Values{}
-	}
-	if hv.LandscaperClusterKubeconfig == nil {
-		hv.LandscaperClusterKubeconfig = &helmdeployer.KubeconfigValues{}
-	}
-	hv.LandscaperClusterKubeconfig.Kubeconfig = string(kubeconfigs.ControllerKubeconfig)
-
-	return hv
 }

@@ -13,7 +13,7 @@ type Values struct {
 	Version                     string                    `json:"version,omitempty"`
 	VerbosityLevel              string                    `json:"verbosityLevel,omitempty"`
 	LandscaperClusterKubeconfig *KubeconfigValues         `json:"landscaperClusterKubeconfig,omitempty"`
-	Image                       ImageValues               `json:"image,omitempty"`
+	Image                       shared.ImageConfig        `json:"image,omitempty"`
 	ImagePullSecrets            []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	ReplicaCount                *int32                    `json:"replicaCount,omitempty"`
 	Resources                   v1.ResourceRequirements   `json:"resources,omitempty"`
