@@ -12,14 +12,14 @@ type Exports struct {
 	DeploymentName string
 }
 
-func InstallHelmDeployer(ctx context.Context, hostCluster *resources.Cluster, values *Values) (*Exports, error) {
+func InstallHelmDeployer(ctx context.Context, values *Values) (*Exports, error) {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
 		return nil, err
 	}
 
-	hostClient := hostCluster.Client()
+	hostClient := values.HostCluster.Client()
 
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, resources.NewNamespaceMutator(valHelper.hostNamespace())); err != nil {
 		return nil, err
@@ -69,14 +69,14 @@ func InstallHelmDeployer(ctx context.Context, hostCluster *resources.Cluster, va
 	}, nil
 }
 
-func UninstallHelmDeployer(ctx context.Context, hostCluster *resources.Cluster, values *Values) error {
+func UninstallHelmDeployer(ctx context.Context, values *Values) error {
 
 	valHelper, err := newValuesHelperForDelete(values)
 	if err != nil {
 		return err
 	}
 
-	hostClient := hostCluster.Client()
+	hostClient := values.HostCluster.Client()
 
 	if err := resources.DeleteResource(ctx, hostClient, newDeploymentMutator(valHelper)); err != nil {
 		return err

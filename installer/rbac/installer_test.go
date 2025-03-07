@@ -16,7 +16,7 @@ func TestConfig(t *testing.T) {
 
 var _ = Describe("Landscaper RBAC Installer", func() {
 
-	const id = "test-rr8fq"
+	const instanceID = "test-rr8fq"
 
 	newResourceCluster := func() (*resources.Cluster, error) {
 		return resources.NewCluster(os.Getenv("RESOURCE_CLUSTER_KUBECONFIG"))
@@ -29,12 +29,13 @@ var _ = Describe("Landscaper RBAC Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		values := &Values{
-			Instance:       id,
-			Version:        "v0.127.0",
-			ServiceAccount: &ServiceAccountValues{Create: true},
+			Instance:        instanceID,
+			Version:         "v0.127.0",
+			ResourceCluster: resourceCluster,
+			ServiceAccount:  &ServiceAccountValues{Create: true},
 		}
 
-		kubeconfigs, err := InstallLandscaperRBACResources(ctx, resourceCluster, values)
+		kubeconfigs, err := InstallLandscaperRBACResources(ctx, values)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kubeconfigs.ControllerKubeconfig).ToNot(BeNil())
 		Expect(kubeconfigs.WebhooksKubeconfig).ToNot(BeNil())
@@ -48,10 +49,11 @@ var _ = Describe("Landscaper RBAC Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		values := &Values{
-			Instance: id,
+			Instance:        instanceID,
+			ResourceCluster: resourceCluster,
 		}
 
-		err = UninstallLandscaperRBACResources(ctx, resourceCluster, values)
+		err = UninstallLandscaperRBACResources(ctx, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

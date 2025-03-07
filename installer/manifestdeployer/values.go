@@ -3,14 +3,16 @@ package manifestdeployer
 import (
 	"fmt"
 	"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/installer/resources"
 	"github.com/gardener/landscaper/installer/shared"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
 
 type Values struct {
-	Instance                    shared.Instance           `json:"instance,omitempty"`
-	Version                     string                    `json:"version,omitempty"`
+	Instance                    shared.Instance `json:"instance,omitempty"`
+	Version                     string          `json:"version,omitempty"`
+	HostCluster                 *resources.Cluster
 	VerbosityLevel              string                    `json:"verbosityLevel,omitempty"`
 	LandscaperClusterKubeconfig *KubeconfigValues         `json:"landscaperClusterKubeconfig,omitempty"`
 	Image                       shared.ImageConfig        `json:"image,omitempty"`
