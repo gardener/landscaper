@@ -67,21 +67,17 @@ type LandscaperConfig struct {
 }
 
 type ControllerConfig struct {
-	// Image specifies the image of the landscaper controller.
 	Image shared.ImageConfig
 }
 
 type WebhooksServerConfig struct {
-	// Image specifies the image of the webhooks server.
 	Image shared.ImageConfig
 }
 
 type ManifestDeployerConfig struct {
-	// Image specifies the image of the manifest deployer controller.
 	Image shared.ImageConfig
 }
 
 type HelmDeployerConfig struct {
-	// Image specifies the image of the helm deployer controller.
 	Image shared.ImageConfig
 }

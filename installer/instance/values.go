@@ -12,6 +12,7 @@ import (
 	"os"
 )
 
+// rbacValues determines the import values for the installation of the rbac resources
 func rbacValues(c *Configuration) *rbac.Values {
 	return &rbac.Values{
 		Instance:        c.Instance,
@@ -21,6 +22,7 @@ func rbacValues(c *Configuration) *rbac.Values {
 	}
 }
 
+// manifestDeployerValues determines the import values for the installation of the manifest deployer
 func manifestDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *manifestdeployer.Values {
 	v := &manifestdeployer.Values{
 		Instance:       c.Instance,
@@ -43,6 +45,7 @@ func manifestDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *ma
 
 }
 
+// helmDeployerValues determines the import values for the installation of the helm deployer
 func helmDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *helmdeployer.Values {
 	v := &helmdeployer.Values{
 		Instance:       c.Instance,
@@ -64,6 +67,7 @@ func helmDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *helmde
 	return v
 }
 
+// landscaperValues determines the import values for the installation of the landscaper controllers and webhooks server
 func landscaperValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs, manifestExports *manifestdeployer.Exports, helmExports *helmdeployer.Exports) *landscaper.Values {
 	v := &landscaper.Values{
 		Instance:       c.Instance,

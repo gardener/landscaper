@@ -84,12 +84,6 @@ type CommonControllerValues struct {
 	Workers int32 `json:"workers,omitempty"`
 }
 
-type ImageValues struct {
-	Repository string `json:"repository,omitempty"`
-	Tag        string `json:"tag,omitempty"`
-	PullPolicy string `json:"pullPolicy,omitempty"`
-}
-
 type ServiceValues struct {
 	Type string `json:"type,omitempty"`
 	Port int32  `json:"port,omitempty"`
