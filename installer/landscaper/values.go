@@ -44,7 +44,7 @@ type ControllerValues struct {
 	// LandscaperKubeconfig contains the kubeconfig for the resource cluster (= landscaper cluster).
 	LandscaperKubeconfig   *KubeconfigValues         `json:"landscaperKubeconfig,omitempty"`
 	Service                *ServiceValues            `json:"service,omitempty"` // optional, has default values
-	Image                  ImageValues               `json:"image,omitempty"`
+	Image                  shared.ImageConfig        `json:"image,omitempty"`
 	ReplicaCount           *int32                    `json:"replicaCount,omitempty"`
 	Resources              core.ResourceRequirements `json:"resources,omitempty"`
 	ResourcesMain          core.ResourceRequirements `json:"resourcesMain,omitempty"`
@@ -70,7 +70,7 @@ type WebhooksServerValues struct {
 	// LandscaperKubeconfig contains the kubeconfig for the resource cluster (= landscaper cluster).
 	LandscaperKubeconfig *KubeconfigValues         `json:"landscaperKubeconfig,omitempty"`
 	Service              *ServiceValues            `json:"service,omitempty"` // optional, has default value
-	Image                ImageValues               `json:"image,omitempty"`
+	Image                shared.ImageConfig        `json:"image,omitempty"`
 	ServicePort          int32                     `json:"servicePort,omitempty"`  // required unless DisableWebhooks contains "all"
 	ReplicaCount         *int32                    `json:"replicaCount,omitempty"` // optional - has default value
 	Ingress              *IngressValues            `json:"ingress,omitempty"`      // optional - if nil, no ingress will be created.
