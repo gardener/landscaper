@@ -28,17 +28,15 @@ func manifestDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *ma
 		Instance:       c.Instance,
 		Version:        c.Version,
 		HostCluster:    c.HostCluster,
+		Image:          c.ManifestDeployer.Image,
 		ServiceAccount: &manifestdeployer.ServiceAccountValues{Create: true},
+		HPA:            c.ManifestDeployer.HPA,
 	}
 
 	if kubeconfigs != nil {
 		v.LandscaperClusterKubeconfig = &manifestdeployer.KubeconfigValues{
 			Kubeconfig: string(kubeconfigs.ControllerKubeconfig),
 		}
-	}
-
-	if c.ManifestDeployer != nil {
-		v.Image = c.ManifestDeployer.Image
 	}
 
 	return v
@@ -51,17 +49,15 @@ func helmDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *helmde
 		Instance:       c.Instance,
 		Version:        c.Version,
 		HostCluster:    c.HostCluster,
+		Image:          c.HelmDeployer.Image,
 		ServiceAccount: &helmdeployer.ServiceAccountValues{Create: true},
+		HPA:            c.HelmDeployer.HPA,
 	}
 
 	if kubeconfigs != nil {
 		v.LandscaperClusterKubeconfig = &helmdeployer.KubeconfigValues{
 			Kubeconfig: string(kubeconfigs.ControllerKubeconfig),
 		}
-	}
-
-	if c.HelmDeployer != nil {
-		v.Image = c.HelmDeployer.Image
 	}
 
 	return v
@@ -85,6 +81,7 @@ func landscaperValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs, manifestE
 			Resources:     corev1.ResourceRequirements{},
 			ResourcesMain: corev1.ResourceRequirements{},
 			Metrics:       nil,
+			HPAMain:       c.Landscaper.Controller.HPAMain,
 		},
 		WebhooksServer: landscaper.WebhooksServerValues{
 			DisableWebhooks: nil,
@@ -98,6 +95,7 @@ func landscaperValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs, manifestE
 				DNSClass:  "garden",
 				ClassName: ptr.To("nginx"),
 			},
+			HPA: c.Landscaper.WebhooksServer.HPA,
 		},
 	}
 

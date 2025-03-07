@@ -18,14 +18,14 @@ type Values struct {
 	Image                       shared.ImageConfig          `json:"image,omitempty"`
 	ImagePullSecrets            []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	ReplicaCount                *int32                      `json:"replicaCount,omitempty"`
-	Resources                   core.ResourceRequirements   `json:"resources,omitempty"`
+	Resources                   core.ResourceRequirements   `json:"resources,omitempty"` // <<<
 	PodSecurityContext          *core.PodSecurityContext    `json:"podSecurityContext,omitempty"`
 	SecurityContext             *core.SecurityContext       `json:"securityContext,omitempty"`
 	ServiceAccount              *ServiceAccountValues       `json:"serviceAccount,omitempty"`
 	Configuration               v1alpha1.Configuration      `json:"configuration,omitempty"`
 	HostClientSettings          *ClientSettings             `json:"hostClientSettings,omitempty"`
 	ResourceClientSettings      *ClientSettings             `json:"resourceClientSettings,omitempty"`
-	HPA                         HPAValues                   `json:"hpa,omitempty"`
+	HPA                         shared.HPAValues            `json:"hpa,omitempty"` // <<<
 	NodeSelector                map[string]string           `json:"nodeSelector,omitempty"`
 	Affinity                    *core.Affinity              `json:"affinity,omitempty"`
 	Tolerations                 []core.Toleration           `json:"tolerations,omitempty"`
@@ -48,12 +48,6 @@ type ClientSettings struct {
 
 type ServiceAccountValues struct {
 	Create bool `json:"create,omitempty"`
-}
-
-type HPAValues struct {
-	MaxReplicas              int32  `json:"maxReplicas,omitempty"`
-	AverageCpuUtilization    *int32 `json:"averageCpuUtilization,omitempty"`
-	AverageMemoryUtilization *int32 `json:"averageMemoryUtilization,omitempty"`
 }
 
 type OCIValues struct {
@@ -100,6 +94,7 @@ func (v *Values) Default() {
 	if v.ResourceClientSettings.QPS == 0 {
 		v.ResourceClientSettings.QPS = 40
 	}
+
 	if v.HPA.MaxReplicas == 0 {
 		v.HPA.MaxReplicas = 1
 	}
@@ -109,8 +104,4 @@ func (v *Values) Default() {
 	if v.HPA.AverageMemoryUtilization == nil {
 		v.HPA.AverageMemoryUtilization = ptr.To(int32(80))
 	}
-}
-
-func (v *Values) Validate() error {
-	return nil
 }
