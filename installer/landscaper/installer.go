@@ -5,14 +5,14 @@ import (
 	"github.com/gardener/landscaper/installer/resources"
 )
 
-func InstallLandscaper(ctx context.Context, hostCluster *resources.Cluster, values *Values) error {
+func InstallLandscaper(ctx context.Context, values *Values) error {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
 		return err
 	}
 
-	hostClient := hostCluster.Client()
+	hostClient := values.HostCluster.Client()
 
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, resources.NewNamespaceMutator(valHelper.hostNamespace())); err != nil {
 		return err
@@ -93,14 +93,14 @@ func InstallLandscaper(ctx context.Context, hostCluster *resources.Cluster, valu
 	return nil
 }
 
-func UninstallLandscaper(ctx context.Context, hostCluster *resources.Cluster, values *Values) error {
+func UninstallLandscaper(ctx context.Context, values *Values) error {
 
 	valHelper, err := newValuesHelperForDelete(values)
 	if err != nil {
 		return err
 	}
 
-	hostClient := hostCluster.Client()
+	hostClient := values.HostCluster.Client()
 
 	if err := resources.DeleteResource(ctx, hostClient, newWebhooksHPAMutator(valHelper)); err != nil {
 		return err

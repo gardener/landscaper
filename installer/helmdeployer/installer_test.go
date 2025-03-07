@@ -3,6 +3,7 @@ package helmdeployer
 import (
 	"context"
 	"github.com/gardener/landscaper/installer/resources"
+	"github.com/gardener/landscaper/installer/shared"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"os"
@@ -16,7 +17,7 @@ func TestConfig(t *testing.T) {
 
 var _ = Describe("Helm Deployer Installer", func() {
 
-	const id = "test-g23tp"
+	const instanceID = "test-g23tp"
 
 	newHostCluster := func() (*resources.Cluster, error) {
 		return resources.NewCluster(os.Getenv("KUBECONFIG"))
@@ -32,12 +33,13 @@ var _ = Describe("Helm Deployer Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		values := &Values{
-			Instance: id,
-			Version:  "v0.127.0",
+			Instance:    instanceID,
+			Version:     "v0.127.0",
+			HostCluster: hostCluster,
 			LandscaperClusterKubeconfig: &KubeconfigValues{
 				Kubeconfig: string(kubeconfig),
 			},
-			Image: ImageValues{
+			Image: shared.ImageConfig{
 				Repository: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/helm-deployer/images/helm-deployer-controller",
 				Tag:        "v0.127.0",
 			},
@@ -50,7 +52,7 @@ var _ = Describe("Helm Deployer Installer", func() {
 			NodeSelector:           nil,
 		}
 
-		_, err = InstallHelmDeployer(ctx, hostCluster, values)
+		_, err = InstallHelmDeployer(ctx, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -61,10 +63,11 @@ var _ = Describe("Helm Deployer Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		values := &Values{
-			Instance: id,
+			Instance:    instanceID,
+			HostCluster: hostCluster,
 		}
 
-		err = UninstallHelmDeployer(ctx, hostCluster, values)
+		err = UninstallHelmDeployer(ctx, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

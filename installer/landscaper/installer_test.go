@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	"github.com/gardener/landscaper/installer/resources"
+	"github.com/gardener/landscaper/installer/shared"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -36,6 +37,7 @@ var _ = Describe("Landscaper Controller Installer", func() {
 		values := &Values{
 			Instance:       id,
 			Version:        "v0.127.0",
+			HostCluster:    hostCluster,
 			VerbosityLevel: "INFO",
 			Configuration:  v1alpha1.LandscaperConfiguration{},
 			ServiceAccount: &ServiceAccountValues{Create: true},
@@ -43,7 +45,7 @@ var _ = Describe("Landscaper Controller Installer", func() {
 				LandscaperKubeconfig: &KubeconfigValues{
 					Kubeconfig: string(kubeconfig),
 				},
-				Image: ImageValues{
+				Image: shared.ImageConfig{
 					Repository: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-controller",
 					Tag:        "v0.127.0",
 				},
@@ -57,7 +59,7 @@ var _ = Describe("Landscaper Controller Installer", func() {
 				LandscaperKubeconfig: &KubeconfigValues{
 					Kubeconfig: string(kubeconfig),
 				},
-				Image: ImageValues{
+				Image: shared.ImageConfig{
 					Repository: "europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/images/landscaper-webhooks-server",
 					Tag:        "v0.127.0",
 				},
@@ -72,7 +74,7 @@ var _ = Describe("Landscaper Controller Installer", func() {
 			Tolerations:        nil,
 		}
 
-		err = InstallLandscaper(ctx, hostCluster, values)
+		err = InstallLandscaper(ctx, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -83,10 +85,11 @@ var _ = Describe("Landscaper Controller Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		values := &Values{
-			Instance: id,
+			Instance:    id,
+			HostCluster: hostCluster,
 		}
 
-		err = UninstallLandscaper(ctx, hostCluster, values)
+		err = UninstallLandscaper(ctx, values)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

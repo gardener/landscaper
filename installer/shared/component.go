@@ -30,7 +30,7 @@ type Component struct {
 
 func NewComponent(instance Instance, version, name string) *Component {
 	return &Component{
-		Instance: Instance(instance),
+		Instance: instance,
 		Version:  version,
 		Name:     name,
 	}

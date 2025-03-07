@@ -14,9 +14,10 @@ import (
 
 func rbacValues(c *Configuration) *rbac.Values {
 	return &rbac.Values{
-		Instance:       c.Instance,
-		Version:        c.Version,
-		ServiceAccount: &rbac.ServiceAccountValues{Create: true},
+		Instance:        c.Instance,
+		Version:         c.Version,
+		ResourceCluster: c.ResourceCluster,
+		ServiceAccount:  &rbac.ServiceAccountValues{Create: true},
 	}
 }
 
@@ -24,6 +25,7 @@ func manifestDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *ma
 	v := &manifestdeployer.Values{
 		Instance:       c.Instance,
 		Version:        c.Version,
+		HostCluster:    c.HostCluster,
 		ServiceAccount: &manifestdeployer.ServiceAccountValues{Create: true},
 	}
 
@@ -45,6 +47,7 @@ func helmDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *helmde
 	v := &helmdeployer.Values{
 		Instance:       c.Instance,
 		Version:        c.Version,
+		HostCluster:    c.HostCluster,
 		ServiceAccount: &helmdeployer.ServiceAccountValues{Create: true},
 	}
 
@@ -65,6 +68,7 @@ func landscaperValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs, manifestE
 	v := &landscaper.Values{
 		Instance:       c.Instance,
 		Version:        c.Version,
+		HostCluster:    c.HostCluster,
 		VerbosityLevel: "INFO",
 		Configuration:  v1alpha1.LandscaperConfiguration{},
 		ServiceAccount: &landscaper.ServiceAccountValues{Create: true},

@@ -9,14 +9,14 @@ type Exports struct {
 	DeploymentName string
 }
 
-func InstallManifestDeployer(ctx context.Context, hostCluster *resources.Cluster, values *Values) (*Exports, error) {
+func InstallManifestDeployer(ctx context.Context, values *Values) (*Exports, error) {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
 		return nil, err
 	}
 
-	hostClient := hostCluster.Client()
+	hostClient := values.HostCluster.Client()
 
 	if err := resources.CreateOrUpdateResource(ctx, hostClient, resources.NewNamespaceMutator(valHelper.hostNamespace())); err != nil {
 		return nil, err
@@ -60,14 +60,14 @@ func InstallManifestDeployer(ctx context.Context, hostCluster *resources.Cluster
 	}, nil
 }
 
-func UninstallManifestDeployer(ctx context.Context, hostCluster *resources.Cluster, values *Values) error {
+func UninstallManifestDeployer(ctx context.Context, values *Values) error {
 
 	valHelper, err := newValuesHelperForDelete(values)
 	if err != nil {
 		return err
 	}
 
-	hostClient := hostCluster.Client()
+	hostClient := values.HostCluster.Client()
 
 	if err := resources.DeleteResource(ctx, hostClient, newDeploymentMutator(valHelper)); err != nil {
 		return err

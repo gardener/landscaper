@@ -3,6 +3,7 @@ package landscaper
 import (
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	lscore "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/installer/resources"
 	"github.com/gardener/landscaper/installer/shared"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -11,8 +12,9 @@ import (
 )
 
 type Values struct {
-	Instance           shared.Instance                  `json:"instance,omitempty"`
-	Version            string                           `json:"version,omitempty"`
+	Instance           shared.Instance `json:"instance,omitempty"`
+	Version            string          `json:"version,omitempty"`
+	HostCluster        *resources.Cluster
 	VerbosityLevel     string                           `json:"verbosityLevel,omitempty"`
 	Configuration      v1alpha1.LandscaperConfiguration `json:"configuration,omitempty"`
 	ServiceAccount     *ServiceAccountValues            `json:"serviceAccount,omitempty"`

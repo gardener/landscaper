@@ -12,13 +12,13 @@ type Kubeconfigs struct {
 	UserKubeconfig       []byte
 }
 
-func InstallLandscaperRBACResources(ctx context.Context, resourceCluster *resources.Cluster, values *Values) (kubeconfigs *Kubeconfigs, err error) {
+func InstallLandscaperRBACResources(ctx context.Context, values *Values) (kubeconfigs *Kubeconfigs, err error) {
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
 		return kubeconfigs, err
 	}
 
-	resourceClient := resourceCluster.Client()
+	resourceClient := values.ResourceCluster.Client()
 
 	if err := resources.CreateOrUpdateResource(ctx, resourceClient, resources.NewNamespaceMutator(valHelper.resourceNamespace())); err != nil {
 		return kubeconfigs, err
@@ -65,19 +65,19 @@ func InstallLandscaperRBACResources(ctx context.Context, resourceCluster *resour
 		kubeconfigs = &Kubeconfigs{}
 
 		controllerServiceAccount := newControllerServiceAccountMutator(valHelper).Empty()
-		kubeconfigs.ControllerKubeconfig, err = resources.CreateKubeconfig(ctx, resourceCluster, controllerServiceAccount.Name, controllerServiceAccount.Namespace)
+		kubeconfigs.ControllerKubeconfig, err = resources.CreateKubeconfig(ctx, values.ResourceCluster, controllerServiceAccount.Name, controllerServiceAccount.Namespace)
 		if err != nil {
 			return kubeconfigs, err
 		}
 
 		webhooksServiceAccount := newWebhooksServiceAccountMutator(valHelper).Empty()
-		kubeconfigs.WebhooksKubeconfig, err = resources.CreateKubeconfig(ctx, resourceCluster, webhooksServiceAccount.Name, webhooksServiceAccount.Namespace)
+		kubeconfigs.WebhooksKubeconfig, err = resources.CreateKubeconfig(ctx, values.ResourceCluster, webhooksServiceAccount.Name, webhooksServiceAccount.Namespace)
 		if err != nil {
 			return kubeconfigs, err
 		}
 
 		userServiceAccount := newUserServiceAccountMutator(valHelper).Empty()
-		kubeconfigs.UserKubeconfig, err = resources.CreateKubeconfig(ctx, resourceCluster, userServiceAccount.Name, userServiceAccount.Namespace)
+		kubeconfigs.UserKubeconfig, err = resources.CreateKubeconfig(ctx, values.ResourceCluster, userServiceAccount.Name, userServiceAccount.Namespace)
 		if err != nil {
 			return kubeconfigs, err
 		}
@@ -86,14 +86,14 @@ func InstallLandscaperRBACResources(ctx context.Context, resourceCluster *resour
 	return kubeconfigs, nil
 }
 
-func UninstallLandscaperRBACResources(ctx context.Context, resourceCluster *resources.Cluster, values *Values) error {
+func UninstallLandscaperRBACResources(ctx context.Context, values *Values) error {
 
 	valHelper, err := newValuesHelper(values)
 	if err != nil {
 		return err
 	}
 
-	resourceClient := resourceCluster.Client()
+	resourceClient := values.ResourceCluster.Client()
 
 	// Delete RBAC objects for the landscaper webhooks
 	if err := resources.DeleteResource(ctx, resourceClient, newWebhooksClusterRoleBindingMutator(valHelper)); err != nil {
