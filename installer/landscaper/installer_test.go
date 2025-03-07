@@ -19,7 +19,7 @@ func TestConfig(t *testing.T) {
 
 var _ = Describe("Landscaper Controller Installer", func() {
 
-	const id = "test-g23tp"
+	const instanceID = "test-g23tp"
 
 	newHostCluster := func() (*resources.Cluster, error) {
 		return resources.NewCluster(os.Getenv("KUBECONFIG"))
@@ -35,7 +35,7 @@ var _ = Describe("Landscaper Controller Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		values := &Values{
-			Instance:       id,
+			Instance:       instanceID,
 			Version:        "v0.127.0",
 			HostCluster:    hostCluster,
 			VerbosityLevel: "INFO",
@@ -85,7 +85,7 @@ var _ = Describe("Landscaper Controller Installer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		values := &Values{
-			Instance:    id,
+			Instance:    instanceID,
 			HostCluster: hostCluster,
 		}
 

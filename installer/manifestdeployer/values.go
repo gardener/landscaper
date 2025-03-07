@@ -45,12 +45,6 @@ type ClientSettings struct {
 	QPS   int32 `json:"qps,omitempty"`
 }
 
-type ImageValues struct {
-	Repository string `json:"repository,omitempty"`
-	Tag        string `json:"tag,omitempty"`
-	PullPolicy string `json:"pullPolicy,omitempty"`
-}
-
 type ServiceAccountValues struct {
 	Create bool `json:"create,omitempty"`
 }
