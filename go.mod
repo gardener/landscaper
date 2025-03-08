@@ -17,18 +17,18 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
-	github.com/mandelsoft/goutils v0.0.0-20241227142622-83a787399095
+	github.com/mandelsoft/goutils 2c16969f387e
 	github.com/mandelsoft/spiff v1.7.0-beta-7
 	github.com/mandelsoft/vfs v0.4.4
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0
+	github.com/opencontainers/image-spec v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.21.0
+	github.com/prometheus/client_golang v1.21.1
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v4 v4.25.1
+	github.com/shirou/gopsutil/v4 v4.25.2
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -44,7 +44,7 @@ require (
 	k8s.io/code-generator v0.32.2
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	ocm.software/ocm v0.20.1
-	sigs.k8s.io/controller-runtime v0.20.2
+	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/yaml v1.4.0
 )
 
