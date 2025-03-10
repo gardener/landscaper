@@ -3,6 +3,7 @@ package instance
 import (
 	"github.com/gardener/landscaper/installer/resources"
 	"github.com/gardener/landscaper/installer/shared"
+	core "k8s.io/api/core/v1"
 )
 
 const (
@@ -67,21 +68,26 @@ type LandscaperConfig struct {
 }
 
 type ControllerConfig struct {
-	Image   shared.ImageConfig
-	HPAMain shared.HPAValues
+	Image         shared.ImageConfig
+	Resources     core.ResourceRequirements
+	ResourcesMain core.ResourceRequirements
+	HPAMain       shared.HPAValues
 }
 
 type WebhooksServerConfig struct {
-	Image shared.ImageConfig
-	HPA   shared.HPAValues
+	Image     shared.ImageConfig
+	Resources core.ResourceRequirements
+	HPA       shared.HPAValues
 }
 
 type ManifestDeployerConfig struct {
-	Image shared.ImageConfig
-	HPA   shared.HPAValues
+	Image     shared.ImageConfig
+	Resources core.ResourceRequirements
+	HPA       shared.HPAValues
 }
 
 type HelmDeployerConfig struct {
-	Image shared.ImageConfig
-	HPA   shared.HPAValues
+	Image     shared.ImageConfig
+	Resources core.ResourceRequirements
+	HPA       shared.HPAValues
 }

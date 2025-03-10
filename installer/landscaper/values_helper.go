@@ -34,7 +34,9 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	if values == nil {
 		return nil, fmt.Errorf("values must not be nil")
 	}
-	values.Default()
+	if err := values.Default(); err != nil {
+		return nil, fmt.Errorf("failed to apply default landscaper values: %w", err)
+	}
 
 	h := &valuesHelper{
 		values:                  values,

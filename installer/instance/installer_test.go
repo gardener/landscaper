@@ -6,6 +6,8 @@ import (
 	"github.com/gardener/landscaper/installer/shared"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 	"testing"
 )
@@ -45,6 +47,23 @@ var _ = Describe("Landscaper Instance Installer", func() {
 		// Add optional values
 		config.HelmDeployer.HPA = shared.HPAValues{
 			MaxReplicas: 3,
+		}
+		config.HelmDeployer.Resources = core.ResourceRequirements{
+			Requests: map[core.ResourceName]resource.Quantity{
+				core.ResourceMemory: resource.MustParse("100Mi"),
+			},
+		}
+		config.Landscaper.Controller.ResourcesMain = core.ResourceRequirements{
+			Requests: map[core.ResourceName]resource.Quantity{
+				core.ResourceMemory: resource.MustParse("50Mi"),
+				core.ResourceCPU:    resource.MustParse("50m"),
+			},
+		}
+		config.Landscaper.WebhooksServer.Resources = core.ResourceRequirements{
+			Requests: map[core.ResourceName]resource.Quantity{
+				core.ResourceMemory: resource.MustParse("50Mi"),
+				core.ResourceCPU:    resource.MustParse("50m"),
+			},
 		}
 
 		err = InstallLandscaperInstance(ctx, config)

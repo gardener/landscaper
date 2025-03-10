@@ -5,7 +5,8 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/installer/resources"
 	"github.com/gardener/landscaper/installer/shared"
-	v1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 )
 
@@ -13,22 +14,22 @@ type Values struct {
 	Instance                    shared.Instance `json:"instance,omitempty"`
 	Version                     string          `json:"version,omitempty"`
 	HostCluster                 *resources.Cluster
-	VerbosityLevel              string                    `json:"verbosityLevel,omitempty"`
-	LandscaperClusterKubeconfig *KubeconfigValues         `json:"landscaperClusterKubeconfig,omitempty"`
-	Image                       shared.ImageConfig        `json:"image,omitempty"`
-	ImagePullSecrets            []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	ReplicaCount                *int32                    `json:"replicaCount,omitempty"`
-	Resources                   v1.ResourceRequirements   `json:"resources,omitempty"`
-	PodSecurityContext          *v1.PodSecurityContext    `json:"podSecurityContext,omitempty"`
-	SecurityContext             *v1.SecurityContext       `json:"securityContext,omitempty"`
-	ServiceAccount              *ServiceAccountValues     `json:"serviceAccount,omitempty"`
-	Configuration               v1alpha2.Configuration    `json:"configuration,omitempty"`
-	HostClientSettings          *ClientSettings           `json:"hostClientSettings,omitempty"`
-	ResourceClientSettings      *ClientSettings           `json:"resourceClientSettings,omitempty"`
-	HPA                         shared.HPAValues          `json:"hpa,omitempty"`
-	NodeSelector                map[string]string         `json:"nodeSelector,omitempty"`
-	Affinity                    *v1.Affinity              `json:"affinity,omitempty"`
-	Tolerations                 []v1.Toleration           `json:"tolerations,omitempty"`
+	VerbosityLevel              string                      `json:"verbosityLevel,omitempty"`
+	LandscaperClusterKubeconfig *KubeconfigValues           `json:"landscaperClusterKubeconfig,omitempty"`
+	Image                       shared.ImageConfig          `json:"image,omitempty"`
+	ImagePullSecrets            []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ReplicaCount                *int32                      `json:"replicaCount,omitempty"`
+	Resources                   core.ResourceRequirements   `json:"resources,omitempty"`
+	PodSecurityContext          *core.PodSecurityContext    `json:"podSecurityContext,omitempty"`
+	SecurityContext             *core.SecurityContext       `json:"securityContext,omitempty"`
+	ServiceAccount              *ServiceAccountValues       `json:"serviceAccount,omitempty"`
+	Configuration               v1alpha2.Configuration      `json:"configuration,omitempty"`
+	HostClientSettings          *ClientSettings             `json:"hostClientSettings,omitempty"`
+	ResourceClientSettings      *ClientSettings             `json:"resourceClientSettings,omitempty"`
+	HPA                         shared.HPAValues            `json:"hpa,omitempty"`
+	NodeSelector                map[string]string           `json:"nodeSelector,omitempty"`
+	Affinity                    *core.Affinity              `json:"affinity,omitempty"`
+	Tolerations                 []core.Toleration           `json:"tolerations,omitempty"`
 }
 
 type ReleaseValues struct {
@@ -49,7 +50,7 @@ type ServiceAccountValues struct {
 	Create bool `json:"create,omitempty"`
 }
 
-func (v *Values) Default() {
+func (v *Values) Default() error {
 	if v.VerbosityLevel == "" {
 		v.VerbosityLevel = "info"
 	}
@@ -87,7 +88,20 @@ func (v *Values) Default() {
 	if v.ResourceClientSettings.QPS == 0 {
 		v.ResourceClientSettings.QPS = 40
 	}
-
+	if v.Resources.Requests == nil {
+		cpu, err := resource.ParseQuantity("100m")
+		if err != nil {
+			return err
+		}
+		memory, err := resource.ParseQuantity("100Mi")
+		if err != nil {
+			return err
+		}
+		v.Resources.Requests = core.ResourceList{
+			core.ResourceCPU:    cpu,
+			core.ResourceMemory: memory,
+		}
+	}
 	if v.HPA.MaxReplicas == 0 {
 		v.HPA.MaxReplicas = 1
 	}
@@ -97,8 +111,6 @@ func (v *Values) Default() {
 	if v.HPA.AverageMemoryUtilization == nil {
 		v.HPA.AverageMemoryUtilization = ptr.To(int32(80))
 	}
-}
 
-func (v *Values) Validate() error {
 	return nil
 }

@@ -25,9 +25,8 @@ func newValuesHelper(values *Values) (*valuesHelper, error) {
 	if values == nil {
 		return nil, fmt.Errorf("values must not be nil")
 	}
-	values.Default()
-	if err := values.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid manifest deployer values: %w", err)
+	if err := values.Default(); err != nil {
+		return nil, fmt.Errorf("failed to apply default manifest deployer values: %w", err)
 	}
 
 	// compute values
@@ -50,9 +49,8 @@ func newValuesHelperForDelete(values *Values) (*valuesHelper, error) {
 	if values == nil {
 		return nil, fmt.Errorf("values must not be nil")
 	}
-	values.Default()
-	if err := values.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid manifest deployer values: %w", err)
+	if err := values.Default(); err != nil {
+		return nil, fmt.Errorf("failed to apply default manifest deployer values during delete operation: %w", err)
 	}
 
 	return &valuesHelper{

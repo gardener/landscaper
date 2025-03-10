@@ -7,7 +7,6 @@ import (
 	"github.com/gardener/landscaper/installer/landscaper"
 	"github.com/gardener/landscaper/installer/manifestdeployer"
 	"github.com/gardener/landscaper/installer/rbac"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	"os"
 )
@@ -30,6 +29,7 @@ func manifestDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *ma
 		HostCluster:    c.HostCluster,
 		Image:          c.ManifestDeployer.Image,
 		ServiceAccount: &manifestdeployer.ServiceAccountValues{Create: true},
+		Resources:      c.ManifestDeployer.Resources,
 		HPA:            c.ManifestDeployer.HPA,
 	}
 
@@ -51,6 +51,7 @@ func helmDeployerValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs) *helmde
 		HostCluster:    c.HostCluster,
 		Image:          c.HelmDeployer.Image,
 		ServiceAccount: &helmdeployer.ServiceAccountValues{Create: true},
+		Resources:      c.HelmDeployer.Resources,
 		HPA:            c.HelmDeployer.HPA,
 	}
 
@@ -78,8 +79,8 @@ func landscaperValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs, manifestE
 			},
 			Image:         c.Landscaper.Controller.Image,
 			ReplicaCount:  nil,
-			Resources:     corev1.ResourceRequirements{},
-			ResourcesMain: corev1.ResourceRequirements{},
+			Resources:     c.Landscaper.Controller.Resources,
+			ResourcesMain: c.Landscaper.Controller.ResourcesMain,
 			Metrics:       nil,
 			HPAMain:       c.Landscaper.Controller.HPAMain,
 		},
@@ -95,7 +96,8 @@ func landscaperValues(c *Configuration, kubeconfigs *rbac.Kubeconfigs, manifestE
 				DNSClass:  "garden",
 				ClassName: ptr.To("nginx"),
 			},
-			HPA: c.Landscaper.WebhooksServer.HPA,
+			Resources: c.Landscaper.WebhooksServer.Resources,
+			HPA:       c.Landscaper.WebhooksServer.HPA,
 		},
 	}
 

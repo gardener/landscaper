@@ -142,7 +142,34 @@ func (v *Values) Default() error {
 	if v.Controller.ResourceClientSettings.QPS == 0 {
 		v.Controller.ResourceClientSettings.QPS = 40
 	}
-
+	if v.Controller.Resources.Requests == nil {
+		cpu, err := resource.ParseQuantity("100m")
+		if err != nil {
+			return err
+		}
+		memory, err := resource.ParseQuantity("100Mi")
+		if err != nil {
+			return err
+		}
+		v.Controller.Resources.Requests = core.ResourceList{
+			core.ResourceCPU:    cpu,
+			core.ResourceMemory: memory,
+		}
+	}
+	if v.Controller.ResourcesMain.Requests == nil {
+		cpu, err := resource.ParseQuantity("300m")
+		if err != nil {
+			return err
+		}
+		memory, err := resource.ParseQuantity("300Mi")
+		if err != nil {
+			return err
+		}
+		v.Controller.ResourcesMain.Requests = core.ResourceList{
+			core.ResourceCPU:    cpu,
+			core.ResourceMemory: memory,
+		}
+	}
 	if v.Controller.HPAMain.MaxReplicas == 0 {
 		v.Controller.HPAMain.MaxReplicas = 1
 	}

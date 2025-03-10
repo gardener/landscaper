@@ -6,6 +6,7 @@ import (
 	"github.com/gardener/landscaper/installer/resources"
 	"github.com/gardener/landscaper/installer/shared"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 )
 
@@ -56,7 +57,7 @@ type OCIValues struct {
 	Secrets            map[string]any `json:"secrets,omitempty"`
 }
 
-func (v *Values) Default() {
+func (v *Values) Default() error {
 	if v.VerbosityLevel == "" {
 		v.VerbosityLevel = "info"
 	}
@@ -94,7 +95,20 @@ func (v *Values) Default() {
 	if v.ResourceClientSettings.QPS == 0 {
 		v.ResourceClientSettings.QPS = 40
 	}
-
+	if v.Resources.Requests == nil {
+		cpu, err := resource.ParseQuantity("300m")
+		if err != nil {
+			return err
+		}
+		memory, err := resource.ParseQuantity("300Mi")
+		if err != nil {
+			return err
+		}
+		v.Resources.Requests = core.ResourceList{
+			core.ResourceCPU:    cpu,
+			core.ResourceMemory: memory,
+		}
+	}
 	if v.HPA.MaxReplicas == 0 {
 		v.HPA.MaxReplicas = 1
 	}
@@ -104,4 +118,6 @@ func (v *Values) Default() {
 	if v.HPA.AverageMemoryUtilization == nil {
 		v.HPA.AverageMemoryUtilization = ptr.To(int32(80))
 	}
+
+	return nil
 }
