@@ -1,0 +1,13 @@
+components:
+  - name: github.com/gardener/landscaper/integration-tests/import-export
+    version: v0.3.0
+    provider:
+      name: internal
+    resources:
+      - name: blueprint
+        type: landscaper.gardener.cloud/blueprint
+        input:
+          type: dir
+          path: ../blueprint
+          compress: true
+          mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
