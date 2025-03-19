@@ -17,7 +17,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
-	github.com/mandelsoft/goutils v0.0.0-20250303160355-2c16969f387e
+	github.com/mandelsoft/goutils v0.0.0-20250316130358-bfa4518828cc
 	github.com/mandelsoft/spiff v1.7.0-beta-7
 	github.com/mandelsoft/vfs v0.4.4
 	github.com/onsi/ginkgo v1.16.5
@@ -386,7 +386,7 @@ require (
 	k8s.io/component-base v0.32.3 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240911193312-2b36238f13e9 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20250304201544-e5f78fe3ede9 // indirect
+	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/kubectl v0.32.2 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	oras.land/oras-go/v2 v2.5.0 // indirect
