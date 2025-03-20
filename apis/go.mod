@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/gardener/component-spec/bindings-go v0.0.98
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/ginkgo/v2 v2.23.0
+	github.com/onsi/ginkgo/v2 v2.23.1
 	github.com/onsi/gomega v1.36.2
 	github.com/robfig/cron/v3 v3.0.1
 	k8s.io/api v0.32.3
