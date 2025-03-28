@@ -6,7 +6,6 @@ package dataobjects
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,6 +114,10 @@ func (t *TargetExtension) Apply(target *lsv1alpha1.Target) error {
 	return nil
 }
 
+type objectWithSecretRef struct {
+	SecretRef *lsv1alpha1.LocalSecretReference `json:"secretRef"`
+}
+
 // GetHashableContent returns the value of the Target based on which its hash can be computed.
 // This is either .Spec.Configuration.RawMessage or a json representation of .Spec.SecretRef.
 // If neither is set (or the given target is nil), nil is returned.
@@ -125,7 +128,14 @@ func GetHashableContent(t *lsv1alpha1.Target) []byte {
 	if t.Spec.Configuration != nil {
 		return t.Spec.Configuration.RawMessage
 	} else if t.Spec.SecretRef != nil {
-		return []byte(fmt.Sprintf(`{"secretRef": {"name": "%s", "key": "%s"}}`, t.Spec.SecretRef.Name, t.Spec.SecretRef.Key))
+		o := &objectWithSecretRef{
+			SecretRef: t.Spec.SecretRef,
+		}
+		raw, err := json.Marshal(o)
+		if err != nil {
+			return nil
+		}
+		return raw
 	}
 	return nil
 }

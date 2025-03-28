@@ -17,8 +17,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
-
 	"github.com/docker/cli/cli/config/configfile"
 	dockerconfigtypes "github.com/docker/cli/cli/config/types"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +31,7 @@ import (
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates"
+	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
 )
 
 const (
@@ -209,7 +208,6 @@ func CreateRegistry(ctx context.Context,
 
 	pod := &corev1.Pod{}
 	if _, _, err := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder().Decode(podBytes.Bytes(), nil, pod); err != nil {
-		logger.Log(podBytes.String())
 		return fmt.Errorf("unable to decode pod: %w", err)
 	}
 	pod.Name = svc.Name
@@ -320,7 +318,7 @@ func CreateRegistry(ctx context.Context,
 	}
 
 	if len(exportRegistryCreds) == 0 {
-		logger.Logfln("password: \n%q", string(dockerconfigBytes))
+		logger.Logfln("exportRegistryCreds is not set")
 		return nil
 	}
 	if err := os.WriteFile(exportRegistryCreds, dockerconfigBytes, os.ModePerm); err != nil {
