@@ -414,6 +414,11 @@ func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		}
 	}
 
+	err := ValidateTarget(ctx, rt)
+	if err != nil {
+		return lserrors.NewWrappedError(err, operation, "ValidateTarget", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+	}
+
 	lsCtx, lsErr := c.getContext(ctx, deployItem, operation)
 	if lsErr != nil {
 		return lsErr
@@ -423,7 +428,7 @@ func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		return lserrors.NewError(operation, "ProviderConfigurationMissing", "provider configuration missing",
 			lsv1alpha1.ErrorConfigurationProblem)
 	}
-	err := c.deployer.Reconcile(ctx, lsCtx, deployItem, rt)
+	err = c.deployer.Reconcile(ctx, lsCtx, deployItem, rt)
 	return lserrors.BuildLsErrorOrNil(err, operation, "Reconcile")
 }
 
@@ -432,6 +437,11 @@ func (c *controller) delete(ctx context.Context, deployItem *lsv1alpha1.DeployIt
 
 	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	operation := "delete"
+
+	err := ValidateTarget(ctx, rt)
+	if err != nil {
+		return lserrors.NewWrappedError(err, operation, "ValidateTarget", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+	}
 
 	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItem.ObjectMeta) {
 		// this case is not required anymore because those items are removed by the execution controller
