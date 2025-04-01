@@ -2,7 +2,6 @@ package lib
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -15,7 +14,8 @@ import (
 
 func ValidateTarget(ctx context.Context, resolvedTarget *lsv1alpha1.ResolvedTarget) error {
 	if resolvedTarget == nil {
-		return errors.New("no target provided")
+		// Nothing to validate. Here we do not judge whether a target is required or not.
+		return nil
 	}
 
 	if resolvedTarget.Target == nil {
