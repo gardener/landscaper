@@ -30,9 +30,13 @@ func ValidateTarget(ctx context.Context, resolvedTarget *lsv1alpha1.ResolvedTarg
 	if targetConfig.Kubeconfig.StrVal != nil {
 		kubeconfigBytes := []byte(*targetConfig.Kubeconfig.StrVal)
 		return validateKubeconfig(ctx, kubeconfigBytes)
+	} else if targetConfig.OIDCConfig != nil {
+		return nil
+	} else if targetConfig.SelfConfig != nil {
+		return nil
+	} else {
+		return fmt.Errorf("target contains neither a kubeconfig, nor oidc config, nor self config")
 	}
-
-	return nil
 }
 
 func validateKubeconfig(ctx context.Context, kubeconfigBytes []byte) error {

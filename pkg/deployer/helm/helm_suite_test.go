@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -284,6 +285,98 @@ var _ = Describe("Template", func() {
 			var config map[string]interface{}
 			Expect(json.Unmarshal(configRaw, &config)).ToNot(HaveOccurred())
 			Expect(config).To(HaveKeyWithValue("ExportA", "SomeVal"))
+		})
+
+		It("should validate the target of a helm deployitem", func() {
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+
+			// Create a target with a kubeconfig that is not allowed (authInfo.TokenFile),
+			// so that the validation of the target should fail.
+			kubeconfigObj, err := kutil.GenerateKubeconfig(testenv.Env.Config)
+			Expect(err).NotTo(HaveOccurred())
+			for _, authInfo := range kubeconfigObj.AuthInfos {
+				authInfo.TokenFile = "test"
+			}
+			kubeconfigBytes, err := clientcmd.Write(kubeconfigObj)
+			Expect(err).NotTo(HaveOccurred())
+			target, err := utils.CreateKubernetesTargetFromKubeconfigBytes(state.Namespace, "my-target", kubeconfigBytes)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./chartresolver/testdata/testchart")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			helmValues := map[string]interface{}{
+				"MyKey": "SomeVal",
+			}
+
+			helmValuesRaw, err := json.Marshal(helmValues)
+			Expect(err).ToNot(HaveOccurred())
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Name:            "test",
+				Namespace:       "some-namespace",
+				Chart:           chartAccess,
+				CreateNamespace: true,
+				Values:          helmValuesRaw,
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "myitem").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				GenerateJobID().
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+			// The deployitem should fail with error reason "ValidateTarget"
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item); err != nil {
+					return err
+				}
+
+				if item.Status.Phase == lsv1alpha1.DeployItemPhases.Failed {
+					return nil
+				}
+
+				return fmt.Errorf("validation error has not yet occurred")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "target validation should fail")
+
+			Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed())
+			Expect(item.Status.LastError).NotTo(BeNil())
+			Expect(item.Status.LastError.Reason).To(Equal("ValidateTarget"))
+
+			// The deletion of the deployitem should fail for the same reason.
+			Expect(testenv.Client.Delete(ctx, item)).To(Succeed())
+			Expect(state.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed())
+			item.Status.SetJobID(uuid.New().String())
+			Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item); err != nil {
+					return err
+				}
+
+				if item.Status.Phase == lsv1alpha1.DeployItemPhases.DeleteFailed {
+					return nil
+				}
+
+				return fmt.Errorf("validation error during deletion has not yet occurred")
+			}, 20*time.Second, 1*time.Second).Should(Succeed(), "target validation during deletion should fail")
+
+			Expect(testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item)).To(Succeed())
+			Expect(item.Status.LastError).NotTo(BeNil())
+			Expect(item.Status.LastError.Reason).To(Equal("ValidateTarget"))
+
+			// Forcefully delete the deployitem
+			item.SetFinalizers(nil)
+			Expect(testenv.Client.Update(ctx, item)).To(Succeed())
 		})
 
 		Context("charts with resource lists", func() {
