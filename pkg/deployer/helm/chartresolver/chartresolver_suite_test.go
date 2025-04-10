@@ -290,8 +290,8 @@ var _ = Describe("GetChart", func() {
 
 		It("should not try to load a chart for non-success http status codes", func() {
 			srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(401)
-				body := []byte(http.StatusText(401))
+				w.WriteHeader(http.StatusUnauthorized)
+				body := []byte(http.StatusText(http.StatusUnauthorized))
 				_, err := w.Write(body)
 				Expect(err).ToNot(HaveOccurred())
 			}))
@@ -305,7 +305,7 @@ var _ = Describe("GetChart", func() {
 			chart, err := getChartFromArchive(Archive)
 			Expect(chart).To(BeNil())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(http.StatusText(401)))
+			Expect(err.Error()).To(ContainSubstring(http.StatusText(http.StatusUnauthorized)))
 		})
 
 	})

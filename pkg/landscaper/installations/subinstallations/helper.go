@@ -30,7 +30,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 	subBlueprint := &lsv1alpha1.BlueprintDefinition{}
 
 	//store reference to parent component descriptor
-	var cdDef *lsv1alpha1.ComponentDescriptorDefinition = inst.Spec.ComponentDescriptor
+	var cdDef = inst.Spec.ComponentDescriptor
 
 	// convert InstallationTemplateBlueprintDefinition to installation blueprint definition
 	if len(subInstTmpl.Blueprint.Filesystem.RawMessage) != 0 {

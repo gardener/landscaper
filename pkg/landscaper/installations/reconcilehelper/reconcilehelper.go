@@ -155,10 +155,10 @@ func (rh *ReconcileHelper) ImportsSatisfied(ctx context.Context) (*imports.Impor
 // fetchParent sets the parent field
 func (rh *ReconcileHelper) fetchParent() error {
 	var parent *installations.InstallationImportsAndBlueprint
-	if rh.Operation.Context().Parent != nil {
+	if rh.Context().Parent != nil {
 		var err error
-		parent, err = installations.CreateInternalInstallationWithContext(rh.ctx, rh.Operation.Context().Parent.GetInstallation(),
-			rh.Operation.LsUncachedClient(), rh.Operation.ComponentsRegistry())
+		parent, err = installations.CreateInternalInstallationWithContext(rh.ctx, rh.Context().Parent.GetInstallation(),
+			rh.LsUncachedClient(), rh.ComponentsRegistry())
 		if err != nil {
 			return err
 		}

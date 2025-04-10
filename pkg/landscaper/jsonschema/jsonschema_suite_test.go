@@ -46,7 +46,6 @@ import (
 	"github.com/gardener/landscaper/pkg/components/model/types"
 	"github.com/gardener/landscaper/pkg/components/registries"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
-	"github.com/gardener/landscaper/test/utils"
 	testutils "github.com/gardener/landscaper/test/utils"
 )
 
@@ -621,7 +620,7 @@ var _ = Describe("jsonschema", func() {
 
 			// CREATE BASE COMPONENT
 			blobfs := memoryfs.New()
-			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+			testutils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 			baseResourceName := "jsonschema"
 
 			cdRes := []types.Resource{
@@ -641,7 +640,7 @@ var _ = Describe("jsonschema", func() {
 
 			// CREATE FIRST REFERENCING COMPONENT
 			blobfs = memoryfs.New()
-			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+			testutils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 			refString := fmt.Sprintf("cd://componentReferences/%s/resources/%s", baseConfig.ComponentNameInReference, baseConfig.ReferencedResourceName)
 			complexSchemaResourceName := "firstjsonschemarefcomplex"
 
@@ -684,7 +683,7 @@ var _ = Describe("jsonschema", func() {
 
 			// CREATE SECOND REFERENCING COMPONENT
 			blobfs = memoryfs.New()
-			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+			testutils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 
 			cdRes = []types.Resource{
 				createBlobResource(blobfs, secondRefConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema2.json", fmt.Sprintf(`
@@ -764,7 +763,7 @@ var _ = Describe("jsonschema", func() {
 		It("should detect cyclic references", func() {
 			blobPath := "blobs"
 			blobfs := memoryfs.New()
-			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+			testutils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 
 			cycleConfig := &componentConfig{
 				ComponentNameInRegistry:  "example.com/cyclicref",
@@ -798,7 +797,7 @@ var _ = Describe("jsonschema", func() {
 
 			// create source component
 			blobfs = memoryfs.New()
-			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+			testutils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
 
 			cdRef := []types.ComponentReference{
 				{
@@ -998,7 +997,7 @@ func createBlobResource(fs vfs.FileSystem, resourceName, resourceType, mediaType
 	file, err := fs.Create(filepath.Join(blobPath, fileName))
 	testutils.ExpectNoError(err)
 	_, err = file.WriteString(content)
-	utils.ExpectNoError(err)
+	testutils.ExpectNoError(err)
 	testutils.ExpectNoError(file.Close())
 	return buildLocalFilesystemResource(resourceName, resourceType, mediaType, fileName)
 }

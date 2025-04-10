@@ -42,7 +42,7 @@ func (t *standardTimeoutChecker) TimeoutExceeded(ctx context.Context, deployItem
 	timeout := t.getTimeout(deployItem)
 
 	currentTime := time.Now()
-	endTime := deployItem.Status.TransitionTimes.InitTime.Time.Add(timeout.Duration)
+	endTime := deployItem.Status.TransitionTimes.InitTime.Add(timeout.Duration)
 
 	if currentTime.After(endTime) || currentTime.Equal(endTime) {
 		msg := fmt.Sprintf("timeout at: %q", checkpoint)

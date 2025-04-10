@@ -82,7 +82,7 @@ func UpdateDataObjectFromFile(ctx context.Context, state *envtest.State, do *lsv
 		return err
 	}
 	do.SetNamespace(state.Namespace)
-	do.ObjectMeta.ResourceVersion = doOld.ObjectMeta.ResourceVersion
+	do.ResourceVersion = doOld.ResourceVersion
 	return state.Client.Update(ctx, do)
 }
 
@@ -147,7 +147,7 @@ func UpdateInstallationFromFile(ctx context.Context, state *envtest.State, inst 
 		return err
 	}
 	inst.Namespace = state.Namespace
-	inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
+	inst.ResourceVersion = instOld.ResourceVersion
 	return state.Update(ctx, inst)
 }
 

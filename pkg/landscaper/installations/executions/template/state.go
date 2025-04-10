@@ -22,7 +22,7 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 )
 
-var StateNotFoundErr = errors.New("state not found")
+var StateNotFoundErr = errors.New("state not found") //nolint:staticcheck
 
 type GenericStateHandler interface {
 	Store(context.Context, string, []byte) error

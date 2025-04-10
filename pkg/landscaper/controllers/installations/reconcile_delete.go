@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	SiblingImportError = errors.New("a sibling still imports some of the exports")
-	SiblingDeleteError = errors.New("deletion of a sibling failed")
+	SiblingImportError = errors.New("a sibling still imports some of the exports") //nolint:staticcheck
+	SiblingDeleteError = errors.New("deletion of a sibling failed")                //nolint:staticcheck
 )
 
 func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (fatalError lserrors.LsError, normalError lserrors.LsError) {
