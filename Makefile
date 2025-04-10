@@ -138,7 +138,7 @@ CODE_GEN_VERSION ?= $(shell  $(REPO_ROOT)/hack/extract-module-version.sh k8s.io/
 # renovate: datasource=github-releases depName=kubernetes-sigs/controller-tools
 CONTROLLER_TOOLS_VERSION ?= v0.17.3
 # renovate: datasource=github-tags depName=golang/tools
-FORMATTER_VERSION ?= v0.31.0
+FORMATTER_VERSION ?= v0.32.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
 LINTER_VERSION ?= v1.64.8
 # renovate: datasource=github-releases depName=elastic/crd-ref-docs
@@ -146,7 +146,7 @@ API_REF_GEN_VERSION ?= v0.1.0
 # renovate: datasource=github-releases depName=jqlang/jq
 JQ_VERSION ?= v1.7.1
 # renovate: datasource=github-releases depName=open-component-model/ocm
-OCM_VERSION ?= v0.21.0
+OCM_VERSION ?= v0.22.1
 # renovate: datasource=github-releases depName=golang/mock
 MOCKGEN_VERSION ?= v1.6.0
 # renovate: datasource=github-releases depName=distribution/distribution
