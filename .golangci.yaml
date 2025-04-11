@@ -2,8 +2,6 @@ version: "2"
 run:
   concurrency: 4
 linters:
-  disable:
-    - "st1005"
   exclusions:
     generated: lax
     presets:
