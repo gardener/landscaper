@@ -1,8 +1,9 @@
 version: "2"
 run:
   concurrency: 4
-  go: 1.24.2
 linters:
+  disable:
+    - "st1005"
   exclusions:
     generated: lax
     presets:
@@ -11,6 +12,7 @@ linters:
       - legacy
       - std-error-handling
     paths:
+      - zz_generated.*\.go$
       - third_party$
       - builtin$
       - examples$
