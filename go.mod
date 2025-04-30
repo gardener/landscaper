@@ -43,7 +43,7 @@ require (
 	k8s.io/client-go v0.33.0
 	k8s.io/code-generator v0.33.0
 	k8s.io/utils v0.0.0-20250321185631-1f6e0b77f77e
-	ocm.software/ocm v0.22.1
+	ocm.software/ocm v0.23.0
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/yaml v1.4.0
 )
