@@ -63,10 +63,8 @@ var _ = Describe("E2E", func() {
 			AnnotationValue = "do"
 		)
 
-		tgt, err := utils.NewTargetBuilder("any").
-			Key(state.Namespace, "target-1").
-			AddAnnotation(AnnotationKey, AnnotationValue).
-			Build()
+		tgt, err := testutils.CreateKubernetesTarget(state.Namespace, "target-1", testenv.Env.Config)
+		tgt.SetAnnotations(map[string]string{AnnotationKey: AnnotationValue})
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, tgt))
 
