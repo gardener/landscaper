@@ -1,0 +1,16 @@
+deployItems:
+  - name: item
+    type: landscaper.gardener.cloud/helm
+
+    target:
+      import: cluster
+
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      name: test
+      namespace: example
+      createNamespace: true
+      chart:
+        resourceRef: {{ getResourceKey `cd://resources/chart` }}
+      values: {}
