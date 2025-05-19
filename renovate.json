@@ -85,8 +85,10 @@
     },
     {
       "customType": "regex",
-      "description": "Gardenlinux in shoots.yaml",
-      "managerFilePatterns": "hack/testcluster/pkg/resources/shootcluster_template\\.yaml",
+      "description": "Gardenlinux in landscaper hack/testcluster/pkg/resources/shootcluster_template.yaml",
+      "managerFilePatterns": [
+        "hack/testcluster/pkg/resources/shootcluster_template\\.yaml"
+      ],
       "matchStrings": [
         "gardenlinux\\s.*version:\\s*(?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
