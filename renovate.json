@@ -82,27 +82,6 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s(?:ENV |ARG )?.+?_VERSION ?(?:\\?=|=)\"? ?(?<currentValue>.+?)\"?\\s"
       ]
-    },
-    {
-      "customType": "regex",
-      "description": "Gardenlinux in landscaper hack/testcluster/pkg/resources/shootcluster_template.yaml",
-      "managerFilePatterns": [
-        "hack/testcluster/pkg/resources/shootcluster_template\\.yaml"
-      ],
-      "matchStrings": [
-        "gardenlinux\\s.*version:\\s*(?<currentValue>\\d+\\.\\d+\\.\\d+)"
-      ],
-      "depNameTemplate": "gardener-live-gardenlinux-supported",
-      "versioningTemplate": "semver-coerced",
-      "datasourceTemplate": "custom.gardener-live-gardenlinux-supported"
     }
-  ],
-  "customDatasources": {
-    "gardener-live-gardenlinux-supported": {
-      "defaultRegistryUrlTemplate": "https://api.live.gardener.cloud.sap/apis/core.gardener.cloud/v1beta1/cloudprofiles/aws",
-      "transformTemplates": [
-        "{\"releases\": $$.spec.machineImages[name = 'gardenlinux'][].versions[classification = 'supported'].{\"version\": $.version},\"sourceUrl\": \"https://github.com/gardenlinux/gardenlinux\",\"homepage\": \"https://pages.github.tools.sap/kubernetes/gardener/docs/landscapes/live/pam/#gardenlinux\"}"
-      ]
-    }
-  }
+  ]
 }
