@@ -348,5 +348,5 @@ resources:
 
 [Context](../../../usage/Context.md)  
 [Open Component Model (OCM)](https://ocm.software)  
-[OCM: All in One](https://ocm.software/docs/guides/getting-started-with-ocm/#all-in-one)  
+[OCM: All in One](https://ocm.software/docs/getting-started)  
 [OCM: Input and Access Types](https://ocm.software/docs/guides/input_and_access)  
