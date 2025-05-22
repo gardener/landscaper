@@ -192,7 +192,7 @@ func (o *Templater) TemplateImportExecutions(opts BlueprintExecutionOptions) ([]
 		if output.Bindings != nil {
 			var imports map[string]interface{}
 			imp := values["imports"]
-			if imports == nil {
+			if imp == nil {
 				imports = map[string]interface{}{}
 				values["imports"] = imports
 			} else {

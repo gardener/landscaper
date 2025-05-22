@@ -10,11 +10,11 @@ during the templating.
 
 For prerequisites, see [here](../../README.md).
 
-
 ## References Between Component Descriptors
 
-Component descriptors can reference other component descriptors. In this example we consider three component descriptors, 
+Component descriptors can reference other component descriptors. In this example we consider three component descriptors,
 which we name as follows:
+
 - the [root component descriptor](./components/component-descriptor-root.yaml),
 - the [core component descriptor](./components/component-descriptor-core.yaml),
 - the [extension component descriptor](./components/component-descriptor-ext.yaml).  
@@ -36,32 +36,18 @@ component:
 ```
 
 We have uploaded these three component descriptors into an OCI registry, so that the Landscaper can read them from there
-([root](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-root), 
-[core](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-core), 
+([root](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-root),
+[core](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-core),
 [extension](https://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/templating-components-extension)).
-
 
 ## The Blueprint
 
-The [blueprint](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/blueprint) of the present example belongs to the root component. Part of the blueprint is a 
-[deploy execution](./blueprint/deploy-execution.yaml). The deploy execution is a [Go Template][2], 
-which is used to generate a DeployItem. 
-The template can be filled with values from a certain data structure. The following fields in this data structure 
+The [blueprint](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/blueprint) of the present example belongs to the root component. Part of the blueprint is a
+[deploy execution](./blueprint/deploy-execution.yaml). The deploy execution is a [Go Template][2],
+which is used to generate a DeployItem.
+The template can be filled with values from a certain data structure. The following fields in this data structure
 provide access to the involved component descriptors:
 
-> **_NOTE:_** If you are using Component
-> Descriptors [Version 3](https://ocm.software/docs/component-descriptors/version-3/) instead of 
-> [Version 2](https://ocm.software/docs/component-descriptors/version-2/), the data structure of the 
-> component descriptors themselves is slightly different from what is described below (e.g. a component's name is under 
-> `metadata.name` instead of `component.name`).  
-> Per default, the component descriptor version a blueprint is templating against is the version of the component 
-> descriptor referenced in the installation.  
-> Since a blueprint could be used in different installations with different component descriptor versions, it is also
-> possible to specify the component descriptor version (v2 or ocm.software/v3alpha1) to template against in the
-> blueprint itself. So you may decide that you want to template against v2 even though v3alpha1 is the component 
-> descriptor version provided in the installation (or vice versa).   Therefore, you may simply add the following 
-> annotation to the blueprint:
-> 
 > ```yaml
 > apiVersion: landscaper.gardener.cloud/v1alpha1
 > kind: Blueprint
@@ -72,15 +58,15 @@ provide access to the involved component descriptors:
 > ```
 
 - **cd** : the component descriptor of the Installation. In our case, this is the root component descriptor.  
-  Let's consider an example, how this field can be used. The expression below evaluates to the component name. 
-  That is because field `cd` contains the complete 
+  Let's consider an example, how this field can be used. The expression below evaluates to the component name.
+  That is because field `cd` contains the complete
   component descriptor, and inside it, the component name is located at the path `component.name`.
 
   ```yaml
   {{ .cd.component.name }}
   ```
 
-- **components** : a list of component descriptors. It contains the component descriptor of the 
+- **components** : a list of component descriptors. It contains the component descriptor of the
   Installation, and all further component descriptors which can be reached from this one by (transitively) following
   component references. In our case, the list contains the three component descriptors from above.
   To give an example, a list with the names of the involved components can be obtained as follows:
@@ -99,7 +85,7 @@ Let's discuss the  [deploy execution](./blueprint/deploy-execution.yaml) of our 
 are added to a dictionary `$typedResources`, and resources with label `landscaper.gardener.cloud/guided-tour/auxiliary` are added to
 a dictionary `$auxiliaryResources`.  
 - Finally, these "typed" and "auxiliary" resources are inserted at different places in a ConfigMap manifest, which will
-be deployed by the manifest deployer. 
+be deployed by the manifest deployer.
 
 The resources that we have collected from the component descriptors look for example like this:
 
@@ -116,9 +102,9 @@ The resources that we have collected from the component descriptors look for exa
   version: 1.0.0
 ```
 
-This is not yet the desired result format. Therefore, we use a template `formatResource` to transform the resources. 
-The template extracts the field `.access.imageReference` from a resource, splits the string value in 
-three parts, and produces the following result: 
+This is not yet the desired result format. Therefore, we use a template `formatResource` to transform the resources.
+The template extracts the field `.access.imageReference` from a resource, splits the string value in
+three parts, and produces the following result:
 
 ```yaml
 registry: eu.gcr.io
@@ -138,7 +124,6 @@ Note that you can use certain [sprig template functions][3] like `list`, `append
 
 For more details, see [Templating][1].
 
-
 ## Procedure
 
 1. On the target cluster, create a namespace `example`. It is the namespace of the resulting ConfigMap.
@@ -154,9 +139,8 @@ For more details, see [Templating][1].
     - run the [deploy-k8s-resources script](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/commands/deploy-k8s-resources.sh),
       which will template and apply the Target, Context, and Installation.
 
-4. When the Installation has succeeded, there is a ConfigMap `templating-components` in namespace `example`, 
+4. When the Installation has succeeded, there is a ConfigMap `templating-components` in namespace `example`,
    which contains the result of the templating that we have discussed.
-
 
 ## Cleanup
 
@@ -165,8 +149,7 @@ You can remove the Installation with the
 When the Installation is gone, you can delete the Context and Target with the
 [delete-other-k8s-resources script](https://github.com/gardener/landscaper/tree/master/docs/guided-tour/templating/components/commands/delete-other-k8s-resources.sh).
 
-
-## References 
+## References
 
 [Templating][1]  
 [Go Template][2]  

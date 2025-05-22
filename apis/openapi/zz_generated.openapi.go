@@ -3751,7 +3751,7 @@ func schema_gardener_landscaper_apis_core_CriticalProblem(ref common.ReferenceCa
 					},
 					"creationTime": {
 						SchemaProps: spec.SchemaProps{
-							Description: "CreationTime contains the timestamp when the problem occured",
+							Description: "CreationTime contains the timestamp when the problem occurred",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
@@ -8320,7 +8320,7 @@ func schema_landscaper_apis_core_v1alpha1_CriticalProblem(ref common.ReferenceCa
 					},
 					"creationTime": {
 						SchemaProps: spec.SchemaProps{
-							Description: "CreationTime contains the timestamp when the problem occured",
+							Description: "CreationTime contains the timestamp when the problem occurred",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},

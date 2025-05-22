@@ -12,7 +12,7 @@ sidebar_position: 1
 - A convenient tool we will often use in the following examples is the [Landscaper
   CLI](https://github.com/gardener/landscapercli). 
 
-- For building reusable components you require the [OCM CLI](https://ocm.software/docs/guides/getting-started-with-ocm/#prerequisites).
+- For building reusable components you require the [OCM CLI](https://ocm.software/docs/getting-started/prerequisites).
 
 - During the following exercises, you might need to change files, provided with the examples. For this, you should
   simply clone [this repository](https://github.com/gardener/landscaper) and do the required changes on your local files. You could also fork the repo and work on your fork.
