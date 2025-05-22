@@ -47,7 +47,7 @@ type CriticalProblemsStatus struct {
 type CriticalProblem struct {
 	// PodName contains the name of the pod where the problem occurred
 	PodName string `json:"podName,omitempty"`
-	// CreationTime contains the timestamp when the problem occured
+	// CreationTime contains the timestamp when the problem occurred
 	CreationTime metav1.Time `json:"creationTime,omitempty"`
 	// Description contains an error description
 	Description string `json:"description,omitempty"`
