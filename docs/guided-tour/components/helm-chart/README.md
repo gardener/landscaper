@@ -25,7 +25,7 @@ External resources are stored elsewhere, for example a Docker image in a Docker 
 
 This Guided Tour cannot go into all the details about that model, so you might want to read about the core concepts,
 the benefits and the available tools on the official website under [https://ocm.software](https://ocm.software).
-A good entry point is the [OCM Getting Started Guide](https://ocm.software/docs/guides/getting-started-with-ocm/).
+A good entry point is the [OCM Getting Started Guide](https://ocm.software/docs/getting-started/).
 
 The advantages of the OCM approach are:
 
@@ -51,7 +51,7 @@ To give an example, we build a component version for an echo server. It has the 
 ### Uploading the Component Version
 
 The most convenient way to generate a component version is through a **component constructor** file as described in
-[Getting Started with OCM - All in One](https://ocm.software/docs/guides/getting-started-with-ocm/#all-in-one).
+[Getting Started with OCM - All in One](https://ocm.software/docs/getting-started/create-component-version/).
 The component constructor file specifies the component name and version, and the list of resources.
 The component constructor file for this example is [here](./commands/component-constructor.yaml):
 
@@ -87,21 +87,21 @@ The resource entries of the component constructor file either have an `input` or
 
 - Resource entries with an `access` section will become external resources of the component version. 
   In our case, the chart and image are both OCI artifacts whose access information is an OCI image reference.
-  There exist other access types, which are specified [here](https://ocm.software/docs/guides/input_and_access/#access-types).
+  There exist other access types, which are specified in [OCM Tutorial "Input and Access Types"](https://ocm.software/docs/tutorials/input-and-access-types/).
   See for example section [Helm Chart in a Helm Chart Repository](#helm-chart-in-a-helm-chart-repository) below.
 
 - Resource entries with an `input` section become local resources (normally, it depends on the type).
   The blueprint entry has an `input` section of type `dir`, whose `path` references the blueprint directory on the file system.
   During the creation of the component version, the content of the blueprint will be taken from there and uploaded 
   as local resource together with the component descriptor into the OCM repository.
-  Again, there exist other input types, which are specified [here](https://ocm.software/docs/guides/input_and_access/#input-types).
+  Again, there exist other input types, which are specified in [OCM Tutorial "Input and Access Types"](https://ocm.software/docs/tutorials/input-and-access-types/#input-types).
 
 The script [components.sh](./commands/component.sh) creates the actual component version based on the component constructor file.
-The script uses commands of the [OCM Command Line Client](https://ocm.software/docs/cli/). It proceeds in two steps:
-- First, the command [ocm add componentversions](https://ocm.software/docs/cli/add/componentversions/) 
+The script uses commands of the [OCM Command Line Client](https://ocm.software/docs/cli-reference/). It proceeds in two steps:
+- First, the command [ocm add componentversions](https://ocm.software/docs/cli-reference/add/componentversions/) 
   creates a file system representation of the component version, a so-called common transport file (CTF).
   The component constructor file determines what will be included in the CTF.
-- Second, the command [ocm transfer ctf](https://ocm.software/docs/cli/transfer/commontransportarchive/) uploads the CTF
+- Second, the command [ocm transfer ctf](https://ocm.software/docs/cli-reference/transfer/commontransportarchive/) uploads the CTF
   to the OCM repository.
 
 ### Downloading the Component Version
@@ -109,7 +109,7 @@ The script uses commands of the [OCM Command Line Client](https://ocm.software/d
 We have uploaded the component version into this 
 [location](https://console.cloud.google.com/gcr/images/gardener-project/eu/landscaper/examples/component-descriptors/github.com/gardener/landscaper-examples/guided-tour/helm-chart) 
 in our public OCI registry. You can download the component version from there with the following command
-[ocm download componentversions](https://ocm.software/docs/cli/download/componentversions/), which more or less provides 
+[ocm download componentversions](https://ocm.software/docs/cli-reference/download/componentversions/), which more or less provides 
 you its file system representation:
 
 ```
@@ -331,7 +331,7 @@ This section describes a modification of the above example.
 Suppose the Helm chart is stored in a Helm chart repository instead of an OCI registry. In this case, you just need to 
 modify the component constructor file before you upload the component version. In the entry of the Helm chart resource,
 replace the `access` section using the access type `helm` as described in
-[OCM Input and Access Types](https://ocm.software/docs/guides/input_and_access/#helm-1):
+[OCM Input and Access Types](https://ocm.software/docs/tutorials/input-and-access-types/#helm-1):
 
 ```yaml
 resources:
@@ -348,5 +348,5 @@ resources:
 
 [Context](../../../usage/Context.md)  
 [Open Component Model (OCM)](https://ocm.software)  
-[OCM: All in One](https://ocm.software/docs/guides/getting-started-with-ocm/#all-in-one)  
+[OCM: All in One](https://ocm.software/docs/getting-started)  
 [OCM: Input and Access Types](https://ocm.software/docs/guides/input_and_access)  
