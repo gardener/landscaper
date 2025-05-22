@@ -9,7 +9,6 @@ components:
         version: ${VERSION}
         access:
           type: github
-          commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
           repoUrl: github.com/gardener/landscaper
     resources:
@@ -45,7 +44,6 @@ components:
         version: ${VERSION}
         access:
           type: github
-          commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
           repoUrl: github.com/gardener/landscaper
     resources:
@@ -81,7 +79,6 @@ components:
         version: ${VERSION}
         access:
           type: github
-          commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
           repoUrl: github.com/gardener/landscaper
     resources:
@@ -133,7 +130,6 @@ components:
         version: ${VERSION}
         access:
           type: github
-          commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
           repoUrl: github.com/gardener/landscaper
     resources:
@@ -168,7 +164,6 @@ components:
         type: git
         access:
           type: github
-          commit: ${COMMIT_SHA}
           ref: refs/tags/${VERSION}
           repoUrl: github.com/gardener/landscaper
     componentReferences:
