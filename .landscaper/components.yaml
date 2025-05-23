@@ -9,7 +9,7 @@ components:
         version: ${VERSION}
         access:
           type: github
-          ref: refs/tags/${VERSION}
+          commit: ${COMMIT_SHA}
           repoUrl: github.com/gardener/landscaper
     resources:
       - name: helm-deployer-blueprint
@@ -44,7 +44,7 @@ components:
         version: ${VERSION}
         access:
           type: github
-          ref: refs/tags/${VERSION}
+          commit: ${COMMIT_SHA}
           repoUrl: github.com/gardener/landscaper
     resources:
       - name: manifest-deployer-blueprint
@@ -79,7 +79,7 @@ components:
         version: ${VERSION}
         access:
           type: github
-          ref: refs/tags/${VERSION}
+          commit: ${COMMIT_SHA}
           repoUrl: github.com/gardener/landscaper
     resources:
       - name: container-deployer-blueprint
@@ -130,7 +130,7 @@ components:
         version: ${VERSION}
         access:
           type: github
-          ref: refs/tags/${VERSION}
+          commit: ${COMMIT_SHA}
           repoUrl: github.com/gardener/landscaper
     resources:
       - name: mock-deployer-blueprint
@@ -164,7 +164,7 @@ components:
         type: git
         access:
           type: github
-          ref: refs/tags/${VERSION}
+          commit: ${COMMIT_SHA}
           repoUrl: github.com/gardener/landscaper
     componentReferences:
       - name: helm-deployer
