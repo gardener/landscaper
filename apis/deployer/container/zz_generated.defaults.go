@@ -9,8 +9,9 @@
 package container
 
 import (
-	v1alpha1 "github.com/gardener/landscaper/apis/config/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+
+	v1alpha1 "github.com/gardener/landscaper/apis/config/v1alpha1"
 )
 
 // RegisterDefaults adds defaulters functions to the given scheme.
