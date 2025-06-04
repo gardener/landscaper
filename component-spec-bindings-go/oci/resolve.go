@@ -32,11 +32,10 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/go-logr/logr"
-
 	v2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 	"github.com/gardener/landscaper/component-spec-bindings-go/codec"
 	"github.com/gardener/landscaper/component-spec-bindings-go/ctf"
+	"github.com/go-logr/logr"
 )
 
 // Client defines a readonly oci artifact client to fetch manifests and blobs.

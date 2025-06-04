@@ -11,12 +11,11 @@ import (
 	"errors"
 	"io"
 
+	"github.com/gardener/landscaper/component-spec-bindings-go/codec"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-
-	"github.com/gardener/landscaper/component-spec-bindings-go/codec"
 
 	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 	"github.com/gardener/landscaper/component-spec-bindings-go/oci"
