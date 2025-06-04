@@ -11,15 +11,13 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	conversion "k8s.io/apimachinery/pkg/conversion"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-
-	v2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
-
 	config "github.com/gardener/landscaper/apis/config"
 	core "github.com/gardener/landscaper/apis/core"
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	v2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	conversion "k8s.io/apimachinery/pkg/conversion"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 func init() {

@@ -13,15 +13,13 @@ import (
 	time "time"
 	unsafe "unsafe"
 
+	core "github.com/gardener/landscaper/apis/core"
+	v2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	selection "k8s.io/apimachinery/pkg/selection"
-
-	v2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
-
-	core "github.com/gardener/landscaper/apis/core"
 )
 
 func init() {

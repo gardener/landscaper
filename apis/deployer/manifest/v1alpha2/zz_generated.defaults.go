@@ -9,9 +9,8 @@
 package v1alpha2
 
 import (
-	runtime "k8s.io/apimachinery/pkg/runtime"
-
 	v1alpha1 "github.com/gardener/landscaper/apis/config/v1alpha1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 // RegisterDefaults adds defaulters functions to the given scheme.
