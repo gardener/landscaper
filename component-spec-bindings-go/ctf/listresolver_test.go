@@ -17,10 +17,11 @@ package ctf_test
 import (
 	"context"
 
-	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
-	"github.com/gardener/landscaper/component-spec-bindings-go/ctf"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
+	"github.com/gardener/landscaper/component-spec-bindings-go/ctf"
 )
 
 var _ = Describe("ListResolver", func() {

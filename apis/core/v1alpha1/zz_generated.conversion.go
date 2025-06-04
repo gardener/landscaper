@@ -19,8 +19,6 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	selection "k8s.io/apimachinery/pkg/selection"
 
-	v2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
-
 	core "github.com/gardener/landscaper/apis/core"
 	v2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 )
