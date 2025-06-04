@@ -20,6 +20,7 @@ GOLANGCI_LINT_CONFIG_FILE=""
 landscaper_module_paths=()
 apis_module_paths=()
 controller_utils_module_paths=()
+component_spec_bindings_go_module_paths=()
 for arg in "$@"; do
   case $arg in
     --golangci-lint-config=*)
@@ -32,6 +33,9 @@ for arg in "$@"; do
     $PROJECT_ROOT/controller-utils/*)
       controller_utils_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/controller-utils" "$arg")")
       ;;
+    $PROJECT_ROOT/component-spec-bindings-go/*)
+      component_spec_bindings_go_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/component-spec-bindings-go" "$arg")")
+      ;;
     *)
       landscaper_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT" "$arg")")
       ;;
@@ -39,6 +43,15 @@ for arg in "$@"; do
 done
 
 echo "> Check"
+
+echo "component-spec-bindings-go module: ${component_spec_bindings_go_module_paths[@]}"
+(
+  cd "$PROJECT_ROOT/component-spec-bindings-go"
+  echo "  Executing golangci-lint"
+  "$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${component_spec_bindings_go_module_paths[@]}"
+  echo "  Executing go vet"
+  go vet "${component_spec_bindings_go_module_paths[@]}"
+)
 
 echo "apis module: ${apis_module_paths[@]}"
 (

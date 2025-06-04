@@ -1,6 +1,6 @@
 module github.com/gardener/landscaper/controller-utils
 
-go 1.24.2
+go 1.24.3
 
 require (
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
@@ -21,7 +21,10 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-replace github.com/gardener/landscaper/apis => ../apis
+replace (
+	github.com/gardener/landscaper/apis => ../apis
+	github.com/gardener/landscaper/component-spec-bindings-go => ../component-spec-bindings-go
+)
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -29,9 +32,9 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
-	github.com/gardener/component-spec/bindings-go v0.0.98 // indirect
+	github.com/gardener/landscaper/component-spec-bindings-go v0.0.0-00010101000000-000000000000 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
@@ -57,7 +60,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect

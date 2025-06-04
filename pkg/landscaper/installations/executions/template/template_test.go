@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
@@ -21,6 +20,8 @@ import (
 	"ocm.software/ocm/api/ocm"
 	"ocm.software/ocm/api/utils/runtime"
 	"sigs.k8s.io/yaml"
+
+	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 
 	apiconfig "github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/core"

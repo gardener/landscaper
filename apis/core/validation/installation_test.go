@@ -5,11 +5,12 @@
 package validation_test
 
 import (
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 
 	"github.com/gardener/landscaper/apis/core"
 	"github.com/gardener/landscaper/apis/core/validation"

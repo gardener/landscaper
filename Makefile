@@ -17,7 +17,7 @@ DOCKER_BUILDER_NAME := "ls-multiarch"
 DISABLE_CLEANUP := false
 ENVTEST_K8S_VERSION = 1.27
 
-CODE_DIRS := $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/... $(REPO_ROOT)/hack/testcluster/... $(REPO_ROOT)/apis/... $(REPO_ROOT)/controller-utils/...
+CODE_DIRS := $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/... $(REPO_ROOT)/hack/testcluster/... $(REPO_ROOT)/apis/... $(REPO_ROOT)/controller-utils/... $(REPO_ROOT)/component-spec-bindings-go/...
 
 ##@ General
 

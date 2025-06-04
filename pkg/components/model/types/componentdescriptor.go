@@ -4,7 +4,7 @@
 
 package types
 
-import cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+import cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 
 type ComponentDescriptor = cdv2.ComponentDescriptor
 

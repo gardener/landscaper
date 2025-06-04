@@ -14,9 +14,10 @@ import (
 	"path/filepath"
 
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+
+	"github.com/gardener/landscaper/component-spec-bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )

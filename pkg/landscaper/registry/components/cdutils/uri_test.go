@@ -12,11 +12,12 @@ import (
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"ocm.software/ocm/api/utils/runtime"
+
+	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/pkg/components/registries"

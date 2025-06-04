@@ -10,6 +10,11 @@ function revendor() {
   go mod tidy
 }
 
+echo "Revendor component-spec-bindings-go module ..."
+(
+  cd "$PROJECT_ROOT/component-spec-bindings-go"
+  revendor
+)
 echo "Revendor apis module ..."
 (
   cd "$PROJECT_ROOT/apis"

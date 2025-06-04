@@ -8,10 +8,11 @@ import (
 	"testing"
 	"time"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
+
+	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
 )
