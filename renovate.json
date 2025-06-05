@@ -13,6 +13,7 @@
   "extends": [
     "config:recommended",
     "config:best-practices",
+    "docker:pinDigests",
     "group:kubernetes",
     "group:goOpenapi",
     "security:openssf-scorecard",
