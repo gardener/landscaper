@@ -263,7 +263,7 @@ func SetDeployItemToFailed(di *v1alpha1.DeployItem) v1alpha1.DeployItemPhase {
 	if di == nil {
 		return ""
 	}
-	if !di.ObjectMeta.DeletionTimestamp.IsZero() {
+	if !di.DeletionTimestamp.IsZero() {
 		di.Status.Phase = v1alpha1.DeployItemPhases.DeleteFailed
 	} else {
 		di.Status.Phase = v1alpha1.DeployItemPhases.Failed
