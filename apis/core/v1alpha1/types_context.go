@@ -5,9 +5,10 @@
 package v1alpha1
 
 import (
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 )
 
 // DefaultContextName is the name of the default context that is replicated in all namespaces.
