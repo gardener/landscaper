@@ -138,13 +138,17 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 	if err != nil {
 		return nil, err
 	}
+	return CreateKubernetesTargetFromKubeconfigBytes(namespace, name, data)
+}
 
+// CreateKubernetesTargetFromKubeconfigBytes creates a new target of type kubernetes from the given kubeconfig bytes
+func CreateKubernetesTargetFromKubeconfigBytes(namespace, name string, data []byte) (*lsv1alpha1.Target, error) {
 	config := targettypes.KubernetesClusterTargetConfig{
 		Kubeconfig: targettypes.ValueRef{
 			StrVal: ptr.To[string](string(data)),
 		},
 	}
-	data, err = json.Marshal(config)
+	data, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
