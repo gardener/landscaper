@@ -349,7 +349,7 @@ The task of a _Blueprint_ is to provide deployitems and final output for
 the data flow among _Installations_ based of their input values provided
 by the actual _Installation_ is evaluated for.
 
-This is described by rule sets consisting of [templates](./Templating) carried together
+This is described by rule sets consisting of [templates](./Templating.md) carried together
 with the blueprint.
 
 All template [executions](./Templating.md) get a common standardized binding:
