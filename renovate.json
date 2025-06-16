@@ -26,6 +26,22 @@
   ],
   "packageRules": [
     {
+      "matchManagers": ["gomod"],
+      "matchDepNames": ["go"],
+      "matchDepTypes": ["golang"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Update golang version in pipelines",
+      "groupName": "Update golang version in pipelines",
+      "groupSlug": "golang-pipelines",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["golang"],
+      "matchPaths": [".ci/pipeline_definitions"],
+      "extractVersion": "^image: 'golang:(?<version>\\d+\\.\\d+\\.\\d+)'$",
+      "versioning": "semver"
+    },
+    {
       "description": "Fixed version for component-cli v0.44.0",
       "matchManagers": [
         "gomod"
