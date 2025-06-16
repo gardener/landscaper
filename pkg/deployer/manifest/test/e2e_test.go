@@ -21,10 +21,12 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/v1alpha1/targettypes"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
@@ -410,6 +412,76 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
 	})
 
+	It("should validate the target of a manifest deployitem", func() {
+		ctx := context.Background()
+
+		// Create a target with a kubeconfig that is not allowed (because authInfo.TokenFile is set).
+		// Therefore, the validation of the target should fail.
+		kubeconfigObj, err := kutil.GenerateKubeconfig(testenv.Env.Config)
+		Expect(err).NotTo(HaveOccurred())
+		for _, authInfo := range kubeconfigObj.AuthInfos {
+			authInfo.TokenFile = "test"
+		}
+		kubeconfigBytes, err := clientcmd.Write(kubeconfigObj)
+		Expect(err).NotTo(HaveOccurred())
+
+		kSecret := &corev1.Secret{}
+		kSecret.Name = "my-target"
+		kSecret.Namespace = state.Namespace
+		kSecret.Data = map[string][]byte{targettypes.DefaultKubeconfigKey: kubeconfigBytes}
+		Expect(state.Create(ctx, kSecret)).To(Succeed())
+
+		target, err := testutil.CreateKubernetesTargetFromSecret(state.Namespace, "my-target", kSecret)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, target)).To(Succeed())
+
+		// Create a manifest deploy item that creates a configmap
+		cm := &corev1.ConfigMap{}
+		cm.Name = "my-cm"
+		cm.Namespace = state.Namespace
+		cm.Data = map[string]string{"key": "val"}
+		rawCM, err := kutil.ConvertToRawExtension(cm, scheme.Scheme)
+		Expect(err).ToNot(HaveOccurred())
+		item, err := manifestctlr.NewDeployItemBuilder().
+			Key(state.Namespace, "myitem").
+			ProviderConfig(&manifestv1alpha2.ProviderConfiguration{
+				Manifests: []managedresource.Manifest{
+					{
+						Policy:   managedresource.ManagePolicy,
+						Manifest: rawCM,
+					},
+				},
+			}).
+			Target(target.Namespace, target.Name).
+			GenerateJobID().
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(item.GetName(), item.GetNamespace()))
+
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
+		Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.Failed))
+		Expect(item.Status.LastError).NotTo(BeNil())
+		Expect(item.Status.LastError.Reason).To(Equal("ValidateTarget"))
+
+		// The deletion of the deployitem should fail for the same reason.
+		Expect(testenv.Client.Delete(ctx, item)).To(Succeed())
+		Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
+		item.Status.SetJobID(uuid.New().String())
+		Expect(state.Client.Status().Update(ctx, item)).To(Succeed())
+
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(item.GetName(), item.GetNamespace()))
+
+		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
+		Expect(item.Status.Phase).To(Equal(lsv1alpha1.DeployItemPhases.DeleteFailed))
+		Expect(item.Status.LastError).NotTo(BeNil())
+		Expect(item.Status.LastError.Reason).To(Equal("ValidateTarget"))
+
+		// Forcefully delete the deployitem
+		item.SetFinalizers(nil)
+		Expect(testenv.Client.Update(ctx, item)).To(Succeed())
+	})
 })
 
 func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconcile.Reconciler) {
