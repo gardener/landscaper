@@ -26,18 +26,30 @@
   ],
   "packageRules": [
     {
-      "matchManagers": ["gomod"],
-      "matchDepNames": ["go"],
-      "matchDepTypes": ["golang"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepNames": [
+        "go"
+      ],
+      "matchDepTypes": [
+        "golang"
+      ],
       "rangeStrategy": "bump"
     },
     {
       "description": "Update golang version in pipelines",
       "groupName": "Update golang version in pipelines",
       "groupSlug": "golang-pipelines",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["golang"],
-      "matchPaths": [".ci/pipeline_definitions"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "golang"
+      ],
+      "matchFileNames": [
+        ".ci/pipeline_definitions"
+      ],
       "extractVersion": "^image: 'golang:(?<version>\\d+\\.\\d+\\.\\d+)'$",
       "versioning": "semver"
     },
