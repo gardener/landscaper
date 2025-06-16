@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var InvalidTypeError = errors.New("INVALID_MEDIA_TYPE")
+var ErrInvalidMediaType = errors.New("INVALID_MEDIA_TYPE")
 
 type MediaTypeFormat string
 
@@ -125,7 +125,7 @@ func Parse(mediaType string, conversions ...ConversionFunc) (MediaType, error) {
 
 	splitType := strings.Split(mediaType, "/")
 	if len(splitType) != 2 {
-		return MediaType{}, InvalidTypeError
+		return MediaType{}, ErrInvalidMediaType
 	}
 	mt := MediaType{
 		Orig: mediaType,
