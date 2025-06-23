@@ -63,7 +63,6 @@
 - [DeployItem Timeouts](usage/DeployItemTimeouts.md)
 - [Installations](usage/Installations.md)
 - [JSONSchema](usage/JSONSchema.md)
-- [Landscaper CLI Usage](usage/LandscaperCli.md)
 - [Configuring the Landscaper Logs](usage/Logging.md)
 - [Optimization](usage/Optimization.md)
 - [Repository Context](usage/RepositoryContext.md)
