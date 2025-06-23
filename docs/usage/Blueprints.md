@@ -567,7 +567,7 @@ A deployitem specification has the following fields:
   This map is used to attach labels to the generated deployitem.
 
 
-- **`configuration`** *any*
+- **`config`** *any*
 
   The structure of this field depends on the type of the deployitem.
   It is intended to tell the deployer about the expected target state to achieve
