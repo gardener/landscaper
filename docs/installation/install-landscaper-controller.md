@@ -26,8 +26,8 @@ helm install -n ls-system landscaper ./charts/landscaper
 We are also building OCI charts so a specific version of Landscaper can be installed with:
 
 ```
-export LS_VERSION="v0.15.0" # use the latest available version
-helm pull oci://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper-examples/charts/landscaper --version $LS_VERSION
+export LS_VERSION="v0.136.0" # use the latest available version
+helm pull oci://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/charts/landscaper --version $LS_VERSION
 tar -xvf landscaper-v0.15.0.tgz
 helm install -n ls-system landscaper ./landscaper
 ```
