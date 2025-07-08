@@ -22,13 +22,13 @@ func (LogHelper) LogErrorAndGetReconcileResult(ctx context.Context, lsError lser
 		return reconcile.Result{}, nil
 	} else if lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorNoRetry) {
 		logger.Info(lsError.Error())
-		return reconcile.Result{Requeue: false}, nil
+		return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 	} else if lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorForInfoOnly) {
 		logger.Info(lsError.Error())
-		return reconcile.Result{Requeue: true}, nil
+		return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 	} else {
 		logger.Error(lsError, lsError.Error())
-		return reconcile.Result{Requeue: true}, nil
+		return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 	}
 }
 
@@ -40,7 +40,7 @@ func (LogHelper) LogStandardErrorAndGetReconcileResult(ctx context.Context, err 
 	}
 
 	logger.Error(err, err.Error())
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 }
 
 func (LogHelper) LogErrorButNotFoundAsInfo(ctx context.Context, err error, message string) {

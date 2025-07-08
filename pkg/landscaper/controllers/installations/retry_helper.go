@@ -143,7 +143,6 @@ func (r *retryHelper) recomputeRetryForFailed(ctx context.Context, inst *lsv1alp
 
 	// too early
 	return reconcile.Result{
-		Requeue:      true,
 		RequeueAfter: r.getDurationUntilNextRetryForFailed(ctx, inst),
 	}, nil
 }
@@ -215,7 +214,6 @@ func (r *retryHelper) recomputeRetryForNewAndSucceeded(ctx context.Context, inst
 
 	// too early
 	return reconcile.Result{
-		Requeue:      true,
 		RequeueAfter: r.getDurationUntilNextRetryForSucceeded(ctx, inst),
 	}, nil
 }
