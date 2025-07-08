@@ -51,7 +51,7 @@ func (d Duration) MarshalJSON() ([]byte, error) {
 	if d.Duration == 0 {
 		return []byte("\"none\""), nil
 	}
-	return []byte(fmt.Sprintf("%q", d.Duration.String())), nil
+	return []byte(fmt.Sprintf("%q", d.String())), nil
 }
 
 // UnmarshalJSON implements json unmarshaling for a Duration
@@ -337,7 +337,7 @@ type LocalConfigMapReference struct {
 // It can be a component or a resource.
 type ComponentDescriptorKind string
 
-var UnknownComponentDescriptorKindKindError = errors.New("UnknownComponentDescriptorKindKind")
+var ErrUnknownComponentDescriptorKindKind = errors.New("UnknownComponentDescriptorKindKind")
 
 const (
 	// ComponentResourceKind is the kind of a component.

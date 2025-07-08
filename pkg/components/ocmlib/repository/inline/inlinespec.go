@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	. "github.com/mandelsoft/goutils/exception"
+	"github.com/mandelsoft/goutils/exception"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"ocm.software/ocm/api/ocm/cpi"
@@ -25,8 +25,8 @@ const (
 var versions = cpi.NewRepositoryTypeVersionScheme(Type)
 
 func init() {
-	Must(versions.Register(cpi.NewRepositoryTypeByConverter[*repository.RepositorySpec, *RepositorySpecV1](Type, &converterV1{}, nil)))
-	Must(versions.Register(cpi.NewRepositoryTypeByConverter[*repository.RepositorySpec, *RepositorySpecV1](TypeV1, &converterV1{}, nil)))
+	exception.Must(versions.Register(cpi.NewRepositoryTypeByConverter[*repository.RepositorySpec, *RepositorySpecV1](Type, &converterV1{}, nil)))
+	exception.Must(versions.Register(cpi.NewRepositoryTypeByConverter[*repository.RepositorySpec, *RepositorySpecV1](TypeV1, &converterV1{}, nil)))
 	cpi.RegisterRepositoryTypeVersions(versions)
 }
 
@@ -52,7 +52,7 @@ func NewRepositorySpecV1(fileSystem vfs.FileSystem, compDescDirPath string, blob
 
 type converterV1 struct{}
 
-func (_ converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpecV1, error) {
+func (converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpecV1, error) {
 	var err error
 	var compdescYaml json.RawMessage
 	var blobYaml json.RawMessage
@@ -89,7 +89,7 @@ func (_ converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpec
 	}, nil
 }
 
-func (_ converterV1) ConvertTo(in *RepositorySpecV1) (*repository.RepositorySpec, error) {
+func (converterV1) ConvertTo(in *RepositorySpecV1) (*repository.RepositorySpec, error) {
 	var err error
 	var compfs vfs.FileSystem
 	var blobfs vfs.FileSystem

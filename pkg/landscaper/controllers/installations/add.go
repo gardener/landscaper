@@ -34,7 +34,7 @@ func AddControllerToManager(controllerName string,
 	lockingEnabled := lock.IsLockingEnabledForMainControllers(config)
 
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.Controllers.Installations.CommonControllerConfig.Workers,
+		"numberOfWorkerThreads", config.Controllers.Installations.Workers,
 		"lockingEnabled", lockingEnabled)
 
 	// check if allowed to access
@@ -50,7 +50,7 @@ func AddControllerToManager(controllerName string,
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
 		config,
-		config.Controllers.Installations.CommonControllerConfig.Workers,
+		config.Controllers.Installations.Workers,
 		lockingEnabled,
 		callerName,
 	)

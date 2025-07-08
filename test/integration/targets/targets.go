@@ -215,7 +215,7 @@ func TargetTests(f *framework.Framework) {
 			target = &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, path.Join(testdataDir, "installation-target-root-1", "target-1-updated.yaml")))
 			target.SetNamespace(state.Namespace)
-			target.ObjectMeta.ResourceVersion = targetOld.ObjectMeta.ResourceVersion
+			target.ResourceVersion = targetOld.ResourceVersion
 			utils.ExpectNoError(state.Update(ctx, target))
 
 			By("Reconcile Installation")
@@ -224,7 +224,7 @@ func TargetTests(f *framework.Framework) {
 			inst = &lsv1alpha1.Installation{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(inst, path.Join(testdataDir, "installation-target-root-1", "installation-1.yaml")))
 			inst.Namespace = state.Namespace
-			inst.ObjectMeta.ResourceVersion = instOld.ObjectMeta.ResourceVersion
+			inst.ResourceVersion = instOld.ResourceVersion
 			utils.ExpectNoError(state.Update(ctx, inst))
 
 			By("Wait for Installation to finish")
@@ -267,7 +267,7 @@ func TargetTests(f *framework.Framework) {
 			target2 = &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target2, path.Join(testdataDir, "installation-target-root-1", "target-2-updated.yaml")))
 			target2.SetNamespace(state.Namespace)
-			target2.ObjectMeta.ResourceVersion = target2Old.ObjectMeta.ResourceVersion
+			target2.ResourceVersion = target2Old.ResourceVersion
 			utils.ExpectNoError(state.Update(ctx, target2))
 
 			By("Reconcile Installation")

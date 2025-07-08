@@ -121,30 +121,30 @@ var _ = Describe("Installation Controller", func() {
 			inst.Name = "root"
 			inst.Namespace = state.Namespace
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			Expect(inst.ObjectMeta.Annotations).To(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
+			Expect(inst.Annotations).To(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
 
 			exec := &lsv1alpha1.Execution{}
 			exec.Name = inst.Status.ExecutionReference.Name
 			exec.Namespace = state.Namespace
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
-			Expect(exec.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
+			Expect(exec.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
 
 			subinst := &lsv1alpha1.Installation{}
 			subinst.Name = "subinst"
 			subinst.Namespace = state.Namespace
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst))
-			Expect(subinst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
+			Expect(subinst.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
 
 			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-			Expect(inst.ObjectMeta.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
+			Expect(inst.Annotations).NotTo(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
-			Expect(exec.ObjectMeta.Annotations).To(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
+			Expect(exec.Annotations).To(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
 
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst))
-			Expect(subinst.ObjectMeta.Annotations).To(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
+			Expect(subinst.Annotations).To(HaveKeyWithValue(lsv1alpha1.OperationAnnotation, string(lsv1alpha1.InterruptOperation)))
 		})
 	})
 

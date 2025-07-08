@@ -169,7 +169,7 @@ var _ = Describe("", func() {
 				g.Expect(obj.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
 				g.Expect(obj.DeletionTimestamp.IsZero()).To(BeFalse())
 
-				obj.ObjectMeta.Finalizers = nil
+				obj.Finalizers = nil
 				g.Expect(state.Client.Update(ctx, obj)).To(Succeed())
 			}, 10*time.Second, time.Second).Should(Succeed())
 		}()
@@ -244,7 +244,7 @@ var _ = Describe("", func() {
 				g.Expect(obj.Annotations).To(HaveKeyWithValue("always", "True"))
 				g.Expect(obj.DeletionTimestamp.IsZero()).To(BeFalse())
 
-				obj.ObjectMeta.Finalizers = nil
+				obj.Finalizers = nil
 				g.Expect(state.Client.Update(ctx, obj)).To(Succeed())
 			}, 10*time.Second, time.Second).Should(Succeed())
 		}()
@@ -545,7 +545,7 @@ var _ = Describe("", func() {
 					g.Expect(obj.Annotations).To(HaveKeyWithValue("to-be-deleted", "True"))
 					g.Expect(obj.DeletionTimestamp.IsZero()).To(BeFalse())
 
-					obj.ObjectMeta.Finalizers = nil
+					obj.Finalizers = nil
 					g.Expect(state.Client.Update(ctx, obj)).To(Succeed())
 				}
 			}, time.Minute, time.Second).Should(Succeed())
@@ -691,7 +691,7 @@ var _ = Describe("", func() {
 				g.Expect(obj.Data).To(HaveKeyWithValue("key3", "val3"))
 				g.Expect(obj.Data).To(HaveKeyWithValue("key4", "val4"))
 
-				obj.ObjectMeta.Finalizers = nil
+				obj.Finalizers = nil
 				g.Expect(state.Client.Update(ctx, obj)).To(Succeed())
 			}, 10*time.Second, time.Second).Should(Succeed())
 		}()

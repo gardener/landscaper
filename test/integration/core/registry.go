@@ -13,12 +13,6 @@ import (
 	"path/filepath"
 	"time"
 
-	componentresolvers2 "github.com/gardener/landscaper/pkg/components/testutils"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"github.com/gardener/landscaper/pkg/components/model/types"
-
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -38,6 +32,9 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/mediatype"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/components/model/types"
+	componentresolvers2 "github.com/gardener/landscaper/pkg/components/testutils"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"

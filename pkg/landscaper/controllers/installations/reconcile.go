@@ -379,7 +379,7 @@ func (c *Controller) handlePhaseCleanupOrphaned(ctx context.Context, inst *lsv1a
 
 	subInstsToDelete := []*lsv1alpha1.Installation{}
 	for _, next := range subInsts {
-		if !next.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !next.DeletionTimestamp.IsZero() {
 			subInstsToDelete = append(subInstsToDelete, next)
 		}
 	}

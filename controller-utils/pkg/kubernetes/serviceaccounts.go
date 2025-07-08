@@ -33,7 +33,7 @@ func GetSecretsForServiceAccount(ctx context.Context, kubeClient client.Client, 
 
 	// Sort the result list so that it starts with the newest secret
 	sort.Slice(result, func(i, j int) bool {
-		return result[j].ObjectMeta.CreationTimestamp.Before(&result[i].ObjectMeta.CreationTimestamp)
+		return result[j].CreationTimestamp.Before(&result[i].CreationTimestamp)
 	})
 
 	return result, nil
