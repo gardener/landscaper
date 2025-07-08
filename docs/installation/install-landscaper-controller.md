@@ -13,11 +13,6 @@ documentation can be found
 Alternatively, the landscaper can also be installed via [helm](https://helm.sh/) using the helm chart in 
 [charts/landscaper](../../charts/landscaper).
 
-:warning: Attention: There were some major changes to `helm`'s OCI features with version `v3.7.0`. This guide uses the 
-new version. If you want to use a version of `helm` older than `v3.7.0`, make sure you have 
-`export HELM_EXPERIMENTAL_OCI=1` set and use `helm chart push`, `helm chart pull`, and `helm chart save` instead of 
-`helm push`, `helm pull`, and `helm package` respectively.
-
 ```
 kubectl create namespace ls-system
 helm install -n ls-system landscaper ./charts/landscaper
@@ -28,7 +23,7 @@ We are also building OCI charts so a specific version of Landscaper can be insta
 ```
 export LS_VERSION="v0.136.0" # use the latest available version
 helm pull oci://europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/github.com/gardener/landscaper/charts/landscaper --version $LS_VERSION
-tar -xvf landscaper-v0.15.0.tgz
+tar -xvf "landscaper-${LS_VERSION}.tgz"
 helm install -n ls-system landscaper ./landscaper
 ```
 
