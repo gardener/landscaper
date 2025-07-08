@@ -445,30 +445,30 @@ func GenerateKubeconfig(restConfig *rest.Config) (clientcmdapi.Config, error) {
 	const defaultID = "default"
 
 	var (
-		caData   = restConfig.TLSClientConfig.CAData
-		certData = restConfig.TLSClientConfig.CertData
-		keyData  = restConfig.TLSClientConfig.KeyData
+		caData   = restConfig.CAData
+		certData = restConfig.CertData
+		keyData  = restConfig.KeyData
 
 		bearerToken = restConfig.BearerToken
 	)
-	if len(restConfig.TLSClientConfig.CAFile) != 0 {
-		data, err := os.ReadFile(restConfig.TLSClientConfig.CAFile)
+	if len(restConfig.CAFile) != 0 {
+		data, err := os.ReadFile(restConfig.CAFile)
 		if err != nil {
-			return clientcmdapi.Config{}, fmt.Errorf("unable to read ca from %q: %w", restConfig.TLSClientConfig.CAFile, err)
+			return clientcmdapi.Config{}, fmt.Errorf("unable to read ca from %q: %w", restConfig.CAFile, err)
 		}
 		caData = data
 	}
-	if len(restConfig.TLSClientConfig.CertFile) != 0 {
-		data, err := os.ReadFile(restConfig.TLSClientConfig.CertFile)
+	if len(restConfig.CertFile) != 0 {
+		data, err := os.ReadFile(restConfig.CertFile)
 		if err != nil {
-			return clientcmdapi.Config{}, fmt.Errorf("unable to read cert from %q: %w", restConfig.TLSClientConfig.CertFile, err)
+			return clientcmdapi.Config{}, fmt.Errorf("unable to read cert from %q: %w", restConfig.CertFile, err)
 		}
 		certData = data
 	}
-	if len(restConfig.TLSClientConfig.KeyFile) != 0 {
-		data, err := os.ReadFile(restConfig.TLSClientConfig.KeyFile)
+	if len(restConfig.KeyFile) != 0 {
+		data, err := os.ReadFile(restConfig.KeyFile)
 		if err != nil {
-			return clientcmdapi.Config{}, fmt.Errorf("unable to read key from %q: %w", restConfig.TLSClientConfig.KeyFile, err)
+			return clientcmdapi.Config{}, fmt.Errorf("unable to read key from %q: %w", restConfig.KeyFile, err)
 		}
 		keyData = data
 	}

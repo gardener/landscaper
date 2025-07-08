@@ -170,7 +170,7 @@ func getObjectsByTypedReference(ctx context.Context, cl client.Client, key []lsv
 		obj := &unstructured.Unstructured{}
 		obj.SetAPIVersion(k.APIVersion)
 		obj.SetKind(k.Kind)
-		if err := read_write_layer.GetUnstructured(ctx, cl, k.ObjectReference.NamespacedName(), obj, read_write_layer.R000044); err != nil {
+		if err := read_write_layer.GetUnstructured(ctx, cl, k.NamespacedName(), obj, read_write_layer.R000044); err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, NewObjectNotReadyError(obj, err)
 			} else {

@@ -226,9 +226,9 @@ func (s *InstallationSimulator) Run(componentVersion model.ComponentVersion, blu
 // executeInstallation calculates the exports of the current installation and calls itself recursively for its subinstallations.
 func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, installationPath *InstallationPath, dataImports, targetImports map[string]interface{}) (*InstallationExports, *BlueprintExports, error) {
 	if installationPath == nil {
-		installationPath = NewInstallationPath(ctx.Installation.Name)
+		installationPath = NewInstallationPath(ctx.Name)
 	} else {
-		installationPath = installationPath.Child(ctx.Installation.Name)
+		installationPath = installationPath.Child(ctx.Name)
 	}
 
 	pathString := installationPath.String()
@@ -278,7 +278,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 		subInstallationPath := path.Join(pathString, subInstallation.Name)
 
 		// data object imports
-		for _, dataImport := range subInstallation.Installation.Spec.Imports.Data {
+		for _, dataImport := range subInstallation.Spec.Imports.Data {
 			v, ok := dataObjectsCurrentInstAndSiblings[dataImport.DataRef]
 			if !ok {
 				return nil, nil, fmt.Errorf("unable to find data import %s for installation %s", dataImport.DataRef, subInstallationPath)
@@ -287,7 +287,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 		}
 
 		// target imports
-		for _, targetImport := range subInstallation.Installation.Spec.Imports.Targets {
+		for _, targetImport := range subInstallation.Spec.Imports.Targets {
 			var (
 				ok     bool
 				target interface{}
@@ -353,7 +353,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	}
 
 	// collect all data objects that are exported by the current installation via export definition
-	for _, dataExport := range ctx.Installation.Spec.Exports.Data {
+	for _, dataExport := range ctx.Spec.Exports.Data {
 		v, ok := dataObjectsCurrentInstAndSiblings[dataExport.DataRef]
 		if ok {
 			currInstallationExports.DataObjects[dataExport.Name] = v
@@ -365,7 +365,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	}
 
 	// collect all targets that are exported by the current installation via export definition
-	for _, targetExport := range ctx.Installation.Spec.Exports.Targets {
+	for _, targetExport := range ctx.Spec.Exports.Targets {
 		v, ok := targetsCurrentInstAndSiblings[targetExport.Target]
 		if ok {
 			currInstallationExports.Targets[targetExport.Name] = v
@@ -382,7 +382,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	}
 
 	// execute export data mappings
-	err = s.handleDataMappings(pathString, ctx.Installation.Spec.ExportDataMappings, currInstallationExports.DataObjects)
+	err = s.handleDataMappings(pathString, ctx.Spec.ExportDataMappings, currInstallationExports.DataObjects)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -393,7 +393,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	}
 
 	// collect all blueprint data object and target exports
-	for _, export := range ctx.Blueprint.Info.Exports {
+	for _, export := range ctx.Info.Exports {
 		if export.Type == lsv1alpha1.ExportTypeData {
 			// data object
 			v, ok := dataObjectsCurrentInstAndSiblings[export.Name]
@@ -426,7 +426,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	dataObjectAndTargetExports := make(map[string]interface{})
 	// When the current installation is the "root" installation, there are no exports specified in the installation resource.
 	// In that case all exports defined in the root installation blueprint will be exported.
-	if _, ok := ctx.Installation.Annotations[rootInstallationAnnotation]; ok {
+	if _, ok := ctx.Annotations[rootInstallationAnnotation]; ok {
 		mergeMaps(dataObjectAndTargetExports, currBlueprintExports.DataObjects)
 		mergeMaps(dataObjectAndTargetExports, currBlueprintExports.Targets)
 	} else {
@@ -442,7 +442,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 // handleSubInstallation tries to find an installation export template for the given subinstallation.
 // If no matching installation export template was found, the subinstallation is being executed.
 func (s *InstallationSimulator) handleSubInstallation(installationPath *InstallationPath, subInstallation *ResolvedInstallation, dataImports, targetImports map[string]interface{}) (*InstallationExports, error) {
-	subInstallationPath := installationPath.Child(subInstallation.Installation.Name)
+	subInstallationPath := installationPath.Child(subInstallation.Name)
 	subInstallationPathString := subInstallationPath.String()
 
 	for _, installationTemplate := range s.exportTemplates.InstallationExports {

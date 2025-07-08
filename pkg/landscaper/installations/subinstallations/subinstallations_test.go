@@ -66,7 +66,7 @@ var _ = Describe("SubInstallation", func() {
 
 			lsCtx, err := installations.GetInstallationContext(ctx, fakeClient, installation)
 			Expect(err).ToNot(HaveOccurred())
-			lsCtx.External.Context.RepositoryContext = &lstypes.UnstructuredTypedObject{
+			lsCtx.External.RepositoryContext = &lstypes.UnstructuredTypedObject{
 				ObjectType: repoCtx.ObjectType,
 				Raw:        repoCtxRaw,
 			}

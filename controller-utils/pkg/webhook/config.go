@@ -214,9 +214,9 @@ func (o *ConfigOptions) buildCommonWebhookConfiguration(w *Webhook) (*commonWebh
 		Operations: w.Operations,
 		Rule:       admissionregistrationv1.Rule{},
 	}
-	rule.Rule.APIGroups = []string{w.APIGroup}
-	rule.Rule.APIVersions = w.APIVersions
-	rule.Rule.Resources = []string{w.ResourceName}
+	rule.APIGroups = []string{w.APIGroup}
+	rule.APIVersions = w.APIVersions
+	rule.Resources = []string{w.ResourceName}
 	clientConfig := admissionregistrationv1.WebhookClientConfig{
 		CABundle: o.CABundle,
 	}

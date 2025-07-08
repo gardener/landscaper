@@ -122,9 +122,10 @@ func (s *CertificateSecretConfig) GenerateFromInfoData(infoData InfoData) (DataI
 	}
 
 	var err error
-	if s.PKCS == PKCS1 {
+	switch s.PKCS {
+	case PKCS1:
 		certificateObj.PrivateKey, err = DecodePrivateKey(data.PrivateKey)
-	} else if s.PKCS == PKCS8 {
+	case PKCS8:
 		certificateObj.PrivateKey, err = DecodeRSAPrivateKeyFromPKCS8(data.PrivateKey)
 	}
 	if err != nil {
@@ -186,15 +187,15 @@ func (s *CertificateSecretConfig) GenerateCertificate() (*Certificate, error) {
 		}
 
 		var pk []byte
-		if s.PKCS == PKCS1 {
+		switch s.PKCS {
+		case PKCS1:
 			pk = EncodePrivateKey(privateKey)
-		} else if s.PKCS == PKCS8 {
+		case PKCS8:
 			pk, err = EncodePrivateKeyInPKCS8(privateKey)
-
 			if err != nil {
 				return nil, err
 			}
-		} else {
+		default:
 			return nil, errors.Errorf("invalid PKCS value: %v", s.PKCS)
 		}
 
@@ -233,11 +234,12 @@ func (c *Certificate) SecretData() map[string][]byte {
 func LoadCertificate(name string, privateKeyPEM, certificatePEM []byte, pkcs int) (*Certificate, error) {
 	var privateKey *rsa.PrivateKey
 	var err error
-	if pkcs == PKCS1 {
+	switch pkcs {
+	case PKCS1:
 		privateKey, err = DecodePrivateKey(privateKeyPEM)
-	} else if pkcs == PKCS8 {
+	case PKCS8:
 		privateKey, err = DecodeRSAPrivateKeyFromPKCS8(privateKeyPEM)
-	} else {
+	default:
 		err = errors.New("only PKCS1 and PKCS8 are supported")
 	}
 	if err != nil {

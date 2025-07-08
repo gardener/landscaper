@@ -41,7 +41,7 @@ import (
 )
 
 // NoChartDefinedError is the error that is returned if no Helm chart was provided
-var NoChartDefinedError = errors.New("no chart was provided")
+var NoChartDefinedError = errors.New("no chart was provided") //nolint:staticcheck
 
 // GetChart resolves the chart based on a chart access configuration.
 func GetChart(ctx context.Context,

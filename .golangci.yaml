@@ -1,4 +1,30 @@
+version: "2"
 run:
   concurrency: 4
-  timeout: 10m
-  go: '1.24.4'
+linters:
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - zz_generated.*\.go$
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    staticcheck:
+      dot-import-whitelist:
+        - "github.com/onsi/ginkgo/v2"
+        - "github.com/onsi/ginkgo"
+        - "github.com/onsi/gomega"
+        - "github.com/onsi/gomega/gstruct"
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

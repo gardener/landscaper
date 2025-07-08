@@ -13,8 +13,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gardener/landscaper/pkg/deployer/lib"
-
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/kube"
@@ -35,10 +33,10 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
-	lserror "github.com/gardener/landscaper/apis/errors"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 	"github.com/gardener/landscaper/pkg/deployer/lib/timeout"
@@ -130,7 +128,7 @@ func (c *RealHelmDeployer) getRelease(ctx context.Context) (*release.Release, er
 
 	rls, err := action.NewGet(actionConfig).Run(c.releaseName)
 	if err != nil {
-		return nil, lserror.NewWrappedError(err, currOp, "GetRelease", err.Error())
+		return nil, lserrors.NewWrappedError(err, currOp, "GetRelease", err.Error())
 	}
 
 	// We check that the release found is from the provided namespace.
@@ -139,7 +137,7 @@ func (c *RealHelmDeployer) getRelease(ctx context.Context) (*release.Release, er
 	// in namespaces that they do not have access to.
 	if c.defaultNamespace != "" && rls.Namespace != c.defaultNamespace {
 		err := fmt.Errorf("release %q not found in namespace %q", c.releaseName, c.defaultNamespace)
-		return nil, lserror.NewWrappedError(err, currOp, "CheckNamespace", err.Error())
+		return nil, lserrors.NewWrappedError(err, currOp, "CheckNamespace", err.Error())
 	}
 
 	return rls, err
@@ -185,9 +183,9 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 		logger.Info(message)
 
 		if c.isHelmInstallMessage(message) {
-			return nil, lserror.NewWrappedError(err, currOp, "Install", message, lsv1alpha1.ErrorForInfoOnly)
+			return nil, lserrors.NewWrappedError(err, currOp, "Install", message, lsv1alpha1.ErrorForInfoOnly)
 		}
-		return nil, lserror.NewWrappedError(err, currOp, "Install", message)
+		return nil, lserrors.NewWrappedError(err, currOp, "Install", message)
 	}
 
 	logger.Info(fmt.Sprintf("%s successfully installed in %s", c.releaseName, c.defaultNamespace))
@@ -238,9 +236,9 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 		logger.Info(message)
 
 		if c.isHelmUpgradeMessage(message) {
-			return nil, lserror.NewWrappedError(err, currOp, "Update", message, lsv1alpha1.ErrorForInfoOnly)
+			return nil, lserrors.NewWrappedError(err, currOp, "Update", message, lsv1alpha1.ErrorForInfoOnly)
 		}
-		return nil, lserror.NewWrappedError(err, currOp, "Update", message)
+		return nil, lserrors.NewWrappedError(err, currOp, "Update", message)
 	}
 
 	logger.Info(fmt.Sprintf("%s successfully upgraded in %s", c.releaseName, c.defaultNamespace))
@@ -287,7 +285,7 @@ func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {
 	_, err = uninstall.Run(c.releaseName)
 	if err != nil {
 		err2 := fmt.Errorf("unable to delete helm chart release: %w", err)
-		return lserror.NewWrappedError(err2, currOp, "Uninstall", err2.Error())
+		return lserrors.NewWrappedError(err2, currOp, "Uninstall", err2.Error())
 	}
 
 	logger.Info(fmt.Sprintf("%s successfully deleted in %s", c.releaseName, c.defaultNamespace))
@@ -306,7 +304,7 @@ func (c *RealHelmDeployer) initActionConfig(ctx context.Context) (*action.Config
 
 	clientset, err := kc.Factory.KubernetesClientSet()
 	if err != nil {
-		return nil, lserror.NewWrappedError(err, currOp, "GetKubernetesClientSet", err.Error())
+		return nil, lserrors.NewWrappedError(err, currOp, "GetKubernetesClientSet", err.Error())
 	}
 
 	store := c.getStorageType(ctx, clientset, c.defaultNamespace)

@@ -140,13 +140,13 @@ CONTROLLER_TOOLS_VERSION ?= v0.18.0
 # renovate: datasource=github-tags depName=golang/tools
 FORMATTER_VERSION ?= v0.34.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-LINTER_VERSION ?= v1.64.8
+LINTER_VERSION ?= v2.0.2
 # renovate: datasource=github-releases depName=elastic/crd-ref-docs
 API_REF_GEN_VERSION ?= v0.1.0
 # renovate: datasource=github-releases depName=jqlang/jq
 JQ_VERSION ?= v1.7.1
 # renovate: datasource=github-releases depName=open-component-model/ocm
-OCM_VERSION ?= v0.24.0
+OCM_VERSION ?= v0.26.0
 # renovate: datasource=github-releases depName=golang/mock
 MOCKGEN_VERSION ?= v1.6.0
 # renovate: datasource=github-releases depName=distribution/distribution

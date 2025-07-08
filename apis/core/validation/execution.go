@@ -143,7 +143,7 @@ func (visited visitedList) getCycle(new string) Cycle {
 // If no element with that name exists, the returned index is -1 and the returned DeployItemTemplate is undefined.
 func getDeployItemTemplateByName(list core.DeployItemTemplateList, name string) (int, core.DeployItemTemplate) {
 	resIndex := -1
-	var resDit core.DeployItemTemplate = core.DeployItemTemplate{}
+	var resDit = core.DeployItemTemplate{}
 	for idx, elem := range list {
 		if elem.Name == name {
 			resIndex = idx

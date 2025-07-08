@@ -30,14 +30,14 @@ func AddControllerToManager(lsUncachedClient, lsCachedClient client.Client,
 	log := logger.Reconciles("", "DeployItem")
 
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.CommonControllerConfig.Workers)
+		"numberOfWorkerThreads", config.Workers)
 
 	a, err := NewController(
 		lsUncachedClient, lsCachedClient,
 		log,
 		lsMgr.GetScheme(),
 		deployItemPickupTimeout,
-		config.CommonControllerConfig.Workers,
+		config.Workers,
 	)
 	if err != nil {
 		return err

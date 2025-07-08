@@ -232,7 +232,7 @@ func (o *Operation) createOrUpdateSubinstallations(ctx context.Context,
 
 	for _, subInstTmpl := range installationTmpl {
 		subInst := subInstallations[subInstTmpl.Name]
-		if subInst != nil && !subInst.ObjectMeta.DeletionTimestamp.IsZero() {
+		if subInst != nil && !subInst.DeletionTimestamp.IsZero() {
 			// if a subinstallation was deleted, the deletion failed and it should be created again
 			// in such a situation the subinstallation must be removed first
 			return nil, fmt.Errorf("an installation %s should be created which is currently under deletion", subInst.Name)

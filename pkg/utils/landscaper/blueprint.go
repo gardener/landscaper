@@ -120,7 +120,7 @@ func (r *BlueprintRenderer) RenderImportExecutions(input *ResolvedInstallation, 
 		return nil, fmt.Errorf("blueprint may not be nil")
 	}
 
-	if len(input.Blueprint.Info.ImportExecutions) == 0 {
+	if len(input.Info.ImportExecutions) == 0 {
 		// nothing to do if there aren't any ImportExecutions
 		return imports, nil
 	}
@@ -222,12 +222,12 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 		if elem.Target != nil {
 			target = &core.ObjectReference{
 				Name:      elem.Target.Name,
-				Namespace: input.Installation.Namespace,
+				Namespace: input.Namespace,
 			}
 			if elem.Target.Index != nil {
 				// targetlist import reference
 				raw := imports[elem.Target.Import]
-				imp := input.Blueprint.GetImportByName(elem.Target.Import)
+				imp := input.GetImportByName(elem.Target.Import)
 				if imp == nil {
 					return nil, nil, deployItemSpecificationError(elem.Name, "targetlist import %q not found", elem.Target.Import)
 				}
@@ -254,7 +254,7 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 			} else if len(elem.Target.Import) > 0 {
 				// single target import reference
 				raw := imports[elem.Target.Import]
-				imp := input.Blueprint.GetImportByName(elem.Target.Import)
+				imp := input.GetImportByName(elem.Target.Import)
 				if imp == nil {
 					return nil, nil, deployItemSpecificationError(elem.Name, "target import %q not found", elem.Target.Import)
 				}
@@ -318,7 +318,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 		return nil, nil, fmt.Errorf("unable to get repository context for input installation: %w", err)
 	}
 
-	installationTemplates, err := input.Blueprint.GetSubinstallations()
+	installationTemplates, err := input.GetSubinstallations()
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get subinstallation of blueprint: %w", err)
 	}
@@ -422,15 +422,15 @@ func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports
 	}
 
 	validatorConfig := &jsonschema.ReferenceContext{
-		LocalTypes:        input.Blueprint.Info.LocalTypes,
-		BlueprintFs:       input.Blueprint.Fs,
+		LocalTypes:        input.Info.LocalTypes,
+		BlueprintFs:       input.Fs,
 		ComponentVersion:  input.ComponentVersion,
 		RegistryAccess:    r.registryAccess,
 		RepositoryContext: inputRepositoryContext,
 	}
 
 	var allErr field.ErrorList
-	for _, importDef := range input.Blueprint.Info.Imports {
+	for _, importDef := range input.Info.Imports {
 		fldPath := field.NewPath(importDef.Name)
 		value, ok := imports[importDef.Name]
 		if !ok {
@@ -474,12 +474,12 @@ func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) (*
 		return r.repositoryContext, nil
 	}
 
-	if input.Installation != nil && input.Installation.Spec.ComponentDescriptor != nil {
-		if input.Installation.Spec.ComponentDescriptor.Reference != nil && input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext != nil {
-			return input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext, nil
+	if input.Installation != nil && input.Spec.ComponentDescriptor != nil {
+		if input.Spec.ComponentDescriptor.Reference != nil && input.Spec.ComponentDescriptor.Reference.RepositoryContext != nil {
+			return input.Spec.ComponentDescriptor.Reference.RepositoryContext, nil
 		}
-		if input.Installation.Spec.ComponentDescriptor.Inline != nil {
-			return input.Installation.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext(), nil
+		if input.Spec.ComponentDescriptor.Inline != nil {
+			return input.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext(), nil
 		}
 	}
 
