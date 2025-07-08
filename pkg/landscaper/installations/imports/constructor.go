@@ -342,39 +342,39 @@ func (c *Constructor) templateDataMappings(
 // RenderImportExecutions renders the blueprint's ImportExecutions.
 // Has to be called after import construction (c.Construct(...))
 func (c *Constructor) RenderImportExecutions() error {
-	cond := lsv1alpha1helper.GetOrInitCondition(c.Operation.Inst.GetInstallation().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(c.Inst.GetInstallation().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
-		KubeClient: c.Operation.LsUncachedClient(),
-		Inst:       c.Operation.Inst.GetInstallation(),
+		KubeClient: c.LsUncachedClient(),
+		Inst:       c.Inst.GetInstallation(),
 	}
-	targetResolver := genericresolver.New(c.Operation.LsUncachedClient())
+	targetResolver := genericresolver.New(c.LsUncachedClient())
 	tmpl := template.New(
 		gotemplate.New(templateStateHandler, targetResolver),
 		spiff.New(templateStateHandler, targetResolver))
 	errors, bindings, err := tmpl.TemplateImportExecutions(
 		template.NewBlueprintExecutionOptions(
-			c.Operation.Context().External.InjectComponentDescriptorRef(c.Operation.Inst.GetInstallation()),
-			c.Operation.Inst.GetBlueprint(),
-			c.Operation.ComponentVersion,
-			c.Operation.ResolvedComponentDescriptorList,
-			c.Operation.Inst.GetImports()))
+			c.Context().External.InjectComponentDescriptorRef(c.Inst.GetInstallation()),
+			c.Inst.GetBlueprint(),
+			c.ComponentVersion,
+			c.ResolvedComponentDescriptorList,
+			c.Inst.GetImports()))
 
 	if err != nil {
-		c.Operation.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+		c.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
 		return fmt.Errorf("RenderImportExecutions - unable to template executions: %w", err)
 	}
 
 	for k, v := range bindings {
-		c.Operation.Inst.GetImports()[k] = v
+		c.Inst.GetImports()[k] = v
 	}
 	if len(errors) == 0 {
 		return nil
 	}
 
 	msg := strings.Join(errors, ", ")
-	c.Operation.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+	c.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 		TemplatingFailedReason, msg))
 	return fmt.Errorf("import validation failed: %w", fmt.Errorf("%s", msg))
 }

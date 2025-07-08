@@ -31,7 +31,7 @@ func AddControllerToManager(ctx context.Context, lsUncachedClient, lsCachedClien
 	lockingEnabled := lock.IsLockingEnabledForMainControllers(config)
 
 	log.Info(fmt.Sprintf("Running on pod %s in namespace %s", utils.GetCurrentPodName(), utils.GetCurrentPodNamespace()),
-		"numberOfWorkerThreads", config.Controllers.Executions.CommonControllerConfig.Workers,
+		"numberOfWorkerThreads", config.Controllers.Executions.Workers,
 		"lockingEnabled", lockingEnabled)
 
 	// check if allowed to access
@@ -46,7 +46,7 @@ func AddControllerToManager(ctx context.Context, lsUncachedClient, lsCachedClien
 		log,
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor("Landscaper"),
-		config.Controllers.Executions.CommonControllerConfig.Workers,
+		config.Controllers.Executions.Workers,
 		lockingEnabled,
 		"executions",
 	)

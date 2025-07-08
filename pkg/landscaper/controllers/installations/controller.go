@@ -347,7 +347,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	pm := utils.StartPerformanceMeasurement(&logger, "initPrerequisites")
 	defer pm.StopDebug()
 
-	op := c.Operation.Copy()
+	op := c.Copy()
 
 	lsCtx, err := installations.GetInstallationContext(ctx, c.LsUncachedClient(), inst)
 	if err != nil {

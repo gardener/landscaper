@@ -10,13 +10,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	"golang.org/x/sys/unix"
-
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,11 +25,11 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
-	"github.com/gardener/landscaper/test/utils"
-
 	"github.com/gardener/landscaper/test/framework"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 // ContainerTests implements tests for the Landscaper container deployer.
@@ -238,10 +234,10 @@ func ContainerTests(f *framework.Framework) {
 
 		By("Reconciling the installation")
 		utils.ExpectNoError(state.Client.Get(ctx, client.ObjectKeyFromObject(inst), inst))
-		if inst.ObjectMeta.Annotations == nil {
-			inst.ObjectMeta.Annotations = make(map[string]string)
+		if inst.Annotations == nil {
+			inst.Annotations = make(map[string]string)
 		}
-		inst.ObjectMeta.Annotations[lsv1alpha1.OperationAnnotation] = string(lsv1alpha1.ReconcileOperation)
+		inst.Annotations[lsv1alpha1.OperationAnnotation] = string(lsv1alpha1.ReconcileOperation)
 		utils.ExpectNoError(state.Client.Update(ctx, inst))
 
 		By("Wait for installation to finish")
@@ -319,7 +315,7 @@ func ContainerTests(f *framework.Framework) {
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
 			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
-			rt.Target.TypeMeta = target.TypeMeta // workaround
+			rt.TypeMeta = target.TypeMeta // workaround
 			Expect(rt.Target).To(Equal(target))
 			var actualTargetContentAsObject interface{}
 			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
@@ -363,7 +359,7 @@ func ContainerTests(f *framework.Framework) {
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
 			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
-			rt.Target.TypeMeta = target.TypeMeta // workaround
+			rt.TypeMeta = target.TypeMeta // workaround
 			Expect(rt.Target).To(Equal(target))
 			var actualTargetContentAsObject interface{}
 			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))
@@ -408,7 +404,7 @@ func ContainerTests(f *framework.Framework) {
 			rawResolvedTarget := exportSecret.Data[lsv1alpha1.DataObjectSecretDataKey]
 			rt := &lsv1alpha1.ResolvedTarget{}
 			utils.ExpectNoError(json.Unmarshal(rawResolvedTarget, rt))
-			rt.Target.TypeMeta = target.TypeMeta // workaround
+			rt.TypeMeta = target.TypeMeta // workaround
 			Expect(rt.Target).To(Equal(target))
 			var actualTargetContentAsObject interface{}
 			utils.ExpectNoError(json.Unmarshal([]byte(rt.Content), &actualTargetContentAsObject))

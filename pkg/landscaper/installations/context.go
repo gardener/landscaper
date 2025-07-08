@@ -167,7 +167,7 @@ func (c *ExternalContext) RegistryPullSecrets() []lsv1alpha1.ObjectReference {
 	for i, r := range c.Context.RegistryPullSecrets {
 		refs[i] = lsv1alpha1.ObjectReference{
 			Name:      r.Name,
-			Namespace: c.Context.Namespace,
+			Namespace: c.Namespace,
 		}
 	}
 	return refs
@@ -247,7 +247,7 @@ func (o *Operation) IsRoot() bool {
 }
 
 // MissingRepositoryContextError defines a error when no repository context is defined.
-var MissingRepositoryContextError = errors.New("RepositoryContextMissing")
+var MissingRepositoryContextError = errors.New("RepositoryContextMissing") //nolint:staticcheck
 
 // GetExternalContext resolves the context for an installation and applies defaults or overwrites if applicable.
 func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (ExternalContext, error) {

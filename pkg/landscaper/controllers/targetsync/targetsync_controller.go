@@ -457,7 +457,7 @@ func (c *TargetSyncController) createOrUpdateTarget(ctx context.Context, targetS
 	}
 
 	_, err := controllerruntime.CreateOrUpdate(ctx, c.lsUncachedClient, newTarget, func() error {
-		newTarget.ObjectMeta.Labels = map[string]string{
+		newTarget.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
 		if addLastTargetSyncAnnotation {
@@ -493,7 +493,7 @@ func (c *TargetSyncController) createOrUpdateSecret(ctx context.Context, targetS
 	}
 
 	_, err := controllerruntime.CreateOrUpdate(ctx, c.lsUncachedClient, newSecret, func() error {
-		newSecret.ObjectMeta.Labels = map[string]string{
+		newSecret.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
 		newSecret.Data = secret.Data
@@ -517,7 +517,7 @@ func (c *TargetSyncController) createOrUpdateSecretForShoot(ctx context.Context,
 	}
 
 	_, err = controllerruntime.CreateOrUpdate(ctx, c.lsUncachedClient, newSecret, func() error {
-		newSecret.ObjectMeta.Labels = map[string]string{
+		newSecret.Labels = map[string]string{
 			labelKeyTargetSync: labelValueOk,
 		}
 		newSecret.Data = map[string][]byte{

@@ -6,7 +6,7 @@ package local
 
 import (
 	"github.com/mandelsoft/filepath/pkg/filepath"
-	. "github.com/mandelsoft/goutils/exception"
+	"github.com/mandelsoft/goutils/exception"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"ocm.software/ocm/api/ocm/cpi"
 	"ocm.software/ocm/api/utils"
@@ -23,8 +23,8 @@ const (
 var versions = cpi.NewRepositoryTypeVersionScheme(Type)
 
 func init() {
-	Must(versions.Register(cpi.NewRepositoryTypeByConverter[*repository.RepositorySpec, *RepositorySpecV1](Type, &converterV1{}, nil)))
-	Must(versions.Register(cpi.NewRepositoryTypeByConverter[*repository.RepositorySpec, *RepositorySpecV1](TypeV1, &converterV1{}, nil)))
+	exception.Must(versions.Register(cpi.NewRepositoryTypeByConverter[*repository.RepositorySpec, *RepositorySpecV1](Type, &converterV1{}, nil)))
+	exception.Must(versions.Register(cpi.NewRepositoryTypeByConverter[*repository.RepositorySpec, *RepositorySpecV1](TypeV1, &converterV1{}, nil)))
 	cpi.RegisterRepositoryTypeVersions(versions)
 }
 
@@ -47,7 +47,7 @@ func NewRepositorySpecV1(filePath string, pathFileSystem ...vfs.FileSystem) (*re
 
 type converterV1 struct{}
 
-func (_ converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpecV1, error) {
+func (converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpecV1, error) {
 	return &RepositorySpecV1{
 		ObjectVersionedType: runtime.NewVersionedObjectType(in.Type),
 		PathFileSystem:      in.FileSystem,
@@ -55,7 +55,7 @@ func (_ converterV1) ConvertFrom(in *repository.RepositorySpec) (*RepositorySpec
 	}, nil
 }
 
-func (_ converterV1) ConvertTo(in *RepositorySpecV1) (*repository.RepositorySpec, error) {
+func (converterV1) ConvertTo(in *RepositorySpecV1) (*repository.RepositorySpec, error) {
 	return &repository.RepositorySpec{
 		InternalVersionedTypedObject: runtime.NewInternalVersionedTypedObject[cpi.RepositorySpec](versions, in.Type),
 		FileSystem:                   in.PathFileSystem,

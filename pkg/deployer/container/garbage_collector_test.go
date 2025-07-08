@@ -48,7 +48,7 @@ var _ = Describe("GarbageCollector", func() {
 		gc        *containerctlr.GarbageCollector
 		ctx       context.Context
 		cancel    context.CancelFunc
-		counter   int = 0
+		counter   = 0
 	)
 
 	BeforeEach(func() {

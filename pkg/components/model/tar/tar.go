@@ -145,7 +145,7 @@ func ExtractTar(ctx context.Context, tarStream io.Reader, fs vfs.FileSystem, opt
 		case tar.TypeReg:
 			file, err := fs.Create(path)
 			if err != nil {
-				if !(os.IsExist(err) && options.Overwrite) {
+				if !(os.IsExist(err) && options.Overwrite) { //nolint:staticcheck
 					return err
 				}
 				// overwrite the file
