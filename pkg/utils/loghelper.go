@@ -22,7 +22,7 @@ func (LogHelper) LogErrorAndGetReconcileResult(ctx context.Context, lsError lser
 		return reconcile.Result{}, nil
 	} else if lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorNoRetry) {
 		logger.Info(lsError.Error())
-		return reconcile.Result{RequeueAfter: requeueImmediate}, nil
+		return reconcile.Result{}, nil
 	} else if lserrors.ContainsErrorCode(lsError, lsv1alpha1.ErrorForInfoOnly) {
 		logger.Info(lsError.Error())
 		return reconcile.Result{RequeueAfter: requeueImmediate}, nil
