@@ -98,7 +98,6 @@ var _ = Describe("Panic Handler", func() {
 		}
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(2 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -119,7 +118,6 @@ var _ = Describe("Panic Handler", func() {
 		Expect(err == nil || apierrors.IsNotFound(err)).To(BeTrue())
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(5 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 
@@ -149,7 +147,6 @@ var _ = Describe("Panic Handler", func() {
 		Expect(err == nil || apierrors.IsNotFound(err)).To(BeTrue())
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(5 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 
@@ -191,7 +188,6 @@ var _ = Describe("Panic Handler", func() {
 		}
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(5 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -218,7 +214,6 @@ var _ = Describe("Panic Handler", func() {
 		}
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(5 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 	})

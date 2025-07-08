@@ -71,6 +71,11 @@ func ResolveSecretReference(ctx context.Context, kubeClient client.Client, secre
 		if !ok {
 			return nil, nil, 0, fmt.Errorf("key %s in secret %s does not exist", secretRef.Key, secretRef.NamespacedName().String())
 		}
+
+		data, err = yaml.ToJSON(data)
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("unable to convert secret data to json: %w", err)
+		}
 	} else {
 		// use the whole secret as map
 		rawMap, err = ByteMapToRawMessageMap(secret.Data)
