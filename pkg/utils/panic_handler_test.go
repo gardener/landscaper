@@ -91,14 +91,13 @@ var _ = Describe("Panic Handler", func() {
 	It("should handle the case without a panic", func() {
 		c := testController{
 			innerReconcile: func(ctx context.Context) (reconcile.Result, error) {
-				result := reconcile.Result{Requeue: true, RequeueAfter: 2 * time.Minute}
+				result := reconcile.Result{RequeueAfter: 2 * time.Minute}
 				return result, nil
 			},
 			cl: testenv.Client,
 		}
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(2 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -108,7 +107,7 @@ var _ = Describe("Panic Handler", func() {
 			innerReconcile: func(ctx context.Context) (reconcile.Result, error) {
 				var n *int
 				m := *n + 1 // provoke a nilpointer
-				result := reconcile.Result{Requeue: true, RequeueAfter: time.Duration(m) * time.Minute}
+				result := reconcile.Result{RequeueAfter: time.Duration(m) * time.Minute}
 				return result, nil
 			},
 			cl: testenv.Client,
@@ -119,7 +118,6 @@ var _ = Describe("Panic Handler", func() {
 		Expect(err == nil || apierrors.IsNotFound(err)).To(BeTrue())
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(5 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 
@@ -138,7 +136,7 @@ var _ = Describe("Panic Handler", func() {
 					"a3",
 				}
 				fmt.Println("Name:", names[len(names)])
-				result := reconcile.Result{Requeue: true, RequeueAfter: time.Duration(1) * time.Minute}
+				result := reconcile.Result{RequeueAfter: time.Duration(1) * time.Minute}
 				return result, nil
 			},
 			cl: testenv.Client,
@@ -149,7 +147,6 @@ var _ = Describe("Panic Handler", func() {
 		Expect(err == nil || apierrors.IsNotFound(err)).To(BeTrue())
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(5 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 
@@ -167,7 +164,7 @@ var _ = Describe("Panic Handler", func() {
 				if ctx != nil {
 					panic("test")
 				}
-				result := reconcile.Result{Requeue: true, RequeueAfter: time.Minute}
+				result := reconcile.Result{RequeueAfter: time.Minute}
 				return result, nil
 			},
 		}
@@ -185,13 +182,12 @@ var _ = Describe("Panic Handler", func() {
 				b = a + b
 				c := a / (4 - b - a)
 				fmt.Println("C:", c)
-				result := reconcile.Result{Requeue: true, RequeueAfter: time.Duration(1) * time.Minute}
+				result := reconcile.Result{RequeueAfter: time.Duration(1) * time.Minute}
 				return result, nil
 			},
 		}
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(5 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -212,13 +208,12 @@ var _ = Describe("Panic Handler", func() {
 				j := i.(int) // This will cause a panic: interface conversion: interface {} is string, not int
 				fmt.Println(j)
 
-				result := reconcile.Result{Requeue: true, RequeueAfter: time.Duration(1) * time.Minute}
+				result := reconcile.Result{RequeueAfter: time.Duration(1) * time.Minute}
 				return result, nil
 			},
 		}
 
 		res, err := c.reconcile(context.Background())
-		Expect(res.Requeue).To(BeTrue())
 		Expect(res.RequeueAfter).To(Equal(5 * time.Minute))
 		Expect(err).NotTo(HaveOccurred())
 	})

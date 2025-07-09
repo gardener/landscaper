@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	requeueImmediate             = 10 * time.Millisecond
 	requeueInterval              = 5 * time.Minute
 	tokenRotationInterval        = 60 * 24 * 60 * 60 * time.Second
 	tokenExpirationSeconds int64 = 90 * 24 * 60 * 60
