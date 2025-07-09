@@ -107,7 +107,7 @@ func NewOCIBlobAccess(ref, mediaType, digest string, size int64) *OCIBlobAccess 
 	}
 }
 
-func (_ *OCIBlobAccess) GetType() string {
+func (*OCIBlobAccess) GetType() string {
 	return OCIBlobType
 }
 
@@ -159,7 +159,7 @@ type LocalFilesystemBlobAccess struct {
 	MediaType string `json:"mediaType,omitempty"`
 }
 
-func (_ *LocalFilesystemBlobAccess) GetType() string {
+func (*LocalFilesystemBlobAccess) GetType() string {
 	return LocalFilesystemBlobType
 }
 
@@ -184,7 +184,7 @@ func NewWebAccess(url string) *Web {
 	}
 }
 
-func (_ *Web) GetType() string {
+func (*Web) GetType() string {
 	return WebType
 }
 
