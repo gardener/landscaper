@@ -24,7 +24,6 @@ func HandlePanics(ctx context.Context, result *reconcile.Result, hostUncachedCli
 	logger, _ := logging.FromContextOrNew(ctx, nil)
 
 	if r := recover(); r != nil {
-		result.Requeue = true
 		result.RequeueAfter = time.Minute * 5
 
 		debug.PrintStack()

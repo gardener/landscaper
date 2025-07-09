@@ -103,7 +103,7 @@ func (c *TargetSyncController) reconcile(ctx context.Context, req reconcile.Requ
 			return reconcile.Result{}, nil
 		}
 		logger.Error(err, "fetching targetsync object failed")
-		return reconcile.Result{Requeue: true}, nil
+		return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 	}
 
 	// set finalizer
@@ -111,7 +111,7 @@ func (c *TargetSyncController) reconcile(ctx context.Context, req reconcile.Requ
 		controllerutil.AddFinalizer(targetSync, lsv1alpha1.LandscaperFinalizer)
 		if err := c.lsUncachedClient.Update(ctx, targetSync); err != nil {
 			logger.Error(err, "adding finalizer to targetsync object failed")
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 		}
 		// do not return here because the controller only watches for particular events and setting a finalizer is not part of this
 	}
@@ -132,17 +132,16 @@ func (c *TargetSyncController) reconcile(ctx context.Context, req reconcile.Requ
 
 		if err != nil {
 			logger.Error(err, "reconciling targetsync object failed")
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 		}
 	} else {
 		if err := c.handleDelete(ctx, targetSync); err != nil {
 			logger.Error(err, "deleting target sync object failed")
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 		}
 	}
 
 	return reconcile.Result{
-		Requeue:      true,
 		RequeueAfter: requeueInterval,
 	}, nil
 }

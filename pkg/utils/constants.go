@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"time"
 
 	"k8s.io/client-go/rest"
 
@@ -25,6 +26,8 @@ const (
 	LsHostClientQpsDefault       = 20
 	LsResourceClientBurstDefault = 60
 	LsResourceClientQpsDefault   = 40
+
+	requeueImmediate = 10 * time.Millisecond
 )
 
 func GetCurrentPodName() string {

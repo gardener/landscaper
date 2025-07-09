@@ -47,12 +47,7 @@ func aggregateHookResults(aggregate func(bool, bool) bool, hrs ...*HookResult) *
 			res = hr.DeepCopy()
 			continue
 		}
-		res.ReconcileResult.Requeue = res.ReconcileResult.Requeue || hr.ReconcileResult.Requeue
 		res.AbortReconcile = aggregate(res.AbortReconcile, hr.AbortReconcile)
-		if res.ReconcileResult.Requeue {
-			res.ReconcileResult.RequeueAfter = 0
-			continue
-		}
 		if hr.ReconcileResult.RequeueAfter > 0 && (res.ReconcileResult.RequeueAfter == 0 || hr.ReconcileResult.RequeueAfter < res.ReconcileResult.RequeueAfter) {
 			res.ReconcileResult.RequeueAfter = hr.ReconcileResult.RequeueAfter
 		}
@@ -63,7 +58,6 @@ func aggregateHookResults(aggregate func(bool, bool) bool, hrs ...*HookResult) *
 func (hr *HookResult) DeepCopy() *HookResult {
 	return &HookResult{
 		ReconcileResult: reconcile.Result{
-			Requeue:      hr.ReconcileResult.Requeue,
 			RequeueAfter: hr.ReconcileResult.RequeueAfter,
 		},
 		AbortReconcile: hr.AbortReconcile,

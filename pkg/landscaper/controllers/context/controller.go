@@ -6,6 +6,7 @@ package context
 
 import (
 	"context"
+	"time"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -21,6 +22,10 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+)
+
+const (
+	requeueImmediate = 10 * time.Millisecond
 )
 
 // NewDefaulterController creates a new context controller that reconciles the default context object in the namespaces.
@@ -85,7 +90,7 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 			logger.Error(err, "default context not created of patched")
 		}
 
-		return reconcile.Result{Requeue: true}, nil
+		return reconcile.Result{RequeueAfter: requeueImmediate}, nil
 	}
 
 	return reconcile.Result{}, nil
