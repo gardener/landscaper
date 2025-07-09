@@ -1,6 +1,6 @@
 module github.com/gardener/landscaper/controller-utils
 
-go 1.24.4
+go 1.24.5
 
 require (
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
@@ -58,6 +58,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	go.yaml.in/yaml/v3 v3.0.3 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
