@@ -13,12 +13,13 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"ocm.software/ocm/api/ocm/compdesc"
 	"ocm.software/ocm/api/ocm/resolvers"
 	"ocm.software/ocm/api/ocm/tools/signing"
 	"ocm.software/ocm/api/tech/signing/handlers/rsa"
 	"ocm.software/ocm/api/tech/signing/signutils"
+
+	v2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 
