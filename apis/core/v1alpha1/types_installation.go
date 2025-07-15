@@ -8,9 +8,10 @@ import (
 	"encoding/json"
 	"slices"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 )
 
 // EncompassedByLabel is the label that contains the name of the parent installation

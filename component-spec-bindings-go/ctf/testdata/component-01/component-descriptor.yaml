@@ -1,0 +1,25 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'github.com/gardener/gardener'
+  version: 'v1.7.2'
+
+  repositoryContexts:
+  - type: 'ociRegistry'
+    baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  sources: []
+
+  componentReferences: []
+
+  resources:
+  - name: 'artifact'
+    version: '0.2.0'
+    type: 'json'
+    relation: 'external'
+    access:
+      type: 'localFilesystemBlob' # <-> localOCIBlob (media type vnd.cnudie+tar)
+      filename: 'myblob' # relative to blobs directory

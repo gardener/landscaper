@@ -17,13 +17,14 @@ import (
 
 	"github.com/gardener/landscaper/pkg/components/model"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"ocm.software/ocm/api/datacontext"
 	"ocm.software/ocm/api/ocm"
 	"ocm.software/ocm/api/utils/runtime"
+
+	cdv2 "github.com/gardener/landscaper/component-spec-bindings-go/apis/v2"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"

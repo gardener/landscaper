@@ -9,8 +9,8 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.3.2+incompatible
 	github.com/gardener/component-cli v0.44.0
-	github.com/gardener/component-spec/bindings-go v0.0.98
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/component-spec-bindings-go v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.4.3
 	github.com/golang/mock v1.6.0
@@ -50,6 +50,7 @@ require (
 
 replace (
 	github.com/gardener/landscaper/apis => ./apis
+	github.com/gardener/landscaper/component-spec-bindings-go => ./component-spec-bindings-go
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.0
 )
@@ -167,9 +168,10 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fvbommel/sortorder v1.1.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+	github.com/gardener/component-spec/bindings-go v0.0.66 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
