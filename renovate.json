@@ -13,10 +13,12 @@
   "extends": [
     "config:recommended",
     "config:best-practices",
+    "default:automergeDigest",
+    "docker:pinDigests",
     "group:kubernetes",
     "group:goOpenapi",
+    "helpers:pinGitHubActionDigests",
     "security:openssf-scorecard",
-    "default:automergeDigest",
     ":dependencyDashboard",
     ":rebaseStalePrs"
   ],
