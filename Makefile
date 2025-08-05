@@ -153,7 +153,7 @@ MOCKGEN_VERSION ?= v1.6.0
 REGISTRY_VERSION ?= v3.0.0-alpha.1
 # This cannot be handled properly e.g. with renovate, because the controller-runtime maintainers refuse to tag the
 # setup-envtest module (https://github.com/kubernetes-sigs/controller-runtime/issues/2720)
-SETUP_ENVTEST_VERSION ?= release-0.17
+SETUP_ENVTEST_VERSION ?= release-0.21
 
 .PHONY: localbin
 localbin: ## Creates the local bin folder, if it doesn't exist. Not meant to be called manually, used as requirement for the other tool commands.
