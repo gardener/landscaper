@@ -9,13 +9,13 @@
 
 ## Deployers
 
+- [What are Deployers ?](deployer/README.md)
 - [Container Deployer](deployer/container.md)
 - [Deployer Resource Health-/Readiness Checks](deployer/healthchecks.md)
 - [Helm Deployer](deployer/helm.md)
-- [Deletion of Manifest and Manifest-Only Helm DeployItems](deployer/manifest_deletion.md)
 - [Kubernetes Manifest Deployer](deployer/manifest.md)
+- [Deletion of Manifest and Manifest-Only Helm DeployItems](deployer/manifest_deletion.md)
 - [Mock Deployer](deployer/mock.md)
-- [What are Deployers ?](deployer/README.md)
 
 ## Development
 
@@ -68,7 +68,7 @@
 - [Repository Context](usage/RepositoryContext.md)
 - [Signature Verification](usage/SignatureVerification.md)
 - [Skipping the Uninstallation of an Application](usage/SkipUninstall.md)
-- [Targets](usage/Targets.md)
 - [TargetSyncs](usage/TargetSyncs.md)
+- [Targets](usage/Targets.md)
 - [Templating](usage/Templating.md)
 
