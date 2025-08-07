@@ -13,7 +13,7 @@ require (
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.4.3
-	github.com/golang/mock v1.6.0
+	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
@@ -42,7 +42,7 @@ require (
 	k8s.io/client-go v0.33.3
 	k8s.io/code-generator v0.33.3
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
-	ocm.software/ocm v0.26.0
+	ocm.software/ocm v0.27.0
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -203,7 +203,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
-	github.com/google/certificate-transparency-go v1.3.1 // indirect
+	github.com/google/certificate-transparency-go v1.3.2 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-containerregistry v0.20.6 // indirect
@@ -301,7 +301,7 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/sigstore/cosign/v2 v2.5.1 // indirect
+	github.com/sigstore/cosign/v2 v2.5.2 // indirect
 	github.com/sigstore/fulcio v1.7.1 // indirect
 	github.com/sigstore/protobuf-specs v0.4.3 // indirect
 	github.com/sigstore/rekor v1.3.10 // indirect
