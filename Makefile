@@ -140,7 +140,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.18.0
 # renovate: datasource=github-tags depName=golang/tools
 FORMATTER_VERSION ?= v0.36.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-LINTER_VERSION ?= v2.3.1
+LINTER_VERSION ?= v2.4.0
 # renovate: datasource=github-releases depName=elastic/crd-ref-docs
 API_REF_GEN_VERSION ?= v0.2.0
 # renovate: datasource=github-releases depName=jqlang/jq
