@@ -17,7 +17,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mandelsoft/filepath v0.0.0-20240223090642-3e2777258aa3
-	github.com/mandelsoft/goutils v0.0.0-20250514111418-50031d56842e
+	github.com/mandelsoft/goutils af06c70600cf
 	github.com/mandelsoft/spiff v1.7.0-beta-7
 	github.com/mandelsoft/vfs v0.4.5-0.20250514111339-d7b067920e91
 	github.com/onsi/ginkgo/v2 v2.25.1
@@ -35,13 +35,13 @@ require (
 	golang.org/x/sync v0.16.0
 	golang.org/x/sys v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.18.5
-	k8s.io/api v0.33.3
-	k8s.io/apiextensions-apiserver v0.33.3
-	k8s.io/apimachinery v0.33.3
-	k8s.io/client-go v0.33.3
-	k8s.io/code-generator v0.33.3
-	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
+	helm.sh/helm/v3 v3.18.6
+	k8s.io/api v0.33.4
+	k8s.io/apiextensions-apiserver v0.33.4
+	k8s.io/apimachinery v0.33.4
+	k8s.io/client-go v0.33.4
+	k8s.io/code-generator v0.33.4
+	k8s.io/utils 0af2bda4dd1d
 	ocm.software/ocm v0.28.0
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/yaml v1.6.0
@@ -50,7 +50,7 @@ require (
 replace (
 	github.com/gardener/landscaper/apis => ./apis
 	github.com/gardener/landscaper/controller-utils => ./controller-utils
-	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.0
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.7.1
 )
 
 require (
