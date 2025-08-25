@@ -39,7 +39,7 @@ require (
 	k8s.io/api v0.33.3
 	k8s.io/apiextensions-apiserver v0.33.3
 	k8s.io/apimachinery v0.33.3
-	k8s.io/client-go v0.33.3
+	k8s.io/client-go/v12 v12.0.0
 	k8s.io/code-generator v0.33.3
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	ocm.software/ocm v0.28.0
