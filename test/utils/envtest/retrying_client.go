@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/hack/testcluster/pkg/utils"
@@ -79,6 +80,18 @@ func (r *retryingClient) Update(ctx context.Context, obj client.Object, opts ...
 func (r *retryingClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	err := retrySporadic(ctx, r.log, func() error {
 		return r.Client.Patch(ctx, obj, patch, opts...)
+	})
+
+	if err != nil {
+		err = errors.Wrap(err, "retryingClient: "+err.Error())
+	}
+
+	return err
+}
+
+func (r *retryingClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) error {
+	err := retrySporadic(ctx, r.log, func() error {
+		return r.Client.Apply(ctx, obj, opts...)
 	})
 
 	if err != nil {
