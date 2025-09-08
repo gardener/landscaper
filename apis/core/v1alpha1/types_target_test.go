@@ -34,7 +34,7 @@ var _ = Describe("Target", func() {
 		targetJSON, err := json.Marshal(target)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(targetJSON).To(MatchJSON(`{"metadata":{"creationTimestamp":null},"spec":{"type":"landscaper.gardener.cloud/kubernetes-cluster","config":{"kubeconfig":"a: 1\nb: 2"}}}`))
+		Expect(targetJSON).To(MatchJSON(`{"metadata":{},"spec":{"type":"landscaper.gardener.cloud/kubernetes-cluster","config":{"kubeconfig":"a: 1\nb: 2"}}}`))
 	})
 
 	It("should unmarshal a target with inline kubeconfig", func() {
