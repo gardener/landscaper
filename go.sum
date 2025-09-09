@@ -2705,8 +2705,8 @@ modernc.org/strutil v1.1.3/go.mod h1:MEHNA7PdEnEwLvspRMtWTNnp2nnyvMfkimT1NKNAGbw
 modernc.org/tcl v1.13.1/go.mod h1:XOLfOwzhkljL4itZkK6T72ckMgvj0BDsnKNdZVUOecw=
 modernc.org/token v1.0.0/go.mod h1:UGzOrNV1mAFSEB63lOFHIpNRUVMvYTc6yu1SMY/XTDM=
 modernc.org/z v1.5.1/go.mod h1:eWFB510QWW5Th9YGZT81s+LwvaAs3Q2yr4sP0rmLkv8=
-ocm.software/ocm v0.29.0 h1:IWb0WoYPAJROuPzyZeULKU1gXU8cPLFGEGwUWuTMGiM=
-ocm.software/ocm v0.29.0/go.mod h1:ffI5PEzY7qxbcwLGiCpl3DiCbH8wsJPYlcP6bgQCYyk=
+ocm.software/ocm v0.29.1 h1:tTq4Xi8ZdsYnHT3bz5x/nY+vvGUkx0Qa1AuRGq09V3c=
+ocm.software/ocm v0.29.1/go.mod h1:mF1s+7rSSKqIQcOny1jG2JemGOzAm4FgwUXrDKruEe8=
 oras.land/oras-go/v2 v2.6.0 h1:X4ELRsiGkrbeox69+9tzTu492FMUu7zJQW6eJU+I2oc=
 oras.land/oras-go/v2 v2.6.0/go.mod h1:magiQDfG6H1O9APp+rOsvCPcW1GD2MM7vgnKY0Y+u1o=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
