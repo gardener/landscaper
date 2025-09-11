@@ -57,9 +57,11 @@ spec:
       install: # see  https://helm.sh/docs/helm/helm_install/#options
         atomic: true
         force: true
+        skipSchemaValidation: true
       upgrade: # see https://helm.sh/docs/helm/helm_upgrade/#options
         atomic: true
         force: true
+        skipSchemaValidation: true
       uninstall: {} # see https://helm.sh/docs/helm/helm_uninstall/#options
 
     updateStrategy: update | patch # optional; defaults to update

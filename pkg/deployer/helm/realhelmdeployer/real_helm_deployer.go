@@ -166,6 +166,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 	install.CreateNamespace = c.createNamespace
 	install.Atomic = installConfig.Atomic
 	install.Force = installConfig.Force
+	install.SkipSchemaValidation = installConfig.SkipSchemaValidation
 
 	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeInstallingRelease)
 	if err != nil {
@@ -219,6 +220,7 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 	upgrade.MaxHistory = 10
 	upgrade.Atomic = upgradeConfig.Atomic
 	upgrade.Force = upgradeConfig.Force
+	upgrade.SkipSchemaValidation = upgradeConfig.SkipSchemaValidation
 
 	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeUpgradingRelease)
 	if err != nil {

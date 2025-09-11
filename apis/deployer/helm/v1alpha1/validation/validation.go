@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	helmArgumentAtomic  = "atomic"
-	helmArgumentForce   = "force"
-	helmArgumentTimeout = "timeout"
+	helmArgumentAtomic               = "atomic"
+	helmArgumentForce                = "force"
+	helmArgumentTimeout              = "timeout"
+	helmArgumentSkipSchemaValidation = "skipSchemaValidation"
 )
 
 // ValidateProviderConfiguration validates a helm deployer configuration
@@ -106,11 +107,11 @@ func ValidateHelmDeploymentConfiguration(fldPath *field.Path, deployConfig *helm
 }
 
 func ValidateInstallConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {
-	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce})
+	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce, helmArgumentSkipSchemaValidation})
 }
 
 func ValidateUpgradeConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {
-	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce})
+	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce, helmArgumentSkipSchemaValidation})
 }
 
 func ValidateUninstallConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {

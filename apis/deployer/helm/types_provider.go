@@ -152,8 +152,9 @@ type HelmDeploymentConfiguration struct {
 
 // HelmInstallConfiguration defines settings for a helm install operation.
 type HelmInstallConfiguration struct {
-	Atomic bool `json:"atomic,omitempty"`
-	Force  bool `json:"force,omitempty"`
+	Atomic               bool `json:"atomic,omitempty"`
+	Force                bool `json:"force,omitempty"`
+	SkipSchemaValidation bool `json:"skipSchemaValidation,omitempty"`
 
 	// Timeout is the timeout for the operation in minutes.
 	// +optional
