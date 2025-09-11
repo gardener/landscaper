@@ -19,9 +19,10 @@ const (
 
 // installConfiguration defines settings for a helm install operation.
 type installConfiguration struct {
-	Atomic  bool                 `json:"atomic,omitempty"`
-	Force   bool                 `json:"force,omitempty"`
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
+	Atomic               bool                 `json:"atomic,omitempty"`
+	Force                bool                 `json:"force,omitempty"`
+	SkipSchemaValidation bool                 `json:"skipSchemaValidation,omitempty"`
+	Timeout              *lsv1alpha1.Duration `json:"timeout,omitempty"`
 }
 
 func newInstallConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*installConfiguration, error) {
@@ -50,9 +51,10 @@ func newInstallConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*i
 
 // upgradeConfiguration defines settings for a helm upgrade operation.
 type upgradeConfiguration struct {
-	Atomic  bool                 `json:"atomic,omitempty"`
-	Force   bool                 `json:"force,omitempty"`
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
+	Atomic               bool                 `json:"atomic,omitempty"`
+	Force                bool                 `json:"force,omitempty"`
+	SkipSchemaValidation bool                 `json:"skipSchemaValidation,omitempty"`
+	Timeout              *lsv1alpha1.Duration `json:"timeout,omitempty"`
 }
 
 func newUpgradeConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*upgradeConfiguration, error) {

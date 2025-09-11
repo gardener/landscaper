@@ -438,6 +438,7 @@ func Convert_helm_HelmDeploymentConfiguration_To_v1alpha1_HelmDeploymentConfigur
 func autoConvert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration(in *HelmInstallConfiguration, out *helm.HelmInstallConfiguration, s conversion.Scope) error {
 	out.Atomic = in.Atomic
 	out.Force = in.Force
+	out.SkipSchemaValidation = in.SkipSchemaValidation
 	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
@@ -450,6 +451,7 @@ func Convert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration(
 func autoConvert_helm_HelmInstallConfiguration_To_v1alpha1_HelmInstallConfiguration(in *helm.HelmInstallConfiguration, out *HelmInstallConfiguration, s conversion.Scope) error {
 	out.Atomic = in.Atomic
 	out.Force = in.Force
+	out.SkipSchemaValidation = in.SkipSchemaValidation
 	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
