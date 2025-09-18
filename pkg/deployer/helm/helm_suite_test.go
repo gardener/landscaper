@@ -971,6 +971,105 @@ var _ = Describe("Template", func() {
 			}
 		})
 
+		// Tests concerning the validation of helm chart values against a JSON schema
+		Context("schema validation", func() {
+
+			createHelmDeployItem := func(path, name string, skipSchemaValidation bool) *lsv1alpha1.DeployItem {
+				Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+				target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(state.Create(ctx, target)).To(Succeed())
+
+				chartBytes, closer := utils.ReadChartFrom(path)
+				defer closer()
+
+				chartAccess := helmv1alpha1.Chart{
+					Archive: &helmv1alpha1.ArchiveAccess{
+						Raw: base64.StdEncoding.EncodeToString(chartBytes),
+					},
+				}
+
+				helmConfig := &helmv1alpha1.ProviderConfiguration{
+					Name:            "test",
+					Namespace:       "some-namespace-schema-validation",
+					Chart:           chartAccess,
+					CreateNamespace: true,
+				}
+				if skipSchemaValidation {
+					helmConfig.HelmDeploymentConfig = &helmv1alpha1.HelmDeploymentConfiguration{
+						Install: map[string]lsv1alpha1.AnyJSON{
+							"skipSchemaValidation": {RawMessage: []byte("true")},
+						},
+						Upgrade: map[string]lsv1alpha1.AnyJSON{
+							"skipSchemaValidation": {RawMessage: []byte("true")},
+						},
+					}
+				}
+
+				item, err := helm.NewDeployItemBuilder().
+					Key(state.Namespace, "myitem").
+					ProviderConfig(helmConfig).
+					Target(target.Namespace, target.Name).
+					GenerateJobID().
+					Build()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
+
+				return item
+			}
+
+			It("schema validation should succeed", func() {
+				// The chart contains a values.yaml and values.schema.json
+				// The values are valid. The deployitem should succeed.
+				item := createHelmDeployItem("./testdata/testchart10", "item-valid", false)
+				Eventually(func() error {
+					if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item); err != nil {
+						return err
+					}
+
+					if item.Status.Phase != lsv1alpha1.DeployItemPhases.Succeeded {
+						return fmt.Errorf("deploy item phase is not succeeded")
+					}
+
+					return nil
+				}, 30*time.Second, 1*time.Second).Should(Succeed(), "deploy item should succeed")
+			})
+
+			It("schema validation should fail", func() {
+				// The chart contains a values.yaml and values.schema.json
+				// The values are invalid. The deployitem should have an error.
+				item := createHelmDeployItem("./testdata/testchart11", "item-invalid", false)
+				Eventually(func() error {
+					if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item); err != nil {
+						return err
+					}
+					if item.Status.LastError != nil && item.Status.LastError.Reason == "installRelease" {
+						// expected error occurred
+						return nil
+					}
+					return fmt.Errorf("deploy item has not yet the expected error")
+				}, 30*time.Second, 1*time.Second).Should(Succeed(), "deploy item should fail during installRelease due to invalid values")
+			})
+
+			It("schema validation should be skipped", func() {
+				// The chart contains a values.yaml and values.schema.json. but validation is skipped
+				// The values are invalid, but validation is skipped. The deployitem should succeed.
+				item := createHelmDeployItem("./testdata/testchart11", "item-skipped", true)
+				Eventually(func() error {
+					if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(item), item); err != nil {
+						return err
+					}
+
+					if item.Status.Phase != lsv1alpha1.DeployItemPhases.Succeeded {
+						return fmt.Errorf("deploy item phase is not succeeded")
+					}
+
+					return nil
+				}, 30*time.Second, 1*time.Second).Should(Succeed(), "deploy item should succeed")
+			})
+
+		})
+
 	})
 
 })
