@@ -163,7 +163,10 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		return nil, nil, nil, nil, lserrors.NewWrappedError(
 			err, currOp, "ParseHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
-	values, err = chartutil.ToRenderValues(ch, values, options, nil)
+
+	// At this point, we always set skipSchemaValidation=true, because the schema validation is also done later
+	// during the helm install/upgrade action (except if skipped).
+	values, err = chartutil.ToRenderValuesWithSchemaValidation(ch, values, options, nil, true)
 	if err != nil {
 		return nil, nil, nil, nil, lserrors.NewWrappedError(
 			err, currOp, "PrepareHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
