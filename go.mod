@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v28.5.0+incompatible
+	github.com/docker/cli v28.5.1+incompatible
 	github.com/gardener/component-cli v0.44.0
 	github.com/gardener/component-spec/bindings-go v0.0.98
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
@@ -43,7 +43,7 @@ require (
 	k8s.io/code-generator v0.34.1
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	ocm.software/ocm v0.31.0
-	sigs.k8s.io/controller-runtime v0.22.1
+	sigs.k8s.io/controller-runtime v0.22.3
 	sigs.k8s.io/yaml v1.6.0
 )
 
