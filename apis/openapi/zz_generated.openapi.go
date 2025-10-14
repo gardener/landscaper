@@ -13455,6 +13455,18 @@ func schema_landscaper_apis_deployer_helm_HelmInstallConfiguration(ref common.Re
 							Format: "",
 						},
 					},
+					"takeOwnership": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"wait": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the timeout for the operation in minutes.",
@@ -13476,6 +13488,12 @@ func schema_landscaper_apis_deployer_helm_HelmUninstallConfiguration(ref common.
 				Description: "HelmUninstallConfiguration defines settings for a helm uninstall operation.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"wait": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the timeout for the operation in minutes.",
@@ -14131,6 +14149,18 @@ func schema_apis_deployer_helm_v1alpha1_HelmInstallConfiguration(ref common.Refe
 							Format: "",
 						},
 					},
+					"takeOwnership": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"wait": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the timeout for the operation in minutes.",
@@ -14152,6 +14182,12 @@ func schema_apis_deployer_helm_v1alpha1_HelmUninstallConfiguration(ref common.Re
 				Description: "HelmUninstallConfiguration defines settings for a helm uninstall operation.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"wait": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the timeout for the operation in minutes.",

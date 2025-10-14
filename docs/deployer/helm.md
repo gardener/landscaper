@@ -58,11 +58,16 @@ spec:
         atomic: true
         force: true
         skipSchemaValidation: true
+        takeOwnership: true
+        wait: true
       upgrade: # see https://helm.sh/docs/helm/helm_upgrade/#options
         atomic: true
         force: true
         skipSchemaValidation: true
-      uninstall: {} # see https://helm.sh/docs/helm/helm_uninstall/#options
+        takeOwnership: true
+        wait: true
+      uninstall: # see https://helm.sh/docs/helm/helm_uninstall/#options
+        wait: true
 
     updateStrategy: update | patch # optional; defaults to update
 

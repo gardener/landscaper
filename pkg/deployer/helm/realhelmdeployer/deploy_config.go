@@ -22,7 +22,9 @@ type installConfiguration struct {
 	Atomic               bool                 `json:"atomic,omitempty"`
 	Force                bool                 `json:"force,omitempty"`
 	SkipSchemaValidation bool                 `json:"skipSchemaValidation,omitempty"`
+	TakeOwnership        bool                 `json:"takeOwnership,omitempty"`
 	Timeout              *lsv1alpha1.Duration `json:"timeout,omitempty"`
+	Wait                 bool                 `json:"wait,omitempty"`
 }
 
 func newInstallConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*installConfiguration, error) {
@@ -54,7 +56,9 @@ type upgradeConfiguration struct {
 	Atomic               bool                 `json:"atomic,omitempty"`
 	Force                bool                 `json:"force,omitempty"`
 	SkipSchemaValidation bool                 `json:"skipSchemaValidation,omitempty"`
+	TakeOwnership        bool                 `json:"takeOwnership,omitempty"`
 	Timeout              *lsv1alpha1.Duration `json:"timeout,omitempty"`
+	Wait                 bool                 `json:"wait,omitempty"`
 }
 
 func newUpgradeConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*upgradeConfiguration, error) {
@@ -79,4 +83,28 @@ func newUpgradeConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*u
 	}
 
 	return upgradeConf, nil
+}
+
+// uninstallConfiguration defines settings for a helm uninstall operation.
+type uninstallConfiguration struct {
+	Wait bool `json:"wait,omitempty"`
+}
+
+func newUninstallConfiguration(conf *helmv1alpha1.HelmDeploymentConfiguration) (*uninstallConfiguration, error) {
+	currOp := "NewUninstallConfiguration"
+
+	uninstallConf := &uninstallConfiguration{}
+
+	if conf != nil && len(conf.Uninstall) > 0 {
+		rawConf, err := json.Marshal(conf.Uninstall)
+		if err != nil {
+			return nil, lserror.NewWrappedError(err, currOp, "MarshalConfig", err.Error())
+		}
+
+		if err := json.Unmarshal(rawConf, uninstallConf); err != nil {
+			return nil, lserror.NewWrappedError(err, currOp, "UnmarshalConfig", err.Error())
+		}
+	}
+
+	return uninstallConf, nil
 }
