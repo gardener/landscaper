@@ -22,6 +22,8 @@ const (
 	helmArgumentForce                = "force"
 	helmArgumentTimeout              = "timeout"
 	helmArgumentSkipSchemaValidation = "skipSchemaValidation"
+	helmArgumentTakeOwnership        = "takeOwnership"
+	helmArgumentWait                 = "wait"
 )
 
 // ValidateProviderConfiguration validates a helm deployer configuration
@@ -107,15 +109,17 @@ func ValidateHelmDeploymentConfiguration(fldPath *field.Path, deployConfig *helm
 }
 
 func ValidateInstallConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {
-	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce, helmArgumentSkipSchemaValidation})
+	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce,
+		helmArgumentSkipSchemaValidation, helmArgumentTakeOwnership, helmArgumentWait})
 }
 
 func ValidateUpgradeConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {
-	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce, helmArgumentSkipSchemaValidation})
+	return validateHelmArguments(fldPath, conf, []string{helmArgumentAtomic, helmArgumentTimeout, helmArgumentForce,
+		helmArgumentSkipSchemaValidation, helmArgumentTakeOwnership, helmArgumentWait})
 }
 
 func ValidateUninstallConfiguration(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON) field.ErrorList {
-	return validateHelmArguments(fldPath, conf, []string{helmArgumentTimeout})
+	return validateHelmArguments(fldPath, conf, []string{helmArgumentTimeout, helmArgumentWait})
 }
 
 func validateHelmArguments(fldPath *field.Path, conf map[string]lsv1alpha1.AnyJSON, validArguments []string) field.ErrorList {

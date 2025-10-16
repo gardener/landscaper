@@ -167,6 +167,8 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 	install.Atomic = installConfig.Atomic
 	install.Force = installConfig.Force
 	install.SkipSchemaValidation = installConfig.SkipSchemaValidation
+	install.TakeOwnership = installConfig.TakeOwnership
+	install.Wait = installConfig.Wait
 
 	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeInstallingRelease)
 	if err != nil {
@@ -221,6 +223,8 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 	upgrade.Atomic = upgradeConfig.Atomic
 	upgrade.Force = upgradeConfig.Force
 	upgrade.SkipSchemaValidation = upgradeConfig.SkipSchemaValidation
+	upgrade.TakeOwnership = upgradeConfig.TakeOwnership
+	upgrade.Wait = upgradeConfig.Wait
 
 	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeUpgradingRelease)
 	if err != nil {
@@ -275,8 +279,14 @@ func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {
 		return err
 	}
 
+	uninstallConfig, err := newUninstallConfiguration(c.helmConfig)
+	if err != nil {
+		return err
+	}
+
 	uninstall := action.NewUninstall(actionConfig)
 	uninstall.KeepHistory = false
+	uninstall.Wait = uninstallConfig.Wait
 
 	timeout, err := timeout.TimeoutExceeded(ctx, c.di, TimeoutCheckpointHelmBeforeDeletingRelease)
 	if err != nil {
