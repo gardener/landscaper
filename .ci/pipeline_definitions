@@ -38,19 +38,19 @@ landscaper:
               - committers
               - codeowners
       steps:
-        integration_test:
-          execute:
-          - integration-test
-          depends:
-          - ocm_build_and_publish
-          image: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/integration-test:1.25.3-alpine3.22'
-          output_dir: 'integration_test'
+        # integration_test:
+        #   execute:
+        #   - integration-test
+        #   depends:
+        #   - ocm_build_and_publish
+        #   image: 'europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper/integration-test:1.25.3-alpine3.22'
+        #   output_dir: 'integration_test'
         format:
           publish_to:
           - source
           depends:
           - verify
-          - integration_test
+          # - integration_test
     pull-request:
       steps:
         integration_test:
