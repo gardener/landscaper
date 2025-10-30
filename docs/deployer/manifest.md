@@ -79,8 +79,8 @@ spec:
         # jsonPath denotes the path of the field of the selected object to be checked and compared
         - jsonPath: .status.readyReplicas
           # operator specifies how the contents of the given field should be compared to the desired value
-          # allowed operators are: DoesNotExist(!), Exists(exists), Equals(=, ==), NotEquals(!=), In(in), NotIn(notIn)
-          operator: In
+          # allowed operators are: ! (field does not exist), exists (field exists), =, == (equal), != (not equal), in (matches at least one given value), notin (does not match any given value)
+          operator: in
           # values is a list of values that the field at jsonPath must match to according to the operators
           values:
           - value: 1
