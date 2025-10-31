@@ -59,8 +59,8 @@ readinessChecks:
     # jsonPath denotes the path of the field of the selected object to be checked and compared
     - jsonPath: .status.readyReplicas
       # operator specifies how the contents of the given field should be compared to the desired value
-      # allowed operators are: DoesNotExist(!), Exists(exists), Equals(=, ==), NotEquals(!=), In(in), NotIn(notIn)
-      operator: In
+      # allowed operators are: ! (field does not exist), exists (field exists), =, == (equal), != (not equal), in (matches at least one given value), notin (does not match any given value)
+      operator: in
       # values is a list of values that the field at jsonPath must match to according to the operators
       values:
       - value: 1
@@ -99,11 +99,11 @@ As already mentioned above, these selectors can only select resources that have 
 A field that is specified by its `jsonPath` will be extracted from each of the selected objects. The `jsonPath` is just a blank JSON path, i.e. without surrounding braces `{}`. The contents of the extracted field can be matched against a set of values according to an operator:
 
 - `exists`: the given field must exist, irrelevant of its value
-- `!` (NotExists): the given field must not exist
-- `=` (Equals): the given field must match to the given value, only one value is allowed
-- `!=` (NotEquals): the given fiels must _not_ match to the given value, only one value is allowed
-- `in`: the given field must many to _at least one_ of the given values
-- `notIn`: the given field mut _not_ match _to any_ of the given values
+- `!`: the given field must not exist
+- `=` or `==`: the given field must match to the given value, only one value is allowed
+- `!=`: the given field must _not_ match to the given value, only one value is allowed
+- `in`: the given field must match to _at least one_ of the given values
+- `notin`: the given field must _not_ match _to any_ of the given values
 
 Allowed values are given as a list of key-value pairs with the key always being `value` and the value being a valid desired value. Values can be either primitives like ints, strings or bools as well as complex types.
 
