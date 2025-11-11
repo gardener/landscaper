@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	dockerreference "github.com/containerd/containerd/reference/docker"
+	dockerreference "github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 )
 

@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"sigs.k8s.io/yaml"
@@ -93,7 +92,7 @@ func ReadProcessorMessage(r io.Reader) (*cdv2.ComponentDescriptor, cdv2.Resource
 				return nil, cdv2.Resource{}, nil, fmt.Errorf("unable to read %s: %w", ComponentDescriptorFile, err)
 			}
 		case ResourceBlobFile:
-			if f, err = ioutil.TempFile("", ""); err != nil {
+			if f, err = os.CreateTemp("", ""); err != nil {
 				return nil, cdv2.Resource{}, nil, fmt.Errorf("unable to create tempfile: %w", err)
 			}
 			if _, err := io.Copy(f, tr); err != nil {

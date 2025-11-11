@@ -86,7 +86,7 @@ var _ = Describe("Add", func() {
 		Expect(cd.Resources[0].Access.Object).To(HaveKeyWithValue("filename", BeAssignableToTypeOf("")))
 
 		var data bytes.Buffer
-		info, err := ca.BlobResolver.Resolve(ctx, cd.Resources[0], &data)
+		info, err := ca.Resolve(ctx, cd.Resources[0], &data)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(info.MediaType).To(Equal("application/x-tar"))
 		Expect(data.Len()).To(BeNumerically(">", 0))

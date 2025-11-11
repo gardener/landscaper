@@ -96,7 +96,7 @@ func (o *ComponentArchiveOptions) Run(ctx context.Context, log logr.Logger, fs v
 	}
 
 	// ensure that a optional archive exists
-	_, err := o.BuilderOptions.Build(fs)
+	_, err := o.Build(fs)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (o *ComponentArchiveOptions) Run(ctx context.Context, log logr.Logger, fs v
 	if err := o.copyToTempDir(fs); err != nil {
 		return err
 	}
-	o.BuilderOptions.ComponentArchivePath = o.TempDir
+	o.ComponentArchivePath = o.TempDir
 
 	if len(o.ResourcesPaths) != 0 {
 		add := &resources.Options{
@@ -206,8 +206,8 @@ func (o *ComponentArchiveOptions) Complete(args []string) error {
 	if len(args) == 0 {
 		return errors.New("at least a component archive path argument has to be defined")
 	}
-	o.BuilderOptions.ComponentArchivePath = args[0]
-	o.BuilderOptions.Default()
+	o.ComponentArchivePath = args[0]
+	o.Default()
 
 	if len(args) == 2 {
 		o.CTFPath = args[1]
@@ -219,5 +219,5 @@ func (o *ComponentArchiveOptions) Complete(args []string) error {
 }
 
 func (o *ComponentArchiveOptions) validate() error {
-	return o.BuilderOptions.Validate()
+	return o.Validate()
 }

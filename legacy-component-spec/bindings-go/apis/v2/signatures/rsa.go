@@ -23,7 +23,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 )
@@ -38,7 +38,7 @@ type RSASigner struct {
 // The private key has to be in the PKCS #1, ASN.1 DER form, see x509.ParsePKCS1PrivateKey.
 // mediaType defines the format of the signature that is saved to the component descriptor.
 func CreateRSASignerFromKeyFile(pathToPrivateKey, mediaType string) (*RSASigner, error) {
-	privKeyFile, err := ioutil.ReadFile(pathToPrivateKey)
+	privKeyFile, err := os.ReadFile(pathToPrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open private key file: %w", err)
 	}
@@ -131,7 +131,7 @@ func CreateRSAVerifier(publicKey *rsa.PublicKey) (*RSAVerifier, error) {
 // CreateRSAVerifierFromKeyFile creates an instance of RsaVerifier from a rsa public key file.
 // The private key has to be in the PKIX, ASN.1 DER form, see x509.ParsePKIXPublicKey.
 func CreateRSAVerifierFromKeyFile(pathToPublicKey string) (*RSAVerifier, error) {
-	publicKey, err := ioutil.ReadFile(pathToPublicKey)
+	publicKey, err := os.ReadFile(pathToPublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open public key file: %w", err)
 	}

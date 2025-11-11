@@ -455,7 +455,7 @@ func (ca *ComponentArchiveBlobResolver) Resolve(ctx context.Context, res v2.Reso
 
 func (ca *ComponentArchiveBlobResolver) resolve(_ context.Context, res v2.Resource) (*BlobInfo, vfs.File, error) {
 	if res.Access == nil || res.Access.GetType() != v2.LocalFilesystemBlobType {
-		return nil, nil, UnsupportedResolveType
+		return nil, nil, ErrUnsupportedResolveType
 	}
 	localFSAccess := &v2.LocalFilesystemBlobAccess{}
 	if err := res.Access.DecodeInto(localFSAccess); err != nil {

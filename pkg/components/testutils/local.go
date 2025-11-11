@@ -94,7 +94,7 @@ func (ca *LocalFilesystemBlobResolver) Resolve(_ context.Context, res types.Reso
 
 func (ca *LocalFilesystemBlobResolver) resolve(res types.Resource) (*ctf.BlobInfo, io.ReadCloser, error) {
 	if res.Access == nil || res.Access.GetType() != cdv2.LocalFilesystemBlobType {
-		return nil, nil, ctf.UnsupportedResolveType
+		return nil, nil, ctf.ErrUnsupportedResolveType
 	}
 
 	localFSAccess := &cdv2.LocalFilesystemBlobAccess{}

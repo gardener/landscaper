@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"time"
 
 	"github.com/opencontainers/go-digest"
@@ -92,7 +91,7 @@ func (b *ManifestBuilder) Build(ctx context.Context) (*ocispecv1.Manifest, error
 		Digest:    digest.FromBytes(componentConfigBytes),
 		Size:      int64(len(componentConfigBytes)),
 	}
-	if err := b.store.Add(componentConfigDesc, ioutil.NopCloser(bytes.NewBuffer(componentConfigBytes))); err != nil {
+	if err := b.store.Add(componentConfigDesc, io.NopCloser(bytes.NewBuffer(componentConfigBytes))); err != nil {
 		return nil, fmt.Errorf("unable to add component config layer to internal store: %w", err)
 	}
 
@@ -112,17 +111,18 @@ func (b *ManifestBuilder) addComponentDescriptorDesc() (ocispecv1.Descriptor, er
 		return ocispecv1.Descriptor{}, fmt.Errorf("unable to encode component descriptor: %w", err)
 	}
 
-	if b.componentDescriptorStorageType == ComponentDescriptorJSONMimeType {
+	switch b.componentDescriptorStorageType {
+	case ComponentDescriptorJSONMimeType:
 		componentDescriptorDesc := ocispecv1.Descriptor{
 			MediaType: ComponentDescriptorJSONMimeType,
 			Digest:    digest.FromBytes(data),
 			Size:      int64(len(data)),
 		}
-		if err := b.store.Add(componentDescriptorDesc, ioutil.NopCloser(bytes.NewBuffer(data))); err != nil {
+		if err := b.store.Add(componentDescriptorDesc, io.NopCloser(bytes.NewBuffer(data))); err != nil {
 			return ocispecv1.Descriptor{}, fmt.Errorf("unable to add component descriptor layer to internal store: %w", err)
 		}
 		return componentDescriptorDesc, nil
-	} else if b.componentDescriptorStorageType == ComponentDescriptorTarMimeType || b.componentDescriptorStorageType == ComponentDescriptorTarMimeTypeOCM {
+	case ComponentDescriptorTarMimeType, ComponentDescriptorTarMimeTypeOCM:
 		// create tar with component descriptor
 		var buf bytes.Buffer
 		tw := tar.NewWriter(&buf)
@@ -146,7 +146,7 @@ func (b *ManifestBuilder) addComponentDescriptorDesc() (ocispecv1.Descriptor, er
 			Digest:    digest.FromBytes(buf.Bytes()),
 			Size:      int64(buf.Len()),
 		}
-		if err := b.store.Add(componentDescriptorDesc, ioutil.NopCloser(&buf)); err != nil {
+		if err := b.store.Add(componentDescriptorDesc, io.NopCloser(&buf)); err != nil {
 			return ocispecv1.Descriptor{}, fmt.Errorf("unable to add component descriptor layer to internal store: %w", err)
 		}
 		return componentDescriptorDesc, nil
@@ -163,7 +163,7 @@ func (b *ManifestBuilder) addLocalBlobs(ctx context.Context) ([]ocispecv1.Descri
 		var blob bytes.Buffer
 		info, err := b.archive.Resolve(ctx, res, &blob)
 		if err != nil {
-			if err == ctf.UnsupportedResolveType {
+			if err == ctf.ErrUnsupportedResolveType {
 				continue
 			}
 			return nil, fmt.Errorf("unable to get blob for resource %s: %w", res.GetName(), err)
@@ -174,7 +174,7 @@ func (b *ManifestBuilder) addLocalBlobs(ctx context.Context) ([]ocispecv1.Descri
 			Digest:    digest.Digest(info.Digest),
 			Size:      info.Size,
 		}
-		if err := b.store.Add(desc, ioutil.NopCloser(&blob)); err != nil {
+		if err := b.store.Add(desc, io.NopCloser(&blob)); err != nil {
 			return nil, fmt.Errorf("unable to store blob: %w", err)
 		}
 

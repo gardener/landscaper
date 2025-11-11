@@ -106,7 +106,7 @@ func (c ComponentDescriptor) GetComponentReferences(selectors ...IdentitySelecto
 		}
 	}
 	if len(refs) == 0 {
-		return refs, NotFound
+		return refs, ErrNotFound
 	}
 	return refs, nil
 }
@@ -118,7 +118,7 @@ func (c ComponentDescriptor) GetResourceByIdentity(id Identity) (Resource, error
 			return res, nil
 		}
 	}
-	return Resource{}, NotFound
+	return Resource{}, ErrNotFound
 }
 
 // GetComponentReferencesByName returns all component references with a given name.
@@ -166,7 +166,7 @@ func (c ComponentDescriptor) GetResourcesBySelector(selectors ...IdentitySelecto
 		}
 	}
 	if len(resources) == 0 {
-		return resources, NotFound
+		return resources, ErrNotFound
 	}
 	return resources, nil
 }
@@ -192,7 +192,7 @@ func (c ComponentDescriptor) getResourceBySelectors(selectors []IdentitySelector
 		resources = append(resources, res)
 	}
 	if len(resources) == 0 {
-		return resources, NotFound
+		return resources, ErrNotFound
 	}
 	return resources, nil
 }

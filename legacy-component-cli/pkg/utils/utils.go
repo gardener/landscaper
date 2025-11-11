@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"net/http"
@@ -194,7 +193,7 @@ func WriteFileToTARArchive(filename string, inputReader io.Reader, outputWriter 
 		return errors.New("outputWriter must not be nil")
 	}
 
-	tempfile, err := ioutil.TempFile("", "")
+	tempfile, err := os.CreateTemp("", "")
 	if err != nil {
 		return fmt.Errorf("unable to create tempfile: %w", err)
 	}

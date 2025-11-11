@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 	cdoci "github.com/gardener/landscaper/legacy-component-spec/bindings-go/oci"
@@ -44,7 +44,7 @@ func (d *localOCIBlobDownloader) Process(ctx context.Context, r io.Reader, w io.
 		return fmt.Errorf("unsupported access type: %s", res.Access.Type)
 	}
 
-	tmpfile, err := ioutil.TempFile("", "")
+	tmpfile, err := os.CreateTemp("", "")
 	if err != nil {
 		return fmt.Errorf("unable to create tempfile: %w", err)
 	}

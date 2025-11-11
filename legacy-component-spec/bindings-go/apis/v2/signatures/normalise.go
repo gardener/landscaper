@@ -91,7 +91,7 @@ func normaliseComponentDescriptor(cd cdv2.ComponentDescriptor) ([]byte, error) {
 	}
 
 	componentReferences := []interface{}{}
-	for _, ref := range cd.ComponentSpec.ComponentReferences {
+	for _, ref := range cd.ComponentReferences {
 		extraIdentity := buildExtraIdentity(ref.ExtraIdentity)
 
 		digest := []Entry{
@@ -111,7 +111,7 @@ func normaliseComponentDescriptor(cd cdv2.ComponentDescriptor) ([]byte, error) {
 	}
 
 	resources := []interface{}{}
-	for _, res := range cd.ComponentSpec.Resources {
+	for _, res := range cd.Resources {
 		extraIdentity := buildExtraIdentity(res.ExtraIdentity)
 
 		//ignore access.type=None for normalisation and hash calculation
@@ -145,9 +145,9 @@ func normaliseComponentDescriptor(cd cdv2.ComponentDescriptor) ([]byte, error) {
 	}
 
 	componentSpec := []Entry{
-		{"name": cd.ComponentSpec.Name},
-		{"version": cd.ComponentSpec.Version},
-		{"provider": cd.ComponentSpec.Provider},
+		{"name": cd.Name},
+		{"version": cd.Version},
+		{"provider": cd.Provider},
 		{"componentReferences": componentReferences},
 		{"resources": resources},
 	}

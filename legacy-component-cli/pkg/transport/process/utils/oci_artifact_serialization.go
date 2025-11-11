@@ -10,7 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 
@@ -45,7 +45,7 @@ func SerializeOCIArtifact(ociArtifact oci.Artifact, cache cache.Cache) (io.ReadC
 		return nil, errors.New("cache must not be nil")
 	}
 
-	tmpfile, err := ioutil.TempFile("", "")
+	tmpfile, err := os.CreateTemp("", "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create tempfile: %w", err)
 	}
@@ -185,7 +185,7 @@ func DeserializeOCIArtifact(reader io.Reader, cache cache.Cache) (*oci.Artifact,
 			}
 			isImageIndex = true
 		} else if strings.HasPrefix(header.Name, BlobsDir) {
-			tmpfile, err := ioutil.TempFile("", "")
+			tmpfile, err := os.CreateTemp("", "")
 			if err != nil {
 				return nil, fmt.Errorf("unable to create tempfile: %w", err)
 			}

@@ -361,7 +361,7 @@ var _ = Describe("Add", func() {
 				},
 			)
 			Expect(err).To(HaveOccurred())
-			Expect(errors.Is(err, ctf.NotFoundError)).To(BeTrue())
+			Expect(errors.Is(err, ctf.ErrNotFoundError)).To(BeTrue())
 		})
 
 		It("should add image sources with the component reference label as component reference", func() {

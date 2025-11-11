@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -157,7 +156,7 @@ func (e *Environment) GetConfigFileBytes() ([]byte, error) {
 // setups creates all necessary files for the registry.
 // This includes the configuration and the certificates.
 func (e *Environment) setup() error {
-	configPath, err := ioutil.TempDir(os.TempDir(), "registry-")
+	configPath, err := os.MkdirTemp(os.TempDir(), "registry-")
 	if err != nil {
 		return fmt.Errorf("unable to create temporary config path: %w", err)
 	}
@@ -178,13 +177,13 @@ func (e *Environment) setup() error {
 			certPath = filepath.Join(e.configDir, "cert.pem")
 			keyPath  = filepath.Join(e.configDir, "key.pem")
 		)
-		if err := ioutil.WriteFile(caPath, cert.CA, os.ModePerm); err != nil {
+		if err := os.WriteFile(caPath, cert.CA, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write ca to %q: %w", caPath, err)
 		}
-		if err := ioutil.WriteFile(certPath, cert.Cert, os.ModePerm); err != nil {
+		if err := os.WriteFile(certPath, cert.Cert, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write ca to %q: %w", certPath, err)
 		}
-		if err := ioutil.WriteFile(keyPath, cert.Key, os.ModePerm); err != nil {
+		if err := os.WriteFile(keyPath, cert.Key, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write ca to %q: %w", keyPath, err)
 		}
 
@@ -210,7 +209,7 @@ func (e *Environment) setup() error {
 			Username: "testuser",
 			Password: RandString(10),
 		}
-		if err := ioutil.WriteFile(
+		if err := os.WriteFile(
 			httpasswdPath,
 			[]byte(CreateHtpasswd(e.BasicAuth.Username, e.BasicAuth.Password)),
 			os.ModePerm); err != nil {
@@ -227,7 +226,7 @@ func (e *Environment) setup() error {
 		return fmt.Errorf("unable to marshal registry config: %w", err)
 	}
 	e.configPath = filepath.Join(e.configDir, "config.json")
-	if err := ioutil.WriteFile(e.configPath, configBytes, os.ModePerm); err != nil {
+	if err := os.WriteFile(e.configPath, configBytes, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to write configuration file %q: %w", e.configPath, err)
 	}
 	return nil

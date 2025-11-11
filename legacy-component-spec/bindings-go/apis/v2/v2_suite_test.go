@@ -144,7 +144,7 @@ var _ = Describe("Helper", func() {
 					"name":    "image1",
 					"nomatch": "fail",
 				})
-				Expect(err).To(Equal(v2.NotFound))
+				Expect(err).To(Equal(v2.ErrNotFound))
 				Expect(res).To(HaveLen(0))
 			})
 
@@ -174,7 +174,7 @@ var _ = Describe("Helper", func() {
 	It("should select no resources by a their type", func() {
 		_, err := comp.GetResourcesByType(v2.GitType)
 		Expect(err).To(HaveOccurred())
-		Expect(err).To(Equal(v2.NotFound))
+		Expect(err).To(Equal(v2.ErrNotFound))
 	})
 
 })

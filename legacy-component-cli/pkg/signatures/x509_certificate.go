@@ -9,7 +9,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 // CreateAndVerifyX509CertificateFromFiles creates and verifies a x509 certificate from certificate files.
@@ -19,7 +19,7 @@ func CreateAndVerifyX509CertificateFromFiles(certPath, intermediateCACertsPath, 
 
 	var rootCACert []byte
 	if rootCACertPath != "" {
-		rootCACert, err = ioutil.ReadFile(rootCACertPath)
+		rootCACert, err = os.ReadFile(rootCACertPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read root ca certificate file: %w", err)
 		}
@@ -27,13 +27,13 @@ func CreateAndVerifyX509CertificateFromFiles(certPath, intermediateCACertsPath, 
 
 	var intermediateCACerts []byte
 	if intermediateCACertsPath != "" {
-		intermediateCACerts, err = ioutil.ReadFile(intermediateCACertsPath)
+		intermediateCACerts, err = os.ReadFile(intermediateCACertsPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read intermediate ca certificates file: %w", err)
 		}
 	}
 
-	cert, err := ioutil.ReadFile(certPath)
+	cert, err := os.ReadFile(certPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read certificate file: %w", err)
 	}

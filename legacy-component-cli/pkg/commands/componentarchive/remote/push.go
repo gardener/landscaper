@@ -80,7 +80,7 @@ func (o *PushOptions) Run(ctx context.Context, log logr.Logger, fs vfs.FileSyste
 		return fmt.Errorf("unable to build oci client: %s", err.Error())
 	}
 
-	archive, err := o.BuilderOptions.Build(fs)
+	archive, err := o.Build(fs)
 	if err != nil {
 		return fmt.Errorf("unable to build component archive: %w", err)
 	}
@@ -121,12 +121,12 @@ func (o *PushOptions) Run(ctx context.Context, log logr.Logger, fs vfs.FileSyste
 func (o *PushOptions) Complete(args []string) error {
 	switch len(args) {
 	case 1:
-		o.BuilderOptions.ComponentArchivePath = args[0]
+		o.ComponentArchivePath = args[0]
 	case 4:
-		o.BuilderOptions.BaseUrl = args[0]
-		o.BuilderOptions.Name = args[1]
-		o.BuilderOptions.Version = args[2]
-		o.BuilderOptions.ComponentArchivePath = args[3]
+		o.BaseUrl = args[0]
+		o.Name = args[1]
+		o.Version = args[2]
+		o.ComponentArchivePath = args[3]
 	}
 
 	var err error

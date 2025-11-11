@@ -6,10 +6,9 @@ package cache
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,7 +52,7 @@ var _ = Describe("Cache", func() {
 		})
 
 		It("should detect tampered data and remove the tempered blob", func() {
-			path, err := ioutil.TempDir(os.TempDir(), "ocicache")
+			path, err := os.MkdirTemp(os.TempDir(), "ocicache")
 			Expect(err).ToNot(HaveOccurred())
 
 			c, err := NewCache(logr.Discard(), WithBasePath(path))
@@ -72,7 +71,7 @@ var _ = Describe("Cache", func() {
 		})
 
 		It("should detect tampered data (size shortcut) and remove the tempered blob", func() {
-			path, err := ioutil.TempDir(os.TempDir(), "ocicache")
+			path, err := os.MkdirTemp(os.TempDir(), "ocicache")
 			Expect(err).ToNot(HaveOccurred())
 
 			c, err := NewCache(logr.Discard(), WithBasePath(path))
@@ -93,7 +92,7 @@ var _ = Describe("Cache", func() {
 		Context("metrics", func() {
 			It("should read data from the in memory cache", func() {
 				uid := "unit-test"
-				dir, err := ioutil.TempDir(os.TempDir(), "test-")
+				dir, err := os.MkdirTemp(os.TempDir(), "test-")
 				Expect(err).ToNot(HaveOccurred())
 				defer func() {
 					Expect(os.RemoveAll(dir)).To(Succeed())
@@ -430,7 +429,7 @@ func readIntoBuffer(r io.ReadCloser) *bytes.Buffer {
 func exampleDataSet(size int) (ocispecv1.Descriptor, io.ReadCloser) {
 	buf := exampleData(size)
 	desc := exampleDesc(buf)
-	return desc, ioutil.NopCloser(buf)
+	return desc, io.NopCloser(buf)
 }
 
 func exampleDesc(buf *bytes.Buffer) ocispecv1.Descriptor {

@@ -43,7 +43,7 @@ func (l ListResolver) Resolve(_ context.Context, repoCtx cdv2.Repository, name, 
 		}
 	}
 
-	return nil, NotFoundError
+	return nil, ErrNotFoundError
 }
 
 func (l ListResolver) ResolveWithBlobResolver(ctx context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, BlobResolver, error) {
@@ -52,7 +52,7 @@ func (l ListResolver) ResolveWithBlobResolver(ctx context.Context, repoCtx cdv2.
 		return nil, nil, err
 	}
 	if l.blobResolver == nil {
-		return nil, nil, BlobResolverNotDefinedError
+		return nil, nil, ErrBlobResolverNotDefinedError
 	}
 	return cd, l.blobResolver, err
 }

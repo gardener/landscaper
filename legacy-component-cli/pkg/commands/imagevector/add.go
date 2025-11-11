@@ -291,8 +291,8 @@ func (o *AddOptions) validate() error {
 func (o *AddOptions) AddFlags(set *pflag.FlagSet) {
 	set.StringVar(&o.ComponentDescriptorPath, "comp-desc", "", "path to the component descriptor directory")
 	set.StringVar(&o.ImageVectorPath, "image-vector", "", "The path to the resources defined as yaml or json")
-	set.StringArrayVar(&o.ParseImageOptions.ComponentReferencePrefixes, "component-prefixes", []string{}, "Specify all prefixes that define a image  from another component")
-	set.StringArrayVar(&o.ParseImageOptions.ExcludeComponentReference, "exclude-component-reference", []string{}, "Specify all image name that should not be added as component reference")
+	set.StringArrayVar(&o.ComponentReferencePrefixes, "component-prefixes", []string{}, "Specify all prefixes that define a image  from another component")
+	set.StringArrayVar(&o.ExcludeComponentReference, "exclude-component-reference", []string{}, "Specify all image name that should not be added as component reference")
 	set.StringArrayVar(&o.ParseImageOptions.GenericDependencies, "generic-dependency", []string{}, "Specify all image source names that are a generic dependency.")
 	set.StringVar(&o.GenericDependencies, "generic-dependencies", "", "Specify all prefixes that define a image  from another component")
 	o.OciOptions.AddFlags(set)

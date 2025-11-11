@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -61,7 +60,7 @@ var _ = Describe("ComponentArchive", func() {
 			ca, err := ctf.ComponentArchiveFromPath("./testdata/component-01")
 			Expect(err).ToNot(HaveOccurred())
 
-			file, err := ioutil.TempFile(os.TempDir(), "ca-tar-")
+			file, err := os.CreateTemp(os.TempDir(), "ca-tar-")
 			Expect(err).ToNot(HaveOccurred())
 			defer func() {
 				Expect(os.Remove(file.Name())).ToNot(HaveOccurred())

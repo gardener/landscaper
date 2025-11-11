@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/docker/cli/cli/config"
 	dockerconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/credentials"
@@ -44,7 +43,7 @@ func (b *KeyringBuilder) applyDefaults() {
 
 	if !b.disableDefaultConfig {
 		// add docker default config to config files
-		defaultDockerConfigFile := filepath.Join(config.Dir(), config.ConfigFileName)
+		defaultDockerConfigFile := filepath.Join(dockerconfig.Dir(), dockerconfig.ConfigFileName)
 
 		// only add default if the file exists
 		if _, err := b.fs.Stat(defaultDockerConfigFile); err == nil {

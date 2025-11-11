@@ -59,7 +59,7 @@ func ResolveInLocalCache(fs vfs.FileSystem, repoCtx cdv2.OCIRegistryRepository, 
 	data, err := vfs.ReadFile(fs, componentPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, ctf.NotFoundError
+			return nil, ctf.ErrNotFoundError
 		}
 		return nil, fmt.Errorf("unable to read file from %q: %w", componentPath, err)
 	}

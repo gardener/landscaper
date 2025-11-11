@@ -4,6 +4,7 @@ go 1.25.4
 
 require (
 	github.com/containerd/containerd v1.7.29
+	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.5.2+incompatible
 	github.com/drone/envsubst v1.0.3
 	github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000
@@ -44,7 +45,6 @@ require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
-	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.4 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect

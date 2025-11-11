@@ -30,7 +30,7 @@ func ExtraIdentityKey(name string) string {
 var (
 	// ReferencedResourceNotFoundError is an error that indicates that a image is referenced by a external component
 	// but it cannot be found in the referenced component.
-	ReferencedResourceNotFoundError = errors.New("ReferencedResourceNotFound")
+	ErrReferencedResourceNotFoundError = errors.New("ReferencedResourceNotFound")
 )
 
 var (

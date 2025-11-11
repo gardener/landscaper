@@ -92,7 +92,7 @@ var _ = Describe("ListResolver", func() {
 		Expect(err).ToNot(HaveOccurred())
 		_, err = lr.Resolve(context.TODO(), &repoCtx, "example.com/b", "0.0.0")
 		Expect(err).To(HaveOccurred())
-		Expect(err).To(Equal(ctf.NotFoundError))
+		Expect(err).To(Equal(ctf.ErrNotFoundError))
 	})
 
 })

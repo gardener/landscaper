@@ -15,7 +15,7 @@
 package codec_test
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -33,7 +33,7 @@ func TestConfig(t *testing.T) {
 var _ = Describe("serializer", func() {
 
 	It("should decode a simple component", func() {
-		data, err := ioutil.ReadFile("../../language-independent/test-resources/component_descriptor_v2.yaml")
+		data, err := os.ReadFile("../../language-independent/test-resources/component_descriptor_v2.yaml")
 		Expect(err).ToNot(HaveOccurred())
 
 		var comp v2.ComponentDescriptor
@@ -64,7 +64,7 @@ var _ = Describe("serializer", func() {
 	})
 
 	It("should encode a simple component", func() {
-		data, err := ioutil.ReadFile("../../language-independent/test-resources/component_descriptor_v2.yaml")
+		data, err := os.ReadFile("../../language-independent/test-resources/component_descriptor_v2.yaml")
 		Expect(err).ToNot(HaveOccurred())
 
 		var comp v2.ComponentDescriptor

@@ -165,5 +165,5 @@ func (u *UnstructuredTypedObject) MarshalJSON() ([]byte, error) {
 	return data, nil
 }
 
-func (_ UnstructuredTypedObject) OpenAPISchemaType() []string { return []string{"object"} }
-func (_ UnstructuredTypedObject) OpenAPISchemaFormat() string { return "" }
+func (UnstructuredTypedObject) OpenAPISchemaType() []string { return []string{"object"} }
+func (UnstructuredTypedObject) OpenAPISchemaFormat() string { return "" }

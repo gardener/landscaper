@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	pathutil "path"
 	"path/filepath"
@@ -114,7 +113,8 @@ func (input *BlobInput) Read(ctx context.Context, fs vfs.FileSystem, inputFilePa
 	}
 
 	// automatically tar the input artifact if it is a directory
-	if input.Type == DirInputType {
+	switch input.Type {
+	case DirInputType:
 		if !inputInfo.IsDir() {
 			return nil, fmt.Errorf("resource type is dir but a file was provided")
 		}
@@ -151,9 +151,9 @@ func (input *BlobInput) Read(ctx context.Context, fs vfs.FileSystem, inputFilePa
 		return &BlobOutput{
 			Digest: digest.FromBytes(data.Bytes()).String(),
 			Size:   int64(data.Len()),
-			Reader: ioutil.NopCloser(&data),
+			Reader: io.NopCloser(&data),
 		}, nil
-	} else if input.Type == FileInputType {
+	case FileInputType:
 		if inputInfo.IsDir() {
 			return nil, fmt.Errorf("resource type is file but a directory was provided")
 		}
@@ -184,7 +184,7 @@ func (input *BlobInput) Read(ctx context.Context, fs vfs.FileSystem, inputFilePa
 			return &BlobOutput{
 				Digest: digest.FromBytes(data.Bytes()).String(),
 				Size:   int64(data.Len()),
-				Reader: ioutil.NopCloser(&data),
+				Reader: io.NopCloser(&data),
 			}, nil
 		}
 		return &BlobOutput{
@@ -192,7 +192,7 @@ func (input *BlobInput) Read(ctx context.Context, fs vfs.FileSystem, inputFilePa
 			Size:   inputInfo.Size(),
 			Reader: inputBlob,
 		}, nil
-	} else {
+	default:
 		return nil, fmt.Errorf("unknown input type %q", inputPath)
 	}
 }

@@ -5,7 +5,7 @@
 package cdutils_test
 
 import (
-	"io/ioutil"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,7 +19,7 @@ var _ = Describe("resource utils", func() {
 
 	Context("#GetImageReferenceFromList", func() {
 		It("should return the image from a component descriptor list", func() {
-			data, err := ioutil.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
+			data, err := os.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			cd := cdv2.ComponentDescriptor{}
 			Expect(codec.Decode(data, &cd)).To(Succeed())
@@ -32,7 +32,7 @@ var _ = Describe("resource utils", func() {
 		})
 
 		It("should return an error if no component matches the given name", func() {
-			data, err := ioutil.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
+			data, err := os.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			cd := cdv2.ComponentDescriptor{}
 			Expect(codec.Decode(data, &cd)).To(Succeed())
@@ -46,7 +46,7 @@ var _ = Describe("resource utils", func() {
 
 	Context("#GetImageReferenceByName", func() {
 		It("should return the image from a component descriptor", func() {
-			data, err := ioutil.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
+			data, err := os.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(codec.Decode(data, cd)).To(Succeed())
@@ -58,7 +58,7 @@ var _ = Describe("resource utils", func() {
 		})
 
 		It("should return an error if no resource matches the given name", func() {
-			data, err := ioutil.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
+			data, err := os.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(codec.Decode(data, cd)).To(Succeed())

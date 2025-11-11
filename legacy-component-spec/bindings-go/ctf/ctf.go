@@ -40,11 +40,11 @@ const ManifestFileName = "manifest.json"
 // BlobsDirectoryName is the name of the blob directory in the tar.
 const BlobsDirectoryName = "blobs"
 
-var UnsupportedResolveType = errors.New("UnsupportedResolveType")
+var ErrUnsupportedResolveType = errors.New("UnsupportedResolveType")
 
-var NotFoundError = errors.New("ComponentDescriptorNotFound")
+var ErrNotFoundError = errors.New("ComponentDescriptorNotFound")
 
-var BlobResolverNotDefinedError = errors.New("BlobResolverNotDefined")
+var ErrBlobResolverNotDefinedError = errors.New("BlobResolverNotDefined")
 
 // ComponentResolver describes a general interface to resolve a component descriptor
 type ComponentResolver interface {
@@ -296,7 +296,7 @@ func (a *AggregatedBlobResolver) getResolver(res v2.Resource) (BlobResolver, err
 			return resolver, nil
 		}
 	}
-	return nil, UnsupportedResolveType
+	return nil, ErrUnsupportedResolveType
 }
 
 // AggregateBlobResolvers aggregates two resolvers to one by using aggregated blob resolver.

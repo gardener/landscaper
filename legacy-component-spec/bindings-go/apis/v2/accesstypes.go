@@ -70,7 +70,7 @@ func NewRelativeOciAccess(ref string) *RelativeOciAccess {
 	}
 }
 
-func (_ *RelativeOciAccess) GetType() string {
+func (*RelativeOciAccess) GetType() string {
 	return RelativeOciReferenceType
 }
 
@@ -107,7 +107,7 @@ func NewOCIBlobAccess(ref, mediaType, digest string, size int64) *OCIBlobAccess 
 	}
 }
 
-func (_ *OCIBlobAccess) GetType() string {
+func (*OCIBlobAccess) GetType() string {
 	return OCIBlobType
 }
 
@@ -131,7 +131,7 @@ type LocalOCIBlobAccess struct {
 	Digest string `json:"digest"`
 }
 
-func (_ *LocalOCIBlobAccess) GetType() string {
+func (*LocalOCIBlobAccess) GetType() string {
 	return LocalOCIBlobType
 }
 
@@ -159,7 +159,7 @@ type LocalFilesystemBlobAccess struct {
 	MediaType string `json:"mediaType,omitempty"`
 }
 
-func (_ *LocalFilesystemBlobAccess) GetType() string {
+func (*LocalFilesystemBlobAccess) GetType() string {
 	return LocalFilesystemBlobType
 }
 
@@ -184,7 +184,7 @@ func NewWebAccess(url string) *Web {
 	}
 }
 
-func (_ *Web) GetType() string {
+func (*Web) GetType() string {
 	return WebType
 }
 

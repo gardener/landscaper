@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/ghodss/yaml"
 	"github.com/xeipuuv/gojsonschema"
+	"sigs.k8s.io/yaml"
 )
 
 // Interface defines a selector interface that

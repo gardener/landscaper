@@ -71,7 +71,7 @@ func (o *X509CertificateVerifyOptions) Run(ctx context.Context, log logr.Logger,
 		return fmt.Errorf("unable to create rsa verifier: %w", err)
 	}
 
-	if err := o.GenericVerifyOptions.VerifyWithVerifier(ctx, log, fs, verifier); err != nil {
+	if err := o.VerifyWithVerifier(ctx, log, fs, verifier); err != nil {
 		return fmt.Errorf("unable to verify component descriptor: %w", err)
 	}
 	return nil

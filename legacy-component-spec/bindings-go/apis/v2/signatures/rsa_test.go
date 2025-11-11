@@ -18,7 +18,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/pem"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -38,7 +37,7 @@ var _ = Describe("RSA sign/verify", func() {
 
 	BeforeEach(func() {
 		var err error
-		dir, err = ioutil.TempDir("", "component-spec-test")
+		dir, err = os.MkdirTemp("", "component-spec-test")
 		Expect(err).To(BeNil())
 
 		// openssl genpkey -out private.key -algorithm RSA

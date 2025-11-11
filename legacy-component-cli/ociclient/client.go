@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -48,7 +47,7 @@ type client struct {
 	allowPlainHttp bool
 	getHostConfig  docker.RegistryHosts
 
-	knownMediaTypes sets.String
+	knownMediaTypes sets.String //nolint:all
 }
 
 // NewClient creates a new OCI Client.
@@ -98,7 +97,7 @@ func NewClient(log logr.Logger, opts ...Option) (*client, error) {
 	} else if log.V(2).Enabled() {
 		cLogger.SetLevel(logrus.ErrorLevel)
 	}
-	containerdlog.L = logrus.NewEntry(cLogger)
+	containerdlog.L = logrus.NewEntry(cLogger) //nolint:all
 
 	return &client{
 		log:            log,
@@ -331,7 +330,7 @@ func (c *client) PushRawManifest(ctx context.Context, ref string, desc ocispecv1
 				Digest:    digest.FromBytes(dummyConfig),
 				Size:      int64(len(dummyConfig)),
 			}
-			if err := tempCache.Add(dummyDesc, ioutil.NopCloser(bytes.NewBuffer(dummyConfig))); err != nil {
+			if err := tempCache.Add(dummyDesc, io.NopCloser(bytes.NewBuffer(dummyConfig))); err != nil {
 				return fmt.Errorf("unable to add dummy config to cache: %w", err)
 			}
 			if err := c.pushContent(ctx, tempCache, pusher, dummyDesc); err != nil {
@@ -350,7 +349,7 @@ func (c *client) PushRawManifest(ctx context.Context, ref string, desc ocispecv1
 		}
 	}
 
-	if err := tempCache.Add(desc, ioutil.NopCloser(bytes.NewBuffer(rawManifest))); err != nil {
+	if err := tempCache.Add(desc, io.NopCloser(bytes.NewBuffer(rawManifest))); err != nil {
 		return fmt.Errorf("unable to add manifest to cache: %w", err)
 	}
 
@@ -408,7 +407,7 @@ func (c *client) pushManifest(ctx context.Context, manifest *ocispecv1.Manifest,
 			Digest:    digest.FromBytes(dummyConfig),
 			Size:      int64(len(dummyConfig)),
 		}
-		if err := cache.Add(dummyDesc, ioutil.NopCloser(bytes.NewBuffer(dummyConfig))); err != nil {
+		if err := cache.Add(dummyDesc, io.NopCloser(bytes.NewBuffer(dummyConfig))); err != nil {
 			return ocispecv1.Descriptor{}, fmt.Errorf("unable to add dummy config to cache: %w", err)
 		}
 		if err := c.pushContent(ctx, cache, pusher, dummyDesc); err != nil {
@@ -437,7 +436,7 @@ func (c *client) pushManifest(ctx context.Context, manifest *ocispecv1.Manifest,
 		return ocispecv1.Descriptor{}, fmt.Errorf("unable to marshal manifest: %w", err)
 	}
 
-	if err := cache.Add(manifestDesc, ioutil.NopCloser(bytes.NewBuffer(manifestBytes))); err != nil {
+	if err := cache.Add(manifestDesc, io.NopCloser(bytes.NewBuffer(manifestBytes))); err != nil {
 		return ocispecv1.Descriptor{}, fmt.Errorf("unable to add manifest to cache: %w", err)
 	}
 
@@ -479,7 +478,7 @@ func (c *client) pushImageIndex(ctx context.Context, indexArtifact *oci.Index, p
 	}
 
 	manifestBuf := bytes.NewBuffer(indexBytes)
-	if err := cache.Add(indexDescriptor, ioutil.NopCloser(manifestBuf)); err != nil {
+	if err := cache.Add(indexDescriptor, io.NopCloser(manifestBuf)); err != nil {
 		return err
 	}
 
@@ -732,7 +731,7 @@ func (c *client) ListRepositories(ctx context.Context, ref string) ([]string, er
 		return nil, fmt.Errorf("unable to get authentication: %w", err)
 	}
 
-	trp, err := transport.New(repo.Context().Registry, auth, c.transport, []string{"registry:catalog:*"})
+	trp, err := transport.New(repo.Context().Registry, auth, c.transport, []string{"registry:catalog:*"}) //nolint:all
 	if err != nil {
 		return nil, fmt.Errorf("unable to create transport: %w", err)
 	}

@@ -11,8 +11,9 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 	cdv2signatures "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2/signatures"
@@ -45,7 +46,7 @@ func NewSigningServerSigner(serverURL, clientCertPath, privateKeyPath, rootCACer
 	}
 
 	if rootCACertsPath != "" {
-		rootCACerts, err := ioutil.ReadFile(rootCACertsPath)
+		rootCACerts, err := os.ReadFile(rootCACertsPath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read root ca certificates file: %w", err)
 		}
@@ -95,7 +96,7 @@ func (signer *SigningServerSigner) Sign(componentDescriptor cdv2.ComponentDescri
 	}
 	defer res.Body.Close()
 
-	responseBodyBytes, err := ioutil.ReadAll(res.Body)
+	responseBodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read response body: %w", err)
 	}

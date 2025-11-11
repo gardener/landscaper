@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"fmt"
-	"io/ioutil"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 
@@ -24,7 +23,7 @@ type resourceProcessingPipelineImpl struct {
 }
 
 func (p *resourceProcessingPipelineImpl) Process(ctx context.Context, cd cdv2.ComponentDescriptor, res cdv2.Resource) (*cdv2.ComponentDescriptor, cdv2.Resource, error) {
-	infile, err := ioutil.TempFile("", "")
+	infile, err := os.CreateTemp("", "")
 	if err != nil {
 		return nil, cdv2.Resource{}, fmt.Errorf("unable to create temporary infile: %w", err)
 	}
@@ -65,7 +64,7 @@ func (p *resourceProcessingPipelineImpl) runProcessor(ctx context.Context, infil
 		return nil, fmt.Errorf("unable to seek to beginning of input file: %w", err)
 	}
 
-	outfile, err := ioutil.TempFile("", "")
+	outfile, err := os.CreateTemp("", "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporary outfile: %w", err)
 	}

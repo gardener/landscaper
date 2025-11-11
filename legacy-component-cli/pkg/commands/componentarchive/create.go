@@ -56,7 +56,7 @@ func (o *CreateOptions) Run(_ context.Context, log logr.Logger, fs vfs.FileSyste
 	if o.Overwrite {
 		log.V(3).Info("overwrite enabled")
 	}
-	_, err := o.BuilderOptions.Build(fs)
+	_, err := o.Build(fs)
 	return err
 }
 
@@ -79,10 +79,10 @@ func (o *CreateOptions) Complete(args []string) error {
 }
 
 func (o *CreateOptions) validate() error {
-	return o.BuilderOptions.Validate()
+	return o.Validate()
 }
 
 func (o *CreateOptions) AddFlags(fs *pflag.FlagSet) {
 	o.BuilderOptions.AddFlags(fs)
-	fs.BoolVarP(&o.BuilderOptions.Overwrite, "overwrite", "w", false, "overwrites the existing component")
+	fs.BoolVarP(&o.Overwrite, "overwrite", "w", false, "overwrites the existing component")
 }

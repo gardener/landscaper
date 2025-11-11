@@ -134,8 +134,8 @@ func (o *BuilderOptions) Build(fs vfs.FileSystem) (*ctf.ComponentArchive, error)
 
 	cd := &cdv2.ComponentDescriptor{}
 	cd.Metadata.Version = cdv2.SchemaVersion
-	cd.ComponentSpec.Name = o.Name
-	cd.ComponentSpec.Version = o.Version
+	cd.Name = o.Name
+	cd.Version = o.Version
 	cd.Provider = "internal"
 	cd.RepositoryContexts = make([]*cdv2.UnstructuredTypedObject, 0)
 	if len(o.BaseUrl) != 0 {

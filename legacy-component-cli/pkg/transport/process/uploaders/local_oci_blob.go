@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -48,7 +48,7 @@ func (d *localOCIBlobUploader) Process(ctx context.Context, r io.Reader, w io.Wr
 	}
 	defer blobreader.Close()
 
-	tmpfile, err := ioutil.TempFile("", "")
+	tmpfile, err := os.CreateTemp("", "")
 	if err != nil {
 		return fmt.Errorf("unable to create tempfile: %w", err)
 	}

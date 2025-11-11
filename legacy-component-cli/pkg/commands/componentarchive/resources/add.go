@@ -170,7 +170,7 @@ resources:
 func (o *Options) Run(ctx context.Context, log logr.Logger, fs vfs.FileSystem) error {
 	compDescFilePath := filepath.Join(o.ComponentArchivePath, ctf.ComponentDescriptorFileName)
 
-	archive, err := o.BuilderOptions.Build(fs)
+	archive, err := o.Build(fs)
 	if err != nil {
 		return err
 	}
@@ -230,8 +230,8 @@ func (o *Options) Complete(args []string) error {
 	if len(args) == 0 {
 		return errors.New("at least a component archive path argument has to be defined")
 	}
-	o.BuilderOptions.ComponentArchivePath = args[0]
-	o.BuilderOptions.Default()
+	o.ComponentArchivePath = args[0]
+	o.Default()
 
 	o.ResourceObjectPaths = append(o.ResourceObjectPaths, args[1:]...)
 	if len(o.ResourceObjectPath) != 0 {
@@ -242,7 +242,7 @@ func (o *Options) Complete(args []string) error {
 }
 
 func (o *Options) validate() error {
-	return o.BuilderOptions.Validate()
+	return o.Validate()
 }
 
 func (o *Options) AddFlags(fs *pflag.FlagSet) {

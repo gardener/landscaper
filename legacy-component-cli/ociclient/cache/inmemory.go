@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -33,7 +32,7 @@ func (fs *inmemoryCache) Get(desc ocispecv1.Descriptor) (io.ReadCloser, error) {
 	if !ok {
 		return nil, ErrNotFound
 	}
-	return ioutil.NopCloser(bytes.NewBuffer(data)), nil
+	return io.NopCloser(bytes.NewBuffer(data)), nil
 }
 
 func (fs *inmemoryCache) Add(desc ocispecv1.Descriptor, reader io.ReadCloser) error {

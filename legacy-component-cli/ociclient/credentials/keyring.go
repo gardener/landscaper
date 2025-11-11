@@ -10,7 +10,7 @@ import (
 	"path"
 	"strings"
 
-	dockerreference "github.com/containerd/containerd/reference/docker"
+	dockerreference "github.com/distribution/reference"
 	dockercreds "github.com/docker/cli/cli/config/credentials"
 	dockerconfigtypes "github.com/docker/cli/cli/config/types"
 	"github.com/google/go-containerregistry/pkg/authn"

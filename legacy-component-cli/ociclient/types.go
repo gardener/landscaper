@@ -141,7 +141,7 @@ type Options struct {
 	Cache cache.Cache
 
 	// CustomMediaTypes defines the custom known media types
-	CustomMediaTypes sets.String
+	CustomMediaTypes sets.String //nolint:all
 
 	HTTPClient *http.Client
 }

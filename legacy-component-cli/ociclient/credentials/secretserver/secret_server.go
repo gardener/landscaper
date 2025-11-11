@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -148,7 +147,7 @@ func (kb *KeyringBuilder) Apply(keyring *credentials.GeneralOciKeyring) error {
 
 	srv, err := NewSecretServer()
 	if err != nil {
-		if errors.Is(err, NoSecretFoundError) {
+		if errors.Is(err, ErrNoSecretFoundError) {
 			kb.log.V(3).Info(err.Error())
 			return nil
 		}
@@ -170,7 +169,7 @@ type SecretServer struct {
 	key             []byte
 }
 
-var NoSecretFoundError = errors.New("no secret server configuration found")
+var ErrNoSecretFoundError = errors.New("no secret server configuration found")
 
 const unencyptedEndpoint = "concourse-secrets/concourse_cfg"
 
@@ -189,7 +188,7 @@ func NewSecretServer() (*SecretServer, error) {
 	}
 
 	if len(secSrvEndpoint) == 0 {
-		return nil, NoSecretFoundError
+		return nil, ErrNoSecretFoundError
 	}
 
 	return &SecretServer{
@@ -249,7 +248,7 @@ func (ss *SecretServer) read() (io.ReadCloser, error) {
 		//}
 		//fmt.Println(string(d["container_registry"]))
 
-		return ioutil.NopCloser(bytes.NewBuffer(dst)), nil
+		return io.NopCloser(bytes.NewBuffer(dst)), nil
 	default:
 		return nil, fmt.Errorf("unknown block %q", ss.cipherAlgorithm)
 	}
