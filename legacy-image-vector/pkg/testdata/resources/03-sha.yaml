@@ -1,0 +1,5 @@
+images:
+- name: pause-container
+  sourceRepository: github.com/kubernetes/kubernetes/blob/master/build/pause/Dockerfile
+  repository: gcr.io/google_containers/pause-amd64
+  tag: "sha256:179e67c248007299e05791db36298c41cbf0992372204a68473e12795a51b06b"

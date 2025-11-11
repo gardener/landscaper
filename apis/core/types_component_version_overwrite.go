@@ -5,8 +5,9 @@
 package core
 
 import (
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

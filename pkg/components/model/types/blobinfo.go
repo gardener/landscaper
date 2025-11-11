@@ -4,6 +4,6 @@
 
 package types
 
-import "github.com/gardener/component-spec/bindings-go/ctf"
+import "github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf"
 
 type BlobInfo = ctf.BlobInfo

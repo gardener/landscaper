@@ -1,0 +1,5 @@
+images:
+  - name: kube-apiserver
+    repository: k8s.gcr.io/hyperkube
+    sourceRepository: github.com/kubernetes/kubernetes
+    targetVersion: < 1.17

@@ -1,0 +1,11 @@
+---
+name: 'ubuntu'
+version: '${MY_VERSION}'
+type: 'ociImage'
+relation: 'external'
+extraIdentity:
+  myid: test
+access:
+  type: 'ociRegistry'
+  imageReference: 'ubuntu:${MY_VERSION}'
+---

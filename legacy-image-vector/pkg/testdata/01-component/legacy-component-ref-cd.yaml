@@ -1,0 +1,40 @@
+component:
+  componentReferences:
+  - componentName: github.com/gardener/autoscaler
+    extraIdentity:
+      imagevector-gardener-cloud+tag: v0.13.0
+    labels:
+    - name: imagevector.gardener.cloud/images
+      value:
+        images:
+        - name: autoscaler
+          repository: eu.gcr.io/gardener-project/gardener/autoscaler/cluster-autoscaler
+          sourceRepository: github.com/gardener/autoscaler
+          tag: v0.13.0
+          targetVersion: '>= 1.16'
+    name: cluster-autoscaler
+    version: v0.13.0
+  - componentName: github.com/gardener/autoscaler
+    extraIdentity:
+      imagevector-gardener-cloud+tag: v0.10.1
+    labels:
+    - name: imagevector.gardener.cloud/images
+      value:
+        images:
+        - name: autoscaler
+          repository: eu.gcr.io/gardener-project/gardener/autoscaler/cluster-autoscaler
+          sourceRepository: github.com/gardener/autoscaler
+          tag: v0.10.1
+          targetVersion: < 1.16
+    name: cluster-autoscaler
+    version: v0.10.1
+  name: example.com/component
+  provider: internal
+  repositoryContexts:
+  - baseUrl: eu.gcr.io/gardener-project/components/dev
+    type: ociRegistry
+  resources: []
+  sources: []
+  version: v0.0.0
+meta:
+  schemaVersion: v2

@@ -1,0 +1,24 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'example.com/component'
+  version: 'v0.0.0'
+
+  repositoryContexts:
+  - type: 'ociRegistry'
+    baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  sources:
+  - name: 'repo'
+    version: 'v0.0.1'
+    type: 'git'
+    access:
+      type: 'git'
+      repository: 'github.com/gardener/landscaper/legacy-component-cli'
+
+  componentReferences: []
+
+  resources: []

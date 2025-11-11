@@ -28,16 +28,17 @@ import (
 
 	apiconfig "github.com/gardener/landscaper/apis/config"
 
-	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-cli/ociclient/cache"
-	testcred "github.com/gardener/component-cli/ociclient/credentials"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
-	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/gardener/landscaper/legacy-component-cli/ociclient"
+	"github.com/gardener/landscaper/legacy-component-cli/ociclient/cache"
+	testcred "github.com/gardener/landscaper/legacy-component-cli/ociclient/credentials"
+	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf"
+	cdoci "github.com/gardener/landscaper/legacy-component-spec/bindings-go/oci"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/mediatype"

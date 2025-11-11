@@ -1,0 +1,18 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'example.com/component'
+  version: 'v0.0.0'
+
+  repositoryContexts:
+  - type: 'ociRegistry'
+    baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  sources: []
+
+  componentReferences: []
+
+  resources: []

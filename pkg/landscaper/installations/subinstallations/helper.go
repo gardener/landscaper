@@ -7,9 +7,10 @@ package subinstallations
 import (
 	"fmt"
 
-	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/codec"
 
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"

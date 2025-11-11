@@ -1,0 +1,6 @@
+name: 'testres'
+type: 'mytype'
+relation: 'local'
+access:
+  type: 'ociRegistry'
+  imageReference: 'ubuntu:18.0'

@@ -10,6 +10,21 @@ function revendor() {
   go mod tidy
 }
 
+echo "Revendor legacy-component-spec module ..."
+(
+  cd "$PROJECT_ROOT/legacy-component-spec"
+  revendor
+)
+echo "Revendor legacy-image-vector module ..."
+(
+  cd "$PROJECT_ROOT/legacy-image-vector"
+  revendor
+)
+echo "Revendor legacy-component-cli module ..."
+(
+  cd "$PROJECT_ROOT/legacy-component-cli"
+  revendor
+)
 echo "Revendor apis module ..."
 (
   cd "$PROJECT_ROOT/apis"

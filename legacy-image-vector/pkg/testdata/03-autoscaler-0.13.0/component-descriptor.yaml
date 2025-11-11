@@ -1,0 +1,27 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'github.com/gardener/autoscaler'
+  version: 'v0.13.0'
+
+  repositoryContexts:
+  - type: 'ociRegistry'
+    baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  sources: []
+
+  componentReferences: []
+
+  resources:
+  - name: cluster-autoscaler
+    version: "v0.13.0"
+    type: ociImage
+    labels:
+    - name: cloud.gardener.cnudie/migration/original_ref
+      value: "eu.gcr.io/gardener-project/gardener/autoscaler/cluster-autoscaler:v0.13.0"
+    access:
+      type: ociRegistry
+      imageReference: eu.gcr.io/gardener-project/gardener/autoscaler/cluster-autoscaler@sha256:3a33df492c3da1436d7301142d60d1c3e90c354ec70775ac664b8933e4c3d7ec

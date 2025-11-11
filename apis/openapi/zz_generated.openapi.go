@@ -9,12 +9,13 @@
 package apis
 
 import (
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	v1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	common "k8s.io/kube-openapi/pkg/common"
 	spec "k8s.io/kube-openapi/pkg/validation/spec"
+
+	v2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 
 	core "github.com/gardener/landscaper/apis/core"
 	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -22,19 +23,19 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor":                           schema_component_spec_bindings_go_apis_v2_ComponentDescriptor(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentReference":                            schema_component_spec_bindings_go_apis_v2_ComponentReference(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentSpec":                                 schema_component_spec_bindings_go_apis_v2_ComponentSpec(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.DigestSpec":                                    schema_component_spec_bindings_go_apis_v2_DigestSpec(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.IdentityObjectMeta":                            schema_component_spec_bindings_go_apis_v2_IdentityObjectMeta(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.Label":                                         schema_component_spec_bindings_go_apis_v2_Label(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.Metadata":                                      schema_component_spec_bindings_go_apis_v2_Metadata(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.Resource":                                      schema_component_spec_bindings_go_apis_v2_Resource(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.Signature":                                     schema_component_spec_bindings_go_apis_v2_Signature(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.SignatureSpec":                                 schema_component_spec_bindings_go_apis_v2_SignatureSpec(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.Source":                                        schema_component_spec_bindings_go_apis_v2_Source(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.SourceRef":                                     schema_component_spec_bindings_go_apis_v2_SourceRef(ref),
-		"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject":                       schema_component_spec_bindings_go_apis_v2_UnstructuredTypedObject(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor":         schema_component_spec_bindings_go_apis_v2_ComponentDescriptor(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentReference":          schema_component_spec_bindings_go_apis_v2_ComponentReference(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentSpec":               schema_component_spec_bindings_go_apis_v2_ComponentSpec(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.DigestSpec":                  schema_component_spec_bindings_go_apis_v2_DigestSpec(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.IdentityObjectMeta":          schema_component_spec_bindings_go_apis_v2_IdentityObjectMeta(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label":                       schema_component_spec_bindings_go_apis_v2_Label(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Metadata":                    schema_component_spec_bindings_go_apis_v2_Metadata(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Resource":                    schema_component_spec_bindings_go_apis_v2_Resource(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Signature":                   schema_component_spec_bindings_go_apis_v2_Signature(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.SignatureSpec":               schema_component_spec_bindings_go_apis_v2_SignatureSpec(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Source":                      schema_component_spec_bindings_go_apis_v2_Source(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.SourceRef":                   schema_component_spec_bindings_go_apis_v2_SourceRef(ref),
+		"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject":     schema_component_spec_bindings_go_apis_v2_UnstructuredTypedObject(ref),
 		"github.com/gardener/landscaper/apis/config.AdditionalDeployments":                                     schema_gardener_landscaper_apis_config_AdditionalDeployments(ref),
 		"github.com/gardener/landscaper/apis/config.BlueprintStore":                                            schema_gardener_landscaper_apis_config_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config.CommonControllerConfig":                                    schema_gardener_landscaper_apis_config_CommonControllerConfig(ref),
@@ -672,14 +673,14 @@ func schema_component_spec_bindings_go_apis_v2_ComponentDescriptor(ref common.Re
 						SchemaProps: spec.SchemaProps{
 							Description: "Metadata specifies the schema version of the component.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.Metadata"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Metadata"),
 						},
 					},
 					"component": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec contains the specification of the component.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.ComponentSpec"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentSpec"),
 						},
 					},
 					"signatures": {
@@ -690,7 +691,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentDescriptor(ref common.Re
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Signature"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Signature"),
 									},
 								},
 							},
@@ -701,7 +702,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentDescriptor(ref common.Re
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentSpec", "github.com/gardener/component-spec/bindings-go/apis/v2.Metadata", "github.com/gardener/component-spec/bindings-go/apis/v2.Signature"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentSpec", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Metadata", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Signature"},
 	}
 }
 
@@ -755,7 +756,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentReference(ref common.Ref
 					"digest": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Digest is the optional digest of the referenced component.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.DigestSpec"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.DigestSpec"),
 						},
 					},
 					"labels": {
@@ -766,7 +767,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentReference(ref common.Ref
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Label"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"),
 									},
 								},
 							},
@@ -777,7 +778,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentReference(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.DigestSpec", "github.com/gardener/component-spec/bindings-go/apis/v2.Label"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.DigestSpec", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"},
 	}
 }
 
@@ -812,7 +813,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentSpec(ref common.Referenc
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Label"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"),
 									},
 								},
 							},
@@ -825,7 +826,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentSpec(ref common.Referenc
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+										Ref: ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 									},
 								},
 							},
@@ -847,7 +848,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentSpec(ref common.Referenc
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Source"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Source"),
 									},
 								},
 							},
@@ -861,7 +862,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentSpec(ref common.Referenc
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.ComponentReference"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentReference"),
 									},
 								},
 							},
@@ -875,7 +876,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentSpec(ref common.Referenc
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Resource"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Resource"),
 									},
 								},
 							},
@@ -893,7 +894,7 @@ func schema_component_spec_bindings_go_apis_v2_ComponentSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentReference", "github.com/gardener/component-spec/bindings-go/apis/v2.Label", "github.com/gardener/component-spec/bindings-go/apis/v2.Resource", "github.com/gardener/component-spec/bindings-go/apis/v2.Source", "github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentReference", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Resource", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Source", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -987,7 +988,7 @@ func schema_component_spec_bindings_go_apis_v2_IdentityObjectMeta(ref common.Ref
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Label"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"),
 									},
 								},
 							},
@@ -998,7 +999,7 @@ func schema_component_spec_bindings_go_apis_v2_IdentityObjectMeta(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.Label"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"},
 	}
 }
 
@@ -1108,7 +1109,7 @@ func schema_component_spec_bindings_go_apis_v2_Resource(ref common.ReferenceCall
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Label"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"),
 									},
 								},
 							},
@@ -1117,7 +1118,7 @@ func schema_component_spec_bindings_go_apis_v2_Resource(ref common.ReferenceCall
 					"digest": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Digest is the optional digest of the referenced resource.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.DigestSpec"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.DigestSpec"),
 						},
 					},
 					"relation": {
@@ -1135,7 +1136,7 @@ func schema_component_spec_bindings_go_apis_v2_Resource(ref common.ReferenceCall
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.SourceRef"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.SourceRef"),
 									},
 								},
 							},
@@ -1144,7 +1145,7 @@ func schema_component_spec_bindings_go_apis_v2_Resource(ref common.ReferenceCall
 					"access": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Access describes the type specific method to access the defined resource.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 				},
@@ -1152,7 +1153,7 @@ func schema_component_spec_bindings_go_apis_v2_Resource(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.DigestSpec", "github.com/gardener/component-spec/bindings-go/apis/v2.Label", "github.com/gardener/component-spec/bindings-go/apis/v2.SourceRef", "github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.DigestSpec", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.SourceRef", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -1173,13 +1174,13 @@ func schema_component_spec_bindings_go_apis_v2_Signature(ref common.ReferenceCal
 					"digest": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.DigestSpec"),
+							Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.DigestSpec"),
 						},
 					},
 					"signature": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.SignatureSpec"),
+							Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.SignatureSpec"),
 						},
 					},
 				},
@@ -1187,7 +1188,7 @@ func schema_component_spec_bindings_go_apis_v2_Signature(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.DigestSpec", "github.com/gardener/component-spec/bindings-go/apis/v2.SignatureSpec"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.DigestSpec", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.SignatureSpec"},
 	}
 }
 
@@ -1281,7 +1282,7 @@ func schema_component_spec_bindings_go_apis_v2_Source(ref common.ReferenceCallba
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Label"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"),
 									},
 								},
 							},
@@ -1289,7 +1290,7 @@ func schema_component_spec_bindings_go_apis_v2_Source(ref common.ReferenceCallba
 					},
 					"access": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref: ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 				},
@@ -1297,7 +1298,7 @@ func schema_component_spec_bindings_go_apis_v2_Source(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.Label", "github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label", "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -1332,7 +1333,7 @@ func schema_component_spec_bindings_go_apis_v2_SourceRef(ref common.ReferenceCal
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/component-spec/bindings-go/apis/v2.Label"),
+										Ref:     ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"),
 									},
 								},
 							},
@@ -1342,7 +1343,7 @@ func schema_component_spec_bindings_go_apis_v2_SourceRef(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.Label"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.Label"},
 	}
 }
 
@@ -1518,7 +1519,7 @@ func schema_gardener_landscaper_apis_config_ContextControllerDefaultConfig(ref c
 					"RepositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 				},
@@ -1526,7 +1527,7 @@ func schema_gardener_landscaper_apis_config_ContextControllerDefaultConfig(ref c
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -1825,7 +1826,7 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 					"RepositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors. DEPRECATED: use controllers.context.config.default.repositoryContext instead.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"Registry": {
@@ -1886,7 +1887,7 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.HPAMainConfiguration", "github.com/gardener/landscaper/apis/config.LsDeployments", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.HPAMainConfiguration", "github.com/gardener/landscaper/apis/config.LsDeployments", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
 	}
 }
 
@@ -2264,7 +2265,7 @@ func schema_landscaper_apis_config_v1alpha1_ContextControllerDefaultConfig(ref c
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 				},
@@ -2272,7 +2273,7 @@ func schema_landscaper_apis_config_v1alpha1_ContextControllerDefaultConfig(ref c
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -2576,7 +2577,7 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors. DEPRECATED: use controllers.context.config.default.repositoryContext instead.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"registry": {
@@ -2637,7 +2638,7 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.Controllers", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.HPAMainConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.LsDeployments", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.Controllers", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.HPAMainConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.LsDeployments", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
 	}
 }
 
@@ -3190,14 +3191,14 @@ func schema_gardener_landscaper_apis_core_ComponentDescriptorDefinition(ref comm
 					"inline": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InlineDescriptorReference defines an inline component descriptor",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core.ComponentDescriptorReference"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core.ComponentDescriptorReference"},
 	}
 }
 
@@ -3211,7 +3212,7 @@ func schema_gardener_landscaper_apis_core_ComponentDescriptorReference(ref commo
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"componentName": {
@@ -3235,7 +3236,7 @@ func schema_gardener_landscaper_apis_core_ComponentDescriptorReference(ref commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -3279,7 +3280,7 @@ func schema_gardener_landscaper_apis_core_ComponentVersionOverwriteReference(ref
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"componentName": {
@@ -3302,7 +3303,7 @@ func schema_gardener_landscaper_apis_core_ComponentVersionOverwriteReference(ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -3547,7 +3548,7 @@ func schema_gardener_landscaper_apis_core_Context(ref common.ReferenceCallback) 
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"ocmConfig": {
@@ -3611,7 +3612,7 @@ func schema_gardener_landscaper_apis_core_Context(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core.AnyJSON", "github.com/gardener/landscaper/apis/core.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core.AnyJSON", "github.com/gardener/landscaper/apis/core.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3624,7 +3625,7 @@ func schema_gardener_landscaper_apis_core_ContextConfiguration(ref common.Refere
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"ocmConfig": {
@@ -3688,7 +3689,7 @@ func schema_gardener_landscaper_apis_core_ContextConfiguration(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core.AnyJSON", "github.com/gardener/landscaper/apis/core.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core.AnyJSON", "github.com/gardener/landscaper/apis/core.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -7759,14 +7760,14 @@ func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorDefinition(ref comm
 					"inline": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InlineDescriptorReference defines an inline component descriptor",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"},
 	}
 }
 
@@ -7780,7 +7781,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorReference(ref commo
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"componentName": {
@@ -7804,7 +7805,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorReference(ref commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -7848,7 +7849,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwriteReference(ref
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"componentName": {
@@ -7871,7 +7872,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwriteReference(ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
 	}
 }
 
@@ -8116,7 +8117,7 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"ocmConfig": {
@@ -8180,7 +8181,7 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -8193,7 +8194,7 @@ func schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref common.Refere
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
 					"ocmConfig": {
@@ -8257,7 +8258,7 @@ func schema_landscaper_apis_core_v1alpha1_ContextConfiguration(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "github.com/gardener/landscaper/apis/core/v1alpha1.VerificationSignature", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -13736,7 +13737,7 @@ func schema_landscaper_apis_deployer_helm_RemoteChartReference(ref common.Refere
 					"inline": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InlineDescriptorReference defines an inline component descriptor",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor"),
 						},
 					},
 					"resourceName": {
@@ -13752,7 +13753,7 @@ func schema_landscaper_apis_deployer_helm_RemoteChartReference(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"},
 	}
 }
 
@@ -14430,7 +14431,7 @@ func schema_apis_deployer_helm_v1alpha1_RemoteChartReference(ref common.Referenc
 					"inline": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InlineDescriptorReference defines an inline component descriptor",
-							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor"),
+							Ref:         ref("github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor"),
 						},
 					},
 					"resourceName": {
@@ -14446,7 +14447,7 @@ func schema_apis_deployer_helm_v1alpha1_RemoteChartReference(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"},
+			"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2.ComponentDescriptor", "github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"},
 	}
 }
 

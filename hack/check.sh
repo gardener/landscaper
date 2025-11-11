@@ -32,6 +32,15 @@ for arg in "$@"; do
     $PROJECT_ROOT/controller-utils/*)
       controller_utils_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/controller-utils" "$arg")")
       ;;
+   $PROJECT_ROOT/legacy-component-cli/*)
+      controller_utils_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/legacy-component-cli" "$arg")")
+      ;;
+   $PROJECT_ROOT/legacy-component-spec/bindings-go/*)
+      controller_utils_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/legacy-component-spec/bindings-go" "$arg")")
+      ;;
+   $PROJECT_ROOT/legacy-image-vector/*)
+      controller_utils_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/legacy-image-vector" "$arg")")
+      ;;
     *)
       landscaper_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT" "$arg")")
       ;;
@@ -39,6 +48,33 @@ for arg in "$@"; do
 done
 
 echo "> Check"
+
+echo "apis module: ${apis_module_paths[@]}"
+(
+  cd "$PROJECT_ROOT/apis"
+  echo "  Executing golangci-lint"
+  "$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${apis_module_paths[@]}"
+  echo "  Executing go vet"
+  go vet "${apis_module_paths[@]}"
+)
+
+echo "apis module: ${apis_module_paths[@]}"
+(
+  cd "$PROJECT_ROOT/apis"
+  echo "  Executing golangci-lint"
+  "$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${apis_module_paths[@]}"
+  echo "  Executing go vet"
+  go vet "${apis_module_paths[@]}"
+)
+
+echo "apis module: ${apis_module_paths[@]}"
+(
+  cd "$PROJECT_ROOT/apis"
+  echo "  Executing golangci-lint"
+  "$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${apis_module_paths[@]}"
+  echo "  Executing go vet"
+  go vet "${apis_module_paths[@]}"
+)
 
 echo "apis module: ${apis_module_paths[@]}"
 (

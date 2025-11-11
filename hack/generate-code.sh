@@ -66,7 +66,7 @@ kube::codegen::gen_helpers "$PROJECT_ROOT" \
    --extra-pkgs "$API_MODULE_PATH/deployer/manifest/v1alpha2" \
    --extra-pkgs "$API_MODULE_PATH/deployer/container/v1alpha1" \
    --extra-pkgs "$API_MODULE_PATH/deployer/mock/v1alpha1" \
-   --extra-pkgs "github.com/gardener/component-spec/bindings-go/apis/v2" \
+   --extra-pkgs "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2" \
    --extra-pkgs "k8s.io/api/core/v1" \
    --extra-pkgs "k8s.io/apimachinery/pkg/apis/meta/v1" \
    --extra-pkgs "k8s.io/apimachinery/pkg/api/resource" \
@@ -87,7 +87,7 @@ echo "> Generating API reference"
 echo
 echo "> Generating mock client"
 "$MOCKGEN" "-destination=$PROJECT_ROOT/controller-utils/pkg/kubernetes/mock/client_mock.go" sigs.k8s.io/controller-runtime/pkg/client Client,StatusWriter
-"$MOCKGEN" "-destination=$PROJECT_ROOT/pkg/landscaper/registry/components/mock/resolver_mock.go" github.com/gardener/component-spec/bindings-go/ctf ComponentResolver
+"$MOCKGEN" "-destination=$PROJECT_ROOT/pkg/landscaper/registry/components/mock/resolver_mock.go" github.com/gardener/clandscaper/legacy-component-spec/bindings-go/ctf ComponentResolver
 
 echo
 echo "NOTE: If you changed the API then consider updating the example manifests."

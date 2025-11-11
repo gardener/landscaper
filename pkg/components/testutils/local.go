@@ -10,10 +10,11 @@ import (
 	"fmt"
 	"io"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
+
+	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf"
 
 	"github.com/gardener/landscaper/pkg/components/model/tar"
 	"github.com/gardener/landscaper/pkg/components/model/types"

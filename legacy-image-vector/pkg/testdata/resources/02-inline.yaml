@@ -1,0 +1,4 @@
+images:
+- name: gardenlet
+  sourceRepository: github.com/gardener/gardener
+  repository: eu.gcr.io/gardener-project/gardener/gardenlet

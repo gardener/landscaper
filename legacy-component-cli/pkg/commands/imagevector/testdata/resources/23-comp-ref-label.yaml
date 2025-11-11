@@ -1,0 +1,9 @@
+images:
+- name: cluster-autoscaler
+  sourceRepository: github.com/gardener/autoscaler
+  repository: eu.gcr.io/gardener-project/gardener/autoscaler/cluster-autoscaler
+  targetVersion: "< 1.16"
+  tag: "v0.10.0"
+  labels:
+  - name: imagevector.gardener.cloud/component-reference
+    value: ~

@@ -13,10 +13,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/ctf"
-	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	. "github.com/onsi/ginkgo/v2"
@@ -26,6 +22,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/legacy-component-cli/pkg/commands/componentarchive/input"
+	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf"
+	cdoci "github.com/gardener/landscaper/legacy-component-spec/bindings-go/oci"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
