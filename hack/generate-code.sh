@@ -87,7 +87,7 @@ echo "> Generating API reference"
 echo
 echo "> Generating mock client"
 "$MOCKGEN" "-destination=$PROJECT_ROOT/controller-utils/pkg/kubernetes/mock/client_mock.go" sigs.k8s.io/controller-runtime/pkg/client Client,StatusWriter
-"$MOCKGEN" "-destination=$PROJECT_ROOT/pkg/landscaper/registry/components/mock/resolver_mock.go" github.com/gardener/clandscaper/legacy-component-spec/bindings-go/ctf ComponentResolver
+"$MOCKGEN" "-destination=$PROJECT_ROOT/pkg/landscaper/registry/components/mock/resolver_mock.go" github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf ComponentResolver
 
 echo
 echo "NOTE: If you changed the API then consider updating the example manifests."
