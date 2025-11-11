@@ -46,7 +46,7 @@ func GenerateCertificates() (*Certificate, error) {
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		BasicConstraintsValid: true,
 	}
-	caPrivKey, err := rsa.GenerateKey(rand.Reader, 1024) // only for testing
+	caPrivKey, err := rsa.GenerateKey(rand.Reader, 2048) // only for testing
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate private key: %w", err)
 	}
@@ -87,7 +87,7 @@ func GenerateCertificates() (*Certificate, error) {
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 	}
-	certPrivKey, err := rsa.GenerateKey(rand.Reader, 1024)
+	certPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate private key: %w", err)
 	}
