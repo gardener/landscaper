@@ -1,0 +1,16 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: ''
+  version: ''
+
+  repositoryContexts: []
+
+  provider: 'internal'
+
+  sources: []
+
+  componentReferences: []
+
+  resources: []

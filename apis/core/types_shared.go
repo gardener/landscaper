@@ -10,9 +10,10 @@ import (
 	"fmt"
 	"time"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 )
 
 // JSONSchemaDefinition defines a jsonschema.

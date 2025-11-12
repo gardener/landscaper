@@ -4,7 +4,7 @@
 
 package testutils
 
-import cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+import cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 
 func NewOCIRegistryAccess(ociImageRef string) (cdv2.UnstructuredTypedObject, error) {
 	return cdv2.NewUnstructured(cdv2.NewOCIRegistryAccess(ociImageRef))

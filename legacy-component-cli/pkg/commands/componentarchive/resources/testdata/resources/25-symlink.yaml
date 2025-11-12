@@ -1,0 +1,8 @@
+name: 'myconfig'
+version: 'v0.0.1'
+type: 'something'
+relation: 'external'
+input:
+  type: dir
+  path: "./25-symlink/testdir"
+  followSymlinks: true

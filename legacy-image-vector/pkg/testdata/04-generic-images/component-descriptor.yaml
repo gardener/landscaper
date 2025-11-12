@@ -1,0 +1,51 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'github.com/gardener/kubernetes-versions'
+  version: 'v0.100.0'
+
+  repositoryContexts:
+  - type: 'ociRegistry'
+    baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  sources: []
+
+  componentReferences: []
+
+  resources:
+  - name: hyperkube
+    version: "v1.18.6"
+    type: ociImage
+    extraIdentity:
+      "imagevector-gardener-cloud+tag": "v1.18.6"
+    labels:
+    - name: imagevector.gardener.cloud/name
+      value: hyperkube
+    access:
+      type: ociRegistry
+      imageReference: k8s.gcr.io/hyperkube:v1.18.6
+  - name: hyperkube
+    version: "v1.17.10"
+    type: ociImage
+    extraIdentity:
+      "imagevector-gardener-cloud+tag": "v1.17.10"
+    labels:
+    - name: imagevector.gardener.cloud/name
+      value: hyperkube
+    access:
+      type: ociRegistry
+      imageReference: k8s.gcr.io/hyperkube:v1.17.10
+  - name: hyperkube
+    version: "v1.19.2"
+    type: ociImage
+    extraIdentity:
+      "imagevector-gardener-cloud+tag": "v1.19.2"
+    labels:
+    - name: imagevector.gardener.cloud/name
+      value: hyperkube
+    access:
+      type: ociRegistry
+      imageReference: eu.gcr.io/gardener-project/hyperkube:v1.19.2

@@ -1,0 +1,7 @@
+name: 'myconfig'
+version: 'v0.0.1'
+type: 'jsonschema'
+relation: 'external'
+input:
+  type: file
+  path: "./21-jsonschema.json"

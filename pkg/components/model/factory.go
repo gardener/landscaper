@@ -57,7 +57,7 @@ type Factory interface {
 	// additionalBlobResolvers allows to pass in additional blob resolvers. These are only used by the component-cli
 	// backed implementation and are ignored otherwise.
 	//
-	// [component-cli]: https://github.com/gardener/component-cli
+	// [component-cli]: https://github.com/gardener/landscaper/legacy-component-cli
 	// [ocmlib]: https://ocm.software/ocm
 	NewRegistryAccess(ctx context.Context, options *RegistryAccessOptions) (RegistryAccess, error)
 

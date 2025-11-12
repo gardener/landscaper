@@ -1,0 +1,8 @@
+images:
+- name: pause-container
+  sourceRepository: github.com/kubernetes/kubernetes/blob/master/build/pause/Dockerfile
+  repository: gcr.io/google_containers/pause-amd64
+  tag: "3.1"
+  labels:
+  - name: my-label
+    value: myval

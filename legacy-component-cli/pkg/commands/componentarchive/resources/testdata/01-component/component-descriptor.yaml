@@ -1,0 +1,19 @@
+component:
+  componentReferences: []
+  name: example.com/component
+  provider: internal
+  repositoryContexts:
+  - baseUrl: eu.gcr.io/gardener-project/components/dev
+    type: ociRegistry
+  resources:
+  - name: 'ubuntu'
+    version: 'v0.0.1'
+    type: 'ociImage'
+    relation: 'external'
+    access:
+      type: 'ociRegistry'
+      imageReference: 'ubuntu:18.0'
+  sources: []
+  version: v0.0.0
+meta:
+  schemaVersion: v2

@@ -1,0 +1,6 @@
+name: 'repo'
+version: 'v0.0.1'
+type: 'git'
+access:
+  type: 'git'
+  repository: 'github.com/gardener/landscaper/legacy-component-cli'

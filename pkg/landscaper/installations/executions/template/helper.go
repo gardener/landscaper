@@ -11,8 +11,8 @@ import (
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/common"
 
-	"github.com/gardener/component-cli/ociclient/oci"
-	"github.com/gardener/component-spec/bindings-go/utils/selector"
+	"github.com/gardener/landscaper/legacy-component-cli/ociclient/oci"
+	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/utils/selector"
 
 	"github.com/gardener/landscaper/pkg/components/model/types"
 )

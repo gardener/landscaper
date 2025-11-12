@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 
 	"helm.sh/helm/v3/pkg/registry"
 	"k8s.io/utils/ptr"

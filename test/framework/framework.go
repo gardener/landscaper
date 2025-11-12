@@ -18,9 +18,6 @@ import (
 	"time"
 
 	"github.com/docker/cli/cli/config/configfile"
-	"github.com/gardener/component-cli/ociclient"
-	"github.com/gardener/component-cli/ociclient/cache"
-	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/admissionregistration/v1"
@@ -31,6 +28,10 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/legacy-component-cli/ociclient"
+	"github.com/gardener/landscaper/legacy-component-cli/ociclient/cache"
+	"github.com/gardener/landscaper/legacy-component-cli/ociclient/credentials"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"

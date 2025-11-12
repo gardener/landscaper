@@ -1,0 +1,17 @@
+---
+name: 'ubuntu'
+version: 'v0.0.1'
+type: 'ociImage'
+relation: 'external'
+access:
+  type: 'ociRegistry'
+  imageReference: 'ubuntu:18.0'
+...
+---
+name: 'testres'
+type: 'mytype'
+relation: 'local'
+access:
+  type: 'ociRegistry'
+  imageReference: 'ubuntu:18.0'
+...

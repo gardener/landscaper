@@ -9,13 +9,14 @@ import (
 	"errors"
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/utils/selector"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+
+	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
+	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/utils/selector"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/mediatype"
@@ -181,7 +182,7 @@ func GetBlueprintResourceFromComponentDescriptor(cd *types.ComponentDescriptor, 
 	// get blueprint resource from component descriptor
 	resources, err := cd.GetResourcesByType(mediatype.BlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
 	if err != nil {
-		if !errors.Is(err, cdv2.NotFound) {
+		if !errors.Is(err, cdv2.ErrNotFound) {
 			return types.Resource{}, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
 		}
 		// try to fallback to old blueprint type

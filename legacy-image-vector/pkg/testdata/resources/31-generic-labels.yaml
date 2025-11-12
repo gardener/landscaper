@@ -1,0 +1,12 @@
+images:
+- name: hyperkube
+  sourceRepository: github.com/kubernetes/kubernetes
+  repository: eu.gcr.io/gardener-project/new/hyperkube
+  targetVersion: "< 1.19"
+  labels:
+  - name: imagevector.gardener.cloud/generic
+- name: hyperkube
+  sourceRepository: github.com/gardener/hyperkube
+  repository: eu.gcr.io/gardener-project/hyperkube
+  targetVersion: ">= 1.19"
+  tag: "1.19.0"

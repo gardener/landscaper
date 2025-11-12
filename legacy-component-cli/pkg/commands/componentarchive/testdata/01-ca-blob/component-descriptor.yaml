@@ -1,0 +1,20 @@
+component:
+  componentReferences: []
+  name: example.com/component
+  provider: internal
+  repositoryContexts:
+  - baseUrl: eu.gcr.io/gardener-project/components/dev
+    type: ociRegistry
+  resources:
+  - access:
+      filename: sha256-ab894987c426bf8d660826c6fa52a1f351a4c4c094f913862be9c76386bcc32f
+      mediaType: text/plain
+      type: localFilesystemBlob
+    name: myconfig
+    relation: local
+    type: json
+    version: v0.0.0
+  sources: []
+  version: v0.0.0
+meta:
+  schemaVersion: v2

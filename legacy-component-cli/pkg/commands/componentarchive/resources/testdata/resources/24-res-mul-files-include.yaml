@@ -1,0 +1,9 @@
+name: 'myconfig'
+version: 'v0.0.1'
+type: 'jsonschema'
+relation: 'external'
+input:
+  type: dir
+  path: "./24-dir-mul-files"
+  includeFiles:
+  - 'file*.txt'
