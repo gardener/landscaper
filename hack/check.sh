@@ -33,7 +33,7 @@ for arg in "$@"; do
       apis_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/apis" "$arg")")
       ;;
     $PROJECT_ROOT/controller-utils/*)
-      controller_utils_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/controller-utils" "$arg")")
+      controller_utils_module_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/controller-utils" "$arg")")
       ;;
    $PROJECT_ROOT/legacy-component-cli/*)
       legacy_component_cli_paths+=("./$(realpath "--relative-base=$PROJECT_ROOT/legacy-component-cli" "$arg")")
@@ -88,13 +88,13 @@ echo "apis module: ${apis_module_paths[@]}"
   go vet "${apis_module_paths[@]}"
 )
 
-echo "controller-utils module: ${controller_utils_paths[@]}"
+echo "controller-utils module: ${controller_utils_module_paths[@]}"
 (
   cd "$PROJECT_ROOT/controller-utils"
   echo "  Executing golangci-lint"
-  "$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${controller_utils_paths[@]}"
+  "$LINTER" run $GOLANGCI_LINT_CONFIG_FILE --timeout 10m "${controller_utils_module_paths[@]}"
   echo "  Executing go vet"
-  go vet "${controller_utils_paths[@]}"
+  go vet "${controller_utils_module_paths[@]}"
 )
 
 echo "root module: ${landscaper_module_paths[@]}"

@@ -59,7 +59,7 @@
       ]
     },
     {
-      "description": "Ignore version for landscpaer/apis and controller-utils as used locally",
+      "description": "Ignore version for landscaper/apis and controller-utils as used locally",
       "matchManagers": [
         "gomod"
       ],
