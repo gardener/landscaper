@@ -42,13 +42,6 @@
       "rangeStrategy": "bump"
     },
     {
-      "description": "Update golang version in .ci/pipeline_definitions & .ci/ensure_go",
-      "groupName": "golang-version-updates-pipeline",
-      "matchDatasources": ["docker"],
-      "matchDepNames": ["golang"],
-      "automerge": true
-    },
-    {
       "description": "Fixed version for component-cli v0.44.0",
       "matchManagers": [
         "gomod"
@@ -106,24 +99,6 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s(?:ENV |ARG )?.+?_VERSION ?(?:\\?=|=)\"? ?(?<currentValue>.+?)\"?\\s"
       ]
-    },
-    {
-      "description": "Update golang version in .ci/pipeline_definitions & .ci/ensure_go",
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/(^|/)\\.ci/ensure_go$/",
-        "^\\.ci/ensure-go$",
-        "^\\.ci/pipeline_definitions$"
-  
-      ],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+image: ['\"]{0,1}(?<currentValue>.*?)['\"]{0,1}\\s",
-        "go_version=\\\"(?<currentValue>.*?)\\\""
-      ],
-      "datasourceTemplate": "docker",
-      "depNameTemplate": "golang",
-      "versioningTemplate": "docker",
-      "groupName": "golang-version-updates-pipeline"
     }
   ]
 }
