@@ -29,7 +29,13 @@ sed -i -e "0,/)/{s@github.com/gardener/landscaper/controller-utils .*@github.com
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/landscaper/apis ${VERSION}@}" \
   ${PROJECT_ROOT}/controller-utils/go.mod
 
-echo "Landscaper release: starting revendor"
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-cli  .*@github.com/gardener/landscaper/legacy-component-cli v0.0.0-00010101000000-000000000000@}" \
+  ${PROJECT_ROOT}/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000@}" \
+  ${PROJECT_ROOT}/go.mod
+
+(echo "Landscaper release: starting revendor"
 
 (
   cd $PROJECT_ROOT
