@@ -49,8 +49,8 @@ landscaper:
         format:
           publish_to:
           - source
-          depends:
-          - verify
+          # depends:
+          # - verify
           # - integration_test
     pull-request:
       steps:
