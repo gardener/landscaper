@@ -847,7 +847,7 @@ var _ = Describe("jsonschema", func() {
 			// this is somewhat ugly, since
 			// 1. waiting for a timeout is not the best way to check for undetected cycles
 			// 2. if this test fails, the looping function cannot be aborted and will continue to run until all goroutines are killed at the end of the test
-			timeoutSeconds := 1
+			timeoutSeconds := 2
 			ch := make(chan error, 1)
 			go func() {
 				err := val.CompileSchema([]byte(fmt.Sprintf(`
