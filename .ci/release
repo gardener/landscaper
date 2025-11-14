@@ -14,7 +14,7 @@ source "$PROJECT_ROOT/.ci/ensure-go"
 apk add --no-cache git musl-dev curl gcompat
 mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
-echo "Landscaper release: updating go.mod files"
+echo "Landscaper release: version update in the go.mod files"
 
 # update go.mod's internal dependency to local module so that it can be used by other repositories
 VERSION=$(cat ${PROJECT_ROOT}/VERSION)
@@ -29,11 +29,23 @@ sed -i -e "0,/)/{s@github.com/gardener/landscaper/controller-utils .*@github.com
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/landscaper/apis ${VERSION}@}" \
   ${PROJECT_ROOT}/controller-utils/go.mod
 
-sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-cli  .*@github.com/gardener/landscaper/legacy-component-cli v0.0.0-00010101000000-000000000000@}" \
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-cli  .*@github.com/gardener/landscaper/legacy-component-cli ${VERSION}@}" \
   ${PROJECT_ROOT}/go.mod
 
-sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000@}" \
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go ${VERSION}@}" \
   ${PROJECT_ROOT}/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go ${VERSION}@}" \
+  ${PROJECT_ROOT}/apis/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go ${VERSION}@}" \
+  ${PROJECT_ROOT}/legacy-component-cli/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-image-vector .*@github.com/gardener/landscaper/legacy-image-vector ${VERSION}@}" \
+  ${PROJECT_ROOT}/legacy-component-cli/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go ${VERSION}@}" \
+  ${PROJECT_ROOT}/legacy-image-vector/go.mod
 
 echo "Landscaper release: starting revendor"
 
