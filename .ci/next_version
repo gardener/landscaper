@@ -14,7 +14,9 @@ source "$PROJECT_ROOT/.ci/ensure-go"
 apk add --no-cache git musl-dev curl
 mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
-# revert the version update in the gomod file
+echo "Landscaper next version: revert the version update in the go.mod files"
+
+# revert to go.mod's internal dependency
 VERSION=$(cat ${PROJECT_ROOT}/VERSION)
 
 # 0,/)/ only replaces the first ocurrence until the first dep block with ')' is reached
@@ -32,6 +34,20 @@ sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-cli  .*@githu
 
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000@}" \
   ${PROJECT_ROOT}/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000@}" \
+  ${PROJECT_ROOT}/apis/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000@}" \
+  ${PROJECT_ROOT}/legacy-component-cli/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-image-vector .*@github.com/gardener/landscaper/legacy-image-vector v0.0.0-00010101000000-000000000000@}" \
+  ${PROJECT_ROOT}/legacy-component-cli/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000@}" \
+  ${PROJECT_ROOT}/legacy-image-vector/go.mod
+
+echo "Landscaper next version: starting revendor"
 
 (
   cd $PROJECT_ROOT
