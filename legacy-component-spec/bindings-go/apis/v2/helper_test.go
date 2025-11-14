@@ -15,15 +15,15 @@
 package v2_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	v2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 )
 
-var _ = Describe("helper", func() {
+var _ = ginkgo.Describe("helper", func() {
 
-	It("should inject a new repository context if none is defined", func() {
+	ginkgo.It("should inject a new repository context if none is defined", func() {
 		cd := &v2.ComponentDescriptor{}
 		Expect(v2.DefaultComponent(cd)).To(Succeed())
 

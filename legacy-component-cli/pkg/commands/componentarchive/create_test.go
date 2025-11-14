@@ -15,7 +15,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -25,18 +25,18 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/commands/componentarchive"
 )
 
-var _ = Describe("Create", func() {
+var _ = ginkgo.Describe("Create", func() {
 
 	var testdataFs vfs.FileSystem
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		baseFs, err := projectionfs.New(osfs.New(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
 	})
 
-	Context("Create", func() {
-		It("should create a component archive and overwrite with a newer version", func() {
+	ginkgo.Context("Create", func() {
+		ginkgo.It("should create a component archive and overwrite with a newer version", func() {
 			opts := &componentarchive.CreateOptions{}
 			opts.Name = "example.com/component/name"
 			opts.Version = "v0.0.1"
@@ -65,9 +65,9 @@ var _ = Describe("Create", func() {
 
 	})
 
-	Context("Overwrite", func() {
+	ginkgo.Context("Overwrite", func() {
 
-		It("should create a component archive and overwrite with a newer version", func() {
+		ginkgo.It("should create a component archive and overwrite with a newer version", func() {
 			opts := &componentarchive.CreateOptions{}
 			opts.Name = "example.com/component/name"
 			opts.Version = "v0.0.1"

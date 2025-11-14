@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -21,11 +21,11 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/transport/process/utils"
 )
 
-var _ = Describe("oci artifact serialization", func() {
+var _ = ginkgo.Describe("oci artifact serialization", func() {
 
-	Context("serialize and deserialize oci artifact", func() {
+	ginkgo.Context("serialize and deserialize oci artifact", func() {
 
-		It("should correctly serialize and deserialize image", func() {
+		ginkgo.It("should correctly serialize and deserialize image", func() {
 			configData := []byte("config-data")
 			layers := [][]byte{
 				[]byte("layer-data"),
@@ -66,7 +66,7 @@ var _ = Describe("oci artifact serialization", func() {
 			Expect(actualLayerBuf.Bytes()).To(Equal(layers[0]))
 		})
 
-		It("should correctly serialize and deserialize image index", func() {
+		ginkgo.It("should correctly serialize and deserialize image index", func() {
 			configData1 := []byte("config-data-1")
 			layers1 := [][]byte{
 				[]byte("layer-data-1"),
@@ -164,29 +164,29 @@ var _ = Describe("oci artifact serialization", func() {
 
 	})
 
-	Context("serialize oci artifact", func() {
+	ginkgo.Context("serialize oci artifact", func() {
 
-		It("should raise error if cache is nil", func() {
+		ginkgo.It("should raise error if cache is nil", func() {
 			_, err := utils.SerializeOCIArtifact(oci.Artifact{}, nil)
 			Expect(err).To(MatchError("cache must not be nil"))
 		})
 
 	})
 
-	Context("deserialize oci artifact", func() {
+	ginkgo.Context("deserialize oci artifact", func() {
 
-		It("should raise error if reader is nil", func() {
+		ginkgo.It("should raise error if reader is nil", func() {
 			_, err := utils.DeserializeOCIArtifact(nil, cache.NewInMemoryCache())
 			Expect(err).To(MatchError("reader must not be nil"))
 		})
 
-		It("should raise error if cache is nil", func() {
+		ginkgo.It("should raise error if cache is nil", func() {
 			buf := bytes.NewBuffer([]byte{})
 			_, err := utils.DeserializeOCIArtifact(buf, nil)
 			Expect(err).To(MatchError("cache must not be nil"))
 		})
 
-		It("should raise error if tar archive contains unknown file", func() {
+		ginkgo.It("should raise error if tar archive contains unknown file", func() {
 			fileName := "invalid-filename"
 			fileContent := []byte("file-content")
 

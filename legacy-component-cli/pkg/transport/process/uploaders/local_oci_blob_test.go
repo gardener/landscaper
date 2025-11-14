@@ -8,7 +8,7 @@ import (
 	"context"
 	"io"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -20,11 +20,11 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/utils"
 )
 
-var _ = Describe("localOciBlob", func() {
+var _ = ginkgo.Describe("localOciBlob", func() {
 
-	Context("Process", func() {
+	ginkgo.Context("Process", func() {
 
-		It("should upload and stream resource", func() {
+		ginkgo.It("should upload and stream resource", func() {
 			resBytes := []byte("Hello World")
 			expectedDigest := digest.FromBytes(resBytes)
 			res := cdv2.Resource{
@@ -83,7 +83,7 @@ var _ = Describe("localOciBlob", func() {
 			Expect(buf.Bytes()).To(Equal(resBytes))
 		})
 
-		It("should return error if resource blob is nil", func() {
+		ginkgo.It("should return error if resource blob is nil", func() {
 			acc, err := cdv2.NewUnstructured(cdv2.NewLocalOCIBlobAccess("sha256:123"))
 			Expect(err).ToNot(HaveOccurred())
 			res := cdv2.Resource{

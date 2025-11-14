@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -25,11 +25,11 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/utils"
 )
 
-var _ = Describe("Manifest v1 Conversion", func() {
+var _ = ginkgo.Describe("Manifest v1 Conversion", func() {
 
-	Context("Create Config", func() {
+	ginkgo.Context("Create Config", func() {
 
-		It("should create oci config", func() {
+		ginkgo.It("should create oci config", func() {
 			v1layer0Digest := digest.FromBytes([]byte("v1_layer_0"))
 			v1layer1Digest := digest.FromBytes([]byte("v1_layer_1"))
 
@@ -130,7 +130,7 @@ var _ = Describe("Manifest v1 Conversion", func() {
 
 	})
 
-	Context("Parse V1 Manifest", func() {
+	ginkgo.Context("Parse V1 Manifest", func() {
 
 		var (
 			server      *httptest.Server
@@ -144,7 +144,7 @@ var _ = Describe("Manifest v1 Conversion", func() {
 			}
 		)
 
-		BeforeEach(func() {
+		ginkgo.BeforeEach(func() {
 			server = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				handler(writer, request)
 			}))
@@ -154,11 +154,11 @@ var _ = Describe("Manifest v1 Conversion", func() {
 			host = hostUrl.Host
 		})
 
-		AfterEach(func() {
+		ginkgo.AfterEach(func() {
 			server.Close()
 		})
 
-		It("should parse V1 manifest", func() {
+		ginkgo.It("should parse V1 manifest", func() {
 			decompressedV1Layer0 := []byte("v1_layer_0")
 			decompressedV1Layer1 := []byte("v1_layer_1")
 			decompressedV1Layer2 := []byte("v1_layer_2")

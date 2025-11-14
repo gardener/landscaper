@@ -8,18 +8,18 @@ import (
 	"context"
 	"io"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/transport/process/downloaders"
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/transport/process/utils"
 )
 
-var _ = Describe("localOciBlob", func() {
+var _ = ginkgo.Describe("localOciBlob", func() {
 
-	Context("Process", func() {
+	ginkgo.Context("Process", func() {
 
-		It("should download and stream resource", func() {
+		ginkgo.It("should download and stream resource", func() {
 			localOciBlobRes := testComponent.Resources[localOciBlobResIndex]
 
 			inProcessorMsg := bytes.NewBuffer([]byte{})
@@ -46,7 +46,7 @@ var _ = Describe("localOciBlob", func() {
 			Expect(resBlob.Bytes()).To(Equal(localOciBlobData))
 		})
 
-		It("should return error if called with resource of invalid access type", func() {
+		ginkgo.It("should return error if called with resource of invalid access type", func() {
 			ociArtifactRes := testComponent.Resources[imageResIndex]
 
 			d, err := downloaders.NewLocalOCIBlobDownloader(ociClient)

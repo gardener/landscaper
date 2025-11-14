@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-cli/ociclient"
@@ -19,8 +19,8 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CTF Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "CTF Test Suite")
 }
 
 var (
@@ -29,11 +29,11 @@ var (
 	keyring *credentials.GeneralOciKeyring
 )
 
-var _ = BeforeSuite(func() {
+var _ = ginkgo.BeforeSuite(func() {
 	testenv = envtest.New(envtest.Options{
 		RegistryBinaryPath: filepath.Join("../../../", envtest.DefaultRegistryBinaryPath),
-		Stdout:             GinkgoWriter,
-		Stderr:             GinkgoWriter,
+		Stdout:             ginkgo.GinkgoWriter,
+		Stderr:             ginkgo.GinkgoWriter,
 	})
 	Expect(testenv.Start(context.Background())).To(Succeed())
 
@@ -47,6 +47,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 }, 60)
 
-var _ = AfterSuite(func() {
+var _ = ginkgo.AfterSuite(func() {
 	Expect(testenv.Close()).To(Succeed())
 })

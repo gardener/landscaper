@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -26,14 +26,14 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Cache Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Cache Test Suite")
 }
 
-var _ = Describe("Cache", func() {
+var _ = ginkgo.Describe("Cache", func() {
 
-	Context("Cache", func() {
-		It("should read data from the in memory cache", func() {
+	ginkgo.Context("Cache", func() {
+		ginkgo.It("should read data from the in memory cache", func() {
 			c, err := NewCache(logr.Discard(), WithInMemoryOverlay(true))
 			Expect(err).ToNot(HaveOccurred())
 			defer c.Close()
@@ -51,7 +51,7 @@ var _ = Describe("Cache", func() {
 			Expect(buf.Len() > 0).To(BeTrue(), "The cache should return some data")
 		})
 
-		It("should detect tampered data and remove the tempered blob", func() {
+		ginkgo.It("should detect tampered data and remove the tempered blob", func() {
 			path, err := os.MkdirTemp(os.TempDir(), "ocicache")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -70,7 +70,7 @@ var _ = Describe("Cache", func() {
 			Expect(err).To(Equal(ErrNotFound))
 		})
 
-		It("should detect tampered data (size shortcut) and remove the tempered blob", func() {
+		ginkgo.It("should detect tampered data (size shortcut) and remove the tempered blob", func() {
 			path, err := os.MkdirTemp(os.TempDir(), "ocicache")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -89,8 +89,8 @@ var _ = Describe("Cache", func() {
 			Expect(err).To(Equal(ErrNotFound))
 		})
 
-		Context("metrics", func() {
-			It("should read data from the in memory cache", func() {
+		ginkgo.Context("metrics", func() {
+			ginkgo.It("should read data from the in memory cache", func() {
 				uid := "unit-test"
 				dir, err := os.MkdirTemp(os.TempDir(), "test-")
 				Expect(err).ToNot(HaveOccurred())
@@ -178,8 +178,8 @@ var _ = Describe("Cache", func() {
 		})
 	})
 
-	Context("GC", func() {
-		It("should garbage collect when the cache reaches its max size", func() {
+	ginkgo.Context("GC", func() {
+		ginkgo.It("should garbage collect when the cache reaches its max size", func() {
 			c, err := NewCache(logr.Discard(), WithBaseSize("1Ki"))
 			Expect(err).ToNot(HaveOccurred())
 			defer c.Close()
@@ -192,7 +192,7 @@ var _ = Describe("Cache", func() {
 			}).Should(HaveLen(1))
 		})
 
-		It("should garbage collect the in memory cache but not the base cache if the size exceeds", func() {
+		ginkgo.It("should garbage collect the in memory cache but not the base cache if the size exceeds", func() {
 			c, err := NewCache(logr.Discard(), WithInMemoryOverlay(true), WithInMemoryOverlaySize("1Ki"))
 			Expect(err).ToNot(HaveOccurred())
 			defer c.Close()
@@ -217,7 +217,7 @@ var _ = Describe("Cache", func() {
 			}).Should(HaveLen(1))
 		})
 
-		It("should delete files until the low threshold has been reached", func() {
+		ginkgo.It("should delete files until the low threshold has been reached", func() {
 			c, err := NewCache(logr.Discard(), WithBaseSize("1Ki"))
 			Expect(err).ToNot(HaveOccurred())
 			defer c.Close()
@@ -236,9 +236,9 @@ var _ = Describe("Cache", func() {
 		})
 	})
 
-	Context("Index", func() {
+	ginkgo.Context("Index", func() {
 
-		It("should add 2 entries to the index", func() {
+		ginkgo.It("should add 2 entries to the index", func() {
 			index := NewIndex()
 			index.Add("a", 500, time.Now())
 			index.Add("b", 500, time.Now())
@@ -247,7 +247,7 @@ var _ = Describe("Cache", func() {
 			Expect(list).To(HaveLen(2))
 		})
 
-		It("should return a prioritised entries based on hits", func() {
+		ginkgo.It("should return a prioritised entries based on hits", func() {
 			index := NewIndex()
 			index.Add("a", 500, newDate("0:01AM"))
 			index.Add("b", 500, newDate("0:01AM"))
@@ -269,7 +269,7 @@ var _ = Describe("Cache", func() {
 			Expect(list[1].Name).To(Equal("b"))
 		})
 
-		It("should return a prioritised entries based on added date", func() {
+		ginkgo.It("should return a prioritised entries based on added date", func() {
 			index := NewIndex()
 			index.Add("b", 500, newDate("0:01AM"))
 			index.Add("a", 500, newDate("0:03AM"))
@@ -289,7 +289,7 @@ var _ = Describe("Cache", func() {
 			Expect(list[1].Name).To(Equal("b"))
 		})
 
-		It("should return a prioritised entries based on hits and added date", func() {
+		ginkgo.It("should return a prioritised entries based on hits and added date", func() {
 			index := NewIndex()
 			index.Add("a", 500, newDate("0:01AM"))
 			index.Add("b", 500, newDate("0:02AM"))
@@ -307,8 +307,8 @@ var _ = Describe("Cache", func() {
 			Expect(list[3].Name).To(Equal("c"))
 		})
 
-		Context("Hits", func() {
-			It("should add hits to a entry", func() {
+		ginkgo.Context("Hits", func() {
+			ginkgo.It("should add hits to a entry", func() {
 				index := NewIndex()
 				index.Add("a", 500, newDate("0:01AM"))
 				index.Hit("a")
@@ -322,7 +322,7 @@ var _ = Describe("Cache", func() {
 				Expect(list[0].Hits).To(Equal(int64(2)))
 			})
 
-			It("should reset hits and keep 100% of newly added hits", func() {
+			ginkgo.It("should reset hits and keep 100% of newly added hits", func() {
 				index := NewIndex()
 				index.Add("a", 500, newDate("0:01AM"))
 
@@ -336,7 +336,7 @@ var _ = Describe("Cache", func() {
 				Expect(list[0].Hits).To(Equal(int64(4)))
 			})
 
-			It("should reset hits and keep 100% of newly added hits and preserve 50% of old hits", func() {
+			ginkgo.It("should reset hits and keep 100% of newly added hits and preserve 50% of old hits", func() {
 				index := NewIndex()
 				index.Add("a", 500, newDate("0:01AM"))
 
@@ -352,8 +352,8 @@ var _ = Describe("Cache", func() {
 			})
 		})
 
-		Context("CalculatePriority", func() {
-			It("should prioritise more hits if added at the same time", func() {
+		ginkgo.Context("CalculatePriority", func() {
+			ginkgo.It("should prioritise more hits if added at the same time", func() {
 				var minHits, maxHits int64 = 2, 6
 				oldest := newDate("0:01AM")
 				newest := newDate("11:59AM")
@@ -373,7 +373,7 @@ var _ = Describe("Cache", func() {
 				Expect(valA).To(BeNumerically("<", valB))
 			})
 
-			It("should prioritise the creation date if the hits are the same", func() {
+			ginkgo.It("should prioritise the creation date if the hits are the same", func() {
 				var minHits, maxHits int64 = 2, 6
 				oldest := newDate("0:01AM")
 				newest := newDate("11:59AM")
@@ -393,7 +393,7 @@ var _ = Describe("Cache", func() {
 				Expect(valA).To(BeNumerically(">", valB))
 			})
 
-			It("should prioritise the hits over the creation date", func() {
+			ginkgo.It("should prioritise the hits over the creation date", func() {
 				var minHits, maxHits int64 = 2, 6
 				oldest := newDate("0:01AM")
 				newest := newDate("11:59AM")

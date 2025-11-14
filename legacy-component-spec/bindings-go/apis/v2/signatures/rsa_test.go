@@ -22,20 +22,20 @@ import (
 	"os/exec"
 	"path"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2/signatures"
 )
 
-var _ = Describe("RSA sign/verify", func() {
+var _ = ginkgo.Describe("RSA sign/verify", func() {
 	var pathPrivateKey string
 	var pathPublicKey string
 	var stringToHashAndSign string
 	var dir string
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		var err error
 		dir, err = os.MkdirTemp("", "component-spec-test")
 		Expect(err).To(BeNil())
@@ -55,12 +55,12 @@ var _ = Describe("RSA sign/verify", func() {
 		stringToHashAndSign = "TestStringToSign"
 	})
 
-	AfterEach(func() {
+	ginkgo.AfterEach(func() {
 		os.RemoveAll(dir)
 	})
 
-	Describe("RSA sign with private key", func() {
-		It("should create a signature", func() {
+	ginkgo.Describe("RSA sign with private key", func() {
+		ginkgo.It("should create a signature", func() {
 			hashOfString := sha256.Sum256([]byte(stringToHashAndSign))
 
 			signer, err := signatures.CreateRSASignerFromKeyFile(pathPrivateKey, cdv2.MediaTypeRSASignature)
@@ -78,7 +78,7 @@ var _ = Describe("RSA sign/verify", func() {
 			Expect(signature.Value).NotTo(BeNil())
 		})
 
-		It("should create a signature in pem format", func() {
+		ginkgo.It("should create a signature in pem format", func() {
 			hashOfString := sha256.Sum256([]byte(stringToHashAndSign))
 
 			signer, err := signatures.CreateRSASignerFromKeyFile(pathPrivateKey, cdv2.MediaTypePEM)
@@ -105,8 +105,8 @@ var _ = Describe("RSA sign/verify", func() {
 		})
 	})
 
-	Describe("RSA sign and verify with public key", func() {
-		It("should verify a signature", func() {
+	ginkgo.Describe("RSA sign and verify with public key", func() {
+		ginkgo.It("should verify a signature", func() {
 			hashOfString := sha256.Sum256([]byte(stringToHashAndSign))
 
 			signer, err := signatures.CreateRSASignerFromKeyFile(pathPrivateKey, cdv2.MediaTypeRSASignature)
@@ -133,7 +133,7 @@ var _ = Describe("RSA sign/verify", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should deny a signature from a wrong actor", func() {
+		ginkgo.It("should deny a signature from a wrong actor", func() {
 			hashOfString := sha256.Sum256([]byte(stringToHashAndSign))
 
 			//generate a wrong key (e.g. from a malicious actor)
