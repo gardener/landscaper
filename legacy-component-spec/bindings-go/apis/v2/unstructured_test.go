@@ -15,15 +15,15 @@
 package v2_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	v2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 )
 
-var _ = Describe("UnstructuredTypedObject", func() {
+var _ = ginkgo.Describe("UnstructuredTypedObject", func() {
 
-	It("should create a new unstructured object using a typed accessor", func() {
+	ginkgo.It("should create a new unstructured object using a typed accessor", func() {
 		type example struct {
 			v2.ObjectType
 			Test int `json:"test"`

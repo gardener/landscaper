@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -16,11 +16,11 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/transport/process/utils"
 )
 
-var _ = Describe("util", func() {
+var _ = ginkgo.Describe("util", func() {
 
-	Context("WriteProcessorMessage & ReadProcessorMessage", func() {
+	ginkgo.Context("WriteProcessorMessage & ReadProcessorMessage", func() {
 
-		It("should correctly write and read a processor message", func() {
+		ginkgo.It("should correctly write and read a processor message", func() {
 			res := cdv2.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-res",

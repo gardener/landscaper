@@ -7,8 +7,8 @@ package oci_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
@@ -16,11 +16,11 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "oci Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "oci Test Suite")
 }
 
-var _ = Describe("ref", func() {
+var _ = ginkgo.Describe("ref", func() {
 
 	DescribeTable("parse oci references",
 		func(ref, host, repository, tag, digest string) {

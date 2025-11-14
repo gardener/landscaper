@@ -11,7 +11,7 @@ import (
 	"errors"
 	"io"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -22,11 +22,11 @@ import (
 	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/oci"
 )
 
-var _ = Describe("resolve", func() {
+var _ = ginkgo.Describe("resolve", func() {
 
-	Context("Resolve", func() {
+	ginkgo.Context("Resolve", func() {
 
-		It("should fetch a component descriptor", func() {
+		ginkgo.It("should fetch a component descriptor", func() {
 			ctx := context.Background()
 			ociClient := &testClient{
 				getManifest: func(ctx context.Context, ref string) (*ocispecv1.Manifest, error) {
@@ -74,7 +74,7 @@ var _ = Describe("resolve", func() {
 			Expect(repoCtx.BaseURL).To(Equal("example.com"), "the repository context should be injected")
 		})
 
-		It("should not fetch from the client of a cache is provided", func() {
+		ginkgo.It("should not fetch from the client of a cache is provided", func() {
 			ctx := context.Background()
 			ociCache := &testCache{
 				get: func(ctx context.Context, repoCtx cdv2.OCIRegistryRepository, name, version string) (*cdv2.ComponentDescriptor, error) {
@@ -100,7 +100,7 @@ var _ = Describe("resolve", func() {
 			Expect(cd.Name).To(Equal("example.com/my-comp"))
 		})
 
-		It("should store a component descriptor in the cache", func() {
+		ginkgo.It("should store a component descriptor in the cache", func() {
 			ctx := context.Background()
 			storeCalled := false
 			ociCache := &testCache{

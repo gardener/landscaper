@@ -8,7 +8,7 @@ import (
 	"context"
 	"os"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/opencontainers/go-digest"
@@ -20,9 +20,9 @@ import (
 	"github.com/gardener/landscaper/legacy-image-vector/pkg"
 )
 
-var _ = Describe("GenerateOverwrite", func() {
+var _ = ginkgo.Describe("GenerateOverwrite", func() {
 
-	It("should generate a simple image with tag from a component descriptor", func() {
+	ginkgo.It("should generate a simple image with tag from a component descriptor", func() {
 		imageVector, err := pkg.GenerateImageOverwrite(context.TODO(),
 			nil,
 			readComponentDescriptor("./testdata/01-component/component-descriptor.yaml"),
@@ -44,7 +44,7 @@ var _ = Describe("GenerateOverwrite", func() {
 		})))
 	})
 
-	It("should generate a image source with a target version", func() {
+	ginkgo.It("should generate a image source with a target version", func() {
 		ivReader, err := os.Open("./testdata/resources/10-targetversion.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
@@ -66,8 +66,8 @@ var _ = Describe("GenerateOverwrite", func() {
 		})))
 	})
 
-	Context("From Component Reference", func() {
-		It("should generate image sources from component references", func() {
+	ginkgo.Context("From Component Reference", func() {
+		ginkgo.It("should generate image sources from component references", func() {
 			ivReader, err := os.Open("./testdata/resources/21-multi-comp-ref.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			defer func() {
@@ -105,7 +105,7 @@ var _ = Describe("GenerateOverwrite", func() {
 			})))
 		})
 
-		It("should use the resource name", func() {
+		ginkgo.It("should use the resource name", func() {
 			cd := readComponentDescriptor("./testdata/01-component/component-ref-cd.yaml")
 
 			list := readComponentDescriptors(
@@ -137,7 +137,7 @@ var _ = Describe("GenerateOverwrite", func() {
 			})))
 		})
 
-		It("should use a workaround if image and resource names do not match for legacy labels without a resource name", func() {
+		ginkgo.It("should use a workaround if image and resource names do not match for legacy labels without a resource name", func() {
 			cd := readComponentDescriptor("./testdata/01-component/component-ref-cd.yaml")
 
 			list := readComponentDescriptors(
@@ -161,7 +161,7 @@ var _ = Describe("GenerateOverwrite", func() {
 			})))
 		})
 
-		It("should use a workaround use the gardener migration tag if image and resource names do not match for legacy labels without a resource name", func() {
+		ginkgo.It("should use a workaround use the gardener migration tag if image and resource names do not match for legacy labels without a resource name", func() {
 			cd := readComponentDescriptor("./testdata/01-component/legacy-component-ref-cd.yaml")
 
 			list := readComponentDescriptors(
@@ -186,7 +186,7 @@ var _ = Describe("GenerateOverwrite", func() {
 		})
 	})
 
-	It("should generate image sources from generic images", func() {
+	ginkgo.It("should generate image sources from generic images", func() {
 		ivReader, err := os.Open("./testdata/resources/30-generic.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
@@ -226,7 +226,7 @@ var _ = Describe("GenerateOverwrite", func() {
 		})))
 	})
 
-	It("should generate image sources from generic images with digest", func() {
+	ginkgo.It("should generate image sources from generic images with digest", func() {
 		ivReader, err := os.Open("./testdata/resources/30-generic.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
@@ -266,7 +266,7 @@ var _ = Describe("GenerateOverwrite", func() {
 		})))
 	})
 
-	It("should generate image sources from generic images based on extra identity", func() {
+	ginkgo.It("should generate image sources from generic images based on extra identity", func() {
 		ivReader, err := os.Open("./testdata/resources/31-generic.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
@@ -300,7 +300,7 @@ var _ = Describe("GenerateOverwrite", func() {
 		})))
 	})
 
-	It("should generate a simple image with digest from a component descriptor", func() {
+	ginkgo.It("should generate a simple image with digest from a component descriptor", func() {
 		imageVector, err := pkg.GenerateImageOverwrite(context.TODO(),
 			nil,
 			readComponentDescriptor("./testdata/01-component/component-descriptor.yaml"),

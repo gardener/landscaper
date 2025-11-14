@@ -18,7 +18,7 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	v2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -26,13 +26,13 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Utils Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Utils Test Suite")
 }
 
-var _ = Describe("serializer", func() {
+var _ = ginkgo.Describe("serializer", func() {
 
-	It("should decode a simple component", func() {
+	ginkgo.It("should decode a simple component", func() {
 		data, err := os.ReadFile("../../language-independent/test-resources/component_descriptor_v2.yaml")
 		Expect(err).ToNot(HaveOccurred())
 
@@ -63,7 +63,7 @@ var _ = Describe("serializer", func() {
 		Expect(ociAccess.ImageReference).To(Equal("registry-1.docker.io/grafana/grafana/7.0.3"))
 	})
 
-	It("should encode a simple component", func() {
+	ginkgo.It("should encode a simple component", func() {
 		data, err := os.ReadFile("../../language-independent/test-resources/component_descriptor_v2.yaml")
 		Expect(err).ToNot(HaveOccurred())
 

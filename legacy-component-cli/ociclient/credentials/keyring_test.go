@@ -8,21 +8,21 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-cli/ociclient/credentials"
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "credentials Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "credentials Test Suite")
 }
 
-var _ = Describe("Keyrings", func() {
+var _ = ginkgo.Describe("Keyrings", func() {
 
-	Context("#Get", func() {
-		It("should parse authentication config from a dockerconfig and match the hostname", func() {
+	ginkgo.Context("#Get", func() {
+		ginkgo.It("should parse authentication config from a dockerconfig and match the hostname", func() {
 			keyring, err := credentials.CreateOCIRegistryKeyring(nil, []string{"./testdata/dockerconfig.json"})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -31,7 +31,7 @@ var _ = Describe("Keyrings", func() {
 			Expect(auth.GetUsername()).To(Equal("test"))
 		})
 
-		It("should return nil if no auth match the url", func() {
+		ginkgo.It("should return nil if no auth match the url", func() {
 			keyring, err := credentials.NewBuilder(logr.Discard()).DisableDefaultConfig().Build()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -39,7 +39,7 @@ var _ = Describe("Keyrings", func() {
 			Expect(auth).To(BeNil())
 		})
 
-		It("should parse authentication config from a dockerconfig and match the hostname with protocol", func() {
+		ginkgo.It("should parse authentication config from a dockerconfig and match the hostname with protocol", func() {
 			keyring, err := credentials.CreateOCIRegistryKeyring(nil, []string{"./testdata/dockerconfig.json"})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -48,7 +48,7 @@ var _ = Describe("Keyrings", func() {
 			Expect(auth.GetUsername()).To(Equal("docker"))
 		})
 
-		It("should fallback to legacy docker domain is no secret can be found for the new one. ", func() {
+		ginkgo.It("should fallback to legacy docker domain is no secret can be found for the new one. ", func() {
 			keyring, err := credentials.CreateOCIRegistryKeyring(nil, []string{"./testdata/dockerconfig-legacy.json"})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -57,7 +57,7 @@ var _ = Describe("Keyrings", func() {
 			Expect(auth.GetUsername()).To(Equal("legacy"))
 		})
 
-		It("should match a whole resource url", func() {
+		ginkgo.It("should match a whole resource url", func() {
 			keyring, err := credentials.CreateOCIRegistryKeyring(nil, []string{"./testdata/dockerconfig.json"})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -66,7 +66,7 @@ var _ = Describe("Keyrings", func() {
 			Expect(auth.GetUsername()).To(Equal("test"))
 		})
 
-		It("should match the hostname with a prefix", func() {
+		ginkgo.It("should match the hostname with a prefix", func() {
 			keyring, err := credentials.CreateOCIRegistryKeyring(nil, []string{"./testdata/dockerconfig.json"})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -75,7 +75,7 @@ var _ = Describe("Keyrings", func() {
 			Expect(auth.GetUsername()).To(Equal("myproj"))
 		})
 
-		It("should parse authentication config from a dockerconfig and match the reference from dockerhub", func() {
+		ginkgo.It("should parse authentication config from a dockerconfig and match the reference from dockerhub", func() {
 			keyring, err := credentials.CreateOCIRegistryKeyring(nil, []string{"./testdata/dockerconfig.json"})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -84,7 +84,7 @@ var _ = Describe("Keyrings", func() {
 			Expect(auth.GetUsername()).To(Equal("docker"))
 		})
 
-		It("should skip emtpy credentials if multiple are defined", func() {
+		ginkgo.It("should skip emtpy credentials if multiple are defined", func() {
 			keyring, err := credentials.NewBuilder(logr.Discard()).
 				FromConfigFiles("./testdata/dockerconfig-empty.json").
 				FromConfigFiles("./testdata/dockerconfig.json").
@@ -97,8 +97,8 @@ var _ = Describe("Keyrings", func() {
 		})
 	})
 
-	Context("#GetCredentials", func() {
-		It("should parse authentication config from a dockerconfig and match the hostname", func() {
+	ginkgo.Context("#GetCredentials", func() {
+		ginkgo.It("should parse authentication config from a dockerconfig and match the hostname", func() {
 			keyring, err := credentials.CreateOCIRegistryKeyring(nil, []string{"./testdata/dockerconfig.json"})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -107,7 +107,7 @@ var _ = Describe("Keyrings", func() {
 			Expect(username).To(Equal("test"))
 		})
 
-		It("should fallback to legacy docker domain is no secret can be found for the new one. ", func() {
+		ginkgo.It("should fallback to legacy docker domain is no secret can be found for the new one. ", func() {
 			keyring, err := credentials.CreateOCIRegistryKeyring(nil, []string{"./testdata/dockerconfig-legacy.json"})
 			Expect(err).ToNot(HaveOccurred())
 

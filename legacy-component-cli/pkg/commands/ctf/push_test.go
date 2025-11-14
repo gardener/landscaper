@@ -14,7 +14,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf"
@@ -26,17 +26,17 @@ import (
 	cmd "github.com/gardener/landscaper/legacy-component-cli/pkg/commands/ctf"
 )
 
-var _ = Describe("Add", func() {
+var _ = ginkgo.Describe("Add", func() {
 
 	var testdataFs vfs.FileSystem
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		baseFs, err := projectionfs.New(osfs.New(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
 	})
 
-	It("should push a component archive with a local file", func() {
+	ginkgo.It("should push a component archive with a local file", func() {
 		baseFs, err := projectionfs.New(osfs.New(), "../componentarchive")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
@@ -83,7 +83,7 @@ var _ = Describe("Add", func() {
 			"Expect that the second layer contains the local blob")
 	})
 
-	It("should throw an error if a local resource does not exist", func() {
+	ginkgo.It("should throw an error if a local resource does not exist", func() {
 		baseFs, err := projectionfs.New(osfs.New(), "../componentarchive")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)

@@ -10,7 +10,7 @@ import (
 	"errors"
 	"os"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
@@ -20,9 +20,9 @@ import (
 	"github.com/gardener/landscaper/legacy-image-vector/pkg"
 )
 
-var _ = Describe("Add", func() {
+var _ = ginkgo.Describe("Add", func() {
 
-	It("should add a image source with tag", func() {
+	ginkgo.It("should add a image source with tag", func() {
 
 		ivReader, err := os.Open("./testdata/resources/00-tag.yaml")
 		Expect(err).ToNot(HaveOccurred())
@@ -62,7 +62,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a image source with a digest as tag", func() {
+	ginkgo.It("should add a image source with a digest as tag", func() {
 
 		ivReader, err := os.Open("./testdata/resources/03-sha.yaml")
 		Expect(err).ToNot(HaveOccurred())
@@ -102,7 +102,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a image source with a label", func() {
+	ginkgo.It("should add a image source with a label", func() {
 
 		ivReader, err := os.Open("./testdata/resources/01-labels.yaml")
 		Expect(err).ToNot(HaveOccurred())
@@ -142,7 +142,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add imagevector labels for inline image definitions", func() {
+	ginkgo.It("should add imagevector labels for inline image definitions", func() {
 
 		ivReader, err := os.Open("./testdata/resources/02-inline.yaml")
 		Expect(err).ToNot(HaveOccurred())
@@ -178,7 +178,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a image source with tag and target version", func() {
+	ginkgo.It("should add a image source with tag and target version", func() {
 
 		ivReader, err := os.Open("./testdata/resources/10-targetversion.yaml")
 		Expect(err).ToNot(HaveOccurred())
@@ -201,7 +201,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add two image sources with different target versions", func() {
+	ginkgo.It("should add two image sources with different target versions", func() {
 
 		ivReader, err := os.Open("./testdata/resources/11-multi-targetversion.yaml")
 		Expect(err).ToNot(HaveOccurred())
@@ -233,7 +233,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should throw an error in case of different target version labels for the same name and tag", func() {
+	ginkgo.It("should throw an error in case of different target version labels for the same name and tag", func() {
 		ivReader, err := os.Open("./testdata/resources/12-multi-targetversion-same-name-and-tag.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
@@ -246,11 +246,11 @@ var _ = Describe("Add", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	Context("ComponentReferences", func() {
+	ginkgo.Context("ComponentReferences", func() {
 
-		Context("should add image sources that match a given pattern as component reference", func() {
+		ginkgo.Context("should add image sources that match a given pattern as component reference", func() {
 
-			It("match by resource name", func() {
+			ginkgo.It("match by resource name", func() {
 				ivReader, err := os.Open("./testdata/resources/20-0-comp-ref.yaml")
 				Expect(err).ToNot(HaveOccurred())
 				defer func() {
@@ -295,7 +295,7 @@ var _ = Describe("Add", func() {
 				})))
 			})
 
-			It("match by image repository", func() {
+			ginkgo.It("match by image repository", func() {
 				ivReader, err := os.Open("./testdata/resources/20-1-comp-ref.yaml")
 				Expect(err).ToNot(HaveOccurred())
 				defer func() {
@@ -342,7 +342,7 @@ var _ = Describe("Add", func() {
 
 		})
 
-		It("should return an error if the referenced component cannot be found in the context", func() {
+		ginkgo.It("should return an error if the referenced component cannot be found in the context", func() {
 			ivReader, err := os.Open("./testdata/resources/20-0-comp-ref.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			defer func() {
@@ -364,7 +364,7 @@ var _ = Describe("Add", func() {
 			Expect(errors.Is(err, ctf.ErrNotFoundError)).To(BeTrue())
 		})
 
-		It("should add image sources with the component reference label as component reference", func() {
+		ginkgo.It("should add image sources with the component reference label as component reference", func() {
 
 			ivReader, err := os.Open("./testdata/resources/23-comp-ref-label.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -398,7 +398,7 @@ var _ = Describe("Add", func() {
 			})))
 		})
 
-		It("should add image sources with the component reference label and overwrites as component reference", func() {
+		ginkgo.It("should add image sources with the component reference label and overwrites as component reference", func() {
 
 			ivReader, err := os.Open("./testdata/resources/24-comp-ref-label.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -432,7 +432,7 @@ var _ = Describe("Add", func() {
 			})))
 		})
 
-		It("should not add image sources that match a given pattern as component reference but has a ignore label", func() {
+		ginkgo.It("should not add image sources that match a given pattern as component reference but has a ignore label", func() {
 
 			ivReader, err := os.Open("./testdata/resources/25-comp-ref-ignore-label.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -452,7 +452,7 @@ var _ = Describe("Add", func() {
 			Expect(cd.ComponentReferences).To(HaveLen(0))
 		})
 
-		It("should not add a image sources that match a given pattern as component reference but is excluded", func() {
+		ginkgo.It("should not add a image sources that match a given pattern as component reference but is excluded", func() {
 
 			ivReader, err := os.Open("./testdata/resources/20-0-comp-ref.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -481,7 +481,7 @@ var _ = Describe("Add", func() {
 			}))
 		})
 
-		It("should add two image sources that match a given pattern as one component reference", func() {
+		ginkgo.It("should add two image sources that match a given pattern as one component reference", func() {
 
 			ivReader, err := os.Open("./testdata/resources/22-multi-image-comp-ref.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -524,9 +524,9 @@ var _ = Describe("Add", func() {
 		})
 	})
 
-	Context("Generic Dependencies", func() {
+	ginkgo.Context("Generic Dependencies", func() {
 
-		It("should add generic sources that match a given generic dependency name", func() {
+		ginkgo.It("should add generic sources that match a given generic dependency name", func() {
 			ivReader, err := os.Open("./testdata/resources/30-generic.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			defer func() {
@@ -561,7 +561,7 @@ var _ = Describe("Add", func() {
 			})))
 		})
 
-		It("should add an image entry as generic resources hwn a tag is absent", func() {
+		ginkgo.It("should add an image entry as generic resources hwn a tag is absent", func() {
 			ivReader, err := os.Open("./testdata/resources/30-generic.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			defer func() {
@@ -592,7 +592,7 @@ var _ = Describe("Add", func() {
 			})))
 		})
 
-		It("should add generic sources that match a given generic dependency name defined by a list of dependencies", func() {
+		ginkgo.It("should add generic sources that match a given generic dependency name defined by a list of dependencies", func() {
 
 			ivReader, err := os.Open("./testdata/resources/30-generic.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -628,7 +628,7 @@ var _ = Describe("Add", func() {
 			})))
 		})
 
-		It("should add generic sources that are labeled", func() {
+		ginkgo.It("should add generic sources that are labeled", func() {
 			ivReader, err := os.Open("./testdata/resources/31-generic-labels.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			defer func() {

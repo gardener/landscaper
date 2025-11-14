@@ -7,18 +7,18 @@ import (
 	"bytes"
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/transport/process/downloaders"
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/transport/process/utils"
 )
 
-var _ = Describe("ociArtifact", func() {
+var _ = ginkgo.Describe("ociArtifact", func() {
 
-	Context("Process", func() {
+	ginkgo.Context("Process", func() {
 
-		It("should download and stream oci image", func() {
+		ginkgo.It("should download and stream oci image", func() {
 			ociImageRes := testComponent.Resources[imageResIndex]
 
 			inProcessorMsg := bytes.NewBuffer([]byte{})
@@ -44,7 +44,7 @@ var _ = Describe("ociArtifact", func() {
 			Expect(*actualOciArtifact.GetManifest()).To(Equal(expectedImageManifest))
 		})
 
-		It("should download and stream oci image index", func() {
+		ginkgo.It("should download and stream oci image index", func() {
 			ociImageIndexRes := testComponent.Resources[imageIndexResIndex]
 
 			inProcessorMsg := bytes.NewBuffer([]byte{})
@@ -70,7 +70,7 @@ var _ = Describe("ociArtifact", func() {
 			Expect(actualOciArtifact.GetIndex()).To(Equal(&expectedImageIndex))
 		})
 
-		It("should return error if called with resource of invalid type", func() {
+		ginkgo.It("should return error if called with resource of invalid type", func() {
 			localOciBlobRes := testComponent.Resources[localOciBlobResIndex]
 
 			d, err := downloaders.NewOCIArtifactDownloader(ociClient, ociCache)
