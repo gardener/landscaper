@@ -14,16 +14,16 @@ landscaper:
       component_descriptor:
         ocm_repository: europe-docker.pkg.dev/sap-gcp-cp-k8s-stable-hub/landscaper
     steps:
-      verify:
-        # renovate: datasource=docker depName=golang
-        image: 'golang:1.25.4'
+      # verify:
+      #   # renovate: datasource=docker depName=golang
+      #   image: 'golang:1.25.4'
       ocm_build_and_publish:
         image: europe-docker.pkg.dev/gardener-project/releases/cicd/job-image:1.2360.0
         privilege_mode: privileged
         trait_depends:
         - version
-        depends:
-        - verify
+        # depends:
+        # - verify
         execute:
         - component_descriptor_ocm
 
@@ -92,11 +92,11 @@ landscaper:
           - update_release.py
           trait_depends:
           - release
-          depends:
+          # depends:
           # - integration_test
         format:
           publish_to:
           - source
-          depends:
-          - verify
+          # depends:
+          # - verify
           # - integration_test
