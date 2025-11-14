@@ -14,7 +14,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
@@ -26,17 +26,17 @@ import (
 	ivcmd "github.com/gardener/landscaper/legacy-component-cli/pkg/commands/imagevector"
 )
 
-var _ = Describe("Add", func() {
+var _ = ginkgo.Describe("Add", func() {
 
 	var testdataFs vfs.FileSystem
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		fs, err := projectionfs.New(osfs.New(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), fs)
 	})
 
-	It("should add a image source with tag", func() {
+	ginkgo.It("should add a image source with tag", func() {
 
 		opts := &ivcmd.AddOptions{
 			ComponentDescriptorPath: "./00-component/component-descriptor.yaml",
@@ -79,7 +79,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a image source with a digest as tag", func() {
+	ginkgo.It("should add a image source with a digest as tag", func() {
 
 		opts := &ivcmd.AddOptions{
 			ComponentDescriptorPath: "./00-component/component-descriptor.yaml",
@@ -122,7 +122,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a image source with a label", func() {
+	ginkgo.It("should add a image source with a label", func() {
 
 		opts := &ivcmd.AddOptions{
 			ComponentDescriptorPath: "./00-component/component-descriptor.yaml",
@@ -165,7 +165,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add imagevector labels for inline image definitions", func() {
+	ginkgo.It("should add imagevector labels for inline image definitions", func() {
 
 		opts := &ivcmd.AddOptions{
 			ComponentDescriptorPath: "./05-inline/component-descriptor.yaml",
@@ -204,7 +204,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a image source with tag and target version", func() {
+	ginkgo.It("should add a image source with tag and target version", func() {
 
 		opts := &ivcmd.AddOptions{
 			ComponentDescriptorPath: "./00-component/component-descriptor.yaml",
@@ -230,7 +230,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add two image sources with different target versions", func() {
+	ginkgo.It("should add two image sources with different target versions", func() {
 
 		opts := &ivcmd.AddOptions{
 			ComponentDescriptorPath: "./00-component/component-descriptor.yaml",
@@ -265,9 +265,9 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	Context("Generic Dependencies", func() {
+	ginkgo.Context("Generic Dependencies", func() {
 
-		It("should add generic sources that match a given generic dependency name", func() {
+		ginkgo.It("should add generic sources that match a given generic dependency name", func() {
 			opts := &ivcmd.AddOptions{
 				ParseImageOptions: iv.ParseImageOptions{
 					GenericDependencies: []string{
@@ -297,7 +297,7 @@ var _ = Describe("Add", func() {
 			})))
 		})
 
-		It("should add generic sources that match a given generic dependency name defined by a list of dependencies", func() {
+		ginkgo.It("should add generic sources that match a given generic dependency name defined by a list of dependencies", func() {
 			opts := &ivcmd.AddOptions{
 				GenericDependencies: "hyperkube",
 			}

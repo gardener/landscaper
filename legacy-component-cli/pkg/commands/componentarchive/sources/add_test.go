@@ -16,7 +16,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
@@ -30,21 +30,21 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Sources Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Sources Test Suite")
 }
 
-var _ = Describe("Add", func() {
+var _ = ginkgo.Describe("Add", func() {
 
 	var testdataFs vfs.FileSystem
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		fs, err := projectionfs.New(osfs.New(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), fs)
 	})
 
-	It("should add a source defined by a file", func() {
+	ginkgo.It("should add a source defined by a file", func() {
 		opts := &sources.Options{
 			BuilderOptions:    componentarchive.BuilderOptions{ComponentArchivePath: "./00-component"},
 			SourceObjectPaths: []string{"./resources/00-src.yaml"},
@@ -66,7 +66,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a source defined by the arguments", func() {
+	ginkgo.It("should add a source defined by the arguments", func() {
 		opts := &sources.Options{}
 		Expect(opts.Complete([]string{"./00-component", "./resources/00-src.yaml"})).To(Succeed())
 
@@ -86,7 +86,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a source file defined by the deprecated -r flag", func() {
+	ginkgo.It("should add a source file defined by the deprecated -r flag", func() {
 		opts := &sources.Options{
 			SourceObjectPath: "./resources/00-src.yaml",
 		}
@@ -108,7 +108,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a source defined by stdin when the resource path is '-'", func() {
+	ginkgo.It("should add a source defined by stdin when the resource path is '-'", func() {
 		input, err := os.Open("./testdata/resources/00-src.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		defer input.Close()
@@ -139,7 +139,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a source defined by stdin when no other inputs are defined.", func() {
+	ginkgo.It("should add a source defined by stdin when no other inputs are defined.", func() {
 		input, err := os.Open("./testdata/resources/00-src.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		defer input.Close()
@@ -169,7 +169,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add multiple sources defined by a multi doc file", func() {
+	ginkgo.It("should add multiple sources defined by a multi doc file", func() {
 
 		opts := &sources.Options{
 			BuilderOptions:    componentarchive.BuilderOptions{ComponentArchivePath: "./00-component"},
@@ -197,7 +197,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should throw an error if an invalid source is defined", func() {
+	ginkgo.It("should throw an error if an invalid source is defined", func() {
 		opts := &sources.Options{
 			BuilderOptions:    componentarchive.BuilderOptions{ComponentArchivePath: "./00-component"},
 			SourceObjectPaths: []string{"./resources/10-invalid.yaml"},
@@ -212,7 +212,7 @@ var _ = Describe("Add", func() {
 		Expect(cd.Sources).To(HaveLen(0))
 	})
 
-	It("should overwrite the version of a already existing source", func() {
+	ginkgo.It("should overwrite the version of a already existing source", func() {
 
 		opts := &sources.Options{
 			BuilderOptions:    componentarchive.BuilderOptions{ComponentArchivePath: "./01-component"},
@@ -235,7 +235,7 @@ var _ = Describe("Add", func() {
 		}))
 	})
 
-	It("should add a templated source defined by a file", func() {
+	ginkgo.It("should add a templated source defined by a file", func() {
 		opts := &sources.Options{
 			BuilderOptions: componentarchive.BuilderOptions{ComponentArchivePath: "./00-component"},
 			TemplateOptions: template.Options{

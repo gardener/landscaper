@@ -7,28 +7,28 @@ package template_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/template"
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Template Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Template Test Suite")
 }
 
-var _ = Describe("Template", func() {
+var _ = ginkgo.Describe("Template", func() {
 
-	Context("Parse Arguments", func() {
+	ginkgo.Context("Parse Arguments", func() {
 
-		It("should parse one argument after a '--'", func() {
+		ginkgo.It("should parse one argument after a '--'", func() {
 			opts := template.Options{}
 			Expect(opts.Parse([]string{"MY_VAR=test"})).To(BeNil())
 			Expect(opts.Vars).To(HaveKeyWithValue("MY_VAR", "test"))
 		})
 
-		It("should return non variable arguments", func() {
+		ginkgo.It("should return non variable arguments", func() {
 			opts := template.Options{}
 
 			args := opts.Parse([]string{"--", "MY_VAR=test", "my-arg"})
@@ -38,7 +38,7 @@ var _ = Describe("Template", func() {
 			Expect(opts.Vars).To(HaveKeyWithValue("MY_VAR", "test"))
 		})
 
-		It("should parse multiple values", func() {
+		ginkgo.It("should parse multiple values", func() {
 			opts := template.Options{}
 			Expect(opts.Parse([]string{"MY_VAR=test", "myOtherVar=true"})).To(BeNil())
 			Expect(opts.Vars).To(HaveKeyWithValue("MY_VAR", "test"))
@@ -47,8 +47,8 @@ var _ = Describe("Template", func() {
 
 	})
 
-	Context("Template", func() {
-		It("should template with a single value", func() {
+	ginkgo.Context("Template", func() {
+		ginkgo.It("should template with a single value", func() {
 			s := "my ${MY_VAR}"
 			opts := template.Options{}
 			opts.Vars = map[string]string{
@@ -59,7 +59,7 @@ var _ = Describe("Template", func() {
 			Expect(res).To(Equal("my test"))
 		})
 
-		It("should template multiple value", func() {
+		ginkgo.It("should template multiple value", func() {
 			s := "my ${MY_VAR} ${my_second_var}"
 			opts := template.Options{}
 			opts.Vars = map[string]string{
@@ -71,7 +71,7 @@ var _ = Describe("Template", func() {
 			Expect(res).To(Equal("my test testvalue"))
 		})
 
-		It("should use an empty string if no value is provided", func() {
+		ginkgo.It("should use an empty string if no value is provided", func() {
 			s := "my ${MY_VAR}"
 			opts := template.Options{}
 			opts.Vars = map[string]string{}

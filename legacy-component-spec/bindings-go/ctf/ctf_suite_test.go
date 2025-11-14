@@ -24,7 +24,7 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 
@@ -33,14 +33,14 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ctf Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "ctf Test Suite")
 }
 
-var _ = Describe("ComponentArchive", func() {
+var _ = ginkgo.Describe("ComponentArchive", func() {
 
-	Context("build", func() {
-		It("should build a component archive from path", func() {
+	ginkgo.Context("build", func() {
+		ginkgo.It("should build a component archive from path", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			ca, err := ctf.ComponentArchiveFromPath("./testdata/component-01")
@@ -54,7 +54,7 @@ var _ = Describe("ComponentArchive", func() {
 			Expect(data.Bytes()).To(Equal([]byte("{\"some\": \"data\"}")))
 		})
 
-		It("should build a component archive from a tar", func() {
+		ginkgo.It("should build a component archive from a tar", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			ca, err := ctf.ComponentArchiveFromPath("./testdata/component-01")
@@ -78,7 +78,7 @@ var _ = Describe("ComponentArchive", func() {
 		})
 	})
 
-	It("should build a tar from a component archive", func() {
+	ginkgo.It("should build a tar from a component archive", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		ca, err := ctf.ComponentArchiveFromPath("./testdata/component-01")
@@ -97,7 +97,7 @@ var _ = Describe("ComponentArchive", func() {
 		Expect(blobData).To(Equal([]byte("{\"some\": \"data\"}")))
 	})
 
-	It("should add a resource to the component archive from a data reader", func() {
+	ginkgo.It("should add a resource to the component archive from a data reader", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		ca, err := ctf.ComponentArchiveFromPath("./testdata/component-01")
@@ -130,7 +130,7 @@ var _ = Describe("ComponentArchive", func() {
 		Expect(result.Bytes()).To(Equal(data))
 	})
 
-	It("should add a resource to the component archive from a blobresolver", func() {
+	ginkgo.It("should add a resource to the component archive from a blobresolver", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		ca, err := ctf.ComponentArchiveFromPath("./testdata/component-01")

@@ -17,18 +17,18 @@ package v2_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	v2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "v2 Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "v2 Test Suite")
 }
 
-var _ = Describe("Helper", func() {
+var _ = ginkgo.Describe("Helper", func() {
 
 	var (
 		comp *v2.ComponentDescriptor
@@ -39,7 +39,7 @@ var _ = Describe("Helper", func() {
 		ociRegistry2 *v2.OCIRegistryAccess
 	)
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		ociRegistry1 = &v2.OCIRegistryAccess{
 			ObjectType: v2.ObjectType{
 				Type: v2.OCIRegistryType,
@@ -101,10 +101,10 @@ var _ = Describe("Helper", func() {
 		}
 	})
 
-	Context("#IdentitySelector", func() {
+	ginkgo.Context("#IdentitySelector", func() {
 
-		Context("json selector", func() {
-			It("should select a resource by a single name selector", func() {
+		ginkgo.Context("json selector", func() {
+			ginkgo.It("should select a resource by a single name selector", func() {
 				res, err := comp.GetResourceByDefaultSelector(`{ "name": "image1"}`)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(res).To(HaveLen(1))
@@ -112,8 +112,8 @@ var _ = Describe("Helper", func() {
 			})
 		})
 
-		Context("go selector", func() {
-			It("should select a resource by a single name selector", func() {
+		ginkgo.Context("go selector", func() {
+			ginkgo.It("should select a resource by a single name selector", func() {
 				res, err := comp.GetResourceByDefaultSelector(map[string]interface{}{
 					"name": "image1",
 				})
@@ -122,7 +122,7 @@ var _ = Describe("Helper", func() {
 				Expect(res[0].Name).To(Equal("image1"))
 			})
 
-			It("should select a resource by a regex selector", func() {
+			ginkgo.It("should select a resource by a regex selector", func() {
 				res, err := comp.GetResourceByRegexSelector(map[string]interface{}{
 					"name": ".*1",
 				})
@@ -131,7 +131,7 @@ var _ = Describe("Helper", func() {
 				Expect(res[0].Name).To(Equal("image1"))
 			})
 
-			It("should select multiple resource by a regex selector", func() {
+			ginkgo.It("should select multiple resource by a regex selector", func() {
 				res, err := comp.GetResourceByRegexSelector(map[string]interface{}{
 					"name": "image.*",
 				})
@@ -139,7 +139,7 @@ var _ = Describe("Helper", func() {
 				Expect(res).To(HaveLen(2))
 			})
 
-			It("should return no resource if a label does not match", func() {
+			ginkgo.It("should return no resource if a label does not match", func() {
 				res, err := comp.GetResourceByDefaultSelector(map[string]interface{}{
 					"name":    "image1",
 					"nomatch": "fail",
@@ -148,7 +148,7 @@ var _ = Describe("Helper", func() {
 				Expect(res).To(HaveLen(0))
 			})
 
-			It("should return multiple resources", func() {
+			ginkgo.It("should return multiple resources", func() {
 				res, err := comp.GetResourceByDefaultSelector(map[string]interface{}{
 					"all": "true",
 				})
@@ -158,20 +158,20 @@ var _ = Describe("Helper", func() {
 		})
 	})
 
-	It("should select a resource by a its type, name and version", func() {
+	ginkgo.It("should select a resource by a its type, name and version", func() {
 		res, err := comp.GetExternalResource(v2.OCIImageType, "image1", "1.2.3")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res.Name).To(Equal("image1"))
 		Expect(res.Version).To(Equal("1.2.3"))
 	})
 
-	It("should select 2 resources by a their type", func() {
+	ginkgo.It("should select 2 resources by a their type", func() {
 		res, err := comp.GetResourcesByType(v2.OCIImageType)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(HaveLen(2))
 	})
 
-	It("should select no resources by a their type", func() {
+	ginkgo.It("should select no resources by a their type", func() {
 		_, err := comp.GetResourcesByType(v2.GitType)
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(Equal(v2.ErrNotFound))

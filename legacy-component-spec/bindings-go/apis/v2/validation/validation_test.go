@@ -17,7 +17,7 @@ package validation
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -26,11 +26,11 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "V2 Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "V2 Test Suite")
 }
 
-var _ = Describe("Validation", func() {
+var _ = ginkgo.Describe("Validation", func() {
 
 	var (
 		comp *v2.ComponentDescriptor
@@ -41,7 +41,7 @@ var _ = Describe("Validation", func() {
 		ociRegistry2 *v2.OCIRegistryAccess
 	)
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		ociRegistry1 = &v2.OCIRegistryAccess{
 			ObjectType: v2.ObjectType{
 				Type: v2.OCIRegistryType,
@@ -95,9 +95,9 @@ var _ = Describe("Validation", func() {
 		}
 	})
 
-	Context("#Metadata", func() {
+	ginkgo.Context("#Metadata", func() {
 
-		It("should forbid if the component schemaVersion is missing", func() {
+		ginkgo.It("should forbid if the component schemaVersion is missing", func() {
 			comp := v2.ComponentDescriptor{
 				Metadata: v2.Metadata{},
 			}
@@ -109,7 +109,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should pass if the component schemaVersion is defined", func() {
+		ginkgo.It("should pass if the component schemaVersion is defined", func() {
 			errList := validate(nil, comp)
 			Expect(errList).ToNot(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
@@ -119,8 +119,8 @@ var _ = Describe("Validation", func() {
 
 	})
 
-	Context("#Provider", func() {
-		It("should pass if a component's provider is a non-empty string", func() {
+	ginkgo.Context("#Provider", func() {
+		ginkgo.It("should pass if a component's provider is a non-empty string", func() {
 			comp.Provider = "custom"
 			errList := validate(nil, comp)
 			Expect(errList).ToNot(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
@@ -130,8 +130,8 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Context("#ObjectMeta", func() {
-		It("should forbid invalid component name as specified in json schema", func() {
+	ginkgo.Context("#ObjectMeta", func() {
+		ginkgo.It("should forbid invalid component name as specified in json schema", func() {
 			comp.Name = "http://example.org/org/name"
 			err := v2.DefaultComponent(comp)
 			Expect(err).ToNot(HaveOccurred())
@@ -140,7 +140,7 @@ var _ = Describe("Validation", func() {
 			Expect(errs.Error()).To(ContainSubstring("component.name: Does not match pattern"))
 		})
 
-		It("should forbid if the component's version is missing", func() {
+		ginkgo.It("should forbid if the component's version is missing", func() {
 			comp := v2.ComponentDescriptor{}
 			errList := validate(nil, &comp)
 			Expect(errList).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
@@ -153,7 +153,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should forbid if the component's name is missing", func() {
+		ginkgo.It("should forbid if the component's name is missing", func() {
 			comp := v2.ComponentDescriptor{}
 			errList := validate(nil, &comp)
 			Expect(errList).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
@@ -164,8 +164,8 @@ var _ = Describe("Validation", func() {
 
 	})
 
-	Context("#Sources", func() {
-		It("should forbid if a duplicated component's source is defined", func() {
+	ginkgo.Context("#Sources", func() {
+		ginkgo.It("should forbid if a duplicated component's source is defined", func() {
 			comp.Sources = []v2.Source{
 				{
 					IdentityObjectMeta: v2.IdentityObjectMeta{
@@ -188,8 +188,8 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Context("#ComponentReferences", func() {
-		It("should pass if a reference is set", func() {
+	ginkgo.Context("#ComponentReferences", func() {
+		ginkgo.It("should pass if a reference is set", func() {
 			comp.ComponentReferences = []v2.ComponentReference{
 				{
 					Name:          "test",
@@ -208,7 +208,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should forbid if a reference's name is missing", func() {
+		ginkgo.It("should forbid if a reference's name is missing", func() {
 			comp.ComponentReferences = []v2.ComponentReference{
 				{
 					ComponentName: "test",
@@ -222,7 +222,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should forbid if a reference's component name is missing", func() {
+		ginkgo.It("should forbid if a reference's component name is missing", func() {
 			comp.ComponentReferences = []v2.ComponentReference{
 				{
 					Name:    "test",
@@ -236,7 +236,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should forbid if a reference's version is missing", func() {
+		ginkgo.It("should forbid if a reference's version is missing", func() {
 			comp.ComponentReferences = []v2.ComponentReference{
 				{
 					ComponentName: "test",
@@ -252,8 +252,8 @@ var _ = Describe("Validation", func() {
 
 	})
 
-	Context("#Resources", func() {
-		It("should forbid if a local resource's version differs from the version of the parent", func() {
+	ginkgo.Context("#Resources", func() {
+		ginkgo.It("should forbid if a local resource's version differs from the version of the parent", func() {
 			comp.Resources = []v2.Resource{
 				{
 					IdentityObjectMeta: v2.IdentityObjectMeta{
@@ -271,7 +271,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should forbid if a resource name contains invalid characters", func() {
+		ginkgo.It("should forbid if a resource name contains invalid characters", func() {
 			comp.Resources = []v2.Resource{
 				{
 					IdentityObjectMeta: v2.IdentityObjectMeta{
@@ -295,7 +295,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should forbid if a duplicated local resource is defined", func() {
+		ginkgo.It("should forbid if a duplicated local resource is defined", func() {
 			comp.Resources = []v2.Resource{
 				{
 					IdentityObjectMeta: v2.IdentityObjectMeta{
@@ -315,7 +315,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should forbid if a duplicated resource with additional identity labels is defined", func() {
+		ginkgo.It("should forbid if a duplicated resource with additional identity labels is defined", func() {
 			comp.Resources = []v2.Resource{
 				{
 					IdentityObjectMeta: v2.IdentityObjectMeta{
@@ -341,7 +341,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should pass if a duplicated resource has the same name but with different additional identity labels", func() {
+		ginkgo.It("should pass if a duplicated resource has the same name but with different additional identity labels", func() {
 			comp.Resources = []v2.Resource{
 				{
 					IdentityObjectMeta: v2.IdentityObjectMeta{
@@ -369,9 +369,9 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Context("#labels", func() {
+	ginkgo.Context("#labels", func() {
 
-		It("should forbid if labels are defined multiple times in the same context", func() {
+		ginkgo.It("should forbid if labels are defined multiple times in the same context", func() {
 			comp.ComponentReferences = []v2.ComponentReference{
 				{
 					ComponentName: "test",
@@ -397,7 +397,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should pass if labels are defined multiple times in the same context with differnet names", func() {
+		ginkgo.It("should pass if labels are defined multiple times in the same context with differnet names", func() {
 			comp.ComponentReferences = []v2.ComponentReference{
 				{
 					ComponentName: "test",
@@ -424,8 +424,8 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Context("#Identity", func() {
-		It("should pass valid identity labels", func() {
+	ginkgo.Context("#Identity", func() {
+		ginkgo.It("should pass valid identity labels", func() {
 			identity := v2.Identity{
 				"my-l1": "test",
 				"my-l2": "test",
@@ -434,7 +434,7 @@ var _ = Describe("Validation", func() {
 			Expect(errList).To(HaveLen(0))
 		})
 
-		It("should forbid if a identity label define the name", func() {
+		ginkgo.It("should forbid if a identity label define the name", func() {
 			identity := v2.Identity{
 				"name": "test",
 			}
@@ -445,7 +445,7 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should forbid if a identity label defines a key with invalid characters", func() {
+		ginkgo.It("should forbid if a identity label defines a key with invalid characters", func() {
 			identity := v2.Identity{
 				"my-l1!": "test",
 			}

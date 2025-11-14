@@ -9,20 +9,20 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-cli/ociclient/test/envtest"
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "envtest Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "envtest Test Suite")
 }
 
-var _ = Describe("Test Environment", func() {
+var _ = ginkgo.Describe("Test Environment", func() {
 
-	It("should run and stop a test registry", func() {
+	ginkgo.It("should run and stop a test registry", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		testenv := envtest.New(envtest.Options{

@@ -14,7 +14,7 @@ import (
 	"net/url"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
@@ -107,31 +107,31 @@ func RunPushAndPullImageIndexTest(untaggedRepo, indexMediaType string) {
 	testutils.CompareRemoteManifest(ctx, client, manifest2Ref, manifest2Desc, manifest2Bytes, configData2, layersData2)
 }
 
-var _ = Describe("client", func() {
+var _ = ginkgo.Describe("client", func() {
 
-	Context("Client", func() {
+	ginkgo.Context("Client", func() {
 
-		It("should push and pull a single architecture image without modifications (oci media type)", func() {
+		ginkgo.It("should push and pull a single architecture image without modifications (oci media type)", func() {
 			ref := fmt.Sprintf("%s/%s", testenv.Addr, "single-arch-tests/0/artifact:v0.0.1")
 			RunPushAndPullImageTest(ref, ocispecv1.MediaTypeImageManifest)
 		}, 20)
 
-		It("should push and pull a multi architecture image without modifications (oci media type)", func() {
+		ginkgo.It("should push and pull a multi architecture image without modifications (oci media type)", func() {
 			untaggedRef := fmt.Sprintf("%s/%s", testenv.Addr, "multi-arch-tests/0/artifact")
 			RunPushAndPullImageIndexTest(untaggedRef, ocispecv1.MediaTypeImageIndex)
 		}, 20)
 
 		// TODO: investigate why this test isn't working (could be registry not accepting docker media type)
-		// It("should push and pull a single architecture image without modifications (docker media type)", func() {
+		// ginkgo.It("should push and pull a single architecture image without modifications (docker media type)", func() {
 		// 	RunPushAndPullTest("single-arch-tests/1/artifact:0.0.1", images.MediaTypeDockerSchema2Manifest)
 		// }, 20)
 
 		// TODO: investigate why this test isn't working (could be registry not accepting docker media type)
-		// It("should push and pull a multi architecture image without modifications (docker media type)", func() {
+		// ginkgo.It("should push and pull a multi architecture image without modifications (docker media type)", func() {
 		// 	RunPushAndPullImageIndexTest("multi-arch-tests/1/artifact", images.MediaTypeDockerSchema2ManifestList)
 		// }, 20)
 
-		It("should push and pull an empty oci image index", func() {
+		ginkgo.It("should push and pull an empty oci image index", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 
@@ -169,7 +169,7 @@ var _ = Describe("client", func() {
 			Expect(actualIndexBytes).To(Equal(indexBytes))
 		}, 20)
 
-		It("should push and pull an oci image index with only 1 manifest and no platform information", func() {
+		ginkgo.It("should push and pull an oci image index with only 1 manifest and no platform information", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 
@@ -226,7 +226,7 @@ var _ = Describe("client", func() {
 			testutils.CompareRemoteManifest(ctx, client, manifest1Ref, manifest1Desc, manifest1Bytes, configData, layersData)
 		}, 20)
 
-		It("should copy an oci artifact", func() {
+		ginkgo.It("should copy an oci artifact", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 
@@ -244,7 +244,7 @@ var _ = Describe("client", func() {
 			testutils.CompareRemoteManifest(ctx, client, newRef, mdesc, mbytes, configData, layersData)
 		}, 20)
 
-		It("should copy an oci image index", func() {
+		ginkgo.It("should copy an oci image index", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 
@@ -322,8 +322,8 @@ var _ = Describe("client", func() {
 
 	})
 
-	Context("ExtendedClient", func() {
-		Context("ListTags", func() {
+	ginkgo.Context("ExtendedClient", func() {
+		ginkgo.Context("ListTags", func() {
 			var (
 				server  *httptest.Server
 				host    string
@@ -333,7 +333,7 @@ var _ = Describe("client", func() {
 				}
 			)
 
-			BeforeEach(func() {
+			ginkgo.BeforeEach(func() {
 				server = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 					handler(writer, request)
 				}))
@@ -343,11 +343,11 @@ var _ = Describe("client", func() {
 				host = hostUrl.Host
 			})
 
-			AfterEach(func() {
+			ginkgo.AfterEach(func() {
 				server.Close()
 			})
 
-			It("should return a list of tags", func() {
+			ginkgo.It("should return a list of tags", func() {
 				var (
 					ctx        = context.Background()
 					repository = "myproject/repo/myimage"
@@ -379,7 +379,7 @@ var _ = Describe("client", func() {
 
 		})
 
-		Context("ListRepositories", func() {
+		ginkgo.Context("ListRepositories", func() {
 			var (
 				server  *httptest.Server
 				host    string
@@ -389,7 +389,7 @@ var _ = Describe("client", func() {
 				}
 			)
 
-			BeforeEach(func() {
+			ginkgo.BeforeEach(func() {
 				server = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 					handler(writer, request)
 				}))
@@ -399,11 +399,11 @@ var _ = Describe("client", func() {
 				host = hostUrl.Host
 			})
 
-			AfterEach(func() {
+			ginkgo.AfterEach(func() {
 				server.Close()
 			})
 
-			It("should return a list of repositories", func() {
+			ginkgo.It("should return a list of repositories", func() {
 				var (
 					ctx        = context.Background()
 					repository = "myproject/repo"

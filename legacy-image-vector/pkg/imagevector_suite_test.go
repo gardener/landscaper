@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -16,8 +16,8 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "imagevector Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "imagevector Test Suite")
 }
 
 func readComponentDescriptor(path string) *cdv2.ComponentDescriptor {

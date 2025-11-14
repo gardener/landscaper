@@ -17,11 +17,11 @@ package signatures_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 func TestSignatures(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Signatures Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Signatures Test Suite")
 }

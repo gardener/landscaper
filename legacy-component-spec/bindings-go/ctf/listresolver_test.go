@@ -17,16 +17,16 @@ package ctf_test
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf"
 )
 
-var _ = Describe("ListResolver", func() {
+var _ = ginkgo.Describe("ListResolver", func() {
 
-	It("should resolve a component from a list of one component descriptor", func() {
+	ginkgo.It("should resolve a component from a list of one component descriptor", func() {
 		cd := cdv2.ComponentDescriptor{}
 		cd.Name = "example.com/a"
 		cd.Version = "0.0.0"
@@ -42,7 +42,7 @@ var _ = Describe("ListResolver", func() {
 		Expect(res.Name).To(Equal("example.com/a"))
 	})
 
-	It("should resolve a component from a list of multiple component descriptors", func() {
+	ginkgo.It("should resolve a component from a list of multiple component descriptors", func() {
 		cd := cdv2.ComponentDescriptor{}
 		cd.Name = "example.com/a"
 		cd.Version = "0.0.0"
@@ -79,7 +79,7 @@ var _ = Describe("ListResolver", func() {
 		}))
 	})
 
-	It("should not resolve a component if the repository contexts do not match", func() {
+	ginkgo.It("should not resolve a component if the repository contexts do not match", func() {
 		cd := cdv2.ComponentDescriptor{}
 		cd.Name = "example.com/a"
 		cd.Version = "0.0.0"

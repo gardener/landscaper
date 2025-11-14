@@ -8,17 +8,17 @@ import (
 	"bytes"
 	"io"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/utils"
 )
 
-var _ = Describe("utils", func() {
+var _ = ginkgo.Describe("utils", func() {
 
-	Context("WriteFileToTARArchive", func() {
+	ginkgo.Context("WriteFileToTARArchive", func() {
 
-		It("should write file", func() {
+		ginkgo.It("should write file", func() {
 			fname := "testfile"
 			content := []byte("testcontent")
 
@@ -42,7 +42,7 @@ var _ = Describe("utils", func() {
 			Expect(err).To(Equal(io.EOF))
 		})
 
-		It("should write empty file", func() {
+		ginkgo.It("should write empty file", func() {
 			fname := "testfile"
 
 			archiveBuf := bytes.NewBuffer([]byte{})
@@ -65,18 +65,18 @@ var _ = Describe("utils", func() {
 			Expect(err).To(Equal(io.EOF))
 		})
 
-		It("should return error if filename is empty", func() {
+		ginkgo.It("should return error if filename is empty", func() {
 			tw := tar.NewWriter(bytes.NewBuffer([]byte{}))
 			inputReader := bytes.NewReader([]byte{})
 			Expect(utils.WriteFileToTARArchive("", inputReader, tw)).To(MatchError("filename must not be empty"))
 		})
 
-		It("should return error if inputReader is nil", func() {
+		ginkgo.It("should return error if inputReader is nil", func() {
 			tw := tar.NewWriter(bytes.NewBuffer([]byte{}))
 			Expect(utils.WriteFileToTARArchive("testfile", nil, tw)).To(MatchError("inputReader must not be nil"))
 		})
 
-		It("should return error if outArchive is nil", func() {
+		ginkgo.It("should return error if outArchive is nil", func() {
 			inputReader := bytes.NewReader([]byte{})
 			Expect(utils.WriteFileToTARArchive("testfile", inputReader, nil)).To(MatchError("outputWriter must not be nil"))
 		})

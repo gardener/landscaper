@@ -17,19 +17,19 @@ package signatures_test
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2/signatures"
 )
 
-var _ = Describe("Normalise/Hash component-descriptor", func() {
+var _ = ginkgo.Describe("Normalise/Hash component-descriptor", func() {
 	var baseCd cdv2.ComponentDescriptor
 	correctBaseCdHash := "6c571bb6e351ae755baa7f26cbd1f600d2968ab8b88e25a3bab277e53afdc3ad"
 	//corresponding normalised CD:
 	//[{"component":[{"componentReferences":[[{"componentName":"compRefNameComponentName"},{"digest":[{"hashAlgorithm":"sha256"},{"normalisationAlgorithm":"jsonNormalisation/v1"},{"value":"00000000000000"}]},{"extraIdentity":[{"refKey":"refName"}]},{"name":"compRefName"},{"version":"v0.0.2compRef"}]]},{"name":"CD-Name"},{"provider":""},{"resources":[[{"digest":[{"hashAlgorithm":"sha256"},{"normalisationAlgorithm":"ociArtifactDigest/v1"},{"value":"00000000000000"}]},{"extraIdentity":[{"key":"value"}]},{"name":"Resource1"},{"relation": ""},{"type",""},{"version":"v0.0.3resource"}]]},{"version":"v0.0.1"}]},{"meta":[{"schemaVersion":"v2"}]}]
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		baseCd = cdv2.ComponentDescriptor{
 			Metadata: cdv2.Metadata{
 				Version: "v2",
@@ -75,8 +75,8 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 		}
 	})
 
-	Describe("missing componentReference Digest", func() {
-		It("should fail to hash", func() {
+	ginkgo.Describe("missing componentReference Digest", func() {
+		ginkgo.It("should fail to hash", func() {
 			baseCd.ComponentSpec.ComponentReferences[0].Digest = nil
 			hasher, err := signatures.HasherForName(signatures.SHA256)
 			Expect(err).To(BeNil())
@@ -85,8 +85,8 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			Expect(err).ToNot(BeNil())
 		})
 	})
-	Describe("should give the correct hash", func() {
-		It("with sha256", func() {
+	ginkgo.Describe("should give the correct hash", func() {
+		ginkgo.It("with sha256", func() {
 			hasher, err := signatures.HasherForName(signatures.SHA256)
 			Expect(err).To(BeNil())
 			hash, err := signatures.HashForComponentDescriptor(baseCd, *hasher)
@@ -94,8 +94,8 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			Expect(hash.Value).To(Equal(correctBaseCdHash))
 		})
 	})
-	Describe("should ignore modifications in unhashed fields", func() {
-		It("should succeed with signature changes", func() {
+	ginkgo.Describe("should ignore modifications in unhashed fields", func() {
+		ginkgo.It("should succeed with signature changes", func() {
 			baseCd.Signatures = append(baseCd.Signatures, cdv2.Signature{
 				Name: "TestSig",
 				Digest: cdv2.DigestSpec{
@@ -114,7 +114,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			Expect(err).To(BeNil())
 			Expect(hash.Value).To(Equal(correctBaseCdHash))
 		})
-		It("should succeed with source changes", func() {
+		ginkgo.It("should succeed with source changes", func() {
 			baseCd.Sources = append(baseCd.Sources, cdv2.Source{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "source1",
@@ -127,7 +127,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			Expect(err).To(BeNil())
 			Expect(hash.Value).To(Equal(correctBaseCdHash))
 		})
-		It("should succeed with resource access reference changes", func() {
+		ginkgo.It("should succeed with resource access reference changes", func() {
 			access, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryAccess("ociRef/path/to/image"))
 			Expect(err).To(BeNil())
 			baseCd.Resources[0].Access = &access
@@ -139,8 +139,8 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 		})
 
 	})
-	Describe("should correctly handle empty access and digest", func() {
-		It("should be equal hash for access.type == None and access == nil", func() {
+	ginkgo.Describe("should correctly handle empty access and digest", func() {
+		ginkgo.It("should be equal hash for access.type == None and access == nil", func() {
 			baseCd.Resources[0].Access = nil
 			baseCd.Resources[0].Digest = nil
 
@@ -157,7 +157,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal(hash2))
 		})
-		It("should fail if digest is empty", func() {
+		ginkgo.It("should fail if digest is empty", func() {
 			baseCd.Resources[0].Digest = nil
 
 			hasher, err := signatures.HasherForName(signatures.SHA256)
@@ -165,7 +165,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			_, err = signatures.HashForComponentDescriptor(baseCd, *hasher)
 			Expect(err).To(HaveOccurred())
 		})
-		It("should succed if digest is empty and access is nil", func() {
+		ginkgo.It("should succed if digest is empty and access is nil", func() {
 			baseCd.Resources[0].Access = nil
 			baseCd.Resources[0].Digest = nil
 
@@ -174,7 +174,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			_, err = signatures.HashForComponentDescriptor(baseCd, *hasher)
 			Expect(err).To(BeNil())
 		})
-		It("should fail if first is nil access and an access is added but a digest is missing", func() {
+		ginkgo.It("should fail if first is nil access and an access is added but a digest is missing", func() {
 			baseCd.Resources[0].Access = nil
 			baseCd.Resources[0].Digest = nil
 
@@ -190,7 +190,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			_, err = signatures.HashForComponentDescriptor(baseCd, *hasher)
 			Expect(err).To(HaveOccurred())
 		})
-		It("should fail if first is none access.type and an access is added but a digest is missing", func() {
+		ginkgo.It("should fail if first is none access.type and an access is added but a digest is missing", func() {
 			baseCd.Resources[0].Access = cdv2.NewEmptyUnstructured("None")
 			baseCd.Resources[0].Digest = nil
 
@@ -206,7 +206,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			_, err = signatures.HashForComponentDescriptor(baseCd, *hasher)
 			Expect(err).To(HaveOccurred())
 		})
-		It("should fail if access is nil and digest is set", func() {
+		ginkgo.It("should fail if access is nil and digest is set", func() {
 			baseCd.Resources[0].Access = nil
 
 			hasher, err := signatures.HasherForName(signatures.SHA256)
@@ -214,7 +214,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			_, err = signatures.HashForComponentDescriptor(baseCd, *hasher)
 			Expect(err).To(HaveOccurred())
 		})
-		It("should fail if access.type is None and digest is set", func() {
+		ginkgo.It("should fail if access.type is None and digest is set", func() {
 			baseCd.Resources[0].Access = cdv2.NewEmptyUnstructured("None")
 
 			hasher, err := signatures.HasherForName(signatures.SHA256)
@@ -223,8 +223,8 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	Describe("add digest to cd", func() {
-		It("should succed if existing digest match calculated", func() {
+	ginkgo.Describe("add digest to cd", func() {
+		ginkgo.It("should succed if existing digest match calculated", func() {
 			err := signatures.AddDigestsToComponentDescriptor(context.TODO(), &baseCd, func(ctx context.Context, cd cdv2.ComponentDescriptor, cr cdv2.ComponentReference) (*cdv2.DigestSpec, error) {
 				return &cdv2.DigestSpec{
 					HashAlgorithm:          signatures.SHA256,
@@ -240,7 +240,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			})
 			Expect(err).To(BeNil())
 		})
-		It("should fail if calcuated componentReference digest is different", func() {
+		ginkgo.It("should fail if calcuated componentReference digest is different", func() {
 			err := signatures.AddDigestsToComponentDescriptor(context.TODO(), &baseCd, func(ctx context.Context, cd cdv2.ComponentDescriptor, cr cdv2.ComponentReference) (*cdv2.DigestSpec, error) {
 				return &cdv2.DigestSpec{
 					HashAlgorithm:          signatures.SHA256,
@@ -256,7 +256,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			})
 			Expect(err).To(HaveOccurred())
 		})
-		It("should fail if calcuated resource digest is different", func() {
+		ginkgo.It("should fail if calcuated resource digest is different", func() {
 			err := signatures.AddDigestsToComponentDescriptor(context.TODO(), &baseCd, func(ctx context.Context, cd cdv2.ComponentDescriptor, cr cdv2.ComponentReference) (*cdv2.DigestSpec, error) {
 				return &cdv2.DigestSpec{
 					HashAlgorithm:          signatures.SHA256,
@@ -272,7 +272,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 			})
 			Expect(err).To(HaveOccurred())
 		})
-		It("should add digest if missing", func() {
+		ginkgo.It("should add digest if missing", func() {
 			baseCd.ComponentReferences[0].Digest = nil
 			baseCd.Resources[0].Digest = nil
 
@@ -302,7 +302,7 @@ var _ = Describe("Normalise/Hash component-descriptor", func() {
 				Value:                  "00000000000000",
 			}))
 		})
-		It("should preserve the EXCLUDE-FROM-SIGNATURE digest", func() {
+		ginkgo.It("should preserve the EXCLUDE-FROM-SIGNATURE digest", func() {
 			baseCd.Resources[0].Digest = cdv2.NewExcludeFromSignatureDigest()
 
 			err := signatures.AddDigestsToComponentDescriptor(context.TODO(), &baseCd, func(ctx context.Context, cd cdv2.ComponentDescriptor, cr cdv2.ComponentReference) (*cdv2.DigestSpec, error) {

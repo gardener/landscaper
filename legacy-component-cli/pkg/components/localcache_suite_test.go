@@ -18,7 +18,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -32,11 +32,11 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Components Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Components Test Suite")
 }
 
-var _ = Describe("Components", func() {
+var _ = ginkgo.Describe("Components", func() {
 
 	var (
 		mockCtrl      *gomock.Controller
@@ -44,8 +44,8 @@ var _ = Describe("Components", func() {
 		testdatafs    vfs.FileSystem
 	)
 
-	BeforeEach(func() {
-		mockCtrl = gomock.NewController(GinkgoT())
+	ginkgo.BeforeEach(func() {
+		mockCtrl = gomock.NewController(ginkgo.GinkgoT())
 		mockOCIClient = mock_ociclient.NewMockClient(mockCtrl)
 
 		fs, err := projectionfs.New(osfs.New(), "./testdata")
@@ -53,12 +53,12 @@ var _ = Describe("Components", func() {
 		testdatafs = layerfs.New(memoryfs.New(), fs)
 	})
 
-	AfterEach(func() {
+	ginkgo.AfterEach(func() {
 		mockCtrl.Finish()
 	})
 
-	Context("#ResolveInLocalCache", func() {
-		It("should resolve a component from a local cache", func() {
+	ginkgo.Context("#ResolveInLocalCache", func() {
+		ginkgo.It("should resolve a component from a local cache", func() {
 			Expect(os.Setenv(constants.ComponentRepositoryCacheDirEnvVar, "./cache")).To(Succeed())
 			repoCtx := cdv2.OCIRegistryRepository{
 				BaseURL: "eu.gcr.io/my-context/dev",
@@ -70,8 +70,8 @@ var _ = Describe("Components", func() {
 		})
 	})
 
-	Context("#Resolver", func() {
-		It("should resolve a component from a local cache", func() {
+	ginkgo.Context("#Resolver", func() {
+		ginkgo.It("should resolve a component from a local cache", func() {
 			Expect(os.Setenv(constants.ComponentRepositoryCacheDirEnvVar, "./cache")).To(Succeed())
 			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/my-context/dev", ""))
 			Expect(err).ToNot(HaveOccurred())
@@ -84,7 +84,7 @@ var _ = Describe("Components", func() {
 			Expect(cd.Version).To(Equal("v0.1.0"))
 		})
 
-		It("should fallback to the oci client if a component is not in the local cache", func() {
+		ginkgo.It("should fallback to the oci client if a component is not in the local cache", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			Expect(os.Setenv(constants.ComponentRepositoryCacheDirEnvVar, "./cache")).To(Succeed())

@@ -10,6 +10,8 @@ import (
 	"os"
 	"path"
 
+	. "github.com/onsi/gomega"
+
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/landscaper/legacy-component-spec/bindings-go/oci"
@@ -20,8 +22,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
 
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/utils"
 
@@ -33,7 +34,7 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/commands/componentarchive/remote"
 )
 
-var _ = Describe("Remote", func() {
+var _ = ginkgo.Describe("Remote", func() {
 
 	var (
 		testdataFs       vfs.FileSystem
@@ -41,7 +42,7 @@ var _ = Describe("Remote", func() {
 		targetRepoCtxURL string
 	)
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		baseFs, err := projectionfs.New(osfs.New(), "../")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
@@ -51,7 +52,7 @@ var _ = Describe("Remote", func() {
 		targetRepoCtxURL = testenv.Addr + "/target-" + r
 	})
 
-	It("should push a component archive", func() {
+	ginkgo.It("should push a component archive", func() {
 		baseFs, err := projectionfs.New(osfs.New(), "../")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
@@ -85,7 +86,7 @@ var _ = Describe("Remote", func() {
 			"Expect that the first layer contains the component descriptor")
 	})
 
-	It("should get component archive", func() {
+	ginkgo.It("should get component archive", func() {
 		baseFs, err := projectionfs.New(osfs.New(), "../")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
@@ -119,7 +120,7 @@ var _ = Describe("Remote", func() {
 		Expect(showOpts.Run(ctx, logr.Discard(), testdataFs)).To(Succeed())
 	})
 
-	It("should fail getting component archive which does not exist", func() {
+	ginkgo.It("should fail getting component archive which does not exist", func() {
 		baseFs, err := projectionfs.New(osfs.New(), "../")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
@@ -142,7 +143,7 @@ var _ = Describe("Remote", func() {
 		Expect(showOpts.Run(ctx, logr.Discard(), testdataFs)).To(HaveOccurred())
 	})
 
-	It("should copy a component descriptor and its blobs from the source repository to the target repository.", func() {
+	ginkgo.It("should copy a component descriptor and its blobs from the source repository to the target repository.", func() {
 		baseFs, err := projectionfs.New(osfs.New(), "../")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
@@ -234,20 +235,20 @@ var _ = Describe("Remote", func() {
 		Expect(layerBlobTarget.String()).To(Equal(blobContent), "Expect that the target blob contains the same as source blob")
 	})
 
-	Context("Copy", func() {
+	ginkgo.Context("Copy", func() {
 
 		var (
 			srcRepoCtxURL    string
 			targetRepoCtxURL string
 		)
 
-		BeforeEach(func() {
+		ginkgo.BeforeEach(func() {
 			r := utils.RandomString(5)
 			srcRepoCtxURL = testenv.Addr + "/test-" + r
 			targetRepoCtxURL = testenv.Addr + "/target-" + r
 		})
 
-		It("should copy a component descriptor with a docker image and an oci artifact by value", func() {
+		ginkgo.It("should copy a component descriptor with a docker image and an oci artifact by value", func() {
 			ctx := context.Background()
 			ociCache, err := cache.NewCache(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())
@@ -322,7 +323,7 @@ var _ = Describe("Remote", func() {
 			Expect(acc.ImageReference).To(ContainSubstring("gardener-project/landscaper/charts/landscaper-controller:v0.11.0"))
 		})
 
-		It("should replace parts of the target ref of copied docker image resource", func() {
+		ginkgo.It("should replace parts of the target ref of copied docker image resource", func() {
 			ctx := context.Background()
 			ociCache, err := cache.NewCache(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())
@@ -403,7 +404,7 @@ var _ = Describe("Remote", func() {
 			Expect(res2Acc.ImageReference).To(ContainSubstring("my-project/component-cli:v0.28.0"))
 		})
 
-		It("should copy a component descriptor with a relative oci ref and convert it to a absolute path", func() {
+		ginkgo.It("should copy a component descriptor with a relative oci ref and convert it to a absolute path", func() {
 			ctx := context.Background()
 			ociCache, err := cache.NewCache(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())
@@ -472,7 +473,7 @@ var _ = Describe("Remote", func() {
 			Expect(acc.ImageReference).To(ContainSubstring(ociImageTargetRelRef))
 		})
 
-		It("should copy a component descriptor with a absolute oci ref and convert it to a relative path", func() {
+		ginkgo.It("should copy a component descriptor with a absolute oci ref and convert it to a relative path", func() {
 			ctx := context.Background()
 			ociCache, err := cache.NewCache(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())

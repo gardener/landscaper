@@ -5,17 +5,17 @@
 package cdutils
 
 import (
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
 )
 
-var _ = Describe("resource utils", func() {
+var _ = ginkgo.Describe("resource utils", func() {
 
-	Context("#MergeIdentityObjectMeta", func() {
+	ginkgo.Context("#MergeIdentityObjectMeta", func() {
 
-		It("should merge labels", func() {
+		ginkgo.It("should merge labels", func() {
 			meta1 := cdv2.IdentityObjectMeta{
 				Name: "test",
 				Labels: cdv2.Labels{

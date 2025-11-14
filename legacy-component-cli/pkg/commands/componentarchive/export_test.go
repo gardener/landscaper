@@ -13,7 +13,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/ctf"
@@ -22,19 +22,19 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/utils"
 )
 
-var _ = Describe("Export", func() {
+var _ = ginkgo.Describe("Export", func() {
 
 	var testdataFs vfs.FileSystem
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		baseFs, err := projectionfs.New(osfs.New(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), baseFs)
 	})
 
-	Context("From Filesystem", func() {
+	ginkgo.Context("From Filesystem", func() {
 
-		It("should export a component archive from filesystem as tar file", func() {
+		ginkgo.It("should export a component archive from filesystem as tar file", func() {
 			opts := &componentarchive.ExportOptions{
 				ComponentArchivePath: "00-ca",
 				OutputPath:           "ca.tar",
@@ -47,7 +47,7 @@ var _ = Describe("Export", func() {
 			Expect(mediatype).ToNot(ContainSubstring("gzip"))
 		})
 
-		It("should export a component archive from filesystem as tar file", func() {
+		ginkgo.It("should export a component archive from filesystem as tar file", func() {
 			opts := &componentarchive.ExportOptions{
 				ComponentArchivePath: "00-ca",
 				OutputPath:           "ca.tar.gz",
@@ -62,9 +62,9 @@ var _ = Describe("Export", func() {
 
 	})
 
-	Context("From tar", func() {
+	ginkgo.Context("From tar", func() {
 
-		It("should export a component archive as tar file to filesystem", func() {
+		ginkgo.It("should export a component archive as tar file to filesystem", func() {
 			opts := &componentarchive.ExportOptions{
 				ComponentArchivePath: "00-ca",
 				OutputPath:           "ca.tar",

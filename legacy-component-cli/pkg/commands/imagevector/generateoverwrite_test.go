@@ -18,7 +18,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"sigs.k8s.io/yaml"
@@ -34,17 +34,17 @@ import (
 	ivcmd "github.com/gardener/landscaper/legacy-component-cli/pkg/commands/imagevector"
 )
 
-var _ = Describe("GenerateOverwrite", func() {
+var _ = ginkgo.Describe("GenerateOverwrite", func() {
 
 	var testdataFs vfs.FileSystem
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		fs, err := projectionfs.New(osfs.New(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), fs)
 	})
 
-	It("should generate a simple image with tag from a component descriptor", func() {
+	ginkgo.It("should generate a simple image with tag from a component descriptor", func() {
 		imageVector := runGenerateOverwrite(testdataFs, "./01-component/component-descriptor.yaml")
 
 		Expect(imageVector.Images).To(HaveLen(3))
@@ -62,7 +62,7 @@ var _ = Describe("GenerateOverwrite", func() {
 		})))
 	})
 
-	It("should generate a image source with a target version", func() {
+	ginkgo.It("should generate a image source with a target version", func() {
 		runAdd(testdataFs, "./00-component/component-descriptor.yaml", "./resources/10-targetversion.yaml")
 		imageVector := runGenerateOverwrite(testdataFs, "./00-component/component-descriptor.yaml")
 		Expect(imageVector.Images).To(HaveLen(1))
@@ -73,7 +73,7 @@ var _ = Describe("GenerateOverwrite", func() {
 		})))
 	})
 
-	It("should generate image sources from generic images", func() {
+	ginkgo.It("should generate image sources from generic images", func() {
 		addOpts := &ivcmd.AddOptions{
 			ParseImageOptions: iv.ParseImageOptions{
 				GenericDependencies: []string{
@@ -107,9 +107,9 @@ var _ = Describe("GenerateOverwrite", func() {
 		})))
 	})
 
-	Context("Integration", func() {
+	ginkgo.Context("Integration", func() {
 
-		It("should generate image sources from a gardener component descriptor ", func() {
+		ginkgo.It("should generate image sources from a gardener component descriptor ", func() {
 			res, err := http.Get("https://raw.githubusercontent.com/gardener/gardener/v1.25.1/charts/images.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			var gardenerImageVectorBytes bytes.Buffer

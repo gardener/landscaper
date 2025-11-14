@@ -9,7 +9,7 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -18,43 +18,43 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "oci Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "oci Test Suite")
 }
 
-var _ = Describe("helper", func() {
+var _ = ginkgo.Describe("helper", func() {
 
-	Context("OCIRef", func() {
+	ginkgo.Context("OCIRef", func() {
 
-		It("should correctly parse a repository url without a protocol and a component", func() {
+		ginkgo.It("should correctly parse a repository url without a protocol and a component", func() {
 			repoCtx := cdv2.OCIRegistryRepository{BaseURL: "example.com"}
 			ref, err := oci.OCIRef(repoCtx, "somecomp", "v0.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref).To(Equal("example.com/component-descriptors/somecomp:v0.0.0"))
 		})
 
-		It("should correctly parse a repository url with a protocol and a component", func() {
+		ginkgo.It("should correctly parse a repository url with a protocol and a component", func() {
 			repoCtx := cdv2.OCIRegistryRepository{BaseURL: "http://example.com"}
 			ref, err := oci.OCIRef(repoCtx, "somecomp", "v0.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref).To(Equal("example.com/component-descriptors/somecomp:v0.0.0"))
 		})
 
-		It("should correctly parse a repository url without a protocol and a port and a component", func() {
+		ginkgo.It("should correctly parse a repository url without a protocol and a port and a component", func() {
 			repoCtx := cdv2.OCIRegistryRepository{BaseURL: "example.com:443"}
 			ref, err := oci.OCIRef(repoCtx, "somecomp", "v0.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref).To(Equal("example.com:443/component-descriptors/somecomp:v0.0.0"))
 		})
 
-		It("should correctly parse a repository url with a protocol and a port and a component", func() {
+		ginkgo.It("should correctly parse a repository url with a protocol and a port and a component", func() {
 			repoCtx := cdv2.OCIRegistryRepository{BaseURL: "http://example.com:443"}
 			ref, err := oci.OCIRef(repoCtx, "somecomp", "v0.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref).To(Equal("example.com:443/component-descriptors/somecomp:v0.0.0"))
 		})
 
-		It("should correctly parse a repository url with a sha256-digest name mapping", func() {
+		ginkgo.It("should correctly parse a repository url with a sha256-digest name mapping", func() {
 			repoCtx := cdv2.OCIRegistryRepository{
 				BaseURL:              "example.com:443",
 				ComponentNameMapping: cdv2.OCIRegistryDigestMapping,
