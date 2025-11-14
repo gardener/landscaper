@@ -4,7 +4,7 @@ go 1.25.4
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.147.0
+	github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.38.2

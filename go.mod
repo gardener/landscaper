@@ -8,8 +8,8 @@ require (
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.5.2+incompatible
-	github.com/gardener/landscaper/apis v0.147.0
-	github.com/gardener/landscaper/controller-utils v0.147.0
+	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/legacy-component-cli v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.147.0
 	github.com/go-logr/logr v1.4.3
