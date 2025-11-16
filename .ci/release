@@ -29,7 +29,7 @@ sed -i -e "0,/)/{s@github.com/gardener/landscaper/controller-utils .*@github.com
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/landscaper/apis ${VERSION}@}" \
   ${PROJECT_ROOT}/controller-utils/go.mod
 
-sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-cli  .*@github.com/gardener/landscaper/legacy-component-cli ${VERSION}@}" \
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-cli .*@github.com/gardener/landscaper/legacy-component-cli ${VERSION}@}" \
   ${PROJECT_ROOT}/go.mod
 
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/legacy-component-spec/bindings-go .*@github.com/gardener/landscaper/legacy-component-spec/bindings-go ${VERSION}@}" \
