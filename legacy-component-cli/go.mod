@@ -7,8 +7,8 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.5.2+incompatible
 	github.com/drone/envsubst v1.0.3
-	github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.151.0
-	github.com/gardener/landscaper/legacy-image-vector v0.151.0
+	github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/legacy-image-vector v0.0.0-00010101000000-000000000000
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
