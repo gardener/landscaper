@@ -77,6 +77,9 @@ landscaper:
           - ref_template: 'refs/tags/{VERSION}'
           - ref_template: 'refs/tags/apis/{VERSION}'
           - ref_template: 'refs/tags/controller-utils/{VERSION}'
+          - ref_template: 'refs/tags/legacy-component-cli/{VERSION}'
+          - ref_template: 'refs/tags/legacy-component-spec/bindings-go/{VERSION}'
+          - ref_template: 'refs/tags/legacy-image-vector/{VERSION}'
       steps:
         # integration_test:
         #   execute:
