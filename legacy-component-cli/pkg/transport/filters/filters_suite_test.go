@@ -6,7 +6,7 @@ package filters_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -15,15 +15,15 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Filters Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Filters Test Suite")
 }
 
-var _ = Describe("filters", func() {
+var _ = ginkgo.Describe("filters", func() {
 
-	Context("accessTypeFilter", func() {
+	ginkgo.Context("accessTypeFilter", func() {
 
-		It("should match if access type is in include list", func() {
+		ginkgo.It("should match if access type is in include list", func() {
 			cd := cdv2.ComponentDescriptor{}
 			res := cdv2.Resource{
 				Access: cdv2.NewEmptyUnstructured(cdv2.OCIRegistryType),
@@ -41,7 +41,7 @@ var _ = Describe("filters", func() {
 			Expect(actualMatch).To(Equal(true))
 		})
 
-		It("should not match if access type is not in include list", func() {
+		ginkgo.It("should not match if access type is not in include list", func() {
 			cd := cdv2.ComponentDescriptor{}
 			res := cdv2.Resource{
 				Access: cdv2.NewEmptyUnstructured(cdv2.OCIRegistryType),
@@ -59,7 +59,7 @@ var _ = Describe("filters", func() {
 			Expect(actualMatch).To(Equal(false))
 		})
 
-		It("should return error upon creation if include list is empty", func() {
+		ginkgo.It("should return error upon creation if include list is empty", func() {
 			spec := filter.AccessTypeFilterSpec{
 				IncludeAccessTypes: []string{},
 			}
@@ -70,9 +70,9 @@ var _ = Describe("filters", func() {
 
 	})
 
-	Context("resourceTypeFilter", func() {
+	ginkgo.Context("resourceTypeFilter", func() {
 
-		It("should match if resource type is in include list", func() {
+		ginkgo.It("should match if resource type is in include list", func() {
 			cd := cdv2.ComponentDescriptor{}
 			res := cdv2.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -94,7 +94,7 @@ var _ = Describe("filters", func() {
 			Expect(actualMatch).To(Equal(true))
 		})
 
-		It("should not match if resource type is not in include list", func() {
+		ginkgo.It("should not match if resource type is not in include list", func() {
 			cd := cdv2.ComponentDescriptor{}
 			res := cdv2.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -116,7 +116,7 @@ var _ = Describe("filters", func() {
 			Expect(actualMatch).To(Equal(false))
 		})
 
-		It("should return error upon creation if include list is empty", func() {
+		ginkgo.It("should return error upon creation if include list is empty", func() {
 			spec := filter.ResourceTypeFilterSpec{
 				IncludeResourceTypes: []string{},
 			}
@@ -127,9 +127,9 @@ var _ = Describe("filters", func() {
 
 	})
 
-	Context("componentNameFilter", func() {
+	ginkgo.Context("componentNameFilter", func() {
 
-		It("should match if component name is in include list", func() {
+		ginkgo.It("should match if component name is in include list", func() {
 			cd := cdv2.ComponentDescriptor{
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
@@ -162,7 +162,7 @@ var _ = Describe("filters", func() {
 			Expect(match2).To(Equal(true))
 		})
 
-		It("should not match if component name is not in include list", func() {
+		ginkgo.It("should not match if component name is not in include list", func() {
 			cd := cdv2.ComponentDescriptor{
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
@@ -195,7 +195,7 @@ var _ = Describe("filters", func() {
 			Expect(match2).To(Equal(false))
 		})
 
-		It("should return error upon creation if include list is empty", func() {
+		ginkgo.It("should return error upon creation if include list is empty", func() {
 			spec := filter.ComponentNameFilterSpec{
 				IncludeComponentNames: []string{},
 			}
@@ -204,7 +204,7 @@ var _ = Describe("filters", func() {
 			Expect(err).To(MatchError("includeComponentNames must not be empty"))
 		})
 
-		It("should return error upon creation if regexp is invalid", func() {
+		ginkgo.It("should return error upon creation if regexp is invalid", func() {
 			spec := filter.ComponentNameFilterSpec{
 				IncludeComponentNames: []string{
 					"github.com/\\",

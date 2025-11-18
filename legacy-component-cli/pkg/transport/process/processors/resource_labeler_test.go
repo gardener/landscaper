@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"io"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -18,11 +18,11 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/transport/process/utils"
 )
 
-var _ = Describe("resourceLabeler", func() {
+var _ = ginkgo.Describe("resourceLabeler", func() {
 
-	Context("Process", func() {
+	ginkgo.Context("Process", func() {
 
-		It("should correctly add labels", func() {
+		ginkgo.It("should correctly add labels", func() {
 			res := cdv2.Resource{
 				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "my-res",

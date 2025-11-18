@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"io"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -22,11 +22,11 @@ import (
 	"github.com/gardener/landscaper/legacy-component-cli/pkg/transport/process/utils"
 )
 
-var _ = Describe("ociArtifact", func() {
+var _ = ginkgo.Describe("ociArtifact", func() {
 
-	Context("Process", func() {
+	ginkgo.Context("Process", func() {
 
-		It("should upload and stream oci image", func() {
+		ginkgo.It("should upload and stream oci image", func() {
 			acc, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryAccess("my-registry.com/image:0.1.0"))
 			Expect(err).ToNot(HaveOccurred())
 			res := cdv2.Resource{
@@ -99,7 +99,7 @@ var _ = Describe("ociArtifact", func() {
 			Expect(actualOciArtifact).To(Equal(expectedOciArtifact))
 		})
 
-		It("should upload and stream oci image index", func() {
+		ginkgo.It("should upload and stream oci image index", func() {
 			acc, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryAccess("my-registry.com/image:0.1.0"))
 			Expect(err).ToNot(HaveOccurred())
 			res := cdv2.Resource{
@@ -209,7 +209,7 @@ var _ = Describe("ociArtifact", func() {
 			Expect(actualOciArtifact).To(Equal(expectedOciArtifact))
 		})
 
-		It("should return error for invalid access type", func() {
+		ginkgo.It("should return error for invalid access type", func() {
 			acc, err := cdv2.NewUnstructured(cdv2.NewLocalOCIBlobAccess("sha256:123"))
 			Expect(err).ToNot(HaveOccurred())
 			res := cdv2.Resource{

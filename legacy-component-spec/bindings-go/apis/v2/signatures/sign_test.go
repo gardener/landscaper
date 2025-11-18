@@ -18,7 +18,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -45,7 +45,7 @@ func (v TestVerifier) Verify(componentDescriptor cdv2.ComponentDescriptor, signa
 
 type TestSHA256Hasher signatures.Hasher
 
-var _ = Describe("Sign/Verify component-descriptor", func() {
+var _ = ginkgo.Describe("Sign/Verify component-descriptor", func() {
 	var baseCd cdv2.ComponentDescriptor
 	testSHA256Hasher := signatures.Hasher{
 		HashFunction:  sha256.New(),
@@ -54,7 +54,7 @@ var _ = Describe("Sign/Verify component-descriptor", func() {
 	signatureName := "testSignatureName"
 	correctBaseCdHash := "6c571bb6e351ae755baa7f26cbd1f600d2968ab8b88e25a3bab277e53afdc3ad"
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		baseCd = cdv2.ComponentDescriptor{
 			Metadata: cdv2.Metadata{
 				Version: "v2",
@@ -100,8 +100,8 @@ var _ = Describe("Sign/Verify component-descriptor", func() {
 		}
 	})
 
-	Describe("sign component-descriptor", func() {
-		It("should add one signature", func() {
+	ginkgo.Describe("sign component-descriptor", func() {
+		ginkgo.It("should add one signature", func() {
 			err := signatures.SignComponentDescriptor(&baseCd, TestSigner{}, testSHA256Hasher, signatureName)
 			Expect(err).To(BeNil())
 			Expect(len(baseCd.Signatures)).To(BeIdenticalTo(1))
@@ -113,15 +113,15 @@ var _ = Describe("Sign/Verify component-descriptor", func() {
 			Expect(baseCd.Signatures[0].Signature.Value).To(BeIdenticalTo(fmt.Sprintf("%s:%s-signed", signatures.SHA256, correctBaseCdHash)))
 		})
 	})
-	Describe("verify component-descriptor signature", func() {
-		It("should verify one signature", func() {
+	ginkgo.Describe("verify component-descriptor signature", func() {
+		ginkgo.It("should verify one signature", func() {
 			err := signatures.SignComponentDescriptor(&baseCd, TestSigner{}, testSHA256Hasher, signatureName)
 			Expect(err).To(BeNil())
 			Expect(len(baseCd.Signatures)).To(BeIdenticalTo(1))
 			err = signatures.VerifySignedComponentDescriptor(&baseCd, TestVerifier{}, signatureName)
 			Expect(err).To(BeNil())
 		})
-		It("should reject an invalid signature", func() {
+		ginkgo.It("should reject an invalid signature", func() {
 			err := signatures.SignComponentDescriptor(&baseCd, TestSigner{}, testSHA256Hasher, signatureName)
 			Expect(err).To(BeNil())
 			Expect(len(baseCd.Signatures)).To(BeIdenticalTo(1))
@@ -129,12 +129,12 @@ var _ = Describe("Sign/Verify component-descriptor", func() {
 			err = signatures.VerifySignedComponentDescriptor(&baseCd, TestVerifier{}, signatureName)
 			Expect(err).ToNot(BeNil())
 		})
-		It("should reject a missing signature", func() {
+		ginkgo.It("should reject a missing signature", func() {
 			err := signatures.VerifySignedComponentDescriptor(&baseCd, TestVerifier{}, signatureName)
 			Expect(err).ToNot(BeNil())
 		})
 
-		It("should validate the correct signature if multiple are present", func() {
+		ginkgo.It("should validate the correct signature if multiple are present", func() {
 			err := signatures.SignComponentDescriptor(&baseCd, TestSigner{}, testSHA256Hasher, signatureName)
 			Expect(err).To(BeNil())
 			Expect(len(baseCd.Signatures)).To(BeIdenticalTo(1))
@@ -156,8 +156,8 @@ var _ = Describe("Sign/Verify component-descriptor", func() {
 		})
 	})
 
-	Describe("verify normalised component-descriptor digest with signed digest ", func() {
-		It("should reject an invalid hash", func() {
+	ginkgo.Describe("verify normalised component-descriptor digest with signed digest ", func() {
+		ginkgo.It("should reject an invalid hash", func() {
 			err := signatures.SignComponentDescriptor(&baseCd, TestSigner{}, testSHA256Hasher, signatureName)
 			Expect(err).To(BeNil())
 			Expect(len(baseCd.Signatures)).To(BeIdenticalTo(1))
@@ -165,7 +165,7 @@ var _ = Describe("Sign/Verify component-descriptor", func() {
 			err = signatures.VerifySignedComponentDescriptor(&baseCd, TestVerifier{}, signatureName)
 			Expect(err).ToNot(BeNil())
 		})
-		It("should reject a missing hash", func() {
+		ginkgo.It("should reject a missing hash", func() {
 			err := signatures.SignComponentDescriptor(&baseCd, TestSigner{}, testSHA256Hasher, signatureName)
 			Expect(err).To(BeNil())
 			Expect(len(baseCd.Signatures)).To(BeIdenticalTo(1))

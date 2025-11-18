@@ -12,26 +12,26 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ComponentArchive Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "ComponentArchive Test Suite")
 }
 
-var _ = Describe("Archive", func() {
+var _ = ginkgo.Describe("Archive", func() {
 
 	var testdataFs vfs.FileSystem
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		fs, err := projectionfs.New(osfs.New(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 		testdataFs = layerfs.New(memoryfs.New(), fs)
 	})
 
-	It("should return error for empty component descriptor if name and version not set in options", func() {
+	ginkgo.It("should return error for empty component descriptor if name and version not set in options", func() {
 		opts := BuilderOptions{ComponentArchivePath: "./00-component"}
 
 		_, err := opts.Build(testdataFs)
@@ -39,7 +39,7 @@ var _ = Describe("Archive", func() {
 		Expect(err.Error()).Should(ContainSubstring("invalid component descriptor"))
 	})
 
-	It("should set the component name and version for empty component descriptor", func() {
+	ginkgo.It("should set the component name and version for empty component descriptor", func() {
 		const (
 			componentName    = "example.com/component"
 			componentVersion = "v0.0.0"
@@ -57,7 +57,7 @@ var _ = Describe("Archive", func() {
 		Expect(archive.ComponentDescriptor.Version).To(Equal(componentVersion))
 	})
 
-	It("should return error when trying to overwrite existing component name", func() {
+	ginkgo.It("should return error when trying to overwrite existing component name", func() {
 		const (
 			componentName    = "example.com/new-component"
 			componentVersion = "v0.0.0"
@@ -74,7 +74,7 @@ var _ = Describe("Archive", func() {
 		Expect(err.Error()).Should(ContainSubstring("unable to overwrite the existing component name: forbidden"))
 	})
 
-	It("should return error when trying to overwrite existing component version", func() {
+	ginkgo.It("should return error when trying to overwrite existing component version", func() {
 		const (
 			componentName    = "example.com/component"
 			componentVersion = "v0.0.1"
@@ -90,7 +90,7 @@ var _ = Describe("Archive", func() {
 		Expect(err.Error()).Should(ContainSubstring("unable to overwrite the existing component version: forbidden"))
 	})
 
-	It("should not return error when existing component name and version are equal to opts", func() {
+	ginkgo.It("should not return error when existing component name and version are equal to opts", func() {
 		const (
 			componentName    = "example.com/component"
 			componentVersion = "v0.0.0"

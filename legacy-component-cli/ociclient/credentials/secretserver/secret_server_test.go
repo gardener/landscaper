@@ -11,20 +11,20 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/legacy-component-cli/ociclient/credentials/secretserver"
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "secretserver Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "secretserver Test Suite")
 }
 
-var _ = Describe("secret server", func() {
+var _ = ginkgo.Describe("secret server", func() {
 
-	It("should read from unencrypted server", func() {
+	ginkgo.It("should read from unencrypted server", func() {
 		svr := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			writer.WriteHeader(200)
 			_, _ = writer.Write([]byte(`
@@ -49,9 +49,9 @@ var _ = Describe("secret server", func() {
 		Expect(config.ContainerRegistry).To(HaveKey("a"))
 	})
 
-	It("should read from encrypted server", func() {
+	ginkgo.It("should read from encrypted server", func() {
 		svr := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			defer GinkgoRecover()
+			defer ginkgo.GinkgoRecover()
 			writer.WriteHeader(200)
 			data, _ := base64.StdEncoding.DecodeString("gqxpvIjAFda7NS3XAVqn/SIVujnGsG0dPjG5s0S5+TyszCVEQ8QF9di+7ZpVpHnCnRXUuZ6HSKV2B1tRi+Lf6MQxr7U5QGix6FB3/8YdYr8=")
 			n, err := writer.Write(data)

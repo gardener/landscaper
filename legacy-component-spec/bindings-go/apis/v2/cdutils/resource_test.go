@@ -7,7 +7,7 @@ package cdutils_test
 import (
 	"os"
 
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -15,10 +15,10 @@ import (
 	"github.com/gardener/landscaper/legacy-component-spec/bindings-go/codec"
 )
 
-var _ = Describe("resource utils", func() {
+var _ = ginkgo.Describe("resource utils", func() {
 
-	Context("#GetImageReferenceFromList", func() {
-		It("should return the image from a component descriptor list", func() {
+	ginkgo.Context("#GetImageReferenceFromList", func() {
+		ginkgo.It("should return the image from a component descriptor list", func() {
 			data, err := os.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			cd := cdv2.ComponentDescriptor{}
@@ -31,7 +31,7 @@ var _ = Describe("resource utils", func() {
 			Expect(imageAccess).To(Equal("eu.gcr.io/gardener-project/gardener/apiserver:v1.7.4"))
 		})
 
-		It("should return an error if no component matches the given name", func() {
+		ginkgo.It("should return an error if no component matches the given name", func() {
 			data, err := os.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			cd := cdv2.ComponentDescriptor{}
@@ -44,8 +44,8 @@ var _ = Describe("resource utils", func() {
 		})
 	})
 
-	Context("#GetImageReferenceByName", func() {
-		It("should return the image from a component descriptor", func() {
+	ginkgo.Context("#GetImageReferenceByName", func() {
+		ginkgo.It("should return the image from a component descriptor", func() {
 			data, err := os.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
@@ -57,7 +57,7 @@ var _ = Describe("resource utils", func() {
 			Expect(imageAccess).To(Equal("eu.gcr.io/gardener-project/gardener/apiserver:v1.7.4"))
 		})
 
-		It("should return an error if no resource matches the given name", func() {
+		ginkgo.It("should return an error if no resource matches the given name", func() {
 			data, err := os.ReadFile("../../../../language-independent/test-resources/component_descriptor_v2.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
@@ -68,8 +68,8 @@ var _ = Describe("resource utils", func() {
 		})
 	})
 
-	Context("#ParseImageReference", func() {
-		It("should return the repository and tag", func() {
+	ginkgo.Context("#ParseImageReference", func() {
+		ginkgo.It("should return the repository and tag", func() {
 			repo, tag, seperator, err := cdutils.ParseImageReference("eu.gcr.io/gardener-project/gardener/apiserver:v1.7.4")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -78,7 +78,7 @@ var _ = Describe("resource utils", func() {
 			Expect(seperator).To(Equal(":"))
 		})
 
-		It("should return the repository and tag - image reference contains port", func() {
+		ginkgo.It("should return the repository and tag - image reference contains port", func() {
 			repo, tag, seperator, err := cdutils.ParseImageReference("eu.gcr.io:5000/gardener-project/gardener/apiserver:v1.7.4")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -87,7 +87,7 @@ var _ = Describe("resource utils", func() {
 			Expect(seperator).To(Equal(":"))
 		})
 
-		It("should return the repository and tag - image reference contains a SHA256", func() {
+		ginkgo.It("should return the repository and tag - image reference contains a SHA256", func() {
 			repo, sha, seperator, err := cdutils.ParseImageReference("eu.gcr.io/gardener-project/apiserver@sha256:12345")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -96,7 +96,7 @@ var _ = Describe("resource utils", func() {
 			Expect(seperator).To(Equal("@"))
 		})
 
-		It("should return the repository and tag - image reference contains a SHA256 and port", func() {
+		ginkgo.It("should return the repository and tag - image reference contains a SHA256 and port", func() {
 			repo, sha, seperator, err := cdutils.ParseImageReference("eu.gcr.io:5000/gardener-project/apiserver@sha256:12345")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -105,7 +105,7 @@ var _ = Describe("resource utils", func() {
 			Expect(seperator).To(Equal("@"))
 		})
 
-		It("should return an error - the image reference is invalid", func() {
+		ginkgo.It("should return an error - the image reference is invalid", func() {
 			_, _, _, err := cdutils.ParseImageReference("eu.gcr.io/gardener-project/gardenerapiserver--v1.7.4")
 			Expect(err).To(HaveOccurred())
 		})

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/landscaper/legacy-component-spec/bindings-go/apis/v2"
@@ -21,8 +21,8 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Uploaders Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Uploaders Test Suite")
 }
 
 var (
@@ -33,11 +33,11 @@ var (
 	targetCtx *cdv2.OCIRegistryRepository
 )
 
-var _ = BeforeSuite(func() {
+var _ = ginkgo.BeforeSuite(func() {
 	testenv = envtest.New(envtest.Options{
 		RegistryBinaryPath: filepath.Join("../../../../", envtest.DefaultRegistryBinaryPath),
-		Stdout:             GinkgoWriter,
-		Stderr:             GinkgoWriter,
+		Stdout:             ginkgo.GinkgoWriter,
+		Stderr:             ginkgo.GinkgoWriter,
 	})
 	Expect(testenv.Start(context.Background())).To(Succeed())
 	targetCtx = cdv2.NewOCIRegistryRepository(testenv.Addr+"/test", "")
@@ -53,6 +53,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 }, 60)
 
-var _ = AfterSuite(func() {
+var _ = ginkgo.AfterSuite(func() {
 	Expect(testenv.Close()).To(Succeed())
 })

@@ -13,7 +13,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	. "github.com/onsi/ginkgo"
+	ginkgo "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
@@ -32,8 +32,8 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Downloaders Test Suite")
+	RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Downloaders Test Suite")
 }
 
 var (
@@ -52,11 +52,11 @@ var (
 	expectedImageIndex    oci.Index
 )
 
-var _ = BeforeSuite(func() {
+var _ = ginkgo.BeforeSuite(func() {
 	testenv = envtest.New(envtest.Options{
 		RegistryBinaryPath: filepath.Join("../../../../", envtest.DefaultRegistryBinaryPath),
-		Stdout:             GinkgoWriter,
-		Stderr:             GinkgoWriter,
+		Stdout:             ginkgo.GinkgoWriter,
+		Stderr:             ginkgo.GinkgoWriter,
 	})
 	Expect(testenv.Start(context.Background())).To(Succeed())
 
@@ -73,7 +73,7 @@ var _ = BeforeSuite(func() {
 	uploadTestComponent()
 }, 60)
 
-var _ = AfterSuite(func() {
+var _ = ginkgo.AfterSuite(func() {
 	Expect(testenv.Close()).To(Succeed())
 })
 
