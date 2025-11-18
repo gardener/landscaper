@@ -102,10 +102,9 @@
     },
     {
       "customType": "regex",
-      "description": "Gardenlinux in shoots|cola.yaml",
+      "description": "Gardenlinux in several yaml files",
       "managerFilePatterns": [
-        "/config/shoots.yaml/",
-        "/config/cola.yaml/"
+         "/.landscaper/blueprint/shoot-config.json/"
       ],
       "matchStrings": [
         "gardenlinux\\s.*version:\\s*(?<currentValue>\\d+\\.\\d+\\.\\d+)"
