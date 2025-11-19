@@ -10,9 +10,9 @@ function revendor() {
   go mod tidy
 }
 
-echo "Revendor legacy-component-spec module ..."
+echo "Revendor legacy-component-spec/bindings-go module ..."
 (
-  cd "$PROJECT_ROOT/legacy-component-spec"
+  cd "$PROJECT_ROOT/legacy-component-spec/bindings-go"
   revendor
 )
 echo "Revendor legacy-image-vector module ..."
