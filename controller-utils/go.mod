@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.38.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.10
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.45.0
 	k8s.io/api v0.34.2
 	k8s.io/apiextensions-apiserver v0.34.2
