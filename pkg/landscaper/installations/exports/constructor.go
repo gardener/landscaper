@@ -246,6 +246,7 @@ func ConvertTargetTemplateToTargetExtension(tmplData interface{}) (*dataobjects.
 		Spec: lsv1alpha1.TargetSpec{
 			Type:          targetTemplate.Type,
 			Configuration: targetTemplate.Configuration,
+			SecretRef:     targetTemplate.SecretRef,
 		},
 	}
 	return dataobjects.NewTargetExtension(target, nil), nil
