@@ -62,7 +62,7 @@ detail.
 
 The _Landscaper_ is a set of Kubernetes controllers working on a Kubernetes
 data plane hosting the resources manged by the landscaper. As such it may live
-in a Kubernetes cluster and use the data plane of the runtime cluster, or is uses
+in a Kubernetes cluster and use the data plane of the runtime cluster, or it uses
 its own data plane consisting of a nodeless Kubernetes data plane 
 (Kubernetes api server plus etcd and stripped controller manager). The latter
 is highly recommended to grant access to the landscaper data plane to be
