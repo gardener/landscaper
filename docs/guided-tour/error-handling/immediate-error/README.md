@@ -38,7 +38,7 @@ status:
 
 ## Deploy the fixed Installation
 
-Here you can find a fixed version of the Installation: [installation/installation-fixed.yaml](installation/installation-fixed.yaml).
+Here you can find a fixed version of the Installation: [installation/installation-fixed.yaml.tpl](installation/installation-fixed.yaml.tpl).
 
 Deploy it with the script [commands/deploy-fixed-installation.sh](commands/deploy-fixed-installation.sh).
 
