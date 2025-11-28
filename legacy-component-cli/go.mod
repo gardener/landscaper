@@ -5,7 +5,7 @@ go 1.25.4
 require (
 	github.com/containerd/containerd v1.7.29
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v28.5.2+incompatible
+	github.com/docker/cli v29.0.2+incompatible
 	github.com/drone/envsubst v1.0.3
 	github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/legacy-image-vector v0.0.0-00010101000000-000000000000
