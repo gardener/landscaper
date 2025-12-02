@@ -62,7 +62,7 @@ detail.
 
 The _Landscaper_ is a set of Kubernetes controllers working on a Kubernetes
 data plane hosting the resources manged by the landscaper. As such it may live
-in a Kubernetes cluster and use the data plane of the runtime cluster, or is uses
+in a Kubernetes cluster and use the data plane of the runtime cluster, or it uses
 its own data plane consisting of a nodeless Kubernetes data plane 
 (Kubernetes api server plus etcd and stripped controller manager). The latter
 is highly recommended to grant access to the landscaper data plane to be
@@ -378,8 +378,8 @@ the target sets are not overlapping.
 The _Landscaper_ is typically embedded in continuous deployment scenarios
 controlled by git-ops methods. The artefacts are provided via development
 methodologies or delivery processes in (a set of) artefact repositories.
-the _Blueprints_ used by the _Landscaper_ are deployment artefacts like
-container images or helm charts amd appropriately versioned.
+The _Blueprints_ used by the _Landscaper_ are deployment artefacts like
+container images or helm charts and appropriately versioned.
 
 For operating a dedicated landscape git-ops methodologies can be used by
 describing the desired state of a landscape by a set of (interconnected)
