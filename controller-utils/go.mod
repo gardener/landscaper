@@ -1,6 +1,6 @@
 module github.com/gardener/landscaper/controller-utils
 
-go 1.25.4
+go 1.25.5
 
 require (
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
