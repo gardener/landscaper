@@ -16,7 +16,7 @@ landscaper:
     steps:
       verify:
        # renovate: datasource=docker depName=golang
-        image: 'golang:1.25.4'
+        image: 'golang:1.25'
       ocm_build_and_publish:
         image: europe-docker.pkg.dev/gardener-project/releases/cicd/job-image:1.2360.0
         privilege_mode: privileged
