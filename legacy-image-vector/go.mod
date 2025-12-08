@@ -6,8 +6,8 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/gardener/landscaper/legacy-component-spec/bindings-go v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.4.3
-	github.com/onsi/ginkgo/v2 v2.27.2
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/ginkgo/v2 v2.27.3
+	github.com/onsi/gomega v1.38.3
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	sigs.k8s.io/yaml v1.6.0
