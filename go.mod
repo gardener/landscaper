@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v29.0.3+incompatible
+	github.com/docker/cli v29.1.3+incompatible
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/legacy-component-cli v0.152.0
