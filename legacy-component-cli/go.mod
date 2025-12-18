@@ -3,7 +3,7 @@ module github.com/gardener/landscaper/legacy-component-cli
 go 1.25.5
 
 require (
-	github.com/containerd/containerd v1.7.29
+	github.com/containerd/containerd v1.7.30
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v29.0.3+incompatible
 	github.com/drone/envsubst v1.0.3
