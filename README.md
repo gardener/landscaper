@@ -7,6 +7,10 @@
 [![CI Build status](https://concourse.ci.gardener.cloud/api/v1/teams/landscaper/pipelines/landscaper-master/jobs/master-head-update-job/badge)](https://concourse.ci.gardener.cloud/teams/landscaper/pipelines/landscaper-master/jobs/master-head-update-job)
 [![Go Report Card](https://goreportcard.com/badge/github.com/landscaper/landscaper)](https://goreportcard.com/report/github.com/landscaper/landscaper)
 
+
+## Landscaper has been moved to the [openmcp-project](https://github.com/openmcp-project) organization. Please find the new repository here: [github.com/openmcp-project/landscaper](https://github.com/openmcp-project/landscaper).
+
+
 <!-- Motivation -->
 _Landscaper_ provides the means to describe, install and maintain cloud-native landscapes. It allows
 you to express an order of building blocks, connect output with input data and ultimately, bring your landscape to live.
